@@ -1016,7 +1016,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             Utf8StringCP colAlias = nullptr;
             if (basePropertyMap != nullptr)
                 {
-                DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>()->GetColumn();
+                DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
                 if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
                     colAlias = &basePropertyMapCol.GetName();
                 }
