@@ -342,16 +342,8 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
     m_renderSystem = renderSys;
     BeAssert(m_viewport.IsValid());
 
-    static bool s_useTiles = false; // debugging - to be removed.
-    if (s_useTiles)
-        {
-        m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
-        }
-    else
-        {
-        m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
+    m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
             (QuadTree::Tile*) new Tile(*this, QuadTree::TileId(0,0,0), nullptr) : new Tile2dModel(*this, QuadTree::TileId(0,0,0), nullptr);
-        }
     }
 
 //=======================================================================================
@@ -419,7 +411,7 @@ void Attachment::Tree::Draw(TerrainContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this usually queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
