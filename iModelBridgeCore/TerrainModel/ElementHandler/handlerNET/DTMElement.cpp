@@ -1595,7 +1595,7 @@ void DTMElement::RegisterManagedElementHandler()
 // ---------------------------------------------------------------------------------------
 // @bsiclass                                    Daryl Holmwood                  02/2017
 // ---------------------------------------------------------------------------------------
-ref class ElementTemplateAdmin
+public ref class ElementTemplateAdmin
     {
     // ---------------------------------------------------------------------------------------
     // @bsimethod                                   Daryl Holmwood                  02/2017
