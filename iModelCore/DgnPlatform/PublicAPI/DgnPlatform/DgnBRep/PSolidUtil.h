@@ -299,7 +299,7 @@ struct PSolidKernelManager
 {
 DGNPLATFORM_EXPORT static void StartSession();
 DGNPLATFORM_EXPORT static void StopSession();
-DGNPLATFORM_EXPORT static void SetExternalFrustrum(); // Frustrum registered and session started by external dll (V8 convert)...
+DGNPLATFORM_EXPORT static bool SetExternalFrustrum(bool isActive); // Frustrum registered and session started by external dll (V8 convert)...
 
 }; // PSolidKernelManager
 
