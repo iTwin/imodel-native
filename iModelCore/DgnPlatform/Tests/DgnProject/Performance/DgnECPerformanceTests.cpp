@@ -24,7 +24,7 @@ double PerformanceDgnECTests::s_zCoord = 0.0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model)
+StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId)
     {
     if (!model.Is3d())
         return ERROR; // What kind of model is this?!?
@@ -33,10 +33,6 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnM
     ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), elementClassId);
 
     if (nullptr == elementHandler)
-        return ERROR;
-
-    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(model.GetDgnDb(), "TestCategory");
-    if (!categoryId.IsValid())
         return ERROR;
 
     DgnElementPtr element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(model.GetDgnDb(), model.GetModelId(), DgnClassId(model.GetDgnDb().Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
@@ -66,9 +62,9 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
+void PerformanceDgnECTests::RunInsertTests(ECN::ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
     {
-    DgnCode partitionCode = InformationPartitionElement::CreateCode(*project.Elements().GetRootSubject(), "Default");
+    DgnCode partitionCode = InformationPartitionElement::CreateCode(*project.Elements().GetRootSubject(), "DefaultModel");
     DgnModels& modelTable = project.Models();
     DgnModelId id = modelTable.QuerySubModelId(partitionCode);
     DgnModelPtr model = modelTable.GetModel(id);
@@ -118,12 +114,15 @@ void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf
         }
     insertingTimer.Stop();
 
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(model->GetDgnDb(), "TestCategory");
+    EXPECT_TRUE(categoryId.IsValid());
+
     DgnElementPtrVec elements;
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
         StatusInt status;
         DgnElementPtr element;
-        status = CreateArbitraryElement(element, *model);
+        status = CreateArbitraryElement(element, *model, categoryId);
         ASSERT_EQ(SUCCESS, status);
         elements.push_back(element);
         }
@@ -252,7 +251,6 @@ void PerformanceDgnECTests::RunQueryTests(ECSchemaR schema, DgnDbR project, Utf8
 
     PERFORMANCELOG.infov("Found %d instances of class %s:%s in %.4lf seconds", count, schema.GetFullSchemaName().c_str(), TEST_CLASS_NAME, timer.GetElapsedSeconds());
     LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), count, Utf8PrintfString("Found Instance of class: %s ", TEST_CLASS_NAME).c_str());
-
     }
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)

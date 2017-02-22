@@ -37,7 +37,6 @@ namespace DgnNET {
 
 ref struct      DgnDb;
 ref struct      DgnElement;
-ref struct      ECSqlArrayValue;
 ref struct      ECSqlValue;
 ref struct      DgnModel;
 ref struct      DgnModels;
@@ -118,9 +117,7 @@ static BDGN::DgnDbP             DgnDbToNative (DgnDb^ managed);
 
 static DgnDb^                   DgnDbToManaged (BDGN::DgnDbP);
 
-static ECSqlArrayValue^         ECSqlArrayValueToManaged (BeSQLite::EC::IECSqlArrayValue* native);
-
-static ECSqlValue^              ECSqlValueToManaged (BeSQLite::EC::IECSqlValue* native, ECSqlArrayValue^ owner);
+static ECSqlValue^              ECSqlValueToManaged (BeSQLite::EC::IECSqlValue* native, ECSqlValue^ owner);
 
 static System::DateTimeKind     DateTimeKindToManaged (BENTLEY_NAMESPACE_NAME::DateTime::Kind nativeKind)
     {
@@ -169,7 +166,10 @@ static ECValue^                 ECValueToManaged (ECN::ECValueP);
 
 static ECN::ECValueCP           ECValueToNative (ECValue^);
 
+#if defined (NEEDSWORK_ECDB_AdhocJsonPropertyValue)
+// removed from ECN in February 2017. What replaces it, if anything?
 static AdHocJsonPropertyValue^  AdHocJsonPropertyValueToManaged (ECN::AdHocJsonPropertyValueP);
+#endif
 
 static BDGN::IBriefcaseManager::Request* RepositoryRequestToNative (RepositoryRequest^);
 
@@ -762,11 +762,11 @@ public ref struct ECSqlValue
 {
 private:
     BeSQLite::EC::IECSqlValue const*    m_native;
-    // if this is a ECSqlValue that is part of an ECSqlArrayValue, make sure the ECSqlArrayValue object isn't collected before this.
-    ECSqlArrayValue^                    m_owner;
+    // if this is a ECSqlValue that is part of another ECSqlValue, make sure the ECSqlValue object isn't collected before this.
+    ECSqlValue^                         m_owner;
 
 internal:
-    ECSqlValue (BeSQLite::EC::IECSqlValue const* native, ECSqlArrayValue^ owner)
+    ECSqlValue (BeSQLite::EC::IECSqlValue const* native, ECSqlValue^ owner)
         {
         m_native = native;
         m_owner  = owner;
@@ -829,20 +829,23 @@ public:
     /**
      * Get the value as an Array
      */
+#if defined (NEEDSWORK_ECDB_ArrayValue)
+    // IECSqlArrayValue was removed from the native API. Need to figure out what, if anything, replaces it.
     ECSqlArrayValue^ GetArray()
         {
         return Convert::ECSqlArrayValueToManaged (const_cast <BeSQLite::EC::IECSqlArrayValue*> (&m_native->GetArray()));
         }
+#endif
 };
 
 
 struct ECSqlValueEnumeratorImpl
     {
     // we need this class only because a managed class can have only a pointer to a struct as a member, not a struct
-    BeSQLite::EC::IECSqlArrayValue&                 m_collection;
-    BeSQLite::EC::IECSqlArrayValue::const_iterator  m_current;
+    BeSQLite::EC::IECSqlValueIterable&                 m_collection;
+    BeSQLite::EC::IECSqlValueIterable::const_iterator  m_current;
 
-    ECSqlValueEnumeratorImpl (BeSQLite::EC::IECSqlArrayValue& collection) : m_collection (collection), m_current (m_collection.begin()) {}
+    ECSqlValueEnumeratorImpl (BeSQLite::EC::IECSqlValueIterable& collection) : m_collection (collection), m_current (m_collection.begin()) {}
     };
 
 /*=================================================================================**//**
@@ -852,10 +855,10 @@ struct ECSqlValueEnumeratorImpl
 public ref struct ECSqlValueEnumerator : System::Collections::Generic::IEnumerator <ECSqlValue^>
 {
 private:
-    // The lifetime of the collection is controllsed by the ECSqlArrayValue, not by the enumerator.
-    BeSQLite::EC::IECSqlArrayValue&             m_collection;
-    // We keep a reference to the owning ECSqlArrayValue so it will not get collected while the ECSqlValueEnumerator is alive.
-    ECSqlArrayValue^                            m_owner;
+    // The lifetime of the collection is controllsed by the ECSqlyValue, not by the enumerator.
+    BeSQLite::EC::IECSqlValueIterable&          m_collection;
+    // We keep a reference to the owning ECSqlValue so it will not get collected while the ECSqlValueEnumerator is alive.
+    ECSqlValue^                                 m_owner;
 
     ECSqlValueEnumeratorImpl*                   m_impl;
     ECSqlValue^                                 m_currentMember;
@@ -865,13 +868,13 @@ private:
         if (NULL == m_impl)
             return nullptr;
 
-        BeSQLite::EC::IECSqlArrayValue::const_iterator theCurrent = m_impl->m_current;
-        BeSQLite::EC::IECSqlArrayValue::const_iterator theEnd     = m_impl->m_collection.end();
+        BeSQLite::EC::IECSqlValueIterable::const_iterator theCurrent = m_impl->m_current;
+        BeSQLite::EC::IECSqlValueIterable::const_iterator theEnd     = m_impl->m_collection.end();
         if (!(theCurrent != theEnd))
             return nullptr;
 
-        BeSQLite::EC::IECSqlValue const * native = (*m_impl->m_current);
-        return Convert::ECSqlValueToManaged (const_cast <BeSQLite::EC::IECSqlValue *> (native), m_owner);
+        BeSQLite::EC::IECSqlValue const &native = (*m_impl->m_current);
+        return Convert::ECSqlValueToManaged (const_cast <BeSQLite::EC::IECSqlValue *> (&native), m_owner);
         }
 
     void            SetCurrentMember ()
@@ -887,7 +890,7 @@ private:
             return m_impl->m_current != m_impl->m_collection.end();
             }
 
-        BeSQLite::EC::IECSqlArrayValue::const_iterator endIterator = m_impl->m_collection.end();
+        BeSQLite::EC::IECSqlValueIterable::const_iterator endIterator = m_impl->m_collection.end();
         if (!(m_impl->m_current != endIterator))
             return false;
 
@@ -906,7 +909,7 @@ private:
 
 
 internal:
-    ECSqlValueEnumerator (BeSQLite::EC::IECSqlArrayValue& collection, ECSqlArrayValue^ owner) : m_collection (collection)
+    ECSqlValueEnumerator (BeSQLite::EC::IECSqlValueIterable& collection, ECSqlValue^ owner) : m_collection (collection)
         {
         m_owner         = owner;
         m_impl          = nullptr;
@@ -958,34 +961,6 @@ public:
         }
 };
 
-
-
-/*=================================================================================**//**
-*  ECSqlArrayValue class
-* @bsiclass                                                     Barry.Bentley   10/16
-+===============+===============+===============+===============+===============+======*/
-public ref struct ECSqlArrayValue : System::Collections::Generic::IEnumerable <ECSqlValue^>
-{
-private:
-    BeSQLite::EC::IECSqlArrayValue*  m_native;
-
-internal:
-    ECSqlArrayValue (BeSQLite::EC::IECSqlArrayValue* native)
-        {
-        m_native = native;
-        }
-
-public:
-    virtual System::Collections::IEnumerator^ RawGetEnumerator () = System::Collections::IEnumerable::GetEnumerator
-        {
-        return GetEnumerator ();
-        }
-
-    virtual System::Collections::Generic::IEnumerator <ECSqlValue^>^ GetEnumerator ()
-        {
-        return gcnew ECSqlValueEnumerator (*m_native, this);
-        }
-};
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,6 +1159,7 @@ public:
         return Convert::DateTimeToManaged (m_statement->GetValueDateTime (columnIndex));
         }
 
+#if defined (NEEDSWORK_ECDB_ArrayValue)
     /**
      * Get the value of the specified column as an Array
      * @param columnIndex Index of ECSQL column in result set (0-based)
@@ -1192,6 +1168,7 @@ public:
         {
         return Convert::ECSqlArrayValueToManaged (const_cast <BeSQLite::EC::IECSqlArrayValue*> (&m_statement->GetValueArray (columnIndex)));
         }
+#endif
 
     ~PreparedECSqlStatement ()
         {
@@ -2028,6 +2005,7 @@ public:
         return (int) m_native->SetPropertyValue (utf8Name.c_str(), *nativeValue);
         }
 
+#if defined (BENTLEY_CHANGE)
     /**
      * Get a handle to a user property on this element.
      * @note If the user property does not already exist, this function will create it.
@@ -2065,6 +2043,7 @@ public:
         Utf8String utf8Name (namePinned);
         m_native->RemoveUserProperty (utf8Name.c_str());
         }
+#endif
 
     /** Cast this element to GeometrySource if possible */
     GeometrySource^ ToGeometrySource()
@@ -4686,6 +4665,7 @@ public:
 };
 
 
+#if defined (NEEDSWORK_ECDB_AdhocJsonPropertyValue)
 /*=================================================================================**//**
 * AdHocJsonPropertyValue - managed version of ECN::AdHocJsonPropertyValue
 * @bsiclass                                                     Barry.Bentley   10/16
@@ -4822,6 +4802,7 @@ internal:
             }
         }
 };
+#endif
 
 struct ECClassEnumeratorImpl
     {
@@ -5295,12 +5276,14 @@ BDGN::DgnDbP            Convert::DgnDbToNative (DgnNET::DgnDb^ managed)
     return managed->GetNative();
     }
 
+#if defined (NEEDSWORK_ECDB_ArrayValue)
 ECSqlArrayValue^        Convert::ECSqlArrayValueToManaged (BeSQLite::EC::IECSqlArrayValue* native)
     {
     return gcnew ECSqlArrayValue (native);
     }
+#endif
 
-ECSqlValue^             Convert::ECSqlValueToManaged (BeSQLite::EC::IECSqlValue* native, ECSqlArrayValue^ owner)
+ECSqlValue^             Convert::ECSqlValueToManaged (BeSQLite::EC::IECSqlValue* native, ECSqlValue^ owner)
     {
     return gcnew ECSqlValue (native, owner);
     }
@@ -5387,10 +5370,12 @@ ECN::ECValueCP           Convert::ECValueToNative (ECValue^ ecValue)
     return ecValue->GetNative();
     }
 
+#if defined (NEEDSWORK_ECDB_AdhocJsonPropertyValue)
 AdHocJsonPropertyValue^  Convert::AdHocJsonPropertyValueToManaged (ECN::AdHocJsonPropertyValueP native)
     {
     return gcnew AdHocJsonPropertyValue (native);
     }
+#endif
 
 BDGN::IBriefcaseManager::Request* Convert::RepositoryRequestToNative (RepositoryRequest^ request)
     {

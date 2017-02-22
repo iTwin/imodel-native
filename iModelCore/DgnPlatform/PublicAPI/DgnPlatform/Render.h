@@ -891,8 +891,8 @@ public:
     bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
-    //! Compare two GeometryParams.
-    DGNPLATFORM_EXPORT bool operator==(GeometryParamsCR rhs) const;
+    //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
+    DGNPLATFORM_EXPORT bool IsEquivalent(GeometryParamsCR) const;
 
     //! copy operator
     DGNPLATFORM_EXPORT GeometryParamsR operator=(GeometryParamsCR rhs);
@@ -1838,7 +1838,7 @@ public:
     static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
     static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
-    static double DepthFromDisplayPriority(int32_t priority) {return 0;}// GetDisplayPriorityFactor() * (double) priority;}
+    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;

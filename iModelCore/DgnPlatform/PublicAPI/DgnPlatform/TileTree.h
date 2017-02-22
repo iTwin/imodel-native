@@ -415,7 +415,7 @@ struct DrawArgs : TileArgs
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
     void Clear() {m_graphics.Clear(); m_hiResSubstitutes.Clear(); m_loResSubstitutes.Clear(); m_missing.clear();}
-    DGNPLATFORM_EXPORT void DrawGraphics(RootR); // place all entries into a GraphicBranch and send it to the ViewContext.
+    DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
 };
 
@@ -461,7 +461,7 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
+    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
 
     ProgressiveTaskPtr _CreateProgressiveTask(DrawArgs&, TileLoadStatePtr) override;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}

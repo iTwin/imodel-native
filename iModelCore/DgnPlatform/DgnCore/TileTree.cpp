@@ -151,7 +151,7 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Attempt to load a node from the local cache.
+* Attempt to load a tile from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoader::DoReadFromDb()
@@ -162,25 +162,29 @@ BentleyStatus TileLoader::DoReadFromDb()
 
     if (true)
         {
-        RealityData::Cache::AccessLock lock(*cache);
+        RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
+        CachedStatementPtr stmt;    
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+            {
+            BeAssert(false);
             return ERROR;
+            }
 
         stmt->ClearBindings();
         stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
-        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
+        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(Column::Data), stmt->GetValueInt(Column::DataSize));
         m_tileBytes.SetPos(0);
-        m_contentType = stmt->GetValueText(2);
-        m_expirationDate = stmt->GetValueInt64(3);
+        m_contentType = stmt->GetValueText(Column::ContentType);
+        m_expirationDate = stmt->GetValueInt64(Column::Expires);
 
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        uint64_t rowId = stmt->GetValueInt64(2);
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
             {
             stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
@@ -194,7 +198,7 @@ BentleyStatus TileLoader::DoReadFromDb()
 
     if (m_loads != nullptr)
         {
-        m_loads->m_fromDb.IncrementAtomicPre(std::memory_order_relaxed);
+        m_loads->m_fromDb.IncrementAtomicPre(std::memory_order_relaxed);   // just for debugging, really
         m_loads = nullptr;
         }
 
@@ -366,28 +370,18 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 
 /*---------------------------------------------------------------------------------**//**
 * Create the table to hold entries in this TileCache
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Prepare() const
     {
     if (m_db.TableExists(TABLE_NAME_TileTree))
         return SUCCESS;
 
-    Utf8CP ddl = "Filename CHAR PRIMARY KEY,"
-                 "Data BLOB,"
-                 "DataSize BIGINT,"
-                 "ContentType TEXT,"
-                 "Created BIGINT,"
-                 "Expires BIGINT";
-
-    if (BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, ddl))
-        return SUCCESS;
-
-    return ERROR;
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Created BIGINT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Cleanup() const
     {
@@ -579,9 +573,9 @@ void Tile::Draw(DrawArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
+        box.Multiply(args.GetLocation());
 
-        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box) ||
             ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
             {
             if (_HasChildren())
@@ -593,8 +587,8 @@ void Tile::Draw(DrawArgsR args, int depth) const
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
         DPoint3d center = args.GetTileCenter(*this);
 
-        static double   s_minPixelSizeAtPoint = 1.0E-3;
-        double          pixelSize = radius / std::max (s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
+        static double s_minPixelSize = 1.0E-7;
+        double pixelSize = radius / std::max(s_minPixelSize, args.m_context.GetPixelSizeAtPoint(&center));
         tooCoarse = pixelSize > _GetMaximumSize();
         }
 
@@ -736,9 +730,9 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
 * Add the Render::Graphics from all tiles that were found from this draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(RootR root)
+void DrawArgs::DrawGraphics()
     {
-    ViewFlags flags = root._GetDrawViewFlags(m_context);
+    ViewFlags flags = m_root._GetDrawViewFlags(m_context);
     DrawBranch(flags, m_graphics, 0.0, "Main");
     DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
     DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
@@ -837,7 +831,7 @@ void Root::DrawInView(RenderListContext& context, TransformCR location, ClipVect
         args.Clear(); // clear graphics/missing from previous attempt
         }
 
-    args.DrawGraphics(*this);
+    args.DrawGraphics();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -945,7 +939,7 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(RenderList
         }
 
     args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(m_root);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
+    args.DrawGraphics();  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 

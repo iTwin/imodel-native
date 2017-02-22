@@ -1417,86 +1417,57 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
-        ECN::AdHocJsonPropertyValue boolProperty = el.GetUserProperty("b");
-        //  No user properties yet
-        ECN::ECValue checkValue = boolProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue doubleProperty = el.GetUserProperty("d");
-        checkValue = doubleProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue dateTimeProperty = el.GetUserProperty("dt");
-        checkValue = dateTimeProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue dateTimeUtcProperty = el.GetUserProperty("dtUtc");
-        checkValue = dateTimeUtcProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue intProperty = el.GetUserProperty("i");
-        checkValue = intProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue longProperty = el.GetUserProperty("l");
-        checkValue = longProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue stringProperty = el.GetUserProperty("s");
-        checkValue = longProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue point2dProperty = el.GetUserProperty("p2d");
-        checkValue = point2dProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
-
-        ECN::AdHocJsonPropertyValue point3dProperty = el.GetUserProperty("p3d");
-        checkValue = point3dProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
+        auto testProps = el.GetUserProperties("testProps");
 
         // set user properties
-        ASSERT_EQ(SUCCESS, boolProperty.SetValueEC(ECN::ECValue(false)));
-        ASSERT_EQ(SUCCESS, doubleProperty.SetValueEC(ECN::ECValue(1.0001)));
-        ASSERT_EQ(SUCCESS, dateTimeProperty.SetValueEC(ECN::ECValue(dateTime)));
-        ASSERT_EQ(SUCCESS, dateTimeUtcProperty.SetValueEC(ECN::ECValue(dateTimeUtc)));
-        ASSERT_EQ(SUCCESS, intProperty.SetValueEC(ECN::ECValue(1)));
-        ASSERT_EQ(SUCCESS, longProperty.SetValueEC(ECN::ECValue(1000000000001ULL)));
-        ASSERT_EQ(SUCCESS, stringProperty.SetValueEC(ECN::ECValue("StringVal")));
-        ASSERT_EQ(SUCCESS, point2dProperty.SetValueEC(ECN::ECValue(point2d)));
-        ASSERT_EQ(SUCCESS, point3dProperty.SetValueEC(ECN::ECValue(point3d)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("b", ECN::ECValue(false)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("d", ECN::ECValue(1.0001)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("date", ECN::ECValue(dateTime)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("utc", ECN::ECValue(dateTimeUtc)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("i", ECN::ECValue(1)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("l", ECN::ECValue(1000000000001ULL)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("s", ECN::ECValue("StringVal")));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("p2d", ECN::ECValue(point2d)));
+        ASSERT_EQ(SUCCESS, testProps.SetValueEC("p3d", ECN::ECValue(point3d)));
 
         //get property values
-        checkValue = boolProperty.GetValueEC();
+        ECN::ECValue checkValue = testProps.GetValueEC("b");
         EXPECT_FALSE(checkValue.GetBoolean());
 
-        checkValue = doubleProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("d");
         EXPECT_EQ(1.0001, checkValue.GetDouble());
 
-        checkValue = dateTimeProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("date");
         EXPECT_FALSE(checkValue.IsNull());
         compareDateTimes(dateTime, checkValue.GetDateTime());
 
-        checkValue = dateTimeUtcProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("utc");
         EXPECT_FALSE(checkValue.IsNull());
         compareDateTimes(dateTimeUtc, checkValue.GetDateTime());
 
-        checkValue = intProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("i");
         EXPECT_EQ(1, checkValue.GetInteger());
 
-        checkValue = longProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("l");
         EXPECT_EQ(1000000000001, checkValue.GetLong());
 
-        checkValue = stringProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("s");
+        testProps.SetHidden("s", true);
+        testProps.SetCategory("s", "blah");
+        testProps.SetReadOnly("s", true);
+        testProps.SetExtendedType("s", "myType");
         EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
 
-        checkValue = point2dProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("p2d");
         EXPECT_EQ(point2d.x, checkValue.GetPoint2d().x);
         EXPECT_EQ(point2d.y, checkValue.GetPoint2d().y);
 
-        checkValue = point3dProperty.GetValueEC();
+        checkValue = testProps.GetValueEC("p3d");
         EXPECT_EQ(point3d.x, checkValue.GetPoint3d().x);
         EXPECT_EQ(point3d.y, checkValue.GetPoint3d().y);
         EXPECT_EQ(point3d.z, checkValue.GetPoint3d().z);
+
+        el.SetUserProperties("testProps", testProps);
 
         //  Insert the element
         persistentEl = el.Insert();
@@ -1512,34 +1483,29 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         {
         DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
 
+        auto& testProps = persistentEl->GetUserProperties("testProps");
         // verify property value is persisted
-        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("s");
-        ECN::ECValue checkValue = persistedStringProperty.GetValueEC();
+        ECN::ECValue checkValue = testProps.GetValueEC("s");
         EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
 
         // get priority
-        int priority = 0;
-        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetPriority(priority));
+        int priority = testProps.GetPriority("s");
         EXPECT_EQ(0, priority);
 
         // get is hidden
-        bool isHidden = false;
-        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetHidden(isHidden));
-        EXPECT_FALSE(isHidden);
+        bool isHidden = testProps.GetHidden("s");
+        EXPECT_TRUE(isHidden);
 
         // get extended type
-        Utf8String extendedType = "";
-        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetExtendedType(extendedType));
-        EXPECT_STREQ("", extendedType.c_str());
+        Utf8String extendedType = testProps.GetExtendedType("s");
+        EXPECT_TRUE("myType" == extendedType);
 
         // get category
-        Utf8String category = "";
-        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetCategory(category));
-        EXPECT_STREQ("", category.c_str());
+        Utf8String category = testProps.GetCategory("s");
+        EXPECT_TRUE(category == "blah");
 
-        persistedStringProperty.SetValueNull();
-        checkValue = persistedStringProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
+        bool readonly = testProps.GetReadOnly("s");
+        EXPECT_TRUE(readonly);
         }
     }
 
@@ -1563,19 +1529,15 @@ TEST_F(DgnElementTests, TestUserProperties)
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
-        ECN::AdHocJsonPropertyValue stringProperty = el.GetUserProperty("StringProperty");
-
-        //  No user properties yet
-        ECN::ECValue checkValue = stringProperty.GetValueEC();
-        EXPECT_TRUE(checkValue.IsNull());
+        ECN::AdHocJsonValue testProps;
 
         //  Set user property (in memory)
-        ASSERT_EQ(SUCCESS, stringProperty.SetValueEC(ECN::ECValue("initial value")));
+        testProps.SetValueEC("stringProperty", ECN::ECValue("initial value"));
 
-        //      ... check that we see the pending value
-        checkValue = stringProperty.GetValueEC();
-        EXPECT_FALSE(checkValue.IsNull());
-        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
+        el.SetUserProperties("testProps", testProps);
+
+        Json::Value val(23.0);
+        el.SetUserProperties("test2", val);
 
         //  Insert the element
         persistentEl = el.Insert();
@@ -1591,10 +1553,10 @@ TEST_F(DgnElementTests, TestUserProperties)
         {
         DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
 
-        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("StringProperty");
+        auto testProps = persistentEl->GetUserProperties("testProps");
 
         // Check that we see the stored value
-        ECN::ECValue checkValue = persistedStringProperty.GetValueEC();
+        ECN::ECValue checkValue = testProps.GetValueEC("stringProperty");
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
@@ -1602,24 +1564,11 @@ TEST_F(DgnElementTests, TestUserProperties)
         RefCountedPtr<TestElement> editEl = persistentEl->MakeCopy<TestElement>();
 
         //      ... initially we still see the initial/stored value
-        ECN::AdHocJsonPropertyValue  editedStringProperty = editEl->GetUserProperty("StringProperty");
-        checkValue = editedStringProperty.GetValueEC();
-        EXPECT_FALSE(checkValue.IsNull());
-        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
-
         //  Set a new value (in memory)
-        EXPECT_EQ(SUCCESS, editedStringProperty.SetValueEC(ECN::ECValue("changed value")));
+        testProps.SetValueEC("stringProperty", ECN::ECValue("changed value"));
 
-        //      ... check that we now see the pending value on the edited copy ...
-        checkValue = editedStringProperty.GetValueEC();
-        EXPECT_FALSE(checkValue.IsNull());
-        EXPECT_STREQ("changed value", checkValue.ToString().c_str());
-
-        //      ... but no change on the persistent element
-        checkValue = persistedStringProperty.GetValueEC();
-        EXPECT_FALSE(checkValue.IsNull());
-        EXPECT_STREQ("initial value", checkValue.ToString().c_str());
-
+        editEl->SetUserProperties("testProps", testProps);
+        
         //  Update the element
         persistentEl = editEl->Update();
         }
@@ -1629,13 +1578,15 @@ TEST_F(DgnElementTests, TestUserProperties)
     if (true)
         {
         DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
-        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("StringProperty");
+        auto& testProps = persistentEl->GetUserProperties("testProps");
 
         // Check that the stored value was changed
-        ECN::ECValue checkValue;
-        checkValue = persistedStringProperty.GetValueEC();
+        ECN::ECValue checkValue = testProps.GetValueEC("stringProperty");
         EXPECT_FALSE(checkValue.IsNull());
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+
+        auto test2 = persistentEl->GetUserProperties("test2");
+        EXPECT_TRUE(test2.asInt() == 23);
         }
     }
 
@@ -1830,6 +1781,7 @@ TEST_F(DgnElementTests, FederationGuid)
 TEST_F(DgnElementTests, PhysicalTypeCRUD)
     {
     SetupSeedProject();
+    DefinitionModelPtr typeModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "PhysicalTypes");
 
     DgnClassId physicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
     ASSERT_TRUE(physicalTypeRelClassId.IsValid());
@@ -1840,9 +1792,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     // insert some sample PhysicalTypes
     for (int32_t i=0; i<_countof(physicalTypeId); i++)
         {
-        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*m_db);
+        Utf8PrintfString name("PhysicalType%" PRIi32, i);
+        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*typeModel, name.c_str());
         ASSERT_TRUE(physicalType.IsValid());
-        physicalType->SetUserLabel(Utf8PrintfString("PhysicalType%d", i).c_str());
         physicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
         physicalType->SetIntProperty(i);
         ASSERT_TRUE(physicalType->Insert().IsValid());
@@ -1933,6 +1885,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 TEST_F(DgnElementTests, GraphicalType2dCRUD)
     {
     SetupSeedProject();
+    DefinitionModelPtr typesModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "GraphicalTypes");
 
     DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
     ASSERT_TRUE(graphicalTypeRelClassId.IsValid());
@@ -1940,12 +1893,11 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
     DgnElementId graphicalTypeId[3];
     DgnElementId elementId;
 
-    // insert some sample GraphicalType2ds
+    // insert some sample GraphicalTypes
     for (int32_t i=0; i<_countof(graphicalTypeId); i++)
         {
-        TestGraphicalType2dPtr graphicalType = TestGraphicalType2d::Create(*m_db);
+        TestGraphicalType2dPtr graphicalType = TestGraphicalType2d::Create(*typesModel, Utf8PrintfString("GraphicalType%d", i).c_str());
         ASSERT_TRUE(graphicalType.IsValid());
-        graphicalType->SetUserLabel(Utf8PrintfString("GraphicalType2d%d", i).c_str());
         graphicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
         graphicalType->SetIntProperty(i);
         ASSERT_TRUE(graphicalType->Insert().IsValid());
