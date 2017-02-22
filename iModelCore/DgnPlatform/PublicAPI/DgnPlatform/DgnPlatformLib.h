@@ -120,12 +120,7 @@ public:
                 };
 
             private:
-            // per session:
             bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
-            // per thread:
-            bmap<intptr_t, BeJsEnvironmentP> m_jsenvs;
-            bmap<intptr_t, BeJsContextP> m_contexts;
-            bmap<intptr_t, ScriptNotificationHandler*> m_notificationHandlers;
 
             public:
             DGNPLATFORM_EXPORT ScriptAdmin();
