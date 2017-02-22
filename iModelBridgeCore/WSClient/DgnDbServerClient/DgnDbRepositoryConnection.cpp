@@ -2948,7 +2948,7 @@ const bvector<DgnDbServerRevisionInfoPtr>& revisions
             idsString = idsString + ",";
 
         Utf8String revisionId;
-        revisionId.Sprintf("'%s'", revision->GetId());
+        revisionId.Sprintf("'%s'", revision->GetId().c_str());
         idsString = idsString + revisionId;
         }
 
