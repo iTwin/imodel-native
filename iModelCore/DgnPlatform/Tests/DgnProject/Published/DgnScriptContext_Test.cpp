@@ -216,12 +216,15 @@ static MtStats s_mtStats;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void runScript(DgnScriptTest* thisTest)
     {
-    T_HOST.GetScriptAdmin().InitializeOnThread();
-
-    Json::Value parms (Json::objectValue);
-
     int sres;
-    DgnDbStatus xstatus = DgnScript::ExecuteDgnDbScript(sres, thisTest->GetDgnDb(), "DgnScriptTest.ScriptsInMultipleThreads", parms);
+    DgnDbStatus xstatus;
+        {
+        DgnScriptThreadEnabler canEvaluateScriptsInThisScope;
+
+        Json::Value parms (Json::objectValue);
+
+        xstatus = DgnScript::ExecuteDgnDbScript(sres, thisTest->GetDgnDb(), "DgnScriptTest.ScriptsInMultipleThreads", parms);
+        }
 
     BeMutexHolder _v_(s_mtCv.GetMutex());
 
@@ -233,8 +236,6 @@ static void runScript(DgnScriptTest* thisTest)
     s_mtStats.finished++;
 
     s_mtCv.notify_all();
-
-    T_HOST.GetScriptAdmin().TerminateOnThread();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,7 +280,10 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
     while (s_mtStats.finished != (1 + _countof(threads)))
         s_mtCv.InfiniteWait(lock);
     
-    ASSERT_EQ(1 + _countof(threads), s_mtStats.accum);
+    //  Execute this script in this thread again
+    runScript(this);
+
+    ASSERT_EQ(2 + _countof(threads), s_mtStats.accum);
     ASSERT_EQ(0, s_mtStats.failed);
 
     T_HOST.GetScriptAdmin().CheckCleanup();

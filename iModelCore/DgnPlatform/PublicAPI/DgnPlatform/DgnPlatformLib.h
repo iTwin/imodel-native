@@ -29,6 +29,7 @@ DGNPLATFORM_TYPEDEFS(DgnHost)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+struct DgnScriptThreadEnabler;
 typedef struct ::FT_LibraryRec_* FreeType_LibraryP; 
 
 /*=================================================================================**//**
@@ -122,15 +123,19 @@ public:
             // per session:
             bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
             // per thread:
-            bmap<intptr_t, BeJsEnvironmentP> m_jsenvs;
-            bmap<intptr_t, BeJsContextP> m_contexts;
-            bmap<intptr_t, ScriptNotificationHandler*> m_notificationHandlers;
+            bmap<std::thread::id, BeJsEnvironmentP> m_jsenvs;
+            bmap<std::thread::id, BeJsContextP> m_contexts;
+            bmap<std::thread::id, ScriptNotificationHandler*> m_notificationHandlers;
 
             public:
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
 
+            //! Prepare to execute scripts on the current thread. Call only once per thread!
+            //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void InitializeOnThread();
+            //! Indicate that the current thread is finished executing scripts. A thread that has called InitializeOnThread must call TerminateOnThread before exiting!
+            //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void TerminateOnThread();
 
             //! Provide the script environment needed to evaluate script expressions on the current thread. 
@@ -709,6 +714,17 @@ public:
     //! Forward assertion failures to the specified handler.
     DGNPLATFORM_EXPORT static void ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler*);
 };
+
+//=======================================================================================
+//! Helper class for preparing a thread for scripts and then cleaning up.
+//! Script support is initialized on the current thread in the constructor.
+//! Script support is torn down in the destructor.
+//=======================================================================================
+struct DgnScriptThreadEnabler
+    {
+    DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().InitializeOnThread();}
+    ~DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().TerminateOnThread();}
+    };
 
 END_BENTLEY_DGN_NAMESPACE
 

@@ -17,6 +17,7 @@
 #include <DgnPlatform/DgnJsApiProjection.h>
 #include <DgnPlatform/ScriptDomain.h>
 #include <regex>
+#include <sstream> 
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
@@ -32,6 +33,7 @@ struct ArgMarshallInfo
 }
 
 static bmap<DgnClassId, bvector<ArgMarshallInfo>> s_argMarshalling;
+static std::thread::id s_homeThreadId;
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
 HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
@@ -270,6 +272,7 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
+    s_homeThreadId = std::this_thread::get_id();
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,10 +283,20 @@ void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
     if (m_contexts.size() <= 1)
         return;
 
+    bool anyLeft = false;
     for (auto const& context : m_contexts)
         {
-        LOG.errorv("BeJsContext for thread %llu not terminated", (uint64_t)context.first);
+        if (context.first == s_homeThreadId)
+            continue;
+        anyLeft = true;
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        LOG.errorv("BeJsContext for thread %s not terminated", ss.str().c_str());
         }
+    
+    if (!anyLeft)
+        return;
+
     BeAssert(false && "Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
     }
 
@@ -301,7 +314,8 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     {
-    auto tid = BeThreadUtilities::GetCurrentThreadId();
+    auto tid = std::this_thread::get_id();
+
 
     BeSystemMutexHolder _thread_safe_;
 
@@ -309,7 +323,11 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     //  Initialize the BeJsEnvironment
     auto i = m_jsenvs.find(tid);
     if (i != m_jsenvs.end())
-/*<=*/  return;         // *** already initialized -- tolerate this ***
+        {
+        if (tid == s_homeThreadId)
+/*<=*/      return;         // *** already initialized -- tolerate this on main thread only ***
+        BeAssert(false && "Call ScriptAdmin::InitializeOnThread only once on a given thread");
+        }
 
     auto jsenv = m_jsenvs[tid] = new BeJsEnvironment;
 
@@ -344,7 +362,10 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     {
-    auto tid = BeThreadUtilities::GetCurrentThreadId();
+    auto tid = std::this_thread::get_id();
+
+    if (tid == s_homeThreadId)      // don't terminate the contexts on the main thread.
+        return;
 
     BeSystemMutexHolder _thread_safe_;
 
@@ -371,7 +392,7 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeSystemMutexHolder _thread_safe_;
 
-    auto tid = BeThreadUtilities::GetCurrentThreadId();
+    auto tid = std::this_thread::get_id();
 
     auto i = m_jsenvs.find(tid);
     if (i == m_jsenvs.end())
@@ -385,9 +406,11 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
 //---------------------------------------------------------------------------------------
 BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
+    auto tid = std::this_thread::get_id();
+    
     BeSystemMutexHolder _thread_safe_;
 
-    auto i = m_contexts.find(BeThreadUtilities::GetCurrentThreadId());
+    auto i = m_contexts.find(tid);
     if (i == m_contexts.end())
         throw "InitializeOnThread was not called";
 
@@ -399,13 +422,13 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
     {
-    BeSystemMutexHolder _thread_safe_;
+    auto tid = std::this_thread::get_id();
 
-    auto tid = BeThreadUtilities::GetCurrentThreadId();
+    BeSystemMutexHolder _thread_safe_;
 
     ScriptNotificationHandler* was = nullptr;
 
-    auto i = m_notificationHandlers.find(BeThreadUtilities::GetCurrentThreadId());
+    auto i = m_notificationHandlers.find(tid);
     if (i != m_notificationHandlers.end())
         was = i->second;
 
@@ -419,7 +442,7 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Ho
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
     {
-    auto tid = BeThreadUtilities::GetCurrentThreadId();
+    auto tid = std::this_thread::get_id();
 
     BeSystemMutexHolder _thread_safe_;
 
