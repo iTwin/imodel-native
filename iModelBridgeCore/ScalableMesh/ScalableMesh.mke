@@ -320,6 +320,8 @@ $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)Reproject
 
 $(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
 
+$(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
@@ -496,8 +498,8 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
-    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
-    
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+    $(ContextSubpartsLibs)ThreeMxSchema.lib
 
 %include $(sharedMki)LinkLibrary.mki
 
