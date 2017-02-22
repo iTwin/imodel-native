@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/DgnDbServerEventParserTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifdef DGNDBSERVER_UNIT_TESTS
@@ -58,7 +58,7 @@ Utf8String StubHttpResponseValidLockEvent()
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "ObjectIds":["SomeObjectId1", "SomeObjectId2", "SomeObjectId3"],
               "LockLevel":"SomeLockLevel",
-              "BriefcaseId":"SomeBriefcaseId",
+              "BriefcaseId":1,
               "ReleasedWithRevision":"SomeReleasedWithRevision"
               }
              )";
@@ -76,7 +76,7 @@ Utf8String StubHttpResponseValidRevisionEvent()
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "RevisionId":"RevisionId",
               "RevisionIndex":"SomeRevisionIndex",
-			  "BriefcaseId":"SomeBriefcaseId"
+			        "BriefcaseId":2
               }
              )";
     }
@@ -96,7 +96,7 @@ Utf8String StubHttpResponseValidCodeEvent()
               "Values":["SomeValue1", "SomeValue2", "SomeValue3"],
               "Reserved":"True",
               "Used":"False",
-              "BriefcaseId":"SomeBriefcaseId",
+              "BriefcaseId":3,
               "UsedWithRevision":"SomeUsedWithRevision"
               }
              )";
@@ -112,7 +112,7 @@ Utf8String StubHttpResponseValidDeletedEvent()
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic",
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
-              "BriefcaseId":"SomeBriefcaseId"
+              "BriefcaseId":4
               }
              )";
     }
@@ -125,7 +125,7 @@ Utf8String StubHttpResponseInvalidLockEvent1()
     return R"(
               {
               "Date":"SomeDate",
-              "BriefcaseId":"SomeBriefcaseId",
+              "BriefcaseId":5,
               "ReleasedWithRevision":"SomeReleasedWithRevision"
               }
              )";
@@ -144,7 +144,7 @@ Utf8String StubHttpResponseInvalidLockEvent2()
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "ObjectIds":[],
               "LockLevel":"SomeLockLevel",
-              "BriefcaseId":"SomeBriefcaseId",
+              "BriefcaseId":6,
               "ReleasedWithRevision":"SomeReleasedWithRevision"
               }
              )";
@@ -192,7 +192,7 @@ Utf8String StubHttpResponseInvalidCodeEvent2()
               "Values":[],
               "Reserved":"True",
               "Used":"False",
-              "BriefcaseId":"SomeBriefcaseId",
+              "BriefcaseId":7,
               "UsedWithRevision":"SomeUsedWithRevision"
               }
              )";
