@@ -268,7 +268,15 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
 ";
     m_host.SetFetchScriptCallback(&jsProg);
 
-    //  Execute this script in this thread
+    if (true)
+        {
+        //  Execute this script in this thread, using auto-initialization of the jscontext
+        Json::Value parms (Json::objectValue);
+        int sres;
+        DgnScript::ExecuteDgnDbScript(sres, GetDgnDb(), "DgnScriptTest.ScriptsInMultipleThreads", parms);
+        }
+
+    //  Execute this script in this thread using explicit initialization of the jscontext
     runScript(this);
 
     //  Execute this script in multiple threads

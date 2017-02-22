@@ -282,9 +282,6 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize(assetDir);
-
-    // To simplify the common case, always initialize support for scripts on the main/work thread
-    GetScriptAdmin().InitializeOnThread();
     }
 
 /*---------------------------------------------------------------------------------**//**
