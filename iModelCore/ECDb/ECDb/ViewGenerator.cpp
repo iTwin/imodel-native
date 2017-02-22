@@ -990,9 +990,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
             ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
             //! This is where we generate strong type column for shared column for ECClassView
+            NativeSqlBuilder propertySql;
             if (ctx.GetViewType() == ViewType::ECClassView)
                 {
-                NativeSqlBuilder propertySql;
                 if (r.GetColumn().IsShared())
                     {
                     //shared columns don't have a column data type in its DDL.
@@ -1012,7 +1012,19 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 continue;
                 }
 
-            propertySqlList.push_back(r.GetSqlBuilder());
+            propertySql.Append(r.GetSqlBuilder().ToString());
+            Utf8StringCP colAlias = nullptr;
+            if (basePropertyMap != nullptr)
+                {
+                DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+                if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
+                    colAlias = &basePropertyMapCol.GetName();
+                }
+
+            if (colAlias != nullptr)
+                propertySql.AppendSpace().AppendEscaped(colAlias->c_str());
+
+            propertySqlList.push_back(propertySql);
             continue;
             }
 

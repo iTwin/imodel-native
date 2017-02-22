@@ -411,7 +411,6 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
         for (auto& kp : lwmc.GetHorizontalPartitionsForClass(classId))
             {
             auto table = kp.first;
-
             auto& deriveClassList = kp.second;
             derviedClassSet.insert(deriveClassList.begin(), deriveClassList.end());
             if (deriveClassList.empty())
