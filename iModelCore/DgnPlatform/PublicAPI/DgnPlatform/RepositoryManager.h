@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RepositoryManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,6 +51,7 @@ public:
         LockState = 1 << 0, //!< If a request to acquire locks is denied, the response will include the current lock state of each denied lock
         CodeState = 1 << 1, //!< Include DgnCodeState for any codes for which the request was denied
         RevisionIds = 1 << 2, //!< For locks or codes requiring a revision to be pulled, include the specific revision IDs.
+        UnlimitedReporting = 1 << 3, //! Acuire all denied instances despite server side thresholds
         All = 0xff, //!< Include all options
     };
 

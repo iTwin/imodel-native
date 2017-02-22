@@ -61,7 +61,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalType" modifier="Abstract" displayLabel="Functional Type" description="Defines a set of properties (the 'type') that can be associated with a Functional Element.">
-        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

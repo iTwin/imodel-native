@@ -149,7 +149,7 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Attempt to load a node from the local cache.
+* Attempt to load a tile from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoader::DoReadFromDb()
@@ -160,25 +160,29 @@ BentleyStatus TileLoader::DoReadFromDb()
 
     if (true)
         {
-        RealityData::Cache::AccessLock lock(*cache);
+        RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
+        CachedStatementPtr stmt;    
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+            {
+            BeAssert(false);
             return ERROR;
+            }
 
         stmt->ClearBindings();
         stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
 
-        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
+        m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(Column::Data), stmt->GetValueInt(Column::DataSize));
         m_tileBytes.SetPos(0);
-        m_contentType = stmt->GetValueText(2);    
-        m_expirationDate = stmt->GetValueInt64(3);
+        m_contentType = stmt->GetValueText(Column::ContentType);
+        m_expirationDate = stmt->GetValueInt64(Column::Expires);
         
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        uint64_t rowId = stmt->GetValueInt64(2);
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
             {
             stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
@@ -352,28 +356,18 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 
 /*---------------------------------------------------------------------------------**//**
 * Create the table to hold entries in this TileCache
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Prepare() const 
     {
     if (m_db.TableExists(TABLE_NAME_TileTree))
         return SUCCESS;
         
-    Utf8CP ddl = "Filename CHAR PRIMARY KEY,"
-                 "Data BLOB,"
-                 "DataSize BIGINT,"
-                 "ContentType TEXT," 
-                 "Created BIGINT,"
-                 "Expires BIGINT";
-
-    if (BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, ddl))
-        return SUCCESS;
-
-    return ERROR;
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Created BIGINT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2015
+* @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Cleanup() const 
     {

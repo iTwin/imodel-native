@@ -282,7 +282,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
                                             meshPoints.size(), &meshPoints[0], &indices[0], // Points.
                                             0, nullptr, nullptr,                            // Normals.
                                             meshParams.size(), &meshParams[0], &indices[0], // Params.
-                                            0,  nullptr, nullptr);                          // Colors
+                                            0, nullptr, nullptr);                          // Colors
 
     builder->AddPolyface(polyface, true);
     }
@@ -333,26 +333,26 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
 //=======================================================================================
 namespace EnvironmentJson
 {
-    static Utf8CP str_Environment() {return "environment";}
-    static Utf8CP str_Display()     {return "display";}
-    static Utf8CP str_Ground()      {return "ground";}
-    static Utf8CP str_Sky()         {return "sky";}
+    static constexpr Utf8CP str_Environment() {return "environment";}
+    static constexpr Utf8CP str_Display()     {return "display";}
+    static constexpr Utf8CP str_Ground()      {return "ground";}
+    static constexpr Utf8CP str_Sky()         {return "sky";}
 
     namespace GroundPlaneJson
     {
-        static Utf8CP str_Elevation()   {return "elevation";}
-        static Utf8CP str_AboveColor()  {return "aboveColor";}
-        static Utf8CP str_BelowColor()  {return "belowColor";}
+        static constexpr Utf8CP str_Elevation()   {return "elevation";}
+        static constexpr Utf8CP str_AboveColor()  {return "aboveColor";}
+        static constexpr Utf8CP str_BelowColor()  {return "belowColor";}
     };
     namespace SkyBoxJson
     {
-        static Utf8CP str_Filename()    {return "file";}
-        static Utf8CP str_SkyColor()    {return "skyColor";}
-        static Utf8CP str_ZenithColor() {return "zenithColor";}
-        static Utf8CP str_NadirColor()  {return "nadirColor";}
-        static Utf8CP str_GroundColor() {return "groundColor";}
-        static Utf8CP str_SkyExponent() {return "skyExponent";}
-        static Utf8CP str_GroundExponent() {return "groundExponent";}
+        static constexpr Utf8CP str_Filename()    {return "file";}
+        static constexpr Utf8CP str_SkyColor()    {return "skyColor";}
+        static constexpr Utf8CP str_ZenithColor() {return "zenithColor";}
+        static constexpr Utf8CP str_NadirColor()  {return "nadirColor";}
+        static constexpr Utf8CP str_GroundColor() {return "groundColor";}
+        static constexpr Utf8CP str_SkyExponent() {return "skyExponent";}
+        static constexpr Utf8CP str_GroundExponent() {return "groundExponent";}
     };
 
     static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
@@ -373,9 +373,9 @@ void DisplayStyle3d::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_Load()
+void DisplayStyle3d::_OnLoadedJsonProperties()
     {
-    T_Super::_Load();
+    T_Super::_OnLoadedJsonProperties();
 
     JsonValueCR env = GetStyle(str_Environment());
     
@@ -402,9 +402,9 @@ void DisplayStyle3d::_Load()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayStyle3d::_Save() 
+void DisplayStyle3d::_OnSaveJsonProperties() 
     {
-    T_Super::_Save();
+    T_Super::_OnSaveJsonProperties();
 
     Json::Value env;
     Json::Value ground;

@@ -211,9 +211,9 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    08/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE FunctionalType : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalType : TypeDefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalType, DefinitionElement)
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalType, TypeDefinitionElement)
     friend struct func_ElementHandler::FunctionalTypeHandler;
 
 protected:

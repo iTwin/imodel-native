@@ -317,27 +317,25 @@ static bool getRange(PolyfaceQueryCR geom, DRange3dR range, TransformCP transfor
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP transform)
     {
-#if defined (NOT_NOW_NEEDSWORK_TOO_SLOW)
-    IFacetOptionsPtr facetOpt = IFacetOptions::Create();
+    Transform originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal;
 
-    facetOpt->SetMinPerBezier(3);
-    facetOpt->SetAngleTolerance(0.30); 
+    // NOTE: MSBsplineSurface::GetPoleRange can result in a very large range...but using IPolyfaceConstruction is too slow...
+    if (geom.TightPrincipalExtents(originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal, range))
+        {
+        centroidalLocalToWorld.Multiply(range, range);
 
-    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOpt);
+        if (nullptr != transform)
+            transform->Multiply(range, range);
 
-    builder->Add(geom);
+        return true;
+        }
 
-    return getRange(builder->GetClientMeshR(), range, transform);
-#else
-    // NEEDSWORK: MSBsplineSurface::GetPoleRange doesn't give a nice fitted box...but using IPolyfaceConstruction is too slow...
-    //            Earlin will add a new method to get a better compromise range that ignores trim boundaries...
     if (nullptr != transform)
         geom.GetPoleRange(range, *transform);
     else
         geom.GetPoleRange(range);
 
    return true;
-#endif
     }
 
 /*----------------------------------------------------------------------------------*//**

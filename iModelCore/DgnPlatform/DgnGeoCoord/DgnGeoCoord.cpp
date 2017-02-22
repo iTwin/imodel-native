@@ -4261,6 +4261,16 @@ bool            DgnGCS::GetDatumOrEllipsoidInUserLibrary()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void            DgnGCS::SetGlobalOriginAndUnitScaling (DPoint3d& globalOrigin, double uorsPerBaseUnit)
+    {
+    // this method should only be called from the DgnV8Converter. For all BIM files, the base unit is meters, and uorsPerBaseUnit is 1.0
+    m_globalOrigin    = globalOrigin;
+    m_uorsPerBaseUnit = uorsPerBaseUnit;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnGCS::~DgnGCS ()

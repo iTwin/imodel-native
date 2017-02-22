@@ -182,7 +182,7 @@ MapTile::MapTile(MapRootR root, QuadTree::TileId id, MapTileCP parent) : QuadTre
     llPts[2].Init(east, south, 0.0);   //  | [2]     [3]
     llPts[3].Init(west, south, 0.0);   //  v
 
-    // attempt tor reproject using BIM's GCS
+    // attempt to reproject using BIM's GCS
     if (SUCCESS != ReprojectCorners(llPts))
         {
         // reprojection failed, use linear transform
@@ -321,28 +321,28 @@ DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams c
 
 namespace WebMercatorStrings
 {
-static Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
-static Utf8CP str_MapService() {return "service";}
-static Utf8CP str_MapType() {return "map_type";}
-static Utf8CP str_GroundBias() {return "groundBias";}
-static Utf8CP str_Transparency() {return "transparency";}
+static constexpr Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
+static constexpr Utf8CP str_MapService() {return "service";}
+static constexpr Utf8CP str_MapType() {return "map_type";}
+static constexpr Utf8CP str_GroundBias() {return "groundBias";}
+static constexpr Utf8CP str_Transparency() {return "transparency";}
 };
 
 using namespace WebMercatorStrings;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::ToJson(Json::Value& value) const
     {
-    value[str_MapService()] = (uint32_t) m_mapService;
-    value[str_MapType()] = (uint32_t) m_mapType;
-    value[str_GroundBias()] = m_groundBias;
-    value[str_Transparency()] = m_transparency;
+    value[Json::StaticString(str_MapService())] = (uint32_t) m_mapService;
+    value[Json::StaticString(str_MapType())] = (uint32_t) m_mapType;
+    value[Json::StaticString(str_GroundBias())] = m_groundBias;
+    value[Json::StaticString(str_Transparency())] = m_transparency;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::FromJson(Json::Value const& value)
     {
@@ -359,7 +359,7 @@ void WebMercatorModel::Properties::FromJson(Json::Value const& value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
     {
@@ -368,12 +368,12 @@ void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     {
     BeAssert(val.isMember(str_WebMercatorModel()));
-    m_properties.FromJson(val[str_WebMercatorModel()]);
+    m_properties.FromJson(val[Json::StaticString(str_WebMercatorModel())]);
     T_Super::_ReadJsonProperties(val);
     }
 

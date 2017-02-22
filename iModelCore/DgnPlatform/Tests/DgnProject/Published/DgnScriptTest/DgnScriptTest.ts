@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnScriptTest/DgnScriptTest.ts $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
@@ -12,7 +12,7 @@ module DgnScriptTests {
 
     //---------------------------------------------------------------------------------------
     // *** NB: Keep this consistent with {DgnScriptContext_Test.cpp}TEST_F(DgnScriptTest, RunScripts)
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     class Params
     {
@@ -25,7 +25,7 @@ module DgnScriptTests {
     var shiftYsize = 2.5;
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function getModelFromModeledElementIdStr(db: be.DgnDb, modeledElementIdStr: string) {
         var modelElementId = new be.DgnObjectId;
@@ -35,14 +35,14 @@ module DgnScriptTests {
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function fmtDPoint3d(pt: be.DPoint3d) {
         return "(" + pt.X + "," + pt.Y + "," + pt.Z + ")";
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function testFile(filename: string) {
         var file = be.File.Fopen(filename, "r");
@@ -57,12 +57,12 @@ module DgnScriptTests {
      }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function testEcSql_selectLastInstanceOf(db: be.DgnDb, cls: be.ECClass, minGenericObjectsExpected: number): be.DgnObjectId {
         var lastelid: be.DgnObjectId;
 
-        //  0             1      2    3      4 
+        //  0             1      2    3      4
         var stmt = db.GetPreparedECSqlSelectStatement("ECInstanceId, Origin, Yaw, Pitch, Roll, BBoxLow, BBoxHigh FROM " + cls.ECSqlName);
         var count: number = 0;
         while (be.BeSQLiteDbResult.BE_SQLITE_ROW == stmt.Step()) {
@@ -74,7 +74,7 @@ module DgnScriptTests {
             var bboxLow: be.DPoint3d = stmt.GetValueDPoint3d(5);
             var bboxHigh: be.DPoint3d = stmt.GetValueDPoint3d(6);
 
-            // The above code shows how to extract multiple columns from a statement. 
+            // The above code shows how to extract multiple columns from a statement.
             // In real code, we would do something with those values.
 
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, "eid: " + elemid.ToString() + " bbox:{" + fmtDPoint3d(bboxLow) + "," + fmtDPoint3d(bboxHigh));
@@ -93,7 +93,7 @@ module DgnScriptTests {
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function getElementRange(db: be.DgnDb, eid: be.DgnObjectId): be.DRange3d {
         var el: be.DgnElement = db.Elements.GetElement(eid);
@@ -109,7 +109,7 @@ module DgnScriptTests {
         }
         return pel.Placement.CalculateRange();
     }
- 
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Paul.Connelly   06/16
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -168,7 +168,7 @@ module DgnScriptTests {
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function testEcSql(db: be.DgnDb, minGenericObjectsExpected: number) {
 
@@ -186,7 +186,7 @@ module DgnScriptTests {
         // be testing for valves and girders and so on.) I could also be testing for the properties aspects,
         // or codes, or various other things.
         var spatialQuery = db.GetPreparedECSqlSelectStatement(
-            "SELECT rt.ECInstanceId FROM BisCore.SpatialIndex rt, " + physObjClass.ECSqlName + 
+            "SELECT rt.ECInstanceId FROM BisCore.SpatialIndex rt, " + physObjClass.ECSqlName +
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
         );
 
@@ -207,7 +207,7 @@ module DgnScriptTests {
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function testInvalidArg()
     {
@@ -243,7 +243,7 @@ module DgnScriptTests {
     }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function Shift(g: be.Geometry, dx: number, dy: number)
         {
@@ -251,7 +251,7 @@ module DgnScriptTests {
         }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
@@ -260,7 +260,7 @@ module DgnScriptTests {
         }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                   
+    // @bsimethod
     //---------------------------------------------------------------------------------------
     function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
@@ -353,7 +353,7 @@ module DgnScriptTests {
         if (igeom != 3)
             be.Script.ReportError('expected 3 part instances');
     }
-    
+
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
@@ -403,7 +403,7 @@ module DgnScriptTests {
         {
             var geomParams = geomcollection.GetGeometryParams(geomcollectionIter);
             var lineColor = geomParams.LineColor;
-         
+
             // *** NEEDS WORK: Not getting the lineColors that I expect
             //if (lineColor.Red != igeom)
             //    be.Script.ReportError('expected sequential colors');
@@ -511,46 +511,6 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Sam.Wilson                      02/16
     //---------------------------------------------------------------------------------------
-    function testUserProperties(el: be.DgnElement)
-    {
-        if (el.ContainsUserProperty('stuff'))
-            be.Script.ReportError('no user props expected initially');
-
-        if (true)
-        {
-            var stuff_userprop = el.GetUserProperty('stuff');
-            stuff_userprop.ValueEC = be.ECValue.FromString('foo');
-            stuff_userprop.Units = 'm';
-            stuff_userprop.ReadOnly = true;
-            // *** TRICKY: stuff_userprop is magically connected to el. Setting stuff_userprop's value actually
-            //              updates data that is stored on el. That's why we don't need a "SetUserProperty" method.
-        }
-
-        if (!el.ContainsUserProperty('stuff'))
-            be.Script.ReportError('stuff userprop should be there now');
-
-        var stuff_userprop = el.GetUserProperty('stuff');
-        if (stuff_userprop.ValueEC.GetString() != 'foo' || stuff_userprop.Units != 'm' || !stuff_userprop.ReadOnly)
-            be.Script.ReportError('stuff userprop value should have been set to foo with units m');
-
-        el.Update();
-
-        if (!el.ContainsUserProperty('stuff'))
-            be.Script.ReportError('stuff userprop should have been saved');
-
-        el.GetUserProperty('nonsense').ValueEC = be.ECValue.FromString('bar');
-        var nonsenseValue = el.GetUserProperty('nonsense').ValueEC;
-        if (nonsenseValue.GetString() != 'bar')
-            be.Script.ReportError('nonsense userprop should have been set to bar');
-
-        el.RemoveUserProperty('nonsense');
-        if (el.ContainsUserProperty('nonsense'))
-            be.Script.ReportError('nonsense userprop should have been removed');
-    }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Sam.Wilson                      02/16
-    //---------------------------------------------------------------------------------------
     function testProperties(el: be.DgnElement)
     {
         if (el.GetPropertyValue('StringProperty'))
@@ -588,7 +548,7 @@ module DgnScriptTests {
         if (!catid.Equals(be.DgnCategory.QueryCategoryId(params.categoryName, db)))
             be.Script.ReportError('QueryCategoryId failed?');
 
-        // Get the model. The caller has passed in the DgnElementId of the model *element*. We want its submodel. 
+        // Get the model. The caller has passed in the DgnElementId of the model *element*. We want its submodel.
         var model = getModelFromModeledElementIdStr(db, params.modeledElementIdStr);
 
         //  Create element
@@ -693,7 +653,7 @@ module DgnScriptTests {
         if (!catid.Equals(ele.CategoryId))
             be.Script.ReportError('set DgnCategoryId failed');
 
-        //  Test GeometryCollection 
+        //  Test GeometryCollection
         var geomcollection = ele.Geometry;
         var geomcollectionIter = geomcollection.Begin();
         var igeom = 0;
@@ -713,7 +673,7 @@ module DgnScriptTests {
             var geomPrim = geomcollection.GetGeometry(geomcollectionIter);
             if (igeom == 0)
             {
-                if (!geomPrim)                
+                if (!geomPrim)
                     be.Script.ReportError('first item should be geometry!');
                 var geom = geomPrim.Geometry;
                 if (!(geom instanceof be.DgnSphere))
@@ -761,7 +721,6 @@ module DgnScriptTests {
 
         //  DgnElement Properties and UserProperties
         testProperties(ele);
-        testUserProperties(ele);
 
         //  Test argument validation
         testInvalidArg();

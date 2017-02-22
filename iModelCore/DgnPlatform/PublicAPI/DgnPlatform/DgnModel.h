@@ -15,22 +15,15 @@
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
-DGNPLATFORM_TYPEDEFS(GeometricModel)
-DGNPLATFORM_TYPEDEFS(DefinitionModel)
-DGNPLATFORM_TYPEDEFS(GeometricModel2d)
-DGNPLATFORM_TYPEDEFS(GeometricModel3d)
-DGNPLATFORM_TYPEDEFS(GraphicalModel2d)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
 namespace TileTree {struct Root;}
-namespace dgn_ModelHandler { struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation; }
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -492,7 +485,7 @@ public:
     bool IsTemplate() const {return m_isTemplate;}
 
     //! @private
-    void SetTemplate(bool b) {m_isTemplate = b;}
+    void SetIsTemplate(bool b) {m_isTemplate = b;}
 
     //! @name Dynamic casting to DgnModel subclasses
     //@{
@@ -812,7 +805,7 @@ protected:
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
     void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
@@ -830,7 +823,7 @@ public:
 
     void RemoveRangeIndex() {m_rangeIndex.reset();}
 
-    RangeIndex::Tree* GetRangeIndex() {return m_rangeIndex.get();}
+    RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
@@ -930,6 +923,9 @@ public:
 
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
+
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalRecipeCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalRecipeCR modeledElement);
 };
 
 //=======================================================================================
@@ -1109,6 +1105,9 @@ protected:
 public:
     //! Create a DrawingModel that breaks down the specified Drawing element
     DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
+
+    //! Create a DrawingModel that breaks down the specified GraphicalRecipe2d element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(GraphicalRecipe2dCR drawing);
 };
 
 //=======================================================================================
@@ -1186,7 +1185,7 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for Drawing
+    //! The ModelHandler for DrawingModel
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)

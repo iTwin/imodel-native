@@ -43,6 +43,7 @@
 #define BIS_CLASS_ElementExternalKey        "ElementExternalKey"
 #define BIS_CLASS_ElementMultiAspect        "ElementMultiAspect"
 #define BIS_CLASS_ElementUniqueAspect       "ElementUniqueAspect"
+#define BIS_CLASS_GeometricElement          "GeometricElement"
 #define BIS_CLASS_GeometricElement2d        "GeometricElement2d"
 #define BIS_CLASS_GeometricElement3d        "GeometricElement3d"
 #define BIS_CLASS_GeometricModel            "GeometricModel"
@@ -52,6 +53,7 @@
 #define BIS_CLASS_GraphicalElement2d        "GraphicalElement2d"
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
+#define BIS_CLASS_GraphicalRecipe2d         "GraphicalRecipe2d"
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
@@ -61,14 +63,17 @@
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
+#define BIS_CLASS_InformationRecordElement  "InformationRecordElement"
 #define BIS_CLASS_LightDefinition           "LightDefinition"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelSelector             "ModelSelector"
+#define BIS_CLASS_NestedTypeLocation2d      "NestedTypeLocation2d"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
+#define BIS_CLASS_PhysicalRecipe            "PhysicalRecipe"
 #define BIS_CLASS_PhysicalType              "PhysicalType"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_RoleElement               "RoleElement"
@@ -112,12 +117,16 @@
 #define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
+#define BIS_REL_GraphicalType2dHasRecipe            "GraphicalType2dHasRecipe"
 #define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
 #define BIS_REL_ModelContainsElements               "ModelContainsElements"
 #define BIS_REL_ModelModelsElement                  "ModelModelsElement"
 #define BIS_REL_ModelSelectorRefersToModels         "ModelSelectorRefersToModels"
+#define BIS_REL_NestedTypeLocation2dRefersToType    "NestedTypeLocation2dRefersToType"
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
+#define BIS_REL_PhysicalTypeHasRecipe               "PhysicalTypeHasRecipe"
+#define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
 //-----------------------------------------------------------------------------------------
@@ -685,7 +694,8 @@ struct DgnUnits
     static double constexpr OneKilometer() {return 1000.0 * OneMeter();}
     static double constexpr OneMillimeter() {return OneMeter() / 1000.0;}
     static double constexpr OneCentimeter() {return OneMeter() / 100.0;}
-    static double constexpr DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double constexpr DiameterOfEarth() {return 12742.0 * OneKilometer();} // approximate
+    static double constexpr CircumferenceOfEarth() {return 40075.0 * OneKilometer();} // approximate
 };
 
 //=======================================================================================

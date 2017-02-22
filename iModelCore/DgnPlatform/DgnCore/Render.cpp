@@ -46,6 +46,7 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)
     {
+    DgnDb::VerifyClientThread();
     BeMutexHolder mux(m_cv.GetMutex());
 
     // see whether the new task should replace any existing tasks

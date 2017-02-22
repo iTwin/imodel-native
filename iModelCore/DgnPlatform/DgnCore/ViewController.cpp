@@ -12,25 +12,25 @@
 
 namespace StyleJson
 {
-    static Utf8CP str_Acs()            {return "acs";}
-    static Utf8CP str_Grid()           {return "grid";}
-    static Utf8CP str_HiddenEdges()    {return "hidEdges";}
-    static Utf8CP str_ClipVolume()     {return "clipVol";}
-    static Utf8CP str_NoConstruction() {return "noConstruct";}
-    static Utf8CP str_NoDimension()    {return "noDim";}
-    static Utf8CP str_NoFill()         {return "noFill";}
-    static Utf8CP str_NoLighting()     {return "noLighting";}
-    static Utf8CP str_NoMaterial()     {return "noMaterial";}
-    static Utf8CP str_NoPattern()      {return "noPattern";}
-    static Utf8CP str_NoSceneLight()   {return "noSceneLight";}
-    static Utf8CP str_NoStyle()        {return "noStyle";}
-    static Utf8CP str_NoText()         {return "noText";}
-    static Utf8CP str_NoTexture()      {return "noTexture";}
-    static Utf8CP str_NoTransparency() {return "noTransp";}
-    static Utf8CP str_NoWeight()       {return "noWeight";}
-    static Utf8CP str_RenderMode()     {return "renderMode";}
-    static Utf8CP str_Shadows()        {return "shadows";}
-    static Utf8CP str_VisibleEdges()   {return "visEdges";}
+    static constexpr Utf8CP str_Acs()            {return "acs";}
+    static constexpr Utf8CP str_Grid()           {return "grid";}
+    static constexpr Utf8CP str_HiddenEdges()    {return "hidEdges";}
+    static constexpr Utf8CP str_ClipVolume()     {return "clipVol";}
+    static constexpr Utf8CP str_NoConstruction() {return "noConstruct";}
+    static constexpr Utf8CP str_NoDimension()    {return "noDim";}
+    static constexpr Utf8CP str_NoFill()         {return "noFill";}
+    static constexpr Utf8CP str_NoLighting()     {return "noLighting";}
+    static constexpr Utf8CP str_NoMaterial()     {return "noMaterial";}
+    static constexpr Utf8CP str_NoPattern()      {return "noPattern";}
+    static constexpr Utf8CP str_NoSceneLight()   {return "noSceneLight";}
+    static constexpr Utf8CP str_NoStyle()        {return "noStyle";}
+    static constexpr Utf8CP str_NoText()         {return "noText";}
+    static constexpr Utf8CP str_NoTexture()      {return "noTexture";}
+    static constexpr Utf8CP str_NoTransparency() {return "noTransp";}
+    static constexpr Utf8CP str_NoWeight()       {return "noWeight";}
+    static constexpr Utf8CP str_RenderMode()     {return "renderMode";}
+    static constexpr Utf8CP str_Shadows()        {return "shadows";}
+    static constexpr Utf8CP str_VisibleEdges()   {return "visEdges";}
 };
 
 using namespace StyleJson;

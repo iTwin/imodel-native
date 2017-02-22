@@ -412,7 +412,7 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
         DPoint3d eyeOrg;
         eyeOrg.DifferenceOf(m_camera.GetEyePoint(), orgWorld);
         m_rotMatrix.Multiply(eyeOrg);
-        backFraction  = eyeOrg.z / m_camera.GetFocusDistance(); // Perspective fraction at back clip plane.
+        backFraction = m_camera.GetFocusDistance() / eyeOrg.z; // Perspective fraction at focus plane.
 
         if (backFraction <= 0.0)
             {
@@ -479,7 +479,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 }
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
-            zMax = std::max(zMax, DgnUnits::OneMillimeter()); // make sure we have at least +-100. Data may be purely planar
+            zMax = std::max(zMax, DgnUnits::OneMillimeter()); // make sure we have at least +-1m. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
             }

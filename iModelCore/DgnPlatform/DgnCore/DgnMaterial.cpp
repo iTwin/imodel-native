@@ -16,16 +16,7 @@ namespace dgn_ElementHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define PROPNAME_Data "Data"
 #define PROPNAME_Descr "Descr"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnMaterial::ToJson() const
-    {
-    return Json::FastWriter::ToString(m_assets);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -33,82 +24,6 @@ Utf8String DgnMaterial::ToJson() const
 DgnDbStatus DgnMaterial::_OnDelete() const
     {
     return DgnDbStatus::DeletionProhibited; // can only purge, not delete
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
-    Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(PROPNAME_Data)), m_assets);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
-    {
-    T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Data), ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnMaterial::_CopyFrom(DgnElementCR el) 
-    {
-    T_Super::_CopyFrom(el);
-    auto& other = static_cast<DgnMaterialCR>(el);
-    m_descr = other.m_descr;
-    m_assets = other.m_assets;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            12/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void dgn_ElementHandler::Material::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, PROPNAME_Descr,
-        [] (ECValueR value, DgnElementCR elIn)
-            {
-            DgnMaterial& el = (DgnMaterial&) elIn;
-            value.SetUtf8CP(el.GetDescr().c_str());
-            return DgnDbStatus::Success;
-            },
-        [] (DgnElementR elIn, ECValueCR value)
-            {
-            if (!value.IsString())
-                return DgnDbStatus::BadArg;
-            DgnMaterial& el = (DgnMaterial&) elIn;
-            el.SetDescr(value.GetUtf8CP());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, PROPNAME_Data,
-        [] (ECValueR value, DgnElementCR elIn)
-            {
-            DgnMaterial& el = (DgnMaterial&) elIn;
-            value.SetUtf8CP(el.ToJson().c_str());
-            return DgnDbStatus::Success;
-            },
-        [] (DgnElementR elIn, ECValueCR value)
-            {
-            if (!value.IsString())
-                return DgnDbStatus::BadArg;
-            DgnMaterial& el = (DgnMaterial&) elIn;
-            Json::Reader::Parse(value.GetUtf8CP(), el.m_assets);
-            return DgnDbStatus::Success;
-            });
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,8 +49,8 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId), m_descr(descr)
+DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId)
+  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId)
     {
     if (parentMaterialId.IsValid())
         m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);

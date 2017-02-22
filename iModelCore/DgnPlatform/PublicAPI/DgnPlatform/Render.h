@@ -1869,7 +1869,7 @@ public:
     static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
     static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
-    static double DepthFromDisplayPriority(int32_t priority) {return 0;}// GetDisplayPriorityFactor() * (double) priority;}
+    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
     double GetTileSizeModifier() const {return m_tileSizeModifier;}
     void SetTileSizeModifier(double mod) {m_tileSizeModifier=mod;}
     uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}

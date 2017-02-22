@@ -549,7 +549,7 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in tile coordinates
+    ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
 
     ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 

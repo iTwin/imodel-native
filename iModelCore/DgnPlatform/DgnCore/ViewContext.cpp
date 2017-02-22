@@ -659,11 +659,7 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 
     if (nullptr != inPoint)
         {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        LocalToView(vec, inPoint, 1); // convert point to pixels
-#else
         WorldToView(vec, inPoint, 1); // convert point to pixels
-#endif
         }
     else
         {
@@ -674,14 +670,8 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     vec[1] = vec[0];
     vec[1].x += 1.0;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Convert pixels back to local coordinates and use the length as tolerance
-    ViewToLocal(vec, vec, 2);
-#else
     // Convert pixels back to world coordinates and use the length as tolerance
     ViewToWorld(vec, vec, 2);
-#endif
-
     return vec[0].Distance(vec[1]);
     }
 
