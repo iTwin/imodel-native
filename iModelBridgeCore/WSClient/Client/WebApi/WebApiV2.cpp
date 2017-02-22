@@ -18,7 +18,7 @@
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 4);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
