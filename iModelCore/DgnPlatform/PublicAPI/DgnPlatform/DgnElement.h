@@ -39,7 +39,7 @@ namespace dgn_ElementHandler
 {
     struct Element; 
     struct InformationCarrier; 
-    struct InformationContent; struct GroupInformation; struct Subject;
+    struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
     struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct NestedTypeLocation2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
@@ -1950,7 +1950,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = DgnUnits::DiameterOfEarth();
+        double maxCoord = DgnUnits::CircumferenceOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord || m_boundingBox.low.z < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord || m_boundingBox.high.z > maxCoord)
@@ -2014,7 +2014,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = DgnUnits::DiameterOfEarth();
+        double maxCoord = DgnUnits::CircumferenceOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord)
@@ -2382,6 +2382,18 @@ public:
 };
 
 //=======================================================================================
+//! A PhysicalPortion represents an arbitrary portion of a larger PhysicalElement that will be broken down in more detail in a separate (sub) PhysicalModel.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalPortion : PhysicalElement
+{
+    DEFINE_T_SUPER(PhysicalElement);
+protected:
+    explicit PhysicalPortion(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
 //! Examples include grid lines, parcel boundaries, and work areas.
 //! @ingroup GROUP_DgnElement
@@ -2393,6 +2405,18 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
     friend struct dgn_ElementHandler::SpatialLocation;
 protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A SpatialLocationPortion represents an arbitrary portion of a larger SpatialLocationElement that will be broken down in more detail in a separate (sub) SpatialLocationModel.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationPortion : SpatialLocationElement
+{
+    DEFINE_T_SUPER(SpatialLocationElement);
+protected:
+    explicit SpatialLocationPortion(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -2694,6 +2718,19 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
 
 protected:
     explicit InformationCarrierElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! An information element whose main purpose is to hold an information record.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationRecordElement : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationRecordElement, InformationContentElement);
+    friend struct dgn_ElementHandler::InformationRecord;
+
+protected:
+    explicit InformationRecordElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

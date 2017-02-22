@@ -476,6 +476,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="An Information Content Element is pure information.">
+        <!-- NOTE: Only platform can directly subclass from InformationContentElement. Everyone else should pick the most appropriate superclass. -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <BfoMapping xmlns="BisCore.01.00">
@@ -484,6 +485,17 @@
             </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="InformationRecordElement" modifier="Abstract" displayLabel="Information Record Element" description="An information element whose main purpose is to hold an information record.">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>32</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -687,7 +699,6 @@
     <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract" displayLabel="Information Reference" description="An information element whose main purpose is to reference something else.">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
@@ -1008,6 +1019,10 @@
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
+    <ECEntityClass typeName="PhysicalPortion" modifier="Abstract" displayLabel="Physical Portion" description="A Physical Portion represents an arbitrary portion of a larger Physical Element that will be broken down in more detail in a separate (sub) Physical Model.">
+        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
+    </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract" displayLabel="Spatial Location Element" description="A Spatial Location Element identifies a 'tracked' real world location but has no mass and cannot be 'touched'.">
         <BaseClass>SpatialElement</BaseClass>
         <ECCustomAttributes>
@@ -1016,6 +1031,10 @@
             </BfoMapping>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialLocationPortion" modifier="Abstract" displayLabel="Spatial Location Portion" description="A Spatial Location Portion represents an arbitrary portion of a larger Spatial Location Element that will be broken down in more detail in a separate (sub) Spatial Location Model.">
+        <BaseClass>SpatialLocationElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement" displayLabel="Volume Element" description="A Volume Element is a Spatial Location Element that is restricted to defining a volume.">
         <BaseClass>SpatialLocationElement</BaseClass>

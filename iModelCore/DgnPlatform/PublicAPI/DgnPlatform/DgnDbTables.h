@@ -63,6 +63,7 @@
 #define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
+#define BIS_CLASS_InformationRecordElement  "InformationRecordElement"
 #define BIS_CLASS_LightDefinition           "LightDefinition"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"
@@ -693,7 +694,8 @@ struct DgnUnits
     static double constexpr OneKilometer() {return 1000.0 * OneMeter();}
     static double constexpr OneMillimeter() {return OneMeter() / 1000.0;}
     static double constexpr OneCentimeter() {return OneMeter() / 100.0;}
-    static double constexpr DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double constexpr DiameterOfEarth() {return 12742.0 * OneKilometer();} // approximate
+    static double constexpr CircumferenceOfEarth() {return 40075.0 * OneKilometer();} // approximate
 };
 
 //=======================================================================================

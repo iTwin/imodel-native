@@ -62,6 +62,7 @@ HANDLER_DEFINE_MEMBERS(DrawingGraphic)
 HANDLER_DEFINE_MEMBERS(NestedTypeLocation2d)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(InformationContent)
+HANDLER_DEFINE_MEMBERS(InformationRecord)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
@@ -133,6 +134,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationContent::GetHandler());
+    RegisterHandler(dgn_ElementHandler::InformationRecord::GetHandler());
     RegisterHandler(dgn_ElementHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationCarrier::GetHandler());
     RegisterHandler(dgn_ElementHandler::Document::GetHandler());
