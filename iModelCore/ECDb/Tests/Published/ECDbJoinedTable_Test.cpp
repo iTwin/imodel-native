@@ -2867,7 +2867,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, JoinedTableForClassesWithoutBusinessProp
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
         "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='BaseClass'>"
+        "    <ECEntityClass typeName='BaseClass' modifier='Abstract'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"

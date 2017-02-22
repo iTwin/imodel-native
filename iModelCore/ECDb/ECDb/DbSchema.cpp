@@ -1445,6 +1445,22 @@ bool DbColumn::IsOnlyColumnOfPrimaryKeyConstraint() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        2/2017
+//---------------------------------------------------------------------------------------
+int DbColumn::DeterminePosition() const
+    {
+    bvector<DbColumn const*> const& columns = GetTable().GetColumns();
+    for (size_t i = 0; i < columns.size(); i++)
+        {
+        if (columns[i] == this)
+            return (int) i;
+        }
+
+    BeAssert(false && "Column must exist in the table");
+    return -1;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus DbColumn::SetKind(Kind kind)
@@ -2003,7 +2019,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         if (colInfo.GetPrimaryKeyOrdinal() > 0)
             {
             pkColumns.push_back(column);
-            pkOrdinals.push_back(static_cast<size_t>(colInfo.GetPrimaryKeyOrdinal() - 1));
+            pkOrdinals.push_back((size_t) (colInfo.GetPrimaryKeyOrdinal() - 1));
             }
 
         if (column->GetName().EqualsIAscii(primaryKeyColName))
@@ -2014,7 +2030,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         {
         if (pkColumns.size() > 1)
             {
-            BeAssert(false && "Multi-column PK not supported for MapStrategy ExistingTable");
+            LOG.errorv("Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s", table->GetName().c_str());
             return nullptr;
             }
 

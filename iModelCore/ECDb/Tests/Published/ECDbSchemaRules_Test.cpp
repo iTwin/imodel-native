@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSchemaRules_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SchemaImportTestFixture.h"
@@ -170,6 +170,138 @@ TEST_F(ECDbSchemaRules, SchemaAlias)
     AssertSchemaImport(asserted, ecdb, secondSchemaTestItem);
     ASSERT_FALSE(asserted);
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, BaseClasses)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECEntityClass typeName="Base1" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Base2" modifier="Abstract">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                     </ECEntityClass>
+               </ECSchema>)xml", false, "Multi-inheritance for abstract entity classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECStructClass typeName="Base1" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECStructClass>
+                    <ECStructClass typeName="Base2" modifier="Abstract">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECStructClass>
+                    <ECStructClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECStructClass>
+               </ECSchema>)xml", false, "Multi-inheritance for abstract struct classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECCustomAttributeClass typeName="Base1" modifier="Abstract" appliesTo="Schema">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECCustomAttributeClass>
+                    <ECCustomAttributeClass typeName="Base2" modifier="Abstract" appliesTo="Schema">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECCustomAttributeClass>
+                    <ECCustomAttributeClass typeName="Sub" modifier="Abstract" appliesTo="Schema">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECCustomAttributeClass>
+               </ECSchema>)xml", false, "Multi-inheritance for abstract custom attribute classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECEntityClass typeName="Base1" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Base2" modifier="Abstract">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="None">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                     </ECEntityClass>
+               </ECSchema>)xml", false, "Multi-inheritance for non-abstract entity classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECStructClass typeName="Base1" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECStructClass>
+                    <ECStructClass typeName="Base2" modifier="Abstract">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECStructClass>
+                    <ECStructClass typeName="Sub" modifier="None">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECStructClass>
+               </ECSchema>)xml", false, "Multi-inheritance for non-abstract struct classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECCustomAttributeClass typeName="Base1" modifier="Abstract" appliesTo="Schema">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECCustomAttributeClass>
+                    <ECCustomAttributeClass typeName="Base2" modifier="Abstract" appliesTo="Schema">
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECCustomAttributeClass>
+                    <ECCustomAttributeClass typeName="Sub" modifier="None" appliesTo="Schema">
+                      <BaseClass>Base1</BaseClass>
+                      <BaseClass>Base2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECCustomAttributeClass>
+               </ECSchema>)xml", false, "Multi-inheritance for non-abstract custom attribute classes is not supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECEntityClass typeName="Base" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Abstract entity class may not inherit concrete entity class"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECStructClass typeName="Base" modifier="None">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECStructClass>
+                    <ECStructClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECStructClass>
+               </ECSchema>)xml", false, "Abstract struct class may not inherit concrete struct class"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECCustomAttributeClass typeName="Base" modifier="None" appliesTo="Schema">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECCustomAttributeClass>
+                    <ECCustomAttributeClass typeName="Sub" modifier="Abstract" appliesTo="Schema">
+                      <BaseClass>Base</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                    </ECCustomAttributeClass>
+               </ECSchema>)xml", false, "Abstract CA class may not inherit concrete CA class"));
+
+    AssertSchemaImport(testSchemas, "ecdbschemarules_baseclasses.ecdb");
     }
 
 //---------------------------------------------------------------------------------------

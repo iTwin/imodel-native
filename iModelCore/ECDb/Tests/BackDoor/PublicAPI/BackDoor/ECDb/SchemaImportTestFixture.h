@@ -51,6 +51,9 @@ protected:
     void AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyDdl);
     void AssertColumnCount(ECDbCR ecdb, std::vector<std::pair<Utf8String, int>> const& testItems, Utf8CP scenario);
 
+    //!logs the issues if there are any
+    static bool HasDataCorruptingMappingIssues(ECDbCR);
+
     static std::vector<IndexInfo> RetrieveIndicesForTable(ECDbCR, Utf8CP tableName);
 
 public:

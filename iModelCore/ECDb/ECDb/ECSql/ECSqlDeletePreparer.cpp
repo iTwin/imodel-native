@@ -20,16 +20,16 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
     BeAssert(exp.IsComplete());
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
 
-    auto classNameExp = exp.GetClassNameExp();
-    auto const& classMap = classNameExp->GetInfo().GetMap();
+    ClassNameExp const* classNameExp = exp.GetClassNameExp();
+    ClassMap const& classMap = classNameExp->GetInfo().GetMap();
 
     NativeSqlSnippets deleteNativeSqlSnippets;
-    auto stat = GenerateNativeSqlSnippets(deleteNativeSqlSnippets, ctx, exp, *classNameExp);
+    ECSqlStatus stat = GenerateNativeSqlSnippets(deleteNativeSqlSnippets, ctx, exp, *classNameExp);
     if (!stat.IsSuccess())
         return stat;
 
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        stat = PrepareForEndTableRelationship(ctx, deleteNativeSqlSnippets, static_cast<RelationshipClassEndTableMap const&> (classMap));
+        stat = PrepareForEndTableRelationship(ctx, deleteNativeSqlSnippets, classMap.GetAs<RelationshipClassEndTableMap>());
     else
         stat = PrepareForClass(ctx, deleteNativeSqlSnippets);
 
@@ -115,7 +115,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
         ClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
         if (currentClassMap.IsMappedToSingleTable())
             {
-            status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
+            status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
             if (!status.IsSuccess())
                 return status;
 
@@ -132,11 +132,11 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
 
-            if (propertyExpsInWhereClause.size() == 1 && static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->GetSystemPropertyInfo() == ECSqlSystemPropertyInfo::ECInstanceId())
+            if (propertyExpsInWhereClause.size() == 1 && propertyExpsInWhereClause[0]->GetAs<PropertyNameExp>().GetSystemPropertyInfo() == ECSqlSystemPropertyInfo::ECInstanceId())
                 {
                 //WhereClause only consists of ECInstanceId exp
                 ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
                 if (!status.IsSuccess())
                     return status;
 
@@ -145,7 +145,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             else if (primaryTableIsReferencedByWhereClause && !joinedTableIsReferencedByWhereClause)
                 {
                 //only primary table is involved in where clause -> do not modify where
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
                 if (!status.IsSuccess())
                     return status;
 
@@ -153,7 +153,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 }
             else
                 {
-                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereExp);
+                status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereExp);
                 if (!status.IsSuccess())
                     return status;
 

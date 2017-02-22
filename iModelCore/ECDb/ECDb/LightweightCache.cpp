@@ -142,7 +142,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         if (relIt == relClassIds.end())
             relClassIds[relationshipId] = end;
         else
-            relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
+            relClassIds[relationshipId] = (RelationshipEnd) ((int) (relIt->second) | (int) (end));
         }
 
     return relClassIds;
@@ -186,7 +186,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         if (constraintIt == constraintClassIds.end())
             constraintClassIds[constraintClassId] = end;
         else
-            constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int) (constraintIt->second) | (int) (end));
+            constraintClassIds[constraintClassId] = (RelationshipEnd) ((int) (constraintIt->second) | (int) (end));
         }
 
     return constraintClassIds;
@@ -204,11 +204,11 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        "SELECT CH.ClassId, CT.TableId FROM " TABLE_ClassHasTablesCache " CT"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " CH ON CH.ClassId = CT.ClassId"
-        "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId "
-        "WHERE CH.BaseClassId=?1 AND ((SELECT 1 FROM ec_ClassMap WHERE ClassId = ?1 AND MapStrategy <> " SQLVAL_MapStrategy_TablePerHierarchy
-        " AND JoinedTableInfo IS NULL) = 1 OR ec_Table.Type <>" SQLVAL_DbTable_Type_Joined ")");
+        "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
+        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
+        "WHERE ch.BaseClassId=?1 AND (cm.MapStrategy<>" SQLVAL_MapStrategy_TablePerHierarchy " OR t.Type<>" SQLVAL_DbTable_Type_Joined ")");
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
 
@@ -387,7 +387,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     std::set<ECClassId> derviedClassSet;
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
+        RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
         for (DbTable const* endTable : relClassMap.GetTables())
             {
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
@@ -411,7 +411,6 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
         for (auto& kp : lwmc.GetHorizontalPartitionsForClass(classId))
             {
             auto table = kp.first;
-
             auto& deriveClassList = kp.second;
             derviedClassSet.insert(deriveClassList.begin(), deriveClassList.end());
             if (deriveClassList.empty())

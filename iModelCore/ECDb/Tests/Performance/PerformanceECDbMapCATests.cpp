@@ -45,8 +45,13 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     EXPECT_TRUE(ca != nullptr);
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_TRUE(customAttribute != nullptr);
-    ASSERT_TRUE(customAttribute->SetValue("MapStrategy.Strategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
-    ASSERT_TRUE(customAttribute->SetValue("MapStrategy.Options", ECValue("SharedColumnsForSubclasses")) == ECObjectsStatus::Success);
+    ASSERT_TRUE(customAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
+    ASSERT_TRUE(baseClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
+
+    ca = ecdbmapSchema->GetClassCP("ShareColumns");
+    ASSERT_TRUE(ca != nullptr);
+    customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_TRUE(customAttribute != nullptr);
     ASSERT_TRUE(baseClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
@@ -119,7 +124,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     EXPECT_TRUE(ca != nullptr);
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_TRUE(customAttribute != nullptr);
-    ASSERT_TRUE(customAttribute->SetValue("MapStrategy.Strategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
+    ASSERT_TRUE(customAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
     ASSERT_TRUE(baseClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));

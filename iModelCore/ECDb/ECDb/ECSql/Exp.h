@@ -158,7 +158,7 @@ struct Exp : NonCopyableClass
             friend struct Exp;
 
             public:
-                template <class TExp>
+                template <typename TExp>
                 struct const_iterator : std::iterator<std::forward_iterator_tag, TExp>
                     {
                     private:
@@ -226,7 +226,7 @@ struct Exp : NonCopyableClass
                 Exp const* operator[] (size_t i) const;
                 Exp* operator[] (size_t i);
 
-                template <class TExp>
+                template <typename TExp>
                 TExp const* Get(size_t i) const
                     {
                     Exp const* child = this->operator[] (i);
@@ -271,10 +271,10 @@ struct Exp : NonCopyableClass
 
         void SetIsComplete() { m_isComplete = true; }
 
-        template <class TExp>
+        template <typename TExp>
         TExp const* GetChild(size_t index) const { return GetChildren().Get<TExp>(index); }
 
-        template <class TExp>
+        template <typename TExp>
         TExp* GetChildP(size_t index) const
             {
             Exp* child = GetChildrenR()[index];
@@ -289,6 +289,20 @@ struct Exp : NonCopyableClass
 
     public:
         virtual ~Exp() {}
+
+        template <typename TExp>
+        TExp const* GetAsCP() const 
+            { 
+            if (dynamic_cast<TExp const*> (this) == nullptr)
+                {
+                BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
+                return nullptr;
+                }
+
+            return static_cast<TExp const*> (this); }
+
+        template <typename TExp>
+        TExp const& GetAs() const { return *GetAsCP<TExp>(); }
 
         BentleyStatus FinalizeParsing(ECSqlParseContext&);
         bool TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const;
@@ -316,15 +330,14 @@ struct Exp : NonCopyableClass
         std::set<DbTable const*> GetReferencedTables() const;
     };
 
-typedef Exp* ExpP;
 typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
 
 
 struct RangeClassRefExp;
-struct RangeClasssInfo
+struct RangeClassInfo
     {
-    typedef std::vector<RangeClasssInfo> List;
+    typedef std::vector<RangeClassInfo> List;
     enum Scope
         {
         Nil,
@@ -336,9 +349,9 @@ struct RangeClasssInfo
         Scope m_scope;
 
     public:
-        RangeClasssInfo() :m_exp(nullptr), m_scope(Scope::Nil) {}
-        RangeClasssInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
-        ~RangeClasssInfo() {}
+        RangeClassInfo() :m_exp(nullptr), m_scope(Scope::Nil) {}
+        RangeClassInfo(RangeClassRefExp const& exp, Scope scope) :m_exp(&exp), m_scope(scope) {}
+        ~RangeClassInfo() {}
         Scope GetScope() const { return m_scope; }
         bool IsLocal() const { return m_scope == Scope::Local; }
         bool IsInherited() const { return m_scope == Scope::Inherited; }

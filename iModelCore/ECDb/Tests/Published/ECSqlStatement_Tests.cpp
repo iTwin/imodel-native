@@ -4706,7 +4706,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
     SetupECDb("ecsqlonabstractclasswithorderbyclause.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                        "<ECSchema schemaName='TestSchema' alias='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
-                                                                       "        <ECProperty propertyName='P0' typeName='String' />"
+                                                                       "        <ECProperty propertyName='P0' typeName='string' />"
                                                                        "        <ECProperty propertyName='P1' typeName='int' />"
                                                                        "    </ECEntityClass>"
                                                                        "    <ECEntityClass typeName='GeometricElement' >"
@@ -4723,7 +4723,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
     int rowCount = 0;
     Utf8CP expectedValues = "Hello World !!!";
     Utf8String actualValues;
-    while (statement.Step() != BE_SQLITE_DONE)
+    while (statement.Step() == BE_SQLITE_ROW)
         {
         actualValues.append(statement.GetValueText(0));
         rowCount++;
@@ -4731,6 +4731,99 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
     ASSERT_STREQ(expectedValues, actualValues.c_str()) << statement.GetECSql();
     ASSERT_EQ(3, rowCount);
     statement.Finalize();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle                      02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
+    {
+    ECDbCR ecdb = SetupECDb("orderbyonmixin.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="Base" modifier="Abstract">
+                <ECProperty propertyName="BaseProp1" typeName="string" />
+                <ECProperty propertyName="BaseProp2" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="IOriginSource" modifier="Abstract">
+              <ECCustomAttributes>
+                  <IsMixin xmlns="CoreCustomAttributes.01.00.00">
+                    <AppliesToEntityClass>Base</AppliesToEntityClass>
+                  </IsMixin>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Origin" typeName="Point3d" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Geometric2dElement">
+                 <BaseClass>Base</BaseClass>
+                 <BaseClass>IOriginSource</BaseClass>
+                <ECProperty propertyName="TwoDType" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Geometric3dElement">
+                 <BaseClass>Base</BaseClass>
+                 <BaseClass>IOriginSource</BaseClass>
+                <ECProperty propertyName="ThreeDType" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", true));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    {
+    int id = 1;
+    ECSqlStatement statement1;
+    ASSERT_EQ(ECSqlStatus::Success, statement1.Prepare(ecdb, "INSERT INTO ts.Geometric2dElement(TwoDType, Code, Origin, BaseProp2) VALUES('Line', ?, ?, ?)"));
+
+    ECSqlStatement statement2;
+    ASSERT_EQ(ECSqlStatus::Success, statement2.Prepare(ecdb, "INSERT INTO ts.Geometric3dElement(ThreeDType, Code, Origin, BaseProp2) VALUES('Volume', ?, ?, ?)"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindInt(1, 10));
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindPoint3d(2, DPoint3d::From(10.0,10.0,10.0)));
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindInt(3, id));
+    ASSERT_EQ(BE_SQLITE_DONE, statement1.Step());
+    statement1.Reset();
+    statement1.ClearBindings();
+
+    id++;
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindInt(1, 5));
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindPoint3d(2, DPoint3d::From(5.0, 5.0, 5.0)));
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindInt(3, id));
+    ASSERT_EQ(BE_SQLITE_DONE, statement2.Step());
+    statement2.Reset();
+    statement2.ClearBindings();
+
+    id++;
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindInt(1, 2));
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindPoint3d(2, DPoint3d::From(2.0, 2.0, 2.0)));
+    ASSERT_EQ(ECSqlStatus::Success, statement1.BindInt(3, id));
+    ASSERT_EQ(BE_SQLITE_DONE, statement1.Step());
+    statement1.Reset();
+    statement1.ClearBindings();
+
+    id++;
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindInt(1, 1));
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindPoint3d(2, DPoint3d::From(1.0, 1.0, 1.0)));
+    ASSERT_EQ(ECSqlStatus::Success, statement2.BindInt(3, id));
+    ASSERT_EQ(BE_SQLITE_DONE, statement2.Step());
+    statement2.Reset();
+    statement2.ClearBindings();
+    }
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Origin.X, Origin.Y, Origin.Z, Code FROM ts.IOriginSource ORDER BY Code"));
+    std::vector<int> expectedCodes {1, 2, 5, 10};
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        int ix = rowCount;
+        rowCount++;
+        const int actualCode = statement.GetValueInt(3);
+        ASSERT_EQ(expectedCodes[(size_t) ix], actualCode);
+        ASSERT_EQ(actualCode, statement.GetValueInt(0));
+        ASSERT_EQ(actualCode, statement.GetValueInt(1));
+        ASSERT_EQ(actualCode, statement.GetValueInt(2));
+        }
+
+    ASSERT_EQ((int) expectedCodes.size(), rowCount);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -237,15 +237,15 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         bvector<Parameter const*> thisValueParams;
         for (Exp const* exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            ParameterExp const* param = static_cast<ParameterExp const*>(exp);
-            if (!param->IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(param->GetParameterName()) == nullptr)
-                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
+            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+            if (!paramExp.IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(paramExp.GetParameterName()) == nullptr)
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(paramExp));
             }
 
 
         if (property->GetPropertyMap().IsSystem())
             {
-            SystemPropertyMap const& systemPropertyMap = *property->GetPropertyMap().GetAs<SystemPropertyMap>();
+            SystemPropertyMap const& systemPropertyMap = property->GetPropertyMap().GetAs<SystemPropertyMap>();
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -277,7 +277,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             }
         else if (property->GetPropertyMap().IsData())
             {
-            DataPropertyMap const& businessPropertyMap = *property->GetPropertyMap().GetAs<DataPropertyMap>();
+            DataPropertyMap const& businessPropertyMap = property->GetPropertyMap().GetAs<DataPropertyMap>();
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
                 joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -360,40 +360,40 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     parentOfJoinedTableECSQL.Append("UPDATE ").Append(parentOfJoinedTableClass->GetECSqlName().c_str()).Append(" SET ");
 
     std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>(new JoinedTableInfo(classMap.GetClass()));
-    auto assignmentList = exp.GetAssignmentListExp();
-    for (size_t i = 0; i < assignmentList->GetChildrenCount(); i++)
+    AssignmentListExp const* assignmentListExp = exp.GetAssignmentListExp();
+    for (size_t i = 0; i < assignmentListExp->GetChildrenCount(); i++)
         {
-        AssignmentExp const* assignmentExp = assignmentList->GetAssignmentExp(i);
-        PropertyNameExp const* property = assignmentExp->GetPropertyNameExp();
-        ValueExp const* value = assignmentExp->GetValueExp();
+        AssignmentExp const* assignmentExp = assignmentListExp->GetAssignmentExp(i);
+        PropertyNameExp const* propertyNameExp = assignmentExp->GetPropertyNameExp();
+        ValueExp const* assignmentValueExp = assignmentExp->GetValueExp();
 
         bvector<Parameter const*> thisValueParams;
-        for (auto exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
+        for (Exp const* exp : assignmentValueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            auto param = static_cast<ParameterExp const*>(exp);
-            if (!param->IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(param->GetParameterName()) == nullptr)
-                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
+            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+            if (!paramExp.IsNamedParameter() || info->m_parameterMap.GetOrignal().Find(paramExp.GetParameterName()) == nullptr)
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(paramExp));
             }
 
-        if (property->GetPropertyMap().IsSystem())
+        if (propertyNameExp->GetPropertyMap().IsSystem())
             {
             BeAssert(false && "Updating system properties are not supported");
             return nullptr;
             }
-        else if (property->GetPropertyMap().IsData())
+        else if (propertyNameExp->GetPropertyMap().IsData())
             {
-            DataPropertyMap const& businessPropertyMap = *property->GetPropertyMap().GetAs<DataPropertyMap>();
+            DataPropertyMap const& businessPropertyMap = propertyNameExp->GetPropertyMap().GetAs<DataPropertyMap>();
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
-                joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-                joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                joinedTableProperties.push_back(NativeSqlBuilder(propertyNameExp->ToECSql().c_str()));
+                joinedTableValues.push_back(NativeSqlBuilder(assignmentValueExp->ToECSql().c_str()));
                 info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
                 }
             else
                 {
                 BeAssert(&businessPropertyMap.GetTable() == &primaryTable);
-                parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
-                parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+                parentOfJoinedTableProperties.push_back(NativeSqlBuilder(propertyNameExp->ToECSql().c_str()));
+                parentOfJoinedTableValues.push_back(NativeSqlBuilder(assignmentValueExp->ToECSql().c_str()));
                 info->m_parameterMap.GetPrimaryR().Add(thisValueParams);
                 }
             }
@@ -407,9 +407,9 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         bvector<Parameter const*> thisValueParams;
         for (Exp const* exp : bwhere->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            ParameterExp const* param = static_cast<ParameterExp const*>(exp);
-            if (!(param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName())))
-                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
+            ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
+            if (!(paramExp.IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(paramExp.GetParameterName())))
+                thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(paramExp));
             }
 
         info->m_parameterMap.GetSecondaryR().Add(thisValueParams);
@@ -461,9 +461,9 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     {
     std::unique_ptr<JoinedTableInfo> info = nullptr;
     if (exp.GetType() == Exp::Type::Insert)
-        info = CreateForInsert(ctx, static_cast<InsertStatementExp const&>(exp));
+        info = CreateForInsert(ctx, exp.GetAs<InsertStatementExp>());
     else if (exp.GetType() == Exp::Type::Update)
-        info = CreateForUpdate(ctx, static_cast<UpdateStatementExp const&>(exp));
+        info = CreateForUpdate(ctx, exp.GetAs<UpdateStatementExp>());
 
     if (info != nullptr)
         {
@@ -475,9 +475,9 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
         info->m_originalECSql = orignalECSQL;
 
-        auto& primary = info->m_parameterMap.GetPrimaryR();
-        auto& secondary = info->m_parameterMap.GetSecondaryR();
-        for (auto i = primary.First(); i > 0 && i <= primary.Last(); ++i)
+        ParameterSet& primary = info->m_parameterMap.GetPrimaryR();
+        ParameterSet& secondary = info->m_parameterMap.GetSecondaryR();
+        for (size_t i = primary.First(); i > 0 && i <= primary.Last(); ++i)
             {
             Parameter* p = const_cast<Parameter*>(primary.Find(i));
             if (p != nullptr && p->GetOrignalParameter() != nullptr)

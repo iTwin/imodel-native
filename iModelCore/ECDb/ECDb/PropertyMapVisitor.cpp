@@ -206,13 +206,13 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
     switch (propertyMap.GetType())
         {
             case PropertyMap::Type::ConstraintECInstanceId:
-                return ToNativeSql(*propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
             case PropertyMap::Type::ConstraintECClassId:
-                return ToNativeSql(*propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
             case PropertyMap::Type::ECClassId:
-                return ToNativeSql(*propertyMap.GetAs<ECClassIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ECClassIdPropertyMap>());
             case PropertyMap::Type::ECInstanceId:
-                return ToNativeSql(*propertyMap.GetAs<ECInstanceIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ECInstanceIdPropertyMap>());
             default:
                 BeAssert(false);
                 return ERROR;
@@ -225,7 +225,7 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(*propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
+        return ToNativeSql(propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
 
     Result& result = Record(propertyMap);
 
@@ -269,7 +269,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             case ECSqlScope::NonSelectNoAssignmentExp:
             {
             BeAssert(relClassIdPropMap.GetParent() != nullptr && relClassIdPropMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
-            NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
+            NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>().GetIdPropertyMap();
 
             NativeSqlBuilder idColStrBuilder;
             idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());

@@ -286,12 +286,12 @@ void TableClassMap::InitPropertyColumnMaps()
     m_classMap->GetPropertyMaps().AcceptVisitor(visitor);
     for (PropertyMap const* propertyMap : visitor.Results())
         {
-        SingleColumnDataPropertyMap const* singleColumnMap = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
+        SingleColumnDataPropertyMap const& singleColumnMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
 
-        if (singleColumnMap->GetTable().GetId() != m_tableMap.GetDbTable()->GetId())
+        if (singleColumnMap.GetTable().GetId() != m_tableMap.GetDbTable()->GetId())
             continue; // Skip properties that don't belong to the current table. 
 
-        AddColumnMapsForProperty(*singleColumnMap);
+        AddColumnMapsForProperty(singleColumnMap);
         }
     }
 
@@ -905,10 +905,9 @@ void ChangeExtractor::ExtractRelInstances(ChangeIterator::RowEntry const& rowEnt
     ClassMap::Type type = classMap->GetType();
     if (type == ClassMap::Type::RelationshipLinkTable)
         {
-        BeAssert(nullptr != dynamic_cast<RelationshipClassLinkTableMap const*> (classMap));
-        RelationshipClassLinkTableMap const* relClassMap = static_cast<RelationshipClassLinkTableMap const*>(classMap);
+        RelationshipClassLinkTableMap const& relClassMap =  classMap->GetAs<RelationshipClassLinkTableMap>();
 
-        ExtractRelInstanceInLinkTable(rowEntry, *relClassMap);
+        ExtractRelInstanceInLinkTable(rowEntry, relClassMap);
         return;
         }
 
