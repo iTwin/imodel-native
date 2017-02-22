@@ -288,6 +288,9 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
     while (s_mtStats.finished != (1 + _countof(threads)))
         s_mtCv.InfiniteWait(lock);
     
+    for (auto& thread : threads)
+        thread.detach();
+
     //  Execute this script in this thread again
     runScript(this);
 
