@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/LightweightCache.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,11 +27,10 @@ struct LightweightCache final: NonCopyableClass
             Source = (int) MapStrategy::ForeignKeyRelationshipInSourceTable,
             Target = (int) MapStrategy::ForeignKeyRelationshipInTargetTable,
             };
-
-
+        struct CompareDbTableById {bool operator()(DbTable const * lhs, DbTable const * rhs) const { return lhs->GetId() < rhs->GetId(); }};
         typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
-        typedef bmap<DbTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
-        typedef bmap<DbTable const*, RelationshipTypeByClassId> RelationshipPerTable;
+        typedef bmap < DbTable const*, std::vector<ECN::ECClassId>, CompareDbTableById> ClassIdsPerTableMap;
+        typedef bmap<DbTable const*, RelationshipTypeByClassId, CompareDbTableById> RelationshipPerTable;
 
     private:
         ECDb const& m_ecdb;
