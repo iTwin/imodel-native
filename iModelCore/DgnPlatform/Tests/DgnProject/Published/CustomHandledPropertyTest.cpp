@@ -368,3 +368,104 @@ TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
     ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromRadians(3.5).Degrees());
     checkValue1.Clear();
     }
+    /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, CategoryProperties)
+    {
+    SetupSeedProject();
+    DgnElementId eleid;
+    ECN::ECValue checkValue;
+    uint32_t catindex, rankindex, scatindex, scpropindex;
+    DgnCategoryId categoryId;
+    DgnSubCategoryId subcatid;
+    DgnSubCategory::Appearance subappearence;
+    if (true)
+    {
+        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
+
+        DrawingCategory category(*m_db, "TestCategory");
+        ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, catindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+
+        ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyIndex(rankindex, "Rank"));
+        ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(rankindex, ECN::ECValue(3)));
+        ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, rankindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(3)));
+        DgnSubCategory::Appearance  appearance;
+        DrawingCategoryCPtr persistentCategory = category.Insert(appearance);
+        EXPECT_TRUE(persistentCategory.IsValid());
+        categoryId=persistentCategory->GetCategoryId();
+        m_db->SaveChanges();
+    }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+     DgnCategoryCPtr category = m_db->Elements().Get<DgnCategory>(categoryId);
+
+     ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, catindex));
+     ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+
+     ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, rankindex));
+     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(3)));
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update Properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DgnCategoryPtr editcategory = m_db->Elements().GetForEdit<DgnCategory>(categoryId);
+
+    ASSERT_EQ(DgnDbStatus::Success, editcategory->SetPropertyValue(catindex, ECN::ECValue("New Descr")));
+    ASSERT_EQ(DgnDbStatus::Success, editcategory->GetPropertyValue(checkValue, catindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("New Descr")));
+
+    ASSERT_EQ(DgnDbStatus::Success, editcategory->SetPropertyValue(rankindex, ECN::ECValue(2)));
+    ASSERT_EQ(DgnDbStatus::Success, editcategory->GetPropertyValue(checkValue, rankindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(2)));
+
+    subcatid=editcategory->GetDefaultSubCategoryId();
+    DgnSubCategoryPtr editsubcategory = m_db->Elements().GetForEdit<DgnSubCategory>(subcatid);
+
+    //Verify Subcategory description is readonly
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scatindex, "Descr"));
+    ASSERT_EQ(DgnDbStatus::ReadOnly, editsubcategory->SetPropertyValue(scatindex, ECN::ECValue("SubDescr")));
+    subappearence.SetInvisible(false);
+    subappearence.SetWeight(10);
+    subappearence.SetColor(ColorDef::White());
+    subappearence.SetTransparency(0.1);
+    subappearence.SetDisplayPriority(2);
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scpropindex, "Properties"));
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(subappearence.ToJson().c_str())));
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyValue(checkValue, scpropindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
+    DgnDbStatus  stat;
+    editcategory->Update(&stat);
+    ASSERT_EQ(stat,DgnDbStatus::Success);
+    editsubcategory->Update(&stat);
+    ASSERT_EQ(stat, DgnDbStatus::Success);
+    m_db->SaveChanges();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update Properties
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    DgnCategoryCPtr category = m_db->Elements().Get<DgnCategory>(categoryId);
+
+    ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, catindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("New Descr")));
+
+    ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, rankindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(2)));
+
+    DgnSubCategoryCPtr subcategory = m_db->Elements().Get<DgnSubCategory>(subcatid);
+
+    //Verify Subcategory description is readonly
+    ASSERT_EQ(DgnDbStatus::Success, subcategory->GetPropertyValue(checkValue, scpropindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
+    }

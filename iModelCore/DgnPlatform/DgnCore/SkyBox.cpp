@@ -282,7 +282,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
                                             meshPoints.size(), &meshPoints[0], &indices[0], // Points.
                                             0, nullptr, nullptr,                            // Normals.
                                             meshParams.size(), &meshParams[0], &indices[0], // Params.
-                                            0,  nullptr, nullptr);                          // Colors
+                                            0, nullptr, nullptr);                          // Colors
 
     builder->AddPolyface(polyface, true);
     }
