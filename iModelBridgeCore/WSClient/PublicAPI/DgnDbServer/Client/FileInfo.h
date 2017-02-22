@@ -114,5 +114,5 @@ struct DgnDbServerFileAccessKey
         //! Url for download
         Utf8StringCR GetDownloadUrl() const;
     };
-
+//__PUBLISH_SECTION_START__
 END_BENTLEY_DGNDBSERVER_NAMESPACE
