@@ -151,14 +151,9 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         Type GetType() const { return m_type; }
         
         template <typename TPropertyMap>
-        TPropertyMap const* GetAs() const
-            {
-            BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr);
-            return static_cast<TPropertyMap const*> (this);
-            }
-
-        Utf8StringCR GetName() const { return GetProperty().GetName(); }
+        TPropertyMap const& GetAs() const { BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr); return *static_cast<TPropertyMap const*> (this); }
         
+        Utf8StringCR GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
         ECN::ECPropertyId GetRootPropertyId() const;
         //! return full access string from root property to current property.

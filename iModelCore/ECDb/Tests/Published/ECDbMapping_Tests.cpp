@@ -5437,6 +5437,8 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
         }
     }
 
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6736,9 +6738,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(db, "uix_root", true, "ts8_Root", {"RootProp"});
 
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-                /* #TFS 555738
                 AssertIndex(db, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
-                */
                 AssertIndex(db, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
                 AssertIndex(db, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
                 AssertIndex(db, "uix_sub", true, "ts8_Sub", {"SubProp"});
@@ -6806,6 +6806,63 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  02/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, UserDefinedIndexOnMixin)
+    {
+    SchemaItem testItem("Index on mixin",
+                        "<?xml version='1.0' encoding='utf-8'?>"
+                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                        "    <ECEntityClass typeName='Root' modifier='Abstract'>"
+                        "        <ECCustomAttributes>"
+                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                        "            </ClassMap>"
+                        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                        "        </ECCustomAttributes>"
+                        "        <ECProperty propertyName='RootProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Interface' modifier='Abstract'>"
+                        "        <ECCustomAttributes>"
+                        "            <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+                        "               <AppliesToEntityClass>Root</AppliesToEntityClass>"
+                        "            </IsMixin>"
+                        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+                        "                 <Indexes>"
+                        "                   <DbIndex>"
+                        "                       <IsUnique>True</IsUnique>"
+                        "                       <Name>uix_interface</Name>"
+                        "                       <Properties>"
+                        "                          <string>InterfaceProp</string>"
+                        "                       </Properties>"
+                        "                   </DbIndex>"
+                        "                 </Indexes>"
+                        "            </DbIndexList>"
+                        "        </ECCustomAttributes>"
+                        "        <ECProperty propertyName='InterfaceProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='Sub'>"
+                        "       <BaseClass>Root</BaseClass>"
+                        "       <BaseClass>Interface</BaseClass>"
+                        "        <ECProperty propertyName='SubProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "    <ECEntityClass typeName='SubSub'>"
+                        "       <BaseClass>Sub</BaseClass>"
+                        "        <ECProperty propertyName='SubSubProp' typeName='int' />"
+                        "    </ECEntityClass>"
+                        "</ECSchema>");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "userdefinedindexonmixin.ecdb");
+    ASSERT_FALSE(asserted);
+
+    AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
@@ -12291,9 +12348,8 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
     ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     GetECDb().SaveChanges();
-    //This does not work with overflow property
-    //ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -12530,11 +12586,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour1]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB1 FROM Foo.IBehaviour1 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-3", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-4", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-5", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-6", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB1-7", stmt.GetValueText(0));
@@ -12544,11 +12599,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour2]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB2 FROM Foo.IBehaviour2 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-4", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-1", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-2", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-3", stmt.GetValueText(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-4", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-5", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB2-6", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -12556,11 +12610,10 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 
     //====[Foo.IBehaviour3]====================================================
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT IB3 FROM Foo.IBehaviour3 ORDER BY ECInstanceId"));
-    //ORDER BY does not work.
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-2", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-3", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-4", stmt.GetValueText(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()); ASSERT_STREQ("IB3-1", stmt.GetValueText(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }
@@ -12640,13 +12693,12 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(43, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFace ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(22, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
@@ -12751,17 +12803,17 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(54, stmt.GetValueInt64(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFaceA ORDER BY P2 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P2 FROM ts.IXFaceA ORDER BY P2 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(21, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(23, stmt.GetValueInt64(0));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(22, stmt.GetValueInt64(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(23, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P3 FROM ts.IXFaceB ORDER BY P3 ")); //! ORDER BY DOES NOT WORK
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P3 FROM ts.IXFaceB ORDER BY P3 "));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(31, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -12769,7 +12821,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(34, stmt.GetValueInt64(0));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -12944,7 +12995,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_EQ(3, stmt.GetValueInt64(2));
     ASSERT_EQ(55, stmt.GetValueInt64(3));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13043,7 +13093,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     stmt.Finalize();
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13192,7 +13241,6 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')");
     GetECDb().SaveChanges();
     ASSERT_ECSQL_INSERT(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')");
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 //---------------------------------------------------------------------------------------
@@ -13299,11 +13347,11 @@ TEST_F(ECDbMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Affan.Khan                         01/17
-    //+---------------+---------------+---------------+---------------+---------------+------
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         01/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
     {
     SetupECDb("useecinstanceidasfk3.ecdb",
@@ -13417,7 +13465,6 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
 
     GetECDb().Schemas().CreateECClassViewsInDb();
     GetECDb().SaveChanges();
-    AssertForMapCorruptionCausedByMultiInheritence();
     }
 
 

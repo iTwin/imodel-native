@@ -103,7 +103,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     if (auto whereClauseExp = exp.GetWhereClauseExp())
         {
         NativeSqlBuilder whereClause;
-        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, whereClauseExp);
+        status = ECSqlExpPreparer::PrepareWhereExp(whereClause, ctx, *whereClauseExp);
         if (!status.IsSuccess())
             return status;
 
@@ -242,12 +242,12 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
     BeAssert(snippets.m_valuesNativeSqlSnippets.empty());
 
     size_t index = 0;
-    for (auto childExp : assignmentListExp->GetChildren())
+    for (Exp const* childExp : assignmentListExp->GetChildren())
         {
         BeAssert(childExp != nullptr);
-        AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*> (childExp);
+        AssignmentExp const& assignmentExp = childExp->GetAs<AssignmentExp>();
         NativeSqlBuilder::List propertyNamesNativeSqlSnippets;
-        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(propertyNamesNativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp());
+        ECSqlStatus stat = ECSqlPropertyNameExpPreparer::Prepare(propertyNamesNativeSqlSnippets, ctx, *assignmentExp.GetPropertyNameExp());
         if (!stat.IsSuccess())
             {
             ctx.PopScope();
@@ -260,15 +260,12 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
         if (sqlSnippetCount > 0)
             {
             NativeSqlBuilder::List rhsNativeSqlSnippets;
-            ValueExp const* valueExp = assignmentExp->GetValueExp();
+            ValueExp const* valueExp = assignmentExp.GetValueExp();
             //if value is null exp, we need to pass target operand snippets
             if (ECSqlExpPreparer::IsNullExp(*valueExp))
-                {
-                BeAssert(dynamic_cast<LiteralValueExp const*> (valueExp) != nullptr);
-                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), sqlSnippetCount);
-                }
+                stat = ECSqlExpPreparer::PrepareNullLiteralValueExp(rhsNativeSqlSnippets, ctx, valueExp->GetAs<LiteralValueExp>(), sqlSnippetCount);
             else
-                stat = ECSqlExpPreparer::PrepareValueExp(rhsNativeSqlSnippets, ctx, valueExp);
+                stat = ECSqlExpPreparer::PrepareValueExp(rhsNativeSqlSnippets, ctx, *valueExp);
 
             if (!stat.IsSuccess())
                 {

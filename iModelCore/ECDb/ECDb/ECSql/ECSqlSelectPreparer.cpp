@@ -103,7 +103,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
 
     sqlGenerator.AppendSpace();
     // Append FROM
-    status = ECSqlExpPreparer::PrepareFromExp(ctx, exp.GetFrom());
+    status = ECSqlExpPreparer::PrepareFromExp(ctx, *exp.GetFrom());
     if (!status.IsSuccess())
         return status;
 
@@ -111,7 +111,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     if (WhereExp const* e = exp.GetWhere())
         {
         sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, e);
+        status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, *e);
         if (!status.IsSuccess())
             return status;
         }
@@ -119,7 +119,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     if (GroupByExp const* e = exp.GetGroupBy())
         {
         sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareGroupByExp(ctx, e);
+        status = ECSqlExpPreparer::PrepareGroupByExp(ctx, *e);
         if (!status.IsSuccess())
             return status;
         }
@@ -128,7 +128,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     if (HavingExp const* e = exp.GetHaving())
         {
         sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareHavingExp(ctx, e);
+        status = ECSqlExpPreparer::PrepareHavingExp(ctx, *e);
         if (!status.IsSuccess())
             return status;
         }
@@ -137,7 +137,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     if (OrderByExp const* e = exp.GetOrderBy())
         {
         sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, e);
+        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, *e);
         if (!status.IsSuccess())
             return status;
         }
@@ -146,7 +146,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     if (LimitOffsetExp const* e = exp.GetLimitOffset())
         {
         sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareLimitOffsetExp(ctx, e);
+        status = ECSqlExpPreparer::PrepareLimitOffsetExp(ctx, *e);
         if (!status.IsSuccess())
             return status;
         }
@@ -202,13 +202,13 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     size_t snippetCountBefore = nativeSqlSnippets.size();
     if (ECSqlExpPreparer::IsNullExp(*innerExp))
         { 
-        ECSqlStatus status = ECSqlExpPreparer::PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (innerExp), referenceSqliteSnippetCount);
+        ECSqlStatus status = ECSqlExpPreparer::PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, innerExp->GetAs<LiteralValueExp>(), referenceSqliteSnippetCount);
         if (!status.IsSuccess())
             return status;
         }
     else
         {
-        ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, innerExp);
+        ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, *innerExp);
         if (!status.IsSuccess())
             return status;
         }

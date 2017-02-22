@@ -20,11 +20,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+--------
 FromExp const* JoinExp::FindFromExpression() const
     {
-    auto parent = GetParent();
+    Exp const* parent = GetParent();
     while (parent != nullptr && parent->GetType() != Exp::Type::FromClause)
         parent = parent->GetParent();
 
-    return static_cast<FromExp const*>(parent);
+    if (parent == nullptr)
+        return nullptr;
+
+    return parent->GetAsCP<FromExp>();
     }
 
 //************************* JoinConditionExp *******************************************
@@ -107,7 +110,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     auto fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
 
-    RangeClasssInfo::List fromClassRefs;
+    RangeClassInfo::List fromClassRefs;
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ERROR);
 
@@ -115,7 +118,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     PRECONDITION(relationshipClass != nullptr, ERROR);
 
     ResolvedEndPoint fromEP, toEP;
-    toEP.SetClassRef(static_cast<ClassNameExp const*> (&GetToClassRef()));
+    toEP.SetClassRef(&GetToClassRef().GetAs<ClassNameExp>());
     // Get flat list of relationship source and target classes. 
     // It also consider IsPolymorphic attribute on source and target constraint in ECSchema
     ECSqlParseContext::ClassListById sourceList, targetList;
@@ -164,7 +167,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInSourceList;
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInTargetList;
 
-    for(RangeClasssInfo const& classRef : fromClassRefs)
+    for(RangeClassInfo const& classRef : fromClassRefs)
         {
         if (classRef.GetExp().GetType() != Exp::Type::ClassName)
             continue;
@@ -172,26 +175,26 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
         if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClass())
             continue; 
 
-        auto fromClassNameExpression = static_cast<ClassNameExp const*> (&classRef.GetExp());
-        auto fromClassId = fromClassNameExpression->GetInfo().GetMap().GetClass ().GetId ();
+        ClassNameExp const& fromClassNameExpression = classRef.GetExp().GetAs<ClassNameExp>();
+        ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass ().GetId ();
 
         //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
         if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
             {
             auto itor = sourceList.find(fromClassId);
             if (itor != sourceList.end())
-                fromClassExistsInSourceList[fromClassId] = fromClassNameExpression;
+                fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
             else if (sourceContainsAnyClass && fromClassExistsInSourceList.empty()) //only the first class found is use as source
-                fromClassExistsInSourceList[fromClassId] = fromClassNameExpression;
+                fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
             }
 
         if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
             {
             auto itor = targetList.find(fromClassId);    
             if (itor != targetList.end())
-                fromClassExistsInTargetList[fromClassId] = fromClassNameExpression;
+                fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
             else if (targetContainsAnyClass && fromClassExistsInTargetList.empty()) //only the first class found is use as target
-                fromClassExistsInTargetList[fromClassId] = fromClassNameExpression;
+                fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
             }
         }
 

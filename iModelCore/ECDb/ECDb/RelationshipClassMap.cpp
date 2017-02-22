@@ -87,8 +87,8 @@ bool RelationshipClassMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint) const
         return false;
         }
 
-    SingleColumnDataPropertyMap const* vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
-    return vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables();
+    SingleColumnDataPropertyMap const& vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
+    return vm.GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm.IsMappedToClassMapTables();
     }
 
 //************************ RelationshipConstraintMap ******************************************
@@ -162,25 +162,24 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
     if (endPoint == GetForeignEnd())
         return false;
 
-    auto referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+    ConstraintECClassIdPropertyMap const* referencedEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
     if (!referencedEndClassIdPropertyMap->IsMappedToSingleTable())
         {
         BeAssert(false);
         return false;
         }
 
-    SingleColumnDataPropertyMap const* vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
-    if (vm->GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm->IsMappedToClassMapTables())
+    SingleColumnDataPropertyMap const& vm = referencedEndClassIdPropertyMap->GetDataPropertyMaps().front()->GetAs<SingleColumnDataPropertyMap>();
+    if (vm.GetColumn().GetPersistenceType() != PersistenceType::Virtual && !vm.IsMappedToClassMapTables())
         return true;
 
     //SELF JOIN case
     if (GetSourceECClassIdPropMap()->IsMappedToSingleTable() && GetTargetECClassIdPropMap()->IsMappedToSingleTable())
         {
-        auto source = GetSourceECClassIdPropMap()->GetDataPropertyMaps().front();
-        auto target = GetTargetECClassIdPropMap()->GetDataPropertyMaps().front();
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* source = GetSourceECClassIdPropMap()->GetDataPropertyMaps().front();
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* target = GetTargetECClassIdPropMap()->GetDataPropertyMaps().front();
 
-        return  &source->GetColumn() == &target->GetColumn()
-            && source->GetColumn().GetPersistenceType() == PersistenceType::Physical;
+        return &source->GetColumn() == &target->GetColumn() && source->GetColumn().GetPersistenceType() == PersistenceType::Physical;
         }
 
     return false;
@@ -661,7 +660,7 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
         return ERROR;
         }
 
-    RelationshipClassEndTableMap const& baseRelClassMap = static_cast<RelationshipClassEndTableMap const&>(*baseClassMap);
+    RelationshipClassEndTableMap const& baseRelClassMap = baseClassMap->GetAs<RelationshipClassEndTableMap>();
     //ECInstanceId property map
     SystemPropertyMap const* basePropMap = baseRelClassMap.GetECInstanceIdPropertyMap();
     if (basePropMap == nullptr)
@@ -698,10 +697,13 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
     
     //Foreign ECInstanceId prop map
     RefCountedPtr<SystemPropertyMap> clonedConstraintInstanceId = PropertyMapCopier::CreateCopy(*baseForeignEndConstraintMap.GetECInstanceIdPropMap(), *this);
+    if (clonedConstraintInstanceId == nullptr)
+        return ERROR;
+
     if (GetPropertyMapsR().Insert(clonedConstraintInstanceId) != SUCCESS)
         return ERROR;
 
-    foreignEndConstraintMap.SetECInstanceIdPropMap(clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
+    foreignEndConstraintMap.SetECInstanceIdPropMap(&clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
 
     GetTablesPropertyMapVisitor tableDisp;
     clonedConstraintInstanceId->AcceptVisitor(tableDisp);
@@ -712,10 +714,13 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
 
     //Foreign ECClassId prop map
     RefCountedPtr<SystemPropertyMap> clonedConstraintClassId = PropertyMapCopier::CreateCopy(*baseForeignEndConstraintMap.GetECClassIdPropMap(), *this);
+    if (clonedConstraintClassId == nullptr)
+        return ERROR;
+
     if (GetPropertyMapsR().Insert(clonedConstraintClassId) != SUCCESS)
         return ERROR;
 
-    foreignEndConstraintMap.SetECClassIdPropMap(clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
+    foreignEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
 
     //ReferencedEnd
     RelationshipConstraintMap const& baseReferencedEndConstraintMap = baseRelClassMap.GetConstraintMap(GetReferencedEnd());
@@ -730,17 +735,22 @@ BentleyStatus RelationshipClassEndTableMap::MapSubClass(RelationshipMappingInfo 
 
     //Referenced ECInstanceId prop map
     clonedConstraintInstanceId = PropertyMapCopier::CreateCopy(*baseReferencedEndConstraintMap.GetECInstanceIdPropMap(), *this);
+    if (clonedConstraintInstanceId == nullptr)
+        return ERROR;
+
     if (GetPropertyMapsR().Insert(clonedConstraintInstanceId) != SUCCESS)
         return ERROR;
 
-    referencedEndConstraintMap.SetECInstanceIdPropMap(clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
+    referencedEndConstraintMap.SetECInstanceIdPropMap(&clonedConstraintInstanceId->GetAs<ConstraintECInstanceIdPropertyMap>());
 
     //Referenced ECClassId prop map
     clonedConstraintClassId = PropertyMapCopier::CreateCopy(*baseReferencedEndConstraintMap.GetECClassIdPropMap(), *this);
+    if (clonedConstraintClassId == nullptr)
+        return ERROR;
     if (GetPropertyMapsR().Insert(clonedConstraintClassId) != SUCCESS)
         return ERROR;
 
-    referencedEndConstraintMap.SetECClassIdPropMap(clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
+    referencedEndConstraintMap.SetECClassIdPropMap(&clonedConstraintClassId->GetAs<ConstraintECClassIdPropertyMap>());
 
     return SUCCESS;
     }
@@ -1181,35 +1191,35 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
         return ClassMappingStatus::Error;
         }
 
-    RelationshipClassLinkTableMap const& baseRelClassMap = static_cast<RelationshipClassLinkTableMap const&>(*baseClassMap);
+    RelationshipClassLinkTableMap const& baseRelClassMap = baseClassMap->GetAs<RelationshipClassLinkTableMap>();
 
     //SourceECInstanceId prop map
     RefCountedPtr<SystemPropertyMap> clonedSourceECInstanceIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetSourceECInstanceIdPropMap(), *this);
     if (GetPropertyMapsR().Insert(clonedSourceECInstanceIdPropMap) != SUCCESS)
         return ClassMappingStatus::Error;
 
-    m_sourceConstraintMap.SetECInstanceIdPropMap(clonedSourceECInstanceIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>());
+    m_sourceConstraintMap.SetECInstanceIdPropMap(&clonedSourceECInstanceIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>());
 
     //SourceECClassId prop map
     RefCountedPtr<SystemPropertyMap> clonedSourceECClassIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetSourceECClassIdPropMap(), *this);
     if (GetPropertyMapsR().Insert(clonedSourceECClassIdPropMap) != SUCCESS)
         return ClassMappingStatus::Error;
 
-    m_sourceConstraintMap.SetECClassIdPropMap(clonedSourceECClassIdPropMap->GetAs<ConstraintECClassIdPropertyMap>());
+    m_sourceConstraintMap.SetECClassIdPropMap(&clonedSourceECClassIdPropMap->GetAs<ConstraintECClassIdPropertyMap>());
 
     //TargetECInstanceId prop map
     RefCountedPtr<SystemPropertyMap> clonedTargetECInstanceIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetTargetECInstanceIdPropMap(), *this);
     if (GetPropertyMapsR().Insert(clonedTargetECInstanceIdPropMap) != SUCCESS)
         return ClassMappingStatus::Error;
 
-    m_targetConstraintMap.SetECInstanceIdPropMap(clonedTargetECInstanceIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>());
+    m_targetConstraintMap.SetECInstanceIdPropMap(&clonedTargetECInstanceIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>());
 
     //TargetECClassId prop map
     RefCountedPtr<SystemPropertyMap> clonedTargetECClassIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetTargetECClassIdPropMap(), *this);
     if (GetPropertyMapsR().Insert(clonedTargetECClassIdPropMap) != SUCCESS)
         return ClassMappingStatus::Error;
 
-    m_targetConstraintMap.SetECClassIdPropMap(clonedTargetECClassIdPropMap->GetAs<ConstraintECClassIdPropertyMap>());
+    m_targetConstraintMap.SetECClassIdPropMap(&clonedTargetECClassIdPropMap->GetAs<ConstraintECClassIdPropertyMap>());
 
     ClassMappingStatus stat = DoMapPart2(ctx);
     if (stat != ClassMappingStatus::Success)
@@ -1648,7 +1658,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType persType)
+DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnKind, PersistenceType persType)
     {
     DbTable& table = GetPrimaryTable();
     const bool wasEditMode = table.GetEditHandle().CanEdit();
@@ -1658,26 +1668,25 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
     DbColumn* column = table.FindColumnP(columnName);
     if (column != nullptr)
         {
-        if (!Enum::Intersects(column->GetKind(), columnId))
-            column->AddKind(columnId);
+        if (!Enum::Intersects(column->GetKind(), columnKind))
+            column->AddKind(columnKind);
 
         return column;
         }
 
     persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetPersistenceType() == PersistenceType::Physical)
+    if (table.GetPersistenceType() == PersistenceType::Physical && persType == PersistenceType::Virtual)
         {
-        if (persType == PersistenceType::Virtual)
+        if (columnKind == DbColumn::Kind::SourceECInstanceId || columnKind == DbColumn::Kind::TargetECInstanceId)
             {
-            if (columnId == DbColumn::Kind::SourceECInstanceId || columnId == DbColumn::Kind::TargetECInstanceId)
-                {
-                BeAssert(false);
-                return nullptr;
-                }
+            LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for SourceECInstanceId or TargetECInstanceId in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.", 
+                       GetClass().GetFullName(), table.GetName().c_str());
+            return nullptr;
             }
         }
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnId, persType);
+        
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnKind, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();
@@ -1716,6 +1725,9 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
         defaultConstraintClassId = ECClassId();
     }
 //************************RelationshipClassEndTableMap::ColumnFactory********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
 RelationshipClassEndTableMap::ColumnFactory::ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
     :m_relMap(relMap), m_relInfo(relInfo) 
     {
@@ -1803,25 +1815,28 @@ void RelationshipClassEndTableMap::ColumnFactory::Initialize()
     ECDbMap const& ecdbMap = m_relMap.GetDbMap();
     ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
 
-    std::function<void(ECClassCR)> traverseConstraintClass =
-        [&](ECClassCR constraintClass)
+    std::function<void(ECDbMap const&, ECClassCR, ECN::ECRelationshipConstraintCR)> traverseConstraintClass;
+    traverseConstraintClass = [this, &traverseConstraintClass] (ECDbMap const& ecdbMap, ECClassCR constraintClass, ECN::ECRelationshipConstraintCR constraint)
         {
-        if (ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass))
+        ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
+        if (classMap != nullptr)
             {
             m_constraintClassMaps[&classMap->GetJoinedTable()] = classMap;
             if (classMap->GetMapStrategy().IsTablePerHierarchy())
                 return;
             }
 
-        if (constraint.GetIsPolymorphic())
-            for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
-                traverseConstraintClass(*derivedClass);
+        if (!constraint.GetIsPolymorphic())
+            return;
+
+        for (ECClassCP derivedClass : constraintClass.GetDerivedClasses())
+            traverseConstraintClass(ecdbMap, *derivedClass, constraint);
         };
 
-        for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
-            {
-            traverseConstraintClass(*constraintClass);
-            }
+    for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
+        {
+        traverseConstraintClass(ecdbMap, *constraintClass, constraint);
+        }
     }
 
 

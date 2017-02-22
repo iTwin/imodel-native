@@ -427,9 +427,9 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, Context&
     if (classMap.IsRelationshipClassMap())
         {
         if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-            return RenderRelationshipClassEndTableMap(viewSql, ctx, static_cast<RelationshipClassEndTableMap const&>(classMap));
+            return RenderRelationshipClassEndTableMap(viewSql, ctx, classMap.GetAs<RelationshipClassEndTableMap>());
 
-        return RenderRelationshipClassLinkTableMap(viewSql, ctx, static_cast<RelationshipClassLinkTableMap const&>(classMap));
+        return RenderRelationshipClassLinkTableMap(viewSql, ctx, classMap.GetAs<RelationshipClassLinkTableMap>());
         }
 
     return RenderEntityClassMap(viewSql, ctx, classMap);
@@ -581,10 +581,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
         if (propertyMap->IsSystem())
             viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString().c_str());
         else
-            {
-            PrimitivePropertyMap const* primitiveMap = propertyMap->GetAs<PrimitivePropertyMap>();
-            viewSql.Append("NULL ").AppendEscaped(primitiveMap->GetColumn().GetName().c_str());
-            }
+            viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAs<PrimitivePropertyMap>().GetColumn().GetName().c_str());
 
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
@@ -625,7 +622,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             return ERROR;
             }
 
-        RelationshipClassLinkTableMap const& contextRelationship = static_cast<RelationshipClassLinkTableMap const&>(*classMap);
+        RelationshipClassLinkTableMap const& contextRelationship = classMap->GetAs<RelationshipClassLinkTableMap>();
         RelationshipClassLinkTableMap const* castInto = &contextRelationship == &relationMap ? nullptr : &relationMap;
         ConstraintECClassIdJoinInfo sourceECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetSourceECClassIdPropMap(), partition.GetTable());
         ConstraintECClassIdJoinInfo targetECClassIdJoinInfo = ConstraintECClassIdJoinInfo::Create(*relationMap.GetTargetECClassIdPropMap(), partition.GetTable());
@@ -909,9 +906,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 {
                 if (propertyMap->IsData())
                     {
-                    DataPropertyMap const* dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
-                    if (&dataPropertyMap->GetTable() != &contextTable)
-                        requireJoinToTableForDataProperties = &dataPropertyMap->GetTable();
+                    DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
+                    if (&dataPropertyMap.GetTable() != &contextTable)
+                        requireJoinToTableForDataProperties = &dataPropertyMap.GetTable();
                     }
                 }
 
@@ -935,9 +932,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                     {
                     if (propertyMap->IsData())
                         {
-                        DataPropertyMap const* dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
-                        if (&dataPropertyMap->GetTable() != &contextTable)
-                            requireJoinToTableForDataProperties = &dataPropertyMap->GetTable();
+                        DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
+                        if (&dataPropertyMap.GetTable() != &contextTable)
+                            requireJoinToTableForDataProperties = &dataPropertyMap.GetTable();
                         }
                     }
                 propertyMaps.push_back(std::make_pair(propertyMap, nullptr));
@@ -979,15 +976,13 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             }
 
         BeAssert(propertyMap->IsData());
-        BeAssert(dynamic_cast<SingleColumnDataPropertyMap const*>(propertyMap) != nullptr);
-
-        SingleColumnDataPropertyMap const* dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+        SingleColumnDataPropertyMap const& dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
         //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
-        if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
+        if (&dataProperty.GetTable() == requireJoinToTableForDataProperties)
             {
             ToSqlVisitor toSqlVisitor(ctx, *requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
 
-            if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
+            if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
                 return ERROR;
@@ -1035,7 +1030,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
         //no join needed
         ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
-        if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
+        if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
             {
             BeAssert(false);
             return ERROR;
@@ -1063,7 +1058,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         Utf8StringCP colAlias = nullptr;
         if (basePropertyMap != nullptr)
             {
-            DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>()->GetColumn();
+            DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
             if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
                 colAlias = &basePropertyMapCol.GetName();
             }
@@ -1093,7 +1088,7 @@ ConstraintECClassIdJoinInfo ConstraintECClassIdJoinInfo::Create(ConstraintECClas
     if (primaryTable == nullptr)
         return joinInfo;
 
-    RelationshipClassMap const& relationshipMap = static_cast<RelationshipClassMap const&>(propertyMap.GetClassMap());
+    RelationshipClassMap const& relationshipMap = propertyMap.GetClassMap().GetAs<RelationshipClassMap>();
     if (!relationshipMap.IsMappedTo(contextTable))
         {
         BeAssert(false && "Relationship is not mapped to the context table. It must be one of Relationship.GetTables()");
@@ -1214,7 +1209,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 
     if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        RelationshipClassEndTableMap const& map = static_cast<RelationshipClassEndTableMap const&>(propertyMap.GetClassMap());
+        RelationshipClassEndTableMap const& map = propertyMap.GetClassMap().GetAs<RelationshipClassEndTableMap>();
         if (map.GetConstraintMap(map.GetReferencedEnd()).GetECClassIdPropMap() == &propertyMap)
             {
             SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
@@ -1279,13 +1274,13 @@ BentleyStatus ViewGenerator::ToSqlVisitor::_Visit(SystemPropertyMap const& prope
     switch (propertyMap.GetType())
         {
             case PropertyMap::Type::ConstraintECInstanceId:
-                return ToNativeSql(*propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
             case PropertyMap::Type::ConstraintECClassId:
-                return ToNativeSql(*propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
             case PropertyMap::Type::ECClassId:
-                return ToNativeSql(*propertyMap.GetAs<ECClassIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ECClassIdPropertyMap>());
             case PropertyMap::Type::ECInstanceId:
-                return ToNativeSql(*propertyMap.GetAs<ECInstanceIdPropertyMap>());
+                return ToNativeSql(propertyMap.GetAs<ECInstanceIdPropertyMap>());
             default:
                 BeAssert(false);
                 return ERROR;
@@ -1298,7 +1293,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::_Visit(SystemPropertyMap const& prope
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(*propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
+        return ToNativeSql(propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
 
     Result& result = Record(propertyMap);
     NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
@@ -1315,7 +1310,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
     Result& result = Record(relClassIdPropMap);
 
     BeAssert(relClassIdPropMap.GetParent() != nullptr && relClassIdPropMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
-    NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
+    NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>().GetIdPropertyMap();
 
     NativeSqlBuilder idColStrBuilder;
     idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());

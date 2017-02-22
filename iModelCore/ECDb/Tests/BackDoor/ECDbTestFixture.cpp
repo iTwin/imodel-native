@@ -293,7 +293,7 @@ void ECDbTestFixture::Initialize()
         BeTest::GetHost().GetOutputRoot(temporaryDir);
 
         ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-        srand((uint32_t) BeTimeUtilities::QueryMillisecondsCounter());
+        srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
         s_isInitialized = true;
         }
     }

@@ -184,7 +184,6 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
     
     if (SUCCESS != PurgeOrphanTables())
         {
-        BeAssert(false);
         ClearCache();
         m_schemaImportContext = nullptr;
         return ERROR;
@@ -218,7 +217,7 @@ std::vector<ECClassCP> ECDbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         03/2016
 //---------------------------------------------------------------------------------------
-void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixIns)
+void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, std::set<ECClassCP>& rootClassSet, std::vector<ECClassCP>& rootClassList, std::vector<ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins)
     {
     if (doneList.find(&ecclass) != doneList.end())
         return;
@@ -226,16 +225,16 @@ void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList
     doneList.insert(&ecclass);
     if (!ecclass.HasBaseClasses())
         {
-        ECEntityClassCP entityClass = ecclass.IsEntityClass() ? static_cast<ECEntityClassCP>(&ecclass) : nullptr;
+        ECEntityClassCP entityClass = ecclass.IsEntityClass() ? ecclass.GetEntityClassCP() : nullptr;
         if (rootClassSet.find(&ecclass) == rootClassSet.end())
             {
             rootClassSet.insert(&ecclass);
-            if (auto relationship = ecclass.GetRelationshipClassCP())
-                rootRelationshipList.push_back(relationship);
+            if (ecclass.IsRelationshipClass())
+                rootRelationshipList.push_back(ecclass.GetRelationshipClassCP());
             else
                 {
                 if (entityClass && entityClass->IsMixin())
-                    rootMixIns.push_back(entityClass);
+                    rootMixins.push_back(entityClass);
                 else
                     rootClassList.push_back(&ecclass);
                 }
@@ -252,7 +251,7 @@ void ECDbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList
         if (doneList.find(baseClass) != doneList.end())
             return;
 
-        GatherRootClasses(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixIns);
+        GatherRootClasses(*baseClass, doneList, rootClassSet, rootClassList, rootRelationshipList, rootMixins);
         }
     }
 //---------------------------------------------------------------------------------------
@@ -436,33 +435,13 @@ BentleyStatus ECDbMap::DoMapSchemas() const
          existingClassMap->Update();
          }
 
-     bool isCurrentIsMixIn = false;
-     if (ecClass.IsEntityClass())
-         {
-         ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(&ecClass);
-         if (entityClass->IsMixin())
-             {
-             isCurrentIsMixIn = true;
-             }
-         }
+     const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();
 
-     for (ECClassP childClass : ecClass.GetDerivedClasses())
+     for (ECClassCP childClass : ecClass.GetDerivedClasses())
          {
-         bool isChildIsMixIn = false;
-         if (isCurrentIsMixIn)
-             {
-             if (childClass->IsEntityClass())
-                 {
-                 ECEntityClassCP entityClass = static_cast<ECEntityClassCP>(childClass);
-                 if (entityClass->IsMixin())
-                     {
-                     isChildIsMixIn = true;
-                     }
-                 }
-             }
-
-         //Only map mixIn hiearchy but stop if you find a none-mixin class.
-         if (isCurrentIsMixIn && !isChildIsMixIn)
+         const bool isChildIsMixin = childClass->IsEntityClass() && childClass->GetEntityClassCP()->IsMixin();
+         //Only map mixin hierarchy but stop if you find a non-mixin class.
+         if (isCurrentIsMixin && !isChildIsMixin)
              continue;
 
          ClassMappingStatus status = MapClass(*childClass);
@@ -679,6 +658,9 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
             bset<DbTable const*> alreadyProcessedTables;
             //table of index doesn't need to be processed again either, so put it in the set, too
             alreadyProcessedTables.insert(&indexTable);
+
+            bset<ECClassId> horizPartitionClassIds;
+            horizPartitionClassIds.insert(horizPartition.GetClassIds().begin(), horizPartition.GetClassIds().end());
             for (ECClassId derivedClassId : horizPartition.GetClassIds())
                 {
                 ECClassCP derivedClass = m_ecdb.Schemas().GetECClass(derivedClassId);
@@ -687,6 +669,22 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
                     BeAssert(false);
                     return ERROR;
                     }
+
+                bool needsSeparateIndex = true;
+                for (ECClassCP baseClass : derivedClass->GetBaseClasses())
+                    {
+                    //if derivedClass is a subclass of another class of this horiz partition
+                    //we will not create an index for it. Indexes apply to subclasses implicitly, so 
+                    //no need to create a separate index per subclass
+                    if (horizPartitionClassIds.find(baseClass->GetId()) != horizPartitionClassIds.end())
+                        {
+                        needsSeparateIndex = false;
+                        break;
+                        }
+                    }
+                
+                if (!needsSeparateIndex)
+                    continue;
 
                 ClassMap const* derivedClassMap = GetClassMap(*derivedClass);
                 if (derivedClassMap == nullptr)
@@ -950,7 +948,7 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
     {
     NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidLegacyClassInheritance");
     const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
-    const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_FATAL;
+    const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_ERROR;
     if (!diagLogger->isSeverityEnabled(diagSeverity) && !LOG.isSeverityEnabled(logSeverity))
         return SUCCESS;
 
@@ -958,10 +956,8 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb,
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, 
-        json('{"Column":"' || ec_Column.Name || '","Table":"' || ec_Table.Name || '","Properties":[' || 
-        GROUP_CONCAT('"' || PS.Alias || ':' || PC.Name || '.' || ec_PropertyPath.AccessString || '"') || ']}')
+        R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
+        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString, '|') || ']'
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
@@ -969,10 +965,10 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
         INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
         INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
         INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class PC ON PC.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema PS ON PS.Id=PC.SchemaId
-        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn
-                                     " GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
+        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
+        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
+        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") "
+        "GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1"))
         {
         return ERROR;
         }
@@ -980,15 +976,17 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP schemaName = stmt.GetValueText(0);
+        Utf8CP schemaAlias = stmt.GetValueText(1);
         Utf8CP className = stmt.GetValueText(2);
-        Utf8CP issuesJson = stmt.GetValueText(3);
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,\"%s\"",
-                             ecdbFileName, schemaName,
-                             stmt.GetValueText(1), //schema alias
-                             className, issuesJson);
+        Utf8CP tableName = stmt.GetValueText(3);
+        Utf8CP colName = stmt.GetValueText(4);
+        Utf8CP mappedProps = stmt.GetValueText(5);
+        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%s,%s",
+                             ecdbFileName, schemaName, schemaAlias,
+                             className, tableName, colName, mappedProps);
 
-        LOG.messagev(logSeverity, "ECClass with invalid class inheritance resulting in data corruption: %s:%s - %s",
-                     schemaName, className, issuesJson);
+        LOG.messagev(logSeverity, "ECClass with invalid class inheritance resulting in data corruption: %s:%s - Column: %s:%s Mapped Properties: %s",
+                     schemaName, className, tableName, colName, mappedProps);
         }
 
     return SUCCESS;

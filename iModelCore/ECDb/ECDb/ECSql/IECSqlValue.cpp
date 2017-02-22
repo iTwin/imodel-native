@@ -48,7 +48,36 @@ DateTime IECSqlValue::GetDateTime() const
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay(dt, jdMsec, metadata))
         {
-        LOG.error("ECSqlStatement::GetDateTime> Could not convert JulianDays into DateTime.");
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            {
+            Utf8CP metaDataStr = "DateTime::Info invalid";
+            if (metadata.IsValid())
+                {
+                if (metadata.GetComponent() == DateTime::Component::Date)
+                    metaDataStr = "DateTime::Info::Component::Date";
+                else
+                    {
+                    switch (metadata.GetKind())
+                        {
+                            case DateTime::Kind::Utc:
+                                metaDataStr = "DateTime::Info::Kind::Utc";
+                                break;
+                            case DateTime::Kind::Unspecified:
+                                metaDataStr = "DateTime::Info::Kind::Unspecified";
+                                break;
+                            case DateTime::Kind::Local:
+                                metaDataStr = "DateTime::Info::Kind::Local";
+                                break;
+                            default:
+                                metaDataStr = "DateTime::Info::Kind invalid";
+                                BeAssert(false && "DateTime::Info::Kind has changed. This code must be adjusted.");
+                                break;
+                        }
+                    }
+                }
+
+            LOG.errorv("ECSqlStatement::GetDateTime> Could not convert JulianDays value (%" PRIu64 " msec, %s) into DateTime.", jdMsec, metaDataStr);
+            }
         return DateTime();
         }
 

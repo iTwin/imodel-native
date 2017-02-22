@@ -204,7 +204,7 @@ struct LikeRhsValueExp final : ValueExp
             {
             m_rhsExpIndex = AddChild(std::move(rhsExp));
             if (escapeExp != nullptr)
-                m_escapeExpIndex = static_cast<int> (AddChild(std::move(escapeExp)));
+                m_escapeExpIndex = (int) AddChild(std::move(escapeExp));
             }
 
         ValueExp const* GetRhsExp() const { return GetChild<ValueExp>(m_rhsExpIndex); }

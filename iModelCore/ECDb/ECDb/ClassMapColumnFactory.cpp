@@ -27,18 +27,18 @@ ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap)
 void ClassMapColumnFactory::Initialize()const
     {
     UsedColumnFinder::ColumnMap columnMap;
-    if (UsedColumnFinder::Find(columnMap, m_classMap) == SUCCESS)
+    if (SUCCESS != UsedColumnFinder::Find(columnMap, m_classMap))
         {
-        for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
-            {
-            AddColumnToCache(*entry.second, entry.first);
-            }
-
+        BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
         return;
         }
 
-    BeAssert(false && "UsedColumnFinder::Find(columnMap, m_classMap) return ERROR");
+    for (std::pair<Utf8String, DbColumn const*> const& entry : columnMap)
+        {
+        AddColumnToCache(*entry.second, entry.first);
+        }
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -214,10 +214,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
 
     DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Physical);
     if (newColumn == nullptr)
-        {
-        BeAssert(false && "Failed to create column");
         return nullptr;
-        }
 
     if (effectiveNotNullConstraint)
         newColumn->GetConstraintsR().SetNotNullConstraint();
@@ -473,7 +470,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
             {
             if (baseClass->IsEntityClass())
                 {
-                ECEntityClassCP entityClassMap = static_cast<ECEntityClassCP>(baseClass);
+                ECEntityClassCP entityClassMap = baseClass->GetEntityClassCP();
                 if (entityClassMap->IsMixin())
                     {
                     auto itor = m_mixins.find(entityClassMap);
@@ -616,12 +613,12 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
         if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
             continue;
 
-        const RelationshipClassEndTableMap* endTableMap = static_cast<const RelationshipClassEndTableMap*>(relMap);
-        RelationshipConstraintMap const& persistedEnd = endTableMap->GetConstraintMap(endTableMap->GetForeignEnd());
+        RelationshipClassEndTableMap const& endTableMap = relMap->GetAs<RelationshipClassEndTableMap>();
+        RelationshipConstraintMap const& persistedEnd = endTableMap.GetConstraintMap(endTableMap.GetForeignEnd());
         if (!IsMappedIntoContextClassMapTables(*persistedEnd.GetECInstanceIdPropMap()))
             continue;
 
-        m_endTableRelationship.insert(endTableMap);
+        m_endTableRelationship.insert(&endTableMap);
         }
 
     return SUCCESS;
@@ -682,7 +679,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
     if (QueryRelevantMixIns() != SUCCESS)
         return ERROR;
 
-    //Find implementation for mixins and also remove the mixin from queue that has implementaiton as part of deepest mapped classes
+    //Find implementation for mixins and also remove the mixin from queue that has implementation as part of deepest mapped classes
     if (ResolveMixins() != SUCCESS)
         return ERROR;
 
@@ -696,7 +693,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
         SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
         m_classMap.GetPropertyMaps().AcceptVisitor(visitor);
         for (PropertyMap const* propertyMap : visitor.Results())
-            columnMap.insert(std::make_pair(propertyMap->GetAccessString(), &propertyMap->GetAs<SingleColumnDataPropertyMap>()->GetColumn()));
+            columnMap.insert(std::make_pair(propertyMap->GetAccessString(), &propertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn()));
         }
 
     for (ClassMapCP deepestClassMapped : m_deepestClassMapped)
@@ -710,8 +707,8 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
 
             if (IsMappedIntoContextClassMapTables(*propertyMap))
                 {
-                SingleColumnDataPropertyMap const* singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
-                columnMap.insert(std::make_pair(singleColDataPropertyMap->GetAccessString(), &singleColDataPropertyMap->GetColumn()));
+                SingleColumnDataPropertyMap const& singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+                columnMap.insert(std::make_pair(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
                 }
             }
         }
@@ -739,8 +736,8 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
 
             if (IsMappedIntoContextClassMapTables(*propertyMap))
                 {
-                SingleColumnDataPropertyMap const* singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
-                columnMap.insert(std::make_pair(singleColDataPropertyMap->GetAccessString(), &singleColDataPropertyMap->GetColumn()));
+                SingleColumnDataPropertyMap const& singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+                columnMap.insert(std::make_pair(singleColDataPropertyMap.GetAccessString(), &singleColDataPropertyMap.GetColumn()));
                 }
             }
         }

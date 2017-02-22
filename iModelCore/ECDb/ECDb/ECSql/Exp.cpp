@@ -25,27 +25,24 @@ Utf8CP const Exp::ASTERISK_TOKEN = "*";
 std::set<DbTable const*> Exp::GetReferencedTables() const
     {
     std::set<DbTable const*> tmp;
-    if (!this->IsComplete())
+    if (!IsComplete())
         {
         BeAssert(false && "This operation is supported on resolved expressions");
         return tmp;
         }
 
-    auto expList = Find(Type::PropertyName, true);
-    for (auto exp : expList)
+    std::vector<Exp const*> expList = Find(Type::PropertyName, true);
+    for (Exp const* exp : expList)
         {
-        auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
-        if (!propertyNameExp->IsPropertyRef())
-            {
-            PropertyMap const* propertyMap = propertyNameExp->GetTypeInfo().GetPropertyMap();
-            if (propertyMap->IsSystem())
-                tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
-            else
-                {
-                DataPropertyMap const * dataPropertyMap = static_cast<DataPropertyMap const*>(propertyMap);
-                tmp.insert(&dataPropertyMap->GetTable());
-                }
-            }
+        PropertyNameExp const& propertyNameExp = exp->GetAs<PropertyNameExp>();
+        if (propertyNameExp.IsPropertyRef())
+            continue;
+
+        PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
+        if (propertyMap->IsSystem())
+            tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
+        else
+            tmp.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
         }
 
     return tmp;
@@ -249,7 +246,7 @@ ExpCP Exp::Collection::operator[] (size_t i) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ExpP Exp::Collection::operator[] (size_t i)
+Exp* Exp::Collection::operator[] (size_t i)
     {
     return m_collection[i].get ();
     }
@@ -265,9 +262,9 @@ Exp::Collection::const_iterator<ExpCP> Exp::Collection::begin () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<ExpP> Exp::Collection::begin ()
+Exp::Collection::const_iterator<Exp*> Exp::Collection::begin ()
     {
-    return const_iterator<ExpP> (m_collection.begin ());
+    return const_iterator<Exp*> (m_collection.begin ());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -281,9 +278,9 @@ Exp::Collection::const_iterator<ExpCP> Exp::Collection::end () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<ExpP> Exp::Collection::end ()
+Exp::Collection::const_iterator<Exp*> Exp::Collection::end ()
     {
-    return const_iterator<ExpP> (m_collection.end ());
+    return const_iterator<Exp*> (m_collection.end ());
     }
 
 //-----------------------------------------------------------------------------------------
