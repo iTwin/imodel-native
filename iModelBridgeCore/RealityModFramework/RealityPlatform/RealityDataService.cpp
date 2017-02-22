@@ -11,45 +11,22 @@
 #include <Bentley/bset.h>
 
 //#include <iostream>
-#include <stdio.h>
 #include <RealityPlatform/RealityDataService.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/RealityConversionTools.h>
 
+#include <stdio.h>
+#include <iomanip>
+#include <sstream>
+#include <Bentley/Base64Utilities.h>
+
 #define MAX_NB_CONNECTIONS          10
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-/*static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
-{
-    size_t retcode;
-    curl_off_t nread;
 
-    retcode = fread(ptr, size, nmemb, (FILE*)stream);
-
-    nread = (curl_off_t)retcode;
-
-    fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
-        " bytes from file\n", nread);
-
-    return retcode;
-}*/
-
-static size_t ReadCallback(void *ptr, size_t size, size_t nmemb, void *stream) 
+static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityDataFileUpload* request)
     {
-    //size_t retcode = fread(ptr, size, nmemb, stream);
-    //cout << "*** We read " << retcode << " bytes from file" << endl;
-    RealityDataFileUpload* fileUpload = (RealityDataFileUpload*)stream;
-    if (fileUpload != nullptr)
-        {
-        /*uint32_t bytesRead;
-        fileUpload->GetFileStream().Read(ptr, &bytesRead, (uint32_t)(size * nmemb));*/
-        //fileUpload->UpdateUploadedSize((uint64_t)bytesRead); //might not be necessary
-        ptr = fileUpload->GetChunk();
-
-        return fileUpload->GetMessageSize();
-        }
-    else
-        return 0;
+    return request->OnReadData(buffer, size * count);
     }
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -66,11 +43,7 @@ Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::
 
 Utf8StringCR RealityDataUrl::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 
-//Utf8StringCR RealityDataUrl::GetPluginName() const { return ""; }
-
 Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetSchemaName(); }
-
-//Utf8StringCR RealityDataUrl::GetClassName() const { return ""; }
 
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
@@ -142,7 +115,6 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     {
     //https://s3mxcloudservice.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2FScene~2FProduction_Graz_3MX.3mx/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
     Utf8String url = "https://";
-    //url.append(m_serverName);
     url.append(RealityDataService::GetServer());
     url.append("/");
     url.append(RealityDataService::GetWSGProtocol());
@@ -387,9 +359,7 @@ Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
 
 Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityDataService::GetServer(); }
 Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
-//Utf8StringCR RealityDataPagedRequest::GetPluginName() const { return ""; }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
-//Utf8StringCR RealityDataPagedRequest::GetClassName() const { return ""; }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
@@ -580,56 +550,66 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
     Utf8String addon = "/";
-    addon.append(m_fileUrl); // TODO: gestion de m_filename
+    addon.append(m_fileUrl);
     addon.append("?");
     addon.ReplaceAll("//","/"); //this covers whether the user input the directory as 
                                 // C:/Directory or C:/Directory/
     m_httpRequestString.append(addon);
     m_validRequestString = true;
 
-    Utf8String dateString = "Date: ";
-    DateTime currentDate = DateTime::GetCurrentTimeUtc();
-    dateString.append(currentDate.ToString());
-    dateString = "Date: Mon, 20 Feb 2017 00:48:38 GMT"; //TODO : proper date
-    m_requestHeader.push_back(dateString);
-
-    m_requestHeader.push_back("x-ms-version: 2015-04-05"); //TODO: get it
-
-    Utf8String contentLength = "Content-Length: ";
-    Utf8P sizeString = new Utf8Char();
-    //BeStringUtilities::FormatUInt64(sizeString, m_filesize);
-    BeStringUtilities::FormatUInt64(sizeString, m_uploadedSizeStep);
-    contentLength.append(sizeString);
-    //m_requestHeader.push_back(contentLength);
-    m_requestHeader.push_back("Content-Length: 0");
-
-    m_requestHeader.push_back("x-ms-blob-type: BlockBlob");
-
-    //m_requestHeader.push_back("Expect: ");
-    m_requestHeader.push_back("Accept: ");
-    /*m_requestHeader.push_back("Cache-Control: no-cache");*/
-
-    delete sizeString;
+    m_requestHeader.clear();
+    if(m_moreToSend)
+        m_requestHeader.push_back("x-ms-blob-type: BlockBlob");
     }
 
-void RealityDataFileUpload::UpdateUploadedSize()//uint64_t amount)
+void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
     {
-    Utf8P numberString = new Utf8Char();
-    BeStringUtilities::FormatUInt64(numberString, m_uploadedSize);
-    m_chunkStep = "Content-Range: bytes ";
-    m_chunkStep.append(numberString);
-    m_chunkStep.append("-");
+    if(m_uploadProgress < m_fileSize - 1)
+        {
+        uint64_t uploadStep = m_uploadProgress + m_chunkSize;
+        if(m_fileSize > uploadStep)
+            {
+        m_chunkStop = uploadStep;
+            }
+        else
+            {
+            m_chunkStop = m_fileSize;
+            m_chunkSize = m_fileSize - m_uploadProgress;
+            }
 
-    BeFileStatus status = m_fileStream.Read(&m_currentChunk[0], &m_uploadedSizeStep, CHUNK_SIZE - 1);
-    BeAssert(status == BeFileStatus::Success);
+        m_blockList.append("<Latest>");
+        std::stringstream blockIdStream;
+        blockIdStream << std::setw(5) << std::setfill('0') << m_chunkNumber;
+        std::string blockId = blockIdStream.str();
+        m_chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
+        m_blockList.append(m_chunkNumberString);
+        m_blockList.append("</Latest>");
+        m_uploadProgress = m_chunkStop;
+        ++m_chunkNumber;
+        }
+    else
+        {
+        m_moreToSend = false;
+        m_blockList.append("</BlockList>");
+        m_chunkSize = m_blockList.length();
+        }
+    }
 
-    m_uploadedSize += (uint64_t)m_uploadedSizeStep;
-    BeStringUtilities::FormatUInt64(numberString, m_uploadedSize - 1);
-    m_chunkStep.append(numberString);
-    m_chunkStep.append("/");
-    BeStringUtilities::FormatUInt64(numberString, m_filesize);
-    m_chunkStep.append(numberString);
-    delete numberString;
+size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
+    {
+    uint32_t bytesRead = 0;
+    if(m_moreToSend)
+        {
+        BeFileStatus status = m_fileStream.Read(buffer, &bytesRead, (uint32_t)size);
+        if(status != BeFileStatus::Success)
+            return 0;
+        }
+    else
+        {
+        memcpy(buffer, m_blockList.c_str(), m_blockList.length());
+        bytesRead = (uint32_t)m_blockList.length();
+        }
+    return bytesRead;
     }
 
 void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
@@ -897,16 +877,17 @@ UploadReport* RealityDataServiceUpload::Perform()
                 else */
                     if(msg->data.result == CURLE_OK)
                         {
-                        msg = msg;
-                        /*RealityDataFileUpload *fileUp = (RealityDataFileUpload *)pClient;*/
-                        if(fileUp != nullptr && !fileUp->FinishedSending())
+                        if(fileUp != nullptr)
                             {
-                            SetupCurlforFile(fileUp, 0);
-                            still_running++;
-                            }
+                            if(!fileUp->FinishedSending())
+                                {
+                                SetupCurlforFile(fileUp, 0);
+                                still_running++;
+                                }
+                            }      
+
                         }
-                    else
-                        msg = msg;                    
+                                
 
                     //ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                     
@@ -929,106 +910,6 @@ UploadReport* RealityDataServiceUpload::Perform()
         } while (still_running);
 
     return &m_ulReport;
-    }
-
-    struct data {
-        char trace_ascii; /* 1 or 0 */
-    };
-
-    static
-        void dump(const char *text,
-            FILE *stream, unsigned char *ptr, size_t size,
-            char nohex)
-    {
-        size_t i;
-        size_t c;
-
-        unsigned int width = 0x10;
-
-        if (nohex)
-            /* without the hex output, we can fit more on screen */
-            width = 0x40;
-
-        fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
-            text, (long)size, (long)size);
-
-        for (i = 0; i<size; i += width) {
-
-            fprintf(stream, "%4.4lx: ", (long)i);
-
-            if (!nohex) {
-                /* hex not disabled, show it */
-                for (c = 0; c < width; c++)
-                    if (i + c < size)
-                        fprintf(stream, "%02x ", ptr[i + c]);
-                    else
-                        fputs("   ", stream);
-            }
-
-            for (c = 0; (c < width) && (i + c < size); c++) {
-                /* check for 0D0A; if found, skip past and start a new line of output */
-                if (nohex && (i + c + 1 < size) && ptr[i + c] == 0x0D && ptr[i + c + 1] == 0x0A) {
-                    i += (c + 2 - width);
-                    break;
-                }
-                fprintf(stream, "%c",
-                    (ptr[i + c] >= 0x20) && (ptr[i + c]<0x80) ? ptr[i + c] : '.');
-                /* check again for 0D0A, to avoid an extra \n if it's at width */
-                if (nohex && (i + c + 2 < size) && ptr[i + c + 1] == 0x0D && ptr[i + c + 2] == 0x0A) {
-                    i += (c + 3 - width);
-                    break;
-                }
-            }
-            fputc('\n', stream); /* newline */
-        }
-        fflush(stream);
-    }
-
-    static
-        int my_trace(CURL *handle, curl_infotype type,
-            char *data, size_t size,
-            void *userp)
-    {
-        struct data *config = (struct data *)userp;
-        const char *text;
-        (void)handle; /* prevent compiler warning */
-
-        switch (type) {
-        case CURLINFO_TEXT:
-            fprintf(stderr, "== Info: %s", data);
-        default: /* in case a new one is introduced to shock us */
-            return 0;
-
-        case CURLINFO_HEADER_OUT:
-            text = "=> Send header";
-            break;
-        case CURLINFO_DATA_OUT:
-            text = "=> Send data";
-            break;
-        case CURLINFO_SSL_DATA_OUT:
-            text = "=> Send SSL data";
-            break;
-        case CURLINFO_HEADER_IN:
-            text = "<= Recv header";
-            break;
-        case CURLINFO_DATA_IN:
-            text = "<= Recv data";
-            break;
-        case CURLINFO_SSL_DATA_IN:
-            text = "<= Recv SSL data";
-            break;
-        }
-
-        dump(text, stderr, (unsigned char *)data, size, config->trace_ascii);
-        return 0;
-    }
-
-    static size_t header_callback(char *buffer, size_t size,
-        size_t nitems, void *userdata)
-    {
-        /* received header is nitems * size long in 'buffer' NOT ZERO TERMINATED */
-        /* 'userdata' is set with CURLOPT_HEADERDATA */
-        return nitems * size;
     }
 
 
@@ -1054,16 +935,8 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
     CURL *pCurl = PrepareCurl(*request, code, verifyPeer, nullptr);
     if (pCurl)
         {
-        struct data config;
-
-        config.trace_ascii = 1;
-        curl_easy_setopt(pCurl, CURLOPT_DEBUGFUNCTION, my_trace);
-        curl_easy_setopt(pCurl, CURLOPT_DEBUGDATA, &config);
-
-        curl_easy_setopt(pCurl, CURLOPT_HEADERFUNCTION, header_callback);
-
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
-        curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 0L);
         /*if (!m_proxyUrl.empty())
             {
             curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
@@ -1074,34 +947,23 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
                 }
             }*/
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
-        //curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
         
-        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, request);
+
+        curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
+        curl_easy_setopt(pCurl, CURLOPT_LOW_SPEED_LIMIT, 1L); // B/s
+        curl_easy_setopt(pCurl, CURLOPT_LOW_SPEED_TIME, 60); //60s
 
         if(fileUpload != nullptr)
             {
             curl_easy_setopt(pCurl, CURLOPT_UPLOAD, 1L);
-            /*curl_easy_setopt(pCurl, CURLOPT_CUSTOMREQUEST, "PUT");
-            curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, fileUpload->GetChunk());
-            curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, fileUpload->GetMessageSize());*/
+            curl_easy_setopt(pCurl, CURLOPT_CUSTOMREQUEST, "PUT");
 
+            curl_easy_setopt(pCurl, CURLOPT_READFUNCTION, CurlReadDataCallback);
+            curl_easy_setopt(pCurl, CURLOPT_READDATA, fileUpload);
 
-            curl_easy_setopt(pCurl, CURLOPT_PUT, 1L);
-            curl_easy_setopt(pCurl, CURLOPT_READFUNCTION, ReadCallback);
-            //curl_easy_setopt(pCurl, CURLOPT_READFUNCTION, read_callback);
-            curl_easy_setopt(pCurl, CURLOPT_READDATA, fileUpload);//fileUpload->GetChunk());//fileUpload);*/
-
-
-            //curl_easy_setopt(pCurl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)fileUpload->GetMessageSize());
-
-            /*curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
-            curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
-            curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, fileUpload);*/
-        
-            /*fileUpload->m_pProgressFunc = m_pProgressFunc;
-            fileUpload->m_pHeartbeatFunc = m_pHeartbeatFunc;
-            fileUpload->m_progressStep = m_progressStep;*/
+            curl_easy_setopt(pCurl, CURLOPT_INFILESIZE_LARGE, fileUpload->GetMessageSize());
             }
         else if (handshake != nullptr)
             {
