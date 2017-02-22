@@ -158,7 +158,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Get authentication handler for specific server when signed in.
         //! It will automatically authenticate all HttpRequests that is used with.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
-        //! @param rpUrl should contain server URL without any directories
+        //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
         WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) override;
 
