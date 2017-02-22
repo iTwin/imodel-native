@@ -2422,7 +2422,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
         IGeometryPtr        geom = IGeometry::Create(clone);
         TileGeometryList    geometryList;
 
-        geometryList.push_back(TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, true, m_dgndb));
+        geometryList.push_back(TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, prim.HasCurvedFaceOrEdge(), m_dgndb));
         
         m_solidPrimitiveParts.Insert(key, tileGeomPart = TileGeomPart::Create(range, geometryList));
         }
