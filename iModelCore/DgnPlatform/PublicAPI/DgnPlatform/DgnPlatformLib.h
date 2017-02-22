@@ -123,9 +123,9 @@ public:
             // per session:
             bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
             // per thread:
-            bmap<std::thread::id, BeJsEnvironmentP> m_jsenvs;
-            bmap<std::thread::id, BeJsContextP> m_contexts;
-            bmap<std::thread::id, ScriptNotificationHandler*> m_notificationHandlers;
+            bmap<intptr_t, BeJsEnvironmentP> m_jsenvs;
+            bmap<intptr_t, BeJsContextP> m_contexts;
+            bmap<intptr_t, ScriptNotificationHandler*> m_notificationHandlers;
 
             public:
             DGNPLATFORM_EXPORT ScriptAdmin();

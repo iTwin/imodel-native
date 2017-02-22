@@ -33,7 +33,7 @@ struct ArgMarshallInfo
 }
 
 static bmap<DgnClassId, bvector<ArgMarshallInfo>> s_argMarshalling;
-static std::thread::id s_homeThreadId;
+static intptr_t s_homeThreadId;
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
 HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
@@ -272,7 +272,7 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
-    s_homeThreadId = std::this_thread::get_id();
+    s_homeThreadId = BeThreadUtilities::GetCurrentThreadId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -288,10 +288,7 @@ void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
         {
         if (context.first == s_homeThreadId)
             continue;
-        anyLeft = true;
-        std::stringstream ss;
-        ss << std::this_thread::get_id();
-        LOG.errorv("BeJsContext for thread %s not terminated", ss.str().c_str());
+        LOG.errorv("BeJsContext for thread %llu not terminated", (uint64_t)context.first);
         }
     
     if (!anyLeft)
@@ -314,10 +311,16 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     {
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
 
     BeSystemMutexHolder _thread_safe_;
+
+    if (m_jsenvs.size() > 20)
+        {
+        LOG.warningv("ScriptAdmin::InitializeOnThread called %d times. Did you forget to call TerminateOnThread?", (int)m_jsenvs.size());
+        BeDataAssert(false && "ScriptAdmin::InitializeOnThread called many times. Did you forget to call TerminateOnThread?");
+        }
 
     //  *********************************************
     //  Initialize the BeJsEnvironment
@@ -362,7 +365,7 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     {
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
     if (tid == s_homeThreadId)      // don't terminate the contexts on the main thread.
         return;
@@ -392,7 +395,7 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeSystemMutexHolder _thread_safe_;
 
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
     auto i = m_jsenvs.find(tid);
     if (i == m_jsenvs.end())
@@ -406,7 +409,7 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
 //---------------------------------------------------------------------------------------
 BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
     
     BeSystemMutexHolder _thread_safe_;
 
@@ -422,7 +425,7 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
     {
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
     BeSystemMutexHolder _thread_safe_;
 
@@ -442,7 +445,7 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Ho
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
     {
-    auto tid = std::this_thread::get_id();
+    auto tid = BeThreadUtilities::GetCurrentThreadId();
 
     BeSystemMutexHolder _thread_safe_;
 
