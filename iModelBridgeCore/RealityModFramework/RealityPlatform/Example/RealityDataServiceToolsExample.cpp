@@ -27,7 +27,7 @@ void Test()
         //RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
         RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
-        std::cout << RealityDataService::GetServer() << std::endl;
+        std::cout << RealityDataService::GetServerName() << std::endl;
         std::cout << RealityDataService::GetWSGProtocol() << std::endl;
         std::cout << RealityDataService::GetRepoName() << std::endl;
         std::cout << RealityDataService::GetSchemaName() << std::endl << std::endl;
@@ -148,11 +148,11 @@ void Usage()
 
 int main(int argc, char *argv[])
     {
-    if (argc < 2)
+    /*if (argc < 2)
         {
         Usage();
         exit(0);
-        }
+        }*/
 
     // List root
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
@@ -162,8 +162,8 @@ int main(int argc, char *argv[])
 
     RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
     bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
-//    RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
-//    bvector<SpatialEntityPtr> enterpriseVec2 = RealityDataService::Request(*filteredRequest);
+    RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
+    bvector<SpatialEntityPtr> enterpriseVec2 = RealityDataService::Request(*filteredRequest);
 
 
     std::cout << "Enterprise data list:" << std::endl;
@@ -172,14 +172,14 @@ int main(int argc, char *argv[])
         {
         std::cout << " " << pData->GetName() << "  " << pData->GetIdentifier() << std::endl;
 
-#if 1
-        bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(RealityDataService::GetServer(), RealityDataService::GetRepoName());
+        WSGServer server = WSGServer(RealityDataService::GetServerName(), false);
+
+        bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, RealityDataService::GetRepoName());
 
         std::cout << "NavRoots:" << std::endl;
         for (NavNode root : nodes)
             std::cout << root.GetNavString() << std::endl;
         std::cout << std::endl;
-#endif
 
 
         RealityDataByIdRequest A1(pData->GetIdentifier());

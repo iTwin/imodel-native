@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
     //RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
-    std::cout << RealityDataService::GetServer() << std::endl;
+    std::cout << RealityDataService::GetServerName() << std::endl;
     std::cout << RealityDataService::GetWSGProtocol() << std::endl;
     std::cout << RealityDataService::GetRepoName() << std::endl;
     std::cout << RealityDataService::GetSchemaName() << std::endl << std::endl;

@@ -732,7 +732,7 @@ public:
         }
 
     //! Returns the current name of the server
-    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServer();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServerName();
 
     //! Results the string containing the WSG protocol version number
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetWSGProtocol();

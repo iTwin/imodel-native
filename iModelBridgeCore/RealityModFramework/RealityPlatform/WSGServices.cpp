@@ -173,7 +173,7 @@ CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8Stri
         Utf8StringP dummyString = new Utf8String(); //if you don't handle the body, it gets printed to the output
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, dummyString);
-        delete dummyString;
+        //delete dummyString;
         }
     else
         {

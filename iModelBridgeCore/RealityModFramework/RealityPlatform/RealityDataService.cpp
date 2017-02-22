@@ -39,7 +39,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
     }
 
-Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::GetServer(); }
+Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::GetServerName(); }
 
 Utf8StringCR RealityDataUrl::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 
@@ -50,7 +50,7 @@ Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetR
 
 void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload(); 
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -64,7 +64,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
 
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -79,7 +79,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
 
 void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -93,7 +93,7 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
 
 void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -115,7 +115,7 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     {
     //https://s3mxcloudservice.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2FScene~2FProduction_Graz_3MX.3mx/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
     Utf8String url = "https://";
-    url.append(RealityDataService::GetServer());
+    url.append(RealityDataService::GetServerName());
     url.append("/");
     url.append(RealityDataService::GetWSGProtocol());
     url.append("/Repositories/");
@@ -357,7 +357,7 @@ Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
     }
 
 
-Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityDataService::GetServer(); }
+Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityDataService::GetServerName(); }
 Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
@@ -367,7 +367,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     bool hasFilter = m_filter.length() > 0;
     bool hasOrder = m_order.length() > 0;
 
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -375,19 +375,20 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(RealityDataService::GetRepoName());
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetSchemaName());
-    m_httpRequestString.append("/RealityData");
-    if(hasFilter || hasOrder)
-        m_httpRequestString.append("?");
+    m_httpRequestString.append("/RealityData?");
     if (hasFilter)
         {
         m_httpRequestString.append("$filter=");
         m_httpRequestString.append(m_filter);
-        }
-    if(hasFilter && hasOrder)
         m_httpRequestString.append("&");
+        }
     if(hasOrder)
+        {
         m_httpRequestString.append(m_order);
-    m_httpRequestString.append("&$skip=");
+        m_httpRequestString.append("&");
+        }
+    if(hasFilter || hasOrder)
+    m_httpRequestString.append("$skip=");
     Utf8P buf = new Utf8Char();
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
@@ -476,7 +477,7 @@ void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter
 
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -498,7 +499,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -533,7 +534,7 @@ RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf
 
 void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     {
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -615,7 +616,7 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
 void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
     {
     //https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/RealityData/cc5421e5-a80e-469f-a459-8c76da351fe5/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
-    m_serverName = RealityDataService::GetServer();
+    m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
@@ -1060,7 +1061,7 @@ const Utf8String RealityDataService::s_TerrainKey = "Terrain";
 const Utf8String RealityDataService::s_ModelKey = "Model";
 const Utf8String RealityDataService::s_PinnedKey = "Pinned";
 
-Utf8StringCR RealityDataService::GetServer() { return s_realityDataServer; }
+Utf8StringCR RealityDataService::GetServerName() { return s_realityDataServer; }
 Utf8StringCR RealityDataService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
 Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataRepoName; }
 Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaName; }
