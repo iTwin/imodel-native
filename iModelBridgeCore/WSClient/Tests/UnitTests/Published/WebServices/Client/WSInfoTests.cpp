@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 WSInfo CreateWSInfoWithInfoPage(Utf8CP versionString)
     {
     Utf8PrintfString body(R"({"serverVersion" : "%s"})", versionString);
-    return WSInfo(StubHttpResponse(HttpStatus::OK, body.c_str(), {{"Content-Type", "application/json"}}));
+    return WSInfo(StubHttpResponse(HttpStatus::OK, body.c_str(), {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
     }
 
 TEST_F(WSInfoTests, IsValid_DefaultCtor_False)
@@ -29,7 +29,7 @@ TEST_F(WSInfoTests, IsValid_NotExecutedResponse_False)
 
 TEST_F(WSInfoTests, IsValid_ServerInfoWithVersion_True)
     {
-    Http::Response response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})", {{"Content-Type", "application/json"}});
+    Http::Response response = StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})", {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
     EXPECT_TRUE(WSInfo(response).IsValid());
     }
 
@@ -84,7 +84,7 @@ TEST_F(WSInfoTests, Ctor_EmptyResponseBody_InvalidWithZeroVersionAndUnknownType)
 
 TEST_F(WSInfoTests, Ctor_ValidServerVersionInBody_ValidWithSameVersionAndWSGType)
     {
-    WSInfo info(StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.09.10"})", {{"Content-Type", "application/json"}}));
+    WSInfo info(StubHttpResponse(HttpStatus::OK, R"({"serverVersion" : "01.02.09.10"})", {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
     EXPECT_TRUE(info.IsValid());
     EXPECT_EQ(BeVersion(1, 2, 9, 10), info.GetVersion());
     EXPECT_EQ(WSInfo::Type::BentleyWSG, info.GetType());
@@ -123,7 +123,7 @@ TEST_F(WSInfoTests, GetVersion_ButHttpStatusNotFound_ReturnsZero)
 
 TEST_F(WSInfoTests, GetVersion_SuccessResponseWithHtmlContentAndWithUnknownData_InvalidWithZeroVersionAndUnknownType)
     {
-    WSInfo info(StubHttpResponse(HttpStatus::OK, "some html", {{"Content-Type", "text/html"}}));
+    WSInfo info(StubHttpResponse(HttpStatus::OK, "some html", {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
     EXPECT_FALSE(info.IsValid());
     EXPECT_EQ(BeVersion(0, 0), info.GetVersion());
     EXPECT_EQ(WSInfo::Type::Unknown, info.GetType());
@@ -132,7 +132,7 @@ TEST_F(WSInfoTests, GetVersion_SuccessResponseWithHtmlContentAndWithUnknownData_
 TEST_F(WSInfoTests, GetVersion_SuccessResponseWithR1AboutPageHtml_TreatsAsR1AndReturnsOne)
     {
     auto bodyStub = R"(..stub.. <span id="productNameLabel">Bentley Web Services Gateway 01.00</span> ..stub..)";
-    WSInfo info(StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}}));
+    WSInfo info(StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     EXPECT_TRUE(info.IsValid());
     EXPECT_EQ(BeVersion(1, 0), info.GetVersion());
@@ -143,7 +143,7 @@ TEST_F(WSInfoTests, GetVersion_SuccessResponseWithR1AboutPageHtml_TreatsAsR1AndR
 TEST_F(WSInfoTests, GetVersion_SuccessResponseWithR1BentleyConnectAboutPageHtml_TreatsAsR1AndReturnsOneAsWellAsBentleyConnectType)
     {
     auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
-    WSInfo info(StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}}));
+    WSInfo info(StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     EXPECT_TRUE(info.IsValid());
     EXPECT_EQ(BeVersion(1, 0), info.GetVersion());

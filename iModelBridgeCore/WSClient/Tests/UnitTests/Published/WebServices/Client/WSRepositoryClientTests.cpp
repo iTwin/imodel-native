@@ -793,7 +793,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
         {
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
-        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
+        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
@@ -984,7 +984,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_C
         {
         EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/$query", request.GetUrl());
         EXPECT_EQ("POST", request.GetMethod());
-        EXPECT_STREQ("application/json", request.GetHeaders().GetContentType());
+        EXPECT_STREQ(REQUESTHEADER_ContentType_ApplicationJson, request.GetHeaders().GetContentType());
         EXPECT_STREQ("$filter=filter", request.GetRequestBody()->AsString().c_str());
         return StubHttpResponse();
         });

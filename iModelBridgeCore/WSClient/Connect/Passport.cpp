@@ -2,7 +2,7 @@
  |
  |     $Source: Connect/Passport.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -58,7 +58,7 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
 
     HttpClient client(nullptr, s_httpHandler);
     Http::Request request = client.CreateGetRequest(url);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().SetAuthorization(authorization);
 
     Http::Response httpResponse = request.Perform().get();

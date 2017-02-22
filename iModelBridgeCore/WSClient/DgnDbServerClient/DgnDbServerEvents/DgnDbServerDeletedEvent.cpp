@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerDeletedEvent.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/Events/DgnDbServerDeletedEvent.h>
@@ -17,7 +17,7 @@ DgnDbServerDeletedEvent::DgnDbServerDeletedEvent
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
-Utf8String briefcaseId,
+int        briefcaseId,
 DgnDbServerEvent::DgnDbServerEventType deletedEventType
 )
     {
@@ -34,7 +34,7 @@ std::shared_ptr<struct DgnDbServerDeletedEvent> DgnDbServerDeletedEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
-Utf8String briefcaseId,
+int        briefcaseId,
 DgnDbServerEvent::DgnDbServerEventType deletedEventType
 )
     {
@@ -75,7 +75,7 @@ Utf8String DgnDbServerDeletedEvent::GetFromEventSubscriptionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             07/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerDeletedEvent::GetBriefcaseId()
+int DgnDbServerDeletedEvent::GetBriefcaseId()
     {
     return m_briefcaseId;
     }

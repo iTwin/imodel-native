@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerDeletedEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,14 +18,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerDeletedEvent : public DgnDbServerEvent
     private:
         Utf8String m_eventTopic;
         Utf8String m_fromEventSubscriptionId;
-        Utf8String m_briefcaseId;
+        int        m_briefcaseId;
         DgnDbServerEvent::DgnDbServerEventType m_deletedEventType;
 
         DgnDbServerDeletedEvent
             (
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
-            Utf8String briefcaseId,
+            int        briefcaseId,
             DgnDbServerEvent::DgnDbServerEventType deletedEventType
             );
 
@@ -34,13 +34,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerDeletedEvent : public DgnDbServerEvent
             (
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
-            Utf8String briefcaseId,
+            int        briefcaseId,
             DgnDbServerEvent::DgnDbServerEventType deletedEventType
             );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
+        DGNDBSERVERCLIENT_EXPORT int GetBriefcaseId();
         DGNDBSERVERCLIENT_EXPORT DgnDbServerEvent::DgnDbServerEventType GetDeletedEventType();
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerLockEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerLockEvent : public DgnDbServerEvent::G
         bvector<Utf8String> m_objectIds;
         Utf8String m_lockType;
         Utf8String m_lockLevel;
-        Utf8String m_briefcaseId;
+        int        m_briefcaseId;
         Utf8String m_releasedWithRevision;
 
         DgnDbServerLockEvent
@@ -31,7 +31,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerLockEvent : public DgnDbServerEvent::G
                             bvector<Utf8String> objectIds,
                             Utf8String lockType, 
                             Utf8String lockLevel, 
-                            Utf8String briefcaseId, 
+                            int        briefcaseId, 
                             Utf8String releasedWithRevision
                             );
 
@@ -43,7 +43,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerLockEvent : public DgnDbServerEvent::G
                                                                                            bvector<Utf8String> objectIds,
                                                                                            Utf8String lockType, 
                                                                                            Utf8String lockLevel, 
-                                                                                           Utf8String briefcaseId, 
+                                                                                           int        briefcaseId, 
                                                                                            Utf8String releasedWithRevision
                                                                                            );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
@@ -52,7 +52,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerLockEvent : public DgnDbServerEvent::G
         DGNDBSERVERCLIENT_EXPORT bvector<Utf8String> GetObjectIds();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetLockType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetLockLevel();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
+        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetReleasedWithRevision();
     };
 

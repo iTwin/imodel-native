@@ -41,7 +41,7 @@ IWSRepositoryClient::~IWSRepositoryClient()
 WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection) :
 m_connection(connection),
 m_serverClient(WSClient::Create(m_connection)),
-m_config(std::make_shared<ClientConfig>(ClientConfig(*m_connection)))
+m_config(std::make_shared<Configuration>(Configuration(*m_connection)))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -91,7 +91,7 @@ Utf8StringCR WSRepositoryClient::GetRepositoryId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepositoryClient::ClientConfig& WSRepositoryClient::Config()
+WSRepositoryClient::Configuration& WSRepositoryClient::Config()
     {
     return *m_config;
     }
@@ -333,15 +333,22 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepositoryClient::ClientConfig::SetCompressionOptions(CompressionOptions options)
+void WSRepositoryClient::Configuration::SetCompressionOptions(CompressionOptions options)
     {
+    if (options.IsRequestCompressionEnabled())
+        {
+        options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationJson);
+        options.AddSupportedType(REQUESTHEADER_ContentType_ApplicationXml);
+        options.AddSupportedType(REQUESTHEADER_ContentType_TextHtml);
+        }
+
     m_connection.GetConfiguration().GetHttpClient().SetCompressionOptions(options);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepositoryClient::ClientConfig::SetMaxUrlLength(size_t length)
+void WSRepositoryClient::Configuration::SetMaxUrlLength(size_t length)
     {
     m_connection.GetConfiguration().SetMaxUrlLength(length);
     }
@@ -349,7 +356,7 @@ void WSRepositoryClient::ClientConfig::SetMaxUrlLength(size_t length)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CompressionOptionsCR WSRepositoryClient::ClientConfig::GetCompressionOptions() const
+CompressionOptionsCR WSRepositoryClient::Configuration::GetCompressionOptions() const
     {
     return m_connection.GetConfiguration().GetHttpClient().GetCompressionOptions();
     }
@@ -357,7 +364,7 @@ CompressionOptionsCR WSRepositoryClient::ClientConfig::GetCompressionOptions() c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t WSRepositoryClient::ClientConfig::GetMaxUrlLength() const
+size_t WSRepositoryClient::Configuration::GetMaxUrlLength() const
     {
     return m_connection.GetConfiguration().GetMaxUrlLength();
     }
