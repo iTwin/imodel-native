@@ -298,6 +298,12 @@ NodeNavigator::NodeNavigator()
     s_nnInstance = this;
     }
 
+bvector<NavNode> NodeNavigator::GetRootNodes(Utf8String serverName, Utf8String repoId)
+    {
+    WSGServer server = WSGServer(serverName, false);
+    return GetRootNodes(server, repoId);
+    }
+
 bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId)
     {
     bvector<NavNode> returnVector = bvector<NavNode>();

@@ -486,6 +486,26 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetSchemaName());
     m_httpRequestString.append("/RealityData?$filter=Enterprise+eq+'");
+
+    if(m_id.length() == 0)
+        {
+        Utf8String token = CurlConstructor().GetToken();
+        token.ReplaceAll("Authorization: Token ","");
+        Utf8String decodedToken = Base64Utilities::Decode(token);
+
+        const char* charstring = decodedToken.c_str();
+        Utf8String keyword = "organizationid";
+        const char* attributePosition = strstr(charstring, keyword.c_str());
+        keyword = "<saml:AttributeValue>";
+        const char* valuePosition = strstr(attributePosition, keyword.c_str());
+        valuePosition += keyword.length();
+        Utf8String idString = Utf8String(valuePosition);
+
+        bvector<Utf8String> lines;
+        BeStringUtilities::Split(idString.c_str(), "< ", lines);
+        m_id = lines[0];
+        }
+
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
     Utf8P buf = new Utf8Char();
@@ -740,6 +760,11 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
+        case RealityDataField::Group:
+            propertyString.append("\"Group\" : \"");
+            propertyString.append(properties[field]);
+            propertyString.append("\"");
+            break;
             }
         propertyVector.push_back(propertyString);
         }
@@ -806,11 +831,11 @@ UploadReport* RealityDataServiceUpload::Perform()
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
-    //m_curEntry = 0;
+    m_curEntry = 0;
 
     for (int i = 0; i < min(MAX_NB_CONNECTIONS, (int)m_filesToUpload.size()); ++i)
         {
-        SetupCurlforFile((RealityDataUrl*)(m_filesToUpload[i]), 0);
+        SetupNextEntry();
         }   
 
     int still_running; /* keep number of running handles */
@@ -901,11 +926,11 @@ UploadReport* RealityDataServiceUpload::Perform()
                 }
 
             // Other URL to download ?
-            /*if (m_curEntry < m_nbEntry)
+            if (m_curEntry < (int)m_filesToUpload.size())
                 {
                 if (SetupNextEntry())
                     still_running++;
-                }*/
+                }
             }
 
         } while (still_running);
@@ -913,6 +938,18 @@ UploadReport* RealityDataServiceUpload::Perform()
     return &m_ulReport;
     }
 
+bool RealityDataServiceUpload::SetupNextEntry()
+    {
+    if (m_curEntry < (int)m_filesToUpload.size())
+        {
+        SetupCurlforFile((RealityDataUrl*)(m_filesToUpload[m_curEntry]), 0);//SetupCurlandFile(&m_pEntries[m_curEntry]);
+        ++m_curEntry;
+        }
+    else
+        return false;
+
+    return true;
+    }
 
 void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int verifyPeer)
     {

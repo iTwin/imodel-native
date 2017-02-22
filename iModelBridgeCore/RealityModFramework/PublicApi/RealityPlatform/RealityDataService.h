@@ -305,7 +305,8 @@ enum class RealityDataField
     Listable,
     ModifiedTimestamp,
     CreatedTimestamp,
-    OwnedBy
+    OwnedBy,
+    Group
     };
 
 //=====================================================================================
@@ -348,13 +349,10 @@ protected:
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-
-private:
-    RealityDataListByEnterprisePagedRequest() {}
     };
 
 struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
@@ -657,6 +655,7 @@ protected:
 
 private:
     void SetupCurlforFile(RealityDataUrl* upload, int verifyPeer);
+    bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
     bvector<RealityDataFileUpload*>         m_filesToUpload;
 
@@ -684,6 +683,7 @@ private:
     bool                        m_overwrite;
 
     UploadReport                m_ulReport;
+    size_t                      m_curEntry;
     };
 
 //=====================================================================================

@@ -74,9 +74,22 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
     
     //using a NavNode request
-    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], nodes[0]);
+    bvector<NavNode> subNodes = bvector<NavNode>();
+    int nodeIndex;
 
-    std::cout << "NavNodes under "<< nodes[0].GetNavString() << " :" << std::endl;
+    for(nodeIndex = 0; (subNodes.size() < 1) && nodeIndex < nodes.size(); ++nodeIndex)
+        {
+        subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], nodes[nodeIndex]);
+        }
+
+    if(nodeIndex > nodes.size())
+        {
+        std::cout<< "No root nodes have any sub nodes" << std::endl;
+        getch();
+        return 0;
+        }
+
+    std::cout << "NavNodes under "<< nodes[nodeIndex].GetNavString() << " :" << std::endl;
     for (NavNode subNode : subNodes)
         std::cout << subNode.GetNavString() << std::endl;
     std::cout << std::endl;
@@ -90,7 +103,7 @@ int main(int argc, char *argv[])
         {
         for( int i = 0; i < subNodes.size(); i ++ )
             {
-            if(subNodes[i].GetInstanceId().Contains(".")) // '.' used for file extension
+            if(subNodes[i].GetClassName().Equals("Document"))
                 {
                 objectFound = true;
                 objectIndex = i;
@@ -103,7 +116,7 @@ int main(int argc, char *argv[])
             }
         
         if(!objectFound)
-            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0]);
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[nodeIndex]);
         }
 
     std::cout<<"Object location :" << std::endl;

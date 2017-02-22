@@ -160,10 +160,10 @@ int main(int argc, char *argv[])
     Utf8String enterpriseId = "e82a584b-9fae-409f-9581-fd154f7b9ef9";   //Dev-QA
 //    Utf8String enterpriseId = "54c148ad-b2c4-4e8b-afaa-4fb3eee22f33";   //Prod
 
-    RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
-    RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
-    bvector<SpatialEntityPtr> enterpriseVec2 = RealityDataService::Request(*filteredRequest);
+    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest(enterpriseId);
+    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(enterpriseReq);
+    RealityDataPagedRequest filteredRequest = RealityDataPagedRequest();
+    bvector<SpatialEntityPtr> enterpriseVec2 = RealityDataService::Request(filteredRequest);
 
 
     std::cout << "Enterprise data list:" << std::endl;
