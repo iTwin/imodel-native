@@ -192,9 +192,9 @@ private:
         }
 
         // Transform the BGRA buffer into an RGB buffer
-        w = outInfo.width;
-        h = outInfo.height;
-        size_t nPixels = w * h;
+        width  = outInfo.width;
+        height = outInfo.height;
+        size_t nPixels = width * height;
         rgb.resize(nPixels * 3);
         for (size_t i = 0; i < nPixels; i++)
         {
