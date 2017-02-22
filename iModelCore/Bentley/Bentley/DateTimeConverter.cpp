@@ -199,11 +199,15 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
     //date fraction of julian day
     //Strip time fraction. As JD is based on noon, the JD value is shifted by half a day so that z represents an unambiguous day.
     //(technically this is the same as rounding the JD value to the next full day number)
-    //BeAssert(std::numeric_limits<int32_t>::min() <= ((julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY) && 
-    //    ((julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY) <= std::numeric_limits<int32_t>::max());
+    const uint64_t zRaw = (julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY;
+    
+    //out of bounds check for this algo. local operands would have to be adjusted to int64_t.
+    //but int32 suffices for the next 1,000,000 years
+    if (zRaw > std::numeric_limits<int32_t>::max())
+        return ERROR; 
 
-    const int32_t z = (int32_t) ((julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY);
-
+    const int32_t z = (int32_t) zRaw;
+    BeAssert(z >= 0);
     const int32_t g = (int32_t) ((z - 1867216.25) / 36524.25);
     const int32_t a = z + 1 + g - g / 4;
     const int32_t b = a + 1524;
