@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/GeoCoordinationService.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,7 +90,7 @@ protected:
     // Default constructor
     GeoCoordinationService() : m_validRequestString(false) {}
 
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const = 0;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const = 0;
 
     static Utf8String s_geoCoordinationServer = "https://connect-contextservices.bentley.com/";
     static Utf8String s_geoCoordinationWSGProtocol = "2.4";
@@ -167,7 +167,7 @@ public:
     REALITYDATAPLATFORM_EXPORT StatusInt FilterBySource(int informationSource);
     
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;
@@ -188,7 +188,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityByDetailsByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     SpatialEntityByDetailsByIdRequest() {}
@@ -207,7 +207,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     SpatialEntityByIdRequest(): m_requestType(GET_Request) {}
@@ -227,7 +227,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourceByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     SpatialEntityDataSourceByIdRequest(): m_requestType(GET_Request) {}
@@ -246,7 +246,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     SpatialEntityServerByIdRequest(): m_requestType(GET_Request) {}
@@ -265,7 +265,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     SpatialEntityMetadataByIdRequest(): m_requestType(GET_Request) {}
@@ -284,7 +284,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static PreparedPackageRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     PreparedPackageRequest(): m_requestType(GET_Request) {}
@@ -304,7 +304,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static PackagePreparationRequestPtr Create(bvector<GeoPoint2D> projectArea, bvector<Utf8String> listOfSpatialEntities);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     PackagePreparationRequest(): m_requestType(POST_Request) {}
@@ -323,7 +323,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static DownloadReportUploadRequestPtr Create(Utf8StringCR identifier);
    
 protected:
-    virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     DownloadReportUploadRequest(): m_requestType(POST_Request) {}

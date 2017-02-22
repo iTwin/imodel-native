@@ -558,10 +558,12 @@
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
     <!-- Lay out the test product according to the standard BeGTest layout. -->
     <ProductDirectoryList ListName="RealityModFrameworkTestsDir" >
-        <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="applicationroot"                Path=""/>
+        <ProductDirectory Name="Assets"                         Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                         Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        RelativeTo="applicationroot"/>
 
         <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />

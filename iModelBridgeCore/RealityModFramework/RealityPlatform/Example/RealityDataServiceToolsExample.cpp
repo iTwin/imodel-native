@@ -182,10 +182,10 @@ int main(int argc, char *argv[])
 #endif
 
 
-//        RealityDataByIdRequest A1(pData->GetIdentifier());
-//        RealityDataByIdRequest* A2 = new RealityDataByIdRequest(pData->GetIdentifier());
-//        std::cout << A1.GetServerName() << std::endl;
-//        std::cout << A2->GetServerName() << std::endl;
+        RealityDataByIdRequest A1(pData->GetIdentifier());
+        RealityDataByIdRequest* A2 = new RealityDataByIdRequest(pData->GetIdentifier());
+        std::cout << A1.GetServerName() << std::endl;
+        std::cout << A2->GetServerName() << std::endl;
         //        SpatialEntityPtr pData2 = RealityDataService::Request(*A1);
 
 //        RealityDataFolderByIdRequest* A2 = new  RealityDataFolderByIdRequest(pData->GetIdentifier()+"~2f"+pData->GetName());

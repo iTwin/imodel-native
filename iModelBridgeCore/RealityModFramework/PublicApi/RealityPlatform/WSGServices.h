@@ -156,7 +156,7 @@ protected:
     void SetInterface(WSGInterface _interface);
     void SetRepoId(Utf8String repoId);
 
-    virtual void _PrepareHttpRequestStringAndPayload() const;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const;
 
     mutable Utf8String m_serverName;
     Utf8String m_version;
@@ -234,7 +234,7 @@ struct WSGNavRootRequest : public WSGURL
 public:
     REALITYDATAPLATFORM_EXPORT WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -249,7 +249,7 @@ struct WSGNavNodeRequest: public WSGURL
 public:
     REALITYDATAPLATFORM_EXPORT WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String nodeId);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -262,7 +262,7 @@ struct WSGObjectRequest: public WSGURL
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -275,7 +275,7 @@ struct WSGObjectContentRequest: public WSGURL
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -309,7 +309,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint16_t)(page * m_pageSize);}
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
 
     uint16_t m_startIndex;
     uint8_t m_pageSize;
@@ -327,7 +327,7 @@ struct WSGObjectListPagedRequest: public WSGPagedRequest
 public:
     REALITYDATAPLATFORM_EXPORT WSGObjectListPagedRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================

@@ -83,7 +83,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
    
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataByIdRequest() {}
@@ -102,7 +102,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataProjectRelationshipByProjectIdRequest() {}
@@ -119,7 +119,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataFolderByIdRequest() {}
@@ -136,7 +136,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
 	
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentByIdRequest() {}
@@ -202,7 +202,7 @@ public:
     //! Indicates if azure blob container redirection is possible
     REALITYDATAPLATFORM_EXPORT bool IsAzureRedirectionPossible();
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentContentByIdRequest() {}
@@ -336,7 +336,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;
@@ -351,7 +351,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataListByEnterprisePagedRequest() {}
@@ -363,7 +363,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataProjectRelationshipByProjectIdPagedRequest() {}
@@ -395,7 +395,7 @@ struct RealityDataServiceCreate : public RealityDataUrl
     {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     bool m_listable;
@@ -477,7 +477,7 @@ public:
 
     size_t                  m_index;
 protected:
-    void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     mutable bool            m_moreToSend;
@@ -509,7 +509,7 @@ public:
     AzureWriteHandshake(Utf8String sourcePath) { m_id = sourcePath; }
     Utf8StringR GetJsonResponse() { return jsonResponse; }
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 private:
     Utf8String jsonResponse;
     AzureWriteHandshake();
