@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/Tasks/AsyncTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,6 +81,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         void OnCompleted (BeMutexHolder& lock);
 
         void AddSubTaskNoLock (std::shared_ptr<AsyncTask> task);
+        void AddParentTaskNoLock (std::shared_ptr<AsyncTask> task);
 
         void ProcessTaskCompletion ();
         void CleanUpTask           (std::shared_ptr<AsyncTask> task, bset<std::shared_ptr<AsyncTask>>& tasksToCleanUp);  
@@ -111,7 +112,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         //! Create task that will complete once all task in container are completed.
         //! @param tasks - contains std::shared_ptr<AsyncTask> or derived type tasks
         template<typename C>
-        static std::shared_ptr<PackagedAsyncTask<void>> WhenAll (C tasks)
+        static std::shared_ptr<PackagedAsyncTask<void>> WhenAll(C tasks)
             {
             auto whenAll = std::make_shared<PackagedAsyncTask<void>>([]{});
             for (auto task : tasks)
@@ -126,7 +127,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
             PushTaskToDefaultSheduler(whenAll);
             return whenAll;
             }
-        
+
         //! Check if task has completed its execution and has no more sub tasks left
         BENTLEYDLL_EXPORT bool IsCompleted () const;
 
@@ -175,7 +176,7 @@ struct PackagedAsyncTask : AsyncTask
             m_result = m_taskCallback ();
             }
 
-        // Blocks until result is available.
+        //! Blocks until result is available. See Wait()
         T& GetResult ()
             {
             Wait (); return m_result;
