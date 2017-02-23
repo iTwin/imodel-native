@@ -145,6 +145,10 @@ TEST(RotMatrix, Multiply)
     Check::Near (point25, point28[0]);
     Check::Near (point26, point28[1]);
     Check::Near (point27, point28[2]);
+    DRange3d rangeNew = DRange3d::NullRange();
+    matrix0.Multiply (range0, rangeNew);
+    Check::True(range0.IsNull());
+    Check::Near(range0, range1);
     }
 
 TEST(RotMatrix, InitProduct)

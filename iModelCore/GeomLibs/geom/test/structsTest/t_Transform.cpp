@@ -1475,3 +1475,104 @@ TEST(Transform, Transform2Dto3D)
     Check::Near(outPoints[2].x, 7); Check::Near(outPoints[2].y, 7); Check::Near(outPoints[2].z, 4);
     Check::Near(outPoints[3].x, -6.4); Check::Near(outPoints[3].y, -3.1); Check::Near(outPoints[3].z, 4);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+
+void uniformScaleAndRotateAboutLine(Transform tr, bool flag)
+    {
+    DPoint3d      fixedPoint, fixedPointExpected;
+    DVec3d       directionVector;
+    double          radians, scal;
+
+    if (flag == true)
+        {
+        double radiansExpected;
+        Check::True(tr.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, radians, scal));
+        Check::True(tr.IsRotateAroundLine(fixedPointExpected, directionVector, radiansExpected));
+        Check::Near(radians, radiansExpected);
+        Check::Near(fixedPoint, fixedPointExpected);
+        Check::Near(scal, 1);
+        }
+    else
+        {
+        double scale;
+        Check::True(tr.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, radians, scal));
+        Check::True(tr.IsUniformScale(fixedPointExpected, scale));
+        Check::Near(radians, 0);
+        Check::Near(scal, scale);
+        Check::Near(fixedPoint, fixedPointExpected);
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, UnfiformScaleAndRotate)
+    {
+    uniformScaleAndRotateAboutLine(Transform::FromLineAndRotationAngle(DPoint3d::From(7, 3, 7),
+                                                                       DPoint3d::From(11, 11, 11),
+                                                                       Angle::FromDegrees(45).Radians()),
+                                                                       true);
+    uniformScaleAndRotateAboutLine(Transform::FromLineAndRotationAngle(DPoint3d::From(7.1, 3.03, 7),
+                                                                       DPoint3d::From(0.1, 1.1, 0.1),
+                                                                       Angle::FromDegrees(180).Radians()),
+                                                                       true);
+    uniformScaleAndRotateAboutLine(Transform::FromLineAndRotationAngle(DPoint3d::From(1, 3.2, 1.7),
+                                                                       DPoint3d::From(11, 11, 11),
+                                                                       Angle::FromDegrees(330).Radians()),
+                                                                       true);
+
+    uniformScaleAndRotateAboutLine(Transform::FromScaleFactors(2.3, 2.3, 2.3),
+                                                                       false);
+    uniformScaleAndRotateAboutLine(Transform::FromScaleFactors(12, 12, 12),
+                                                                       false);
+    uniformScaleAndRotateAboutLine(Transform::FromScaleFactors(0.3, 0.3, 0.3),
+                                                                       false);
+   
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, FixedPoint) 
+    {
+    Transform tr = Transform::FromRowValues(1, 0, 0, 2,
+                                            0, 1, 0, 3,
+                                            0, 0, 1, 2);  // pure translation
+    DPoint3d fixedPoint;
+    Check::False(tr.GetAnyFixedPoint(fixedPoint));
+
+    tr = Transform::FromRowValues(1, 4, 0, 2,
+                                  0, 1, 3, 3,
+                                  0, 0, 1, 2);    //impure translation
+    
+    Check::True(tr.GetAnyFixedPoint(fixedPoint));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, TransformSegment)
+    {
+    Transform trans = Transform::From(DPoint3d::From(2, 2, 2));
+    DSegment3d seg3d = DSegment3d::FromOriginAndDirection(DPoint3d::From(2, 2, 2), DPoint3d::From(10, 10, 10));
+    trans.Multiply(seg3d);
+    DPoint3d segmentStart = DPoint3d::From(2, 2, 2), segmentEnd = DPoint3d::From(12, 12, 12);
+    trans.Multiply(segmentStart);
+    trans.Multiply(segmentEnd);
+    Check::Near(segmentStart, seg3d.point[0]);
+    Check::Near(segmentEnd, seg3d.point[1]);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, TransformRay)
+    {
+    Transform trans = Transform::From(DPoint3d::From(2, 2, 2));
+    DRay3d ray3d = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(12, 12, 12));
+    trans.Multiply(ray3d);
+    DPoint3d rayStart = DPoint3d::From(2, 2, 2);
+    trans.Multiply(rayStart);
+    Check::Near(rayStart, ray3d.origin);
+    }
