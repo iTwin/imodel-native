@@ -360,8 +360,10 @@ ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewName)
     {
-    auto& db = model.GetDgnDb();
+    DgnDbR db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    EXPECT_TRUE(viewDef.IsValid());
+    viewDef->SetSource(DgnViewSource::Generated);
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());

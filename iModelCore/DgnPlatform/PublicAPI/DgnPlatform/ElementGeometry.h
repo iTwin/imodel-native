@@ -641,11 +641,11 @@ public:
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint3d and optional YawPitchRollAngles.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAnglesCR angles = YawPitchRollAngles());
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint2d and optional AngleInDegrees rotation.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint2dCR origin, AngleInDegreesCR angle = AngleInDegrees());
 
     //! Append a GeometricPrimive to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append(GeometricPrimitiveCR, CoordSystem coord = CoordSystem::Local);
