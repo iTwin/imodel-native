@@ -467,3 +467,161 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     ASSERT_EQ(DgnDbStatus::Success, subcategory->GetPropertyValue(checkValue, scpropindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Annotation)
+    {
+    SetupSeedProject();
+    uint32_t Tsdescrindex, Fsdescrindex, Lsdescrindex, tasdescrindex,dataindex;
+    ECN::ECValue checkValue;
+    AnnotationTextStyleId Tsid;
+    AnnotationFrameStyleId Fsid;
+    AnnotationLeaderStyleId Lsid;
+    TextAnnotationSeedId tasid;
+    if (true)
+        {
+        //Create AnnotationTextStyle
+        AnnotationTextStylePtr textStyle = AnnotationTextStyle::Create(*m_db);
+        textStyle->SetName("MyStyle");
+        ASSERT_EQ(textStyle->GetName(), "MyStyle");
+        const static int DataSize = 10;
+        Byte DummyData[DataSize] = { 1,2,3,4,5,6,7,8,9,10 };
+        ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(Tsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(dataindex, "Data"));
+        ASSERT_EQ(DgnDbStatus::Success, textStyle->SetPropertyValue(Tsdescrindex, ECN::ECValue("MyTesxtStyle Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyValue(checkValue, Tsdescrindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyTesxtStyle Descr")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadRequest, textStyle->SetPropertyValue(dataindex, ECN::ECValue(DummyData,sizeof(DummyData))));
+        ASSERT_EQ(DgnDbStatus::BadRequest, textStyle->GetPropertyValue(checkValue, dataindex));
+        AnnotationTextStyleCPtr Ts = textStyle->Insert();
+        Tsid = Ts->GetElementId();
+        ASSERT_TRUE(Tsid.IsValid());
+        //Create AnnotationFrameStyle
+        AnnotationFrameStylePtr FrameStyle = AnnotationFrameStyle::Create(*m_db);
+        FrameStyle->SetName("MyFraneStyle");
+        ASSERT_EQ(FrameStyle->GetName(), "MyFraneStyle");
+        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(Fsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(dataindex, "Data"));
+        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->SetPropertyValue(Fsdescrindex, ECN::ECValue("MyFrameStyle Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyValue(checkValue, Fsdescrindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyFrameStyle Descr")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadRequest, FrameStyle->SetPropertyValue(dataindex, ECN::ECValue(DummyData, sizeof(DummyData))));
+        ASSERT_EQ(DgnDbStatus::BadRequest, FrameStyle->GetPropertyValue(checkValue, dataindex));
+        AnnotationFrameStyleCPtr Fs = FrameStyle->Insert();
+        Fsid = Fs->GetElementId();
+        ASSERT_TRUE(Fsid.IsValid());
+        //Create AnnotationLeaderStyle
+        AnnotationLeaderStylePtr LeaderStyle = AnnotationLeaderStyle::Create(*m_db);
+        LeaderStyle->SetName("MyLeaderStyle");
+        ASSERT_EQ(LeaderStyle->GetName(), "MyLeaderStyle");
+        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(Lsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(dataindex, "Data"));
+        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->SetPropertyValue(Lsdescrindex, ECN::ECValue("MyLeaderStyle Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyValue(checkValue, Lsdescrindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyLeaderStyle Descr")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadRequest, LeaderStyle->SetPropertyValue(dataindex, ECN::ECValue(DummyData, sizeof(DummyData))));
+        ASSERT_EQ(DgnDbStatus::BadRequest, LeaderStyle->GetPropertyValue(checkValue, dataindex));
+        AnnotationLeaderStyleCPtr Ls = LeaderStyle->Insert();
+        Lsid = Ls->GetElementId();
+        ASSERT_TRUE(Lsid.IsValid());
+
+        //Create TextAnnotationSeed
+        TextAnnotationSeedPtr Textannoseed = TextAnnotationSeed::Create(*m_db);
+        Textannoseed->SetName("TextAnnotationSeed");
+        ASSERT_EQ(Textannoseed->GetName(), "TextAnnotationSeed");
+        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(tasdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(dataindex, "Data"));
+        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->SetPropertyValue(tasdescrindex, ECN::ECValue("TextAnnotationSeed Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyValue(checkValue, tasdescrindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("TextAnnotationSeed Descr")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadRequest, Textannoseed->SetPropertyValue(dataindex, ECN::ECValue(DummyData, sizeof(DummyData))));
+        ASSERT_EQ(DgnDbStatus::BadRequest, Textannoseed->GetPropertyValue(checkValue, dataindex));
+        TextAnnotationSeedCPtr Textannoseedc = Textannoseed->Insert();
+        tasid = Textannoseedc->GetElementId();
+        ASSERT_TRUE(tasid.IsValid());
+
+        m_db->SaveChanges();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    AnnotationTextStyleCPtr textStyle = m_db->Elements().Get<AnnotationTextStyle>(Tsid);
+    ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyValue(checkValue, Tsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyTesxtStyle Descr")));
+    checkValue.Clear();
+    AnnotationFrameStyleCPtr FrameStyle = m_db->Elements().Get<AnnotationFrameStyle>(Fsid);
+    ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyValue(checkValue, Fsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyFrameStyle Descr")));
+    checkValue.Clear();
+    AnnotationLeaderStyleCPtr LeaderStyle = m_db->Elements().Get<AnnotationLeaderStyle>(Lsid);
+    ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyValue(checkValue, Lsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyLeaderStyle Descr")));
+    checkValue.Clear();
+    TextAnnotationSeedCPtr Textannoseed = m_db->Elements().Get<TextAnnotationSeed>(tasid);
+    ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyValue(checkValue, tasdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("TextAnnotationSeed Descr")));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update Properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    AnnotationTextStylePtr textStyle = m_db->Elements().GetForEdit<AnnotationTextStyle>(Tsid);
+    ASSERT_EQ(DgnDbStatus::Success, textStyle->SetPropertyValue(Tsdescrindex, ECN::ECValue("NewTesxtStyle Descr")));
+    ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyValue(checkValue, Tsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewTesxtStyle Descr")));
+    checkValue.Clear();
+    AnnotationFrameStylePtr FrameStyle = m_db->Elements().GetForEdit<AnnotationFrameStyle>(Fsid);
+    ASSERT_EQ(DgnDbStatus::Success, FrameStyle->SetPropertyValue(Fsdescrindex, ECN::ECValue("NewFrameStyle Descr")));
+    ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyValue(checkValue, Fsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewFrameStyle Descr")));
+    checkValue.Clear();
+    AnnotationLeaderStylePtr LeaderStyle = m_db->Elements().GetForEdit<AnnotationLeaderStyle>(Lsid);
+    ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->SetPropertyValue(Lsdescrindex, ECN::ECValue("NewLeaderStyle Descr")));
+    ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyValue(checkValue, Lsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewLeaderStyle Descr")));
+    checkValue.Clear();
+    TextAnnotationSeedPtr Textannoseed = m_db->Elements().GetForEdit<TextAnnotationSeed>(tasid);
+    ASSERT_EQ(DgnDbStatus::Success, Textannoseed->SetPropertyValue(tasdescrindex, ECN::ECValue("NewTextAnnotationSeed Descr")));
+    ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyValue(checkValue, tasdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewTextAnnotationSeed Descr")));
+    checkValue.Clear();
+
+    ASSERT_TRUE(textStyle->Update().IsValid());
+    ASSERT_TRUE(FrameStyle->Update().IsValid());
+    ASSERT_TRUE(LeaderStyle->Update().IsValid());
+    ASSERT_TRUE(Textannoseed->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check values update in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    AnnotationTextStyleCPtr textStyle = m_db->Elements().Get<AnnotationTextStyle>(Tsid);
+    ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyValue(checkValue, Tsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewTesxtStyle Descr")));
+    checkValue.Clear();
+    AnnotationFrameStyleCPtr FrameStyle = m_db->Elements().Get<AnnotationFrameStyle>(Fsid);
+    ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyValue(checkValue, Fsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewFrameStyle Descr")));
+    checkValue.Clear();
+    AnnotationLeaderStyleCPtr LeaderStyle = m_db->Elements().Get<AnnotationLeaderStyle>(Lsid);
+    ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyValue(checkValue, Lsdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewLeaderStyle Descr")));
+    checkValue.Clear();
+    TextAnnotationSeedCPtr Textannoseed = m_db->Elements().Get<TextAnnotationSeed>(tasid);
+    ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyValue(checkValue, tasdescrindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NewTextAnnotationSeed Descr")));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    }
