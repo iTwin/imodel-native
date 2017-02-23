@@ -551,6 +551,7 @@ TEST(VuCreateTriangulatedInGrid,Test0)
                         Check::SaveTransformed (loop.GetPointsCR ());
                     }
                 Check::Shift (30,0,0);
+                vu_freeGraph (graph);
                 }
             }
         }
