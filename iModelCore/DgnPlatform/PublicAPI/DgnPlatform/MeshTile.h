@@ -117,7 +117,8 @@ public:
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
 
-    DGNPLATFORM_EXPORT bool operator<(TileDisplayParams const& rhs) const;
+    bool operator<(TileDisplayParams const& rhs) const { return IsLessThan(rhs, true); }
+    DGNPLATFORM_EXPORT bool IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const;
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
@@ -131,6 +132,45 @@ public:
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
     DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
 };
+
+//=======================================================================================
+//! For a tile, records unique attribute values and associates each with a 16-bit index.
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+template<typename T> struct AttributeIndexMap
+{
+    typedef bmap<T, uint16_t> Map;
+protected:
+    Map     m_map;
+
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+public:
+    uint16_t GetIndex(T const& value)
+        {
+        auto iter = m_map.find(value);
+        if (m_map.end() != iter)
+            return iter->second;
+        else if (IsFull())
+            return 0;
+
+        auto index = GetNumIndices();
+        m_map[value] = index;
+        return index;
+        }
+
+    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
+    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+
+    typedef typename Map::const_iterator const_iterator;
+    typedef const_iterator iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+};
+
+typedef AttributeIndexMap<uint32_t> ColorIndexMap;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -172,30 +212,18 @@ public:
 //! Index 0 always corresponds to an undefined attribute.
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct FeatureAttributesMap
+struct FeatureAttributesMap : AttributeIndexMap<FeatureAttributes>
 {
-    typedef bmap<FeatureAttributes, uint16_t> Map;
-private:
-    Map     m_map;
-
-    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+    DEFINE_T_SUPER(AttributeIndexMap<FeatureAttributes>);
 public:
     DGNPLATFORM_EXPORT FeatureAttributesMap();
 
-    DGNPLATFORM_EXPORT uint16_t GetIndex(FeatureAttributesCR attr);
+    using T_Super::GetIndex;
+
     DGNPLATFORM_EXPORT uint16_t GetIndex(TileGeometryCR geom);
-    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
+    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return T_Super::GetIndex(FeatureAttributes(id, params)); }
 
     bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
-    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
-
-    typedef Map::const_iterator const_iterator;
-    typedef const_iterator iterator;
-
-    const_iterator begin() const { return m_map.begin(); }
-    const_iterator end() const { return m_map.end(); }
-    size_t size() const { return m_map.size(); }
-    uint16_t GetCount() const { return static_cast<uint16_t>(size()); }
 };
 
 //=======================================================================================

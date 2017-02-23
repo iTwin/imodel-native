@@ -400,11 +400,16 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
+bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const
     {
-    COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (m_rasterWidth, rhs.m_rasterWidth);                                                           
-    COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
+    if (compareFillColor && m_fillColor != rhs.m_fillColor)
+        return m_fillColor < rhs.m_fillColor;
+
+    if (m_rasterWidth != rhs.m_rasterWidth)
+        return m_rasterWidth < rhs.m_rasterWidth;
+
+    if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
+        return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();
 
     // Note - do not compare category and subcategory - These are used only for 
     // extracting BRep face attachments.  Comparing them would create seperate
@@ -2949,30 +2954,11 @@ FeatureAttributesMap::FeatureAttributesMap()
     FeatureAttributes undefined;
     m_map[undefined] = 0;
 
-    BeAssert(1 == GetCount());
+    BeAssert(1 == GetNumIndices());
     BeAssert(0 == GetIndex(undefined));
-    BeAssert(1 == GetCount());
+    BeAssert(1 == GetNumIndices());
     BeAssert(!AnyDefined());
     BeAssert(!IsFull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t FeatureAttributesMap::GetIndex(FeatureAttributesCR attr)
-    {
-    auto iter = m_map.find(attr);
-    if (m_map.end() != iter)
-        return iter->second;
-    else if (IsFull())
-        return 0;
-
-    auto index = GetCount();
-    m_map[attr] = index;
-
-    BeAssert(GetCount() == index+1);
-    
-    return index;
     }
 
 /*---------------------------------------------------------------------------------**//**
