@@ -100,7 +100,7 @@ public:
                 };
 
             //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
-            struct ScriptLibraryImporter : IHostObject
+            struct ScriptLibraryImporter
                 {
                 //! Import the specified script
                 virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
@@ -119,10 +119,6 @@ public:
                 DGNPLATFORM_EXPORT virtual void _HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP msg);
                 };
 
-            private:
-            bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
-
-            public:
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
 

@@ -38,6 +38,7 @@ static size_t s_nonHomeThreadCount;
 static thread_local BeJsEnvironmentP s_jsenv;
 static thread_local BeJsContextP s_jscontext;
 static thread_local DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_jsnotificationHandler;
+static thread_local bmap<Utf8String, bpair<DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter*,bool>>* s_importers;
 static DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_defaultNotificationHandler;
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
@@ -339,6 +340,10 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
         }
 
     //  *********************************************
+    //  Set up to receive importers
+    s_importers = new bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>>();
+
+    //  *********************************************
     //  Initialize the BeJsEnvironment
     s_jsenv = new BeJsEnvironment;
 
@@ -400,6 +405,12 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
 
     if (nullptr != s_jsnotificationHandler)
         s_jsnotificationHandler = nullptr;
+
+    if (nullptr != s_importers)
+        {
+        delete s_importers;
+        s_importers = nullptr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -461,7 +472,11 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Ho
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer)
     {
-    m_importers[libName] = make_bpair(&importer, false);
+    if (nullptr == s_importers)
+        {
+        throw "InitializeOnThread was not called";
+        }
+    (*s_importers)[libName] = make_bpair(&importer, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -469,8 +484,10 @@ void DgnPlatformLib::Host::ScriptAdmin::RegisterScriptLibraryImporter(Utf8CP lib
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libName)
     {
-    auto ilib = m_importers.find(libName);
-    if (ilib == m_importers.end())
+    if (nullptr == s_importers)
+        return BSIERROR;
+    auto ilib = s_importers->find(libName);
+    if (ilib == s_importers->end())
         {
         HandleScriptError(ScriptNotificationHandler::Category::Other, "Missing library", libName);
         return BSIERROR;
@@ -526,11 +543,6 @@ void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleLogMes
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
     {
-    for (auto &entry : m_importers)
-        {
-        ON_HOST_TERMINATE(entry.second.first, px);
-        }
-
     delete this;
     }
 
@@ -539,7 +551,10 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* DgnPlatformLib::Host::ScriptAdmin::GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName)
     {
-    for (auto const& entry : m_importers)
+    if (nullptr == s_importers)
+        return nullptr;
+
+    for (auto const& entry : *s_importers)
         {
         auto m = entry.second.first->_GetMarshallerForType(typeScriptTypeName);
         if (nullptr != m)

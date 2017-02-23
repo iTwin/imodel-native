@@ -223,7 +223,7 @@ static void runScript(DgnScriptTest* thisTest)
 
         Json::Value parms (Json::objectValue);
 
-        xstatus = DgnScript::ExecuteDgnDbScript(sres, thisTest->GetDgnDb(), "DgnScriptTest.ScriptsInMultipleThreads", parms);
+        xstatus = DgnScript::ExecuteDgnDbScript(sres, thisTest->GetDgnDb(), "DgnScriptTestMT.ScriptsInMultipleThreads", parms);
         }
 
     BeMutexHolder _v_(s_mtCv.GetMutex());
@@ -256,14 +256,14 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
     //  Set up the script that all threads will run.
     //  Remember that the "host" is global, not thread-specific.
     JsProg jsProg;
-    jsProg.m_jsProgramName = "DgnScriptTest";
+    jsProg.m_jsProgramName = "DgnScriptTestMT";
     jsProg.m_jsProgramText =
 "(function () { \
     function testMT(db, params) { \
         junk = db.Elements;\
         return 1;\
     } \
-    Bentley.Dgn.RegisterDgnDbScript('DgnScriptTest.ScriptsInMultipleThreads', testMT); \
+    Bentley.Dgn.RegisterDgnDbScript('DgnScriptTestMT.ScriptsInMultipleThreads', testMT); \
 })();\
 ";
     m_host.SetFetchScriptCallback(&jsProg);
@@ -273,7 +273,7 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
         //  Execute this script in this thread, using auto-initialization of the jscontext
         Json::Value parms (Json::objectValue);
         int sres;
-        DgnScript::ExecuteDgnDbScript(sres, GetDgnDb(), "DgnScriptTest.ScriptsInMultipleThreads", parms);
+        DgnScript::ExecuteDgnDbScript(sres, GetDgnDb(), "DgnScriptTestMT.ScriptsInMultipleThreads", parms);
         }
 
     //  Execute this script in this thread using explicit initialization of the jscontext
@@ -288,6 +288,9 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
     while (s_mtStats.finished != (1 + _countof(threads)))
         s_mtCv.InfiniteWait(lock);
     
+    for (auto& thread : threads)
+        thread.detach();
+
     //  Execute this script in this thread again
     runScript(this);
 
