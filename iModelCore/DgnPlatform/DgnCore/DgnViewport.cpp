@@ -29,7 +29,7 @@ void DgnViewport::SuspendViewport()
         {
         m_viewController->RequestAbort(true);
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
         }
 
     SetRenderTarget(nullptr);
@@ -440,12 +440,13 @@ struct ViewChangedCaller
     ViewChangedCaller() {}
     void CallHandler(DgnViewport::Tracker& tracker) const {tracker._OnViewChanged();}
     };
+
 /*---------------------------------------------------------------------------------**//**
 * set up this viewport from its viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::SetupFromViewController()
-    {                                               
+    {
     ViewControllerP viewController = m_viewController.get();
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
@@ -479,7 +480,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 }
 
             double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
-            zMax = std::max(zMax, DgnUnits::OneMillimeter()); // make sure we have at least +-1m. Data may be purely planar
+            zMax = std::max(zMax, DgnUnits::OneMeter()); // make sure we have at least +-1m. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
             }
@@ -639,10 +640,10 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         }
     else
         {
-        // get the view extents 
+        // get the view extents
         delta.z = viewController->GetDelta().z;
 
-        // make sure its not too big or too small 
+        // make sure its not too big or too small
         auto stat = viewController->GetViewDefinition().ValidateViewDelta(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
@@ -950,7 +951,7 @@ ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const 
+double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const
     {
     DPoint3d    rootTestPt;
 
@@ -1208,7 +1209,7 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
         if (dropGraphics)
             {
             m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-            m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
+            m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
             }
         }
 

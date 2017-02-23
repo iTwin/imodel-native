@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnScriptContext_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -205,6 +205,99 @@ TEST_F(DgnScriptTest, TestEga)
         ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function should not be callable so the attempt should fail";
         ASSERT_EQ( -1 , sres );
         }
+    }
+
+BeConditionVariable s_mtCv;
+struct MtStats {int failed; int accum; int finished;};
+static MtStats s_mtStats;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void runScript(DgnScriptTest* thisTest)
+    {
+    int sres;
+    DgnDbStatus xstatus;
+        {
+        DgnScriptThreadEnabler canEvaluateScriptsInThisScope;
+
+        Json::Value parms (Json::objectValue);
+
+        xstatus = DgnScript::ExecuteDgnDbScript(sres, thisTest->GetDgnDb(), "DgnScriptTestMT.ScriptsInMultipleThreads", parms);
+        }
+
+    BeMutexHolder _v_(s_mtCv.GetMutex());
+
+    if (DgnDbStatus::Success != xstatus)
+        s_mtStats.failed++;
+
+    s_mtStats.accum += sres;
+
+    s_mtStats.finished++;
+
+    s_mtCv.notify_all();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
+    {
+    SetupSeedProject();
+    DgnDbP project = m_db.get();// tdm.GetDgnProjectP();
+    ASSERT_TRUE( project != NULL );
+    if (true)
+        {
+        PhysicalModelPtr model = GetDefaultPhysicalModel();
+        RefCountedCPtr<DgnElement> newel = insertElement(*model);
+        ASSERT_TRUE( newel.IsValid() );
+        }
+    
+    //  Set up the script that all threads will run.
+    //  Remember that the "host" is global, not thread-specific.
+    JsProg jsProg;
+    jsProg.m_jsProgramName = "DgnScriptTestMT";
+    jsProg.m_jsProgramText =
+"(function () { \
+    function testMT(db, params) { \
+        junk = db.Elements;\
+        return 1;\
+    } \
+    Bentley.Dgn.RegisterDgnDbScript('DgnScriptTestMT.ScriptsInMultipleThreads', testMT); \
+})();\
+";
+    m_host.SetFetchScriptCallback(&jsProg);
+
+    if (true)
+        {
+        //  Execute this script in this thread, using auto-initialization of the jscontext
+        Json::Value parms (Json::objectValue);
+        int sres;
+        DgnScript::ExecuteDgnDbScript(sres, GetDgnDb(), "DgnScriptTestMT.ScriptsInMultipleThreads", parms);
+        }
+
+    //  Execute this script in this thread using explicit initialization of the jscontext
+    runScript(this);
+
+    //  Execute this script in multiple threads
+    std::thread threads[3];
+    for (auto& thread : threads)
+        thread = std::thread(runScript, this);
+
+    BeMutexHolder lock(s_mtCv.GetMutex());
+    while (s_mtStats.finished != (1 + _countof(threads)))
+        s_mtCv.InfiniteWait(lock);
+    
+    for (auto& thread : threads)
+        thread.detach();
+
+    //  Execute this script in this thread again
+    runScript(this);
+
+    ASSERT_EQ(2 + _countof(threads), s_mtStats.accum);
+    ASSERT_EQ(0, s_mtStats.failed);
+
+    T_HOST.GetScriptAdmin().CheckCleanup();
     }
 
 /*=================================================================================**//**

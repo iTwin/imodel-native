@@ -258,6 +258,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
     BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
+    BeAssert(NULL == m_scriptingAdmin); m_scriptingAdmin = &_SupplyScriptingAdmin();
 
     auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
 
