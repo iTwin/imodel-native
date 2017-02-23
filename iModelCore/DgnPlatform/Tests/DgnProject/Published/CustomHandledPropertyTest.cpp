@@ -94,7 +94,6 @@ TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
-    m_db->Schemas().CreateECClassViewsInDb();
     DgnElementId eleid;
     ECN::ECValue checkValue1, checkValue2;
     uint32_t Orgindex, Yawindex, Pitchindex, Rollindex, BBlindex, BBHindex;
@@ -247,7 +246,6 @@ TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
-    m_db->Schemas().CreateECClassViewsInDb();
     DgnElementId eleid;
     ECN::ECValue checkValue1, checkValue2;
     uint32_t Orgindex,Rotindex, BBlindex, BBHindex;
@@ -381,7 +379,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     DgnSubCategoryId subcatid;
     DgnSubCategory::Appearance subappearence;
     if (true)
-    {
+        {
         DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
         DrawingCategory category(*m_db, "TestCategory");
@@ -394,12 +392,12 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
         ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(rankindex, ECN::ECValue(3)));
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, rankindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue(3)));
-        DgnSubCategory::Appearance  appearance;
+        DgnSubCategory::Appearance appearance;
         DrawingCategoryCPtr persistentCategory = category.Insert(appearance);
         EXPECT_TRUE(persistentCategory.IsValid());
         categoryId=persistentCategory->GetCategoryId();
         m_db->SaveChanges();
-    }
+        }
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
