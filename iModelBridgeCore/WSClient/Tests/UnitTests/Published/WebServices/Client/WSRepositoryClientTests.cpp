@@ -893,7 +893,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV25)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -901,7 +901,22 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 5}));
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 6}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
         });
 
