@@ -10,7 +10,6 @@
 
 #define JSON_NAMESPACE_TypeTests        "TypeTests"
 #define JSON_PROP_IsInstanceSpecific    "IsInstanceSpecific"
-#define JSON_PROP_ValueExpression       "ValueExpression"
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -23,15 +22,24 @@ struct TypeTests : public DgnDbTestFixture
     static const bool GEOMETRY3D = true;
     static const bool GEOMETRY2D = false;
 
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnBoxDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnConeDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnSphereDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnTorusPipeDetailCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ISolidPrimitiveCR);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DEllipse3dCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ICurvePrimitiveCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, CurveVectorCR, bool);
+    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, GeometricPrimitiveCR, bool);
+
     GraphicalRecipe2dCPtr InsertRecipe2d(DefinitionModelR, Utf8CP);
     GraphicalType2dCPtr InsertType2d(DefinitionModelR, Utf8CP, GraphicalRecipe2dCR);
 
     DrawingModelPtr InsertTemplate2A(GraphicalRecipe2dCR);
     DrawingModelPtr InsertTemplate2B(GraphicalRecipe2dCR, GraphicalType2dCR);
 
-    DrawingGraphicPtr CreateGeometricElement2d(DrawingModelR, DgnSubCategoryId, DPoint2dCR, double, Utf8CP);
+    DrawingGraphicPtr CreateTextElement2d(DrawingModelR, DgnSubCategoryId, DPoint2dCR, double, Utf8CP, bool isExpression=false);
     DrawingGraphicPtr CreateGeometricElement2d(DrawingModelR, DgnSubCategoryId, DgnGeometryPartId, DPoint2dCR, AngleInDegreesCR rotation=AngleInDegrees());
-    DrawingGraphicPtr CreateGeometricElement2d(DrawingModelR, DgnSubCategoryId, GraphicalType2dCR, DPoint2dCR, AngleInDegreesCR rotation=AngleInDegrees());
     DrawingGraphicPtr CreateGeometricElement2d(DrawingModelR, DgnCategoryId, GeometryBuilderR);
     DrawingGraphicPtr CreateDrawingGraphic(DrawingModelR, GraphicalType2dCR, DPoint2dCR, AngleInDegreesCR rotation=AngleInDegrees(), DgnSubCategoryId subCategoryOverride=DgnSubCategoryId(), Utf8CP userLabel=nullptr);
     
@@ -43,16 +51,6 @@ struct TypeTests : public DgnDbTestFixture
     PhysicalModelPtr InsertTemplate3C(PhysicalRecipeCR);
     PhysicalModelPtr InsertTemplate3E(PhysicalRecipeCR);
 
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnBoxDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnConeDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnSphereDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnTorusPipeDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ISolidPrimitiveCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DEllipse3dCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ICurvePrimitiveCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, CurveVectorCR, bool);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, GeometricPrimitiveCR, bool);
-
     GeometricElement3dPtr CreateGeometricElement3d(GeometricModel3dR, DgnSubCategoryId, DgnGeometryPartId, DPoint3dCR, YawPitchRollAnglesCR angles=YawPitchRollAngles());
     GeometricElement3dPtr CreateGeometricElement3d(GeometricModel3dR, GeometryCollection::Iterator const&);
     GeometricElement3dPtr CreateGeometricElement3d(GeometricModel3dR, DgnCategoryId, GeometryBuilderR);
@@ -60,17 +58,11 @@ struct TypeTests : public DgnDbTestFixture
     DgnDbStatus InstantiateTemplate3d(PhysicalModelR, PhysicalTypeCR, GenericGroupModelP, DPoint3dCR, YawPitchRollAnglesCR);
     DgnDbStatus DropSpatialElementToGeometry(SpatialModelR, SpatialElementCR);
 
-    DgnGeometryPartId QueryGeometryPartId(DgnElementCR, Utf8CP);
-    DgnGeometryPartId QueryGeometryPartId(TypeDefinitionElementCR); // Only valid for types that have templates that resolve to a single element
     DgnCategoryId DetermineCategoryId(TypeDefinitionElementCR);     // Only valid for types that have templates that resolve to a single element
 
     ElementIterator MakeElementIteratorWhereModel(Utf8CP, DgnModelCR);
-    bool IsNestedTypeLocation(DgnElementCR);
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
-    DgnDbStatus AppendInstanceSpecificGeometry(GeometryBuilderR, DgnElementCR, GraphicalType2dCR, DPoint2dCR);
-    Utf8String GetValueExpression(DgnElementCR);
-    void SetValueExpression(DgnElementR, Utf8CP);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
 };
 
@@ -161,20 +153,11 @@ DrawingModelPtr TypeTests::InsertTemplate2B(GraphicalRecipe2dCR recipe, Graphica
 
     DrawingGraphicPtr circle = CreateGeometricElement2d(*model, circleSubCategoryId, circlePart->GetId(), DPoint2d::FromZero());
     DrawingGraphicPtr cross = CreateGeometricElement2d(*model, lineSubCategoryId, crossPart->GetId(), DPoint2d::FromZero());
-    DrawingGraphicPtr field = CreateGeometricElement2d(*model, fieldSubCategoryId, DPoint2d::From(0, 1.5*radius), radius/4, "_XXX_");
-#if 0
-    NestedTypeLocation2dPtr nested1 = NestedTypeLocation2d::Create(*model, categoryId, nestedType, DPoint2d::From(-1.2*radius, 0));
-    NestedTypeLocation2dPtr nested2 = NestedTypeLocation2d::Create(*model, categoryId, nestedType, DPoint2d::From(0, -1.2*radius));
-    NestedTypeLocation2dPtr nested3 = NestedTypeLocation2d::Create(*model, categoryId, nestedType, DPoint2d::From(1.2*radius, 0));
-#else
+    DrawingGraphicPtr field = CreateTextElement2d(*model, fieldSubCategoryId, DPoint2d::From(0, 1.5*radius), radius/4, "UserLabel", true);
     DrawingGraphicPtr nested1 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(-1.2*radius, 0), AngleInDegrees(), lineSubCategoryId);
     DrawingGraphicPtr nested2 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(0, -1.2*radius), AngleInDegrees(), lineSubCategoryId);
     DrawingGraphicPtr nested3 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(1.2*radius, 0), AngleInDegrees(), lineSubCategoryId);
-#endif
     BeAssert(cross.IsValid() && circle.IsValid() && field.IsValid() && nested1.IsValid() && nested2.IsValid() && nested3.IsValid());
-
-    SetInstanceSpecific(*field, true);
-    SetValueExpression(*field, "UserLabel");
 
     BeAssert(cross->Insert().IsValid() && circle->Insert().IsValid() && field->Insert().IsValid() && nested1->Insert().IsValid() && nested2->Insert().IsValid() && nested3->Insert().IsValid());
     return model;
@@ -183,7 +166,7 @@ DrawingModelPtr TypeTests::InsertTemplate2B(GraphicalRecipe2dCR recipe, Graphica
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DrawingGraphicPtr TypeTests::CreateGeometricElement2d(DrawingModelR model, DgnSubCategoryId subCategoryId, DPoint2dCR origin, double textHeight, Utf8CP text)
+DrawingGraphicPtr TypeTests::CreateTextElement2d(DrawingModelR model, DgnSubCategoryId subCategoryId, DPoint2dCR origin, double textHeight, Utf8CP text, bool isExpression)
     {
     TextStringPtr textString = TextString::Create();
     textString->SetOrigin(DPoint3d::From(origin));
@@ -200,39 +183,16 @@ DrawingGraphicPtr TypeTests::CreateGeometricElement2d(DrawingModelR model, DgnSu
     if (!builder.IsValid() || !builder->Append(subCategoryId) || !builder->Append(*textString))
         return nullptr;
 
-    return CreateGeometricElement2d(model, categoryId, *builder);
+    DrawingGraphicPtr element = CreateGeometricElement2d(model, categoryId, *builder);
+    if (!element.IsValid())
+        return nullptr;
+
+    if (isExpression)
+        SetInstanceSpecific(*element, true);
+
+    return element;
     }
     
-////---------------------------------------------------------------------------------------
-//// @bsimethod                                   Shaun.Sewall                    02/2017
-////---------------------------------------------------------------------------------------
-//DrawingGraphicPtr TypeTests::CreateGeometricElement2d(DrawingModelR model, DgnSubCategoryId subCategoryId, GraphicalType2dCR nestedType, DPoint2dCR origin, AngleInDegreesCR rotation)
-//    {
-//    RecipeElementCPtr recipe = nestedType.GetRecipe();
-//    if (!recipe.IsValid())
-//        return nullptr;
-//
-//    DgnModelPtr templateModel = recipe->GetSubModel();
-//    if (!templateModel.IsValid())
-//        return nullptr;
-//
-//    //DgnDbR db = model.GetDgnDb();
-//    //ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometryPart), "WHERE CodeSpec.Id=:CodeSpecId AND CodeScope=:CodeScope");
-//    //ECSqlStatement* statement = iterator.GetStatement();
-//    //if (nullptr == statement)
-//    //    return nullptr;
-//
-//    //DgnCode geometryPartCode = CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, *nestedRecipe, "Ignored");
-//    //statement->BindId(statement->GetParameterIndex("CodeSpecId"), geometryPartCode.GetCodeSpecId());
-//    //statement->BindText(statement->GetParameterIndex("CodeScope"), geometryPartCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
-//
-//    //for (ElementIteratorEntryCR elementEntry : iterator)
-//    //    {
-//    //    }
-//
-//    return nullptr;
-//    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
@@ -294,30 +254,6 @@ PhysicalTypeCPtr TypeTests::InsertType3d(DefinitionModelR typeModel, Utf8CP type
 //---------------------------------------------------------------------------------------
 DrawingGraphicPtr TypeTests::CreateDrawingGraphic(DrawingModelR model, GraphicalType2dCR type, DPoint2dCR origin, AngleInDegreesCR rotation, DgnSubCategoryId subCategoryOverride, Utf8CP userLabel)
     {
-#if 0
-    DgnDbR db = model.GetDgnDb();
-    DgnCategoryId categoryId = DetermineCategoryId(type);
-    if (!categoryId.IsValid())
-        return nullptr;
-
-    DrawingGraphicPtr graphic = DrawingGraphic::Create(model, categoryId);
-    GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, DPoint2d::FromZero());
-    if (!graphic.IsValid() || !builder.IsValid())
-        return nullptr;
-
-    graphic->SetGraphicalType(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType));
-
-    if (userLabel && *userLabel)
-        graphic->SetUserLabel(userLabel);
-
-    if (DgnDbStatus::Success != AppendInstanceSpecificGeometry(*builder, *graphic, type, origin))
-        return nullptr;
-
-    return (BentleyStatus::SUCCESS == builder->Finish(*graphic)) ? graphic : nullptr;
-#endif
-
-
-
     RecipeElementCPtr recipe = type.GetRecipe();
     if (!recipe.IsValid())
         return nullptr;
@@ -368,23 +304,19 @@ DrawingGraphicPtr TypeTests::CreateDrawingGraphic(DrawingModelR model, Graphical
                 GeometricPrimitivePtr geometry = geometryEntry.GetGeometryPtr();
                 if (geometry.IsValid())
                     {
-                    if (GeometryCollection::Iterator::EntryType::TextString == geometryEntry.GetEntryType())
+                    if (IsInstanceSpecific(*templateElement) && GeometryCollection::Iterator::EntryType::TextString == geometryEntry.GetEntryType())
                         {
-                        Utf8String expression = GetValueExpression(*templateElement);
-                        if (!expression.empty())
+                        TextStringPtr textString = geometry->GetAsTextString();
+                        if (textString.IsValid())
                             {
-                            TextStringPtr textString = geometry->GetAsTextString();
-                            if (textString.IsValid())
-                                {
-                                ECN::ECValue value;
-                                Utf8String valueAsString = "???";
+                            ECN::ECValue value;
+                            Utf8String valueAsString = "???";
 
-                                if ((DgnDbStatus::Success == element->GetPropertyValue(value, expression.c_str())) && !value.IsNull())
-                                    valueAsString = value.ToString();
+                            if ((DgnDbStatus::Success == element->GetPropertyValue(value, textString->GetText().c_str())) && !value.IsNull())
+                                valueAsString = value.ToString();
 
-                                textString->SetText(valueAsString.c_str());
-                                geometry = GeometricPrimitive::Create(*textString);
-                                }
+                            textString->SetText(valueAsString.c_str());
+                            geometry = GeometricPrimitive::Create(*textString);
                             }
                         }
 
@@ -798,67 +730,6 @@ GeometricElement3dPtr TypeTests::CreateGeometricElement3d(GeometricModel3dR mode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnGeometryPartId TypeTests::QueryGeometryPartId(DgnElementCR scopeElement, Utf8CP name)
-    {
-    return DgnGeometryPart::QueryGeometryPartId(scopeElement.GetDgnDb(), CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, scopeElement, name));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
-DgnGeometryPartId TypeTests::QueryGeometryPartId(TypeDefinitionElementCR type)
-    {
-    DgnCode geometryPartCode = CodeSpec::CreateCode(BIS_CODESPEC_GeometryPart, type, type.GetCode().GetValue());
-    if (!geometryPartCode.IsValid())
-        return DgnGeometryPartId();
-
-    DgnDbR db = type.GetDgnDb();
-    DgnGeometryPartId geometryPartId = DgnGeometryPart::QueryGeometryPartId(db, geometryPartCode);
-    if (geometryPartId.IsValid())
-        return geometryPartId; // geometry part already exists
-
-    RecipeElementCPtr recipe = type.GetRecipe();
-    if (!recipe.IsValid())
-        return DgnGeometryPartId(); // no recipe to create the type
-
-    bool is3d = nullptr != recipe->ToPhysicalRecipe();
-    DgnGeometryPartPtr geometryPart = DgnGeometryPart::Create(db, geometryPartCode);
-    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(db, is3d);
-    if (!geometryPart.IsValid() || !builder.IsValid())
-        return DgnGeometryPartId();
-
-    DgnModelPtr templateModel = recipe->GetSubModel();
-    if (!templateModel.IsValid())
-        return DgnGeometryPartId();
-
-    for (ElementIteratorEntryCR elementEntry : MakeElementIteratorWhereModel(BIS_SCHEMA(BIS_CLASS_GeometricElement), *templateModel))
-        {
-        GeometricElementCPtr templateElement = db.Elements().Get<GeometricElement>(elementEntry.GetElementId());
-        if (!templateElement.IsValid())
-            return DgnGeometryPartId();
-
-        if ((IsNestedTypeLocation(*templateElement)) || (IsInstanceSpecific(*templateElement)))
-            continue;
-
-        for (GeometryCollection::Iterator const& geometryEntry : GeometryCollection(*templateElement->ToGeometrySource()))
-            {
-            GeometricPrimitivePtr geometry = geometryEntry.GetGeometryPtr();
-            if (!geometry.IsValid())
-                continue;
-
-            builder->Append(geometryEntry.GetGeometryParams().GetSubCategoryId());
-            builder->Append(*geometry);
-            }
-        }
-
-    builder->Finish(*geometryPart);
-    db.Elements().Insert<DgnGeometryPart>(*geometryPart);
-    return geometryPart->GetId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
 DgnCategoryId TypeTests::DetermineCategoryId(TypeDefinitionElementCR type)
     {
     DgnDbR db = type.GetDgnDb();
@@ -892,96 +763,6 @@ ElementIterator TypeTests::MakeElementIteratorWhereModel(Utf8CP elementClassName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus TypeTests::AppendInstanceSpecificGeometry(GeometryBuilderR builder, DgnElementCR element, GraphicalType2dCR type, DPoint2dCR origin)
-    {
-    DgnGeometryPartId geometryPartId = QueryGeometryPartId(type);
-    if (geometryPartId.IsValid())
-        {
-        if (!builder.Append(geometryPartId, origin))
-            return DgnDbStatus::BadRequest;
-        }
-
-    GraphicalRecipe2dCPtr recipe = type.GetRecipe();
-    if (!recipe.IsValid())
-        return DgnDbStatus::BadRequest;
-
-    GeometricModelPtr templateModel = recipe->GetSub<GeometricModel>();
-    if (!templateModel.IsValid())
-        return DgnDbStatus::BadRequest;
-
-    DgnDbR db = type.GetDgnDb();
-    for (ElementIteratorEntryCR elementEntry : MakeElementIteratorWhereModel(BIS_SCHEMA(BIS_CLASS_GraphicalElement2d), *templateModel))
-        {
-        NestedTypeLocation2dCPtr nestedTypeLocation = db.Elements().Get<NestedTypeLocation2d>(elementEntry.GetElementId());
-        if (nestedTypeLocation.IsValid())
-            {
-            GraphicalType2dCPtr nestedType = nestedTypeLocation->GetNestedType();
-            DPoint2d location = nestedTypeLocation->GetLocation();
-            location.Add(origin);
-            DgnDbStatus status = AppendInstanceSpecificGeometry(builder, element, *nestedType, location);
-            if (DgnDbStatus::Success != status)
-                return status;
-
-            continue;
-            }
-
-        DrawingGraphicCPtr templateElement = db.Elements().Get<DrawingGraphic>(elementEntry.GetElementId());
-        if (!templateElement.IsValid())
-            return DgnDbStatus::BadRequest;
-
-        if (!IsInstanceSpecific(*templateElement))
-            continue;
-
-        for (GeometryCollection::Iterator const& geometryEntry : GeometryCollection(*templateElement))
-            {
-            GeometricPrimitivePtr geometry = geometryEntry.GetGeometryPtr();
-            if (!geometry.IsValid())
-                continue;
-
-            if (GeometryCollection::Iterator::EntryType::TextString == geometryEntry.GetEntryType())
-                {
-                Utf8String expression = GetValueExpression(*templateElement);
-                if (!expression.empty())
-                    {
-                    TextStringPtr textString = geometry->GetAsTextString();
-                    if (textString.IsValid())
-                        {
-                        ECN::ECValue value;
-                        Utf8String valueAsString = "???";
-
-                        if ((DgnDbStatus::Success == element.GetPropertyValue(value, expression.c_str())) && !value.IsNull())
-                            valueAsString = value.ToString();
-
-                        textString->SetText(valueAsString.c_str());
-                        geometry = GeometricPrimitive::Create(*textString);
-                        }
-                    }
-                }
-
-            geometry->TransformInPlace(Transform::From(DPoint3d::From(origin)));
-            builder.Append(*geometry);
-            }
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
-bool TypeTests::IsNestedTypeLocation(DgnElementCR element)
-    {
-    if (nullptr != dynamic_cast<NestedTypeLocation2dCP>(&element))
-        return true;
-
-    // WIP: check for 3D nested types also!
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
 bool TypeTests::IsInstanceSpecific(DgnElementCR element)
     {
     ECN::AdHocJsonValueCR jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
@@ -995,25 +776,6 @@ void TypeTests::SetInstanceSpecific(DgnElementR element, bool isInstanceSpecific
     {
     Json::Value jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
     jsonObj[JSON_PROP_IsInstanceSpecific] = isInstanceSpecific;
-    element.SetJsonProperties(JSON_NAMESPACE_TypeTests, jsonObj);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
-Utf8String TypeTests::GetValueExpression(DgnElementCR element)
-    {
-    ECN::AdHocJsonValueCR jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
-    return jsonObj.get(JSON_PROP_ValueExpression, "").asCString();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
-void TypeTests::SetValueExpression(DgnElementR element, Utf8CP expression)
-    {
-    Json::Value jsonObj = element.GetJsonProperties(JSON_NAMESPACE_TypeTests);
-    jsonObj[JSON_PROP_ValueExpression] = expression;
     element.SetJsonProperties(JSON_NAMESPACE_TypeTests, jsonObj);
     }
 
