@@ -17,12 +17,14 @@
 
 //#define FORMAT_DEBUG_PRINT
 
-#undef LOG
-#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 using namespace BentleyApi::Units;
-BEGIN_BENTLEY_FORMATTING_NAMESPACE
+//USING_BENTLEY_FORMATTING;
+using namespace BentleyApi::Formatting;
+BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
-
+#undef LOG
+//#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 
 TEST(FormattingTest, PhysValues)
     {
@@ -431,5 +433,5 @@ TEST(FormattingTest, DictionaryValidation)
     }
 
 
-END_BENTLEY_FORMATTING_NAMESPACE
+END_BENTLEY_FORMATTEST_NAMESPACE
 

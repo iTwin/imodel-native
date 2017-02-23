@@ -245,9 +245,17 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+                                          //12345678901234567|234567890123
     TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
+
+    //The usable precision of IEEE - 754 double is around 16 decimal digits - so excluding educational purposes, 
+    //representations longer than that are just a waste of resources and computing power :
+    //Users are not getting more informed when they see a 700 - digit - number on the screeen.
+    //Configuration variables stored in that "more accurate" form are useless
+
+
 
     // Expected values generated using the following equations and windows calculator
     // Fahrenheit = Celsius󭝵+32

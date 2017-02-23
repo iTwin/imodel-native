@@ -146,9 +146,7 @@ friend struct Expression;
 
 private:
     bvector<UnitCP> m_units;
-
     void AddUnit(UnitCR unit);
-
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
     Phenomenon() = delete;

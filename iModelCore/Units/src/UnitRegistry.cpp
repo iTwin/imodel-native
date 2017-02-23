@@ -107,7 +107,7 @@ Utf8CP GetBasePhenomenonName(Utf8Char baseSymbol)
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddBasePhenomena(Utf8Char baseSymbol)
+void UnitRegistry::AddBasePhenomenon(Utf8Char baseSymbol)
     {
     Utf8CP phenomenaName = GetBasePhenomenonName(baseSymbol);
     if (Utf8String::IsNullOrEmpty(phenomenaName))
@@ -128,7 +128,7 @@ void UnitRegistry::AddBasePhenomena(Utf8Char baseSymbol)
 //-------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr     02/16
 //+---------------+---------------+---------------+---------------+---------------+----//
-void UnitRegistry::AddPhenomena (Utf8CP phenomenaName, Utf8CP definition)
+void UnitRegistry::AddPhenomenon (Utf8CP phenomenaName, Utf8CP definition)
     {
     if (Utf8String::IsNullOrEmpty(phenomenaName))
         {
