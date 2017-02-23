@@ -21,7 +21,7 @@
 #include <sql.h>
 #include <sqlext.h>
 
-#define CHUNK_SIZE                  (512*1024) - 1 //512Kb CURL_MAX_READ_SIZE
+//#define CHUNK_SIZE                  (512*1024) - 1 //512Kb CURL_MAX_READ_SIZE
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
@@ -43,11 +43,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
 
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
-
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
-
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
@@ -84,10 +80,10 @@ struct RealityDataByIdRequest : public RealityDataUrl
     {
 public:
 	// Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
    
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataByIdRequest() {}
@@ -103,10 +99,10 @@ private:
 struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataProjectRelationshipByProjectIdRequest() {}
@@ -120,10 +116,10 @@ private:
 struct RealityDataFolderByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataFolderByIdRequest() {}
@@ -137,10 +133,10 @@ private:
 struct RealityDataDocumentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 	
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentByIdRequest() {}
@@ -178,7 +174,7 @@ private:
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
@@ -206,7 +202,7 @@ public:
     //! Indicates if azure blob container redirection is possible
     REALITYDATAPLATFORM_EXPORT bool IsAzureRedirectionPossible();
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataDocumentContentByIdRequest() {}
@@ -309,7 +305,8 @@ enum class RealityDataField
     Listable,
     ModifiedTimestamp,
     CreatedTimestamp,
-    OwnedBy
+    OwnedBy,
+    Group
     };
 
 //=====================================================================================
@@ -325,12 +322,10 @@ struct RealityDataPagedRequest : public WSGPagedRequest
 public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetPluginName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
-    //REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_requestType = HttpRequestType::GET_Request; m_sort = false; }
+    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
 
@@ -342,7 +337,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
     int m_informationSourceFilter;
     bool m_informationSourceFilteringSet;
@@ -354,22 +349,19 @@ protected:
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier, uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint8_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
-
-private:
-    RealityDataListByEnterprisePagedRequest() {}
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     RealityDataProjectRelationshipByProjectIdPagedRequest() {}
@@ -401,7 +393,7 @@ struct RealityDataServiceCreate : public RealityDataUrl
     {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
     bool m_listable;
@@ -411,28 +403,26 @@ struct RealityDataFileUpload : public RealityDataUrl
     {
 public:
     RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
-        m_azureServer(azureServer), m_index(index), m_uploadedSize(0)
+        m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), 
+        m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true)
         {
-        /*struct stat file_info;
-        stat(filename.GetNameUtf8().c_str(), &file_info);
-        m_filesize = file_info.st_size;*/
-
+        m_validRequestString = false;
         Utf8String fileFromRoot = filename.GetNameUtf8();
         fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
         m_fileUrl = "/";
         m_fileUrl.append(fileFromRoot);
         m_fileUrl.ReplaceAll("\\","/");
 
-        //testFile = fopen(filename.GetNameUtf8().c_str(), "r");
-
         BeFileStatus status = m_fileStream.Open(filename.GetName(), BeFileAccess::Read);
         BeAssert(status == BeFileStatus::Success);
 
-        m_fileStream.GetSize((uint64_t)m_filesize);
+        m_fileStream.GetSize((uint64_t)m_fileSize);
         m_requestType = HttpRequestType::PUT_Request;
 
-        //m_currentChunk = (Byte*) malloc(CHUNK_SIZE);//unit8_t[CHUNK_SIZE];//malloc(CHUNK_SIZE + 1);//new char[CHUNK_SIZE];
-        m_currentChunk.resize(CHUNK_SIZE);
+        m_singleChunk = m_fileSize < m_chunkSize;
+
+        if(m_singleChunk)
+            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
         }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
@@ -446,26 +436,33 @@ public:
         m_requestWithToken = m_httpRequestString;
         m_requestWithToken.append(m_azureToken);
 
+        if(!m_singleChunk)
+            {
+            if(m_moreToSend)
+                {
+                m_requestWithToken.append("&comp=block&blockid=");
+                m_requestWithToken.append(m_chunkNumberString);
+                }
+            else
+                {
+                m_requestWithToken.append("&comp=blocklist");
+                }
+            }
+
         return m_requestWithToken;
         };
 
-    /*REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRequestPayload() const override
-    {
-        if (!m_validRequestString)
-            _PrepareHttpRequestStringAndPayload();
-
-        BeAssert(m_validRequestString);
-
-        return (char*)GetChunk();
-    }*/
-
     REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
 
-    REALITYDATAPLATFORM_EXPORT bool FinishedSending() { return m_uploadedSize == m_filesize; }
+    REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
 
-    REALITYDATAPLATFORM_EXPORT uint32_t GetMessageSize() { return m_uploadedSizeStep; }
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
 
-    uint64_t GetFileSize() const { return m_filesize; }
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
+
+    uint64_t GetFileSize() const { return m_fileSize; }
 
     BeFile& GetFileStream() { return m_fileStream; }
 
@@ -473,49 +470,52 @@ public:
 
     REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
         {
-        if (!m_validRequestString)
+        if (!m_validRequestString || !m_moreToSend)
             _PrepareHttpRequestStringAndPayload();
 
         BeAssert(m_validRequestString);
 
-        /*if(m_requestHeader.size() > 4)
-            m_requestHeader.pop_back();*/
-        m_requestHeader.push_back(m_chunkStep);
-
         return m_requestHeader;
-        } //might not be necessary
+        } 
 
-    REALITYDATAPLATFORM_EXPORT Byte* GetChunk() { return &m_currentChunk[0]; }
+    REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
 
-    //FILE*                   testFile;
     size_t                  m_index;
 protected:
-    void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
+    mutable bool            m_moreToSend;
+    mutable bool            m_singleChunk;
+
     Utf8String              m_fileUrl;
 
     BeFile                  m_fileStream;
-    uint64_t                m_filesize;
-    uint64_t                m_uploadedSize;
-    uint32_t                m_uploadedSizeStep;
+    uint64_t                m_fileSize;
+
+    uint64_t                m_chunkSize;
+    uint64_t                m_chunkStop;
+    uint32_t                m_chunkNumber;
+    Utf8String              m_chunkNumberString;
+    uint64_t                m_uploadProgress;
+
     Utf8String              m_azureServer;
-    Utf8String              m_chunkStep;
     float                   m_progressStep;
     RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
     RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
     Utf8String              m_azureToken;
     mutable Utf8String      m_requestWithToken;
-    bvector<Byte>           m_currentChunk;
+
+    Utf8String              m_blockList;
     };
 
 struct AzureWriteHandshake : public RealityDataUrl
     {
 public:
-    AzureWriteHandshake(Utf8String sourcePath) { m_id = sourcePath; }
+    AzureWriteHandshake(Utf8String sourcePath) { m_validRequestString = false; m_id = sourcePath; }
     Utf8StringR GetJsonResponse() { return jsonResponse; }
 protected:
-    virtual void _PrepareHttpRequestStringAndPayload() const override;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 private:
     Utf8String jsonResponse;
     AzureWriteHandshake();
@@ -527,8 +527,8 @@ struct UploadReport
     bmap<WString, RealityDataFileUpload*> results;
     ~UploadReport()
         {
-        /*for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
-            delete (it->second);*/
+        for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
+            delete (it->second);
         }
 
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
@@ -663,7 +663,9 @@ protected:
 
 private:
     void SetupCurlforFile(RealityDataUrl* upload, int verifyPeer);
+    bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
+    Utf8String GetAzureToken();
     bvector<RealityDataFileUpload*>         m_filesToUpload;
 
     AzureWriteHandshake*        m_handshakeRequest;
@@ -690,6 +692,8 @@ private:
     bool                        m_overwrite;
 
     UploadReport                m_ulReport;
+    size_t                      m_curEntry;
+    time_t                      m_azureTokenTimer;
     };
 
 //=====================================================================================
@@ -738,7 +742,7 @@ public:
         }
 
     //! Returns the current name of the server
-    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServer();
+    REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetServerName();
 
     //! Results the string containing the WSG protocol version number
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetWSGProtocol();

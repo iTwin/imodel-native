@@ -60,8 +60,17 @@ WSGRequest& WSGRequest::GetInstance()
     return *s_instance;
     }
 
+Utf8String CurlConstructor::GetToken()
+    {
+    if((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
+        RefreshToken();
+    return m_token;
+    }
+
 void CurlConstructor::RefreshToken()
     {
+    m_tokenRefreshTimer = std::time(nullptr);
+
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
 
@@ -173,7 +182,7 @@ CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8Stri
         Utf8StringP dummyString = new Utf8String(); //if you don't handle the body, it gets printed to the output
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, dummyString);
-        delete dummyString;
+        //delete dummyString;
         }
     else
         {
@@ -203,7 +212,7 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
     return returnString;
     }
 
-WSGURL::WSGURL(Utf8String url) : m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
+WSGURL::WSGURL(Utf8String url) : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
     {}
 
 WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
@@ -296,6 +305,12 @@ NodeNavigator& NodeNavigator::GetInstance()
 NodeNavigator::NodeNavigator()
     {
     s_nnInstance = this;
+    }
+
+bvector<NavNode> NodeNavigator::GetRootNodes(Utf8String serverName, Utf8String repoId)
+    {
+    WSGServer server = WSGServer(serverName, false);
+    return GetRootNodes(server, repoId);
     }
 
 bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId)

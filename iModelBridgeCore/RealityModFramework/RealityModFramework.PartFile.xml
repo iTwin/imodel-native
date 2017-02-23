@@ -138,6 +138,26 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceUploader.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceUploader.exe</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityDataServiceToolsExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceToolsExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceToolsExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -172,6 +192,8 @@
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="WSGServicesExample"/>
         <SubPart PartName="RealityDataServiceExample"/>
+        <SubPart PartName="RealityDataServiceToolsExample"/>
+        <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
@@ -547,10 +569,12 @@
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
     <!-- Lay out the test product according to the standard BeGTest layout. -->
     <ProductDirectoryList ListName="RealityModFrameworkTestsDir" >
-        <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="applicationroot"                Path=""/>
+        <ProductDirectory Name="Assets"                         Path="Assets" RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assets"                         Path="Assets" RelativeTo="applicationroot" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        RelativeTo="applicationroot"/>
 
         <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
