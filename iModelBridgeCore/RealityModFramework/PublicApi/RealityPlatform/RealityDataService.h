@@ -80,7 +80,7 @@ struct RealityDataByIdRequest : public RealityDataUrl
     {
 public:
 	// Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -99,7 +99,7 @@ private:
 struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -116,7 +116,7 @@ private:
 struct RealityDataFolderByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -133,7 +133,7 @@ private:
 struct RealityDataDocumentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 	
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -174,7 +174,7 @@ private:
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
@@ -325,7 +325,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_requestType = HttpRequestType::GET_Request; m_sort = false; }
+    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
 
@@ -349,7 +349,7 @@ protected:
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint8_t pageSize = 25) { m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint8_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -358,7 +358,7 @@ protected:
 struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -406,6 +406,7 @@ public:
         m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), 
         m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true)
         {
+        m_validRequestString = false;
         Utf8String fileFromRoot = filename.GetNameUtf8();
         fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
         m_fileUrl = "/";
@@ -418,7 +419,10 @@ public:
         m_fileStream.GetSize((uint64_t)m_fileSize);
         m_requestType = HttpRequestType::PUT_Request;
 
-        m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+        m_singleChunk = m_fileSize < m_chunkSize;
+
+        if(m_singleChunk)
+            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
         }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
@@ -432,14 +436,17 @@ public:
         m_requestWithToken = m_httpRequestString;
         m_requestWithToken.append(m_azureToken);
 
-        if(m_moreToSend)
+        if(!m_singleChunk)
             {
-            m_requestWithToken.append("&comp=block&blockid=");
-            m_requestWithToken.append(m_chunkNumberString);
-            }
-        else
-            {
-            m_requestWithToken.append("&comp=blocklist");
+            if(m_moreToSend)
+                {
+                m_requestWithToken.append("&comp=block&blockid=");
+                m_requestWithToken.append(m_chunkNumberString);
+                }
+            else
+                {
+                m_requestWithToken.append("&comp=blocklist");
+                }
             }
 
         return m_requestWithToken;
@@ -449,7 +456,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
 
-    REALITYDATAPLATFORM_EXPORT bool FinishedSending() { return !m_moreToSend; }
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
 
     REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
 
@@ -479,6 +486,7 @@ protected:
 
 private:
     mutable bool            m_moreToSend;
+    mutable bool            m_singleChunk;
 
     Utf8String              m_fileUrl;
 
@@ -504,7 +512,7 @@ private:
 struct AzureWriteHandshake : public RealityDataUrl
     {
 public:
-    AzureWriteHandshake(Utf8String sourcePath) { m_id = sourcePath; }
+    AzureWriteHandshake(Utf8String sourcePath) { m_validRequestString = false; m_id = sourcePath; }
     Utf8StringR GetJsonResponse() { return jsonResponse; }
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;

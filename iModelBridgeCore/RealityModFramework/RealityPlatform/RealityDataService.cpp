@@ -583,6 +583,14 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
         m_requestHeader.push_back("x-ms-blob-type: BlockBlob");
     }
 
+bool RealityDataFileUpload::FinishedSending()
+    { 
+    if(!m_singleChunk)
+        return !m_moreToSend; 
+    else
+        return (m_uploadProgress < m_fileSize - 1);
+    }
+
 void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
     {
     if(m_uploadProgress < m_fileSize - 1)
@@ -598,17 +606,20 @@ void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
             m_chunkSize = m_fileSize - m_uploadProgress;
             }
 
-        m_blockList.append("<Latest>");
-        std::stringstream blockIdStream;
-        blockIdStream << std::setw(5) << std::setfill('0') << m_chunkNumber;
-        std::string blockId = blockIdStream.str();
-        m_chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
-        m_blockList.append(m_chunkNumberString);
-        m_blockList.append("</Latest>");
+        if(!m_singleChunk)
+            {
+            m_blockList.append("<Latest>");
+            std::stringstream blockIdStream;
+            blockIdStream << std::setw(5) << std::setfill('0') << m_chunkNumber;
+            std::string blockId = blockIdStream.str();
+            m_chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
+            m_blockList.append(m_chunkNumberString);
+            m_blockList.append("</Latest>");
+            }
         m_uploadProgress = m_chunkStop;
         ++m_chunkNumber;
         }
-    else
+    else if (!m_singleChunk)
         {
         m_moreToSend = false;
         m_blockList.append("</BlockList>");
@@ -625,7 +636,7 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
         if(status != BeFileStatus::Success)
             return 0;
         }
-    else
+    else if (!m_singleChunk)
         {
         memcpy(buffer, m_blockList.c_str(), m_blockList.length());
         bytesRead = (uint32_t)m_blockList.length();
@@ -989,7 +1000,7 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
             }*/
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         
-        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
+        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, request);
 
         curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);
@@ -1057,7 +1068,7 @@ Utf8String RealityDataServiceUpload::GetAzureToken()
         m_azureTokenTimer = std::time(nullptr);
         RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
         if(ParseHandshakeResponse(m_handshakeRequest->GetJsonResponse()) != BentleyStatus::SUCCESS)
-            return ""; //TODO: handle errors (azureFailure) ((ReportStatus))
+            BeAssert(0); //TODO: handle errors (azureFailure) ((ReportStatus))
         }
     return m_azureToken;
     }
@@ -1066,6 +1077,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     { 
     CreateUpload(properties);
     m_handshakeRequest = new AzureWriteHandshake(m_id);
+    GetAzureToken();
 
     if(uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {

@@ -212,7 +212,7 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
     return returnString;
     }
 
-WSGURL::WSGURL(Utf8String url) : m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
+WSGURL::WSGURL(Utf8String url) : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
     {}
 
 WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
