@@ -384,7 +384,9 @@ static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint3d> const &data);
+static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
+static void SaveTransformed (bvector<DSegment3d> const &data);
 static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void Shift (double dx, double dy, double dz = 0.0);
 static void Shift (DVec3dCR shift);
@@ -469,11 +471,15 @@ SaveAndRestoreCheckTransform (double dxFinal, double dyFinal, double dzFinal)
     m_finalShift.Init (dxFinal, dyFinal, dzFinal);
     m_baseTransform = Check::GetTransform ();
     }
-
-~SaveAndRestoreCheckTransform ()
+void DoShift ()
     {
     Check::SetTransform (m_baseTransform);
     Check::Shift (m_finalShift.x, m_finalShift.y, m_finalShift.z);
+    m_baseTransform = Check::GetTransform ();
+    }
+~SaveAndRestoreCheckTransform ()
+    {
+    DoShift ();
     }
 };
 

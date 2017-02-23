@@ -1401,6 +1401,12 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data)
     SaveTransformed (IGeometry::Create (cv));
     }
 
+void Check::SaveTransformed (bvector<bvector<DPoint3d>> const &data)
+    {
+    for (auto a : data)
+        SaveTransformed (a);
+    }
+
 void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
     {
     bvector<DPoint3d> points;
@@ -1418,6 +1424,15 @@ void Check::SaveTransformed (bvector<DTriangle3d> const &data, bool closed)
             }
         else
             SaveTransformed (points);
+        }
+    }
+
+void Check::SaveTransformed (bvector<DSegment3d> const &data)
+    {
+    for (auto &segment : data)
+        {
+        auto prim = ICurvePrimitive::CreateLine (segment);
+        SaveTransformed (*prim);
         }
     }
 

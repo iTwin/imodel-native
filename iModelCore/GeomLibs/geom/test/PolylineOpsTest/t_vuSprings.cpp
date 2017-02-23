@@ -485,104 +485,249 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+
+// Space id's are one based !!!!
+static const int s_invalidSpaceId = 0;
+
+// the "userDataPAsInt" attribute of a vu node is the space id.
+// spaceId == 0 is an unassigned node.
+// (i.e. first space gets id 1)
+struct SpaceDescriptor
+{
+DPoint3d m_seedPoint;
+int m_id;
+bvector<VuP> m_nodes;   // !! Complete list of nodes.
+
+// Constructor -- initialize with a reference coordinate and an id but no nodes.
+SpaceDescriptor (DPoint3dCR xyz, int id)
+    {
+    m_id = id;
+    m_seedPoint = xyz;
+    }
+
+int GetId () const { return m_id;}
+// Add a node to this space.
+// If the node is already in another space, return false.
+bool AddNode (VuP node)
+    {
+    int idInNode = node->GetUserDataAsInt ();
+    if (idInNode == m_id)
+        return true;
+    if (idInNode != 0)
+        return false;
+    m_nodes.push_back (node);
+    node->SetUserDataAsIntAroundFace (m_id);
+    return true;
+    }
+
+};
+
 struct GriddedSpaceManager
 {
+friend struct GriddedSpaceQueries;
 private:
 VuSetP m_graph;
 bvector<bvector <DPoint3d>> m_parityLoops;
 bvector<bvector <DPoint3d>> m_chains;
 double m_meshSize;
+bool m_isoGrid;
+bool m_smoothTriangles;
+int    m_lastSpaceId;
+bvector<SpaceDescriptor> m_spaces;
 public:
-// Constructor -- Copy all linework in:
-GriddedSpaceManager (
-bvector<bvector <DPoint3d>> parityLoops,
-bvector<bvector <DPoint3d>> chains,
-double meshSize
-)
+// Constructor -- empty manager
+GriddedSpaceManager () :
+    m_graph(nullptr),
+    m_isoGrid (true),
+    m_smoothTriangles (true),
+    m_meshSize (1.0)
     {
-    m_parityLoops = parityLoops;
-    m_chains      = chains;
-    m_meshSize = meshSize;
     }
-
-
-bool TryInitializeGraph()
+~GriddedSpaceManager ()
     {
     if (m_graph != nullptr)
         vu_freeVuSet (m_graph);
+    }
+void SetMeshParams (double meshSize, bool isoGrid = true, bool smoothTriangles = true)
+    {
+    m_meshSize = meshSize;
+    m_isoGrid = isoGrid;
+    m_smoothTriangles = smoothTriangles;
+    }
+int GetSpaceId (VuP node)
+    {
+    return node->GetUserDataAsInt ();
+    }
+VuSetP Graph (){ return m_graph;}
+
+// create a graph for given geometry.
+bool TryLoad
+(
+bvector<bvector <DPoint3d>> &parityLoops,
+bvector<bvector <DPoint3d>> &chains
+)
+    {
+    if (m_graph != nullptr)
+        vu_freeVuSet (m_graph);
+    m_graph = nullptr;
+    m_parityLoops = parityLoops;
+    m_chains      = chains;
+    m_lastSpaceId = 0;
+
     m_graph = VuOps::CreateTriangulatedGrid (m_parityLoops, m_chains, bvector<DPoint3d> (),
                         bvector<double> (), bvector<double> (),
-                        m_meshSize, m_meshSize, m_meshSize, m_meshSize, true, true);
+                        m_meshSize, m_meshSize, m_meshSize, m_meshSize, m_isoGrid, m_smoothTriangles);
     return m_graph != nullptr;
+    }
+
+int GetSpaceIdAtXYZ (DPoint3dCR xyz)
+    {
+    VuP node = vu_findContainingFace_linearSearch (m_graph, xyz, VU_EXTERIOR_EDGE);
+    if (nullptr == node)
+        return s_invalidSpaceId;
+    int oldId = node->GetUserDataAsInt ();
+    return oldId;
+    }
+
+// Try to claim the face containing xyz as a space.
+int CreateSpace (DPoint3dCR xyz)
+    {
+    VuP node = vu_findContainingFace_linearSearch (m_graph, xyz, VU_EXTERIOR_EDGE);
+    if (nullptr == node)
+        return s_invalidSpaceId;
+    int oldId = node->GetUserDataAsInt ();
+    if (oldId != 0)
+        {
+        // this node is already claimed
+        return s_invalidSpaceId;
+        }
+    m_spaces.push_back (SpaceDescriptor (xyz, ++m_lastSpaceId));
+    m_spaces.back ().AddNode (node);
+    return m_spaces.back ().GetId ();    
+    }
+
+// Set mask in each node that (a) has a nonzero UserDataPAsInt and (b) edge mate has a different UserDataPAsInt
+size_t SetAllSpaceBoundaryMasks (VuMask mask)
+    {
+    vu_clearMaskInSet (m_graph, mask);
+    size_t numBoundary = 0;
+    VU_SET_LOOP(node, m_graph)
+        {
+        int id = node->GetUserDataAsInt ();
+        if (id != s_invalidSpaceId
+            && node->EdgeMate ()->GetUserDataAsInt () != id)
+            {
+            node->SetMask (mask);
+            numBoundary++;
+            }
+        }
+    END_VU_SET_LOOP (node, m_graph)
+    return numBoundary;
+    }
+
+};
+
+struct GriddedSpaceQueries
+{
+GriddedSpaceManager &m_manager;
+GriddedSpaceQueries (GriddedSpaceManager &manager) : m_manager(manager){}
+
+void SaveSpaceBoundaries ()
+    {
+    _VuSet::TempMask mask (m_manager.m_graph);
+    bvector<DSegment3d> chains;
+    m_manager.SetAllSpaceBoundaryMasks (mask.Mask ());
+    // brain dead -- just pull individual edges, no attempt to chain
+    VU_SET_LOOP (node, m_manager.m_graph)
+        {
+        int id = m_manager.GetSpaceId (node);
+        if (id != s_invalidSpaceId
+            && m_manager.GetSpaceId (node->EdgeMate ()) != id)
+            {
+            chains.push_back (DSegment3d::From (node->GetXYZ (), node->FSucc()->GetXYZ()));
+            }
+        }
+    END_VU_SET_LOOP (node, m_manager.m_graph)
+    Check::SaveTransformed (chains);
+    }
+void SaveWalls ()
+    {
+    Check::SaveTransformed (m_manager.m_parityLoops);
+    Check::SaveTransformed (m_manager.m_chains);
     }
 };
 
-TEST(VuCreateTriangulatedInGrid,Test0)
-    {
-    bvector<bvector <DPoint3d>> parityLoops
-        {
-        bvector<DPoint3d>
-            {
-            DPoint3d::From (0,0),
-            DPoint3d::From (10,0),
-            DPoint3d::From (10,10),
-            DPoint3d::From (20,10),
-            DPoint3d::From (20,30),
-            DPoint3d::From (0,30),
-            DPoint3d::From (0,0)
-            },
-        bvector<DPoint3d>
-            {
-            DPoint3d::From (5,5),
-            DPoint3d::From (8,5),
-            DPoint3d::From (8,11),
-            DPoint3d::From (5,11),
-            DPoint3d::From (5,5)
-            }
-        };
 
-    bvector<bvector <DPoint3d>> openChains
+static bvector<bvector <DPoint3d>> s_testFloorPlanParityLoops
+    {
+    bvector<DPoint3d>
         {
-        bvector<DPoint3d>
-            {
-            DPoint3d::From (2,15),
-            DPoint3d::From (11,15),
-            DPoint3d::From (15,12)
-            }
-        };
+        DPoint3d::From (0,0),
+        DPoint3d::From (10,0),
+        DPoint3d::From (10,10),
+        DPoint3d::From (20,10),
+        DPoint3d::From (20,30),
+        DPoint3d::From (0,30),
+        DPoint3d::From (0,0)
+        },
+    bvector<DPoint3d>
+        {
+        DPoint3d::From (5,5),
+        DPoint3d::From (8,5),
+        DPoint3d::From (8,11),
+        DPoint3d::From (5,11),
+        DPoint3d::From (5,5)
+        }
+    };
+
+bvector<bvector <DPoint3d>> s_testFloorPlanOpenChains
+    {
+    bvector<DPoint3d>
+        {
+        DPoint3d::From (2,15),
+        DPoint3d::From (11,15),
+        DPoint3d::From (15,12)
+        }
+    };
+
+bool TryLoadTestFloorPlan (GriddedSpaceManager &manager, double meshSize)
+    {
     bvector<DPoint3d> isolatedPoints;
     bvector<double> uBreaks;
     bvector<double> vBreaks;
-    bvector<bool> falseThenTrue { false, true};
-    for (bool nonuniform : falseThenTrue)
+    return manager.TryLoad (s_testFloorPlanParityLoops, s_testFloorPlanOpenChains);
+    }
+TEST(VuCreateTriangulatedInGrid,Test0)
+    {
+    GriddedSpaceManager manager;
+    GriddedSpaceQueries queries (manager);
+    bvector<bool> trueThenFalse { true/*, false*/};
+    double ax = 35.0;
+    Check::Shift (ax, 0,0);
+    for (double meshSize : bvector <double> {1.0, 2.0, 4.0})
         {
-        for (bool isoGrid : falseThenTrue)
+        SaveAndRestoreCheckTransform shifter (2.0 * ax, 0, 0);
+        for (bool isoGrid : trueThenFalse)
             {
-            SaveAndRestoreCheckTransform shifter (25, 0, 0);
-            for (bool smooth : falseThenTrue)
+            for (bool smooth : trueThenFalse)
                 {
                 SaveAndRestoreCheckTransform shifter (0, 35, 0);
-                auto graph = nonuniform
-                    ? VuOps::CreateTriangulatedGrid (parityLoops, openChains, isolatedPoints,
-                        uBreaks, vBreaks,
-                        1.0, 1.5,
-                        0.8, 0.9,
-                        isoGrid, smooth)
-                    : VuOps::CreateTriangulatedGrid (parityLoops, openChains, isolatedPoints,
-                        uBreaks, vBreaks,
-                        0.8, 0.8,
-                        0.8, 0.8,
-                        isoGrid, smooth);
-
-                TaggedPolygonVector polygons;
-                VuOps::CollectLoopsWithMaskSummary (graph, polygons, VU_EXTERIOR_EDGE, true);
-                for (auto &loop : polygons)
+                manager.SetMeshParams (meshSize, isoGrid, smooth);
+                if (TryLoadTestFloorPlan (manager, 1.0))
                     {
-                    if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
-                        Check::SaveTransformed (loop.GetPointsCR ());
+                    manager.CreateSpace (DPoint3d::From (15,20,0));
+                    manager.CreateSpace (DPoint3d::From (8,23,0));
+                    TaggedPolygonVector polygons;
+                    VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
+                    for (auto &loop : polygons)
+                        {
+                        if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
+                            Check::SaveTransformed (loop.GetPointsCR ());
+                        }
+                    Check::Shift (ax, 0.0, 0.0);
+                    queries.SaveSpaceBoundaries ();
+                    queries.SaveWalls ();
                     }
-                Check::Shift (30,0,0);
-                vu_freeVuSet (graph);
                 }
             }
         }
