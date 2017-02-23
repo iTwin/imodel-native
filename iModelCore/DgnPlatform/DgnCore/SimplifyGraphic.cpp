@@ -399,35 +399,6 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2007
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR graphicParams) const
-    {
-    graphicParams = m_currGraphicParams;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Render::OvrGraphicParams ovr = *m_context->GetOverrideGraphicParams();
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
-        graphicParams.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (graphicParams.GetLineColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_ColorTransparency))
-        graphicParams.SetLineColor(ColorDef((graphicParams.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColor))
-        graphicParams.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (graphicParams.GetFillColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColorTransparency))
-        graphicParams.SetFillColor(ColorDef((graphicParams.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RastWidth))
-        graphicParams.SetWidth(ovr.GetWidth());
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
-        graphicParams.SetMaterial(ovr.GetMaterial().get());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d SimplifyGraphic::GetLocalToView() const

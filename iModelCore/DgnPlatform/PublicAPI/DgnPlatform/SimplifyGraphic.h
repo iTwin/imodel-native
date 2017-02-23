@@ -120,10 +120,9 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
 
-    DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
-    GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;} // Direct access from PickContext without making builder...
+    GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;}
     IGeometryProcessorR GetGeometryProcesor() const {return m_processor;}
 
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range) const;
