@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct NestedTypeLocation2d; struct Session;
+    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -2485,27 +2485,6 @@ public:
     DGNPLATFORM_EXPORT static DrawingGraphicPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId);
 
     DGNPLATFORM_EXPORT DgnElementCPtr GetDerivedFromElement() const;
-};
-
-//=======================================================================================
-//! @ingroup GROUP_DgnElement
-// @bsiclass                                                    Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NestedTypeLocation2d : GraphicalElement2d
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_NestedTypeLocation2d, GraphicalElement2d)
-    friend struct dgn_ElementHandler::NestedTypeLocation2d;
-
-protected:
-    DgnDbStatus SetNestedType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("NestedType", graphicalTypeId, relClassId);}
-    DgnDbStatus SetLocation(DPoint2dCR location) {return SetPropertyValue("Location", location);}
-    explicit NestedTypeLocation2d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static NestedTypeLocation2dPtr Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR type, DPoint2dCR location);
-    DgnElementId GetNestedTypeId() const {return GetPropertyValueId<DgnElementId>("NestedType");}
-    DPoint2d GetLocation() const {return GetPropertyValueDPoint2d("Location");}
-    DGNPLATFORM_EXPORT GraphicalType2dCPtr GetNestedType() const;
 };
 
 //=======================================================================================

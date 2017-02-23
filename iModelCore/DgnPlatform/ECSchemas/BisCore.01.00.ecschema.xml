@@ -570,17 +570,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="NestedTypeLocation2d" displayLabel="2D Nested Type Location" description="Identifies the location where a nested Type inserts into a Recipe.">
-        <!-- WIP: Remove? -->
-        <BaseClass>GraphicalElement2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECNavigationProperty propertyName="NestedType" relationshipName="NestedTypeLocation2dRefersToType" direction="Forward" displayLabel="Nested Type">
-        </ECNavigationProperty>
-        <ECProperty propertyName="Location" typeName="point2d">
-        </ECProperty>
-    </ECEntityClass>
     <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -589,18 +578,6 @@
             <Class class="GraphicalElement2d" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
-            <Class class="GraphicalType2d"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="NestedTypeLocation2dRefersToType" strength="referencing" modifier="None">
-        <!-- WIP: Remove? -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
-            <Class class="NestedTypeLocation2d" />
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="defines" polymorphic="true">
             <Class class="GraphicalType2d"/>
         </Target>
     </ECRelationshipClass>
