@@ -381,10 +381,6 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
         m_facetOptions->SetMaxPerFace(5000/*MAX_VERTICES*/);
         m_facetOptions->SetAngleTolerance(0.25 * Angle::Pi());
         }
-
-    m_inPatternDraw = false;
-    m_inSymbolDraw  = false;
-    m_inTextDraw    = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,12 +390,10 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
     {
     SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
 
-    subGraphic->m_inPatternDraw      = m_inPatternDraw;
-    subGraphic->m_inSymbolDraw       = m_inSymbolDraw;
-    subGraphic->m_inTextDraw         = m_inTextDraw;
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;
     subGraphic->m_currGeomEntryId    = m_currGeomEntryId;
+    subGraphic->m_currClip           = (nullptr != clip ? clip->Clone(&m_localToWorldTransform) : nullptr);
 
     return subGraphic;
     }
@@ -1368,8 +1362,6 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         if (nullptr == sGraphic)
             return;
 
-        sGraphic->m_inTextDraw = true;
-
         CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, 5));
         sGraphic->ClipAndProcessCurveVector(*curve, false);
         return;
@@ -1383,9 +1375,6 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         if (nullptr == sGraphic)
             return;
 
-        sGraphic->m_inTextDraw = true;
-
-    
         auto        numGlyphs = text.GetNumGlyphs();
         DPoint3dCP  glyphOrigins = text.GetGlyphOrigins();
         DVec3d      xVector, yVector;
@@ -1799,20 +1788,6 @@ void SimplifyGraphic::_ActivateGraphicParams(GraphicParamsCR graphicParams, Geom
     }
 
 #ifdef NEEDS_WORK_GEOMETRY_MAPS
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-MaterialCP SimplifyGraphic::GetCurrentMaterial() const
-    {
-    if (m_inTextDraw)
-        return NULL;
-
-    if (0 != (m_overrideMatSymb.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
-        return m_overrideMatSymb.GetMaterial();
-    
-    return m_currentMatSymb.GetMaterial();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
