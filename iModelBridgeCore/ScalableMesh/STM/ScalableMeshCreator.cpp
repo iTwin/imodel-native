@@ -373,6 +373,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_progress.ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
     m_progress.ProgressStepIndex() = 0;
     m_progress.Progress() = 0;
+    m_progress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+    m_progress.SetTotalNumberOfSteps(0);
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)

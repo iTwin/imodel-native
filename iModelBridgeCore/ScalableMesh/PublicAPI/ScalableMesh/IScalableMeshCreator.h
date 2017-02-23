@@ -12,6 +12,7 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+typedef uint8_t byte;
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <TerrainModel/TerrainModel.h>
@@ -53,6 +54,7 @@ enum ScalableMeshStep
 
 enum ScalableMeshStepProcess
     {
+    PROCESS_INACTIVE = 0,
     PROCESS_GENERATION,
     PROCESS_TEXTURING
     };
