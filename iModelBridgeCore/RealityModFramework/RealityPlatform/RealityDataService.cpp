@@ -940,6 +940,9 @@ UploadReport* RealityDataServiceUpload::Perform()
 
 bool RealityDataServiceUpload::SetupNextEntry()
     {
+    if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
+        return false;
+
     if (m_curEntry < (int)m_filesToUpload.size())
         {
         SetupCurlforFile((RealityDataUrl*)(m_filesToUpload[m_curEntry]), 0);//SetupCurlandFile(&m_pEntries[m_curEntry]);
@@ -964,7 +967,7 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
         code = 0;
     else if(fileUpload != nullptr)
         {
-        fileUpload->SetAzureToken(m_azureToken);
+        fileUpload->SetAzureToken(GetAzureToken());
         fileUpload->UpdateUploadedSize();
         }
     else
@@ -1047,13 +1050,22 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
         }*/
     }
 
+Utf8String RealityDataServiceUpload::GetAzureToken()
+    {
+    if ((std::time(nullptr) - m_azureTokenTimer) > (59 * 60))
+        {
+        m_azureTokenTimer = std::time(nullptr);
+        RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
+        if(ParseHandshakeResponse(m_handshakeRequest->GetJsonResponse()) != BentleyStatus::SUCCESS)
+            return ""; //TODO: handle errors (azureFailure) ((ReportStatus))
+        }
+    return m_azureToken;
+    }
+
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : m_id(id), m_overwrite(overwrite)
     { 
     CreateUpload(properties);
     m_handshakeRequest = new AzureWriteHandshake(m_id);
-    RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
-    if(ParseHandshakeResponse(m_handshakeRequest->GetJsonResponse()) != BentleyStatus::SUCCESS)
-        return; //TODO: handle errors (azureFailure) ((ReportStatus))
 
     if(uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {

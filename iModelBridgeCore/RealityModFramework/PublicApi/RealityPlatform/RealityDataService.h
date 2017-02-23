@@ -657,6 +657,7 @@ private:
     void SetupCurlforFile(RealityDataUrl* upload, int verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
+    Utf8String GetAzureToken();
     bvector<RealityDataFileUpload*>         m_filesToUpload;
 
     AzureWriteHandshake*        m_handshakeRequest;
@@ -684,6 +685,7 @@ private:
 
     UploadReport                m_ulReport;
     size_t                      m_curEntry;
+    time_t                      m_azureTokenTimer;
     };
 
 //=====================================================================================

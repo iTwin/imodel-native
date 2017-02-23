@@ -36,8 +36,6 @@ static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
 
 CurlConstructor::CurlConstructor()
     {
-    RefreshToken();
-
     WChar exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
     WString exeDir = exePath;
@@ -60,8 +58,17 @@ WSGRequest& WSGRequest::GetInstance()
     return *s_instance;
     }
 
+Utf8String CurlConstructor::GetToken()
+    {
+    if((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
+        RefreshToken();
+    return m_token;
+    }
+
 void CurlConstructor::RefreshToken()
     {
+    m_tokenRefreshTimer = std::time(nullptr);
+
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
 
