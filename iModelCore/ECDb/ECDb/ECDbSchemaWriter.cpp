@@ -1657,14 +1657,14 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
     {
     if (!IsMajorChangeAllowedForECSchema(deletedClass.GetSchema().GetId()))
         {
-        Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s'. This schema include a major change but does not increment the MajorVersion for the schema. Bump up the major version for this schema and try again.",
+        Issues().Report("ECSchema Update failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change which requires the 'Read' version number of the ECSchema to be incremented.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
     
     if (!m_ecdb.Schemas().GetDerivedECClasses(deletedClass).empty())
         {
-        Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' with derived classes is not supported.",
+        Issues().Report("ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' is not supported because it has subclasses.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }

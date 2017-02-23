@@ -41,12 +41,6 @@ namespace com {
 
                     const static long TIMESTAMP = 93;
 
-                    const static long BINARY = -2;
-
-                    const static long VARBINARY = -3;
-
-                    const static long LONGVARBINARY = -4;
-
                     const static long SQLNULL = 0;
 
 

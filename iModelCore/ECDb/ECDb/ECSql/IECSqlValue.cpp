@@ -45,39 +45,45 @@ DateTime IECSqlValue::GetDateTime() const
     {
     DateTime::Info metadata;
     const uint64_t jdMsec = GetDateTimeJulianDaysMsec(metadata);
+    
+    //If GetDateTime is called on a select clause item which is an expression or not a DateTime ECProperty
+    //metadata is not available. This is not an error, we just take DateTime::Kind::Unspecified as default
+    //in this case
+    if (!metadata.IsValid())
+        metadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay(dt, jdMsec, metadata))
         {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             {
-            Utf8CP metaDataStr = "DateTime::Info invalid";
-            if (metadata.IsValid())
+            Utf8CP metaDataStr = nullptr;
+            if (metadata.GetComponent() == DateTime::Component::Date)
+                metaDataStr = "DateTime::Component::Date";
+            else
                 {
-                if (metadata.GetComponent() == DateTime::Component::Date)
-                    metaDataStr = "DateTime::Info::Component::Date";
-                else
+                BeAssert(metadata.GetComponent() == DateTime::Component::DateAndTime && "DateTime::Component has changed. This code must be adjusted.");
+                switch (metadata.GetKind())
                     {
-                    switch (metadata.GetKind())
-                        {
-                            case DateTime::Kind::Utc:
-                                metaDataStr = "DateTime::Info::Kind::Utc";
-                                break;
-                            case DateTime::Kind::Unspecified:
-                                metaDataStr = "DateTime::Info::Kind::Unspecified";
-                                break;
-                            case DateTime::Kind::Local:
-                                metaDataStr = "DateTime::Info::Kind::Local";
-                                break;
-                            default:
-                                metaDataStr = "DateTime::Info::Kind invalid";
-                                BeAssert(false && "DateTime::Info::Kind has changed. This code must be adjusted.");
-                                break;
-                        }
+                        case DateTime::Kind::Utc:
+                            metaDataStr = "DateTime::Kind::Utc";
+                            break;
+                        case DateTime::Kind::Unspecified:
+                            metaDataStr = "DateTime::Kind::Unspecified";
+                            break;
+                        case DateTime::Kind::Local:
+                            metaDataStr = "DateTime::Kind::Local";
+                            break;
+                        default:
+                            metaDataStr = "DateTime::Kind invalid";
+                            BeAssert(false && "DateTime::Kind has changed. This code must be adjusted.");
+                            break;
                     }
                 }
 
-            LOG.errorv("ECSqlStatement::GetDateTime> Could not convert JulianDays value (%" PRIu64 " msec, %s) into DateTime.", jdMsec, metaDataStr);
+            LOG.errorv("ECSqlStatement::GetDateTime> Could not convert JulianDays value (%.1f, %s) into DateTime.", DateTime::MsecToRationalDay(jdMsec), metaDataStr);
             }
+
         return DateTime();
         }
 

@@ -720,7 +720,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(unique_ptr<ValueExp>& exp, OSQLParseNod
         Utf8CP castTargetTypeName = nullptr;
         if (SQL_NODE_KEYWORD == primTypeNode->getNodeType())
             {
-            castTargetTypeName = SqlKeywordToString(primTypeNode->getTokenID());
+            castTargetTypeName = SqlDataTypeKeywordToString(primTypeNode->getTokenID());
             if (Utf8String::IsNullOrEmpty(castTargetTypeName))
                 return ERROR;
             }
@@ -2677,12 +2677,14 @@ BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(unique_ptr<ValueExpListExp>& e
 // @bsimethod                                    Krischan.Eberle                    10/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-Utf8CP ECSqlParser::SqlKeywordToString(sal_uInt32 keywordId)
+Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
     {
     switch (keywordId)
         {
             case SQL_TOKEN_BINARY:
                 return "BINARY";
+            case SQL_TOKEN_BLOB:
+                return "BLOB";
             case SQL_TOKEN_BOOLEAN:
                 return "BOOLEAN";
             case SQL_TOKEN_DATE:
@@ -2691,6 +2693,8 @@ Utf8CP ECSqlParser::SqlKeywordToString(sal_uInt32 keywordId)
                 return "DATETIME";
             case SQL_TOKEN_DOUBLE:
                 return "DOUBLE";
+            case SQL_TOKEN_FLOAT:
+                return "FLOAT";
             case SQL_TOKEN_INTEGER:
                 return "INTEGER";
             case SQL_TOKEN_INT:
@@ -2699,10 +2703,14 @@ Utf8CP ECSqlParser::SqlKeywordToString(sal_uInt32 keywordId)
                 return "INT64";
             case SQL_TOKEN_LONG:
                 return "LONG";
+            case SQL_TOKEN_REAL:
+                return "REAL";
             case SQL_TOKEN_STRING:
                 return "STRING";
             case SQL_TOKEN_TIMESTAMP:
                 return "TIMESTAMP";
+            case SQL_TOKEN_VARCHAR:
+                return "VARCHAR";
             default:
                 BeAssert(false && "TokenId unhandled by ECSqlParser::SqlKeywordToString");
                 return "";
