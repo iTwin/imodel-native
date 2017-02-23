@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     {
     // the sandbox server does not have a certificate, so we must set verify peer to false;
     // normally it is recommended to always verify the peer
-    WSGServer server = WSGServer("s3mxcloudservice.cloudapp.net", false); 
+    WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false); 
 
     //-----------------WSGServer methods-----------------------//
     Utf8String version = server.GetVersion(); 

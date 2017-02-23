@@ -136,68 +136,247 @@ void Usage()
     std::cout << "RealityDataServiceToolsExample console tools for RDS V1.0" << std::endl << std::endl;
     std::cout << "RealityDataServiceToolsExample [cmd...] [options...] [RealityData]" << std::endl;
     std::cout << "   [cmd...]" << std::endl;
-    std::cout << "   -List          : List all the RealityData (head only)." << std::endl;
-    std::cout << "   -ListAll Name  : For a specific RealityData, list all entries. " << std::endl;
+    std::cout << "   -List                      : (default)List all the RealityData (head only)." << std::endl;
+    std::cout << "   -ListAll                   : For a specific RealityData, recursively list all entries. " << std::endl;
+    std::cout << "   -ListItem root/xx/xx       : For a specific RealityData item [recursively]. " << std::endl;
+    //std::cout << "   -ListAll [ProjectId]  : **" << std::endl;
+    std::cout << "   -Download NameId Output    : Download file(s) to Output directory" << std::endl;
+    //std::cout << "   -Upload WindowsFolder guid  root  footprint type :  **" << std::endl;
     std::cout << "   [options...]" << std::endl;
-    std::cout << "   -Detail-0      : (default) Fields-> Name, Size " << std::endl;
-    std::cout << "   -Detail-1      : Fields-> Name, Dataset, Classification, Size, Owner, Created " << std::endl;
-    std::cout << "   -Filter        :  ?" << std::endl;
+    std::cout << "   -Detail-0        : (default) Fields-> Name " << std::endl;
+    std::cout << "   -Detail-1        : Fields-> Name, Size " << std::endl;
+    //std::cout << "   -Detail-2        : Fields-> Name, Dataset, Classification, Size, Owner, Created " << std::endl;
+    //std::cout << "   -Filter          :  ?" << std::endl;
 
+    std::cout << "  " << std::endl;
+    std::cout << " -? or -help      : Show this usage" << std::endl;
     std::cout << " " << std::endl;
     }
 
-int main(int argc, char *argv[])
+
+
+#define CmdNone             0x0000
+#define CmdList             0x0001
+#define CmdListAll          0x0002
+#define CmdListItem         0x0004
+static Utf8String s_itemPath;
+#define CmdDownload         0x0100
+static Utf8String s_outputPath;
+#define CmdUpload           0x0800
+
+#define OptionDetail0       0x0001
+#define OptionDetail1       0x0002
+#define OptionDetail2       0x0004
+#define OptionFilter        0x0008
+
+static int s_cmd = CmdNone;
+static int s_option= CmdNone;
+
+void ParsingParamters (int argc, char* argv[])
     {
-    /*if (argc < 2)
+    bool    found = true;
+    int     currentParamPos = 1;
+
+    while (found && currentParamPos < argc)
+        {
+        if (_stricmp(("-?"), argv[currentParamPos]) == 0 ||
+            _stricmp(("-help"), argv[currentParamPos]) == 0)
+            {
+            Usage();
+            exit(1);
+            }
+        else if (_stricmp(("-List"), argv[currentParamPos]) == 0)
+            {
+            s_cmd = CmdList;
+            }
+        else if (_stricmp(("-ListAll"), argv[currentParamPos]) == 0)
+            {
+            s_cmd = CmdListAll;
+            }
+        else if (_stricmp(("-ListItem"), argv[currentParamPos]) == 0)
+            {
+            s_cmd = CmdListItem;
+            currentParamPos++;
+            if (currentParamPos < argc)
+                s_itemPath = argv[currentParamPos];
+            else
+                found = false;
+            }
+        else if (_stricmp(("-Download"), argv[currentParamPos]) == 0)
+        {
+            s_cmd = CmdDownload;
+            currentParamPos++;
+            if (currentParamPos < argc)
+                s_itemPath = argv[currentParamPos];
+            currentParamPos++;
+            if (currentParamPos < argc)
+                s_outputPath = argv[currentParamPos];
+            else
+                found = false;
+        }
+        else if (_stricmp(("-Detail-0"), argv[currentParamPos]) == 0)
+            {
+            s_option |= OptionDetail0;
+            }
+        else if (_stricmp(("-Detail-1"), argv[currentParamPos]) == 0)
+            {
+            s_option |= OptionDetail1;
+            }
+        else
+            found = false;
+
+        // Increment the current position and check that it's valid.
+        if (found)
+            currentParamPos++;
+        }
+
+    if (!found)
         {
         Usage();
-        exit(0);
-        }*/
+        exit(1);
+        }
+    }
+
+
+
+void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String RootName, int MaxEntryDisplay=25)
+    {
+    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(Server, Repo, Root);
+    std::cout << RootName << std::endl;
+    bool folderEmpty=true;
+    int count=0;
+    for (NavNode subNode : subNodes)
+        {
+        if (subNode.GetClassName().Contains("Document"))
+            {
+            if (s_option & OptionDetail1)
+                {
+                Utf8String repoName(subNode.GetRootId() + "~2F" + subNode.GetInstanceId());
+                repoName.ReplaceAll("/", "~2F");
+                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName));
+                std::cout << "  " << subNode.GetInstanceId() << "  Size: " << document->GetSize() << std::endl;
+                }
+            else
+                std::cout << "  " << subNode.GetInstanceId() << std::endl;
+
+            folderEmpty = false;
+            }
+        else
+            {
+            std::cout << "  " << subNode.GetInstanceId() << std::endl;
+            folderEmpty = false;
+            }
+
+        ++count;
+        if (count > MaxEntryDisplay)
+            {
+            std::cout << "     More than  " << MaxEntryDisplay << "entries..." << std::endl;
+            break;
+            }
+        }
+    if (folderEmpty)
+        std::cout << "     Empty" << std::endl;
+
+    std::cout << std::endl;
+
+    for (NavNode subNode : subNodes)
+        {
+        if (subNode.GetClassName().Contains("Folder"))
+            {
+            ListSubItem(Server, Repo, subNode, subNode.GetInstanceId());
+            }
+        }
+    }
+
+
+
+void Download()
+    {
+    std::cout << "Downloading : ";
+
+    s_itemPath.ReplaceAll("/", "~2F");
+    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+
+    std::cout << document->GetId() << std::endl;
+
+    BeFileName fileName (s_outputPath);
+    fileName.AppendToPath(BeFileName(document->GetName()));
+    char outfile[_MAX_PATH] = "";
+    strcpy(outfile, fileName.GetNameUtf8().c_str());
+    FILE* pFile = fopen(outfile, "wb");
+    if (0 != pFile)
+        {
+        RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
+        RealityDataService::Request(*contentRequest, pFile);
+        fclose (pFile);
+        std::cout << "  Done." << std::endl;
+        }
+    else
+        std::cout << "Output  folder invalide :" << outfile << std::endl;
+
+    }
+
+
+
+
+int main(int argc, char* argv[])
+    {
+    ParsingParamters(argc, argv);
 
     // List root
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
-    Utf8String enterpriseId = "e82a584b-9fae-409f-9581-fd154f7b9ef9";   //Dev-QA
-//    Utf8String enterpriseId = "54c148ad-b2c4-4e8b-afaa-4fb3eee22f33";   //Prod
 
-    RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
-    RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
-    bvector<SpatialEntityPtr> enterpriseVec2 = RealityDataService::Request(*filteredRequest);
+    // List head by default only
+    std::cout << "RealityData commander..." << std::endl;
 
-
-    std::cout << "Enterprise data list:" << std::endl;
-    std::cout << enterpriseVec.size() << std::endl;
-    for (auto pData : enterpriseVec)
+    // List commande
+    if (s_cmd == CmdList || s_cmd == CmdListAll)
         {
-        std::cout << " " << pData->GetName() << "  " << pData->GetIdentifier() << std::endl;
+        // With NavNode
+        WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false);
+        bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server");
 
-        WSGServer server = WSGServer(RealityDataService::GetServerName(), false);
-
-        bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, RealityDataService::GetRepoName());
-
-        std::cout << "NavRoots:" << std::endl;
         for (NavNode root : nodes)
-            std::cout << root.GetNavString() << std::endl;
+            {
+            SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));
+
+            std::cout << root.GetInstanceId() << " -- " << pData->GetName()<< std::endl;
+
+            }
         std::cout << std::endl;
 
+        if (s_cmd == CmdListAll)
+            {
+            for (NavNode root : nodes)
+                {
+                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));
 
-        RealityDataByIdRequest A1(pData->GetIdentifier());
-        RealityDataByIdRequest* A2 = new RealityDataByIdRequest(pData->GetIdentifier());
-        std::cout << A1.GetServerName() << std::endl;
-        std::cout << A2->GetServerName() << std::endl;
-        //        SpatialEntityPtr pData2 = RealityDataService::Request(*A1);
-
-//        RealityDataFolderByIdRequest* A2 = new  RealityDataFolderByIdRequest(pData->GetIdentifier()+"~2f"+pData->GetName());
-//        RealityDataFolderPtr pFolder = RealityDataService::Request(*A2);
-
-
-//        REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request);
-
-
-
+                ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
+                }
+            }
         }
 
 
+    if (s_cmd == CmdListItem)
+        {
+        s_itemPath.ReplaceAll("/", "~2F");
+        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+
+        std::cout << document->GetFolderId() << std::endl;
+        std::cout << document->GetName() << std::endl;
+        }
+
+    if (s_cmd == CmdDownload)
+        Download();
+
+    std::cout << "Click a key to continue..." << std::endl;
+    getch();
     return 0;
     }
+
+
+
+
+
+
