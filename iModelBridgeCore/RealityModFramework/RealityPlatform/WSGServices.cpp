@@ -36,6 +36,8 @@ static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
 
 CurlConstructor::CurlConstructor()
     {
+    RefreshToken();
+
     WChar exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
     WString exeDir = exePath;
