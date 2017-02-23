@@ -316,8 +316,7 @@ TEST(DPlane3d, TrueDistanceFromRange)
                         DPoint3d::From(9,8,8),
                         DPoint3d::From(7,9,3) };
     size_t maxIndex, minIndex;
-    
-    //DRange1d range = plane.EvaluateRange(pnts, 4, minIndex, maxIndex);
+    plane.EvaluateRange(pnts, 4, minIndex, maxIndex);
 
     double maxValue = plane.EvaluateMaxAbs(pnts, 4);
 
@@ -337,8 +336,7 @@ TEST(DPlane3d, TrueDistanceFromRange2)
         DPoint3d::From(9,8,8),
         DPoint3d::From(7,9,3) };
     size_t maxIndex, minIndex;
-
-    //DRange1d range = plane.EvaluateRange(pnts, minIndex, maxIndex);
+    plane.EvaluateRange(pnts, minIndex, maxIndex);
 
     double maxValue = plane.EvaluateMaxAbs(pnts);
 
