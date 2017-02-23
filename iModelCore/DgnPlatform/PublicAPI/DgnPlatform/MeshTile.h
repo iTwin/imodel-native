@@ -151,7 +151,7 @@ public:
         if (m_map.end() != iter)
             return iter->second;
         else if (IsFull())
-            return 0;
+            { BeAssert(false); return 0; }
 
         auto index = GetNumIndices();
         m_map[value] = index;
@@ -317,6 +317,7 @@ private:
     bvector<DVec3d>             m_normals;
     bvector<DPoint2d>           m_uvParams;
     bvector<uint16_t>           m_attributes;
+    bvector<uint16_t>           m_colors;
     bool                        m_validIdsPresent = false;
 
     TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
@@ -337,10 +338,12 @@ public:
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t> const& Attributes() const { return m_attributes; } //!< Vertex attribute array specifying the subcategory, element, and class associated with the vertex
+    bvector<uint16_t> const& Colors() const { return m_colors; } //!< Indices into ColorIndexMap, for untextured meshes
     bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t>& AttributesR() { return m_attributes; }
+    bvector<uint16_t>& ColorsR() { return m_colors; }
 
     TileTriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
@@ -361,7 +364,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute);
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint16_t colorIndex);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -387,7 +390,7 @@ struct TileMeshMergeKey
         if(m_hasFacets != rhs.m_hasFacets)
             return !m_hasFacets;
 
-        return *m_params < *rhs.m_params;
+        return m_params->IsLessThan(*rhs.m_params, false);  // don't compare fill colors.
         }
 };
 
@@ -405,11 +408,12 @@ struct TileMeshBuilder : RefCountedBase
         DVec3d              m_normal;
         DPoint2d            m_param;
         FeatureAttributes   m_attributes;
+        uint32_t            m_fillColor = 0;
         bool                m_normalValid = false;
         bool                m_paramValid = false;
 
         VertexKey() { }
-        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr)
+        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr), m_fillColor(fillColor)
             {
             if(m_normalValid) m_normal = *normal;
             if(m_paramValid) m_param = *param;
@@ -449,15 +453,16 @@ private:
     size_t                  m_triangleIndex;
     RenderingAssetCP        m_material = nullptr;
     FeatureAttributesMapR   m_attributes;
+    ColorIndexMap           m_colors;
 
     TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) {  }
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TileTriangleCR triangle);
     void AddTriangle(TileTriangleCR triangle);

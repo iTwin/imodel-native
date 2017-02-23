@@ -506,6 +506,7 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
     if (!mesh.m_attributes.empty())
         m_attributes.insert(m_attributes.end(), mesh.m_attributes.begin(), mesh.m_attributes.end());
 
+    uint32_t fillColor = mesh.GetDisplayParams()->GetFillColor(); // ###TODO: only if untextured...
     for (auto& triangle : mesh.m_triangles)
         AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
     }
@@ -632,7 +633,7 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint16_t color)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -644,6 +645,8 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
 
     if (nullptr != param)
         m_uvParams.push_back(*param);
+    else
+        m_colors.push_back(color);
 
     m_validIdsPresent |= (0 != attribute);
     return index;
@@ -656,6 +659,8 @@ bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, Ve
     {
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
+
+    COMPARE_VALUES(lhs.m_fillColor, rhs.m_fillColor);
 
     COMPARE_VALUES (lhs.m_attributes.GetElementId(), rhs.m_attributes.GetElementId());
     COMPARE_VALUES (lhs.m_attributes.GetSubCategoryId(), rhs.m_attributes.GetSubCategoryId());
@@ -772,7 +777,7 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -807,7 +812,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes, fillColor);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -828,7 +833,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes, fillColor);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -846,7 +851,8 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, attributes);
+        uint32_t fillColor = 0; // ###TODO: Indexed colors for polylines...
+        VertexKey vertex(point, nullptr, nullptr, attributes, fillColor);
 
         newPolyline.m_indices.push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
@@ -856,10 +862,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams);
+        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -871,7 +877,7 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), m_colors.GetIndex(vertex.m_fillColor));
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -885,7 +891,7 @@ uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), m_colors.GetIndex(vertex.m_fillColor));
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -2846,7 +2852,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture, hasTexture ? 0 : displayParams->GetFillColor());
                         }
                     }
                 }
