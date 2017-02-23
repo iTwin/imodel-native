@@ -232,11 +232,48 @@ DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR 
     auto findCallout = db.GetPreparedECSqlStatement(
         "SELECT callout.ECInstanceId FROM bis.ViewDefinition2d view2d, generic.Callout callout"
         " WHERE (callout.DrawingModel.Id = view2d.BaseModel.Id) AND (view2d.ECInstanceId = ?)");
+
     findCallout->BindId(1, viewAttachment.GetAttachedViewId());
-    if (BE_SQLITE_ROW != findCallout->Step())
+    
+    bvector<DgnElementCPtr> calloutsOnSheets;
+    bvector<DgnElementCPtr> calloutsElsewhere;
+    while (BE_SQLITE_ROW == findCallout->Step())
+        {
+        auto calloutId = findCallout->GetValueId<DgnElementId>(0);
+        auto callout = db.Elements().GetElement(calloutId);
+        if (callout.IsValid())
+            {
+            if (callout->GetModel()->IsSheetModel())
+                calloutsOnSheets.push_back(callout);
+            else
+                calloutsElsewhere.push_back(callout);   // probably in a drawing
+            }
+        }
+
+
+    for (auto callout : calloutsOnSheets)
+        {
+        if (Sheet::Model::FindFirstViewOfSheet(db, callout->GetModelId()).IsValid())
+            return callout->GetElementId();
+        }
+
+    if (calloutsElsewhere.empty())
         return DgnElementId();
 
-    return findCallout->GetValueId<DgnElementId>(0);
+    auto findViewOfModel = db.GetPreparedECSqlStatement(
+        "SELECT view.ECInstanceId FROM bis.ViewDefinition2d view"
+        " WHERE (view.BaseModel.Id = ?)");
+
+    for (auto callout : calloutsElsewhere)
+        {
+        findViewOfModel->Reset();
+        findViewOfModel->ClearBindings();
+        findViewOfModel->BindId(1, callout->GetModelId());
+        if (BE_SQLITE_ROW != findViewOfModel->Step())
+            return callout->GetElementId();
+        }
+
+    return DgnElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
