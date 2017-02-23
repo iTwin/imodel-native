@@ -51,6 +51,12 @@ enum ScalableMeshStep
     STEP_QTY
     };
 
+enum ScalableMeshStepProcess
+    {
+    PROCESS_GENERATION,
+    PROCESS_TEXTURING
+    };
+
 struct IScalableMeshCreator;
 typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
 
@@ -60,25 +66,38 @@ struct IScalableMeshProgress
         virtual bool _IsCanceled() const =0 ;
         virtual void _Cancel() = 0;
 
-        virtual std::atomic<int> const& _GetProgressStep() const = 0;
+        virtual std::atomic<ScalableMeshStep> const& _GetProgressStep() const = 0;
+        virtual std::atomic<ScalableMeshStepProcess> const& _GetProgressStepProcess() const = 0;
         virtual int _GetTotalNumberOfSteps() const = 0;
+        virtual std::atomic<int> const& _GetProgressStepIndex() const = 0;
+
+        virtual void _SetTotalNumberOfSteps(int step) = 0;
 
         virtual std::atomic<float> const& _GetProgress() const = 0; //Progress of current step ([0..1])
 
         virtual std::atomic<float>& _Progress() = 0;
-        virtual std::atomic<int>& _ProgressStep() = 0;
+        virtual std::atomic<ScalableMeshStep>& _ProgressStep() = 0;
+        virtual std::atomic<ScalableMeshStepProcess>& _ProgressStepProcess() = 0;
+        virtual std::atomic<int>& _ProgressStepIndex() = 0;
+
 
     public:
     BENTLEY_SM_EXPORT bool IsCanceled() const;
     BENTLEY_SM_EXPORT void Cancel();
 
-    BENTLEY_SM_EXPORT std::atomic<int> const& GetProgressStep() const;
+    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep> const& GetProgressStep() const;
+    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess> const& GetProgressStepProcess() const;
+    BENTLEY_SM_EXPORT std::atomic<int> const& GetProgressStepIndex() const;
     BENTLEY_SM_EXPORT int GetTotalNumberOfSteps() const;
+
+    BENTLEY_SM_EXPORT void SetTotalNumberOfSteps(int step);
 
     BENTLEY_SM_EXPORT std::atomic<float> const& GetProgress() const; //Progress of current step ([0..1])
     
     BENTLEY_SM_EXPORT std::atomic<float>& Progress();
-    BENTLEY_SM_EXPORT std::atomic<int>& ProgressStep();
+    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStep>& ProgressStep();
+    BENTLEY_SM_EXPORT std::atomic<ScalableMeshStepProcess>& ProgressStepProcess();
+    BENTLEY_SM_EXPORT std::atomic<int>& ProgressStepIndex();
     };
 
  

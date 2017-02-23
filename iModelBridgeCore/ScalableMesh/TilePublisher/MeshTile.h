@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -239,6 +239,7 @@ struct Image
         uint32_t   m_width = 0;
         uint32_t   m_height = 0;
         Format     m_format = Format::Rgb;
+        bool       m_headerOnly = false;
         ByteStream m_image;
 
         void ClearData() { m_image.Clear(); }
@@ -266,7 +267,7 @@ struct Image
         //! the source does not have an alpha channel and Rgba is requested, all alpha values are set to 0xff.
         //! @param[in] bottomUp If Yes, the source image is flipped vertically (top-to-bottom) to create the image.
         //! @note If the source is invalid, or if the decompression fails, IsValid() will return false on the new Image.
-        /*DGNPLATFORM_EXPORT explicit*/ Image(ImageSourceCR source, Format targetFormat = Format::Rgba, BottomUp bottomUp = BottomUp::No);
+        /*DGNPLATFORM_EXPORT explicit*/ Image(ImageSourceCR source, Format targetFormat = Format::Rgba, BottomUp bottomUp = BottomUp::No, bool headerOnly = false);
 
         //! Create an image from a Jpeg.
         //! @param[in]      srcData      the Jpeg data
@@ -301,6 +302,8 @@ struct Image
         ByteStream const& GetByteStream() const { return m_image; } //!< get a readonly reference to the ByteStream of this image
         ByteStream& GetByteStreamR() { return m_image; }//!< Get a writable reference to the ByteStream of this image
         void SetSize(uint32_t width, uint32_t height) { BeAssert(0 == m_width && 0 == m_height); m_width = width; m_height = height; } //!< change the size in pixels of this image
+        void SetHeaderOnly(bool headerOnly) { m_headerOnly = headerOnly; }
+        void ReadImageData(ImageSourceCR source, Format targetFormat, Image::BottomUp bottomUp = BottomUp::No);
     };
 
 //=======================================================================================

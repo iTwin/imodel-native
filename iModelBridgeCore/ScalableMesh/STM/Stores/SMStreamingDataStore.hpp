@@ -86,22 +86,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         this->SetDataSourceAccount(accountLocalFile);
         }
-    else if (s_stream_from_disk && s_stream_using_cesium_3d_tiles_format)
-        {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        this->SetDataSourceAccount(accountLocalFile);
-        }
     else if (s_stream_from_disk)
         {
         DataSourceAccount                       *   accountLocalFile;
@@ -168,12 +152,50 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         this->SetDataSourceAccount(accountWSG);
         }
-    else
+    else if (s_stream_from_azure && s_stream_using_curl)
         {
         wstring azureAccount, azureKey;
         if (s_use_azure_sandbox)
             {
             azureAccount = L"s3mxstorageblob";
+            }
+        else if (s_use_public_rds)
+            {
+            azureAccount = L"realityblobdeveussa01";
+            }
+        else
+            {
+            azureAccount = L"pcdsustest";
+            azureKey = L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==";
+            }
+
+        // NEEDS_WORK_STREAMING: the Azure account identifier should be saved in the stub file?
+        DataSourceAccount::AccountIdentifier        accountIdentifier(azureAccount);
+        DataSourceAccount::AccountKey               accountKey(azureKey);
+        DataSourceAccount                       *   accountCURL;
+        DataSourceService                       *   serviceCURL;
+
+        if ((serviceCURL = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        // Create an account on the CURL service streaming
+        if ((accountCURL = serviceCURL->createAccount(DataSourceAccount::AccountName(L"AzureCURLAccount"), accountIdentifier, accountKey)) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountCURL->setPrefixPath(DataSourceURL(directory.c_str()));
+
+        this->SetDataSourceAccount(accountCURL);
+        }
+    else if (s_stream_from_azure)
+        {
+        wstring azureAccount, azureKey;
+        if (s_use_azure_sandbox)
+            {
+            azureAccount = L"s3mxstorageblob";
+            }
+        else if (s_use_public_rds)
+            {
+            azureAccount = L"realityblobdeveussa01";
             }
         else
             {
@@ -189,10 +211,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         DataSourceAccount                       *   accountAzure;
         DataSourceAccount                       *   accountCaching;
         DataSourceService                       *   serviceFile;
-        //  DataSourceAccount                       *   accountCaching;
 
         // Setup Azure account
-        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName((s_stream_from_azure_using_curl ? L"DataSourceServiceAzureCURL" : L"DataSourceServiceAzure")));
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
         if (serviceAzure == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
@@ -217,6 +238,10 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         // Set up default container
         accountAzure->setPrefixPath(DataSourceURL(directory.c_str()));
+        }
+    else
+        {
+        assert(!"Unknown server type for streaming");
         }
 
     return DataSourceStatus();
@@ -488,14 +513,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             group->SetDistributor(*m_NodeHeaderFetchDistributor);
             m_nodeHeaderGroups.push_back(group);
 
-            vector<uint64_t> nodeIds(group_numNodes);
+            vector<size_t> nodeIds(group_numNodes);
             memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
             position += group_numNodes * sizeof(uint64_t);
 
             group->GetHeader()->resize(group_numNodes);
-            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const size_t& nodeId)
                 {
-                return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
+                return SMNodeHeader{ nodeId, size_t(-1), 0 };
                 });
             }
         }
@@ -534,7 +559,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     return headerSize;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize)
     {
     assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
@@ -650,7 +675,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
     po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize) const
     {
 #ifndef VANCOUVER_API
     // Get Cesium 3D tiles required properties
@@ -868,7 +893,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
-    uint32_t headerSize = 0;
+    size_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
     std::wstring extension;
     switch (m_formatType)
@@ -962,7 +987,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 1;
@@ -982,7 +1007,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 0;
@@ -1032,7 +1057,7 @@ template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMB
     return group;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const
     {
     size_t dataIndex = 0;
 
@@ -1279,7 +1304,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         }
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize)
     {
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
     std::unique_ptr<DataSource::Buffer[]>          dest;

@@ -122,6 +122,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual bool          _IsTerrain() override;
 
+        virtual bool          _IsTextured() override;
+
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
