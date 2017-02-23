@@ -10,6 +10,8 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 
+#include <ctime>
+
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <sql.h>
@@ -165,7 +167,7 @@ protected:
     Utf8String m_className;
     WSGInterface m_interface = WSGInterface::Repositories;
     Utf8String m_repoId;
-    Utf8String m_id;
+    mutable Utf8String m_id;
     bool m_objectContent = false;
 
 
@@ -218,6 +220,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static NodeNavigator& GetInstance();
     NodeNavigator();
 
+    REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(Utf8String serverName, Utf8String repoId);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode);
     };
@@ -376,17 +379,18 @@ private:
 struct CurlConstructor
     {
 public:
-    REALITYDATAPLATFORM_EXPORT Utf8String GetToken() { return m_token; }
+    REALITYDATAPLATFORM_EXPORT Utf8String GetToken(); 
     REALITYDATAPLATFORM_EXPORT void RefreshToken();
     REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() { return m_certificatePath; }
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
 
+    REALITYDATAPLATFORM_EXPORT CurlConstructor();
 protected:
-    CurlConstructor();
     REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file) const;
 
-    Utf8String m_token;
-    BeFileName m_certificatePath;
+    Utf8String          m_token;
+    BeFileName          m_certificatePath;
+    time_t              m_tokenRefreshTimer;
     };
 
 struct WSGRequest : public CurlConstructor
