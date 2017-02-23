@@ -226,7 +226,7 @@ DgnElementId GenericViewAttachmentLabel::FindFromViewAttachment(DgnDbR db, DgnEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<DgnElementId> GenericViewAttachmentLabel::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
     auto findCallout = db.GetPreparedECSqlStatement(
@@ -235,45 +235,13 @@ DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR 
 
     findCallout->BindId(1, viewAttachment.GetAttachedViewId());
     
-    bvector<DgnElementCPtr> calloutsOnSheets;
-    bvector<DgnElementCPtr> calloutsElsewhere;
+    bvector<DgnElementId> callouts;
     while (BE_SQLITE_ROW == findCallout->Step())
         {
-        auto calloutId = findCallout->GetValueId<DgnElementId>(0);
-        auto callout = db.Elements().GetElement(calloutId);
-        if (callout.IsValid())
-            {
-            if (callout->GetModel()->IsSheetModel())
-                calloutsOnSheets.push_back(callout);
-            else
-                calloutsElsewhere.push_back(callout);   // probably in a drawing
-            }
+        callouts.push_back(findCallout->GetValueId<DgnElementId>(0));
         }
 
-
-    for (auto callout : calloutsOnSheets)
-        {
-        if (Sheet::Model::FindFirstViewOfSheet(db, callout->GetModelId()).IsValid())
-            return callout->GetElementId();
-        }
-
-    if (calloutsElsewhere.empty())
-        return DgnElementId();
-
-    auto findViewOfModel = db.GetPreparedECSqlStatement(
-        "SELECT view.ECInstanceId FROM bis.ViewDefinition2d view"
-        " WHERE (view.BaseModel.Id = ?)");
-
-    for (auto callout : calloutsElsewhere)
-        {
-        findViewOfModel->Reset();
-        findViewOfModel->ClearBindings();
-        findViewOfModel->BindId(1, callout->GetModelId());
-        if (BE_SQLITE_ROW != findViewOfModel->Step())
-            return callout->GetElementId();
-        }
-
-    return DgnElementId();
+    return callouts;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,8 +263,11 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
     // check that the reverse lookup works
     if (dest.m_viewAttachmentLabel.IsValid())
         {
-        auto loc = GenericCalloutLocation::FindCalloutFor(*dest.m_viewAttachmentLabel);
-        BeAssert(loc.GetCallout() == &callout);
+        auto locs = GenericCalloutLocation::FindCalloutsFor(*dest.m_viewAttachmentLabel);
+        bool foundThis = false;
+        for (auto const& loc : locs)
+            foundThis |= (loc.GetCallout() == &callout);
+        BeAssert(foundThis);
         }
 #endif
 
@@ -306,13 +277,19 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericCalloutLocation GenericCalloutLocation::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<GenericCalloutLocation> GenericCalloutLocation::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
-    GenericCalloutLocation loc;
-    loc.m_callout = db.Elements().Get<GenericCallout>(GenericViewAttachmentLabel::FindCalloutFor(viewAttachment));
-    if (!loc.m_callout.IsValid())
-        return loc;
-    loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
-    return loc;
+    bvector<GenericCalloutLocation> locs;
+    auto callouts = GenericViewAttachmentLabel::FindCalloutsFor(viewAttachment);
+    for (auto callout : callouts)
+        {
+        GenericCalloutLocation loc;
+        loc.m_callout = db.Elements().Get<GenericCallout>(callout);
+        if (!loc.m_callout.IsValid())
+            continue;
+        loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
+        locs.push_back(loc);
+        }
+    return locs;
     }
