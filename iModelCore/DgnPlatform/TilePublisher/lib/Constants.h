@@ -108,9 +108,33 @@ static std::string s_texturedVertexShader = R"RAW_STRING(
     }
 )RAW_STRING";
 
-static std::string s_untexturedVertexShader =  
-s_litVertexCommon +
-"}\n";
+// Indexed colors for untextured meshes - 2d texture lookup. Could optimize for 1d texture lookup.
+static std::string s_indexedColor = R"RAW_STRING(
+    attribute float a_colorIndex;
+    uniform float u_texWidth;
+    uniform vec4 u_texStep;
+    uniform sampler2D u_tex;
+    varying vec4 v_color;
+
+    vec2 computeColorSt(float colorIndex)
+        {
+        float stepX = u_texStep.x;
+        float centerX = u_texStep.y;
+        float stepY = u_texStep.z;
+        float centerY = u_texStep.w;
+
+        float xId = mod(colorIndex, u_texWidth);
+        float yId = floor(colorIndex / u_texWidth);
+        return vec2(centerX + (xId * stepX), 1.0 - (centerY + (yId * stepY)));
+        }
+)RAW_STRING";
+
+static std::string s_untexturedVertexShader =
+s_indexedColor
++ s_litVertexCommon + R"RAW_STRING(
+    v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
+    }
+)RAW_STRING";
 
 // Used for reality meshes.
 static std::string s_unlitTextureVertexShader = R"RAW_STRING(
@@ -163,7 +187,7 @@ static std::string s_computeLighting = R"RAW_STRING(
 
 
 static std::string s_untexturedFragShader = R"RAW_STRING(
-    uniform vec4 u_color;
+    varying vec4 v_color;
     varying vec3 v_n;
     varying vec3 v_pos;
     uniform float u_specularExponent;
@@ -172,7 +196,7 @@ static std::string s_untexturedFragShader = R"RAW_STRING(
 + s_computeLighting + R"RAW_STRING(
     void main(void)
         {
-        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, u_color);
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color);
         }
 )RAW_STRING";
 
@@ -208,17 +232,20 @@ static std::string s_unlitVertexShader = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
+)RAW_STRING"
++ s_indexedColor + R"RAW_STRING(
     void main(void)
         {
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
         }
 )RAW_STRING";
 
 static std::string s_unlitFragmentShader = R"RAW_STRING(
-    uniform vec4 u_color;
+    varying vec4 v_color;
     void main(void)
         {
-        gl_FragColor = vec4(u_color);
+        gl_FragColor = vec4(v_color);
         }
 )RAW_STRING";
 

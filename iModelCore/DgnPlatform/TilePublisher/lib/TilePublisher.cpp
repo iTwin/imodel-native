@@ -320,6 +320,52 @@ auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorIndex::ComputeDimensions(uint16_t nColors)
+    {
+    // Minimum texture size in WebGL is 64x64. For 16-bit color indices, we need at least 256x256.
+    // At the risk of pessimization, let's not assume more than that.
+    // Let's assume non-power-of-2 textures are not a big deal (we're not mipmapping them or anything).
+    constexpr uint16_t maxDim = 256;
+    uint16_t height = 1;
+    uint16_t width = std::min(nColors, maxDim);
+    if (width < nColors)
+        {
+        height = nColors / width;
+        if (height*width < nColors)
+            ++height;
+        }
+
+    BeAssert(height*width >= nColors);
+    m_width = width;
+    m_height = height;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorIndex::Build(ColorIndexMap const& map)
+    {
+    uint16_t nColors = map.GetNumIndices();
+    ComputeDimensions(nColors);
+    BeAssert(0 < m_width && 0 < m_height);
+
+    constexpr size_t bytesPerColor = 4;
+    m_texture.Resize(bytesPerColor * nColors);
+
+    for (auto const& kvp : map)
+        {
+        uint32_t fill = kvp.first;
+        auto pFill = reinterpret_cast<uint32_t*>(&fill);
+        pFill[3] = 255 - pFill[3];
+
+        auto pColor = reinterpret_cast<uint32_t*>(m_texture.GetDataP() + kvp.second*bytesPerColor);
+        *pColor = fill;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context) : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context)
@@ -1097,6 +1143,44 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix)
+    {
+    Utf8String textureId("texture_"),
+               imageId("image_"),
+               bvImageId("imageBufferView");
+
+    textureId.append(suffix);
+    imageId.append(suffix);
+    bvImageId.append(suffix);
+
+    auto& texture = tileData.m_json["textures"][textureId] = Json::objectValue;
+    texture["format"] = GLTF_RGBA;
+    texture["internalFormat"] = GLTF_RGBA;
+    texture["sampler"] = "sampler_0";
+    texture["source"] = imageId;
+
+    auto& bufferView = tileData.m_json["bufferViews"][bvImageId] = Json::objectValue;
+    bufferView["buffer"] = "binary_glTF";
+
+    auto& image = tileData.m_json["images"][imageId] = Json::objectValue;
+    auto& imageExtensions = image["extensions"]["KHR_binary_glTF"] = Json::objectValue;
+    imageExtensions["bufferView"] = bvImageId;
+    imageExtensions["mimeType"] = "image/jpeg";
+    imageExtensions["width"] = colorIndex.GetWidth();
+    imageExtensions["height"] = colorIndex.GetHeight();
+
+    ImageSource imageSource(colorIndex.ExtractImage(), ImageSource::Format::Jpeg);
+    ByteStream const& imageData = imageSource.GetByteStream();
+    bufferView["byteOffset"] = tileData.BinaryDataSize();
+    bufferView["byteLength"] = imageData.size();
+    tileData.AddBinaryData(imageData.data(), imageData.size());
+
+    return textureId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds)
@@ -1155,8 +1239,16 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bo
     tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
     tileData.AddBufferView(s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
 
-    AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
-    techniqueUniforms["u_color"] = "color";
+    AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+    AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
+    AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
+    AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+
+    techniqueUniforms["u_tex"] = "tex";
+    techniqueUniforms["u_texWidth"] = "texWidth";
+    techniqueUniforms["u_texStep"] = "texStep";
+    technique["attributes"]["a_colorIndex"] = "colorIndex";
+    AppendProgramAttribute(rootProgramNode, "a_colorIndex");
 
     tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
 
@@ -1283,8 +1375,18 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         }
     else
         {
-        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
-        techniqueUniforms["u_color"] = "color";
+        AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
+        AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
+        AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+
+        tileData.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
+
+        techniqueUniforms["u_tex"] = "tex";
+        techniqueUniforms["u_texWidth"] = "texWidth";
+        techniqueUniforms["u_texStep"] = "texStep";
+        technique["attributes"]["a_colorIndex"] = "colorIndex";
+        AppendProgramAttribute(rootProgramNode, "a_colorIndex");
         }
     if (!ignoreLighting)
        {
@@ -1364,12 +1466,22 @@ Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTe
         }
     else
         {
-        auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
+        ColorIndexMap colorMap;
+        colorMap.GetIndex(rgbInt);
 
-        materialColor.append(rgb.red);
-        materialColor.append(rgb.green);
-        materialColor.append(rgb.blue);
-        materialColor.append(alpha);
+        ColorIndex colorIndex(&colorMap);
+        materialValue["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
+
+        uint16_t width = colorIndex.GetWidth();
+        double stepX = 1.0 / width;
+        double stepY = 1.0 / colorIndex.GetHeight();
+
+        materialValue["values"]["texWidth"] = width;
+        auto& texStep = materialValue["values"]["texStep"] = Json::arrayValue;
+        texStep.append(stepX);
+        texStep.append(stepX * 0.5);    // centerX
+        texStep.append(stepY);
+        texStep.append(stepY * 0.5);    // centerY
 
         materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, false, alpha < 1.0, false, doBatchIds).c_str();
         }

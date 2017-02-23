@@ -29,6 +29,33 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct ColorIndex
+{
+private:
+    ByteStream      m_texture;
+    uint16_t        m_width = 0;
+    uint16_t        m_height = 0;
+
+    void ComputeDimensions(uint16_t nColors);
+    void Build(ColorIndexMap const& map);
+public:
+    explicit ColorIndex(ColorIndexMap const* map)
+        {
+        if (nullptr != map && !map->empty())
+            Build(*map);
+        }
+
+    ByteStream const& GetTexture() const { return m_texture; }
+    Image ExtractImage() { return Image(GetWidth(), GetHeight(), std::move(m_texture), Image::Format::Rgba); }
+
+    uint16_t GetWidth() const { return m_width; }
+    uint16_t GetHeight() const { return m_height; }
+    bool empty() const { return m_texture.empty(); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
 struct  PublishTileData
@@ -36,12 +63,11 @@ struct  PublishTileData
     Json::Value         m_json;
     ByteStream          m_binaryData;
 
-    size_t BinaryDataSize() const { return m_binaryData.size(); }
+    size_t BinaryDataSize() const { return m_binaryData.size(); }
     void const* BinaryData() const { return m_binaryData.data(); }
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
-
 };
 
 //=======================================================================================
@@ -132,7 +158,7 @@ public:
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
-    TextureMode GetTextureMode() const { return m_textureMode; }
+    TextureMode GetTextureMode() const { return m_textureMode; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
@@ -225,7 +251,7 @@ private:
     Utf8String AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
-
+    Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
