@@ -172,15 +172,15 @@ static GEOMDLLIMPEXP VuSetP CreateTriangulatedGrid
 (
 bvector<bvector<DPoint3d>>  const &parityBoundaries,  //!< [in] closed loops which serve as boundaries in parity logic. (i.e. outer and hole boundaries)
 bvector<bvector<DPoint3d>>  const &openChains,  //!< [in] chains that are fixed edges but do not separate inside from outside.
-bvector<DPoint3d>           const &isolatedPoints,  //!< [in] 
-bvector <double>            const &uBreaks,  //!< [in] 
-bvector <double>            const &vBreaks,  //!< [in] 
-double              maxEdgeXLength,  //!< [in] 
-double              maxEdgeYLength,  //!< [in] 
-double              meshXLength,  //!< [in] 
-double              meshYLength,  //!< [in] 
-bool                isometricGrid,  //!< [in] 
-bool                laplacianSmoothing  //!< [in] 
+bvector<DPoint3d>           const &isolatedPoints,  //!< [in] (NOT IMPLEMENTED) isolated points to appear as vertices.
+bvector <double>            const &xBreaks,  //!< [in]  x values that are to appear in the graph as fixed linework
+bvector <double>            const &yBreaks,  //!< [in]  y values that are to appear in the graph as fixed linework
+double              maxEdgeXLength,  //!< [in]  if nonzero, split edges so their x length is at most maxEdgeXLength
+double              maxEdgeYLength,  //!< [in] if nonzoer, split edges so y length is at most maxEdgeYLength
+double              meshXLength,  //!< [in]     x size of initial grid
+double              meshYLength,  //!< [in]     y size of initial grid
+bool                isometricGrid,  //!< [in]   true to stagger the grid for honeycomb pattern
+bool                laplacianSmoothing  //!< [in]   true to apply a laplace smoothing step.
 );
 
 //!<ul>
