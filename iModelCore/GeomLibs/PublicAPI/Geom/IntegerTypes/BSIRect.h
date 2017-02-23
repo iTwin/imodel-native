@@ -14,7 +14,6 @@
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 //! Integer x,y rectangle coordinates.
-//! This is used in DgnPlatform and Microstation for screen windows.
 //! A constructor cannot be added to BSIRect because BSIRects are included in structs
 //! that are, in turn, included in unions. A constructor results in error C2620:
 //! member 'abc' of union 'xyz' has user-defined constructor or non-trivial default constructor
