@@ -485,6 +485,37 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+struct GriddedSpaceManager
+{
+private:
+VuSetP m_graph;
+bvector<bvector <DPoint3d>> m_parityLoops;
+bvector<bvector <DPoint3d>> m_chains;
+double m_meshSize;
+public:
+// Constructor -- Copy all linework in:
+GriddedSpaceManager (
+bvector<bvector <DPoint3d>> parityLoops,
+bvector<bvector <DPoint3d>> chains,
+double meshSize
+)
+    {
+    m_parityLoops = parityLoops;
+    m_chains      = chains;
+    m_meshSize = meshSize;
+    }
+
+
+bool TryInitializeGraph()
+    {
+    if (m_graph != nullptr)
+        vu_freeVuSet (m_graph);
+    m_graph = VuOps::CreateTriangulatedGrid (m_parityLoops, m_chains, bvector<DPoint3d> (),
+                        bvector<double> (), bvector<double> (),
+                        m_meshSize, m_meshSize, m_meshSize, m_meshSize, true, true);
+    return m_graph != nullptr;
+    }
+};
 
 TEST(VuCreateTriangulatedInGrid,Test0)
     {
@@ -551,7 +582,7 @@ TEST(VuCreateTriangulatedInGrid,Test0)
                         Check::SaveTransformed (loop.GetPointsCR ());
                     }
                 Check::Shift (30,0,0);
-                vu_freeGraph (graph);
+                vu_freeVuSet (graph);
                 }
             }
         }
