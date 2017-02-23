@@ -566,3 +566,34 @@ TEST(DSegment3d, StarttoEnd)
     double mag2 = range.high.Magnitude() - range.low.Magnitude();
     Check::Near(mag1, mag2);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DSegment3d, AlmostSingle)
+    {
+    DSegment3d seg3d = DSegment3d::From(DPoint3d::From(3, 2, 1), DPoint3d::From(8, 8, 6));
+    Check::False(seg3d.IsAlmostSinglePoint());
+    seg3d.SetEndPoint(DPoint3d::From(3.0000000000005, 2.00000000000005, 1.00000000000005));
+    Check::True(seg3d.IsAlmostSinglePoint());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DSegment3d, Zero)
+    {
+    DSegment3d seg3d;
+    seg3d.InitZero();
+    Check::True(seg3d.IsSinglePoint());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DSegment3d, TransformedSegment)
+    {
+    DSegment3d originalSeg = DSegment3d::From(DPoint3d::From(7, 7, 7), DPoint3d::From(12, 12, 12));
+    DSegment3d afterTransform;
+    afterTransform.InitProduct(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(360).Radians())), originalSeg);
+
+    Check::Near(originalSeg, afterTransform);
+    }

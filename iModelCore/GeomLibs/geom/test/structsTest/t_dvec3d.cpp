@@ -1221,6 +1221,25 @@ TEST (DSegment4d, Test28)
     Check::EndScope ();
     }
 
+TEST(DSegment4d, EqualityCheck)
+    {
+    DSegment4d seg4d = DSegment4d::From(DPoint4d::From(3, 3, 3, 1), DPoint4d::From(10, 4, 6, 1));
+
+    DPoint3d start, end, start2, end2;
+    seg4d.GetStartPoint(start);
+    seg4d.GetEndPoint(end);
+    DSegment4d seg4d2 = DSegment4d::From(start, end);
+    seg4d2.GetStartPoint(start2);
+    seg4d2.GetEndPoint(end2);
+    Check::Near(start, start2);
+    Check::Near(end, end2);
+
+    DRange3d range, range2;
+    seg4d.GetRange(range);
+    seg4d2.GetRange(range2);
+    Check::True(range.IsEqual(range2));
+    }
+
 void TestVectorToVector (DVec3dCR U, DVec3dCR V)
     {
     double radians;
