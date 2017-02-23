@@ -484,3 +484,75 @@ TEST(BCS,SpringModelB)
     SaveZones (wall, sm);
     Check::ClearGeometry ("BCS.SpringModelB");
     }
+
+
+TEST(VuCreateTriangulatedInGrid,Test0)
+    {
+    bvector<bvector <DPoint3d>> parityLoops
+        {
+        bvector<DPoint3d>
+            {
+            DPoint3d::From (0,0),
+            DPoint3d::From (10,0),
+            DPoint3d::From (10,10),
+            DPoint3d::From (20,10),
+            DPoint3d::From (20,30),
+            DPoint3d::From (0,30),
+            DPoint3d::From (0,0)
+            },
+        bvector<DPoint3d>
+            {
+            DPoint3d::From (5,5),
+            DPoint3d::From (8,5),
+            DPoint3d::From (8,11),
+            DPoint3d::From (5,11),
+            DPoint3d::From (5,5)
+            }
+        };
+
+    bvector<bvector <DPoint3d>> openChains
+        {
+        bvector<DPoint3d>
+            {
+            DPoint3d::From (2,15),
+            DPoint3d::From (11,15),
+            DPoint3d::From (15,12)
+            }
+        };
+    bvector<DPoint3d> isolatedPoints;
+    bvector<double> uBreaks;
+    bvector<double> vBreaks;
+    bvector<bool> falseThenTrue { false, true};
+    for (bool nonuniform : falseThenTrue)
+        {
+        for (bool isoGrid : falseThenTrue)
+            {
+            SaveAndRestoreCheckTransform shifter (25, 0, 0);
+            for (bool smooth : falseThenTrue)
+                {
+                SaveAndRestoreCheckTransform shifter (0, 35, 0);
+                auto graph = nonuniform
+                    ? VuOps::CreateTriangulatedGrid (parityLoops, openChains, isolatedPoints,
+                        uBreaks, vBreaks,
+                        1.0, 1.5,
+                        0.8, 0.9,
+                        isoGrid, smooth)
+                    : VuOps::CreateTriangulatedGrid (parityLoops, openChains, isolatedPoints,
+                        uBreaks, vBreaks,
+                        0.8, 0.8,
+                        0.8, 0.8,
+                        isoGrid, smooth);
+
+                TaggedPolygonVector polygons;
+                VuOps::CollectLoopsWithMaskSummary (graph, polygons, VU_EXTERIOR_EDGE, true);
+                for (auto &loop : polygons)
+                    {
+                    if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
+                        Check::SaveTransformed (loop.GetPointsCR ());
+                    }
+                Check::Shift (30,0,0);
+                }
+            }
+        }
+    Check::ClearGeometry ("VuCreateTriangulatedInGrid.Test0");
+    }

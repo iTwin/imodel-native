@@ -140,7 +140,7 @@ static bool IsSliverFace (VuP node)
     return vu_fsucc( vu_fsucc (node)) == node;
     }
 
-static size_t AddInteriorBreaks (VuSetP graph, DRange3dCR range, bvector<double> breaks, int uv, VuMask mask)
+size_t AddInteriorBreaks (VuSetP graph, DRange3dCR range, bvector<double> breaks, int uv, VuMask mask)
     {
     size_t numAdded = 0;
     double b0, b1;
@@ -194,7 +194,7 @@ static void MarkVSuccEdges (VuP seed, int numEdges, VuMask mask)
         }
     }
 
-static void vu_deletePairedEdges (VuSetP graph, VuMask mask)
+void vu_deletePairedEdges (VuSetP graph, VuMask mask)
     {
     VuMask deleteMask = vu_grabMask (graph);
     vu_clearMaskInSet (graph, deleteMask);
