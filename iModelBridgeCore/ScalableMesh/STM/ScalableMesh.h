@@ -341,8 +341,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
-        virtual Utf8String                               _GetEditFilesBasePath() override;
+        virtual Utf8String                         _GetEditFilesBasePath() override;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override;        
+        
         virtual IScalableMeshNodePtr               _GetRootNode() override;
 
 #ifdef WIP_MESH_IMPORT
@@ -463,6 +465,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
         virtual int                    _SynchWithSources() override;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
+        
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {};
