@@ -1621,17 +1621,12 @@ public ref class ElementTemplateAdmin
         return (DGNET::LevelId)outLevelId;
         }
 
-static void Initialize()
-{
-ElementTemplateAdmin^ admin = gcnew ElementTemplateAdmin();
-}
     };
 
 END_BENTLEY_TERRAINMODELNET_ELEMENT_NAMESPACE
 
 EXPORT_ATTRIBUTE void registerManagedElementHandler()
     {
-    Bentley::TerrainModelNET::Element::ElementTemplateAdmin::Initialize();
     Bentley::TerrainModelNET::Element::DTMElement::RegisterManagedElementHandler();
     }
 
