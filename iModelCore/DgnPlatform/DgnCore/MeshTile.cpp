@@ -402,8 +402,19 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const
     {
-    if (compareFillColor && m_fillColor != rhs.m_fillColor)
-        return m_fillColor < rhs.m_fillColor;
+    if (m_fillColor != rhs.m_fillColor)
+        {
+        if (compareFillColor)
+            return m_fillColor < rhs.m_fillColor;
+
+        // cannot batch translucent and opaque meshes
+        ColorDef lhsColor(m_fillColor), rhsColor(rhs.m_fillColor);
+        bool lhsHasAlpha = 0 != lhsColor.GetAlpha(),
+             rhsHasAlpha = 0 != rhsColor.GetAlpha();
+
+        if (lhsHasAlpha != rhsHasAlpha)
+            return lhsHasAlpha;
+        }
 
     if (m_rasterWidth != rhs.m_rasterWidth)
         return m_rasterWidth < rhs.m_rasterWidth;

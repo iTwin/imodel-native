@@ -356,12 +356,10 @@ void ColorIndex::Build(ColorIndexMap const& map)
 
     for (auto const& kvp : map)
         {
-        uint32_t fill = kvp.first;
-        auto pFill = reinterpret_cast<uint32_t*>(&fill);
-        pFill[3] = 255 - pFill[3];
-
+        ColorDef fill(kvp.first);
+        fill.SetAlpha(255 - fill.GetAlpha());
         auto pColor = reinterpret_cast<uint32_t*>(m_texture.GetDataP() + kvp.second*bytesPerColor);
-        *pColor = fill;
+        *pColor = fill.GetValue();
         }
     }
 
@@ -1167,11 +1165,11 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
     auto& image = tileData.m_json["images"][imageId] = Json::objectValue;
     auto& imageExtensions = image["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     imageExtensions["bufferView"] = bvImageId;
-    imageExtensions["mimeType"] = "image/jpeg";
+    imageExtensions["mimeType"] = "image/png";
     imageExtensions["width"] = colorIndex.GetWidth();
     imageExtensions["height"] = colorIndex.GetHeight();
 
-    ImageSource imageSource(colorIndex.ExtractImage(), ImageSource::Format::Jpeg);
+    ImageSource imageSource(colorIndex.ExtractImage(), ImageSource::Format::Png);
     ByteStream const& imageData = imageSource.GetByteStream();
     bufferView["byteOffset"] = tileData.BinaryDataSize();
     bufferView["byteLength"] = imageData.size();
@@ -1179,7 +1177,7 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
 
 #if defined(DEBUG_COLOR_INDEX)
     WString name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
-    std::FILE* outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), L"jpg").c_str(), L"wb");
+    std::FILE* outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), L"png").c_str(), L"wb");
     fwrite(imageData.GetData(), 1, imageData.GetSize(), outputFile);
     fclose(outputFile);
 #endif
@@ -1493,6 +1491,8 @@ Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTe
         ColorIndex colorIndex(&mesh.GetColorIndexMap());
         materialValue["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
+        bool hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+
         uint16_t width = colorIndex.GetWidth();
         double stepX = 1.0 / width;
         double stepY = 1.0 / colorIndex.GetHeight();
@@ -1504,7 +1504,7 @@ Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTe
         texStep.append(stepY);
         texStep.append(stepY * 0.5);    // centerY
 
-        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, false, alpha < 1.0, false, doBatchIds).c_str();
+        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, false, hasAlpha, false, doBatchIds).c_str();
         }
 
     if (! isUnlit)

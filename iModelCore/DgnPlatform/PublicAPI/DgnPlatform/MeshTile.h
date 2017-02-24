@@ -37,6 +37,7 @@ BENTLEY_RENDER_TYPEDEFS(TileGeomPart);
 BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributes);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
+BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -144,8 +145,8 @@ protected:
     Map     m_map;
 
     static constexpr uint16_t GetMaxIndex() { return 0xffff; }
-public:
-    uint16_t GetIndex(T const& value)
+
+    uint16_t GetOrCreateIndex(T const& value)
         {
         auto iter = m_map.find(value);
         if (m_map.end() != iter)
@@ -157,7 +158,7 @@ public:
         m_map[value] = index;
         return index;
         }
-
+public:
     bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
     uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
 
@@ -170,7 +171,22 @@ public:
     bool empty() const { return m_map.empty(); }
 };
 
-typedef AttributeIndexMap<uint32_t> ColorIndexMap;
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct ColorIndexMap : AttributeIndexMap<uint32_t>
+{
+private:
+    bool    m_hasAlpha = false;
+public:
+    uint16_t GetIndex(uint32_t color)
+        {
+        m_hasAlpha |= (!IsFull() && 0 != ColorDef(color).GetAlpha());
+        return GetOrCreateIndex(color);
+        }
+
+    bool HasTransparency() const { return m_hasAlpha; }
+};
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -218,10 +234,9 @@ struct FeatureAttributesMap : AttributeIndexMap<FeatureAttributes>
 public:
     DGNPLATFORM_EXPORT FeatureAttributesMap();
 
-    using T_Super::GetIndex;
-
+    uint16_t GetIndex(FeatureAttributesCR value) { return GetOrCreateIndex(value); }
     DGNPLATFORM_EXPORT uint16_t GetIndex(TileGeometryCR geom);
-    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return T_Super::GetIndex(FeatureAttributes(id, params)); }
+    uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
 
     bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
 };
