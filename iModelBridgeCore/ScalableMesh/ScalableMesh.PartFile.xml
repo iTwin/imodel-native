@@ -152,6 +152,7 @@
         <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
         <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
@@ -197,6 +198,11 @@
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
 <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="http" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="WSClientAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>            
         <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
@@ -226,7 +232,7 @@
         <ProductDirectory Name="DgnViewLibs"  Path="Libs" Deliver="true"/>
         <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
         <ProductDirectory Name="GlewAssemblies" Deliver="false"/>
-        <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
+        <ProductDirectory Name="JpegAssemblies" Deliver="false"/>        
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>

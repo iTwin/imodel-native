@@ -144,6 +144,8 @@ struct ScalableMeshProgress : public IScalableMeshProgress
             m_progressStepIndex = 0;
             m_currentStep = ScalableMeshStep::STEP_NOT_STARTED;
             m_progressInStep = 0;
+            m_totalNSteps = 0;
+            m_progressStepProcess = ScalableMeshStepProcess::PROCESS_INACTIVE;
             }
     };
 

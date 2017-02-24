@@ -389,6 +389,11 @@ Utf8String IScalableMesh::GetEditFilesBasePath()
     return _GetEditFilesBasePath();
     }
 
+void IScalableMesh::GetExtraFileNames(bvector<BeFileName>& extraFileNames) const
+    {
+    return _GetExtraFileNames(extraFileNames);
+    }
+
 IScalableMeshNodePtr IScalableMesh::GetRootNode()
     {
     return _GetRootNode();
@@ -850,7 +855,7 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
                                            bool         needsNeighbors,
                                     StatusInt&              status)
 {
-     ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
+    ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
     IScalableMeshPtr scmP(scmPtr);
     scmP->SetEditFilesBasePath(baseEditsFilePath);
     scmPtr->SetNeedsNeighbors(needsNeighbors);
@@ -2206,6 +2211,22 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
     {
     return Utf8String(m_baseExtraFilesPath);
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFileName>& extraFileNames) const
+    {
+    //Clip files
+    //NEEDS_WORK_SM : Might be better to get the name from SMSQLiteSisterFile.cpp
+    BeFileName fileName(m_baseExtraFilesPath);
+    fileName.AppendString(L"_clipDefinitions");
+
+    extraFileNames.push_back(fileName);
+
+    fileName.clear();
+    fileName = BeFileName(m_baseExtraFilesPath);
+    fileName.AppendString(L"_clips");
+
+    extraFileNames.push_back(fileName);        
     }
 
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()

@@ -237,6 +237,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual Utf8String                         _GetEditFilesBasePath() = 0;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const = 0;
+
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
@@ -328,9 +330,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
 
-        BENTLEY_SM_EXPORT Utf8String              GetEditFilesBasePath();
+        BENTLEY_SM_EXPORT Utf8String             GetEditFilesBasePath();
 
-        BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
+        BENTLEY_SM_EXPORT void                   GetExtraFileNames(bvector<BeFileName>& extraFileNames) const;
+
+        BENTLEY_SM_EXPORT ScalableMeshState      GetState() const;
 
         BENTLEY_SM_EXPORT bool                   IsProgressive() const;
 

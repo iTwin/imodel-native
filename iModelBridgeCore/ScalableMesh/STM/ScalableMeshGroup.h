@@ -214,7 +214,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
 
-        virtual Utf8String                               _GetEditFilesBasePath() override { return Utf8String(); }
+        virtual Utf8String                         _GetEditFilesBasePath() override { return Utf8String(); }
+
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override {assert(!"Should not be called");}
 
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {

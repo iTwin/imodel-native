@@ -729,6 +729,7 @@ bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR directio
             DPoint3d currentPt;
             if (scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->IntersectRay(currentPt, direction, testPoint))
                 {
+
                 DPoint3d pt;
                 double param;
                 if (ray.ProjectPointBounded(pt, param, currentPt) && param < minParam && param > -1e-8)
