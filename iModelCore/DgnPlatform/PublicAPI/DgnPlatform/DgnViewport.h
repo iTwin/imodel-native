@@ -229,9 +229,6 @@ public:
     //! due to adjustments made for front/back clipping being turned off.
     CameraViewDefinition::Camera const& GetCamera() const {return m_camera;}
 
-    //! @return the camera target for this DgnViewport
-    DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
-
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
     //! @param[out] high the npc value of the element closest to the front of view

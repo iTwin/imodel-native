@@ -1094,6 +1094,7 @@ public:
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
+
     //! Get the current location of the eyePoint for camera in this view.
     DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}
 

@@ -351,13 +351,13 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefinitionR controller)
+static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefinitionR cameraDef)
     {
     camera.ValidateLens();
     if (camera.IsFocusValid())
-         return;
+        return;
 
-    DPoint3dCR vDelta = controller.GetExtents();
+    DPoint3dCR vDelta = cameraDef.GetExtents();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
     double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
 
@@ -369,8 +369,8 @@ static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefin
     eyePoint.y = vDelta.y/2.0;
     eyePoint.z = vDelta.z/2.0 + focusDistance;
 
-    controller.GetRotation().MultiplyTranspose(eyePoint);
-    eyePoint.Add(controller.GetOrigin());
+    cameraDef.GetRotation().MultiplyTranspose(eyePoint);
+    eyePoint.Add(cameraDef.GetOrigin());
 
     camera.SetEyePoint(eyePoint);
     camera.SetFocusDistance(focusDistance);
@@ -716,7 +716,7 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     double low, high;
 
     if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
-        return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
+        return m_viewController->GetViewDefinition().GetTargetPoint(); // if there are no elements in the view and the camera is on, use the camera target point
 
     return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
     }
@@ -769,24 +769,11 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnViewport::GetCameraTarget() const
-    {
-    DVec3d viewZ;
-    m_rotMatrix.GetRow(viewZ, 2);
-
-    DPoint3d target;
-    target.SumOf(m_camera.GetEyePoint(), viewZ, -1.0 * m_camera.GetFocusDistance());
-    return target;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnViewport::GetFocusPlaneNpc()
     {
-    double npcZ = WorldToNpc(GetCameraTarget()).z;
+    double npcZ = WorldToNpc(m_viewController->GetViewDefinition().GetTargetPoint()).z;
 
     if (npcZ < 0.0 || npcZ > 1.0)
         npcZ = WorldToNpc(DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,1.0)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,0.0)))).z;
