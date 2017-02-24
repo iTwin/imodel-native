@@ -86,7 +86,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
-            <Assemblies>Delivery/$(libprefix)WebServicesClient.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -124,7 +124,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache.so</Libs>
-            <Assemblies>Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -172,7 +172,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnDbServerClient.so</Libs>
-            <Assemblies>Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -221,7 +221,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC.so</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
 
