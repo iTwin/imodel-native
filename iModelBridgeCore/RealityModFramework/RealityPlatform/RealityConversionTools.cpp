@@ -127,9 +127,17 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
         data->SetThumbnailURL(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
 
-    // MetadataUrl
+    // MetadataUrl]
     if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
-        data->SetMetadataURL(Utf8CP(properties["MetadataURL"].asString().c_str()));
+        {
+        if (data->GetMetadataCP() == NULL)
+            {
+            SpatialEntityMetadataPtr metadata = SpatialEntityMetadata::Create();
+            data->SetMetadata(metadata.get());
+            }
+    
+        data->GetMetadataP()->SetMetadataUrl(Utf8CP(properties["MetadataURL"].asString().c_str()));
+        }
 
     if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
         data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
@@ -138,7 +146,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if(properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
         data->SetProvider(Utf8CP(properties["DataProviderName"].asString().c_str()));
 
-    // Public Access
+    // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
         data->SetVisibility(Utf8CP(properties["PublicAccess"].asString().c_str()));
 
