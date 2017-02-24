@@ -34,26 +34,31 @@ int main(int argc, char *argv[])
 
 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Graz");
+    properties.Insert(RealityDataField::Name, "Helsinki");
     properties.Insert(RealityDataField::Dataset, "Terrain");
     properties.Insert(RealityDataField::Group, "Exemple group");
     properties.Insert(RealityDataField::Description, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
-    properties.Insert(RealityDataField::RootDocument, "Graz/Scene/Production_Graz_3MX.3mx");
+    properties.Insert(RealityDataField::RootDocument, "Scene/Production_Helsinki_3MX_ok.3mx");
     properties.Insert(RealityDataField::Classification, "Exemple classification");
     properties.Insert(RealityDataField::Type, "3mx");
-    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[-112.101512,40.700246],[-111.7394581,40.700246],[-111.7394581,40.8529699],[-112.101512,40.8529699],[-112.101512,40.700246]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
-    properties.Insert(RealityDataField::ThumbnailDocument, "Exemple thumbnaildocument");
-    properties.Insert(RealityDataField::MetadataURL, "Exemple metadataurl");
+    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
+    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
+    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
     properties.Insert(RealityDataField::AccuracyInMeters, "16.14");
     properties.Insert(RealityDataField::ResolutionInMeters, "16.14x23.19");
     properties.Insert(RealityDataField::OwnedBy, "francis.boily@bentley.com");
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    BeFileName Montgomery = BeFileName("D:/RealityModFrameworkFolder/Graz");
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "db892d23-9fdd-449b-bb0c-962b6ee15711", propertyString, true);
+    BeFileName Montgomery = BeFileName("C:/s3mx/Helsinki");
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
     if (upload->IsValidUpload())
-        upload->Perform();
+        {
+        UploadReport* ur = upload->Perform();
+        Utf8String report;
+        ur->ToXml(report);
+        std::cout << report << std::endl;
+        }
 
     return 0;
 }
