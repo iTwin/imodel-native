@@ -366,7 +366,7 @@ TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
     ASSERT_EQ(checkValue1.GetDouble(), AngleInDegrees::FromRadians(3.5).Degrees());
     checkValue1.Clear();
     }
-    /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GetSetCustomHandledProprty, CategoryProperties)
@@ -379,20 +379,22 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     DgnSubCategoryId subcatid;
     DgnSubCategory::Appearance subappearence;
     if (true)
-        {
+       {
         DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
         DrawingCategory category(*m_db, "TestCategory");
         ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Descr"));
+        ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(catindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Descr")));
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, catindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
 
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyIndex(rankindex, "Rank"));
+        ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(rankindex, ECN::ECValue("r")));
         ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(rankindex, ECN::ECValue(3)));
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, rankindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue(3)));
-        DgnSubCategory::Appearance appearance;
+        DgnSubCategory::Appearance  appearance;
         DrawingCategoryCPtr persistentCategory = category.Insert(appearance);
         EXPECT_TRUE(persistentCategory.IsValid());
         categoryId=persistentCategory->GetCategoryId();
@@ -439,6 +441,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     subappearence.SetTransparency(0.1);
     subappearence.SetDisplayPriority(2);
     ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scpropindex, "Properties"));
+    ASSERT_EQ(DgnDbStatus::BadArg, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(1)));
     ASSERT_EQ(DgnDbStatus::Success, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(subappearence.ToJson().c_str())));
     ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyValue(checkValue, scpropindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
@@ -489,6 +492,8 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         Byte DummyData[DataSize] = { 1,2,3,4,5,6,7,8,9,10 };
         ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(Tsdescrindex, "Descr"));
         ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(dataindex, "Data"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, textStyle->SetPropertyValue(Tsdescrindex, ECN::ECValue(1)));
         ASSERT_EQ(DgnDbStatus::Success, textStyle->SetPropertyValue(Tsdescrindex, ECN::ECValue("MyTesxtStyle Descr")));
         ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyValue(checkValue, Tsdescrindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyTesxtStyle Descr")));
@@ -504,6 +509,8 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         ASSERT_EQ(FrameStyle->GetName(), "MyFraneStyle");
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(Fsdescrindex, "Descr"));
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(dataindex, "Data"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg,  FrameStyle->SetPropertyValue(Fsdescrindex, ECN::ECValue(1)));
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->SetPropertyValue(Fsdescrindex, ECN::ECValue("MyFrameStyle Descr")));
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyValue(checkValue, Fsdescrindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyFrameStyle Descr")));
@@ -519,6 +526,8 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         ASSERT_EQ(LeaderStyle->GetName(), "MyLeaderStyle");
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(Lsdescrindex, "Descr"));
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(dataindex, "Data"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg,  LeaderStyle->SetPropertyValue(Lsdescrindex, ECN::ECValue(1)));
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->SetPropertyValue(Lsdescrindex, ECN::ECValue("MyLeaderStyle Descr")));
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyValue(checkValue, Lsdescrindex));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue("MyLeaderStyle Descr")));

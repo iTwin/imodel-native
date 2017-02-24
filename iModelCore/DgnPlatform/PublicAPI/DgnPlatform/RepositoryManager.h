@@ -311,6 +311,10 @@ public:
 
     //! Acquire a shared or exclusive lock on the DgnDb.
     Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return Acquire(req); }
+
+    //! Acquire an exclusive lock on Schemas in the DgnDb. 
+    DGNPLATFORM_EXPORT Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
+        
     //@}
 
     //! @name Managing Codes
