@@ -1645,6 +1645,54 @@ void ScalableMeshModel::QueueAddTerrainRegions(uint64_t id, const bvector<DPoint
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines)
+    {
+    TerrainModel::DTMPtr dtm(GetDTM(DTMAnalysisType::RawDataOnly));
+
+    TerrainModel::BcDTMPtr bcDtmPtr(TerrainModel::BcDTM::Create());
+    TerrainModel::DTMDrapedLinePtr drapedLine;
+    TerrainModel::IDTMDraping* draping = dtm->GetDTMDraping();
+    bool hasAddedBreaklines = false;
+
+    for (size_t segmentInd = 0; segmentInd < breaklines.size() - 1; segmentInd++)
+        {
+
+        DTMStatusInt status = draping->DrapeLinear(drapedLine, breaklines[segmentInd].point, 2);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+
+        bvector<DPoint3d> breaklinePts;
+
+        for (size_t ptInd = 0; ptInd < drapedLine->GetPointCount(); ptInd++)
+            {
+            DPoint3d pt;
+            double distance;
+            DTMDrapedLineCode code;
+
+            DTMStatusInt status = drapedLine->GetPointByIndex(pt, &distance, &code, (int)ptInd);
+            assert(status == SUCCESS);
+            breaklinePts.push_back(pt);
+            }
+
+        if (breaklinePts.size() == 0)
+            continue;
+
+        DTMFeatureId featureId;
+
+        status = bcDtmPtr->AddLinearFeature(DTMFeatureType::Breakline, &breaklinePts[0], (int)breaklinePts.size(), &featureId);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        hasAddedBreaklines = true;
+        }
+
+    if (hasAddedBreaklines)
+        {
+        DTMStatusInt status = bcDtmPtr->SaveAsGeopakDat(extraLinearFeatureAbsFileName.c_str());
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        }
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2017
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetDefaultClipsActive()
