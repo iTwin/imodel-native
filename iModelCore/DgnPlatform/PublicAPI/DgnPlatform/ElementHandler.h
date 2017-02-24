@@ -147,12 +147,6 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for NestedTypeLocation2d
-    struct EXPORT_VTABLE_ATTRIBUTE NestedTypeLocation2d : Geometric2d
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_NestedTypeLocation2d, Dgn::NestedTypeLocation2d, NestedTypeLocation2d, Geometric2d, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for RoleElement
     struct EXPORT_VTABLE_ATTRIBUTE Role : Element
     {

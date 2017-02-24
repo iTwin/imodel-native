@@ -675,6 +675,7 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
         {
         for (auto const& model : exclusivelyLockedModels)
             InsertLock(LockableId(LockableType::Model, model), LockLevel::Exclusive, tableType, true);
+        InsertLock(LockableId(GetDgnDb().Schemas()), LockLevel::Exclusive, tableType, true);
         }
 
     if (!exclusivelyLockedModels.empty())
@@ -1691,6 +1692,7 @@ bool RepositoryJson::LockableTypeFromUInt(LockableType& type, unsigned int value
         case LockableType::Db:
         case LockableType::Model:
         case LockableType::Element:
+        case LockableType::Schemas:
             type = static_cast<LockableType>(value);
             return true;
         }

@@ -809,43 +809,6 @@ DrawingGraphicPtr DrawingGraphic::Create(GraphicalModel2dCR model, DgnCategoryId
     return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-NestedTypeLocation2dPtr NestedTypeLocation2d::Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR nestedType, DPoint2dCR location)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::NestedTypeLocation2d::GetHandler());
-    DgnClassId relClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_NestedTypeLocation2dRefersToType);
-
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
-        return nullptr;
-
-    NestedTypeLocation2dPtr nestedTypeLocation = new NestedTypeLocation2d(CreateParams(db, model.GetModelId(), classId, categoryId));
-    if (!nestedTypeLocation.IsValid())
-        return nullptr;
-
-    ICurvePrimitivePtr point = ICurvePrimitive::CreateLine(DSegment3d::From(location, location));
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*nestedTypeLocation);
-    if (!point.IsValid() || !builder.IsValid() || !builder->Append(*point))
-        return nullptr;
-
-    if (BentleyStatus::SUCCESS != builder->Finish(*nestedTypeLocation))
-        return nullptr;
-
-    nestedTypeLocation->SetNestedType(nestedType.GetElementId(), relClassId);
-    nestedTypeLocation->SetLocation(location);
-    return nestedTypeLocation;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicalType2dCPtr NestedTypeLocation2d::GetNestedType() const
-    {
-    return GetDgnDb().Elements().Get<GraphicalType2d>(GetNestedTypeId());
-    }
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
