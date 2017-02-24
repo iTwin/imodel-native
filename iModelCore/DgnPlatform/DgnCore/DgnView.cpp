@@ -225,6 +225,7 @@ ClipVectorPtr ViewDefinition::GetViewClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CategorySelectorR ViewDefinition::GetCategorySelector()
     {
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
     return getThreadSafe<CategorySelector>(m_dgndb, GetCategorySelectorId(), m_categorySelector);
     }
 
@@ -233,6 +234,7 @@ CategorySelectorR ViewDefinition::GetCategorySelector()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayStyleR ViewDefinition::GetDisplayStyle()
     {
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
     return getThreadSafe<DisplayStyle>(m_dgndb, GetDisplayStyleId(), m_displayStyle);
     }
 
@@ -241,6 +243,7 @@ DisplayStyleR ViewDefinition::GetDisplayStyle()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelSelectorR SpatialViewDefinition::GetModelSelector()
     {
+    BeAssert (!IsPersistent()); // you can only call this on a writeable copy 
     return getThreadSafe<ModelSelector>(m_dgndb, GetModelSelectorId(), m_modelSelector);
     }
 
@@ -257,6 +260,7 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
     m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
+    // NOTE: Const ViewDefinitions should never have their display styles or category selector set! You must get a writeable copy to have them.
     return DgnDbStatus::Success;
     }
 
@@ -1095,9 +1099,18 @@ void DisplayStyle::_OnLoadedJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DisplayStyle::ToJson() const
     {
-    auto& ncThis = const_cast<DisplayStyleR>(*this);
-    ncThis._OnSaveJsonProperties();
+    const_cast<DisplayStyleR>(*this)._OnSaveJsonProperties();
     return Json::FastWriter::ToString(GetStyles());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayStyle::EqualState(DisplayStyleR other) 
+    {
+    _OnSaveJsonProperties();
+    other._OnSaveJsonProperties();
+    return GetStyles()==other.GetStyles();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1117,7 +1130,7 @@ void DisplayStyle::_OnSaveJsonProperties()
         int i=0;
         for (auto const& it : m_subCategoryOverrides)
             {
-            ovrJson[i][str_SubCategory()] = it.first.GetValue();
+            ovrJson[i][Json::StaticString(str_SubCategory())] = it.first.GetValue();
             it.second.ToJson(ovrJson[i++]);
             }
         SetStyle(str_SubCategoryOverrides(), ovrJson);
@@ -1454,7 +1467,5 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
-CameraViewControllerPtr CameraViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
 Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}

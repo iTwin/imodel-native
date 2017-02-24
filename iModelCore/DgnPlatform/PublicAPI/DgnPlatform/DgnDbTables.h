@@ -692,7 +692,8 @@ struct DgnUnits
     static double constexpr OneKilometer() {return 1000.0 * OneMeter();}
     static double constexpr OneMillimeter() {return OneMeter() / 1000.0;}
     static double constexpr OneCentimeter() {return OneMeter() / 100.0;}
-    static double constexpr DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double constexpr DiameterOfEarth() {return 12742.0 * OneKilometer();} // approximate
+    static double constexpr CircumferenceOfEarth() {return 40075.0 * OneKilometer();} // approximate
 };
 
 //=======================================================================================

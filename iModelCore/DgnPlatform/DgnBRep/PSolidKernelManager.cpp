@@ -2529,7 +2529,11 @@ void PSolidKernelManager::StopSession()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PSolidKernelManager::SetExternalFrustrum()
+bool PSolidKernelManager::SetExternalFrustrum(bool isActive)
     {
-    s_usingExternalFrustrum = true;
+    bool wasActive = s_usingExternalFrustrum;
+
+    s_usingExternalFrustrum = isActive;
+
+    return wasActive;
     }

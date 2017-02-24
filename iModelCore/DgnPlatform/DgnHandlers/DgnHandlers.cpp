@@ -25,7 +25,6 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert(NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
     BeAssert(NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
     BeAssert(NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin();
-    BeAssert(NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin();
     BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
     BeAssert(NULL == m_codeAdmin);             m_codeAdmin             = &_SupplyCodeAdmin();
     }

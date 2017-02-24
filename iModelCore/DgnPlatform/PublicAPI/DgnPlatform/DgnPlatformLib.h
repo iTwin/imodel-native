@@ -29,6 +29,7 @@ DGNPLATFORM_TYPEDEFS(DgnHost)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+struct DgnScriptThreadEnabler;
 typedef struct ::FT_LibraryRec_* FreeType_LibraryP; 
 
 /*=================================================================================**//**
@@ -84,6 +85,8 @@ public:
                 Trace   = 5
                 };
 
+            DGNPLATFORM_EXPORT void CheckCleanup();
+
             static NativeLogging::SEVERITY ToNativeLoggingSeverity(LoggingSeverity severity)
                 {
                 // *** NB: ScriptAdmin::LoggingSeverity must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
@@ -97,7 +100,7 @@ public:
                 };
 
             //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
-            struct ScriptLibraryImporter : IHostObject
+            struct ScriptLibraryImporter
                 {
                 //! Import the specified script
                 virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
@@ -107,8 +110,8 @@ public:
                 virtual INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) = 0;
                 };
 
-            //! Interface for handling errors reported by scripts or that prevent scripts from running
-            struct ScriptNotificationHandler : IHostObject
+            //! Interface for handling errors reported by scripts or that prevent scripts from running. This should be a singleton. It will not be freed.
+            struct ScriptNotificationHandler
                 {
                 //! Handle a script error
                 enum class Category {ReportedByScript, ParseError, Exception, Other};
@@ -116,21 +119,22 @@ public:
                 DGNPLATFORM_EXPORT virtual void _HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP msg);
                 };
 
-            BeJsEnvironmentP m_jsenv;
-            BeJsContextP m_jsContext;
-            bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
-            ScriptNotificationHandler* m_notificationHandler;
-
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
 
-            //! Provide the script environment needed to evaluate script expressions on the host's thread. 
-            //! There can only be one BeJsEnvironment per thread ... and this is it!
+            //! Prepare to execute scripts on the current thread. Call only once per thread!
+            //! @see DgnScriptThreadEnabler
+            DGNPLATFORM_EXPORT void InitializeOnThread();
+            //! Indicate that the current thread is finished executing scripts. A thread that has called InitializeOnThread must call TerminateOnThread before exiting!
+            //! @see DgnScriptThreadEnabler
+            DGNPLATFORM_EXPORT void TerminateOnThread();
+
+            //! Provide the script environment needed to evaluate script expressions on the current thread. 
             //! All BeJsContexts that run on this thread must use this BeJsEnvironment.
             DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
 
-            //! Provide the BeJsContext to use when executing script that needs to use the Dgn script object model. 
-            //! There can only be one DgnScript per thread ... and this is it!
+            //! Get the BeJsContext to use when executing script that needs to use the Dgn script object model on the current thread.
+            //! All scripts to be evaluated on this thread must use this BeJsContext.
             DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
 
             //! Obtain the text of the specified script program.
@@ -149,8 +153,11 @@ public:
             //! @param details  Information about the exception
             DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
 
-            //! Register the script error handler
-            ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}
+            //! Register the script error handler for the current thread
+            DGNPLATFORM_EXPORT ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h);
+
+            //! Get the script error handler for the current thread
+            DGNPLATFORM_EXPORT ScriptNotificationHandler* GetScriptNotificationHandler();
 
             //! Handle a reported script error. Invokes the registered error handler.
             DGNPLATFORM_EXPORT void HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details);
@@ -158,7 +165,7 @@ public:
             //! Handle a notification sent from the script. Invokes the registered handler.
             DGNPLATFORM_EXPORT void HandleLogMessage (Utf8CP category, LoggingSeverity sev, Utf8CP msg);
 
-            //! Register to import a set of projections or other script classes into the DgnScript JsContext
+            //! Register to import a set of projections or other script classes into the DgnScript JsContext. @note Will be used for all threads. Must be thread-safe.
             //! @param libName  the library's unique ID that will be requested by script client programs
             //! @param importer the importer that can install the specified library
             DGNPLATFORM_EXPORT void RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer);
@@ -698,6 +705,17 @@ public:
     //! Forward assertion failures to the specified handler.
     DGNPLATFORM_EXPORT static void ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler*);
 };
+
+//=======================================================================================
+//! Helper class for preparing a thread for scripts and then cleaning up.
+//! Script support is initialized on the current thread in the constructor.
+//! Script support is torn down in the destructor.
+//=======================================================================================
+struct DgnScriptThreadEnabler
+    {
+    DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().InitializeOnThread();}
+    ~DgnScriptThreadEnabler() {T_HOST.GetScriptAdmin().TerminateOnThread();}
+    };
 
 END_BENTLEY_DGN_NAMESPACE
 

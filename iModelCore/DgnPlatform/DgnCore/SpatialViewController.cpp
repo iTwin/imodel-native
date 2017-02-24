@@ -441,7 +441,7 @@ void SceneQueue::RemovePending(ViewControllerCR view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SceneQueue::Add(Task& task)
     {
-    if (&task.m_view.GetDgnDb() != &m_db)
+    if (&task.m_view->GetDgnDb() != &m_db)
         {
         BeAssert(false);
         return;
@@ -449,7 +449,7 @@ void SceneQueue::Add(Task& task)
 
     BeMutexHolder mux(m_cv.GetMutex());
 
-    RemovePending(task.m_view);
+    RemovePending(*task.m_view);
     m_pending.push_back(&task);
 
     mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem

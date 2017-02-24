@@ -54,7 +54,7 @@ protected:
     static constexpr Utf8CP str_Styles() {return "Styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
-    bool EqualState(DisplayStyleCR other) const {return GetStyles()==other.GetStyles();}
+    DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
@@ -523,11 +523,13 @@ public:
     DrawingViewDefinitionP ToDrawingViewP() {return const_cast<DrawingViewDefinitionP>(ToDrawingView());}
     SheetViewDefinitionP ToSheetViewP() {return const_cast<SheetViewDefinitionP>(ToSheetView());}
 
-    //! Get the CategorySelector for this ViewDefinition
+    //! Get the CategorySelector for this ViewDefinition. 
+    //! @note this is a non-const method and may only be called on a writeable copy of a ViewDefinition.
     DGNPLATFORM_EXPORT CategorySelectorR GetCategorySelector();
     DgnElementId GetCategorySelectorId() const {return m_categorySelectorId;}
 
     //! Get the DisplayStyle for this ViewDefinition
+    //! @note this is a non-const method and may only be called on a writeable copy of a ViewDefinition.
     DGNPLATFORM_EXPORT DisplayStyleR GetDisplayStyle();
     DgnElementId GetDisplayStyleId() const {return m_displayStyleId;}
 
@@ -807,8 +809,6 @@ public:
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
-
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
 };
@@ -940,8 +940,6 @@ public:
     CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
 
-    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
-
     //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
 
@@ -1045,6 +1043,7 @@ public:
     //! lens angle, rotation, back distance, and front distance unchanged.
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
+
 
     //! Get the current location of the eyePoint for camera in this view.
     DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}

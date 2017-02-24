@@ -81,7 +81,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name)
     {
-    DgnDbR db = model.GetDgnDb();
+    DgnDbR db = model.GetDgnDb();       
     DgnClassId classId = db.Domains().GetClassId(Handlers::Element::GetHandler());
 
     if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
@@ -342,16 +342,8 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
     m_renderSystem = renderSys;
     BeAssert(m_viewport.IsValid());
 
-    static bool s_useTiles = false; // debugging - to be removed.
-    if (s_useTiles)
-        {
-        m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
-        }
-    else
-        {
-        m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
+    m_rootTile = m_viewport->GetViewControllerR().IsSpatialView() ? 
             (QuadTree::Tile*) new Tile(*this, QuadTree::TileId(0,0,0), nullptr) : new Tile2dModel(*this, QuadTree::TileId(0,0,0), nullptr);
-        }
     }
 
 //=======================================================================================
@@ -419,7 +411,7 @@ void Attachment::Tree::Draw(TerrainContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->_QueueScene(context.GetUpdatePlan()); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(context.GetUpdatePlan()); // this usually queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         m_sceneReady = m_viewport->GetViewControllerR().UseReadyScene().IsValid(); // happens if updatePlan asks to wait (_QueueScene actually created the scene).
         }
@@ -730,11 +722,7 @@ Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
     {
-    auto findViewOfSheet = db.GetPreparedECSqlStatement(
-        "SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView"
-        " WHERE (sheetView.BaseModel.Id = ?)");
+    auto findViewOfSheet = db.GetPreparedECSqlStatement("SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView WHERE (sheetView.BaseModel.Id=?)");
     findViewOfSheet->BindId(1, mid);
-    if (BE_SQLITE_ROW != findViewOfSheet->Step())
-        return DgnElementId();
-    return findViewOfSheet->GetValueId<DgnElementId>(0);
+    return BE_SQLITE_ROW != findViewOfSheet->Step() ?  DgnElementId() : findViewOfSheet->GetValueId<DgnElementId>(0);
     }
