@@ -132,8 +132,8 @@ static std::string s_indexedColor = R"RAW_STRING(
 static std::string s_untexturedVertexShader =
 s_indexedColor
 + s_litVertexCommon + R"RAW_STRING(
-    v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
-    }
+        v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
+        }
 )RAW_STRING";
 
 // Used for reality meshes.

@@ -633,7 +633,7 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint16_t color)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -646,7 +646,7 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
     if (nullptr != param)
         m_uvParams.push_back(*param);
     else
-        m_colors.push_back(color);
+        m_colors.push_back(m_colorIndex.GetIndex(color));
 
     m_validIdsPresent |= (0 != attribute);
     return index;
@@ -877,7 +877,7 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), m_colors.GetIndex(vertex.m_fillColor));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_fillColor);
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -891,7 +891,7 @@ uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), m_colors.GetIndex(vertex.m_fillColor));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_fillColor);
     m_clusteredVertexMap[vertex] = index;
     return index;
     }

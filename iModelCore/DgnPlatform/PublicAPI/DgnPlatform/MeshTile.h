@@ -318,6 +318,7 @@ private:
     bvector<DPoint2d>           m_uvParams;
     bvector<uint16_t>           m_attributes;
     bvector<uint16_t>           m_colors;
+    ColorIndexMap               m_colorIndex;
     bool                        m_validIdsPresent = false;
 
     TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
@@ -344,6 +345,7 @@ public:
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t>& AttributesR() { return m_attributes; }
     bvector<uint16_t>& ColorsR() { return m_colors; }
+    ColorIndexMap const& GetColorIndexMap() const { return m_colorIndex; }
 
     TileTriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
@@ -364,7 +366,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint16_t colorIndex);
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t fillColor);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -453,7 +455,6 @@ private:
     size_t                  m_triangleIndex;
     RenderingAssetCP        m_material = nullptr;
     FeatureAttributesMapR   m_attributes;
-    ColorIndexMap           m_colors;
 
     TileMeshBuilder(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) {  }

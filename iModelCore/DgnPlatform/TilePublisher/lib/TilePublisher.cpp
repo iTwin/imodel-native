@@ -1177,6 +1177,13 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
     bufferView["byteLength"] = imageData.size();
     tileData.AddBinaryData(imageData.data(), imageData.size());
 
+#if defined(DEBUG_COLOR_INDEX)
+    WString name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
+    std::FILE* outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), L"jpg").c_str(), L"wb");
+    fwrite(imageData.GetData(), 1, imageData.GetSize(), outputFile);
+    fclose(outputFile);
+#endif
+
     return textureId;
     }
 
@@ -1240,14 +1247,14 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bo
     tileData.AddBufferView(s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
 
     AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
-    AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
+    AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
     AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
     AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
 
     techniqueUniforms["u_tex"] = "tex";
     techniqueUniforms["u_texWidth"] = "texWidth";
     techniqueUniforms["u_texStep"] = "texStep";
-    technique["attributes"]["a_colorIndex"] = "colorIndex";
+    techniqueAttributes["a_colorIndex"] = "colorIndex";
     AppendProgramAttribute(rootProgramNode, "a_colorIndex");
 
     tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
@@ -1309,8 +1316,12 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         AddTechniqueParameter(technique, "n", GLTF_INT_VEC2, "NORMAL");
         AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
         }
+
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    if (!textured)
+        AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -1329,6 +1340,9 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
     techniqueAttributes["a_pos"] = "pos";
     if (doBatchIds)
         techniqueAttributes["a_batchId"] = "batch";
+
+    if (!textured)
+        techniqueAttributes["a_colorIndex"] = "colorIndex";
 
     if(!ignoreLighting)
         techniqueAttributes["a_n"] = "n";
@@ -1466,10 +1480,7 @@ Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTe
         }
     else
         {
-        ColorIndexMap colorMap;
-        colorMap.GetIndex(rgbInt);
-
-        ColorIndex colorIndex(&colorMap);
+        ColorIndex colorIndex(&mesh.GetColorIndexMap());
         materialValue["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
         uint16_t width = colorIndex.GetWidth();
@@ -1761,6 +1772,35 @@ void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& pri
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colorIds, Utf8StringCR idStr)
+    {
+    // ###TODO: Consolidate shared code with AddMeshBatchIds()
+    Utf8String bvColor = Concat("bvColorIndex_", idStr),
+               accColor = Concat("accColorIndex_", idStr);
+
+    //primitive["attributes"]["colorIndex"] = accColor;
+    primitive["attributes"]["_COLORINDEX"] = accColor;
+
+    auto nColorBytes = colorIds.size() * sizeof(uint16_t);
+    auto& bv = tileData.m_json["bufferViews"][bvColor];
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nColorBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+
+    tileData.AddBinaryData(colorIds.data(), nColorBytes);
+
+    auto& acc = tileData.m_json["accessors"][accColor];
+    acc["bufferView"] = bvColor;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = GLTF_UNSIGNED_SHORT;
+    acc["count"] = colorIds.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr)
@@ -1867,6 +1907,9 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttributes (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
         }
 
+    BeAssert(isTextured == mesh.Colors().empty());
+    if (!mesh.Colors().empty() && !isTextured)
+        AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
