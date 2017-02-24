@@ -547,7 +547,7 @@
             <Class class="PhysicalType"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PhysicalRecipe" modifier="Abstract" displayLabel="Physical Type Recipe" description="Defines a recipe for generating Physical Types.">
+    <ECEntityClass typeName="PhysicalRecipe" modifier="Abstract" displayLabel="Physical Recipe" description="Defines a recipe for generating Physical Types.">
         <BaseClass>RecipeElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
@@ -1976,7 +1976,9 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Source" typeName="int"/>
+        <ECProperty propertyName="IsPrivate" typeName="boolean">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>

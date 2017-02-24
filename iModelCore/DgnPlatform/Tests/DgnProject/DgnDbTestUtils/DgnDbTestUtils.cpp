@@ -363,7 +363,6 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
     DgnDbR db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
     EXPECT_TRUE(viewDef.IsValid());
-    viewDef->SetSource(DgnViewSource::Generated);
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
