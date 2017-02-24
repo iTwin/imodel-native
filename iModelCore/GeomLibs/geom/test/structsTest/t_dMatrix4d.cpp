@@ -249,3 +249,44 @@ TEST(DMatrix4d, MultiplicationOverload)
     DPoint4d res2 =  mat.Multiply(DPoint3d::From(10, 10, 10), 1);
     Check::Near(res, res2);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, Subtract)
+    {
+    DMatrix4d mat = DMatrix4d::FromScaleAndTranslation(DPoint3d::From(2, 3, 1), DPoint3d::From(4, 4, 4));
+    DMatrix4d mat2 = DMatrix4d::FromScaleAndTranslation(DPoint3d::From(2, 3, 1), DPoint3d::From(4, 4, 4));
+    DMatrix4d matCpy = mat2;
+    mat2.Subtract(mat);
+    Check::True(mat2.MaxAbs() == 0);
+    matCpy.Scale(2);
+    matCpy.Subtract(mat);
+    Check::Near(mat, matCpy);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMatrix4d, TranslationChange)
+    {
+    DMatrix4d mat = DMatrix4d::FromTranslation(2.3, 3.4, 1.2);
+    DPoint3d vec = DPoint3d::From(7, 3, 5);
+    DPoint4d pnt = mat.Multiply(vec, 1);
+    DPoint4d trans;
+    trans.Zero();
+    mat.GetColumn(trans, 3);
+
+    Check::Near(pnt.x, vec.x + trans.x);
+    Check::Near(pnt.y, vec.y + trans.y);
+    Check::Near(pnt.z, vec.z + trans.z);
+    //applying rotation
+    mat.SetColumn(1, 0, Angle::FromDegrees(180).Cos(), Angle::FromDegrees(180).Sin(), 0);
+    mat.SetColumn(2, DPoint4d::From(0, -Angle::FromDegrees(180).Sin(), Angle::FromDegrees(180).Cos(), 0));
+
+    DPoint4d pnt2;
+    pnt2 = mat.Multiply(DPoint3d::From(pnt.x, pnt.y, pnt.z), 1);
+
+    mat.GetColumn(trans, 3);
+    Check::Near(pnt2.x, pnt.x + trans.x);
+    Check::Near(pnt2.y, -pnt.y + trans.y);
+    Check::Near(pnt2.z, -pnt.z + trans.z);
+    }

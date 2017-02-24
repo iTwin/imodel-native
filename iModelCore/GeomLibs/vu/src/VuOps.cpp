@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/VuOps.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -192,6 +192,35 @@ double          abstol
         }
     }
 
+void VuOps::MakeLoops
+(
+VuSetP          graph,
+bvector<bvector<DPoint3d>> const &xyz,
+VuMask          leftMask,
+VuMask          rightMask,
+double          abstol
+)
+    {
+    VuP nodeA, nodeB;
+    for (auto &loop : xyz)
+        MakeLoop (graph, nodeA, nodeB, loop, leftMask, rightMask, abstol);
+    }
+
+void VuOps::MakeEdges
+(
+VuSetP          graph,
+bvector<bvector<DPoint3d>> const &xyz,
+VuMask          leftMask,
+VuMask          rightMask,
+double          abstol
+)
+    {
+    VuP nodeA, nodeB;
+    for (auto &chain : xyz)
+        MakeEdges (graph, nodeA, nodeB, chain, leftMask, rightMask, abstol);
+    }
+
+
 void VuOps::MakeLoop
 (
 VuSetP          graph,
@@ -361,5 +390,214 @@ VuP VuOps::AddExpandedRange (VuSetP graph, DRange3dCR localRange, size_t numPoin
         numSideEdge = s_minSideEdge;
     return AddRangeBase (graph, expandedRange, localRange, 0.0, expansionFracton, numSideEdge, insideMask, outsideMask);
     }
+
+void VuOps::CollectLoopsWithMaskSummary
+(
+VuSetP graph,
+TaggedPolygonVectorR polygons,
+VuMask mask,            //!< [in] mask to test around each face.
+bool wrap       //!< [in] true to add wraparound point to each polygon
+)
+    {
+    polygons.clear ();
+    VuMask visitMask = graph->GrabMask ();
+    graph->ClearMaskInSet (visitMask);
+    VU_SET_LOOP (seed, graph)
+        {
+        if (!seed->HasMask (visitMask))
+            {
+            seed->SetMaskAroundFace (visitMask);
+            VuMask andMask = -1;
+            VuMask orMask  = 0;
+            polygons.push_back (TaggedPolygon ());
+            bvector<DPoint3d> &points = polygons.back ().GetPointsR ();
+            VU_FACE_LOOP (edge, seed)
+                {
+                points.push_back (edge->GetXYZ ());
+                andMask &= vu_getMask (edge, mask);
+                orMask |= vu_getMask (edge, mask);
+                }
+            END_VU_FACE_LOOP (edge, seed)
+            if (wrap)
+                points.push_back (seed->GetXYZ ());
+            polygons.back ().SetIndexA ((ptrdiff_t)andMask);
+            polygons.back ().SetIndexA ((ptrdiff_t)orMask);
+            }
+        }
+    END_VU_SET_LOOP (seed, graph)
+    graph->DropMask (visitMask);
+    }
+// visible from bsppolyface ....
+size_t AddInteriorBreaks (VuSetP graph, DRange3dCR range, bvector<double> breaks, int uv, VuMask mask);
+void vu_deletePairedEdges (VuSetP graph, VuMask mask);
+
+struct Options_vu_createTrianglated
+{
+double maxEdgeXLength;
+double maxEdgeYLength;
+double meshXLength;
+double meshYLength;
+bool isometricGrid;
+};
+
+static VuSetP vu_createTriangulated
+(
+bvector< bvector<DPoint3d>> const &boundaries,
+bvector< bvector<DPoint3d>> const &chains,
+bvector<DPoint3d> const &isolatedPoints,
+bvector <double> const    &uBreaks,
+bvector <double> const    &vBreaks,
+Options_vu_createTrianglated const &optionsIn
+)
+    {
+    auto options = optionsIn;   // to be updated
+    static int s_maxEdge = 400;
+    static int s_maxSubEdge = 100;
+    static double s_defaultCount = 10.0;
+    //static double s_graphRelTol = 1.0e-10;
+    VuSetP      graph = vu_newVuSet (0);
+    StatusInt status = SUCCESS;
+    int    maxPerFace = 3;
+
+    static double s_shortEdgeToleranceFactor = 1.0e-8;
+    static double s_skewAngle = 0.0;
+    double skewAngle = s_skewAngle;
+    if (options.isometricGrid)
+        skewAngle = msGeomConst_pi / 6.0;
+    DRange3d range = DRange3d::From (boundaries);
+
+    double xyTolerance = s_shortEdgeToleranceFactor * range.low.Distance (range.high);
+
+    VuOps::MakeLoops (graph, boundaries, VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE, xyTolerance);
+    VuOps::MakeEdges (graph, chains, VU_RULE_EDGE, VU_RULE_EDGE, xyTolerance);
+
+    double dx = range.high.x - range.low.x;
+    double dy = range.high.y - range.low.y;
+    if (options.meshXLength <= 0.0)
+        options.meshXLength = dy / s_defaultCount;
+    if (options.meshYLength <= 0.0)
+        options.meshYLength = dy / s_defaultCount;
+
+    if (s_maxEdge * options.meshXLength < dx)
+        {
+        status = ERROR;
+        options.meshXLength = dx / s_maxEdge;
+        }
+    if (s_maxEdge * options.meshYLength < dy)
+        {
+        status = ERROR;
+        options.meshYLength = dy / s_maxEdge;
+        }
+    
+    DPoint3d origin = range.low;
+    double ax0, ay0, ax1, ay1;
+    bsiTrig_safeDivide (&ax0, range.low.x - origin.x, options.meshXLength, 0.0);
+    bsiTrig_safeDivide (&ay0, range.low.y - origin.y, options.meshYLength, 0.0);
+    int ix0 = (int) floor (ax0);
+    int iy0 = (int) floor (ay0);
+
+    bsiTrig_safeDivide (&ax1, range.high.x - origin.x, options.meshXLength, 0.0);
+    bsiTrig_safeDivide (&ay1, range.high.y - origin.y, options.meshYLength, 0.0);
+    int ix1 = (int)ceil (ax1);
+    int iy1 = (int)ceil (ay1);
+
+    vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+    vu_deletePairedEdges (graph, VU_BOUNDARY_EDGE);
+    if (0 != AddInteriorBreaks (graph, range, uBreaks, 0, VU_RULE_EDGE)
+            + AddInteriorBreaks (graph, range, vBreaks, 1, VU_RULE_EDGE)
+       )
+        {
+        // remerge with new edges ....
+        vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+        }
+    int numSplit = vu_splitLongEdges (graph, VU_BOUNDARY_EDGE | VU_RULE_EDGE, 0.0, options.maxEdgeXLength, options.maxEdgeYLength, s_maxSubEdge);
+    if (numSplit > 0)
+        vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+
+    vu_regularizeGraph (graph);
+    vu_markAlternatingExteriorBoundaries(graph,true);
+    vu_freeNonMarkedEdges (graph, VU_BOUNDARY_EDGE | VU_RULE_EDGE);
+
+    if (skewAngle != 0.0)
+        {
+        Transform worldToLocal, localToWorld;
+        double s = sin(skewAngle);
+        double c = cos (skewAngle);
+        localToWorld.InitFromRowValues (
+                    1, s, 0, 0,
+                    0, c, 0, 0,
+                    0, 0, 1, 0);
+        bsiTransform_setFixedPoint (&localToWorld, &range.low);
+        bsiTransform_invertTransform (&worldToLocal, &localToWorld);
+        vu_transform (graph, &worldToLocal);
+        int numX = ix1 - ix0;
+        int numY = iy1 - iy0;
+        numX = (int)ceil ((1.0 + s) * (double)numX);
+        numY = (int)ceil((double)numY / c);
+        vu_buildNonInterferingGrid (graph, numX, numY, 0, 0);
+        vu_transform (graph, &localToWorld);
+        }
+    else
+        {
+        vu_buildNonInterferingGrid (graph, ix1-ix0, iy1-iy0, 0, 0);
+        }
+    vu_setZInGraph (graph, range.low.z);
+
+    vu_regularizeGraph (graph);
+    vu_markAlternatingExteriorBoundaries(graph,true);
+    vu_splitMonotoneFacesToEdgeLimit (graph, maxPerFace);
+
+    vu_flipTrianglesToImproveScaledQuadraticAspectRatio (graph, options.meshYLength, options.meshXLength);
+
+    return graph;
+    }
+
+void VuOps_runScaledXYSmoothing
+(
+VuSetP graph,
+double xLength,
+double yLength
+)
+    {
+    static double s_smoothTol = 0.001;
+    static int s_maxSmoothPass = 100;
+    static int s_flipInterval = 4;
+    double shiftFraction;
+    int numSweep;
+    static int s_maxFlipsPerEdgePerPass = 5;
+    vu_smoothInteriorVertices (graph, nullptr, nullptr,
+            s_smoothTol, s_maxSmoothPass,s_flipInterval, s_maxFlipsPerEdgePerPass, &shiftFraction, &numSweep);
+    }
+
+VuSetP VuOps::CreateTriangulatedGrid
+(
+bvector<bvector<DPoint3d>>  const &parityBoundaries,
+bvector<bvector<DPoint3d>>  const &openChains,
+bvector<DPoint3d>           const &isolatedPoints,
+bvector <double>            const &uBreaks,
+bvector <double>            const &vBreaks,
+double              maxEdgeXLength,
+double              maxEdgeYLength,
+double              meshXLength,
+double              meshYLength,
+bool                isometricGrid,
+bool                laplacianSmoothing
+)
+    {
+    Options_vu_createTrianglated options;
+    options.maxEdgeXLength = maxEdgeXLength;
+    options.maxEdgeYLength = maxEdgeYLength;
+    options.meshXLength = meshXLength;
+    options.meshYLength = meshYLength;
+    options.isometricGrid = isometricGrid;
+
+    auto graph = vu_createTriangulated (parityBoundaries, openChains, isolatedPoints, uBreaks, vBreaks, options);
+    if (nullptr != graph && laplacianSmoothing)
+        {
+        VuOps_runScaledXYSmoothing (graph, meshXLength, meshYLength);
+        }
+    return graph;
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

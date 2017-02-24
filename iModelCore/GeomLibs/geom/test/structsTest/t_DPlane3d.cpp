@@ -290,3 +290,67 @@ TEST(DPlane3d, VectorProjectionOnNormal)
     double projectionExpected = plane.normal.DotProduct(vector);
     Check::Near(projectionExpected, projection);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, TrueDistance) 
+    {
+    DVec3d planeNormal = DVec3d::From(1, 0, 0);
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(planeNormal, 5);
+    DPoint3d pointUnderTest = DPoint3d::From(7, 8, 8);
+    double distance = plane.Evaluate(pointUnderTest);
+    DVec3d vecPnt = DVec3d::FromStartEnd(plane.origin, pointUnderTest);
+    double distanceExpected = vecPnt.DotProduct(plane.normal);
+    printf("%f    %f   \n", distance, distanceExpected);
+    Check::Near(distance, distanceExpected);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, TrueDistanceFromRange)
+    {
+    DVec3d planeNormal = DVec3d::From(1, 0, 0);
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(planeNormal, 5);
+    DPoint3d pnts[] = { DPoint3d::From(9,9,9),
+                        DPoint3d::From(2,3,2),
+                        DPoint3d::From(9,8,8),
+                        DPoint3d::From(7,9,3) };
+    size_t maxIndex, minIndex;
+    plane.EvaluateRange(pnts, 4, minIndex, maxIndex);
+
+    double maxValue = plane.EvaluateMaxAbs(pnts, 4);
+
+    double maxValExpected = plane.Evaluate(pnts[maxIndex]);
+    Check::Near(maxValue, maxValExpected);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, TrueDistanceFromRange2)
+    {
+    DVec3d planeNormal = DVec3d::From(1, 0, 0);
+    DPlane3d plane = DPlane3d::FromNormalAndDistance(planeNormal, 5);
+    bvector<DPoint3d> pnts= { DPoint3d::From(9,9,9),
+        DPoint3d::From(2,3,2),
+        DPoint3d::From(9,8,8),
+        DPoint3d::From(7,9,3) };
+    size_t maxIndex, minIndex;
+    plane.EvaluateRange(pnts, minIndex, maxIndex);
+
+    double maxValue = plane.EvaluateMaxAbs(pnts);
+
+    double maxValExpected = plane.Evaluate(pnts[maxIndex]);
+    Check::Near(maxValue, maxValExpected);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DPlane3d, Plane3Points)
+    {
+    DPlane3d plane0 = DPlane3d::From3Points(DPoint3d::From(1, 1, 1), DPoint3d::From(-1, 1, 0), DPoint3d::From(2, 0, 3));
+    DPlane3d plane1 = DPlane3d::FromOriginAndNormal(DPoint3d::From(1, 1, 1), DVec3d::From(-1, 3, 2));
+    
+    Check::Near(plane0.normal, plane1.normal);
+    Check::Near(plane0.origin, plane1.origin);
+    }

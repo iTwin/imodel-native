@@ -229,3 +229,22 @@ TEST(DRay3d,IntersectHyperbolicParaboloid)
     TestIntersectHyperbolicParboloidA (0.43,0.51, 1.02, 0.94, 0.92, 0.981);
     Check::EndScope ();
     }
+
+TEST(DRay3d, Evaluate)
+    {
+    DSegment3d seg = DSegment3d::From(DPoint3d::From(2, 3, 2), DPoint3d::From(8, 9, 8));
+    DRay3d ray = DRay3d::From(seg);
+    DPoint3d origin, target;
+    ray.EvaluateEndPoints(origin, target);
+
+    Check::Near(seg.point[0], origin);
+    Check::Near(seg.point[1], target);
+    }
+TEST(DRay3d, DotVector)
+    {
+    DRay3d ray0 = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(9, 9, 9)); 
+    DVec3d vec = DVec3d::From(DPoint3d::From(8, 8, 8));
+    double dotProduct = ray0.DirectionDotVector(vec);
+    double dotProductExpected = ray0.direction.DotProduct(vec);
+    Check::Near(dotProduct, dotProductExpected);
+    }
