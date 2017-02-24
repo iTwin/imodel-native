@@ -195,6 +195,7 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     cameraDevicePtr->SetDistortion(distortion);
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
     cameraDevicePtr->Insert();
     CameraDeviceElementId cameraDeviceId = cameraDevicePtr->GetId();
 

@@ -22,6 +22,8 @@ HANDLER_DEFINE_MEMBERS(TangentialDistortionHandler)
 #define CAMERA_PROPNAME_TangentialDistortion    "TangentialDistortion"
 #define CAMERA_PROPNAME_AspectRatio             "AspectRatio"
 #define CAMERA_PROPNAME_Skew                    "Skew"
+#define CAMERA_PROPNAME_ModelType               "ModelType"
+#define CAMERA_PROPNAME_SensorSize              "SensorSize"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -241,6 +243,8 @@ void CameraDeviceModelHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     params.Add(CAMERA_PROPNAME_Skew);
     params.Add(CAMERA_PROPNAME_FocalLength);
     params.Add(CAMERA_PROPNAME_PrincipalPoint);
+    params.Add(CAMERA_PROPNAME_ModelType);
+    params.Add(CAMERA_PROPNAME_SensorSize);
     }
 
 
@@ -256,6 +260,7 @@ void CameraDeviceHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     params.Add(CAMERA_PROPNAME_Skew);
     params.Add(CAMERA_PROPNAME_FocalLength);
     params.Add(CAMERA_PROPNAME_PrincipalPoint);
+    params.Add(CAMERA_PROPNAME_SensorSize);
     }
 
 
@@ -303,6 +308,10 @@ void                    CameraDeviceModel::SetFocalLength(double val) { m_focalL
 void                    CameraDeviceModel::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
 void                    CameraDeviceModel::SetAspectRatio(double val) { m_aspectRatio = val; }
 void                    CameraDeviceModel::SetSkew(double val) { m_skew = val; }
+CameraDeviceModel::ModelType CameraDeviceModel::GetModelType() const { return m_modelType; }
+void                    CameraDeviceModel::SetModelType(ModelType val) { m_modelType = val; }
+double                  CameraDeviceModel::GetSensorSize() const { return m_sensorSize; }
+void                    CameraDeviceModel::SetSensorSize(double val) { m_sensorSize = val; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -314,7 +323,9 @@ DgnDbStatus CameraDeviceModel::BindParameters(BeSQLite::EC::ECSqlStatement& stat
         ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageHeight), GetImageHeight()) ||
         ECSqlStatus::Success != statement.BindPoint2D(statement.GetParameterIndex(CAMERA_PROPNAME_PrincipalPoint), GetPrincipalPoint()) ||
         ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_AspectRatio), GetAspectRatio()) ||
-        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_Skew), GetSkew())         )
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_Skew), GetSkew()) ||
+        ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ModelType), (int)GetModelType()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_SensorSize), GetSensorSize()))
         {
         return DgnDbStatus::BadArg;
         }
@@ -358,6 +369,8 @@ DgnDbStatus CameraDeviceModel::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
         SetPrincipalPoint(stmt.GetValuePoint2D(params.GetSelectIndex(CAMERA_PROPNAME_PrincipalPoint))); 
         SetAspectRatio(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_AspectRatio)));
         SetSkew(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_Skew)));
+        SetModelType((ModelType)stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ModelType)));
+        SetSensorSize(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_SensorSize)));
         }
 
     return status;
@@ -396,6 +409,8 @@ void CameraDeviceModel::_CopyFrom(DgnElementCR el)
     SetPrincipalPoint(other->GetPrincipalPoint());
     SetAspectRatio(other->GetAspectRatio());
     SetSkew(other->GetSkew());
+    SetModelType(other->GetModelType());
+    SetSensorSize(other->GetSensorSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,6 +549,8 @@ double                  CameraDevice::GetAspectRatio() const { return m_aspectRa
 void                    CameraDevice::SetAspectRatio(double val) { m_aspectRatio = val; }
 double                  CameraDevice::GetSkew() const { return m_skew; }
 void                    CameraDevice::SetSkew(double val) { m_skew = val; }
+double                  CameraDevice::GetSensorSize() const { return m_sensorSize; }
+void                    CameraDevice::SetSensorSize(double val) { m_sensorSize= val; }
 
 double                  CameraDevice::GetPixelToMeterRatio() const { return m_pixelToMeterRatio;  };
 void                    CameraDevice::SetPixelToMeterRatio(double val) { m_pixelToMeterRatio = val; };
@@ -608,7 +625,8 @@ DgnDbStatus CameraDevice::BindParameters(BeSQLite::EC::ECSqlStatement& statement
         ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageHeight), GetImageHeight()) ||
         ECSqlStatus::Success != statement.BindPoint2D(statement.GetParameterIndex(CAMERA_PROPNAME_PrincipalPoint), GetPrincipalPoint()) ||
         ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_AspectRatio), GetAspectRatio()) ||
-        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_Skew), GetSkew()))
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_Skew), GetSkew()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_SensorSize), GetSensorSize()))
         {
         return DgnDbStatus::BadArg;
         }
@@ -652,6 +670,7 @@ DgnDbStatus CameraDevice::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPara
         SetPrincipalPoint(stmt.GetValuePoint2D(params.GetSelectIndex(CAMERA_PROPNAME_PrincipalPoint)));
         SetAspectRatio(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_AspectRatio)));
         SetSkew(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_Skew)));
+        SetSensorSize(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_SensorSize)));
         }
 
     return status;
@@ -813,6 +832,7 @@ void CameraDevice::_CopyFrom(DgnElementCR el)
     SetFocalLength(other->GetFocalLength());
     SetPrincipalPoint(other->GetPrincipalPoint());
     SetCameraDeviceModelId(other->GetCameraDeviceModelId());
+    SetSensorSize(other->GetSensorSize());
     }
 
 /*---------------------------------------------------------------------------------**//**

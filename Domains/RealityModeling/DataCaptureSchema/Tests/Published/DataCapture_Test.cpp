@@ -47,6 +47,7 @@ TEST_F(DataCaptureTests, CreateCameraDevice)
     cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
 
     //Insert cameraDevice element
     auto cameraDeviceInsertedPtr = cameraDevicePtr->Insert();
@@ -84,6 +85,7 @@ TEST_F(DataCaptureTests, CreateCameraDevice)
     ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCamPtr->GetTangentialDistortion())));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),1.0);
     ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),1.0);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetSensorSize(), 1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,6 +126,7 @@ TEST_F(DataCaptureTests, ModifyCameraDevice)
     cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraDevicePtr->SetAspectRatio(2.0);
     cameraDevicePtr->SetSkew(3.0);
+    cameraDevicePtr->SetSensorSize(1.0);
 
     //Update cameraDevice element
     auto cameraDeviceUpdatedPtr = cameraDevicePtr->Update();
@@ -163,6 +166,7 @@ TEST_F(DataCaptureTests, ModifyCameraDevice)
     ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCamPtr->GetTangentialDistortion())));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),2.0);
     ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),3.0);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetSensorSize(), 1.0);
     }
 
 
@@ -255,6 +259,7 @@ TEST_F(DataCaptureTests, CreateShot)
     cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
     auto cameraDeviceInsertedPtr = cameraDevicePtr->Insert();
     ASSERT_TRUE(cameraDeviceInsertedPtr.IsValid());
     CameraDeviceElementId cameraDeviceId = cameraDeviceInsertedPtr->GetId();
