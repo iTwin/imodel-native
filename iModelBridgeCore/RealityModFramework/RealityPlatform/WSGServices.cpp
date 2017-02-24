@@ -341,9 +341,15 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         navString.append(parentNode.GetInstanceId());
         navString.ReplaceAll("/", "~2F");
         }
+    return GetChildNodes(server, repoId, navString);
+    }
+
+bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath)
+{
+    nodePath.ReplaceAll("/", "~2F");
 
     bvector<NavNode> returnVector = bvector<NavNode>();
-    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, navString);
+    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, nodePath);
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
 
@@ -353,10 +359,10 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         return returnVector;
 
     for (auto instance : instances["instances"])
-        returnVector.push_back(NavNode(instance, parentNode.GetRootNode(), parentNode.GetRootId()));
+        returnVector.push_back(NavNode(instance));//, parentNode.GetRootNode(), parentNode.GetRootId()));
 
     return returnVector;
-    }
+}
 
 WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId)
     {

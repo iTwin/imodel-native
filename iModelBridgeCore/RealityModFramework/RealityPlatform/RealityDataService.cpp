@@ -111,7 +111,7 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
     m_validRequestString = false;
     }
 
-Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl()
+void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl()
     {
     //https://s3mxcloudservice.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2FScene~2FProduction_Graz_3MX.3mx/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
     Utf8String url = "https://";
@@ -123,7 +123,12 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     url.append("/");
     url.append(RealityDataService::GetSchemaName());
     url.append("/Document/");
-    url.append(m_id);
+    
+    bvector<Utf8String> lines;
+    BeStringUtilities::Split(m_id.c_str(), "/", lines);
+    Utf8String root = lines[0];
+
+    url.append(root);
     url.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true ");
     m_allowAzureRedirection = false;
 
@@ -133,29 +138,30 @@ Utf8String RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl(
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     Utf8String jsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, RealityDataService::GetVerifyPeer());
 
-    Utf8String AzureUrl = "";
-
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || (!Json::Reader::Parse(jsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
-        return AzureUrl;
+        return;
 
     for (auto instance : instances["instances"])
         {
         if (instance.isMember("properties") && instance["properties"].isMember("Url") && !instance["properties"]["Url"].isNull())
-            AzureUrl = instance["properties"]["Url"].asCString();
+            {
+            bvector<Utf8String> parts;
+            Utf8String AzureUrl = instance["properties"]["Url"].asCString();
+            BeStringUtilities::Split(AzureUrl.c_str(), "\?", parts);
+            //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
+            m_azureServer = parts[0];
+            m_azureToken = parts[1];
+            m_allowAzureRedirection = true;
+            }
         }
-
-    if(AzureUrl.length() > 0)
-        m_allowAzureRedirection = true;
-
-    return AzureUrl;
     }
 
-void RealityDataDocumentContentByIdRequest::SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl)
+/*void RealityDataDocumentContentByIdRequest::SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl)
     {
     m_AzureRedirectionURL = azureContainerUrl;
     m_AzureRedirected = true;
-    }
+    }*/
 
 bool RealityDataDocumentContentByIdRequest::IsAzureBlobRedirected() { return m_AzureRedirected; }
 
@@ -165,9 +171,15 @@ bool RealityDataDocumentContentByIdRequest::IsAzureRedirectionPossible() { retur
 
 void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    if(m_allowAzureRedirection && m_AzureRedirected)
+    if(m_allowAzureRedirection)
         {
-        m_httpRequestString = m_AzureRedirectionURL;
+        /*m_httpRequestString = m_azureServer;
+        bvector<Utf8String> parts;
+        Utf8String AzureUrl = instance["properties"]["Url"].asCString();
+        BeStringUtilities::Split(AzureUrl.c_str(), "\?", parts);
+        //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
+        m_azureServer = parts[0];
+        m_azureToken = parts[1];*/
 
         m_validRequestString = true;
         }
@@ -660,6 +672,39 @@ void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'&api.singleurlperinstance=true");
     }
 
+UploadReport::~UploadReport()
+    {
+    for (bmap<WString, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
+        delete (it->second);
+    }
+
+void UploadReport::ToXml(Utf8StringR report)
+    {
+    /*BeXmlWriterPtr writer = BeXmlWriter::Create();
+    BeAssert(writer.IsValid());
+    writer->SetIndentation(2);
+
+    writer->WriteElementStart("RealityDataService_UploadReport");
+        {
+        writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
+
+        for (bmap<WString, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
+            {
+            writer->WriteElementStart("File");
+                {
+                UploadResult* tr = it->second;
+                writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
+                writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
+                writer->WriteAttribute("uploadProgress", tr->retries.at(i).uploadProgress);
+                }
+            writer->WriteElementEnd();
+            }
+        }
+    writer->WriteElementEnd();
+    writer->ToString(report);*/
+    }
+
 Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Utf8String> properties)
     {
     Utf8String propertyString;
@@ -921,6 +966,8 @@ UploadReport* RealityDataServiceUpload::Perform()
                                 SetupCurlforFile(fileUp, 0);
                                 still_running++;
                                 }
+                            else
+                                fileUp->CloseFile();
                             }      
 
                         }
@@ -956,7 +1003,9 @@ bool RealityDataServiceUpload::SetupNextEntry()
 
     if (m_curEntry < (int)m_filesToUpload.size())
         {
-        SetupCurlforFile((RealityDataUrl*)(m_filesToUpload[m_curEntry]), 0);//SetupCurlandFile(&m_pEntries[m_curEntry]);
+        RealityDataFileUpload* fUp = m_filesToUpload[m_curEntry];
+        fUp->ReadyFile();
+        SetupCurlforFile((RealityDataUrl*)(fUp), 0);//SetupCurlandFile(&m_pEntries[m_curEntry]);
         ++m_curEntry;
         }
     else
@@ -1038,22 +1087,23 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
     if (m_pStatusFunc)
         m_pStatusFunc(index, pClient, ErrorCode, pMsg);
 
-    /*RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
+    /*RealityDataFileUpload* pEntry = (RealityDataFileUpload*)pClient;
 
-    bmap<WString, TransferReport*>::iterator it = m_dlReport.results.find(pEntry->filename);
-    if (it == m_dlReport.results.end())
-        return;//something went wrong
+    if(pEntry == nullptr)
+        return;
 
-    TransferReport* tr = it->second;
+    m_ulReport.results.
+
+    RealityDataFileUpload* tr = it->second;
     tr->filesize = pEntry->filesize;
 
-    DownloadResult dr = DownloadResult();
-    dr.errorCode = ErrorCode;
-    dr.downloadProgress = pEntry->downloadedSizeStep;
+    UploadResult ur = UploadResult();
+    ur.errorCode = ErrorCode;
+    ur.downloadProgress = pEntry->downloadedSizeStep;
     if (pEntry->filesize != 0)
-        dr.downloadProgress /= pEntry->filesize;
+        ur.downloadProgress /= pEntry->filesize;
 
-    tr->retries.push_back(dr);
+    tr->retries.push_back(ur);
 
     if (ErrorCode != REALITYDATADOWNLOAD_RETRY_TENTATIVE)
         {
@@ -1073,7 +1123,8 @@ Utf8String RealityDataServiceUpload::GetAzureToken()
     return m_azureToken;
     }
 
-RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : m_id(id), m_overwrite(overwrite)
+RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
+    m_id(id), m_overwrite(overwrite), m_azureTokenTimer(0)
     { 
     CreateUpload(properties);
     m_handshakeRequest = new AzureWriteHandshake(m_id);
@@ -1172,10 +1223,10 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String azureUrl = request.GetAzureRedirectionRequestUrl();
+    request.GetAzureRedirectionRequestUrl();
     if (request.IsAzureRedirectionPossible())
         {
-        request.SetAzureRedirectionUrlToContainer(azureUrl);
+        //request.SetAzureRedirectionUrlToContainer(azureUrl);
         WSGRequest::GetInstance().PerformAzureRequest(request, status, RealityDataService::GetVerifyPeer(), file);
         }
     else

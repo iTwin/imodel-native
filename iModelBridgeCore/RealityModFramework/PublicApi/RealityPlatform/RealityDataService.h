@@ -185,11 +185,11 @@ public:
     REALITYDATAPLATFORM_EXPORT void ChangeInstanceId(Utf8String instanceId);
 
     //! This call creates the URL request to obtain the azure redirection URL.
-    REALITYDATAPLATFORM_EXPORT Utf8String GetAzureRedirectionRequestUrl();
+    REALITYDATAPLATFORM_EXPORT void GetAzureRedirectionRequestUrl();
 
     //! Once the azure blob container URL has been obtained it must be set
     //!  using this method after which the object will create azure redirection.
-    REALITYDATAPLATFORM_EXPORT void SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl);
+    //REALITYDATAPLATFORM_EXPORT void SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl);
 
     //! Indicates that an azure blob redirection url has been set to object
     REALITYDATAPLATFORM_EXPORT bool IsAzureBlobRedirected();
@@ -208,8 +208,8 @@ private:
     RealityDataDocumentContentByIdRequest() {}
     bool m_AzureRedirected;
     bool m_allowAzureRedirection;
-    Utf8String m_AzureRedirectionURL;
-
+    Utf8String m_azureServer;
+    Utf8String m_azureToken;
     };
 
 struct RealityDataFilterCreator
@@ -403,7 +403,7 @@ struct RealityDataFileUpload : public RealityDataUrl
     {
 public:
     RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
-        m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), 
+        m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), m_filename(filename.GetNameUtf8()),
         m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true)
         {
         m_validRequestString = false;
@@ -413,16 +413,25 @@ public:
         m_fileUrl.append(fileFromRoot);
         m_fileUrl.ReplaceAll("\\","/");
 
-        BeFileStatus status = m_fileStream.Open(filename.GetName(), BeFileAccess::Read);
+        m_requestType = HttpRequestType::PUT_Request;
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ReadyFile()
+        {
+        BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
         BeAssert(status == BeFileStatus::Success);
 
         m_fileStream.GetSize((uint64_t)m_fileSize);
-        m_requestType = HttpRequestType::PUT_Request;
-
         m_singleChunk = m_fileSize < m_chunkSize;
 
         if(m_singleChunk)
             m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+        }
+
+    REALITYDATAPLATFORM_EXPORT void CloseFile()
+        {
+        if(m_fileStream.IsOpen())
+            m_fileStream.Close();
         }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
@@ -462,6 +471,8 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
 
+    REALITYDATAPLATFORM_EXPORT Utf8String GetFilename() { return m_filename; }
+
     uint64_t GetFileSize() const { return m_fileSize; }
 
     BeFile& GetFileStream() { return m_fileStream; }
@@ -489,6 +500,7 @@ private:
     mutable bool            m_singleChunk;
 
     Utf8String              m_fileUrl;
+    Utf8String              m_filename;
 
     BeFile                  m_fileStream;
     uint64_t                m_fileSize;
@@ -507,6 +519,7 @@ private:
     mutable Utf8String      m_requestWithToken;
 
     Utf8String              m_blockList;
+    time_t                  m_timeSpent;
     };
 
 struct AzureWriteHandshake : public RealityDataUrl
@@ -521,55 +534,21 @@ private:
     AzureWriteHandshake();
     };
 
+//where the curl upload ended, either in success or failure
+struct UploadResult
+    {
+    int                     errorCode; //code returned by curl
+    size_t                  uploadProgress; //a percentage of how much of the file was successfully downloaded
+    time_t                  timeSpent;
+    };
+
 struct UploadReport
     {
     size_t                  packageId;
-    bmap<WString, RealityDataFileUpload*> results;
-    ~UploadReport()
-        {
-        for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
-            delete (it->second);
-        }
+    bmap<WString, UploadResult*> results;
+    ~UploadReport();
 
-    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report)
-        {
-        /*BeXmlWriterPtr writer = BeXmlWriter::Create();
-        BeAssert(writer.IsValid());
-        writer->SetIndentation(2);
-
-        //writer->WriteDocumentStart(xmlCharEncoding::XML_CHAR_ENCODING_UTF8);
-
-        writer->WriteElementStart("RealityDataDownload_DownloadReport");
-            {
-            writer->WriteAttribute("PackageId", packageId);
-            writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
-
-            for (bmap<WString, RealityDataFileUpload*>::iterator it = results.begin(); it != results.end(); ++it)
-                {
-                writer->WriteElementStart("File");
-                    {
-                    writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
-                    RealityDataFileUpload* tr = it->second;
-                    writer->WriteAttribute("url", Utf8CP(tr->url.c_str()));
-                    writer->WriteAttribute("filesize", tr->filesize);
-                    writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
-                    for (size_t i = 0; i < tr->retries.size(); ++i)
-                        {
-                        writer->WriteElementStart("DownloadAttempt");
-                            {
-                            writer->WriteAttribute("attemptNo", i + 1);
-                            writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
-                            writer->WriteAttribute("downloadProgress", tr->retries.at(i).downloadProgress);
-                            }
-                        writer->WriteElementEnd();
-                        }
-                    }
-                writer->WriteElementEnd();
-                }
-            }
-        writer->WriteElementEnd();
-        writer->ToString(report);*/
-        }
+    REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report);
     };
 
 //=====================================================================================
@@ -599,14 +578,6 @@ struct UploadReport
 //=====================================================================================
 struct RealityDataServiceUpload : public CurlConstructor
     {
-
-    //where the curl upload ended, either in success or failure
-    struct UploadResult
-        {
-        int                     errorCode; //code returned by curl
-        size_t                  uploadProgress; //a percentage of how much of the file was successfully downloaded
-        };
-
     REALITYDATAPLATFORM_EXPORT static Utf8String PackageProperties(bmap<RealityDataField, Utf8String> properties);
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false);
