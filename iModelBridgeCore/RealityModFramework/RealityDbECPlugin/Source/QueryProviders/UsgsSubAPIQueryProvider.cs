@@ -191,7 +191,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 var bbox = spatial["boundingBox"] as JObject;
                 if ( bbox != null )
                     {
-                    instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                    instance["Footprint"].StringValue = DbGeometryHelpers.CreateFootprintString(bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"), 4326);
                     }
                 }
 
@@ -395,7 +395,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             case "JPEG2000":
                                 return "JPEG2000";
                             case "TIFF":
-                                return "TIFF";
+                                return "TIF";
                             case "IMG":
                                 return "IMG";
                             case "Shapefile":
