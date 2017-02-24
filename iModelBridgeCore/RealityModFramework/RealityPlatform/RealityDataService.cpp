@@ -175,10 +175,11 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         {
         m_httpRequestString = m_azureServer;
         bvector<Utf8String> parts;
-        BeStringUtilities::Split(m_id.c_str(), "/", parts);
+        BeStringUtilities::Split(m_id.c_str(), "~", parts);
         Utf8String Guid = parts[0];
-        Guid.append("/");
+        Guid.append("~2F");
         m_id.ReplaceAll(Guid.c_str(), "");
+        m_httpRequestString.append("/");
         m_httpRequestString.append(m_id);
         m_httpRequestString.append("\?");
         m_httpRequestString.append(m_azureToken);
