@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 
 #define PROPNAME_Descr "Descr"
-#define PROPNAME_Source "Source"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -57,6 +56,7 @@ namespace ViewProperties
     static constexpr Utf8CP str_Png() {return "png";}
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
+    static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
 };
 
 using namespace ViewProperties;
@@ -137,6 +137,9 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::_EqualState(ViewDefinitionR other)
     {
+    if (m_isPrivate != other.m_isPrivate)
+        return false;
+
     if (m_categorySelectorId != other.m_categorySelectorId)
         return false;
 
@@ -184,6 +187,8 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -251,6 +256,7 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success != status)
         return status;
 
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
     m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
     m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
@@ -266,6 +272,7 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     T_Super::_CopyFrom(el);
 
     auto& other = static_cast<ViewDefinitionCR>(el);
+    m_isPrivate = other.m_isPrivate;
     m_categorySelectorId = other.m_categorySelectorId;
     m_displayStyleId = other.m_displayStyleId;
     m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
@@ -412,132 +419,42 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
+ViewDefinition::Iterator::Iterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,CodeValue,[" PROPNAME_Source "]," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA("ViewDefinition");
+    Utf8String sql("SELECT ECInstanceId,CodeValue,IsPrivate," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
 
-    Utf8CP ecsql = s_ecsql;
-    Utf8String customECSql;
-    if (!options.IsEmpty())
+    if (whereClause)
         {
-        customECSql = s_ecsql;
-        customECSql.append(options.ToString());
-
-        ecsql = customECSql.c_str();
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    Prepare(db, ecsql, 0);
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
+
+    Prepare(db, sql.c_str(), 0 /* Index of ECInstanceId */);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Options::Source source)
+size_t ViewDefinition::QueryCount(DgnDbR db, Utf8CP whereClause)
     {
-#ifdef ECSQL_SUPPORTS_BITWISE_OPS // It doesn't. NEEDSWORK.
-    Utf8Char buf[0x20];
-    BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(m_source));
+    Utf8String sql("SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
 
-    str.append("0 != (" PROPNAME_Source " & ");
-    str.append(buf);
-    str.append(1, ')');
-#else
-    // ECSql doesn't support bitwise operators...
-    typedef ViewDefinition::Iterator::Options::Source Source;
-    bool user {0 != static_cast<uint8_t>(source & Source::User) };
-    bool gen  {0 != static_cast<uint8_t>(source & Source::Generated) };
-    bool priv {0 != static_cast<uint8_t>(source & Source::Private) };
-
-    if (!user && !gen && !priv)
-        return;
-
-    // Parens in case we're preceded by an AND...
-    str.append(1, '(');
-
-    Utf8Char buf[3];
-    if (user)
+    if (whereClause)
         {
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::User));
-        str.append(PROPNAME_Source "=").append(buf);
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    if (gen)
-        {
-        if (user)
-            str.append(" OR ");
-
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Generated));
-        str.append(PROPNAME_Source "=").append(buf);
-        }
-
-    if (priv)
-        {
-        if (user || gen)
-            str.append(" OR ");
-
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Private));
-        str.append(PROPNAME_Source "=").append(buf);
-        }
-
-    str.append(1, ')');
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ViewDefinition::Iterator::Options::ToString() const
-    {
-    Utf8String str;
-    if (IsEmpty())
-        return str;
-
-    if (!m_customECSql.empty())
-        {
-        // mutually exclusive with the other options
-        if (!m_customECSql.StartsWith(" "))
-            str.append(1, ' ');
-
-        str.append(m_customECSql);
-        return str;
-        }
-
-    // WHERE
-    if (Source::All != m_source)
-        {
-        str.append(str.empty() ? " WHERE " : " AND ");
-        appendSourceClause(str, m_source);
-        }
-
-    // ORDER BY
-    if (Order::Ascending == m_order)
-        {
-        str.append(" ORDER BY [CodeValue]");
-        }
-
-    return str;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
-    {
-    static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA("ViewDefinition");
-
-    Utf8CP ecsql = s_ecsql;
-    Utf8String customECSql;
-    if (!opts.IsEmpty())
-        {
-        customECSql = s_ecsql;
-        customECSql.append(opts.ToString());
-        ecsql = customECSql.c_str();
-        }
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql);
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(sql.c_str());
+    return statement.IsValid() && BE_SQLITE_ROW == statement->Step() ? statement->GetValueInt(0) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1250,6 +1167,23 @@ namespace ViewElementHandler
 void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, str_IsPrivate(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
+            value.SetBoolean(viewDef.IsPrivate());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBoolean())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            viewDef.SetIsPrivate(value.GetBoolean());
+            return DgnDbStatus::Success;
+            });
 
     params.RegisterPropertyAccessors(layout, str_DisplayStyle(), 
         [](ECValueR value, DgnElementCR el)
