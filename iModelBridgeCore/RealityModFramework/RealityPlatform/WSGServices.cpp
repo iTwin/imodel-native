@@ -212,7 +212,8 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
     return returnString;
     }
 
-WSGURL::WSGURL(Utf8String url) : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url)
+WSGURL::WSGURL(Utf8String url) : 
+    m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
     {}
 
 WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
@@ -341,9 +342,15 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         navString.append(parentNode.GetInstanceId());
         navString.ReplaceAll("/", "~2F");
         }
+    return GetChildNodes(server, repoId, navString);
+    }
+
+bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath)
+{
+    nodePath.ReplaceAll("/", "~2F");
 
     bvector<NavNode> returnVector = bvector<NavNode>();
-    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, navString);
+    WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, nodePath);
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
 
@@ -353,10 +360,10 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         return returnVector;
 
     for (auto instance : instances["instances"])
-        returnVector.push_back(NavNode(instance, parentNode.GetRootNode(), parentNode.GetRootId()));
+        returnVector.push_back(NavNode(instance));//, parentNode.GetRootNode(), parentNode.GetRootId()));
 
     return returnVector;
-    }
+}
 
 WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId)
     {
