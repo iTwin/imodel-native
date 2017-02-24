@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Tests/BackDoor/DataCaptureTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
@@ -195,6 +195,7 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     cameraDevicePtr->SetDistortion(distortion);
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
     cameraDevicePtr->Insert();
     CameraDeviceElementId cameraDeviceId = cameraDevicePtr->GetId();
 

@@ -142,6 +142,11 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
             {
             };
 
+        enum class ModelType
+            {
+            Perspective = 0,
+            Fisheye = 1,
+            };
 
     private:
         double                  m_focalLength;
@@ -150,13 +155,24 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         DPoint2d                m_principalPoint;
         double                  m_aspectRatio;
         double                  m_skew;
-
+        ModelType               m_modelType;
+        double                  m_sensorSize;
 
         Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
     protected:
 
-        explicit CameraDeviceModel(CreateParams const& params) : T_Super(params) {}
+        explicit CameraDeviceModel(CreateParams const& params) : T_Super(params) 
+            {
+            m_focalLength = 0.0;
+            m_imageWidth = 0;
+            m_imageHeight = 0;
+            m_principalPoint = {0.0, 0.0};
+            m_aspectRatio = 0.0;
+            m_skew = 0.0;
+            m_modelType = ModelType::Perspective;
+            m_sensorSize = 0.0;
+            }
 
 
         //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -221,6 +237,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
         DATACAPTURE_EXPORT double                   GetSkew() const;
         DATACAPTURE_EXPORT void                     SetSkew(double val);
+        DATACAPTURE_EXPORT ModelType                GetModelType() const;
+        DATACAPTURE_EXPORT void                     SetModelType(ModelType val);
+        DATACAPTURE_EXPORT double                   GetSensorSize() const;
+        DATACAPTURE_EXPORT void                     SetSensorSize(double val);
     };
 
 //=======================================================================================
@@ -249,7 +269,6 @@ public:
     {
     };
 
-
 private:
     mutable CameraDeviceModelElementId m_cameraDeviceModel;//Query and cached from DgnDb or given at creation time
     double                  m_focalLength;
@@ -259,12 +278,23 @@ private:
     double                  m_aspectRatio;
     double                  m_skew;
     double                  m_pixelToMeterRatio;
+    double                  m_sensorSize;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
 
-    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) {}
+    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) 
+        {
+        m_focalLength = 0.0;
+        m_imageWidth = 0;
+        m_imageHeight = 0;
+        m_principalPoint = { 0.0, 0.0 };
+        m_aspectRatio = 0.0;
+        m_skew = 0.0;
+        m_pixelToMeterRatio = 0.0;
+        m_sensorSize = 0.0;
+        }
 
     static BentleyStatus InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId, CameraDeviceModelElementId cameraDeviceModelElmId);
     static CameraDeviceModelElementId QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId);
@@ -362,6 +392,8 @@ public:
     DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
     DATACAPTURE_EXPORT double                   GetSkew() const;
     DATACAPTURE_EXPORT void                     SetSkew(double val);
+    DATACAPTURE_EXPORT double                   GetSensorSize() const;
+    DATACAPTURE_EXPORT void                     SetSensorSize(double val);
 
     //Since everything returned by ContextCapture will be in pixel we need a way to convert that into Meters
     DATACAPTURE_EXPORT double                   GetPixelToMeterRatio() const;
