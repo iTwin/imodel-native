@@ -2,7 +2,7 @@
 |
 |     $Source: ext/MatrixFromTiePts/src/server.c $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*mh================================================================ HMR
@@ -380,7 +380,14 @@ int32_t trf_modelSetCoordinateSystem(TRFHANDLE  trfHdl,
   /*
   ** Change the coordinate system
   */
+#if defined (_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
   strncpy(s_trf.pModel->modelDesc,coordinateSystem,L_MODEL_DESC);
+#if defined (_MSC_VER)
+#pragma warning(pop)
+#endif
 
   return(HSUCCESS);
   }
@@ -410,7 +417,14 @@ int32_t trf_modelGetCoordinateSystem(TRFHANDLE  trfHdl,
   /*
   ** Copy the coordinate system
   */
+#if defined (_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
   strncpy(coordinateSystem,s_trf.pModel->modelDesc,L_MODEL_DESC);
+#if defined (_MSC_VER)
+#pragma warning(pop)
+#endif
   return(HSUCCESS);
   }
 
