@@ -51,7 +51,7 @@ public:
     static HttpResponseContentPtr Create(HttpBodyPtr responseBody) {return new HttpResponseContent(responseBody);}
 
     HttpBodyPtr GetBody() const {return m_body;}
-    HttpResponseHeadersR GetHeaders() const {return m_headers;}
+    HttpResponseHeadersR GetHeaders() {return m_headers;}
     HttpResponseHeadersCR GetHeaders() const {return m_headers;}
 };
 
