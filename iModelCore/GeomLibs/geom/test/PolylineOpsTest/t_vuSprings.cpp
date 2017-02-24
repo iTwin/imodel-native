@@ -828,9 +828,9 @@ bvector<bvector <DPoint3d>> s_testFloorPlanOpenChains
 
 bool TryLoadTestFloorPlan (GriddedSpaceManager &manager, double meshSize)
     {
-    bvector<DPoint3d> isolatedPoints;
-    bvector<double> uBreaks;
-    bvector<double> vBreaks;
+    //bvector<DPoint3d> isolatedPoints;
+    //bvector<double> uBreaks;
+    //bvector<double> vBreaks;
     return manager.TryLoad (s_testFloorPlanParityLoops, s_testFloorPlanOpenChains);
     }
 
