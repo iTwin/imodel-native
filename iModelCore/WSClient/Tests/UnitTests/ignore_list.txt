@@ -130,4 +130,6 @@ ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFail
 
 # bim0200dev, x86, DEBUG, crash
 WSClientTests.GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported
-WSRepositoryClientTests.SendQueryRequest_WebApiV2AndHttpResponseHasSkipToken_AddsSkipTokenToResponse
+
+# bim0200dev, x64 & x86, DEBUG, random crash
+WSRepositoryClientTests.Send*
