@@ -647,6 +647,7 @@ double SpaceIdToArea (int id)
         {
         area += vu_area (node);
         }
+    return area;
     }
     
 };
