@@ -485,6 +485,7 @@ TEST(BCS,SpringModelB)
     Check::ClearGeometry ("BCS.SpringModelB");
     }
 
+/////CONCEPTSTATION_START_CUT
 
 // Space id's are one based !!!!
 static const int s_invalidSpaceId = 0;
@@ -880,7 +881,7 @@ void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
             }
         }
     }
-
+/////CONCEPTSTATION_END_CUT
 TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
     {
     for (double meshSize : bvector<double>{1,2,3,4})
