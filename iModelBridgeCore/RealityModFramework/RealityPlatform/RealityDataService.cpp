@@ -483,7 +483,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/"); 
     m_httpRequestString.append(RealityDataService::GetSchemaName());
     m_httpRequestString.append("/RealityData?$filter=Enterprise+eq+'");
 
@@ -497,7 +497,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         Utf8String keyword = "organizationid";
         const char* attributePosition = strstr(charstring, keyword.c_str());
         keyword = "<saml:AttributeValue>";
-        const char* valuePosition = strstr(attributePosition, keyword.c_str());
+        const char* valuePosition = strstr(attributePosition, keyword.c_str()); 
         valuePosition += keyword.length();
         Utf8String idString = Utf8String(valuePosition);
 
