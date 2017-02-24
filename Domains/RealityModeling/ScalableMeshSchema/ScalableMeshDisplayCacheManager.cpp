@@ -36,6 +36,10 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
         }
 
     std::unique_ptr<SmCachedDisplayMesh> qvCachedDisplayMesh(new SmCachedDisplayMesh);
+    if (m_qvCache == nullptr)
+        {
+        return SUCCESS;
+        }
     {
         std::lock_guard<std::mutex> l(elemMutex);
         qvCachedDisplayMesh->m_qvElem = qv_beginElement(m_qvCache, 0, NULL);

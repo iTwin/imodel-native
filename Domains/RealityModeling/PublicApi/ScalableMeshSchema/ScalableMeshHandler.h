@@ -118,6 +118,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         bvector<ScalableMeshModel*>             m_terrainParts;
         bmap<uint64_t, bpair<ClipMode, bool>>                m_currentClips;
 
+
         bool  m_subModel;
         ScalableMeshModel* m_parentModel;
         uint64_t m_associatedRegion;

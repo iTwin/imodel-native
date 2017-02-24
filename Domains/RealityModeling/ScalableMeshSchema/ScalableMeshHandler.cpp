@@ -81,7 +81,8 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
 
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
-    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
+    if (GetProgressiveQueryEngine().IsValid())
+        GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -681,6 +682,10 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager(GetDgnDb());
+        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
+            {
+            return nullptr;
+            }
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
         }
 
@@ -799,7 +804,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
     
 
-    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
+    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid() || !GetProgressiveQueryEngine().IsValid())
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
@@ -823,6 +828,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     BentleyStatus status;
 
     status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
+
 
     assert(status == SUCCESS);
 
@@ -1091,7 +1097,6 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_isInsertingClips = false;
     m_subModel = false;
     m_loadedAllModels = false;
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -1395,7 +1400,8 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
 
-
+    auto tryProgressiveQueryEngine = GetProgressiveQueryEngine();
+    if (tryProgressiveQueryEngine.get() == nullptr) return;
     GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
     GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
 
