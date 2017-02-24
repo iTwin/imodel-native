@@ -81,7 +81,8 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
 
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
-    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
+    if (GetProgressiveQueryEngine().IsValid())
+        GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -681,6 +682,10 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     if (m_progressiveQueryEngine == nullptr)
         {
         m_displayNodesCache = new ScalableMeshDisplayCacheManager(GetDgnDb());
+        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
+            {
+            return nullptr;
+            }
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
         }
 
@@ -799,7 +804,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
     
 
-    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
+    if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid() || !GetProgressiveQueryEngine().IsValid())
         return;
          
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
@@ -823,6 +828,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     BentleyStatus status;
 
     status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
+
 
     assert(status == SUCCESS);
 
@@ -1091,7 +1097,6 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_isInsertingClips = false;
     m_subModel = false;
     m_loadedAllModels = false;
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -1395,7 +1400,8 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
 
-
+    auto tryProgressiveQueryEngine = GetProgressiveQueryEngine();
+    if (tryProgressiveQueryEngine.get() == nullptr) return;
     GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
     GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
 
@@ -1475,6 +1481,12 @@ void ScalableMeshModel::InitializeTerrainRegions()
         }
     m_loadedAllModels = true;
 
+    ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+        {
+        appData->m_smTerrainPhysicalModelP = this;
+        appData->m_modelSearched = true;
+        }
 
     bvector<uint64_t> ids;
     m_smPtr->GetCoverageIds(ids);
@@ -1642,6 +1654,54 @@ void ScalableMeshModel::QueueAddTerrainRegions(uint64_t id, const bvector<DPoint
     reg.id = id;
     reg.regionData = boundary;
     m_queuedRegions.push_back(reg);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines)
+    {
+    TerrainModel::DTMPtr dtm(GetDTM(DTMAnalysisType::RawDataOnly));
+
+    TerrainModel::BcDTMPtr bcDtmPtr(TerrainModel::BcDTM::Create());
+    TerrainModel::DTMDrapedLinePtr drapedLine;
+    TerrainModel::IDTMDraping* draping = dtm->GetDTMDraping();
+    bool hasAddedBreaklines = false;
+
+    for (size_t segmentInd = 0; segmentInd < breaklines.size() - 1; segmentInd++)
+        {
+
+        DTMStatusInt status = draping->DrapeLinear(drapedLine, breaklines[segmentInd].point, 2);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+
+        bvector<DPoint3d> breaklinePts;
+
+        for (size_t ptInd = 0; ptInd < drapedLine->GetPointCount(); ptInd++)
+            {
+            DPoint3d pt;
+            double distance;
+            DTMDrapedLineCode code;
+
+            DTMStatusInt status = drapedLine->GetPointByIndex(pt, &distance, &code, (int)ptInd);
+            assert(status == SUCCESS);
+            breaklinePts.push_back(pt);
+            }
+
+        if (breaklinePts.size() == 0)
+            continue;
+
+        DTMFeatureId featureId;
+
+        status = bcDtmPtr->AddLinearFeature(DTMFeatureType::Breakline, &breaklinePts[0], (int)breaklinePts.size(), &featureId);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        hasAddedBreaklines = true;
+        }
+
+    if (hasAddedBreaklines)
+        {
+        DTMStatusInt status = bcDtmPtr->SaveAsGeopakDat(extraLinearFeatureAbsFileName.c_str());
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        }
     }
 
 //----------------------------------------------------------------------------------------
