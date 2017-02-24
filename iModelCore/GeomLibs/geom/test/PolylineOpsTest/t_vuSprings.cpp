@@ -743,8 +743,10 @@ void SaveSpaceBoundaries ()
     bvector<DPoint3d> chain;
     VU_SET_LOOP (seedNode, m_manager.m_graph)
         {
-        if (!visitMask.IsSetAtNode (seedNode) && boundaryMask.IsSetAtNode (seedNode) )
+        if (m_manager.IsOccupied (seedNode) && !visitMask.IsSetAtNode (seedNode) && boundaryMask.IsSetAtNode (seedNode))
             {
+if (seedNode->HasMask (VU_EXTERIOR_EDGE))  // Something is strange -- this should be filtered by IsOccupied
+    continue;
             chainNodes.clear ();
             auto currentNode = seedNode;
             for (; nullptr != currentNode;)
@@ -843,7 +845,7 @@ void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
     manager.SetMeshParams (meshSize, isoGrid, smoothGrid);
     if (TryLoadTestFloorPlan (manager, 1.0))
         {
-
+        // output the raw grid ...
         TaggedPolygonVector polygons;
         VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
         for (auto &loop : polygons)
@@ -859,74 +861,48 @@ void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
         spaceIds.push_back (manager.CreateSpace (DPoint3d::From (15,16,0), baseAreas.back ()));
         baseAreas.push_back (15.0);
         spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
-        for (double spaceFactor : bvector<double>{1.0, 2.0, 5.0})
+
+        // successively grow each space to larger and larger multiples of the original ....
+        queries.SaveWalls ();
+        double dz = 0.2;
+        Check::Shift (0,0,10.0 * dz);
+        queries.SaveSpaceBoundaries ();
+        Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
+
+        for (double spaceFactor : bvector<double>{1.0, 1.5, 2.0, 2.5, 3.0, 3.5})
             {
             for (size_t i = 0; i < baseAreas.size (); i++)
                 {
                 flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
                 }
-            Check::Shift (ax, 0.0, 0.0);
             queries.SaveSpaceBoundaries ();
-            queries.SaveWalls ();
+            Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
             }
         }
     }
 
 TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
     {
-    TestGriddedSpaceManager (1.0, false, false);
-    TestGriddedSpaceManager (2.0, false, false);
-    TestGriddedSpaceManager (3.0, false, false);
-    TestGriddedSpaceManager (3.0, false, false);
-
-
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, false, false);
     Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSquareGrid");
     }
+
+TEST(GriddedSpaceManager,VaryMeshSizeWithIsoGrid)
+    {
+    // Preshift to be friends with peers ...
+    Check::Shift (100,0,0);
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, true, false);
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithIsoGrid");
+    }
+
 TEST(GriddedSpaceManager,VaryMeshSizeWithSmoothGrid)
     {
-    double ax = 35.0;
-    double ay = 35.0;
-    SaveAndRestoreCheckTransform shifter (0, ay, 0);
-
-
-    GriddedSpaceManager manager;
-    GriddedSpaceQueries queries (manager);
-    GriddedSpace_FloodFromSingleNode flooder (manager);
-    Check::Shift (ax, 0,0);
-    for (double meshSize : bvector <double> {1.0, 2.0, 4.0})
-        {
-        SaveAndRestoreCheckTransform shifter (0, ay, 0);
-        bool isoGrid = true;
-        bool smooth = true;
-        manager.SetMeshParams (meshSize, isoGrid, smooth);
-        if (TryLoadTestFloorPlan (manager, 1.0))
-            {
-            TaggedPolygonVector polygons;
-            VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
-            for (auto &loop : polygons)
-                {
-                if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
-                    Check::SaveTransformed (loop.GetPointsCR ());
-                }
-            Check::Shift (ax, 0,0);
-            bvector<int> spaceIds;
-            bvector<double> baseAreas;
-            // create spaces with smallish area ..
-            baseAreas.push_back (20.0);
-            spaceIds.push_back (manager.CreateSpace (DPoint3d::From (15,16,0), baseAreas.back ()));
-            baseAreas.push_back (15.0);
-            spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
-            // repeatedly grow the areas and write out the growing puddles
-            queries.SaveWalls ();
-            for (double spaceFactor : bvector<double>{1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0})
-                {
-                for (size_t i = 0; i < baseAreas.size (); i++)
-                    {
-                    flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
-                    }
-                queries.SaveSpaceBoundaries ();
-                }
-            }
-        }
+    // Preshift to be friends with peers ...
+    Check::Shift (200,0,0);
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, true, true);
     Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSmoothGrid");
     }
+
