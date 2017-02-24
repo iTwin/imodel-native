@@ -531,6 +531,84 @@ namespace IndexECPlugin.Source
         }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public class AustraliaLayer
+        {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Id
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Classification
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string IdField
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CopyrightText
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Type
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string GeometryType
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Dataset
+            {
+            get;
+            set;
+            }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Dictionary<string, string> FieldMap
+            {
+            get;
+            set;
+            }    
+        }
+
+    /// <summary>
     ///   
     /// </summary>
     public class UsgsRequest : IComparable<UsgsRequest>
@@ -643,6 +721,25 @@ namespace IndexECPlugin.Source
             get;
             set;
             }
+        }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class AURequestBundle
+        {
+        /// <summary>
+        /// 
+        /// </summary>
+        public JObject LayerContent
+            {
+            get;
+            set;
+            }
+        /// <summary>
+        /// 
+        /// </summary>
+        public AustraliaLayer Layer;
         }
 
     /// <summary>

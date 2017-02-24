@@ -19,6 +19,13 @@ namespace IndexECPlugin.Source
 
         public const int USGSIdLenght = 24;
 
+        //Australia Constants
+        public const string AUBaseUrl = "http://portal.eginger.ninja/server/rest/services/ELVIS_Testing/MapServer/";
+        public const string AUDataProviderString = "GeoscienceAUS";
+        public const string AUDataProviderNameString = "Geoscience Australia";
+        public const string AUSubAPIString = "AU";
+
+
         //Rds Constants
         //public const string RdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase"); // "https://s3mxcloudservice.cloudapp.net/v2.3/repositories/S3MXECPlugin--Server/S3MX/";
         public const string RdsRealityDataClass = "RealityData";
@@ -47,5 +54,7 @@ namespace IndexECPlugin.Source
         //Features GUIDs
 
         public const string PackageFeatureGuid = "496da74d-b86b-45a7-bbd3-6f2ea025bdd8";
+
+
         }
     }
