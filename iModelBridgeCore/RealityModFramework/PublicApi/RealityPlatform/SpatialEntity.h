@@ -599,33 +599,54 @@ public:
     REALITYDATAPLATFORM_EXPORT void AddDataSource(SpatialEntityDataSourceR dataSource);
     REALITYDATAPLATFORM_EXPORT size_t GetDataSourceCount() const;
 
+    //! Get/Set
+    //! The id of the enterprise the data belongs to
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetEnterprise() const;
     REALITYDATAPLATFORM_EXPORT void SetEnterprise(Utf8CP enterprise);
 
+    //! [RDS Specific] The name of the RDS container containing the data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
     REALITYDATAPLATFORM_EXPORT void SetContainerName(Utf8CP containerName);
 
+    //! Textual description of the data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
     REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
 
+    //! Given the data can be accessed by a root document , the location of this document
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRootDocument() const;
     REALITYDATAPLATFORM_EXPORT void SetRootDocument(Utf8CP rootDocument);
 
+    //! URL to the metadata
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataURL() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataURL(Utf8CP metadataUrl);
 
+    //! A string indicating the accuracy in number or numberxnumber format. 
+    //! If the accuracy is different in X and Y then two numbers may be provided
+    //! separated by a 'x' character. Ex: 15.56x13.45
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAccuracy() const;
     REALITYDATAPLATFORM_EXPORT void SetAccuracy(Utf8CP accuracy);
 
-    REALITYDATAPLATFORM_EXPORT bool GetPublicAccess() const;
-    REALITYDATAPLATFORM_EXPORT void SetPublicAccess(bool publicAccess);
+    //! Code indicating the visibility of the data. The recognised keywords are:
+    //! PUBLIC
+    //! ENTERPRISE
+    //! PERMISSION
+    //! PRIVATE
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVisibility() const;
+    REALITYDATAPLATFORM_EXPORT void SetVisibility(Utf8CP visibility);
 
+    //! Indicates if the data can be listed. For data containing hundred of thousand of
+    //! components it is advisable to set not-listable. The default is listable.
     REALITYDATAPLATFORM_EXPORT bool GetListable() const;
     REALITYDATAPLATFORM_EXPORT void SetListable(bool listable);
 
+    //! The last modified time
     REALITYDATAPLATFORM_EXPORT DateTime GetModifiedTimestamp() const;
     REALITYDATAPLATFORM_EXPORT void SetModifiedTimestamp(DateTime modifiedDate);
 
+    //! A string indicating the owner. The ownership here is different than
+    //! Copyright owner. Here we expect the mail address of a CONNECT user OR
+    //! A list of semicolon separated such CONNECT User or another
+    //! format understandable by the containing service.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOwner() const;
     REALITYDATAPLATFORM_EXPORT void SetOwner(Utf8CP owner);
 
@@ -641,6 +662,10 @@ public:
     //! A negative value means UNKNOWN.
     REALITYDATAPLATFORM_EXPORT float GetOcclusion() const;
     REALITYDATAPLATFORM_EXPORT void SetOcclusion( float cover );
+
+    //! The Group code. This field can be used to group many data together if another key other than the dataset is required.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGroup() const;
+    REALITYDATAPLATFORM_EXPORT void SetGroup(Utf8CP group);
 
 protected:
     SpatialEntity();
@@ -671,10 +696,11 @@ protected:
     Utf8String m_rootDocument;
     Utf8String m_metadataUrl;
     Utf8String m_accuracy;
-    bool m_publicAccess;
+    Utf8String m_visibility;
     bool m_listable;
     DateTime m_modifiedDate;
     Utf8String m_owner;
+    Utf8String m_group;
 
     float m_occlusion = -1.0f;
     mutable SQLINTEGER m_serverId = -1;
