@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/bsilog.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"
@@ -72,7 +72,9 @@ Utf8CP          msg
 
         ScopedArray<char> tempBuffer (tempStrLen+1);
         char* tempStr = tempBuffer.GetData();
+PUSH_MSVC_IGNORE(4996)
         strncpy (tempStr, msg, tempStrLen);
+POP_MSVC_IGNORE
         tempStr[tempStrLen] = '\0';
 
         GetLogProvider().LogMessage ( m_context, sev, tempStr );
