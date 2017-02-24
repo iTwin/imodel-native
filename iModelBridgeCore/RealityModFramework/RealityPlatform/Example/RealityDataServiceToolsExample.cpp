@@ -192,32 +192,36 @@ void ListCmd()
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
         // With NavNode
-        WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false);
-        bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server");
 
-        for (NavNode root : nodes)
+        RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest();
+        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
+
+        for (SpatialEntityPtr pData : enterpriseVec)
             {
-            SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));
-
-            std::cout << root.GetInstanceId() << " -- " << pData->GetName() << std::endl;
+            std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
 
             if (s_cmd & (CmdListDetail | CmdListAllDetail))
                 {
                 std::cout << "  " << 
-                     " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
-                     " Classification : " << pData->GetClassification() << std::endl << "  " <<
-                     " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
-                     " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                     " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
-                     " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
-                     " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
-                     " Description    : " << pData->GetDescription() << std::endl;
+                    " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
+                    " Group          : " << pData->GetGroup() << std::endl << "  " <<
+                    " Classification : " << pData->GetClassification() << std::endl << "  " <<
+                    " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
+                    " Owner          : " << pData->GetOwner() << std::endl << "  " <<
+                    " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
+                    " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
+                    " Visibility     : " << pData->GetVisibility() << std::endl << "  " <<
+                    " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
+                    " Description    : " << pData->GetDescription() << std::endl;
                 }
             }
         std::cout << std::endl;
 
         if (s_cmd & (CmdListAll | CmdListAllDetail))
             {
+            WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false);
+            bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server");
+
             for (NavNode root : nodes)
                 {
                 SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));

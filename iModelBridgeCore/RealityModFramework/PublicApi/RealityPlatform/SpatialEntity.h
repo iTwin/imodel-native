@@ -616,10 +616,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRootDocument() const;
     REALITYDATAPLATFORM_EXPORT void SetRootDocument(Utf8CP rootDocument);
 
-    //! URL to the metadata
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataURL() const;
-    REALITYDATAPLATFORM_EXPORT void SetMetadataURL(Utf8CP metadataUrl);
-
     //! A string indicating the accuracy in number or numberxnumber format. 
     //! If the accuracy is different in X and Y then two numbers may be provided
     //! separated by a 'x' character. Ex: 15.56x13.45
@@ -653,6 +649,7 @@ public:
     //! Get/Set
     //! A reference to a metadata object. This object can be used by many spatial entities.
     REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCP GetMetadataCP() const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataP GetMetadataP();
     REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataP metadata);
   
     // Get/Set

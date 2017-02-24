@@ -174,6 +174,7 @@ bool SpatialEntity::HasApproximateFootprint() const {return m_approximateFootpri
 void SpatialEntity::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
 
 SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const { return m_pMetadata.get(); }
+SpatialEntityMetadataP SpatialEntity::GetMetadataP()  { return m_pMetadata.get(); }
 void SpatialEntity::SetMetadata(SpatialEntityMetadataP metadata) { m_pMetadata = metadata; }
 
 SpatialEntityDataSourceCR SpatialEntity::GetDataSource(size_t index) const { return *m_DataSources[index]; }
@@ -192,9 +193,6 @@ void SpatialEntity::SetDescription(Utf8CP description) { m_description = descrip
 
 Utf8StringCR SpatialEntity::GetRootDocument() const { return m_rootDocument; }
 void SpatialEntity::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
-
-Utf8StringCR SpatialEntity::GetMetadataURL() const { return m_metadataUrl; }
-void SpatialEntity::SetMetadataURL(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; }
 
 Utf8StringCR SpatialEntity::GetAccuracy() const { return m_accuracy; }
 void SpatialEntity::SetAccuracy(Utf8CP accuracy) { m_accuracy = accuracy; }
