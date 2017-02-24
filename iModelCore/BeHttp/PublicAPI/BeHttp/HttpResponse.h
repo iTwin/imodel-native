@@ -50,7 +50,7 @@ private:
 public:
     static HttpResponseContentPtr Create(HttpBodyPtr responseBody) {return new HttpResponseContent(responseBody);}
 
-    HttpBodyPtr GetBody() const {return m_body;}
+    HttpBodyPtr GetBody() {return m_body;}
     HttpResponseHeadersR GetHeaders() {return m_headers;}
     HttpResponseHeadersCR GetHeaders() const {return m_headers;}
 };
@@ -78,7 +78,7 @@ public:
     HttpBodyCR GetBody() const {return *m_content->GetBody();}
 
     HttpResponseHeadersCR GetHeaders() const {return m_content->GetHeaders();}
-    HttpResponseContentPtr GetContent() const {return m_content;}
+    HttpResponseContentPtr GetContent() {return m_content;}
    
     ConnectionStatus GetConnectionStatus() const {return m_connectionStatus;}
     HttpStatus GetHttpStatus() const {return m_httpStatus;}
