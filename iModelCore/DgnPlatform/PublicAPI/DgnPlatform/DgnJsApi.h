@@ -834,6 +834,14 @@ struct JsGeometryCollection : RefCountedBaseWithCreate
 
 };
 
+// Define a PLACEHOLDER enum in this namespace that just represents the real enum in another C++ namespace. 
+BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
+enum class BuilderCoordSystem : uint32_t 
+{
+    Local = 0, //!< GeometricPrimitive being supplied in local coordinates. @note Builder must be created with a known placement for local coordinates to be meaningful.
+    World = 1, //!< GeometricPrimitive being supplied in world coordinates. @note Builder requires world coordinate geometry when placement isn't specified up front.
+};
+
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
@@ -869,6 +877,12 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angle->Get()));
         }
 
+    static JsGeometryBuilderP CreateWithAutoPlacement (JsDgnModelP model, JsDgnObjectIdP catid)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model));
+        return new JsGeometryBuilder(*GeometryBuilder::CreateWithAutoPlacement (*model->m_model, DgnCategoryId(catid->m_id)));
+        }
+
     static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
@@ -893,18 +907,18 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         m_builder->Append(DgnSubCategoryId(subcategoryId->m_id));
         }
 
-    void AppendGeometry(JsGeometryP geometry)
+    void AppendGeometry(JsGeometryP geometry, BuilderCoordSystem coordSystem)
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && geometry);
         if (geometry->GetCurveVectorPtr().IsValid())
-            m_builder->Append(*geometry->GetCurveVectorPtr());
+            m_builder->Append(*geometry->GetCurveVectorPtr(), static_cast<GeometryBuilder::CoordSystem> (coordSystem));
         else if (geometry->GetICurvePrimitivePtr().IsValid())
-            m_builder->Append(*geometry->GetICurvePrimitivePtr());
+            m_builder->Append(*geometry->GetICurvePrimitivePtr(), static_cast<GeometryBuilder::CoordSystem> (coordSystem));
         else if (geometry->GetISolidPrimitivePtr().IsValid())
-            m_builder->Append(*geometry->GetISolidPrimitivePtr());
+            m_builder->Append(*geometry->GetISolidPrimitivePtr(), static_cast<GeometryBuilder::CoordSystem> (coordSystem));
         }
 
-    void AppendGeometryNode(JsGeometryNodeP node)
+    void AppendGeometryNode(JsGeometryNodeP node, BuilderCoordSystem coordSystem)
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && node);
         auto nativeNode = node->GetGeometryNodePtr ();
@@ -914,7 +928,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             auto nativeFlatNode = flatNode->GetGeometryNodePtr ();
             for (auto &geometry : nativeFlatNode->Geometry ())
                 {
-                m_builder->Append (*geometry);
+                m_builder->Append (*geometry, static_cast<GeometryBuilder::CoordSystem> (coordSystem));
                 }
             }
         }
