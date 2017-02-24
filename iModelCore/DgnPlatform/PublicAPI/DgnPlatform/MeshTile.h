@@ -181,6 +181,8 @@ private:
 public:
     uint16_t GetIndex(uint32_t color)
         {
+        BeAssert(!IsFull());
+        BeAssert(empty() || (0 != ColorDef(color).GetAlpha()) == m_hasAlpha);
         m_hasAlpha |= (!IsFull() && 0 != ColorDef(color).GetAlpha());
         return GetOrCreateIndex(color);
         }

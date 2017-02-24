@@ -357,9 +357,11 @@ void ColorIndex::Build(ColorIndexMap const& map)
     for (auto const& kvp : map)
         {
         ColorDef fill(kvp.first);
-        fill.SetAlpha(255 - fill.GetAlpha());
-        auto pColor = reinterpret_cast<uint32_t*>(m_texture.GetDataP() + kvp.second*bytesPerColor);
-        *pColor = fill.GetValue();
+        auto pColor = m_texture.GetDataP() + kvp.second*bytesPerColor;
+        pColor[0] = fill.GetRed();
+        pColor[1] = fill.GetGreen();
+        pColor[2] = fill.GetBlue();
+        pColor[3] = 255 - fill.GetAlpha();
         }
     }
 

@@ -2754,6 +2754,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     PublishableTileGeometry     publishedTileGeometry;
     TileMeshList&               meshes = publishedTileGeometry.Meshes();
     size_t                      minInstanceCount = m_geometries.size() / 50;               // If the part will include 1/50th of geometry, do instancing (even if part does not deem it worthy).
+    minInstanceCount = std::max(minInstanceCount, (size_t)2);
 
     // Extract instances first...
     for (auto& geom : m_geometries)
