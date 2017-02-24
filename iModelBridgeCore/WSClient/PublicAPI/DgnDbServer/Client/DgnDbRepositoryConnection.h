@@ -262,6 +262,11 @@ private:
     DgnRevisionsTaskPtr DownloadRevisionsInternal(const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Download the revision files.
+    DgnRevisionsTaskPtr DownloadRevisions(std::deque<ObjectId>& revisionIds, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+
     // This pointer needs to change to be generic
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -356,7 +361,7 @@ private:
                                                            DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
 
     WSQuery CreateRevisionsAfterIdQuery (Utf8StringCR revisionId, BeGuidCR fileId) const;
-    WSQuery CreateRevisionsByIdQuery(const bvector<DgnDbServerRevisionInfoPtr>& revisions) const;
+    WSQuery CreateRevisionsByIdQuery(std::deque<ObjectId>& revisionIds) const;
 
 public:
     virtual ~DgnDbRepositoryConnection();
@@ -526,7 +531,16 @@ public:
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
     DGNDBSERVERCLIENT_EXPORT DgnRevisionsTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
-    
+
+    //! Download the revision files.
+    //! @param[in] revisionIds Set of revision ids to download.
+    //! @param[in] callback Download callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of revisions metadata as the result.
+    //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
+    DGNDBSERVERCLIENT_EXPORT DgnRevisionsTaskPtr DownloadRevisions(const bvector<Utf8String>& revisionIds, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Download all revision files after revisionId
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
     //! @param[in] fileId Db guid of the master file.

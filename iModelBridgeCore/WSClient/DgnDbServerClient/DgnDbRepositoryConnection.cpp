@@ -2936,34 +2936,48 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 WSQuery DgnDbRepositoryConnection::CreateRevisionsByIdQuery
 (
-const bvector<DgnDbServerRevisionInfoPtr>& revisions
+std::deque<ObjectId>& revisionIds
 ) const
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
-    Utf8String queryFilter, idsString;
-
-    for(auto revision : revisions)
-        {
-        if (!Utf8String::IsNullOrEmpty(idsString.c_str()))
-            idsString = idsString + ",";
-
-        Utf8String revisionId;
-        revisionId.Sprintf("'%s'", revision->GetId().c_str());
-        idsString = idsString + revisionId;
-        }
-
-    queryFilter.Sprintf("%s+in+[%s]", ServerSchema::Property::Id, idsString.c_str());
-    query.SetFilter(queryFilter);
-
+    query.AddFilterIdsIn(revisionIds, nullptr, 0, 0);
     return query;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             11/2015
+//@bsimethod                                     Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+DgnRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisions(const bvector<Utf8String>& revisionIds, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    std::deque<ObjectId> queryIds;
+    for (auto revisionId : revisionIds)
+        {
+        queryIds.push_back(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId));
+        }
+
+    return DownloadRevisions(queryIds, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             02/2017
 //---------------------------------------------------------------------------------------
 DgnRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisions(const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    auto query = CreateRevisionsByIdQuery(revisions);
+    std::deque<ObjectId> queryIds;
+    for (auto revision : revisions)
+        {
+        queryIds.push_back(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetId()));
+        }
+
+    return DownloadRevisions(queryIds, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+DgnRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisions(std::deque<ObjectId>& revisionIds, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    auto query = CreateRevisionsByIdQuery(revisionIds);
 
     Utf8String selectString;
     selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, ServerSchema::Property::MasterFileId);
