@@ -966,7 +966,7 @@ bool    ClipPlaneSet::GetRange (DRange3dR range, TransformCP transform) const
         if (planeSet.GetRange (thisRange, transform))
             range.Extend (thisRange);
         }
-    return true;
+    return !range.IsNull();
     }
 
 
