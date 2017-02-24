@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vucoord.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -2811,6 +2811,32 @@ VuP VuNode::FindMaskAroundFace(VuMask mask)
     END_VU_FACE_LOOP(node, this)
     return nullptr;
     }
+
+VuP VuNode::FindMaskAroundReverseVertex(VuMask mask)
+    {
+    VU_REVERSE_VERTEX_LOOP(node, this)
+        {
+        if (node->HasMask (mask))
+            return node;
+        }
+    END_VU_REVERSE_VERTEX_LOOP(node, this)
+    return nullptr;
+    }
+
+VuP VuNode::FindMaskAroundReverseFace(VuMask mask)
+    {
+    VU_REVERSE_FACE_LOOP(node, this)
+        {
+        if (node->HasMask(mask))
+            return node;
+        }
+    END_VU_REVERSE_FACE_LOOP(node, this)
+    return nullptr;
+    }
+
+
+
+
 
 // FindNodeAround =========================
 VuP VuNode::FindNodeAroundVertex (VuP target)

@@ -680,6 +680,8 @@ struct VuNode {
 
     GEOMDLLIMPEXP VuP FindMaskAroundFace(VuMask mask);
     GEOMDLLIMPEXP VuP FindMaskAroundVertex(VuMask mask);
+    GEOMDLLIMPEXP VuP FindMaskAroundReverseFace(VuMask mask);
+    GEOMDLLIMPEXP VuP FindMaskAroundReverseVertex(VuMask mask);
 
     GEOMDLLIMPEXP VuP FindNodeAroundFace(VuP node);
     GEOMDLLIMPEXP VuP FindNodeAroundVertex(VuP node);
