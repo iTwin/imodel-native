@@ -124,7 +124,7 @@ void ParsingParamters (int argc, char* argv[])
         }
         else if (_strnicmp(("-Owner="), argv[currentParamPos], 7) == 0)
         {
-            s_option = OptFilterOwner;
+            s_option |= OptFilterOwner;
             Utf8String param (argv[currentParamPos]);
             size_t pos;
 
@@ -135,11 +135,11 @@ void ParsingParamters (int argc, char* argv[])
         }
         else if (_stricmp(("-SortByGroup"), argv[currentParamPos]) == 0)
         {
-            s_option = OptSortGroup;
+            s_option |= OptSortGroup;
         }
         else if (_stricmp(("-SortByModDate"), argv[currentParamPos]) == 0)
         {
-            s_option = OptSortModDate;
+            s_option |= OptSortModDate;
         }
         else
             found = false;
