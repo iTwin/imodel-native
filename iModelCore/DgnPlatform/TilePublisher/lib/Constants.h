@@ -37,6 +37,7 @@ static const uint32_t s_pointCloudVersion    = 1;
 #define GLTF_FLOAT 5126
 #define GLTF_RGB 6407
 #define GLTF_RGBA 6408
+#define GLTF_NEAREST 0x2600
 #define GLTF_LINEAR 9729
 #define GLTF_LINEAR_MIPMAP_LINEAR 9987
 #define GLTF_CLAMP_TO_EDGE 33071

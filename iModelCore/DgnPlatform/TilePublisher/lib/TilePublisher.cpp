@@ -1158,7 +1158,7 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
     auto& texture = tileData.m_json["textures"][textureId] = Json::objectValue;
     texture["format"] = GLTF_RGBA;
     texture["internalFormat"] = GLTF_RGBA;
-    texture["sampler"] = "sampler_0";
+    texture["sampler"] = "sampler_1";
     texture["source"] = imageId;
 
     auto& bufferView = tileData.m_json["bufferViews"][bvImageId] = Json::objectValue;
@@ -1256,6 +1256,12 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bo
     techniqueUniforms["u_texStep"] = "texStep";
     techniqueAttributes["a_colorIndex"] = "colorIndex";
     AppendProgramAttribute(rootProgramNode, "a_colorIndex");
+
+    auto& sampler = tileData.m_json["samplers"]["sampler_1"];
+    sampler["minFilter"] = GLTF_NEAREST;
+    sampler["maxFilter"] = GLTF_NEAREST;
+    sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
+    sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
 
     tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
 
@@ -1394,7 +1400,11 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
         AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
 
-        tileData.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
+        auto& sampler = tileData.m_json["samplers"]["sampler_1"];
+        sampler["minFilter"] = GLTF_NEAREST;
+        sampler["maxFilter"] = GLTF_NEAREST;
+        sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
+        sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
 
         techniqueUniforms["u_tex"] = "tex";
         techniqueUniforms["u_texWidth"] = "texWidth";
