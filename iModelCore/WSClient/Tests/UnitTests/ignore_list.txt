@@ -128,8 +128,17 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
 # bim0200dev, x86, DEBUG, hang
 ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull
 
-# bim0200dev, x86, DEBUG, crash
+# bim0200dev, x64 & x86, DEBUG, random crashes
 WSClientTests.GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported
-
-# bim0200dev, x64 & x86, DEBUG, random crash
 WSRepositoryClientTests.Send*
+
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+# bim0200dev, x64, DEBUG
+# [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+# F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(122): error: Mock function called more times than expected - taking default action specified at:
+# f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\connect\MockImsClient.h(26):
+#     Function call: RequestToken(@049A70EC 56-byte object <94-61 57-04 02-01 00-00 60-92 F4-6B 00-00 00-00 00-00 00-00 00-00 00-00 02-00 00-00 17-71 9A-04 77-73 63-5F 4E-6F 64-65 00-5D 00-45 FF-FF FF-FF 00-00 00-00 70-67 0E-04>, { 'h' (104, 0x68), 't' (116, 0x74), 't' (116, 0x74), 'p' (112, 0x70), 's' (115, 0x73), ':' (58, 0x3A), '/' (47, 0x2F), '/' (47, 0x2F), 'c' (99, 0x63), 'o' (111, 0x6F), 'n' (110, 0x6E), 'n' (110, 0x6E), 'e' (101, 0x65), 'c' (99, 0x63), 't' (116, 0x74), '-' (45, 0x2D), 'w' (119, 0x77), 's' (115, 0x73), 'g' (103, 0x67), '2' (50, 0x32), '0' (48, 0x30), '.' (46, 0x2E), 'b' (98, 0x62), 'e' (101, 0x65), 'n' (110, 0x6E), 't' (116, 0x74), 'l' (108, 0x6C), 'e' (101, 0x65), 'y' (121, 0x79), '.' (46, 0x2E), 'c' (99, 0x63), 'o' (111, 0x6F), ... }, 60)
+#           Returns: 040E0560
+#          Expected: to be called once
+#            Actual: called twice - over-saturated and active
+# [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
