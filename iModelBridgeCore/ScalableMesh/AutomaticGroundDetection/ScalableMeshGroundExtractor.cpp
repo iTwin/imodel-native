@@ -330,7 +330,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(status == SUCCESS);
     //auto editFilesString = ((ScalableMeshBase*)m_scalableMesh.get())->GetPath();
-    terrainCreator->SetBaseExtraFilesPath(m_smTerrainPath);
+    
+    WString terrainPath(BeFileName::GetDirectoryName(m_smTerrainPath.c_str()));
+    WString terrainName(BeFileName::GetFileNameWithoutExtension(m_smTerrainPath.c_str()));
+
+    terrainPath += terrainName;
+        
+    terrainCreator->SetBaseExtraFilesPath(terrainPath);
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
 
