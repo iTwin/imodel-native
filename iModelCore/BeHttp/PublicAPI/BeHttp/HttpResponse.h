@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpResponse.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,8 +50,8 @@ private:
 public:
     static HttpResponseContentPtr Create(HttpBodyPtr responseBody) {return new HttpResponseContent(responseBody);}
 
-    HttpBodyPtr GetBody() {return m_body;}
-    HttpResponseHeadersR GetHeaders() {return m_headers;}
+    HttpBodyPtr GetBody() const {return m_body;}
+    HttpResponseHeadersR GetHeaders() const {return m_headers;}
     HttpResponseHeadersCR GetHeaders() const {return m_headers;}
 };
 
@@ -78,7 +78,7 @@ public:
     HttpBodyCR GetBody() const {return *m_content->GetBody();}
 
     HttpResponseHeadersCR GetHeaders() const {return m_content->GetHeaders();}
-    HttpResponseContentPtr GetContent() {return m_content;}
+    HttpResponseContentPtr GetContent() const {return m_content;}
    
     ConnectionStatus GetConnectionStatus() const {return m_connectionStatus;}
     HttpStatus GetHttpStatus() const {return m_httpStatus;}
