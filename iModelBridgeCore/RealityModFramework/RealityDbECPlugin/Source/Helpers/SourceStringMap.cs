@@ -29,6 +29,17 @@ namespace IndexECPlugin.Source.Helpers
                 case DataSource.RDS:
                     Guid guid;
                     return Guid.TryParse(id, out guid);
+                case DataSource.AU:
+                    string[] splitId = id.Split('_');
+                    if ( splitId.Length < 3 )
+                        {
+                        return false;
+                        }
+                    if ( splitId[0] != "AU" )
+                        {
+                        return false;
+                        }
+                    return true;
                 case DataSource.All:
                     return true;
                 default:
@@ -46,6 +57,8 @@ namespace IndexECPlugin.Source.Helpers
                     return "usgsapi";
                 case DataSource.RDS:
                     return "rds";
+                case DataSource.AU:
+                    return "au";
                 case DataSource.All:
                     return "all";
                 default:
@@ -63,6 +76,8 @@ namespace IndexECPlugin.Source.Helpers
                     return DataSource.USGS;
                 case "rds":
                     return DataSource.RDS;
+                case "au":
+                    return DataSource.AU;
                 case "all":
                     return DataSource.All;
                 default:
@@ -80,7 +95,7 @@ namespace IndexECPlugin.Source.Helpers
             //return result.TrimEnd(' ', ',');
 
             //I hard coded it, because I feared that the commented method could throw exceptions if the map was not updated at the same time as the Source enum.
-            return "\"index\", \"usgsAPI\", \"rds\" and \"all\"";
+            return "\"index\", \"usgsAPI\", \"rds\", \"au\" and \"all\"";
             }
         }
 
@@ -102,8 +117,12 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         RDS,
         /// <summary>
+        /// The australian API datasource
+        /// </summary> 
+        AU,
+        /// <summary>
         /// Represents all datasources
-        /// </summary>
+        /// </summary> 
         All
         }
     }

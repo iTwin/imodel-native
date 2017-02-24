@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/DBGeometryHelpers.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -83,6 +83,30 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 throw new UserFriendlyException("The polygon format is not valid.");
                 }
+            }
+
+        public static string CreateFootprintString(string minX, string minY, string maxX, string maxY, int srid)
+            {
+            return String.Format(@"{{""points"":[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]],""coordinate_system"":""{4}""}}",minX,minY,maxX, maxY,srid);
+            }
+
+        public static string CreateEsriPolygonFromPolyModel (PolygonModel model)
+            {
+            string esriPoly = "{\"rings\":[";
+            
+            //This will give [x1,y1],[x2,y2],...[xn,yn]
+            esriPoly += String.Join( ",", model.points.Select(p => "[" + p[0] + "," + p[1] + "]"));
+
+            int count = model.points.Count;
+
+            //We have to close the polygon, if it's not done already
+            if ( (model.points[0][0] != model.points[count][0]) || model.points[0][1] != model.points[count][1] )
+                {
+                esriPoly += ",[" + model.points[0][0] + "," + model.points[0][1] + "]";
+                }
+
+            esriPoly += "],\"spatialReference\":{\"wkid\":" + model.coordinate_system + "}}";
+            return esriPoly;
             }
 
         public static string ExtractOuterShellPointsFromWKTPolygon (string polygon)
