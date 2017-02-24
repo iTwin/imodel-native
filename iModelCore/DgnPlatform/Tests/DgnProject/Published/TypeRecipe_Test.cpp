@@ -71,11 +71,9 @@ struct TypeTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 GraphicalRecipe2dCPtr TypeTests::InsertRecipe2d(DefinitionModelR model, Utf8CP recipeName)
     {
-    GraphicalRecipe2dPtr recipeFromCreate = TestGraphicalRecipe2d::Create(model, recipeName);
-    BeAssert(recipeFromCreate.IsValid());
-    GraphicalRecipe2dCPtr recipeFromInsert = model.GetDgnDb().Elements().Insert<GraphicalRecipe2d>(*recipeFromCreate);
-    BeAssert(recipeFromInsert.IsValid());
-    return recipeFromInsert;
+    GraphicalRecipe2dPtr recipe = TestGraphicalRecipe2d::Create(model, recipeName);
+    BeAssert(recipe.IsValid());
+    return recipe.IsValid() ? model.GetDgnDb().Elements().Insert<GraphicalRecipe2d>(*recipe) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -83,11 +81,9 @@ GraphicalRecipe2dCPtr TypeTests::InsertRecipe2d(DefinitionModelR model, Utf8CP r
 //---------------------------------------------------------------------------------------
 PhysicalRecipeCPtr TypeTests::InsertRecipe3d(DefinitionModelR model, Utf8CP recipeName)
     {
-    PhysicalRecipePtr recipeFromCreate = TestPhysicalRecipe::Create(model, recipeName);
-    BeAssert(recipeFromCreate.IsValid());
-    PhysicalRecipeCPtr recipeFromInsert = model.GetDgnDb().Elements().Insert<PhysicalRecipe>(*recipeFromCreate);
-    BeAssert(recipeFromInsert.IsValid());
-    return recipeFromInsert;
+    PhysicalRecipePtr recipe = TestPhysicalRecipe::Create(model, recipeName);
+    BeAssert(recipe.IsValid());
+    return recipe.IsValid() ? model.GetDgnDb().Elements().Insert<PhysicalRecipe>(*recipe) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -108,9 +104,8 @@ DrawingModelPtr TypeTests::InsertTemplate2A(GraphicalRecipe2dCR recipe)
         return nullptr;
 
     DrawingModelPtr model = DrawingModel::Create(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(DgnDbStatus::Success == model->Insert());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || (DgnDbStatus::Success != model->Insert()) || !model->IsTemplate())
+        return nullptr;
 
     DgnDbR db = recipe.GetDgnDb();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(db, "RedCategory2d");
@@ -119,8 +114,12 @@ DrawingModelPtr TypeTests::InsertTemplate2A(GraphicalRecipe2dCR recipe)
 
     DrawingGraphicPtr rectangle = CreateGeometricElement2d(*model, rectangleSubCategoryId, rectanglePart->GetId(), DPoint2d::FromZero());
     DrawingGraphicPtr lines = CreateGeometricElement2d(*model, lineSubCategoryId, linesPart->GetId(), DPoint2d::FromZero());
-    BeAssert(rectangle.IsValid() && lines.IsValid());
-    BeAssert(rectangle->Insert().IsValid() && lines->Insert().IsValid());
+    if (!rectangle.IsValid() || !lines.IsValid())
+        return nullptr;
+
+    if (!rectangle->Insert().IsValid() || !lines->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -142,9 +141,8 @@ DrawingModelPtr TypeTests::InsertTemplate2B(GraphicalRecipe2dCR recipe, Graphica
         return nullptr;
 
     DrawingModelPtr model = DrawingModel::Create(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(DgnDbStatus::Success == model->Insert());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || (DgnDbStatus::Success != model->Insert()) || !model->IsTemplate())
+        return nullptr;
 
     DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "BlueCategory2d");
     DgnSubCategoryId lineSubCategoryId = DgnDbTestUtils::InsertSubCategory(*m_db, categoryId, "Lines", ColorDef::Blue());
@@ -157,9 +155,12 @@ DrawingModelPtr TypeTests::InsertTemplate2B(GraphicalRecipe2dCR recipe, Graphica
     DrawingGraphicPtr nested1 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(-1.2*radius, 0), AngleInDegrees(), lineSubCategoryId);
     DrawingGraphicPtr nested2 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(0, -1.2*radius), AngleInDegrees(), lineSubCategoryId);
     DrawingGraphicPtr nested3 = CreateDrawingGraphic(*model, nestedType, DPoint2d::From(1.2*radius, 0), AngleInDegrees(), lineSubCategoryId);
-    BeAssert(cross.IsValid() && circle.IsValid() && field.IsValid() && nested1.IsValid() && nested2.IsValid() && nested3.IsValid());
+    if (!cross.IsValid() || !circle.IsValid() || !field.IsValid() || !nested1.IsValid() || !nested2.IsValid() || !nested3.IsValid())
+        return nullptr;
 
-    BeAssert(cross->Insert().IsValid() && circle->Insert().IsValid() && field->Insert().IsValid() && nested1->Insert().IsValid() && nested2->Insert().IsValid() && nested3->Insert().IsValid());
+    if (!cross->Insert().IsValid() || !circle->Insert().IsValid() || !field->Insert().IsValid() || !nested1->Insert().IsValid() || !nested2->Insert().IsValid() || !nested3->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -226,13 +227,12 @@ DrawingGraphicPtr TypeTests::CreateGeometricElement2d(DrawingModelR model, DgnCa
 //---------------------------------------------------------------------------------------
 GraphicalType2dCPtr TypeTests::InsertType2d(DefinitionModelR typeModel, Utf8CP typeName, GraphicalRecipe2dCR recipe)
     {
-    TestGraphicalType2dPtr typeFromCreate = TestGraphicalType2d::Create(typeModel, typeName);
-    BeAssert(typeFromCreate.IsValid());
-    typeFromCreate->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalType2dHasRecipe));
-    BeAssert(typeFromCreate->GetRecipe().IsValid());
-    GraphicalType2dCPtr typeFromInsert = recipe.GetDgnDb().Elements().Insert<GraphicalType2d>(*typeFromCreate);
-    BeAssert(typeFromInsert.IsValid());
-    return typeFromInsert;
+    TestGraphicalType2dPtr type = TestGraphicalType2d::Create(typeModel, typeName);
+    if (!type.IsValid())
+        return nullptr;
+
+    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalType2dHasRecipe));
+    return recipe.GetDgnDb().Elements().Insert<GraphicalType2d>(*type);
     }
 
 //---------------------------------------------------------------------------------------
@@ -240,13 +240,12 @@ GraphicalType2dCPtr TypeTests::InsertType2d(DefinitionModelR typeModel, Utf8CP t
 //---------------------------------------------------------------------------------------
 PhysicalTypeCPtr TypeTests::InsertType3d(DefinitionModelR typeModel, Utf8CP typeName, PhysicalRecipeCR recipe)
     {
-    TestPhysicalTypePtr typeFromCreate = TestPhysicalType::Create(typeModel, typeName);
-    BeAssert(typeFromCreate.IsValid());
-    typeFromCreate->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalTypeHasRecipe));
-    BeAssert(typeFromCreate->GetRecipe().IsValid());
-    PhysicalTypeCPtr typeFromInsert = recipe.GetDgnDb().Elements().Insert<PhysicalType>(*typeFromCreate);
-    BeAssert(typeFromInsert.IsValid());
-    return typeFromInsert;
+    TestPhysicalTypePtr type = TestPhysicalType::Create(typeModel, typeName);
+    if (!type.IsValid())
+        return nullptr;
+
+    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalTypeHasRecipe));
+    return recipe.GetDgnDb().Elements().Insert<PhysicalType>(*type);
     }
 
 //---------------------------------------------------------------------------------------
@@ -565,12 +564,13 @@ PhysicalModelPtr TypeTests::InsertTemplate3A(PhysicalRecipeCR recipe)
     DgnSubCategoryId defaultSubCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
 
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || !model->IsTemplate())
+        return nullptr;
 
     GeometricElement3dPtr torusPipe = CreateGeometricElement3d(*model, defaultSubCategoryId, torusPipePart->GetId(), DPoint3d::FromZero());
-    BeAssert(torusPipe.IsValid());
-    BeAssert(torusPipe->Insert().IsValid());
+    if (!torusPipe.IsValid() || !torusPipe->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -591,8 +591,8 @@ PhysicalModelPtr TypeTests::InsertTemplate3B(PhysicalRecipeCR recipe)
         return nullptr;
 
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || !model->IsTemplate())
+        return nullptr;
 
     DgnDbR db = recipe.GetDgnDb();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "GreenCategory3d");
@@ -604,8 +604,12 @@ PhysicalModelPtr TypeTests::InsertTemplate3B(PhysicalRecipeCR recipe)
     GeometricElement3dPtr cylinder2 = CreateGeometricElement3d(*model, cylinderSubCategoryId, cylinderPart->GetId(), DPoint3d::From(0.25, 0.75, cubeWidth));
     GeometricElement3dPtr cylinder3 = CreateGeometricElement3d(*model, cylinderSubCategoryId, cylinderPart->GetId(), DPoint3d::From(0.75, 0.75, cubeWidth));
     GeometricElement3dPtr cylinder4 = CreateGeometricElement3d(*model, cylinderSubCategoryId, cylinderPart->GetId(), DPoint3d::From(0.75, 0.25, cubeWidth));
-    BeAssert(cube.IsValid() && cylinder1.IsValid() && cylinder2.IsValid() && cylinder3.IsValid() && cylinder4.IsValid());
-    BeAssert(cube->Insert().IsValid() && cylinder1->Insert().IsValid() && cylinder2->Insert().IsValid() && cylinder3->Insert().IsValid() && cylinder4->Insert().IsValid());
+    if (!cube.IsValid() || !cylinder1.IsValid() || !cylinder2.IsValid() || !cylinder3.IsValid() || !cylinder4.IsValid())
+        return nullptr;
+
+    if (!cube->Insert().IsValid() || !cylinder1->Insert().IsValid() || !cylinder2->Insert().IsValid() || !cylinder3->Insert().IsValid() || !cylinder4->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -620,8 +624,8 @@ PhysicalModelPtr TypeTests::InsertTemplate3C(PhysicalRecipeCR recipe)
         return nullptr;
 
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || !model->IsTemplate())
+        return nullptr;
 
     DgnDbR db = recipe.GetDgnDb();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "YellowCategory3d", ColorDef::Yellow());
@@ -630,8 +634,12 @@ PhysicalModelPtr TypeTests::InsertTemplate3C(PhysicalRecipeCR recipe)
     GeometricElement3dPtr sphere1 = CreateGeometricElement3d(*model, defaultSubCategoryId, spherePart->GetId(), DPoint3d::From(0, 0, 1));
     GeometricElement3dPtr sphere2 = CreateGeometricElement3d(*model, defaultSubCategoryId, spherePart->GetId(), DPoint3d::From(0, 0, 2));
     GeometricElement3dPtr sphere3 = CreateGeometricElement3d(*model, defaultSubCategoryId, spherePart->GetId(), DPoint3d::From(0, 0, 3));
-    BeAssert(sphere1.IsValid() && sphere2.IsValid() && sphere3.IsValid());
-    BeAssert(sphere1->Insert().IsValid() && sphere2->Insert().IsValid() && sphere3->Insert().IsValid());
+    if (!sphere1.IsValid() || !sphere2.IsValid() || !sphere3.IsValid())
+        return nullptr;
+
+    if (!sphere1->Insert().IsValid() || !sphere2->Insert().IsValid() || !sphere3->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -653,8 +661,8 @@ PhysicalModelPtr TypeTests::InsertTemplate3E(PhysicalRecipeCR recipe)
         return nullptr;
 
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(recipe);
-    BeAssert(model.IsValid());
-    BeAssert(model->IsTemplate());
+    if (!model.IsValid() || !model->IsTemplate())
+        return nullptr;
 
     DgnDbR db = recipe.GetDgnDb();
     DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
@@ -667,15 +675,20 @@ PhysicalModelPtr TypeTests::InsertTemplate3E(PhysicalRecipeCR recipe)
     GeometricElement3dPtr column2 = CreateGeometricElement3d(*model, columnSubCategoryId, columnPart->GetId(), DPoint3d::From(slabWidth/4, 3*slabWidth/4, 0));
     GeometricElement3dPtr column3 = CreateGeometricElement3d(*model, columnSubCategoryId, columnPart->GetId(), DPoint3d::From(3*slabWidth/4, 3*slabWidth/4, 0));
     GeometricElement3dPtr column4 = CreateGeometricElement3d(*model, columnSubCategoryId, columnPart->GetId(), DPoint3d::From(3*slabWidth/4, slabWidth/4, 0));
-    BeAssert(slab.IsValid() && column1.IsValid() && column2.IsValid() && column3.IsValid() && column4.IsValid());
-    BeAssert(slab->Insert().IsValid());
+    if (!slab.IsValid() || !column1.IsValid() || !column2.IsValid() || !column3.IsValid() || !column4.IsValid())
+        return nullptr;
+
+    if (!slab->Insert().IsValid())
+        return nullptr;
 
     column1->SetParentId(slab->GetElementId(), parentRelClassId);
     column2->SetParentId(slab->GetElementId(), parentRelClassId);
     column3->SetParentId(slab->GetElementId(), parentRelClassId);
     column4->SetParentId(slab->GetElementId(), parentRelClassId);
 
-    BeAssert(column1->Insert().IsValid() && column2->Insert().IsValid() && column3->Insert().IsValid() && column4->Insert().IsValid());
+    if (!column1->Insert().IsValid() || !column2->Insert().IsValid() || !column3->Insert().IsValid() || !column4->Insert().IsValid())
+        return nullptr;
+
     return model;
     }
 
@@ -826,7 +839,6 @@ DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
         view.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     view.SetStandardViewRotation(StandardView::Iso);
-    view.SetSource(Dgn::DgnViewSource::Generated);
     view.LookAtVolume(model.QueryModelRange());
     view.Insert();
     DgnViewId viewId = view.GetViewId();
@@ -844,29 +856,37 @@ TEST_F(TypeTests, CreateSampleBim)
 
     DefinitionModelPtr typeModel2d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "2D Types");
     GraphicalRecipe2dCPtr recipe2A = InsertRecipe2d(*typeModel2d, "Recipe2-A");
-    GraphicalRecipe2dCPtr recipe2B = InsertRecipe2d(*typeModel2d, "Recipe2-B");
+    ASSERT_TRUE(recipe2A.IsValid());
+    DrawingModelPtr templateModel2A = InsertTemplate2A(*recipe2A);
+    ASSERT_TRUE(templateModel2A.IsValid());
     GraphicalType2dCPtr type2A1 = InsertType2d(*typeModel2d, "Type2-A-1", *recipe2A);
     GraphicalType2dCPtr type2A2 = InsertType2d(*typeModel2d, "Type2-A-2", *recipe2A);
-    GraphicalType2dCPtr type2B1 = InsertType2d(*typeModel2d, "Type2-B-1", *recipe2B);
+    ASSERT_TRUE(type2A1.IsValid());
+    ASSERT_TRUE(type2A2.IsValid());
 
-    DrawingModelPtr templateModel2A = InsertTemplate2A(*recipe2A);
+    GraphicalRecipe2dCPtr recipe2B = InsertRecipe2d(*typeModel2d, "Recipe2-B");
+    ASSERT_TRUE(recipe2B.IsValid());
     DrawingModelPtr templateModel2B = InsertTemplate2B(*recipe2B, *type2A1);
+    ASSERT_TRUE(templateModel2B.IsValid());
+    GraphicalType2dCPtr type2B1 = InsertType2d(*typeModel2d, "Type2-B-1", *recipe2B);
+    ASSERT_TRUE(type2B1.IsValid());
 
     DefinitionModelPtr typeModel3d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "3D Types");
     PhysicalRecipeCPtr recipe3A = InsertRecipe3d(*typeModel3d, "Recipe3-A");
     PhysicalRecipeCPtr recipe3B = InsertRecipe3d(*typeModel3d, "Recipe3-B");
     PhysicalRecipeCPtr recipe3C = InsertRecipe3d(*typeModel3d, "Recipe3-C");
     PhysicalRecipeCPtr recipe3E = InsertRecipe3d(*typeModel3d, "Recipe3-E");
-    PhysicalTypeCPtr type3A1 = InsertType3d(*typeModel3d, "Type3-A-1", *recipe3A);
-    PhysicalTypeCPtr type3B1 = InsertType3d(*typeModel3d, "Type3-B-1", *recipe3B);
-    PhysicalTypeCPtr type3B2 = InsertType3d(*typeModel3d, "Type3-B-2", *recipe3B);
-    PhysicalTypeCPtr type3C1 = InsertType3d(*typeModel3d, "Type3-C-1", *recipe3C);
-    PhysicalTypeCPtr type3E1 = InsertType3d(*typeModel3d, "Type3-E-1", *recipe3E);
 
     PhysicalModelPtr templateModel3A = InsertTemplate3A(*recipe3A);
     PhysicalModelPtr templateModel3B = InsertTemplate3B(*recipe3B);
     PhysicalModelPtr templateModel3C = InsertTemplate3C(*recipe3C);
     PhysicalModelPtr templateModel3E = InsertTemplate3E(*recipe3E);
+
+    PhysicalTypeCPtr type3A1 = InsertType3d(*typeModel3d, "Type3-A-1", *recipe3A);
+    PhysicalTypeCPtr type3B1 = InsertType3d(*typeModel3d, "Type3-B-1", *recipe3B);
+    PhysicalTypeCPtr type3B2 = InsertType3d(*typeModel3d, "Type3-B-2", *recipe3B);
+    PhysicalTypeCPtr type3C1 = InsertType3d(*typeModel3d, "Type3-C-1", *recipe3C);
+    PhysicalTypeCPtr type3E1 = InsertType3d(*typeModel3d, "Type3-E-1", *recipe3E);
 
     GenericGroupModelPtr groupModel = DgnDbTestUtils::InsertGroupInformationModel(*m_db, "Template Instance Groups");
 
