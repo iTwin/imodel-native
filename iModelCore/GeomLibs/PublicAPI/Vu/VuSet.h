@@ -227,6 +227,9 @@ TempMask (VuSetP graph, bool initialState = false) : m_graph (graph)
     m_graph->DropMask (m_mask);
     }
 VuMask Mask (){return m_mask;}
+bool IsSetAtNode (VuP node) { return node->HasMask (m_mask);}
+void SetAtNode (VuP node){node->SetMask (m_mask);}
+void ClearAtNode (VuP node){node->ClearMask (m_mask);}
 };
 
 };

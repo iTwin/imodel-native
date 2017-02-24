@@ -496,13 +496,16 @@ struct SpaceDescriptor
 {
 DPoint3d m_seedPoint;
 int m_id;
+double m_targetArea;
+double m_currentArea;
 bvector<VuP> m_nodes;   // !! Complete list of nodes.
-
+SpaceDescriptor () : m_seedPoint (DPoint3d::From (0,0,0)), m_id(0), m_targetArea (0.0), m_currentArea (0.0) {}
 // Constructor -- initialize with a reference coordinate and an id but no nodes.
-SpaceDescriptor (DPoint3dCR xyz, int id)
+SpaceDescriptor (DPoint3dCR xyz, int id, double targetArea = 0.0)
     {
     m_id = id;
     m_seedPoint = xyz;
+    m_targetArea = targetArea;
     }
 
 int GetId () const { return m_id;}
@@ -525,6 +528,7 @@ bool AddNode (VuP node)
 struct GriddedSpaceManager
 {
 friend struct GriddedSpaceQueries;
+friend struct GriddedSpace_FloodFromSingleNode;
 private:
 VuSetP m_graph;
 bvector<bvector <DPoint3d>> m_parityLoops;
@@ -533,7 +537,7 @@ double m_meshSize;
 bool m_isoGrid;
 bool m_smoothTriangles;
 int    m_lastSpaceId;
-bvector<SpaceDescriptor> m_spaces;
+bmap<int, SpaceDescriptor> m_spaces;
 public:
 // Constructor -- empty manager
 GriddedSpaceManager () :
@@ -558,6 +562,12 @@ int GetSpaceId (VuP node)
     {
     return node->GetUserDataAsInt ();
     }
+bool IsBarrierEdge (VuP node)
+    {
+    return node->HasMask (VU_BOUNDARY_EDGE | VU_RULE_EDGE);
+    }
+
+bool IsOccupied (VuP node) {return node->GetUserDataAsInt () != 0;}
 VuSetP Graph (){ return m_graph;}
 
 // create a graph for given geometry.
@@ -590,7 +600,7 @@ int GetSpaceIdAtXYZ (DPoint3dCR xyz)
     }
 
 // Try to claim the face containing xyz as a space.
-int CreateSpace (DPoint3dCR xyz)
+int CreateSpace (DPoint3dCR xyz, double targetArea)
     {
     VuP node = vu_findContainingFace_linearSearch (m_graph, xyz, VU_EXTERIOR_EDGE);
     if (nullptr == node)
@@ -601,9 +611,10 @@ int CreateSpace (DPoint3dCR xyz)
         // this node is already claimed
         return s_invalidSpaceId;
         }
-    m_spaces.push_back (SpaceDescriptor (xyz, ++m_lastSpaceId));
-    m_spaces.back ().AddNode (node);
-    return m_spaces.back ().GetId ();    
+    int id = ++m_lastSpaceId;
+    m_spaces[id] = SpaceDescriptor (xyz, ++m_lastSpaceId, targetArea);
+    m_spaces[id].AddNode (node);
+    return id;
     }
 
 // Set mask in each node that (a) has a nonzero UserDataPAsInt and (b) edge mate has a different UserDataPAsInt
@@ -625,8 +636,98 @@ size_t SetAllSpaceBoundaryMasks (VuMask mask)
     return numBoundary;
     }
 
+double SpaceIdToArea (int id)
+    {
+    auto space = m_spaces.find (id);
+    if (space == m_spaces.end ())
+        return 0.0;
+    double area = 0.0;
+    for (auto node : space->second.m_nodes)
+        {
+        area += vu_area (node);
+        }
+    }
+    
 };
 
+// Helper class to do flood searches in a GriddedSpaceManager
+struct GriddedSpace_FloodFromSingleNode
+{
+GriddedSpaceManager &m_manager;
+GriddedSpace_FloodFromSingleNode (GriddedSpaceManager &manager) : m_manager(manager) {}
+
+// Floods use a priority queue (aka heap) to access prefered direction of flood
+struct HeapEntry
+    {
+    int m_id;
+    VuP m_node;
+    HeapEntry (int id, VuP node) : m_id (id), m_node(node) {}
+    HeapEntry () : m_id (0), m_node (nullptr) {}
+    };
+MinimumValuePriorityQueue <HeapEntry> m_heap;
+
+// Visit the neighbor across each edge of a face.
+// (but do not cross barriers, or cross into occupied space)
+// push the neighbors onto the priority queue.
+void AddNeighborsToFloodHeap_weightByDistanceFromRefPoint (SpaceDescriptor &s, VuP faceSeed)
+    {
+    VU_FACE_LOOP (edge, faceSeed)
+        {
+        auto mate = edge->EdgeMate ();
+        if (!m_manager.IsBarrierEdge (edge) && m_manager.GetSpaceId (mate) == 0)
+            {
+            DPoint2d uv;
+            int numPos, numNeg;
+            double area;
+            vu_centroid (&uv, &area, &numPos, &numNeg, mate);
+            double d = uv.Distance (DPoint2d::From (s.m_seedPoint));
+            m_heap.Insert (HeapEntry (s.m_id, mate), d);
+            }
+        }
+    END_VU_FACE_LOOP (edge, faceSeed)
+    }
+
+// flood from a space until it reaches its target area.
+// (This may be called repeatedly with larger targetAreas)
+bool ExpandSingleSpaceIdToTargetArea (int id, double targetArea)
+    {
+    m_heap.Clear ();
+    auto space = m_manager.m_spaces.find (id);
+    if (space == m_manager.m_spaces.end ())
+        return false;
+    space->second.m_currentArea = 0.0;
+    space->second.m_targetArea = targetArea;
+    // Sum areas of current faces.
+    // Add all neighbors to the heap.
+    for (auto node : space->second.m_nodes)
+        {
+        space->second.m_currentArea = vu_area (node);
+        AddNeighborsToFloodHeap_weightByDistanceFromRefPoint (space->second, node);
+        }
+    HeapEntry entry;
+    double distance;
+    for (;;)
+        {
+        double a0 = space->second.m_currentArea;
+        double a1 = space->second.m_targetArea;
+        if (a0 > a1)
+            break;
+        if (!m_heap.RemoveMin (entry, distance))
+            break;
+        // The facet may have been absorbed from another direction . . . 
+        if (!m_manager.IsOccupied (entry.m_node))
+            {
+            space->second.m_currentArea += vu_area (entry.m_node);
+            space->second.AddNode (entry.m_node);
+            AddNeighborsToFloodHeap_weightByDistanceFromRefPoint (space->second, entry.m_node);
+            }
+        }
+    return space->second.m_currentArea >= space->second.m_targetArea;
+    }
+
+};
+
+// Helper class to implement queries along with a GriddedSpaceManager.
 struct GriddedSpaceQueries
 {
 GriddedSpaceManager &m_manager;
@@ -634,21 +735,53 @@ GriddedSpaceQueries (GriddedSpaceManager &manager) : m_manager(manager){}
 
 void SaveSpaceBoundaries ()
     {
-    _VuSet::TempMask mask (m_manager.m_graph);
-    bvector<DSegment3d> chains;
-    m_manager.SetAllSpaceBoundaryMasks (mask.Mask ());
-    // brain dead -- just pull individual edges, no attempt to chain
-    VU_SET_LOOP (node, m_manager.m_graph)
+    double tolerance = DoubleOps::SmallMetricDistance ();
+    _VuSet::TempMask boundaryMask (m_manager.m_graph);
+    m_manager.SetAllSpaceBoundaryMasks (boundaryMask.Mask ());
+    _VuSet::TempMask visitMask (m_manager.m_graph);
+    bvector<VuP> chainNodes;
+    bvector<DPoint3d> chain;
+    VU_SET_LOOP (seedNode, m_manager.m_graph)
         {
-        int id = m_manager.GetSpaceId (node);
-        if (id != s_invalidSpaceId
-            && m_manager.GetSpaceId (node->EdgeMate ()) != id)
+        if (!visitMask.IsSetAtNode (seedNode) && boundaryMask.IsSetAtNode (seedNode) )
             {
-            chains.push_back (DSegment3d::From (node->GetXYZ (), node->FSucc()->GetXYZ()));
+            chainNodes.clear ();
+            auto currentNode = seedNode;
+            for (; nullptr != currentNode;)
+                {
+                visitMask.SetAtNode (currentNode);
+                chainNodes.push_back (currentNode);
+                currentNode->SetMask (visitMask.Mask ());
+                currentNode = currentNode->FSucc ()->FindMaskAroundReverseVertex (boundaryMask.Mask ());
+                if (currentNode == seedNode)
+                    break;
+                }
+            // (flood regions are closed ... chain should always close)
+            chain.clear ();
+            for (auto node : chainNodes)
+                {
+                DPoint3d xyz0 = node->GetXYZ ();
+                DPoint3d xyz1 = node->FSucc ()->GetXYZ ();
+                if (m_manager.IsBarrierEdge (node))
+                    {
+                    chain.push_back (xyz0);
+                    chain.push_back (xyz1);
+                    }
+                else
+                    {
+                    chain.push_back (DPoint3d::FromInterpolate (xyz0, 0.5, xyz1));
+                    }
+                }
+            if (currentNode == seedNode)    // closure -- we expect this
+                {
+                auto xyz = chain.front ();
+                chain.push_back (xyz);
+                }
+            DPoint3dOps::Compress (chain, tolerance);
+            Check::SaveTransformed (chain);
             }
         }
-    END_VU_SET_LOOP (node, m_manager.m_graph)
-    Check::SaveTransformed (chains);
+    END_VU_SET_LOOP (seedNode, m_manager.m_graph)
     }
 void SaveWalls ()
     {
@@ -697,39 +830,103 @@ bool TryLoadTestFloorPlan (GriddedSpaceManager &manager, double meshSize)
     bvector<double> vBreaks;
     return manager.TryLoad (s_testFloorPlanParityLoops, s_testFloorPlanOpenChains);
     }
-TEST(VuCreateTriangulatedInGrid,Test0)
+
+void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
     {
     GriddedSpaceManager manager;
     GriddedSpaceQueries queries (manager);
-    bvector<bool> trueThenFalse { true/*, false*/};
+    GriddedSpace_FloodFromSingleNode flooder (manager);
     double ax = 35.0;
+    double ay = 35.0;
+    SaveAndRestoreCheckTransform shifter (0, ay, 0);
+
+    manager.SetMeshParams (meshSize, isoGrid, smoothGrid);
+    if (TryLoadTestFloorPlan (manager, 1.0))
+        {
+
+        TaggedPolygonVector polygons;
+        VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
+        for (auto &loop : polygons)
+            {
+            if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
+                Check::SaveTransformed (loop.GetPointsCR ());
+            }
+        Check::Shift (ax, 0,0);
+        bvector<int> spaceIds;
+        bvector<double> baseAreas;
+        // create spaces with minimal area ..
+        baseAreas.push_back (20.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (15,16,0), baseAreas.back ()));
+        baseAreas.push_back (15.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
+        for (double spaceFactor : bvector<double>{1.0, 2.0, 5.0})
+            {
+            for (size_t i = 0; i < baseAreas.size (); i++)
+                {
+                flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
+                }
+            Check::Shift (ax, 0.0, 0.0);
+            queries.SaveSpaceBoundaries ();
+            queries.SaveWalls ();
+            }
+        }
+    }
+
+TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
+    {
+    TestGriddedSpaceManager (1.0, false, false);
+    TestGriddedSpaceManager (2.0, false, false);
+    TestGriddedSpaceManager (3.0, false, false);
+    TestGriddedSpaceManager (3.0, false, false);
+
+
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSquareGrid");
+    }
+TEST(GriddedSpaceManager,VaryMeshSizeWithSmoothGrid)
+    {
+    double ax = 35.0;
+    double ay = 35.0;
+    SaveAndRestoreCheckTransform shifter (0, ay, 0);
+
+
+    GriddedSpaceManager manager;
+    GriddedSpaceQueries queries (manager);
+    GriddedSpace_FloodFromSingleNode flooder (manager);
     Check::Shift (ax, 0,0);
     for (double meshSize : bvector <double> {1.0, 2.0, 4.0})
         {
-        SaveAndRestoreCheckTransform shifter (2.0 * ax, 0, 0);
-        for (bool isoGrid : trueThenFalse)
+        SaveAndRestoreCheckTransform shifter (0, ay, 0);
+        bool isoGrid = true;
+        bool smooth = true;
+        manager.SetMeshParams (meshSize, isoGrid, smooth);
+        if (TryLoadTestFloorPlan (manager, 1.0))
             {
-            for (bool smooth : trueThenFalse)
+            TaggedPolygonVector polygons;
+            VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
+            for (auto &loop : polygons)
                 {
-                SaveAndRestoreCheckTransform shifter (0, 35, 0);
-                manager.SetMeshParams (meshSize, isoGrid, smooth);
-                if (TryLoadTestFloorPlan (manager, 1.0))
+                if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
+                    Check::SaveTransformed (loop.GetPointsCR ());
+                }
+            Check::Shift (ax, 0,0);
+            bvector<int> spaceIds;
+            bvector<double> baseAreas;
+            // create spaces with smallish area ..
+            baseAreas.push_back (20.0);
+            spaceIds.push_back (manager.CreateSpace (DPoint3d::From (15,16,0), baseAreas.back ()));
+            baseAreas.push_back (15.0);
+            spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
+            // repeatedly grow the areas and write out the growing puddles
+            queries.SaveWalls ();
+            for (double spaceFactor : bvector<double>{1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0})
+                {
+                for (size_t i = 0; i < baseAreas.size (); i++)
                     {
-                    manager.CreateSpace (DPoint3d::From (15,20,0));
-                    manager.CreateSpace (DPoint3d::From (8,23,0));
-                    TaggedPolygonVector polygons;
-                    VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
-                    for (auto &loop : polygons)
-                        {
-                        if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
-                            Check::SaveTransformed (loop.GetPointsCR ());
-                        }
-                    Check::Shift (ax, 0.0, 0.0);
-                    queries.SaveSpaceBoundaries ();
-                    queries.SaveWalls ();
+                    flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
                     }
+                queries.SaveSpaceBoundaries ();
                 }
             }
         }
-    Check::ClearGeometry ("VuCreateTriangulatedInGrid.Test0");
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSmoothGrid");
     }
