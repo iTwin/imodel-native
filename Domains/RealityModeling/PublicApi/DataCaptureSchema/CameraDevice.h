@@ -144,10 +144,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
 
 
     private:
-        double                  m_focalLength;
+        double                  m_focalLength; //Always in meters
         int                     m_imageWidth;
         int                     m_imageHeight;
-        DPoint2d                m_principalPoint;
+        DPoint2d                m_principalPoint;   //Always in meters
         double                  m_aspectRatio;
         double                  m_skew;
 
@@ -213,7 +213,9 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         DATACAPTURE_EXPORT void                     SetImageWidth(int val);
         DATACAPTURE_EXPORT int                      GetImageHeight() const;
         DATACAPTURE_EXPORT void                     SetImageHeight(int val);
+        //Focal always set/get in meters
         DATACAPTURE_EXPORT double                   GetFocalLength() const;
+        //Focal always set/get in meters
         DATACAPTURE_EXPORT void                     SetFocalLength(double val);
         DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
         DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;
@@ -252,8 +254,8 @@ public:
 
 private:
     mutable CameraDeviceModelElementId m_cameraDeviceModel;//Query and cached from DgnDb or given at creation time
-    double                  m_focalLength;
-    DPoint2d                m_principalPoint;
+    double                  m_focalLength;    //Always in meters
+    DPoint2d                m_principalPoint; //Always in meters
     int                     m_imageWidth;
     int                     m_imageHeight;
     double                  m_aspectRatio;
@@ -264,7 +266,7 @@ private:
 
 protected:
 
-    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) {}
+    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel), m_pixelToMeterRatio(1.0) {}
 
     static BentleyStatus InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId, CameraDeviceModelElementId cameraDeviceModelElmId);
     static CameraDeviceModelElementId QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId);
@@ -348,7 +350,9 @@ public:
     DATACAPTURE_EXPORT void                     SetImageWidth(int val);
     DATACAPTURE_EXPORT int                      GetImageHeight() const;
     DATACAPTURE_EXPORT void                     SetImageHeight(int val);
+    //Focal always set/get in meters
     DATACAPTURE_EXPORT double                   GetFocalLength() const;
+    //Focal always set/get in meters
     DATACAPTURE_EXPORT void                     SetFocalLength(double val);
     DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
     DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;

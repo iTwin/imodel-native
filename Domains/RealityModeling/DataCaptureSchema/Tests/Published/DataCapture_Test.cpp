@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Tests/Published/DataCapture_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
@@ -36,7 +36,7 @@ TEST_F(DataCaptureTests, CreateCameraDevice)
 
     //Change cameraDevice properties
     cameraDevicePtr->SetLabel("BasicCameraDevice1");
-    cameraDevicePtr->SetFocalLength(4798.35);
+    cameraDevicePtr->SetFocalLength(0.00479835);
     cameraDevicePtr->SetImageWidth(5456);
     cameraDevicePtr->SetImageHeight(3632);
     DPoint2d principalPoint={2677.8,1772};
@@ -74,7 +74,7 @@ TEST_F(DataCaptureTests, CreateCameraDevice)
     ASSERT_EQ(cameraDeviceId, myCamPtr->GetElementId());
 
     //read back cameraDevice properties and check if equal
-    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLength(),4798.35);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLength(),0.00479835);
     ASSERT_EQ(5456,myCamPtr->GetImageWidth());
     ASSERT_EQ(3632,myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
@@ -244,7 +244,7 @@ TEST_F(DataCaptureTests, CreateShot)
     auto cameraDevicePtr = CameraDevice::Create(*spatialModelP,cameraDeviceModelPtr->GetId());
     ASSERT_TRUE(cameraDevicePtr.IsValid());
     cameraDevicePtr->SetLabel("BasicCameraDevice1");
-    cameraDevicePtr->SetFocalLength(4798.35);
+    cameraDevicePtr->SetFocalLength(0.00479835);
     cameraDevicePtr->SetImageWidth(5456);
     cameraDevicePtr->SetImageHeight(3632);
     DPoint2d principalPoint = { 2677.8,1772 };

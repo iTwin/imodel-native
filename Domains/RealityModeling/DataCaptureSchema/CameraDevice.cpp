@@ -877,8 +877,8 @@ DPoint2d CameraDevice::ComputeFieldOfView(CameraDeviceCR camDevice)
     DPoint2d fieldofView;
 
     //Everything must be in pixels
-    fieldofView.x = atan2(camDevice.GetImageWidth(), 2 * camDevice.GetFocalLength());
-    fieldofView.y = atan2(camDevice.GetImageHeight(), 2 * camDevice.GetFocalLength());
+    fieldofView.x = atan2(camDevice.GetImageWidth(), 2 * camDevice.GetFocalLength() / camDevice.GetPixelToMeterRatio());
+    fieldofView.y = atan2(camDevice.GetImageHeight(), 2 * camDevice.GetFocalLength()/ camDevice.GetPixelToMeterRatio());
 
     return fieldofView;
     }

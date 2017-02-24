@@ -5,7 +5,7 @@
 |  Notice that most of the code here cames from or is an adaptation of "src\MstnPlatform\mstn\mdlapps\rmutil\RMUtilImage.cpp"  
 |  on vancouver source stream
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -93,7 +93,7 @@ BeXmlStatus XmlReader::ReadCameraDeviceInfo (BeXmlNodeR sourceNodeRef, CameraDev
     double                  focalLength;
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLength, "FocalLength")))
         {
-        cameraDeviceInfo.SetFocalLength(focalLength);
+        cameraDeviceInfo.SetFocalLength(focalLength*1000);
         }
 
     int                     ImgDimWidth(0);
