@@ -458,10 +458,6 @@ public:
     SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
     SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
-    //! If this view is a camera view, get the camera physical view controller.
-    CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
-    //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
-    CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
@@ -470,12 +466,6 @@ public:
     Sheet::ViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     Sheet::ViewControllerP GetSheetViewControllerP() {return (Sheet::ViewControllerP) GetSheetViewControllerCP();}
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
-    //! If this view is a query view, get the query view controller.
-    DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
-    //! If this view is a query view, get a writeable pointer to the query view controller.
-    DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
-    */
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
