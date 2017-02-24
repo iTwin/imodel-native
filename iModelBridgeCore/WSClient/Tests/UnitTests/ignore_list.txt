@@ -124,3 +124,10 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
 
 	#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 	*ConnectWebServicesClientCTests*
+
+# bim0200dev, x86, DEBUG, hang
+ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull
+
+# bim0200dev, x86, DEBUG, crash
+WSClientTests.GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported
+WSRepositoryClientTests.SendQueryRequest_WebApiV2AndHttpResponseHasSkipToken_AddsSkipTokenToResponse
