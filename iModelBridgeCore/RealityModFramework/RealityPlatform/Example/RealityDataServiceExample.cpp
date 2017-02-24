@@ -43,8 +43,14 @@ int main(int argc, char *argv[])
 
     BeFileName Montgomery = BeFileName("D:/RealityModFrameworkFolder");
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "604f9be9-e74f-4614-a23e-b02e2dc129f5", propertyString, true);
+    
     if(upload->IsValidUpload())
-        upload->Perform();
+        {
+        UploadReport* ur = upload->Perform();
+        Utf8String report;
+        ur->ToXml(report);
+        std::cout << report << std::endl;
+        }
 
     RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 

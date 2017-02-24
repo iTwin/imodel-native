@@ -424,7 +424,7 @@ public:
         m_fileStream.GetSize((uint64_t)m_fileSize);
         m_singleChunk = m_fileSize < m_chunkSize;
 
-        if(m_singleChunk)
+        if(!m_singleChunk)
             m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
         }
 
@@ -473,9 +473,15 @@ public:
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetFilename() { return m_filename; }
 
-    uint64_t GetFileSize() const { return m_fileSize; }
+    REALITYDATAPLATFORM_EXPORT uint64_t GetFileSize() const { return m_fileSize; }
 
-    BeFile& GetFileStream() { return m_fileStream; }
+    REALITYDATAPLATFORM_EXPORT uint64_t GetUploadedSize() const { return m_uploadProgress; }
+
+    REALITYDATAPLATFORM_EXPORT BeFile& GetFileStream() { return m_fileStream; }
+
+    REALITYDATAPLATFORM_EXPORT void StartTimer();
+
+    REALITYDATAPLATFORM_EXPORT time_t GetStartTime() { return m_startTime; }
 
     void UpdateUploadedSize();
 
@@ -519,7 +525,7 @@ private:
     mutable Utf8String      m_requestWithToken;
 
     Utf8String              m_blockList;
-    time_t                  m_timeSpent;
+    time_t                  m_startTime;
     };
 
 struct AzureWriteHandshake : public RealityDataUrl
@@ -545,7 +551,7 @@ struct UploadResult
 struct UploadReport
     {
     size_t                  packageId;
-    bmap<WString, UploadResult*> results;
+    bmap<Utf8String, UploadResult*> results;
     ~UploadReport();
 
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report);

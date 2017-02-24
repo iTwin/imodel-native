@@ -122,10 +122,10 @@ void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl()
     url.append(RealityDataService::GetRepoName());
     url.append("/");
     url.append(RealityDataService::GetSchemaName());
-    url.append("/Document/");
+    url.append("/RealityData/");
     
     bvector<Utf8String> lines;
-    BeStringUtilities::Split(m_id.c_str(), "/", lines);
+    BeStringUtilities::Split(m_id.c_str(), "~", lines);
     Utf8String root = lines[0];
 
     url.append(root);
@@ -173,13 +173,16 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
     {
     if(m_allowAzureRedirection)
         {
-        /*m_httpRequestString = m_azureServer;
+        m_httpRequestString = m_azureServer;
         bvector<Utf8String> parts;
-        Utf8String AzureUrl = instance["properties"]["Url"].asCString();
-        BeStringUtilities::Split(AzureUrl.c_str(), "\?", parts);
-        //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
-        m_azureServer = parts[0];
-        m_azureToken = parts[1];*/
+        BeStringUtilities::Split(m_id.c_str(), "/", parts);
+        Utf8String Guid = parts[0];
+        Guid.append("/");
+        m_id.ReplaceAll(Guid.c_str(), "");
+        m_httpRequestString.append(m_id);
+        m_httpRequestString.append("\?");
+        m_httpRequestString.append(m_azureToken);
+        m_httpRequestString.ReplaceAll("~2F", "/");
 
         m_validRequestString = true;
         }
@@ -656,6 +659,11 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
     return bytesRead;
     }
 
+void RealityDataFileUpload::StartTimer()
+    {
+    m_startTime = std::time(nullptr);
+    }
+
 void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
     {
     //https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/RealityData/cc5421e5-a80e-469f-a459-8c76da351fe5/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
@@ -674,13 +682,13 @@ void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
 
 UploadReport::~UploadReport()
     {
-    for (bmap<WString, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
+    for (bmap<Utf8String, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
         delete (it->second);
     }
 
 void UploadReport::ToXml(Utf8StringR report)
     {
-    /*BeXmlWriterPtr writer = BeXmlWriter::Create();
+    BeXmlWriterPtr writer = BeXmlWriter::Create();
     BeAssert(writer.IsValid());
     writer->SetIndentation(2);
 
@@ -688,21 +696,21 @@ void UploadReport::ToXml(Utf8StringR report)
         {
         writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
 
-        for (bmap<WString, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
+        for (bmap<Utf8String, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
             {
             writer->WriteElementStart("File");
                 {
-                UploadResult* tr = it->second;
+                UploadResult* ur = it->second;
                 writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
-                writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
-                writer->WriteAttribute("CURLcode", tr->retries.at(i).errorCode);
-                writer->WriteAttribute("uploadProgress", tr->retries.at(i).uploadProgress);
+                writer->WriteAttribute("timeSpent", (long)ur->timeSpent);
+                writer->WriteAttribute("CURLcode", ur->errorCode);
+                writer->WriteAttribute("uploadProgress", ur->uploadProgress);
                 }
             writer->WriteElementEnd();
             }
         }
     writer->WriteElementEnd();
-    writer->ToString(report);*/
+    writer->ToString(report);
     }
 
 Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Utf8String> properties)
@@ -967,13 +975,16 @@ UploadReport* RealityDataServiceUpload::Perform()
                                 still_running++;
                                 }
                             else
+                                {
                                 fileUp->CloseFile();
+                                ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                                }
                             }      
 
                         }
-                                
-
-                    //ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                    else if (fileUp != nullptr)
+                        ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                           
                     
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
                 curl_easy_cleanup(msg->easy_handle);
@@ -1065,6 +1076,7 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
             curl_easy_setopt(pCurl, CURLOPT_READDATA, fileUpload);
 
             curl_easy_setopt(pCurl, CURLOPT_INFILESIZE_LARGE, fileUpload->GetMessageSize());
+            fileUpload->StartTimer();
             }
         else if (handshake != nullptr)
             {
@@ -1073,8 +1085,6 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
             /* Set a pointer to our struct to pass to the callback */
             curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, handshake);
             }
-
-        //request->UploadStart = std::time(nullptr);
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         }
@@ -1087,33 +1097,24 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
     if (m_pStatusFunc)
         m_pStatusFunc(index, pClient, ErrorCode, pMsg);
 
-    /*RealityDataFileUpload* pEntry = (RealityDataFileUpload*)pClient;
+    RealityDataFileUpload* pEntry = (RealityDataFileUpload*)pClient;
 
     if(pEntry == nullptr)
         return;
 
-    m_ulReport.results.
+    UploadResult* ur = new UploadResult();
+    ur->errorCode = ErrorCode;
+    ur->uploadProgress = (100 * pEntry->GetUploadedSize() / pEntry->GetFileSize());
+    ur->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
 
-    RealityDataFileUpload* tr = it->second;
-    tr->filesize = pEntry->filesize;
+    m_ulReport.results.Insert(pEntry->GetFilename(), ur);
 
-    UploadResult ur = UploadResult();
-    ur.errorCode = ErrorCode;
-    ur.downloadProgress = pEntry->downloadedSizeStep;
-    if (pEntry->filesize != 0)
-        ur.downloadProgress /= pEntry->filesize;
-
-    tr->retries.push_back(ur);
-
-    if (ErrorCode != REALITYDATADOWNLOAD_RETRY_TENTATIVE)
-        {
-        tr->timeSpent = time(nullptr) - pEntry->mirrors[0].DownloadStart;
-        }*/
+    delete pEntry;
     }
 
 Utf8String RealityDataServiceUpload::GetAzureToken()
     {
-    if ((std::time(nullptr) - m_azureTokenTimer) > (59 * 60))
+    if ((std::time(nullptr) - m_azureTokenTimer) > (50 * 60))
         {
         m_azureTokenTimer = std::time(nullptr);
         RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
