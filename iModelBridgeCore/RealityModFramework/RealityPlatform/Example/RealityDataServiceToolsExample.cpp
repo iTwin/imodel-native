@@ -30,7 +30,12 @@ static Utf8String s_itemPath;
 static Utf8String s_outputPath;
 #define CmdUpload               0x0800
 
-#define OptionFilter            0x0001
+#define OptFilterOwner          0x0001
+static Utf8String s_filterOwner;
+
+#define OptSortModDate          0x0002
+#define OptSortGroup            0x0004
+
 
 static int s_cmd = CmdNone;
 static int s_option = CmdNone;
@@ -53,7 +58,10 @@ void Usage()
     std::cout << "   -Download NameId Output    : Download file(s) to Output directory" << std::endl;
     //std::cout << "   -Upload WindowsFolder guid  root  footprint type :  **" << std::endl;
     std::cout << "   [options...]" << std::endl;
-    //std::cout << "   -Filter          :  ?" << std::endl;
+    std::cout << "   -Owner=...                 :  Filter" << std::endl;
+    std::cout << "   -SortModDate               :  RealityData sorted by modification date" << std::endl;
+    std::cout << "   -SortGroup                 :  RealityData sorted by group" << std::endl;
+
 
     std::cout << "  " << std::endl;
     std::cout << " -? or -help      : Show this usage" << std::endl;
@@ -113,6 +121,25 @@ void ParsingParamters (int argc, char* argv[])
                 s_outputPath = argv[currentParamPos];
             else
                 found = false;
+        }
+        else if (_strnicmp(("-Owner="), argv[currentParamPos], 7) == 0)
+        {
+            s_option = OptFilterOwner;
+            Utf8String param (argv[currentParamPos]);
+            size_t pos;
+
+            if ((pos=param.GetNextToken(s_filterOwner, "=", 0)) != Utf8String::npos)
+                s_filterOwner = &(argv[currentParamPos][pos]);
+            else
+                found = false;
+        }
+        else if (_stricmp(("-SortByGroup"), argv[currentParamPos]) == 0)
+        {
+            s_option = OptSortGroup;
+        }
+        else if (_stricmp(("-SortByModDate"), argv[currentParamPos]) == 0)
+        {
+            s_option = OptSortModDate;
         }
         else
             found = false;
@@ -191,9 +218,26 @@ void ListCmd()
     {
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
-        // With NavNode
+        RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
 
-        RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest();
+        // Filters ?
+        if (s_option & (OptFilterOwner))
+            {
+            bvector<Utf8String> filter1 = bvector<Utf8String>();
+            
+            filter1.push_back(RealityDataFilterCreator::FilterByOwner(s_filterOwner));
+            Utf8String filters = RealityDataFilterCreator::GroupFiltersOR(filter1);
+
+            enterpriseReq->SetFilter(filters);
+            }
+
+        if (s_option & (OptSortModDate))
+            enterpriseReq->SortBy(RealityDataField::ModifiedTimestamp, true);
+
+        if (s_option & (OptSortGroup))
+            enterpriseReq->SortBy(RealityDataField::Group, true);
+
+
         bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
 
         for (SpatialEntityPtr pData : enterpriseVec)
@@ -209,6 +253,7 @@ void ListCmd()
                     " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
                     " Owner          : " << pData->GetOwner() << std::endl << "  " <<
                     " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
+                    " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
                     " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
                     " Visibility     : " << pData->GetVisibility() << std::endl << "  " <<
                     " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<

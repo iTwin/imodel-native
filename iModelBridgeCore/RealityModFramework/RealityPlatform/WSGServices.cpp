@@ -159,7 +159,6 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, int veri
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, verifyPeer);
 
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);

@@ -175,10 +175,11 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         {
         m_httpRequestString = m_azureServer;
         bvector<Utf8String> parts;
-        BeStringUtilities::Split(m_id.c_str(), "/", parts);
+        BeStringUtilities::Split(m_id.c_str(), "~", parts);
         Utf8String Guid = parts[0];
-        Guid.append("/");
+        Guid.append("~2F");
         m_id.ReplaceAll(Guid.c_str(), "");
+        m_httpRequestString.append("/");
         m_httpRequestString.append(m_id);
         m_httpRequestString.append("\?");
         m_httpRequestString.append(m_azureToken);
@@ -498,7 +499,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/"); 
     m_httpRequestString.append(RealityDataService::GetSchemaName());
     m_httpRequestString.append("/RealityData?$filter=Enterprise+eq+'");
 
@@ -512,7 +513,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         Utf8String keyword = "organizationid";
         const char* attributePosition = strstr(charstring, keyword.c_str());
         keyword = "<saml:AttributeValue>";
-        const char* valuePosition = strstr(attributePosition, keyword.c_str());
+        const char* valuePosition = strstr(attributePosition, keyword.c_str()); 
         valuePosition += keyword.length();
         Utf8String idString = Utf8String(valuePosition);
 
