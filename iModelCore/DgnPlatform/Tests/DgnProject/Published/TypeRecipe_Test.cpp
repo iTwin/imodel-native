@@ -26,7 +26,6 @@ struct TypeTests : public DgnDbTestFixture
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnConeDetailCR);
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnSphereDetailCR);
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DgnTorusPipeDetailCR);
-    DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ISolidPrimitiveCR);
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, DEllipse3dCR, bool);
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, ICurvePrimitiveCR, bool);
     DgnGeometryPartCPtr InsertGeometryPart(DgnElementCR, Utf8CP, CurveVectorCR, bool);
@@ -455,9 +454,9 @@ DgnDbStatus TypeTests::InstantiateTemplate3d(PhysicalModelR instanceModel, Physi
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DEllipse3dCR ellipse, bool is3d)
     {
-    ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc(ellipse);
-    BeAssert(curve.IsValid());
-    return curve.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *curve, is3d) : nullptr;
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(ellipse);
+    BeAssert(geometry.IsValid());
+    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, is3d) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -485,9 +484,9 @@ DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnBoxDetailCR boxDetail)
     {
-    ISolidPrimitivePtr boxSolid = ISolidPrimitive::CreateDgnBox(boxDetail);
-    BeAssert(boxSolid.IsValid());
-    return boxSolid.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *boxSolid) : nullptr;
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(boxDetail);
+    BeAssert(geometry.IsValid());
+    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -495,9 +494,9 @@ DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnConeDetailCR coneDetail)
     {
-    ISolidPrimitivePtr coneSolid = ISolidPrimitive::CreateDgnCone(coneDetail);
-    BeAssert(coneSolid.IsValid());
-    return coneSolid.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *coneSolid) : nullptr;
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(coneDetail);
+    BeAssert(geometry.IsValid());
+    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -505,9 +504,9 @@ DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnSphereDetailCR sphereDetail)
     {
-    ISolidPrimitivePtr sphereSolid = ISolidPrimitive::CreateDgnSphere(sphereDetail);
-    BeAssert(sphereSolid.IsValid());
-    return sphereSolid.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *sphereSolid) : nullptr;
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(sphereDetail);
+    BeAssert(geometry.IsValid());
+    return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -515,17 +514,7 @@ DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope
 //---------------------------------------------------------------------------------------
 DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, DgnTorusPipeDetailCR torusPipeDetail)
     {
-    ISolidPrimitivePtr torusPipeSolid = ISolidPrimitive::CreateDgnTorusPipe(torusPipeDetail);
-    BeAssert(torusPipeSolid.IsValid());
-    return torusPipeSolid.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *torusPipeSolid) : nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    02/2017
-//---------------------------------------------------------------------------------------
-DgnGeometryPartCPtr TypeTests::InsertGeometryPart(DgnElementCR geometryPartScope, Utf8CP geometryPartName, ISolidPrimitiveCR solid)
-    {
-    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(solid);
+    GeometricPrimitivePtr geometry = GeometricPrimitive::Create(torusPipeDetail);
     BeAssert(geometry.IsValid());
     return geometry.IsValid() ? InsertGeometryPart(geometryPartScope, geometryPartName, *geometry, GEOMETRY3D) : nullptr;
     }
