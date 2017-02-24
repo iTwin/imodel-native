@@ -1419,20 +1419,20 @@
     <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates that child elements are "hidden" -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="encapsulates" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is encapsulated by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PhysicalElementAssemblesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="assembles" polymorphic="true">
             <Class class="PhysicalElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is assembled by" polymorphic="true">
             <Class class="PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
