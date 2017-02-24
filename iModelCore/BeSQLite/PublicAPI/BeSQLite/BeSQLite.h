@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -794,6 +794,23 @@ public:
     //! Get a saved copy of the original SQL text used to prepare this Statement
     //! @see sqlite3_sql
     BE_SQLITE_EXPORT Utf8CP GetSql() const;
+
+    //!Get the table name from which a column of the result of Step originates
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_table_name
+    BE_SQLITE_EXPORT Utf8CP GetColumnTableName(int col);
+	
+	//! Get the number of parameters in the statement
+	//! @note This method actually returns the index of the largest (rightmost) parameter.
+	//! For all forms except ?NNN, this will correspond to the number of unique parameters. 
+	//! If parameters of the ?NNN form are used, there may be gaps in the list
+    //! @see sqlite3_bind_parameter_count
+    BE_SQLITE_EXPORT int GetParameterCount();
+
+    //! Get the declared type for a column of the result of Step
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_decltype
+    BE_SQLITE_EXPORT Utf8CP GetColumnDeclaredType(int col);
 
     //! Dump query results to stdout, for debugging purposes
     BE_SQLITE_EXPORT void DumpResults();

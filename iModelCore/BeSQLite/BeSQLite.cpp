@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -367,6 +367,9 @@ int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stm
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
 BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
+int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
+Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
+Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   08/15
