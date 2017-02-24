@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -82,7 +82,8 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
-        LOG.infov
+        //@TODO: Fix this hack around va_args. (c) Vilius
+        Utf8PrintfString msg
             (
             "Received WSError: %d %s\n"
             "Server response: %s\n",
@@ -90,6 +91,7 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
             httpResponse.GetEffectiveUrl().c_str(),
             httpResponse.GetBody().AsString().c_str()
             );
+        LOG.infov(msg.c_str());
         }
 
     if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus())
