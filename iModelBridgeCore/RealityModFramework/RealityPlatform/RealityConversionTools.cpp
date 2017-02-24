@@ -101,6 +101,10 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
         data->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
 
+    //Group
+    if (properties.isMember("Group") && !properties["Group"].isNull())
+        data->SetGroup(Utf8CP(properties["Group"].asString().c_str()));
+
     //Description
     if (properties.isMember("Description") && !properties["Description"].isNull())
         data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
@@ -135,8 +139,8 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         data->SetProvider(Utf8CP(properties["DataProviderName"].asString().c_str()));
 
     // Public Access
-    if (properties.isMember("PublicAccess") && !properties["PublicAccess"].isNull())
-        data->SetPublicAccess(properties["PublicAccess"].asBool());
+    if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
+        data->SetVisibility(Utf8CP(properties["PublicAccess"].asString().c_str()));
 
     // Listable
     if (properties.isMember("Listable") && !properties["Listable"].isNull())

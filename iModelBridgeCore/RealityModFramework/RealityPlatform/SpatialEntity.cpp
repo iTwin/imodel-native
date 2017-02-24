@@ -146,6 +146,9 @@ void SpatialEntity::SetProviderName(Utf8CP providerName) { m_providerName = prov
 Utf8StringCR SpatialEntity::GetDataset() const { return m_dataset; }
 void SpatialEntity::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
 
+Utf8StringCR SpatialEntity::GetGroup() const { return m_group; }
+void SpatialEntity::SetGroup(Utf8CP group) { m_dataset = group; }
+
 Utf8StringCR SpatialEntity::GetThumbnailURL() const { return m_thumbnailURL; }
 void SpatialEntity::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
 
@@ -196,8 +199,8 @@ void SpatialEntity::SetMetadataURL(Utf8CP metadataUrl) { m_metadataUrl = metadat
 Utf8StringCR SpatialEntity::GetAccuracy() const { return m_accuracy; }
 void SpatialEntity::SetAccuracy(Utf8CP accuracy) { m_accuracy = accuracy; }
 
-bool SpatialEntity::GetPublicAccess() const { return m_publicAccess; }
-void SpatialEntity::SetPublicAccess(bool publicAccess) { m_publicAccess = publicAccess; }
+Utf8StringCR SpatialEntity::GetVisibility() const { return m_visibility; }
+void SpatialEntity::SetVisibility(Utf8CP visibility) { m_visibility = visibility; }
 
 bool SpatialEntity::GetListable() const { return m_listable; }
 void SpatialEntity::SetListable(bool listable) { m_listable = listable; }
