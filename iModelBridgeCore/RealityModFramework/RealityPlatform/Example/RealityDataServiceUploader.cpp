@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    BeFileName Montgomery = BeFileName("C:/s3mx/Helsinki");
+    BeFileName Montgomery = BeFileName("D:/Helsinki");
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
     if (upload->IsValidUpload())
         {

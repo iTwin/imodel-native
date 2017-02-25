@@ -20,7 +20,7 @@
 #include <sstream>
 #include <Bentley/Base64Utilities.h>
 
-#define MAX_NB_CONNECTIONS          10
+#define MAX_NB_CONNECTIONS          5
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -604,7 +604,7 @@ bool RealityDataFileUpload::FinishedSending()
     if(!m_singleChunk)
         return !m_moreToSend; 
     else
-        return (m_uploadProgress < m_fileSize - 1);
+        return (m_uploadProgress >= m_fileSize);
     }
 
 void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
@@ -663,6 +663,13 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
 void RealityDataFileUpload::StartTimer()
     {
     m_startTime = std::time(nullptr);
+    }
+
+void RealityDataFileUpload::Retry()
+    {
+    CloseFile();
+    m_chunkSize = 4*1024*1024;
+    ReadyFile();
     }
 
 void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
@@ -946,45 +953,42 @@ UploadReport* RealityDataServiceUpload::Perform()
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
 
                 RealityDataFileUpload *fileUp = (RealityDataFileUpload *)pClient;
+                
                 // Retry on error
-                /*if (msg->data.result == 56)     // Recv failure, try again
+                if (msg->data.result == 56 || msg->data.result == 28)     // Recv failure, try again
                     {
-                    if (fileUp->nbRetry < s_MaxRetryTentative)
+                    if (fileUp != nullptr && fileUp->nbRetry < 5)
                         {
                         ++fileUp->nbRetry;
-                        ReportStatus((int)fileUp->index, pClient, 0, "Trying again...");
-                        //SetupCurlandFile(&m_pEntries[fileUp->index], true);
+                        //ReportStatus((int)fileUp->index, pClient, 0, "Trying again...");
+                        fileUp->Retry();
+                        SetupCurlforFile((RealityDataUrl*)(fileUp), 0);
                         still_running++;
                         }
                     else
                         {
-                        else
-                            {
-                            // Maximun retry done, return error.
-                            ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-                            }
+                        // Maximun retry done, return error.
+                        ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                         }
                     }
-                else */
+                else if(fileUp != nullptr)
+                    {
                     if(msg->data.result == CURLE_OK)
                         {
-                        if(fileUp != nullptr)
+                        if(!fileUp->FinishedSending())
                             {
-                            if(!fileUp->FinishedSending())
-                                {
-                                SetupCurlforFile(fileUp, 0);
-                                still_running++;
-                                }
-                            else
-                                {
-                                fileUp->CloseFile();
-                                ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-                                }
-                            }      
-
+                            SetupCurlforFile(fileUp, 0);
+                            still_running++;
+                            }
+                        else
+                            {
+                            fileUp->CloseFile();
+                            ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            }  
                         }
-                    else if (fileUp != nullptr)
+                    else
                         ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                    }
                            
                     
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
@@ -996,7 +1000,7 @@ UploadReport* RealityDataServiceUpload::Perform()
                 }
 
             // Other URL to download ?
-            if (m_curEntry < (int)m_filesToUpload.size())
+            if (m_curEntry < (int)m_filesToUpload.size() && still_running < MAX_NB_CONNECTIONS)
                 {
                 if (SetupNextEntry())
                     still_running++;
@@ -1061,7 +1065,7 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
             }*/
         curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
         
-        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
+        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 1L);
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, request);
 
         curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1L);

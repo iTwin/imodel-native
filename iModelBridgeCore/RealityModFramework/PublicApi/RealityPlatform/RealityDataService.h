@@ -404,7 +404,7 @@ struct RealityDataFileUpload : public RealityDataUrl
 public:
     RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
         m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), m_filename(filename.GetNameUtf8()),
-        m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true)
+        m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true), nbRetry(0)
         {
         m_validRequestString = false;
         Utf8String fileFromRoot = filename.GetNameUtf8();
@@ -421,7 +421,8 @@ public:
         BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
         BeAssert(status == BeFileStatus::Success);
 
-        m_fileStream.GetSize((uint64_t)m_fileSize);
+        status = m_fileStream.GetSize((uint64_t)m_fileSize);
+        BeAssert(status == BeFileStatus::Success);
         m_singleChunk = m_fileSize < m_chunkSize;
 
         if(!m_singleChunk)
@@ -433,6 +434,8 @@ public:
         if(m_fileStream.IsOpen())
             m_fileStream.Close();
         }
+
+    REALITYDATAPLATFORM_EXPORT void Retry();
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
         {
@@ -497,6 +500,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
 
+    size_t                  nbRetry;
     size_t                  m_index;
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
