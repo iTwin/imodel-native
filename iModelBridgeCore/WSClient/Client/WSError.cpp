@@ -82,8 +82,7 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
-        //@TODO: Fix this hack around va_args. (c) Vilius
-        Utf8PrintfString msg
+        LOG.infov
             (
             "Received WSError: %d %s\n"
             "Server response: %s\n",
@@ -91,7 +90,6 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
             httpResponse.GetEffectiveUrl().c_str(),
             httpResponse.GetBody().AsString().c_str()
             );
-        LOG.infov(msg.c_str());
         }
 
     if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus())
