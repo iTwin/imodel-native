@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/consoleprovider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (ANDROID)
@@ -412,7 +412,7 @@ Utf8CP                  msg
         default:          asev = ANDROID_LOG_INFO;    break;
         }
 
-    __android_log_print (asev, nsUtf8.c_str (), msg);
+    __android_log_print (asev, nsUtf8.c_str (), "%s", msg);
 
 #elif defined (USE_SYSLOG)
 
