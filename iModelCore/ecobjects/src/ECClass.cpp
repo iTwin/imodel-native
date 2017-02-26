@@ -2204,6 +2204,84 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
         return T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_ENTITYCLASS_ELEMENT, nullptr, true);
     }
 
+bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const
+    {
+    bool baseIsMixin = baseAsEntity->IsMixin();
+    if (thisIsMixin && !baseIsMixin)
+        {
+        LOG.errorv("Cannot add '%s' as a base class to '%s' because the base class is not a mixin but %s is.",
+                   baseAsEntity->GetFullName(), GetFullName(), GetFullName());
+        return false;
+        }
+
+    if (thisIsMixin && baseIsMixin)
+        {
+        ECEntityClassCP thisAppliesToClass = GetAppliesToClass();
+        ECEntityClassCP baseAppliesToClass = baseAsEntity->GetAppliesToClass();
+        if (nullptr == thisAppliesToClass || nullptr == baseAppliesToClass)
+            {
+            LOG.errorv("Cannot add '%s' as a base class to '%s' because they are mixin classes but at least one does not define the entity class to which it can be applied",
+                       baseAsEntity->GetFullName(), GetFullName());
+            return false;
+            }
+        if (!thisAppliesToClass->Is(baseAppliesToClass))
+            {
+            LOG.errorv("Cannot add '%s' as a base class to '%s' because they are mixins and the base applies to constraint '%s' is not a base class of the derived applies to constraint '%s'",
+                       baseAsEntity->GetFullName(), GetFullName(), baseAppliesToClass->GetFullName(), thisAppliesToClass->GetFullName());
+            return false;
+            }
+        return true;
+        }
+
+    if(baseIsMixin)
+        {
+        ECEntityClassCP baseAppliesToClass = baseAsEntity->GetAppliesToClass();
+        if (nullptr == baseAppliesToClass)
+            {
+            LOG.errorv("Cannot add '%s' as a base class to '%s' because they are mixin classes but '%s' one does not define the entity class to which it can be applied",
+                       baseAsEntity->GetFullName(), GetFullName(), baseAsEntity->GetFullName());
+            return false;
+            }
+        
+        return this->Is(baseAppliesToClass);
+        }
+    
+    return true;
+    }
+
+bool ECEntityClass::Verify() const
+    {
+    if(!HasBaseClasses())
+        return true;
+    
+    bool thisIsMixin = IsMixin();
+    for(ECClassCP baseClass : GetBaseClasses())
+        {
+        ECEntityClassCP baseAsEntity = baseClass->GetEntityClassCP();
+        if (nullptr == baseAsEntity)
+            return false;
+        if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
+            return false;
+        }
+    return true;
+    }
+
+ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
+    {
+    //if (validate)
+    //    {
+    //    ECEntityClassCP baseAsEntity = baseClass.GetEntityClassCP();
+    //    if (nullptr != baseAsEntity)
+    //        {
+    //        bool thisIsMixin = IsMixin();
+    //        if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
+    //            return ECObjectsStatus::BaseClassUnacceptable;
+    //        }
+    //    }
+
+    return T_Super::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -2224,37 +2302,59 @@ ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& e
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                01/2017
+// @bsimethod                                   Colin.Kerr                  02/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECEntityClass::CanApply(ECEntityClassCR mixinClass) const
+ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     {
-    if (!mixinClass.IsMixin())
-        return false;
+    if (!IsMixin())
+        return nullptr;
 
-    IECInstancePtr caInstance = mixinClass.GetCustomAttribute("CoreCustomAttributes", "IsMixin");
+    IECInstancePtr caInstance = GetCustomAttribute("CoreCustomAttributes", "IsMixin");
     if (!caInstance.IsValid())
-        return false;
+        return nullptr;
 
     ECValue appliesToValue;
     caInstance->GetValue(appliesToValue, "AppliesToEntityClass");
     if (appliesToValue.IsNull() || !appliesToValue.IsString())
-        return false;
+        return nullptr;
 
     Utf8String alias;
     Utf8String className;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, appliesToValue.GetUtf8CP()))
-        return false;
+        return nullptr;
 
-    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
+    ECSchemaCP resolvedSchema = nullptr;
+    if (Utf8String::IsNullOrEmpty(alias.c_str()) || GetSchema().GetAlias().EqualsI(alias.c_str()))
+        resolvedSchema = &GetSchema();
+    else
+        resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
+    
     if (nullptr == resolvedSchema)
-        return false;
+        {
+        LOG.errorv("Cannot resolve mixin class '%s' because the schema which contains it cannot be found.", appliesToValue.GetUtf8CP());
+        return nullptr;
+        }
 
     ECClassCP appliesToClass = resolvedSchema->GetClassCP(className.c_str());
     if (nullptr == appliesToClass)
+        {
+        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), resolvedSchema->GetFullSchemaName());
+        return nullptr;
+        }
+
+    return appliesToClass->GetEntityClassCP();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEntityClass::CanApply(ECEntityClassCR mixinClass) const
+    {
+    ECEntityClassCP appliesToEntityClass = mixinClass.GetAppliesToClass();
+    if (nullptr == appliesToEntityClass)
         return false;
 
-    ECEntityClassCP appliesToEntityClass = appliesToClass->GetEntityClassCP();
-    if (nullptr == appliesToEntityClass)
+    if ((&GetSchema() != &mixinClass.GetSchema()) && !ECSchema::IsSchemaReferenced(GetSchema(), mixinClass.GetSchema()))
         return false;
 
     return Is(appliesToEntityClass);
@@ -2552,26 +2652,27 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const
     {
+    ECEntityClassCP abstractConstraint = GetAbstractConstraint();
+    if (nullptr != abstractConstraint && !baseConstraint.SupportsClass(*abstractConstraint))
+        {
+        LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
+                    GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                    baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
+        return ECObjectsStatus::BaseClassUnacceptable;
+        }
+
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
-        ECEntityClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
-        if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
+        for(ECClassCP constraintClass : m_constraintClasses)
             {
-            LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
-                        GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                        baseConstraint.GetAbstractConstraint()->GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
-            return ECObjectsStatus::BaseClassUnacceptable;
-            }
+            if (!baseConstraint.SupportsClass(*constraintClass))
+                {
+                LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not compatible with the constraint specified in Class '%s'",
+                           constraintClass->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                           baseConstraint.GetRelationshipClass().GetFullName());
 
-        ECClassCR baseConstraintClass = *baseConstraint.GetConstraintClasses()[0];
-
-        if (!m_constraintClasses[0]->Is(&baseConstraintClass))
-            {
-            LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not derived from Class '%s' as specified in Class '%s'",
-                       m_constraintClasses[0]->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                       baseConstraintClass.GetFullName(), baseConstraint.GetRelationshipClass().GetFullName());
-
-            return ECObjectsStatus::BaseClassUnacceptable;
+                return ECObjectsStatus::BaseClassUnacceptable;
+                }
             }
         }
 
@@ -3216,8 +3317,27 @@ bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
         
         if (ECClass::ClassesAreEqualByName(constraintClass, &ecClass) || (m_isPolymorphic && ecClass.Is(constraintClass)))
             return true;
+
+        ECEntityClassCP casEntity = constraintClass->GetEntityClassCP();
+        if (nullptr == casEntity)
+            continue;
+
+        ECEntityClassCP appliesToConstraintClass = casEntity->GetAppliesToClass();
+        if (nullptr == appliesToConstraintClass)
+            continue;
+
+        if (ecClass.Is(appliesToConstraintClass))
+            return true;
         }
-    return false;
+    ECEntityClassCP asEntity = ecClass.GetEntityClassCP();
+    if (nullptr == asEntity)
+        return false;
+
+    ECEntityClassCP appliesToClass = asEntity->GetAppliesToClass();
+    if (nullptr == appliesToClass)
+        return false;
+
+    return SupportsClass(*appliesToClass);
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -1916,6 +1916,10 @@ friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
+private:
+    bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
+    bool Verify() const;
+
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -1928,6 +1932,7 @@ protected:
     ECEntityClassP _GetEntityClassP() override {return this;}
     ECClassType _GetClassType() const override {return ECClassType::Entity;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::EntityClass;}
+    ECObjectsStatus _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
 
 public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
@@ -1946,6 +1951,9 @@ public:
     //! @remarks The mixin class can be applied to this class if this class is derived from the AppliesToEntityClass property defined in IsMixin custom attribute.
     //! @param[in] mixinClass The ECEntityClass to check if it can be add as a mixin to this class.
     ECOBJECTS_EXPORT bool CanApply(ECEntityClassCR mixinClass) const;
+
+    //! If the class is a mixin, returns the ECEntityClass which restricts where the mixin can be applied, else nullptr. 
+    ECOBJECTS_EXPORT ECEntityClassCP GetAppliesToClass() const;
 };
 
 //---------------------------------------------------------------------------------------
@@ -3283,6 +3291,16 @@ public:
     //!                     must be called in order to insure the schema is valid. It is not recommended to set this to false.
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, bool verify = true);
+
+    //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
+    //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
+    //! @param[in]  name    Name of the class to create
+    //! @param[in]  source  The source constraint class
+    //! @param[in]  sourceRoleLabel The source role label.  Must not be null or empty.
+    //! @param[in]  target  The target constraint class
+    //! @param[in]  targetRoleLabel The target role label.  Must not be null or empty.
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, ECEntityClassCR source, Utf8CP sourceRoleLabel, ECEntityClassCR target, Utf8CP targetRoleLabel);
 
     //! Creates a new KindOfQuantity and adds it to the schema.
     //! @param[out] kindOfQuantity If successful, will contain a new KindOfQuantity object

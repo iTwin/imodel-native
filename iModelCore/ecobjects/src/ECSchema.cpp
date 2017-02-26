@@ -566,10 +566,14 @@ bool ECSchema::Validate(bool resolveIssues)
     for (ECClassP ecClass : GetClasses())
         {
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
-        if (nullptr == relClass)
+        if ((nullptr != relClass) && !relClass->Verify(resolveIssues))
+            {
+            isValid = false;
             continue;
-
-        if (!relClass->Verify(resolveIssues))
+            }
+        
+        ECEntityClassP entityClass = ecClass->GetEntityClassP();
+        if ((nullptr != entityClass) && !entityClass->Verify())
             isValid = false;
         }
 
@@ -834,7 +838,7 @@ ECObjectsStatus ECSchema::CreateMixinClass (ECEntityClassP& pClass, Utf8StringCR
         this->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
 
     auto& appliesToClassSchema = appliesTo.GetSchema();
-    if ((GetSchemaKey() != appliesToClassSchema.GetSchemaKey()) && !ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
+    if ((this != &appliesToClassSchema) && !ECSchema::IsSchemaReferenced(*this, appliesToClassSchema))
         {
         status = this->AddReferencedSchema(const_cast<ECSchemaR>(appliesToClassSchema));
         if (ECObjectsStatus::Success != status)
@@ -1080,6 +1084,50 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         pClass = NULL;
         LOG.errorv("Cannot create relationship class '%s' because it already exists in the schema", name.c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                    02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CreateRelationshipClass(ECRelationshipClassP& relationshipClass, Utf8StringCR name, ECEntityClassCR source, Utf8CP sourceRoleLabel, ECEntityClassCR target, Utf8CP targetRoleLabel)
+    {
+    ECObjectsStatus status = CreateRelationshipClass(relationshipClass, name);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    status = relationshipClass->GetSource().AddClass(source);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+        }
+
+    status = relationshipClass->GetSource().SetRoleLabel(sourceRoleLabel);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+        }
+    
+    status = relationshipClass->GetTarget().AddClass(target);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
+        }
+    
+    status = relationshipClass->GetTarget().SetRoleLabel(targetRoleLabel);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete relationshipClass;
+        relationshipClass = nullptr;
+        return status;
         }
 
     return ECObjectsStatus::Success;
