@@ -956,7 +956,11 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, SQL_ValidateDbMapping))
+        {
+        LOG.messagev(logSeverity, "Preparing db mapping validation SQL failed: %s", m_ecdb.GetLastError().c_str());
+        BeAssert(false);
         return ERROR;
+        }
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -967,7 +971,7 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
         const int issueType = stmt.GetValueInt(4);
         Utf8CP issueTypeDesc = stmt.GetValueText(5);
         Utf8CP issue = stmt.GetValueText(6);
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%d,\"%s\",\"%s\"",
+        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%d,%s,\"%s\"",
                              ecdbFileName, schemaName, schemaAlias,
                              className, tableName, issueType, issueTypeDesc, issue);
 

@@ -192,8 +192,10 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Point3d == 0x801 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
 
+//The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
+//them with another double quote
 #define SQL_ValidateDbMapping R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, 1, 'Multiple ECProperties mapped to same column',
-           json('{"column":"' || ec_Column.Name || '", "properties":[' || GROUP_CONCAT('"' || mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString || '"') || ']}')
+           '{""column"":""' || ec_Column.Name || '"", ""properties"":[' || GROUP_CONCAT('""' || mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString || '""') || ']}'
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
@@ -209,7 +211,7 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         UNION ALL
 
         SELECT mappedpropertyschema.Name, mappedpropertyschema.Alias, mappedpropertyclass.Name, ec_Table.Name, 2, 'ECProperty mapped to multiple columns',
-            json('{"property":"' || ec_PropertyPath.AccessString || '","columns":[' || GROUP_CONCAT(DISTINCT '"' || ec_Column.Name || '"') || ']}')
+            '{""property"":""' || ec_PropertyPath.AccessString || '"",""columns"":[' || GROUP_CONCAT(DISTINCT '""' || ec_Column.Name || '""') || ']}'
         FROM ec_PropertyMap
         INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
         INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
@@ -220,6 +222,6 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         " WHERE ec_Column.IsVirtual=" SQLVAL_False " AND " \
         "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") AND " \
         "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SourceECInstanceId "=0) AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_TargetECInstanceId "=0) " \
-        "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT (DISTINCT ec_Column.Id) > 1"
+        "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT(DISTINCT ec_Column.Id) > 1"
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
