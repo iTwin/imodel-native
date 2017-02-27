@@ -486,6 +486,8 @@ public:
 
     REALITYDATAPLATFORM_EXPORT time_t GetStartTime() { return m_startTime; }
 
+    REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
+
     void UpdateUploadedSize();
 
     REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
@@ -639,7 +641,7 @@ struct RealityDataServiceUpload : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
 
 protected:
-    void CreateUpload(Utf8String properties);
+    BentleyStatus CreateUpload(Utf8String properties);
     BentleyStatus ParseHandshakeResponse(Utf8String json);
 
 private:
@@ -753,34 +755,34 @@ public:
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, BentleyStatus& status);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request, BentleyStatus& status);
 
     //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, BentleyStatus& status);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file, BentleyStatus& status);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, BentleyStatus& status);
 
     //! Returns a list of RealityData objects that belongs to the enterprise.
     //! Notice that the enterprise is not usually provided and the enterprise of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request, BentleyStatus& status);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, BentleyStatus& status);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, BentleyStatus& status);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically

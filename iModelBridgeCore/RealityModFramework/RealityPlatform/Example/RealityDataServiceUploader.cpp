@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
     RealityDataService::SetServerComponents(server, version, repo, schema);*/
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
+    time_t time = std::time(nullptr);
 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, "Helsinki");
@@ -55,6 +56,8 @@ int main(int argc, char *argv[])
     if (upload->IsValidUpload())
         {
         UploadReport* ur = upload->Perform();
+        time_t time2 = std::time(nullptr);
+        time2 -= time;
         Utf8String report;
         ur->ToXml(report);
         std::cout << report << std::endl;

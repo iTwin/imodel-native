@@ -54,29 +54,31 @@ int main(int argc, char *argv[])
 
     RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
+    BentleyStatus status;
+
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
-    SpatialEntityPtr entity = RealityDataService::Request(*idReq);
+    SpatialEntityPtr entity = RealityDataService::Request(*idReq, status);
 
     std::cout << "Entity provenance for Id " << id << ":" << std::endl;
     std::cout << entity->GetName() << std::endl << std::endl;
 
 
     RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(projectId);
-    bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq);
+    bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, status);
 
     std::cout << "number of relationships found for projectId " << projectId << " :" << std::endl;
     std::cout << relationships.size() << std::endl;
 
 
     RealityDataFolderByIdRequest* folderReq = new RealityDataFolderByIdRequest(folderId);
-    RealityDataFolderPtr folder = RealityDataService::Request(*folderReq);
+    RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, status);
 
     std::cout << "folder found for Id " << folderId << " :" << std::endl;
     std::cout << folder->GetName() << std::endl;
 
 
     RealityDataDocumentByIdRequest* documentReq = new RealityDataDocumentByIdRequest(documentId);
-    RealityDataDocumentPtr document = RealityDataService::Request(*documentReq);
+    RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, status);
 
     std::cout << "document with Id " << documentId << " :" << std::endl;
     std::cout << document->GetName() << std::endl;
@@ -94,7 +96,7 @@ int main(int argc, char *argv[])
     strcpy(outfile, fileName.GetNameUtf8().c_str());
     FILE* file = fopen(outfile, "wb");
 
-    RealityDataService::Request(*contentRequest, file);
+    RealityDataService::Request(*contentRequest, file, status);
 
 
     bvector<Utf8String> filter1 = bvector<Utf8String>();
@@ -114,21 +116,21 @@ int main(int argc, char *argv[])
     filteredRequest->SetFilter(filters);
     filteredRequest->SortBy(RealityDataField::ModifiedTimestamp, true);
 
-    bvector<SpatialEntityPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest);
+    bvector<SpatialEntityPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
 
     std::cout << "Number of spatial entities found for filter : " << std::endl;
     std::cout << filteredSpatialEntities.size() << std::endl;
 
 
     RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
+    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
     std::cout << "Number of spatial entities found for enterprise" << enterpriseId << " :" << std::endl;
     std::cout << enterpriseVec.size() << std::endl;
 
 
     RealityDataProjectRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataProjectRelationshipByProjectIdPagedRequest(projectId);
-    bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq);
+    bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, status);
 
     std::cout << "Number of relationships found for project " << projectId << " :" << std::endl;
     std::cout << relationVec.size() << std::endl;

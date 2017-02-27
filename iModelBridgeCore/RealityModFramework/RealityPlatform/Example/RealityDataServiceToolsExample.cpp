@@ -174,7 +174,8 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
                 {
                 Utf8String repoName(subNode.GetRootId() + "~2F" + subNode.GetInstanceId());
                 repoName.ReplaceAll("/", "~2F");
-                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName));
+                BentleyStatus status;
+                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName), status);
                 std::cout << "  " << subNode.GetInstanceId() << 
                     std::setw(12) << " Size(KB): " << document->GetSize() <<
                     std::setw(16) << " ContentType: " << document->GetContentType() << std::endl;
@@ -237,8 +238,8 @@ void ListCmd()
         if (s_option & (OptSortGroup))
             enterpriseReq->SortBy(RealityDataField::Group, true);
 
-
-        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
+        BentleyStatus status;
+        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
         for (SpatialEntityPtr pData : enterpriseVec)
             {
@@ -269,7 +270,8 @@ void ListCmd()
 
             for (NavNode root : nodes)
                 {
-                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));
+                BentleyStatus status;
+                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
 
                 ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
                 }
@@ -279,7 +281,8 @@ void ListCmd()
     if (s_cmd == CmdListItem)
         {
         s_itemPath.ReplaceAll("/", "~2F");
-        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+        BentleyStatus status;
+        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
 
         std::cout << document->GetFolderId() << document->GetName() <<
             std::setw(12) << " Size(KB): " << document->GetSize() <<
@@ -298,7 +301,8 @@ void DownloadCmd()
     std::cout << "Downloading : ";
 
     s_itemPath.ReplaceAll("/", "~2F");
-    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+    BentleyStatus status;
+    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
 
     std::cout << document->GetId() << std::endl;
 
@@ -310,7 +314,7 @@ void DownloadCmd()
     if (0 != pFile)
         {
         RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
-        RealityDataService::Request(*contentRequest, pFile);
+        RealityDataService::Request(*contentRequest, pFile, status);
         fclose (pFile);
         std::cout << "  Done." << std::endl;
         }

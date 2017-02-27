@@ -280,7 +280,7 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         if (jsonObject["properties"].isMember("Key_InstanceId") && !jsonObject["properties"]["Key_InstanceId"].isNull())
             m_instanceId = jsonObject["properties"]["Key_InstanceId"].asCString();
         }
-    if(m_rootNode.length() == 0)
+    if(m_rootId.length() == 0)
         {
         m_rootNode = m_navString;
         m_rootId = m_instanceId;
@@ -340,7 +340,6 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         {
         navString.append("~2F");
         navString.append(parentNode.GetInstanceId());
-        navString.ReplaceAll("/", "~2F");
         }
     return GetChildNodes(server, repoId, navString);
     }
