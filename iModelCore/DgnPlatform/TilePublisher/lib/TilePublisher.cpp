@@ -345,23 +345,75 @@ void ColorIndex::ComputeDimensions(uint16_t nColors)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorIndex::Build(ColorIndexMap const& map)
+template<typename T> static void fillColorIndex(ByteStream& texture, ColorIndexMapCR map, uint16_t nColors, T getColorDef)
     {
+    constexpr size_t bytesPerColor = 4;
+    texture.Resize(bytesPerColor * nColors);
+
+    for (auto const& kvp : map)
+        {
+        ColorDef fill = getColorDef(kvp.first);
+        auto pColor = texture.GetDataP() + kvp.second * bytesPerColor;
+        pColor[0] = fill.GetRed();
+        pColor[1] = fill.GetGreen();
+        pColor[2] = fill.GetBlue();
+        pColor[3] = fill.GetAlpha();    // already inverted...
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorIndex::Build(TileMeshCR mesh, MeshMaterial const& mat)
+    {
+    // Possibilities:
+    //  - Material does not override color or alpha. Copy colors directly from ColorIndexMap
+    //      - ###TODO: If only one color in map, don't use indexed colors.
+    //  - Material overrides both color and alpha. Every vertex has same color. ###TODO: Don't use indexed colors in that case
+    //  - Material overrides RGB only. Vertices may have differing alphas. ###TODO: If alpha does not vary, don't use indexed colors.
+    //  - Material overrides alpha only. Vertices may have differing RGB values. ###TODO: If not the case, don't use indexed colors.
+    ColorIndexMapCR map = mesh.GetColorIndexMap();
     uint16_t nColors = map.GetNumIndices();
     ComputeDimensions(nColors);
     BeAssert(0 < m_width && 0 < m_height);
 
-    constexpr size_t bytesPerColor = 4;
-    m_texture.Resize(bytesPerColor * nColors);
-
-    for (auto const& kvp : map)
+    if (!mat.OverridesAlpha() && !mat.OverridesRgb())
         {
-        ColorDef fill(kvp.first);
-        auto pColor = m_texture.GetDataP() + kvp.second*bytesPerColor;
-        pColor[0] = fill.GetRed();
-        pColor[1] = fill.GetGreen();
-        pColor[2] = fill.GetBlue();
-        pColor[3] = 255 - fill.GetAlpha();
+        fillColorIndex(m_texture, map, nColors, [](uint32_t color)
+            {
+            ColorDef fill(color);
+            fill.SetAlpha(255 - fill.GetAlpha());
+            return fill;
+            });
+        }
+    else if (!mat.OverridesAlpha())
+        {
+        RgbFactor fRgb = mat.m_rgbOverride;
+        ColorDef rgb(static_cast<uint8_t>(fRgb.red*255), static_cast<uint8_t>(fRgb.green*255), static_cast<uint8_t>(fRgb.blue*255));
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color)
+            {
+            ColorDef input(color);
+            ColorDef output = rgb;
+            output.SetAlpha(255 - input.GetAlpha());
+            return output;
+            });
+        }
+    else if (!mat.OverridesRgb())
+        {
+        uint8_t alpha = 255 - static_cast<uint8_t>(mat.m_alphaOverride * 255);
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color)
+            {
+            ColorDef def(color);
+            def.SetAlpha(alpha);
+            return def;
+            });
+        }
+    else
+        {
+        uint8_t alpha = 255 - static_cast<uint8_t>(mat.m_alphaOverride * 255);
+        RgbFactor fRgb = mat.m_rgbOverride;
+        ColorDef rgba(static_cast<uint8_t>(fRgb.red*255), static_cast<uint8_t>(fRgb.green*255), static_cast<uint8_t>(fRgb.blue*255), alpha);
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color) { return rgba; });
         }
     }
 
@@ -1292,32 +1344,30 @@ static void addTransparencyToTechnique (Json::Value& technique)
     techniqueFunctions["depthMask"] = "false";
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds)
+Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMaterial const& mat, bool doBatchIds)
     {
-    Utf8String  prefix = textured ? "textured" : "untextured";
+    Utf8String prefix = mat.IsTextured() ? "Textured" : "Untextured";
+    if (mat.HasTransparency())
+        prefix.append("Transparent");
 
-    if (transparent)
-        prefix = prefix + "Transparent";
+    if (mat.IgnoresLighting())
+        prefix.append("Unlit");
 
-    if (ignoreLighting)
-        prefix = prefix + "Unlit";
+    Utf8String techniqueName(prefix);
+    techniqueName.append("Technique");
 
-    Utf8String  techniqueName = prefix + "Technique";
-    
-    if (tileData.m_json.isMember("techniques") &&
-        tileData.m_json["techniques"].isMember(techniqueName.c_str()))
+    if (data.m_json.isMember("techniques") && data.m_json["techniques"].isMember(techniqueName.c_str()))
         return techniqueName;
 
-    Json::Value     technique = Json::objectValue;
+    Json::Value technique(Json::objectValue);
 
     AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         {
         AddTechniqueParameter(technique, "n", GLTF_INT_VEC2, "NORMAL");
         AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
@@ -1326,7 +1376,9 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    if (!textured)
+    // ###TODO: Do not use indexed colors if only one color.
+    // ###TODO: Optimize indexed color lookup for 1D LUT.
+    if (!mat.IsTextured())
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
     Utf8String         programName               = prefix + "Program";
@@ -1347,47 +1399,48 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
     if (doBatchIds)
         techniqueAttributes["a_batchId"] = "batch";
 
-    if (!textured)
+    if (!mat.IsTextured())
         techniqueAttributes["a_colorIndex"] = "colorIndex";
 
-    if(!ignoreLighting)
+    if(!mat.IgnoresLighting())
         techniqueAttributes["a_n"] = "n";
 
     auto& techniqueUniforms = technique["uniforms"];
     techniqueUniforms["u_mv"] = "mv";
     techniqueUniforms["u_proj"] = "proj";
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         techniqueUniforms["u_nmx"] = "nmx";
 
-    auto& rootProgramNode = (tileData.m_json["programs"][programName.c_str()] = Json::objectValue);
+    auto& rootProgramNode = (data.m_json["programs"][programName.c_str()] = Json::objectValue);
     rootProgramNode["attributes"] = Json::arrayValue;
     AppendProgramAttribute(rootProgramNode, "a_pos");
+
     if (doBatchIds)
         AppendProgramAttribute(rootProgramNode, "a_batchId");
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         AppendProgramAttribute(rootProgramNode, "a_n");
 
     rootProgramNode["vertexShader"]   = vertexShader.c_str();
     rootProgramNode["fragmentShader"] = fragmentShader.c_str();
 
-    auto& shaders = tileData.m_json["shaders"];
+    auto& shaders = data.m_json["shaders"];
     AddShader(shaders, vertexShader.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferView.c_str());
     AddShader(shaders, fragmentShader.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferView.c_str());
 
     std::string batchIdString = doBatchIds ? s_batchIdShaderAttribute : std::string();
-    std::string vertexShaderString = s_shaderPrecision + batchIdString + (ignoreLighting ? s_unlitTextureVertexShader  : (textured ? s_texturedVertexShader : s_untexturedVertexShader));
+    std::string vertexShaderString = s_shaderPrecision + batchIdString + (mat.IgnoresLighting() ? s_unlitTextureVertexShader : (mat.IsTextured() ? s_texturedVertexShader : s_untexturedVertexShader));
 
-    tileData.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
-    tileData.AddBufferView(fragmentShaderBufferView.c_str(), ignoreLighting ? s_unlitTextureFragmentShader: (textured ? s_texturedFragShader    : s_untexturedFragShader)); 
+    data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
+    data.AddBufferView(fragmentShaderBufferView.c_str(), mat.IgnoresLighting() ? s_unlitTextureFragmentShader : (mat.IsTextured() ? s_texturedFragShader : s_untexturedFragShader)); 
 
     // Diffuse...
-    if (textured)
+    if (mat.IsTextured())
         {
         AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
         AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
 
-        tileData.m_json["samplers"]["sampler_0"] = Json::objectValue;
-        tileData.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
+        data.m_json["samplers"]["sampler_0"] = Json::objectValue;
+        data.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
 
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
@@ -1400,7 +1453,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
         AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
 
-        auto& sampler = tileData.m_json["samplers"]["sampler_1"];
+        auto& sampler = data.m_json["samplers"]["sampler_1"];
         sampler["minFilter"] = GLTF_NEAREST;
         sampler["maxFilter"] = GLTF_NEAREST;
         sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
@@ -1412,7 +1465,8 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         technique["attributes"]["a_colorIndex"] = "colorIndex";
         AppendProgramAttribute(rootProgramNode, "a_colorIndex");
         }
-    if (!ignoreLighting)
+
+    if (!mat.IgnoresLighting())
        {
         // Specular...
         AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
@@ -1423,104 +1477,125 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
         }
 
     // Transparency requires blending extensions...
-    if (transparent)
+    if (mat.HasTransparency())
         addTransparencyToTechnique (technique);
 
-    tileData.m_json["techniques"][techniqueName.c_str()] = technique;
+    data.m_json["techniques"][techniqueName.c_str()] = technique;
 
     return techniqueName;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
+    : m_name(Utf8String("Material_")+suffix)
     {
-    Utf8String      materialName = Utf8String ("Material_") + suffix;
+    BeAssert(nullptr != mesh.GetDisplayParams());
+    TileDisplayParamsCR params = *mesh.GetDisplayParams();
+    m_ignoreLighting = params.GetIgnoreLighting();
 
-    if (nullptr == displayParams)
-        return materialName;
+    params.ResolveTextureImage(db);
+    m_texture = params.GetTextureImage();
 
+    uint32_t rgbInt = params.GetFillColor();
+    double alpha = 1.0 - ((uint8_t*)&rgbInt)[3] / 255.0;
 
-    RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
-    double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-    uint32_t        rgbInt  = displayParams->GetFillColor();
-    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-    Json::Value&    materialValue = tileData.m_json["materials"][materialName.c_str()] = Json::objectValue;
-    bool            isUnlit = displayParams->GetIgnoreLighting();
-    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
-
-    if (!isUnlit && displayParams->GetMaterialId().IsValid())
+    if (!m_ignoreLighting && params.GetMaterialId().IsValid())
         {
-        auto jsonMaterial = RenderingAsset::Load(displayParams->GetMaterialId(), m_context.GetDgnDb());
-
-        if (nullptr != jsonMaterial)
+        auto jsonMat = RenderingAsset::Load(params.GetMaterialId(), db);
+        if (nullptr != jsonMat)
             {
-            static double       s_finishScale = 15.0;
+            m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
+            m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
-                specularColor = jsonMaterial->GetColor (RENDER_MATERIAL_SpecularColor);
+            if (m_overridesRgb)
+                m_rgbOverride = jsonMat->GetColor(RENDER_MATERIAL_Color);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasFinish, false))
-                specularExponent = jsonMaterial->GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+            if (m_overridesAlpha)
+                {
+                m_alphaOverride = jsonMat->GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+                alpha = m_alphaOverride;
+                }
+            else if (m_overridesRgb)
+                {
+                // Apparently overriding RGB without specifying transmit => opaque.
+                m_alphaOverride = 1.0;
+                alpha = m_alphaOverride;
+                m_overridesAlpha = true;
+                }
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
-                rgb = jsonMaterial->GetColor (RENDER_MATERIAL_Color);
+            if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasSpecularColor, false))
+                m_specularColor = jsonMat->GetColor(RENDER_MATERIAL_SpecularColor);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
-                alpha = 1.0 - jsonMaterial->GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+            constexpr double s_finishScale = 15.0;
+            if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasFinish, false))
+                m_specularExponent = jsonMat->GetDouble(RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
 
-            DgnMaterialCPtr material = DgnMaterial::Get(m_context.GetDgnDb(), displayParams->GetMaterialId());
-
-            if (material.IsValid())
-                materialValue["name"] = material->GetMaterialName().c_str();
-
-            materialValue["materialId"] = displayParams->GetMaterialId().ToString();
+            m_material = DgnMaterial::Get(db, params.GetMaterialId());
             }
         }
 
-    TileTextureImageCP      textureImage = nullptr;
+    if (IsTextured() || m_overridesAlpha)
+        m_hasAlpha = alpha < 1.0;
+    else
+        m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+    }
 
-    displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (false != (isTextured = (nullptr != (textureImage = displayParams->GetTextureImage()))))
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    MeshMaterial mat(mesh, suffix, m_context.GetDgnDb());
+
+    Json::Value& matJson = tileData.m_json["materials"][mat.m_name.c_str()];
+
+    auto matId = mesh.GetDisplayParams()->GetMaterialId();
+    if (matId.IsValid())
+        matJson["materialId"] = matId.ToString(); // Do we actually use this?
+
+    if (mat.m_material.IsValid())
+        matJson["name"] = mat.m_material->GetMaterialName().c_str();
+
+    if (mat.IsTextured())
         {
-        materialValue["technique"] = AddMeshShaderTechnique (tileData, true, alpha < 1.0, displayParams->GetIgnoreLighting(), doBatchIds).c_str();
-        materialValue["values"]["tex"] = AddTextureImage (tileData, *textureImage, mesh, suffix);
+        matJson["technique"] = AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
+        matJson["values"]["tex"] = AddTextureImage(tileData, *mat.m_texture, mesh, suffix);
         }
     else
         {
-        ColorIndex colorIndex(&mesh.GetColorIndexMap());
-        materialValue["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
-
-        bool hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+        // ###TODO: Don't use indexed colors if only one color
+        ColorIndex colorIndex(mesh, mat);
+        matJson["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
         uint16_t width = colorIndex.GetWidth();
         double stepX = 1.0 / width;
         double stepY = 1.0 / colorIndex.GetHeight();
 
-        materialValue["values"]["texWidth"] = width;
-        auto& texStep = materialValue["values"]["texStep"] = Json::arrayValue;
+        // ###TODO: Simplify texture coord computation for 1d texture
+        matJson["values"]["texWidth"] = width;
+        auto& texStep = matJson["values"]["texStep"] = Json::arrayValue;
         texStep.append(stepX);
         texStep.append(stepX * 0.5);    // centerX
         texStep.append(stepY);
         texStep.append(stepY * 0.5);    // centerY
 
-        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, false, hasAlpha, false, doBatchIds).c_str();
+        matJson["technique"] = mat.m_ignoreLighting ? AddUnlitShaderTechnique(tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
         }
 
-    if (! isUnlit)
+    if (!mat.m_ignoreLighting)
         {
-        materialValue["values"]["specularExponent"] = specularExponent;
+        matJson["values"]["specularExponent"] = mat.m_specularExponent;
 
-        auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
-        materialSpecularColor.append (specularColor.red);
-        materialSpecularColor.append (specularColor.green);
-        materialSpecularColor.append (specularColor.blue);
+        auto& specColor = matJson["values"]["specularColor"];
+        specColor.append(mat.m_specularColor.red);
+        specColor.append(mat.m_specularColor.green);
+        specColor.append(mat.m_specularColor.blue);
         }
-    return materialName;
-    }
 
+    return mat;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1792,7 +1867,6 @@ void TilePublisher::AddMeshColors(PublishTileData& tileData, Json::Value& primit
     Utf8String bvColor = Concat("bvColorIndex_", idStr),
                accColor = Concat("accColorIndex_", idStr);
 
-    //primitive["attributes"]["colorIndex"] = accColor;
     primitive["attributes"]["_COLORINDEX"] = accColor;
 
     auto nColorBytes = colorIds.size() * sizeof(uint16_t);
@@ -1892,10 +1966,10 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         {
         for (auto const& tri : mesh.Triangles())
             {
-           indices.push_back(tri.m_indices[0]);
-           indices.push_back(tri.m_indices[1]);
-           indices.push_back(tri.m_indices[2]);
-           }
+            indices.push_back(tri.m_indices[0]);
+            indices.push_back(tri.m_indices[1]);
+            indices.push_back(tri.m_indices[2]);
+            }
         }
 
     Json::Value         primitive = Json::objectValue;
@@ -1904,14 +1978,15 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         AddMeshBatchIds(tileData, primitive, mesh.Attributes(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
-    bool            isTextured = false;
 
-    primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), doBatchIds);
+    MeshMaterial meshMat = AddMeshMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
+    primitive["material"] = meshMat.m_name;
     primitive["mode"] = GLTF_TRIANGLES;
 
     Utf8String      accPositionId =  AddMeshVertexAttributes (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"] = accPositionId;
 
+    bool isTextured = meshMat.IsTextured();
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
         {
@@ -1921,7 +1996,18 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 
     BeAssert(isTextured == mesh.Colors().empty());
     if (!mesh.Colors().empty() && !isTextured)
-        AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
+        {
+        if (meshMat.OverridesAlpha() && meshMat.OverridesRgb())
+            {
+            // ###TODO: Should just pass color as a uniform...
+            bvector<uint16_t> colorIds(mesh.Colors().size(), 0);
+            AddMeshColors(tileData, primitive, colorIds, idStr);
+            }
+        else
+            {
+            AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
+            }
+        }
 
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).

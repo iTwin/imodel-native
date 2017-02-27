@@ -28,6 +28,8 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
+struct MeshMaterial;
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -39,12 +41,11 @@ private:
     uint16_t        m_height = 0;
 
     void ComputeDimensions(uint16_t nColors);
-    void Build(ColorIndexMap const& map);
+    void Build(TileMeshCR mesh, MeshMaterial const& mat);
 public:
-    explicit ColorIndex(ColorIndexMap const* map)
+    ColorIndex(TileMeshCR mesh, MeshMaterial const& mat)
         {
-        if (nullptr != map && !map->empty())
-            Build(*map);
+        Build(mesh, mat);
         }
 
     ByteStream const& GetTexture() const { return m_texture; }
@@ -68,6 +69,35 @@ struct  PublishTileData
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct MeshMaterial
+{
+    static constexpr double GetSpecularFinish() { return 0.9; }
+    static constexpr double GetSpecularExponentMult() { return 48.0; }
+
+    Utf8String              m_name;
+    TileTextureImageCPtr    m_texture;
+    DgnMaterialCPtr         m_material;
+    RgbFactor               m_rgbOverride;
+    RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
+    double                  m_alphaOverride;
+    double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
+    bool                    m_hasAlpha;
+    bool                    m_overridesAlpha = false;
+    bool                    m_overridesRgb = false;
+    bool                    m_ignoreLighting;
+
+    MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db);
+
+    bool IsTextured() const { return m_texture.IsValid(); }
+    bool HasTransparency() const { return m_hasAlpha; }
+    bool IgnoresLighting() const { return m_ignoreLighting; }
+    bool OverridesAlpha() const { return m_overridesAlpha; }
+    bool OverridesRgb() const { return m_overridesRgb; }
 };
 
 //=======================================================================================
@@ -244,12 +274,12 @@ private:
     void AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colors, Utf8StringCR idStr);
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
-    Utf8String AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds);
+    Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
     Utf8String AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds);
     void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
 
-    Utf8String AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
+    MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
