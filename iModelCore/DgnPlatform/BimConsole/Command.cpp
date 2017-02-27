@@ -718,12 +718,6 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
             }
 
-        for (Utf8StringR token : tokens)
-            {
-            token.ReplaceAll("[", "(");
-            token.ReplaceAll("]", ")");
-            }
-
         if (isFirstLine)
             {
             columnCount = (int) tokens.size();
@@ -1613,7 +1607,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         if (issueCount == 1)
             {
             //write header line
-            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, IssueType, IssueTypeDescription, Issue", true))
+            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Issue Type, Issue Type Description, Issue", true))
                 {
                 BimConsole::WriteErrorLine("Failed to write header line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
                 return;
@@ -1621,7 +1615,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
             }
 
         Utf8String csvLine;
-        csvLine.Sprintf("%s,%s,%s,%s,%d,\"%s\",\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
+        csvLine.Sprintf("%s,%s,%s,%s,%d,%s,\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
                         stmt.GetValueInt(4), stmt.GetValueText(5), stmt.GetValueText(6));
         if (TextFileWriteStatus::Success != csvFile->PutLine(WString(csvLine.c_str(), BentleyCharEncoding::Utf8).c_str(), true))
             {
