@@ -2338,7 +2338,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     ECClassCP appliesToClass = resolvedSchema->GetClassCP(className.c_str());
     if (nullptr == appliesToClass)
         {
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), resolvedSchema->GetFullSchemaName());
+        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), resolvedSchema->GetFullSchemaName().c_str());
         return nullptr;
         }
 
