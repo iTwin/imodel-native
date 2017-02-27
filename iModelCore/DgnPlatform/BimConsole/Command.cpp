@@ -1599,21 +1599,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
     BeAssert(csvFile != nullptr);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(),
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
-        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString,'|') || ']'
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=0 AND (ec_Column.ColumnKind & 128=128)
-        GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1)sql"))
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), ECDbSchemaManager::GetValidateDbMappingSql()))
         {
         BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -1627,7 +1613,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         if (issueCount == 1)
             {
             //write header line
-            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Column, Mapped ECProperties", true))
+            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, IssueType, IssueTypeDescription, Issue", true))
                 {
                 BimConsole::WriteErrorLine("Failed to write header line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
                 return;
@@ -1635,8 +1621,8 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
             }
 
         Utf8String csvLine;
-        csvLine.Sprintf("%s,%s,%s,%s,%s,%s", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
-                        stmt.GetValueText(4), stmt.GetValueText(5));
+        csvLine.Sprintf("%s,%s,%s,%s,%d,\"%s\",\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
+                        stmt.GetValueInt(4), stmt.GetValueText(5), stmt.GetValueText(6));
         if (TextFileWriteStatus::Success != csvFile->PutLine(WString(csvLine.c_str(), BentleyCharEncoding::Utf8).c_str(), true))
             {
             BimConsole::WriteErrorLine("Failed to write line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
