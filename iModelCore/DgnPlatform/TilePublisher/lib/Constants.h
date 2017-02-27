@@ -109,8 +109,8 @@ static std::string s_texturedVertexShader = R"RAW_STRING(
     }
 )RAW_STRING";
 
-// Indexed colors for untextured meshes - 2d texture lookup. Could optimize for 1d texture lookup.
-static std::string s_indexedColor = R"RAW_STRING(
+// Indexed colors for untextured meshes - 2d texture lookup.
+static std::string s_indexedColor2d = R"RAW_STRING(
     attribute float a_colorIndex;
     uniform float u_texWidth;
     uniform vec4 u_texStep;
@@ -130,8 +130,30 @@ static std::string s_indexedColor = R"RAW_STRING(
         }
 )RAW_STRING";
 
-static std::string s_untexturedVertexShader =
-s_indexedColor
+// Indexed colors for untextured meshes - 1d texture lookup.
+static std::string s_indexedColor1d = R"RAW_STRING(
+    attribute float a_colorIndex;
+    uniform vec2 u_texStep;
+    uniform sampler2D u_tex;
+    varying vec4 v_color;
+
+    vec2 computeColorSt(float colorIndex)
+        {
+        float stepX = u_texStep.x;
+        float centerX = u_texStep.y;
+        return vec2(centerX + (colorIndex * stepX), 0.5);
+        }
+)RAW_STRING";
+
+static std::string s_untexturedVertexShader2d =
+s_indexedColor2d
++ s_litVertexCommon + R"RAW_STRING(
+        v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
+        }
+)RAW_STRING";
+
+static std::string s_untexturedVertexShader1d =
+s_indexedColor1d
 + s_litVertexCommon + R"RAW_STRING(
         v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
         }
@@ -229,12 +251,26 @@ static std::string s_unlitTextureFragmentShader = R"RAW_STRING(
 
 
 // Unlit shaders....
-static std::string s_unlitVertexShader = R"RAW_STRING(
+static std::string s_unlitVertexShader2d = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
 )RAW_STRING"
-+ s_indexedColor + R"RAW_STRING(
++ s_indexedColor2d + R"RAW_STRING(
+    void main(void)
+        {
+        gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        v_color = texture2D(u_tex, computeColorSt(a_colorIndex));
+        }
+)RAW_STRING";
+
+// Unlit shaders....
+static std::string s_unlitVertexShader1d = R"RAW_STRING(
+    attribute vec3 a_pos;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+)RAW_STRING"
++ s_indexedColor1d + R"RAW_STRING(
     void main(void)
         {
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
@@ -324,10 +360,5 @@ static double const s_qvExponentMultiplier  = 48.0,
 
 
 static const WCharCP s_metadataExtension        = L"json";
-
-
-
-
-
 
 

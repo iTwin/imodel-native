@@ -35,6 +35,13 @@ struct MeshMaterial;
 //=======================================================================================
 struct ColorIndex
 {
+    enum class Dimension : uint8_t
+    {
+        Zero = 0,   // uniform color
+        One,        // only one row
+        Two,        // more than one row
+        None,       // empty
+    };
 private:
     ByteStream      m_texture;
     uint16_t        m_width = 0;
@@ -48,12 +55,24 @@ public:
         Build(mesh, mat);
         }
 
+    static constexpr uint16_t GetMaxWidth() { return 256; }
+
     ByteStream const& GetTexture() const { return m_texture; }
     Image ExtractImage() { return Image(GetWidth(), GetHeight(), std::move(m_texture), Image::Format::Rgba); }
 
     uint16_t GetWidth() const { return m_width; }
     uint16_t GetHeight() const { return m_height; }
     bool empty() const { return m_texture.empty(); }
+
+    Dimension GetDimension() const
+        {
+        if (empty())
+            return Dimension::None;
+        else if (GetHeight() > 1)
+            return Dimension::Two;
+        else
+            return GetWidth() > 1 ? Dimension::One : Dimension::Zero;
+        }
 };
 
 //=======================================================================================
@@ -86,6 +105,7 @@ struct MeshMaterial
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
     double                  m_alphaOverride;
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
+    ColorIndex::Dimension   m_colorDimension = ColorIndex::Dimension::None;
     bool                    m_hasAlpha;
     bool                    m_overridesAlpha = false;
     bool                    m_overridesRgb = false;
@@ -98,6 +118,9 @@ struct MeshMaterial
     bool IgnoresLighting() const { return m_ignoreLighting; }
     bool OverridesAlpha() const { return m_overridesAlpha; }
     bool OverridesRgb() const { return m_overridesRgb; }
+    ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
+
+    std::string const& GetVertexShaderString() const;
 };
 
 //=======================================================================================

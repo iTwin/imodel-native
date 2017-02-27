@@ -327,9 +327,8 @@ void ColorIndex::ComputeDimensions(uint16_t nColors)
     // Minimum texture size in WebGL is 64x64. For 16-bit color indices, we need at least 256x256.
     // At the risk of pessimization, let's not assume more than that.
     // Let's assume non-power-of-2 textures are not a big deal (we're not mipmapping them or anything).
-    constexpr uint16_t maxDim = 256;
     uint16_t height = 1;
-    uint16_t width = std::min(nColors, maxDim);
+    uint16_t width = std::min(nColors, GetMaxWidth());
     if (width < nColors)
         {
         height = nColors / width;
@@ -1244,6 +1243,7 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds)
     {
+#if defined TODO_UNLIT_SHADERS
     Utf8String      s_techniqueName = "unlitTechnique";
 
     if (tileData.m_json.isMember("techniques") &&
@@ -1318,6 +1318,10 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bo
     tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
 
     return s_techniqueName;
+#else
+    BeAssert(false);
+    return "";
+#endif
     }
 
 
@@ -1427,8 +1431,12 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     AddShader(shaders, vertexShader.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferView.c_str());
     AddShader(shaders, fragmentShader.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferView.c_str());
 
-    std::string batchIdString = doBatchIds ? s_batchIdShaderAttribute : std::string();
-    std::string vertexShaderString = s_shaderPrecision + batchIdString + (mat.IgnoresLighting() ? s_unlitTextureVertexShader : (mat.IsTextured() ? s_texturedVertexShader : s_untexturedVertexShader));
+    bool color2d = false;
+    std::string vertexShaderString = s_shaderPrecision;
+    if (doBatchIds)
+        vertexShaderString.append(s_batchIdShaderAttribute);
+
+    vertexShaderString.append(mat.GetVertexShaderString());
 
     data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
     data.AddBufferView(fragmentShaderBufferView.c_str(), mat.IgnoresLighting() ? s_unlitTextureFragmentShader : (mat.IsTextured() ? s_texturedFragShader : s_untexturedFragShader)); 
@@ -1450,8 +1458,16 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
         {
         AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
-        AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
-        AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+
+        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+            {
+            AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
+            AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+            }
+        else
+            {
+            AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC2, nullptr);
+            }
 
         auto& sampler = data.m_json["samplers"]["sampler_1"];
         sampler["minFilter"] = GLTF_NEAREST;
@@ -1460,7 +1476,10 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
         sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
 
         techniqueUniforms["u_tex"] = "tex";
-        techniqueUniforms["u_texWidth"] = "texWidth";
+
+        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+            techniqueUniforms["u_texWidth"] = "texWidth";
+
         techniqueUniforms["u_texStep"] = "texStep";
         technique["attributes"]["a_colorIndex"] = "colorIndex";
         AppendProgramAttribute(rootProgramNode, "a_colorIndex");
@@ -1540,6 +1559,49 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
         m_hasAlpha = alpha < 1.0;
     else
         m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
+
+    if (!IsTextured())
+        {
+        if (m_overridesAlpha && m_overridesRgb)
+            m_colorDimension = ColorIndex::Dimension::Zero;
+        else
+            m_colorDimension = mesh.GetColorIndexMap().GetNumIndices() > ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::Two : ColorIndex::Dimension::One;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& MeshMaterial::GetVertexShaderString() const
+    {
+    if (IgnoresLighting())
+        {
+        switch (GetColorIndexDimension())
+            {
+            case ColorIndex::Dimension::None:
+                return s_unlitTextureVertexShader;
+            case ColorIndex::Dimension::Zero:
+                // ###TODO: Optimize for uniform color
+            case ColorIndex::Dimension::One:
+                return s_unlitVertexShader1d;
+            default:
+                BeAssert(ColorIndex::Dimension::Two == GetColorIndexDimension());
+                return s_unlitVertexShader2d;
+            }
+        }
+
+    switch (GetColorIndexDimension())
+        {
+        case ColorIndex::Dimension::None:
+            return s_texturedVertexShader;
+        case ColorIndex::Dimension::Zero:
+            // ###TODO: Optimize for uniform color
+        case ColorIndex::Dimension::One:
+            return s_untexturedVertexShader1d;
+        default:
+            BeAssert(ColorIndex::Dimension::Two == GetColorIndexDimension());
+            return s_untexturedVertexShader2d;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1574,12 +1636,17 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
         double stepY = 1.0 / colorIndex.GetHeight();
 
         // ###TODO: Simplify texture coord computation for 1d texture
-        matJson["values"]["texWidth"] = width;
         auto& texStep = matJson["values"]["texStep"] = Json::arrayValue;
         texStep.append(stepX);
         texStep.append(stepX * 0.5);    // centerX
-        texStep.append(stepY);
-        texStep.append(stepY * 0.5);    // centerY
+
+        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+            {
+            texStep.append(stepY);
+            texStep.append(stepY * 0.5);    // centerY
+
+            matJson["values"]["texWidth"] = width;
+            }
 
         matJson["technique"] = mat.m_ignoreLighting ? AddUnlitShaderTechnique(tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
         }
