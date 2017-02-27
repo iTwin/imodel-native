@@ -121,6 +121,8 @@ struct MeshMaterial
     ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
 
     std::string const& GetVertexShaderString() const;
+    std::string const& GetFragmentShaderString() const;
+    Utf8String GetTechniqueNamePrefix() const;
 };
 
 //=======================================================================================
@@ -298,7 +300,6 @@ private:
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
-    Utf8String AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds);
     void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
 

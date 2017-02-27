@@ -1238,93 +1238,6 @@ Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& c
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds)
-    {
-#if defined TODO_UNLIT_SHADERS
-    Utf8String      s_techniqueName = "unlitTechnique";
-
-    if (tileData.m_json.isMember("techniques") &&
-        tileData.m_json["techniques"].isMember(s_techniqueName.c_str()))
-        return s_techniqueName;
-
-    Json::Value     technique = Json::objectValue;
-
-    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
-    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
-    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
-
-    static char const   *s_programName                    = "unlitProgram",
-                        *s_vertexShaderName               = "unlitVertexShader",
-                        *s_fragmentShaderName             = "unlitFragmentShader",
-                        *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
-                        *s_fragmentShaderBufferViewName   = "unlitFragmentShaderBufferView";
-
-    technique["program"] = s_programName;
-
-    auto&   techniqueStates = technique["states"];
-    techniqueStates["enable"] = Json::arrayValue;
-    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
-
-    auto& techniqueAttributes = technique["attributes"];
-    techniqueAttributes["a_pos"] = "pos";
-    if (doBatchIds)
-        techniqueAttributes["a_batchId"] = "batch";
-
-    auto& techniqueUniforms = technique["uniforms"];
-    techniqueUniforms["u_mv"] = "mv";
-    techniqueUniforms["u_proj"] = "proj";
-
-    auto& rootProgramNode = (tileData.m_json["programs"][s_programName] = Json::objectValue);
-    rootProgramNode["attributes"] = Json::arrayValue;
-    AppendProgramAttribute(rootProgramNode, "a_pos");
-
-    if (doBatchIds)
-        AppendProgramAttribute(rootProgramNode, "a_batchId");
-
-    rootProgramNode["vertexShader"]   = s_vertexShaderName;
-    rootProgramNode["fragmentShader"] = s_fragmentShaderName;
-
-    auto& shaders = tileData.m_json["shaders"];
-    AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
-    AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
-
-    std::string vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_unlitVertexShader;
-
-    tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
-    tileData.AddBufferView(s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
-
-    AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
-    AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
-    AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
-    AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
-
-    techniqueUniforms["u_tex"] = "tex";
-    techniqueUniforms["u_texWidth"] = "texWidth";
-    techniqueUniforms["u_texStep"] = "texStep";
-    techniqueAttributes["a_colorIndex"] = "colorIndex";
-    AppendProgramAttribute(rootProgramNode, "a_colorIndex");
-
-    auto& sampler = tileData.m_json["samplers"]["sampler_1"];
-    sampler["minFilter"] = GLTF_NEAREST;
-    sampler["maxFilter"] = GLTF_NEAREST;
-    sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
-    sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
-
-    tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
-
-    return s_techniqueName;
-#else
-    BeAssert(false);
-    return "";
-#endif
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void addTransparencyToTechnique (Json::Value& technique)
@@ -1352,15 +1265,7 @@ static void addTransparencyToTechnique (Json::Value& technique)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMaterial const& mat, bool doBatchIds)
     {
-    Utf8String prefix = mat.IsTextured() ? "Textured" : "Untextured";
-    if (mat.HasTransparency())
-        prefix.append("Transparent");
-
-    if (mat.IgnoresLighting())
-        prefix.append("Unlit");
-
-    prefix.append(std::to_string(static_cast<uint8_t>(mat.GetColorIndexDimension())).c_str());
-
+    Utf8String prefix = mat.GetTechniqueNamePrefix();
     Utf8String techniqueName(prefix);
     techniqueName.append("Technique");
 
@@ -1438,7 +1343,8 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     vertexShaderString.append(mat.GetVertexShaderString());
 
     data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
-    data.AddBufferView(fragmentShaderBufferView.c_str(), mat.IgnoresLighting() ? s_unlitTextureFragmentShader : (mat.IsTextured() ? s_texturedFragShader : s_untexturedFragShader)); 
+    data.AddBufferView(fragmentShaderBufferView.c_str(), mat.GetFragmentShaderString());
+
     // Diffuse...
     if (mat.IsTextured())
         {
@@ -1614,6 +1520,34 @@ std::string const& MeshMaterial::GetVertexShaderString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& MeshMaterial::GetFragmentShaderString() const
+    {
+    if (IsTextured())
+        return IgnoresLighting() ? s_unlitTextureFragmentShader : s_texturedFragShader;
+    else
+        return IgnoresLighting() ? s_unlitFragmentShader : s_untexturedFragShader;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String MeshMaterial::GetTechniqueNamePrefix() const
+    {
+    Utf8String prefix = IsTextured() ? "Textured" : "Untextured";
+    if (HasTransparency())
+        prefix.append("Transparent");
+
+    if (IgnoresLighting())
+        prefix.append("Unlit");
+
+    prefix.append(std::to_string(static_cast<uint8_t>(GetColorIndexDimension())).c_str());
+
+    return prefix;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
     {
     MeshMaterial mat(mesh, suffix, m_context.GetDgnDb());
@@ -1670,7 +1604,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
             matColor.append(1.0 - alpha);
             }
 
-        matJson["technique"] = mat.m_ignoreLighting ? AddUnlitShaderTechnique(tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
+        matJson["technique"] = AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
         }
 
     if (!mat.m_ignoreLighting)
