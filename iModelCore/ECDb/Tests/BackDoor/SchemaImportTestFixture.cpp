@@ -85,21 +85,7 @@ bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
         return true;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
-        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString,'|') || ']'
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=0 AND (ec_Column.ColumnKind & 128=128)
-        GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1)sql"))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,ECDbSchemaManager::GetValidateDbMappingSql()))
         {
         EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
         return true;
@@ -109,8 +95,8 @@ bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
     while (BE_SQLITE_ROW == stmt.Step())
         {
         hasError = true;
-        LOG.errorv("ECClass '%s:%s' with invalid mapping. Multiple properties map to the same column: %s:%s | %s", stmt.GetValueText(0),
-                   stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueText(4));
+        LOG.errorv("ECClass '%s:%s' with invalid mapping: %s. Table name: %s - %s", stmt.GetValueText(0),
+                   stmt.GetValueText(2), stmt.GetValueText(5), stmt.GetValueText(3), stmt.GetValueText(6));
         }
 
     return hasError;

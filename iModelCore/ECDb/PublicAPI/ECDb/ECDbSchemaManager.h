@@ -201,6 +201,12 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
+        //! Only use this until we solved handling legacy v8 class inheritance issues when BISifying v8 ECSchemas.
+        //! Gets the SQLite SELECT SQL statement to detect those issues. The SELECT clause of the SQL has these columns:
+        //! ECSchema Name, ECSchema Alias, ECClass Name, Table Name, Issue Type (INT), Issue Type Description, Issue (JSON)
+        //! @return SQLite Validate SELECT SQL
+        ECDB_EXPORT static Utf8CP GetValidateDbMappingSql();
+
         void ClearCache() const;
         ECDbSchemaReader const& GetReader() const;
         ECDbMap const& GetDbMap() const;

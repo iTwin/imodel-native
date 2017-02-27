@@ -69,6 +69,7 @@ struct ECDbMap :NonCopyableClass
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
