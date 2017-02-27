@@ -357,6 +357,8 @@ DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) { return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP()); }
 
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
+Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
+Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
 int         Statement::GetColumnCount()         {return sqlite3_column_count(m_stmt);}
 int         Statement::GetColumnBytes(int col)  {return sqlite3_column_bytes(m_stmt, col);}
 int         Statement::GetColumnBytes16(int col){return sqlite3_column_bytes16(m_stmt, col);}
@@ -367,9 +369,6 @@ int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stm
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
 BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
-int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
-Utf8CP      Statement::GetColumnDeclaredType(int col) { return sqlite3_column_decltype(m_stmt, col); }
-Utf8CP      Statement::GetColumnTableName(int col) { return sqlite3_column_table_name(m_stmt, col); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   08/15
@@ -381,6 +380,7 @@ DbDupValue  Statement::GetDbValue(int col)
     }
 
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
+int         Statement::GetParameterCount() { return sqlite3_bind_parameter_count(m_stmt); }
 Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
 
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
