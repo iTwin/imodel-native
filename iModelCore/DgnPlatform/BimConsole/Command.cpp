@@ -558,6 +558,7 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n"
         COMMAND_USAGE_IDENT "nodelimiterescaping: By default, delimiters are escaped if they are enclosed by double-quotes. If this parameter\r\n"
         COMMAND_USAGE_IDENT "is set, delimiters are not escaped. Default: false\r\n";
+        COMMAND_USAGE_IDENT "If the specified table already exists, rows are inserted into the existing table\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -752,48 +753,83 @@ BentleyStatus ImportCommand::SetupCsvImport(Session& session, Statement& stmt, U
     if (header != nullptr && (uint32_t) header->size() != columnCount)
         return ERROR;
 
-    Utf8String createTableSql("CREATE TABLE [");
-    createTableSql.append(tableName).append("] (");
     Utf8String insertSql("INSERT INTO [");
     insertSql.append(tableName).append("](");
     Utf8String insertValuesClauseSql("VALUES(");
+
+    Utf8String createTableSql;
+    bvector<Utf8String> existingTableColNames;
+    {
+    if (session.GetFile().GetHandle().GetColumns(existingTableColNames, tableName.c_str()))
+        {
+        //table exists. Check whether col count matches with CSV file
+        if ((uint32_t) existingTableColNames.size() != columnCount)
+            {
+            BimConsole::WriteErrorLine("Table '%s' already exists but its column count differs from the column count in CSV file '%s'.",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        //table does not exists
+        createTableSql.assign("CREATE TABLE [").append(tableName).append("] (");
+        }
+    }
+    
+    const bool tableExists = createTableSql.empty();
+
     bool isFirstCol = true;
     for (uint32_t i = 0; i < columnCount; i++)
         {
         if (!isFirstCol)
             {
-            createTableSql.append(",");
+            if (!tableExists)
+                createTableSql.append(",");
+
             insertSql.append(",");
             insertValuesClauseSql.append(",");
             }
 
-        if (header == nullptr)
+        if (tableExists)
             {
-            Utf8String colName;
-            colName.Sprintf("Column%" PRIu32, i + 1);
-            createTableSql.append(colName);
-            insertSql.append(colName);
+            insertSql.append(existingTableColNames[(size_t) i]);
             }
         else
             {
-            Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
-            createTableSql.append("[").append(colName).append("]");
-            insertSql.append("[").append(colName).append("]");
+            if (header == nullptr)
+                {
+                Utf8String colName;
+                colName.Sprintf("Column%" PRIu32, i + 1);
+                createTableSql.append(colName);
+                insertSql.append(colName);
+                }
+            else
+                {
+                Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
+                createTableSql.append("[").append(colName).append("]");
+                insertSql.append("[").append(colName).append("]");
+                }
             }
 
         insertValuesClauseSql.append("?");
         isFirstCol = false;
         }
 
-    createTableSql.append(")");
+    if (!tableExists)
+        createTableSql.append(")");
+
     insertValuesClauseSql.append(")");
     insertSql.append(") ").append(insertValuesClauseSql);
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+    if (!tableExists)
         {
-        BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
-                               tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
-        return ERROR;
+        if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+            {
+            BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
         }
 
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), insertSql.c_str()))
