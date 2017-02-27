@@ -17,6 +17,13 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+static void progressFunc(Utf8String filename, float progress)
+    {
+    char progressString[1024];
+    sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
+    std::cout << progressString << std::endl;
+    }
+
 int main(int argc, char *argv[])
 {
     /*Utf8String server, version, repo, shema;
@@ -32,7 +39,6 @@ int main(int argc, char *argv[])
     RealityDataService::SetServerComponents(server, version, repo, schema);*/
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
-    time_t time = std::time(nullptr);
 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, "Helsinki");
@@ -55,12 +61,15 @@ int main(int argc, char *argv[])
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
     if (upload->IsValidUpload())
         {
+        upload->SetProgressCallBack(progressFunc);
+        time_t time = std::time(nullptr);
         UploadReport* ur = upload->Perform();
         time_t time2 = std::time(nullptr);
         time2 -= time;
         Utf8String report;
         ur->ToXml(report);
         std::cout << report << std::endl;
+        std::cout << time2 << std::endl;
         }
 
     return 0;

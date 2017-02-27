@@ -985,13 +985,17 @@ UploadReport* RealityDataServiceUpload::Perform()
                         {
                         if(!fileUp->FinishedSending())
                             {
+                            if(m_pProgressFunc)
+                                m_pProgressFunc(fileUp->GetFilename(), (float)fileUp->GetUploadedSize() / (float)fileUp->GetFileSize());
                             SetupCurlforFile(fileUp, 0);
                             still_running++;
                             }
                         else
                             {
-                            fileUp->CloseFile();
+                            if (m_pProgressFunc)
+                                m_pProgressFunc(fileUp->GetFilename(), 1.0f);
                             ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            fileUp->CloseFile();
                             }  
                         }
                     else

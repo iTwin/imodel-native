@@ -368,13 +368,9 @@ private:
     };
 
 //! Callback function to follow the download progression.
-//! @param[out] index       Url index set at the creation, (-1)General error, (-2)Retry the command. 
-//! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
-//! @param[out] ByteCurrent Number of byte currently downloaded.
-//! @param[out] ByteTotal   When available, number of total bytes to download.
-//! @return If RealityDataDownload_ProgressCallBack returns 0   The download continue.
-//! @return If RealityDataDownload_ProgressCallBack returns # 0 The download is canceled for this file.
-typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal)> RealityDataServiceUpload_ProgressCallBack;
+//! @param[in] filename    name of the file. 
+//! @param[in] progress    Percentage uploaded.
+typedef std::function<void(Utf8String filename, float progress)> RealityDataServiceUpload_ProgressCallBack;
 
 // ErrorCode --> Curl error code.
 //! Callback function to follow the download progression.
@@ -525,8 +521,6 @@ private:
 
     Utf8String              m_azureServer;
     float                   m_progressStep;
-    RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
-    RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
     Utf8String              m_azureToken;
     mutable Utf8String      m_requestWithToken;
 
@@ -621,14 +615,14 @@ struct RealityDataServiceUpload : public CurlConstructor
     //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
 
     //! Set certificate path for https upload.
-    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; };
+    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; }
 
     //! Set callback to follow progression of the upload.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func, float pi_step = 0.01)
-                                                                   {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func)
+                                                                   { m_pProgressFunc = pi_func; }
     //! Set callback to allow the user to mass cancel all uploads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceUpload_HeartbeatCallBack pi_func)
-                                                                   {m_pHeartbeatFunc = pi_func;};
+                                                                   { m_pHeartbeatFunc = pi_func; }
 
     //! Set callback to know to status, upload done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
