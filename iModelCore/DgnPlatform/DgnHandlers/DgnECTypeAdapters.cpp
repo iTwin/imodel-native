@@ -3132,7 +3132,7 @@ bool ECUnitsTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Colin.Kerr      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP kindOfQuantity)
+bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP& kindOfQuantity)
     {
     kindOfQuantity = ecProp->GetIsPrimitive() ? ecProp->GetAsPrimitiveProperty()->GetKindOfQuantity() : ecProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
     return nullptr != kindOfQuantity;
