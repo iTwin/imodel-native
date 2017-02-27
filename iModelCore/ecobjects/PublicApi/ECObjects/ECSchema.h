@@ -1917,7 +1917,7 @@ friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
 private:
-    bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
+    bool VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseAsEntity) const;
     bool Verify() const;
 
 protected:
