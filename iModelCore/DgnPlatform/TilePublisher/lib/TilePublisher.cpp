@@ -366,11 +366,10 @@ template<typename T> static void fillColorIndex(ByteStream& texture, ColorIndexM
 void ColorIndex::Build(TileMeshCR mesh, MeshMaterial const& mat)
     {
     // Possibilities:
-    //  - Material does not override color or alpha. Copy colors directly from ColorIndexMap
-    //      - ###TODO: If only one color in map, don't use indexed colors.
-    //  - Material overrides both color and alpha. Every vertex has same color. ###TODO: Don't use indexed colors in that case
+    //  - Material does not override color or alpha. Copy colors directly from ColorIndexMap (unless only one color - then use uniform color).
+    //  - Material overrides both color and alpha. Every vertex has same color. Don't use indexed colors in that case.
     //  - Material overrides RGB only. Vertices may have differing alphas. ###TODO: If alpha does not vary, don't use indexed colors.
-    //  - Material overrides alpha only. Vertices may have differing RGB values. ###TODO: If not the case, don't use indexed colors.
+    //  - Material overrides alpha only. Vertices may have differing RGB values. ###TODO: Detect that case and don't use indexed colors?
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     uint16_t nColors = map.GetNumIndices();
     ComputeDimensions(nColors);
@@ -1360,6 +1359,8 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (mat.IgnoresLighting())
         prefix.append("Unlit");
 
+    prefix.append(std::to_string(static_cast<uint8_t>(mat.GetColorIndexDimension())).c_str());
+
     Utf8String techniqueName(prefix);
     techniqueName.append("Technique");
 
@@ -1380,8 +1381,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    // ###TODO: Do not use indexed colors if only one color.
-    // ###TODO: Optimize indexed color lookup for 1D LUT.
     if (!mat.IsTextured())
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
@@ -1440,7 +1439,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
 
     data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
     data.AddBufferView(fragmentShaderBufferView.c_str(), mat.IgnoresLighting() ? s_unlitTextureFragmentShader : (mat.IsTextured() ? s_texturedFragShader : s_untexturedFragShader)); 
-
     // Diffuse...
     if (mat.IsTextured())
         {
@@ -1456,33 +1454,41 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
         }
     else
         {
-        AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
-        AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
-
-        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+        auto dim = mat.GetColorIndexDimension();
+        if (ColorIndex::Dimension::Zero != dim)
             {
-            AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
-            AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+            AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+            AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, nullptr);
+
+            techniqueUniforms["u_tex"] = "tex";
+            techniqueUniforms["u_texStep"] = "texStep";
+
+            technique["attributes"]["a_colorIndex"] = "colorIndex";
+            AppendProgramAttribute(rootProgramNode, "a_colorIndex");
+
+            auto& sampler = data.m_json["samplers"]["sampler_1"];
+            sampler["minFilter"] = GLTF_NEAREST;
+            sampler["maxFilter"] = GLTF_NEAREST;
+            sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
+            sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
+
+            if (ColorIndex::Dimension::Two == dim)
+                {
+                AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
+                AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+
+                techniqueUniforms["u_texWidth"] = "texWidth";
+                }
+            else
+                {
+                AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC2, nullptr);
+                }
             }
         else
             {
-            AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC2, nullptr);
+            AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+            techniqueUniforms["u_color"] = "color";
             }
-
-        auto& sampler = data.m_json["samplers"]["sampler_1"];
-        sampler["minFilter"] = GLTF_NEAREST;
-        sampler["maxFilter"] = GLTF_NEAREST;
-        sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
-        sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
-
-        techniqueUniforms["u_tex"] = "tex";
-
-        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
-            techniqueUniforms["u_texWidth"] = "texWidth";
-
-        techniqueUniforms["u_texStep"] = "texStep";
-        technique["attributes"]["a_colorIndex"] = "colorIndex";
-        AppendProgramAttribute(rootProgramNode, "a_colorIndex");
         }
 
     if (!mat.IgnoresLighting())
@@ -1563,9 +1569,30 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
     if (!IsTextured())
         {
         if (m_overridesAlpha && m_overridesRgb)
+            {
             m_colorDimension = ColorIndex::Dimension::Zero;
+            }
         else
-            m_colorDimension = mesh.GetColorIndexMap().GetNumIndices() > ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::Two : ColorIndex::Dimension::One;
+            {
+            uint16_t nColors = mesh.GetColorIndexMap().GetNumIndices();
+            if (0 == nColors)
+                {
+                BeAssert(false && "empty color map");
+                m_colorDimension = ColorIndex::Dimension::None;
+                }
+            else if (1 == nColors)
+                {
+                m_colorDimension = ColorIndex::Dimension::Zero;
+                }
+            else if (nColors <= ColorIndex::GetMaxWidth())
+                {
+                m_colorDimension = ColorIndex::Dimension::One;
+                }
+            else
+                {
+                m_colorDimension = ColorIndex::Dimension::Two;
+                }
+            }
         }
     }
 
@@ -1574,34 +1601,14 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::string const& MeshMaterial::GetVertexShaderString() const
     {
-    if (IgnoresLighting())
-        {
-        switch (GetColorIndexDimension())
-            {
-            case ColorIndex::Dimension::None:
-                return s_unlitTextureVertexShader;
-            case ColorIndex::Dimension::Zero:
-                // ###TODO: Optimize for uniform color
-            case ColorIndex::Dimension::One:
-                return s_unlitVertexShader1d;
-            default:
-                BeAssert(ColorIndex::Dimension::Two == GetColorIndexDimension());
-                return s_unlitVertexShader2d;
-            }
-        }
+    if (IsTextured())
+        return IgnoresLighting() ? s_unlitTextureVertexShader : s_texturedVertexShader;
 
-    switch (GetColorIndexDimension())
-        {
-        case ColorIndex::Dimension::None:
-            return s_texturedVertexShader;
-        case ColorIndex::Dimension::Zero:
-            // ###TODO: Optimize for uniform color
-        case ColorIndex::Dimension::One:
-            return s_untexturedVertexShader1d;
-        default:
-            BeAssert(ColorIndex::Dimension::Two == GetColorIndexDimension());
-            return s_untexturedVertexShader2d;
-        }
+    auto index = static_cast<uint8_t>(GetColorIndexDimension());
+    BeAssert(index < _countof(s_untexturedVertexShaders));
+
+    std::string const* list = IgnoresLighting() ? s_unlitVertexShaders : s_untexturedVertexShaders;
+    return list[index];
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1627,25 +1634,40 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
         }
     else
         {
-        // ###TODO: Don't use indexed colors if only one color
-        ColorIndex colorIndex(mesh, mat);
-        matJson["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
-
-        uint16_t width = colorIndex.GetWidth();
-        double stepX = 1.0 / width;
-        double stepY = 1.0 / colorIndex.GetHeight();
-
-        // ###TODO: Simplify texture coord computation for 1d texture
-        auto& texStep = matJson["values"]["texStep"] = Json::arrayValue;
-        texStep.append(stepX);
-        texStep.append(stepX * 0.5);    // centerX
-
-        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+        auto dim = mat.GetColorIndexDimension();
+        if (ColorIndex::Dimension::Zero != dim)
             {
-            texStep.append(stepY);
-            texStep.append(stepY * 0.5);    // centerY
+            ColorIndex colorIndex(mesh, mat);
+            matJson["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
-            matJson["values"]["texWidth"] = width;
+            uint16_t width = colorIndex.GetWidth();
+            double stepX = 1.0 / width;
+            double stepY = 1.0 / colorIndex.GetHeight();
+
+            auto& texStep = matJson["values"]["texStep"] = Json::arrayValue;
+            texStep.append(stepX);
+            texStep.append(stepX * 0.5);    // centerX
+
+            if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+                {
+                texStep.append(stepY);
+                texStep.append(stepY * 0.5);    // centerY
+
+                matJson["values"]["texWidth"] = width;
+                }
+            }
+        else
+            {
+            BeAssert(1 == mesh.GetColorIndexMap().GetNumIndices() || (mat.OverridesRgb() && mat.OverridesAlpha()));
+            ColorDef baseDef(mesh.GetColorIndexMap().begin()->first);
+            RgbFactor rgb = mat.OverridesRgb() ? mat.m_rgbOverride : RgbFactor::FromIntColor(baseDef.GetValue());
+            double alpha = mat.OverridesAlpha() ? mat.m_alphaOverride : baseDef.GetAlpha()/255.0;
+
+            auto& matColor = matJson["values"]["color"];
+            matColor.append(rgb.red);
+            matColor.append(rgb.green);
+            matColor.append(rgb.blue);
+            matColor.append(1.0 - alpha);
             }
 
         matJson["technique"] = mat.m_ignoreLighting ? AddUnlitShaderTechnique(tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
@@ -2062,19 +2084,8 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         }
 
     BeAssert(isTextured == mesh.Colors().empty());
-    if (!mesh.Colors().empty() && !isTextured)
-        {
-        if (meshMat.OverridesAlpha() && meshMat.OverridesRgb())
-            {
-            // ###TODO: Should just pass color as a uniform...
-            bvector<uint16_t> colorIds(mesh.Colors().size(), 0);
-            AddMeshColors(tileData, primitive, colorIds, idStr);
-            }
-        else
-            {
-            AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
-            }
-        }
+    if (!mesh.Colors().empty() && !isTextured && ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
+        AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
