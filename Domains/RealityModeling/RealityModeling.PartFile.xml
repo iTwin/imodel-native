@@ -114,8 +114,8 @@
         <SubPart PartName="DataCaptureSchemasPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-            <Libs ProductDirectoryName="DataCaptureLibs" Required="false">Delivery/$(shlibprefix)DataCaptureSchema$(libext)</Libs>
-            <Assemblies  ProductDirectoryName="DataCaptureAssemblies" Required="false">Delivery/$(shlibprefix)DataCaptureSchema$(shlibext)</Assemblies>
+            <Libs>Delivery/$(shlibprefix)DataCaptureSchema$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DataCaptureSchema$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
