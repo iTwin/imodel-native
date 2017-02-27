@@ -1623,7 +1623,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+Utf8String TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
     {
     Utf8String      materialName = Utf8String ("PolylineMaterial_") + suffix;
 
@@ -1644,7 +1644,7 @@ Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDi
     materialColor.append(rgb.blue);
     materialColor.append(alpha);
 
-    Utf8String      s_techniqueName = "polylineTechnique";
+    Utf8String      s_techniqueName = "tesselatedPolylineTechnique";
 
     double          halfWidthPixels = std::max(s_minLineWidth, (double) displayParams->GetRasterWidth()) / 2.0, featherPixels;
     halfWidthPixels += (featherPixels = std::min(halfWidthPixels/2.0, s_featherPixels));
@@ -1663,11 +1663,11 @@ Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDi
         AddTechniqueParameter(technique, "vertexDelta", GLTF_FLOAT_VEC3, "VERTEXDELTA");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-        static char const   *s_programName                    = "polylineProgram",
-                            *s_vertexShaderName               = "polylineVertexShader",
-                            *s_fragmentShaderName             = "polylineFragmentShader",
-                            *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
-                            *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+        static char const   *s_programName                    = "tesselatedPolylineProgram",
+                            *s_vertexShaderName               = "tesselatedPolylineVertexShader",
+                            *s_fragmentShaderName             = "tesselatedPolylineFragmentShader",
+                            *s_vertexShaderBufferViewName     = "tesselatedPolylineVertexShaderBufferView",
+                            *s_fragmentShaderBufferViewName   = "tesselatedPolylineFragmentShaderBufferView";
 
         technique["program"] = s_programName;
 
@@ -1704,11 +1704,10 @@ Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDi
         AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
         AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
         
-        std::string     vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_polylineVertexShader;
+        std::string     vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_tesselatedPolylineVertexShader;
 
         tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
-        tileData.AddBufferView(s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
-
+        tileData.AddBufferView(s_fragmentShaderBufferViewName, s_tesselatedPolylineFragmentShader); 
 
         AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
         techniqueUniforms["u_color"] = "color";
@@ -1716,6 +1715,95 @@ Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDi
         techniqueUniforms["u_width"] = "width";
         AddTechniqueParameter(technique, "feather", GLTF_FLOAT, nullptr);
         techniqueUniforms["u_feather"] = "feather";
+
+        addTransparencyToTechnique (technique);
+        tileData.m_json["techniques"][s_techniqueName] = technique;
+        }
+
+    materialValue["technique"] = s_techniqueName;
+    return materialName;
+    }      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TilePublisher::AddSimplePolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    Utf8String      materialName = Utf8String ("PolylineMaterial_") + suffix;
+
+    if (nullptr == displayParams)
+        return materialName;
+
+    uint32_t        rgbInt  = displayParams->GetFillColor();
+    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
+    Json::Value&    materialValue = tileData.m_json["materials"][materialName.c_str()] = Json::objectValue;
+    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+
+    auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
+
+    materialColor.append(rgb.red);
+    materialColor.append(rgb.green);
+    materialColor.append(rgb.blue);
+    materialColor.append(alpha);
+
+    Utf8String      s_techniqueName = "simplePolylineTechnique";
+
+    if (!tileData.m_json.isMember("techniques") ||
+        !tileData.m_json["techniques"].isMember(s_techniqueName.c_str()))
+        {
+        Json::Value     technique = Json::objectValue;
+
+        AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+        AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+        AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+        static char const   *s_programName                    = "simplePolylineProgram",
+                            *s_vertexShaderName               = "simplePolylineVertexShader",
+                            *s_fragmentShaderName             = "simplePolylineFragmentShader",
+                            *s_vertexShaderBufferViewName     = "simplePolylineVertexShaderBufferView",
+                            *s_fragmentShaderBufferViewName   = "simplePolylineFragmentShaderBufferView";
+
+        technique["program"] = s_programName;
+
+        auto&   techniqueStates = technique["states"];
+        techniqueStates["enable"] = Json::arrayValue;
+        techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+        techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+
+        auto& techniqueAttributes = technique["attributes"];
+
+        if (doBatchIds)
+            techniqueAttributes["a_batchId"] = "batch";
+
+        techniqueAttributes["a_pos"]  = "pos";
+
+        auto& techniqueUniforms = technique["uniforms"];
+        techniqueUniforms["u_mv"] = "mv";
+        techniqueUniforms["u_proj"] = "proj";
+
+        auto& rootProgramNode = (tileData.m_json["programs"][s_programName] = Json::objectValue);
+        rootProgramNode["attributes"] = Json::arrayValue;
+        AppendProgramAttribute(rootProgramNode, "a_pos");
+        if (doBatchIds)
+            AppendProgramAttribute(rootProgramNode, "a_batchId");
+
+        rootProgramNode["vertexShader"]   = s_vertexShaderName;
+        rootProgramNode["fragmentShader"] = s_fragmentShaderName;
+
+        auto& shaders = tileData.m_json["shaders"];
+        AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
+        AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
+        
+        std::string     vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_simplePolylineVertexShader;
+
+        tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
+        tileData.AddBufferView(s_fragmentShaderBufferViewName, s_simplePolylineFragmentShader); 
+
+
+        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        techniqueUniforms["u_color"] = "color";
+        AddTechniqueParameter(technique, "width", GLTF_FLOAT, nullptr);
 
         addTransparencyToTechnique (technique);
         tileData.m_json["techniques"][s_techniqueName] = technique;
@@ -2034,6 +2122,23 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
     }
 
+#ifdef WIP_TESSELATION
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR point2)
+    {
+    bvector<DPoint3d> const&    meshPoints = mesh.Points();
+
+
+    for (size_t i=0, count = indices.size(); i<count; i++)
+        {
+        
+        }
+    }
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2042,6 +2147,41 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
+    if (mesh.GetDisplayParams()->GetRasterWidth() <= 1)
+        {
+        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+        return;
+        }
+                                                                                            
+#ifdef WIP_TESSELATION
+    // Temporary -- Tesselate on CPU for debugging - will be pushed to shader when working.
+    bvector<DPoint3d> const&    meshPoints = mesh.Points();
+
+    for (auto const& polyline : mesh.Polylines())
+        {
+        DPoint3d        previousMidPoint, nextMidpoint;
+
+        for (size_t i=1, count = indices.size(), last = count - 2; i <= last; i++)
+            {
+            DPoint3dCR  thisPoint = meshPoints[i];
+            DPoint3d    start = i == 1    ? meshPoints[0]   : DPoint3d::FromInterpolation(meshPoints[i-1], .5, point);
+            DPoint3d    end   = i == last ? meshPoints[i+1] : DPoint3d::FromInterpolation(point, .5, meshPoints[i+1])
+
+            TesselatePolylineSegment (mesh, start, thisPoint, end);
+            }
+        }
+
+    AddMeshPrimitive (primitivesNode, mesh, index, doBatchIds);
+#else
+    AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+#endif
+    }    
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     011/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+    {
     Utf8String idStr(std::to_string(index).c_str());
 
     bvector<DPoint3d>           points, directions;
@@ -2116,7 +2256,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
     DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 
-    primitive["material"] = AddPolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    primitive["material"] = AddTesselatedPolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
     primitive["mode"] = GLTF_TRIANGLES;
 
     Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
@@ -2133,6 +2273,59 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     primitivesNode.append(primitive);
     tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     011/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+    {
+    if (mesh.Polylines().empty())
+        return;
+
+    Utf8String idStr(std::to_string(index).c_str());
+
+    bvector<DPoint3d>           points;
+    bvector<DPoint3d> const&    meshPoints = mesh.Points();
+    bvector<uint16_t>           attributes;
+    bvector<uint32_t>           indices;
+    static double               s_degenerateSegmentTolerance = 1.0E-5;
+
+    for (auto const& polyline : mesh.Polylines())
+        {
+        for (size_t i=0; i<polyline.m_indices.size()-1; i++)
+            {
+            indices.push_back(polyline.m_indices[i]);
+            indices.push_back(polyline.m_indices[i+1]);
+            if (mesh.ValidIdsPresent())
+                {
+                auto&   attribute0 = mesh.Attributes().at(polyline.m_indices[i]);
+                auto&   attribute1 = mesh.Attributes().at(polyline.m_indices[i+1]);
+
+                attributes.push_back (attribute0);
+                attributes.push_back (attribute1);
+                }
+            }
+        }
+
+    Json::Value     primitive = Json::objectValue;
+    DRange3d        pointRange = DRange3d::From(meshPoints);
+
+    primitive["material"] = AddSimplePolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    primitive["mode"] = GLTF_LINES;
+
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &meshPoints.front().x, "Position", idStr.c_str(), 3, meshPoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+    primitive["attributes"]["POSITION"]  = accPositionId;
+    primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
+
+    if (false && doBatchIds)
+        AddMeshBatchIds(tileData, primitive, attributes, idStr);
+
+    AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
+
+    primitivesNode.append(primitive);
+    tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
@@ -2317,7 +2510,6 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
-#ifdef LIMIT_TILESET_DEPTH                     // I believe this should not be necessary now that we are not combining models into a single tileset. 
         if (0 == --depth)
             {
             // Write children as seperate tilesets.
@@ -2350,7 +2542,6 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         else
-#endif
             {
             // Append children to this tileset.
             for (auto& childTile : tile.GetChildren())

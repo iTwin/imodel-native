@@ -662,6 +662,195 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index)
+    {
+    IECInstancePtr p;
+    ECValue structValueIdValue(PRIMITIVETYPE_Integer);
+    int32_t structValueId = GetMaxStructValueIdentifier() + 1;
+
+    DEBUG_EXPECT(nullptr == GetAddressOfStructArrayEntry(structValueId));
+
+    if (v.IsNull())
+        {
+        p = nullptr;
+        structValueIdValue.SetInteger(0);
+        }
+    else
+        {
+        // Avoid making a copy if we have a Standalone that's not already part of somebody else's struct array
+        IECInstancePtr pFrom = v.GetStruct();
+        StandaloneECInstancePtr pTo = dynamic_cast<StandaloneECInstance*> (pFrom.get());
+        if (pTo.IsNull() || pTo->IsSupportingInstance())
+            {
+            pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+            ECObjectsStatus copyStatus = pTo->CopyValues(*pFrom);
+            if (ECObjectsStatus::Success != copyStatus)
+                return copyStatus;
+            }
+
+        // We now own it as a supporting instance
+        pTo->SetIsSupportingInstance();
+        p = pTo.get();
+        structValueIdValue.SetInteger(structValueId);
+        }
+
+    ECObjectsStatus status = SetPrimitiveValueToMemory(structValueIdValue, propertyLayout, true, index);
+    if (status != ECObjectsStatus::Success)
+        {
+        // This useless return value again....
+        if (ECObjectsStatus::PropertyValueMatchesNoChange != status)
+            return status;
+        }
+
+    if (nullptr == m_element.m_structInstances)
+        m_element.m_structInstances = new ECN::StructInstanceVector();
+
+    m_element.m_structInstances->push_back(ECN::StructArrayEntry(structValueId, p));
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::StructValueIdentifier ElementAutoHandledPropertiesECInstanceAdapter::GetMaxStructValueIdentifier () const
+    {
+    if (nullptr == m_element.m_structInstances)
+        return 0;
+
+    size_t numEntries =  m_element.m_structInstances->size();
+    StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
+
+    // we cannot simply use the size of the array because structs may have been removed at some point - so we must walk the array and find the highest ID
+    ECN::StructValueIdentifier maxId = 0;
+    for (size_t i = 0; i < numEntries; i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier > maxId)
+            maxId = entry.structValueIdentifier;
+        }
+
+    return maxId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StructArrayEntry const* ElementAutoHandledPropertiesECInstanceAdapter::GetAddressOfStructArrayEntry (StructValueIdentifier key) const
+    {
+    if (nullptr == m_element.m_structInstances)
+        return nullptr;
+
+    StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
+    for (size_t i = 0; i<m_element.m_structInstances->size(); i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier != key)
+            continue;
+        return &entry;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const
+    {
+    ECValue structInstanceIdValue;
+    ECObjectsStatus status = GetPrimitiveValueFromMemory(structInstanceIdValue, propertyLayout, true, index);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    // A structValueIdx of 0 means the instance is null
+    if (structInstanceIdValue.IsNull() || 0 == structInstanceIdValue.GetInteger())
+        {
+        v.SetStruct(nullptr);
+        return ECObjectsStatus::Success;
+        }
+
+    ECN::StructValueIdentifier structInstanceId = structInstanceIdValue.GetInteger();
+    ECN::StructArrayEntry const* entry = GetAddressOfStructArrayEntry(structInstanceId);
+
+    IECInstancePtr instancePtr = entry->structInstance;
+    v.SetStruct(instancePtr.get());
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::RemoveStructArrayEntry(StructValueIdentifier structValueId)
+    {
+    if (nullptr == m_element.m_structInstances)
+        return ECObjectsStatus::Error;
+
+    ECN::StructInstanceVector::iterator iter;
+    for (iter = m_element.m_structInstances->begin(); iter != m_element.m_structInstances->end(); iter++)
+        {
+        if (structValueId == (*iter).structValueIdentifier)
+            {
+            m_element.m_structInstances->erase(iter);
+            return ECObjectsStatus::Success;
+            }
+        }
+
+    return ECObjectsStatus::Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount)
+    {
+    if (nullptr == m_element.m_structInstances)
+        return ECObjectsStatus::Error;
+
+    for (uint32_t i = 0; i < removeCount; i++)
+        {
+        ECValue v;
+        ECObjectsStatus status = GetPrimitiveValueFromMemory(v, propertyLayout, true, removeIndex + i);
+        if (ECObjectsStatus::Success != status)
+            return status;
+
+        ECN::StructValueIdentifier structValueId = v.GetInteger();
+        status = RemoveStructArrayEntry(structValueId);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+
+    return RemoveArrayElementsFromMemory(propertyLayout, removeIndex, removeCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementAutoHandledPropertiesECInstanceAdapter::_IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const
+    {
+    uint32_t propIdx;
+    if (ECObjectsStatus::Success == m_layout->GetPropertyLayoutIndex(propIdx, propLayout))
+        {
+        ECPropertyCP ecprop = _GetAsIECInstance()->GetEnabler().LookupECProperty(propIdx);
+        StructArrayECPropertyCP arrayProp = (nullptr != ecprop) ? ecprop->GetAsStructArrayProperty() : nullptr;
+        if (nullptr != arrayProp)
+            return structInstance.GetEnabler().GetClass().Is(&arrayProp->GetStructElementType());
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceUpdaterCache::ECInstanceUpdaterCache()
@@ -814,8 +1003,8 @@ uint32_t ElementAutoHandledPropertiesECInstanceAdapter::GetBytesUsed() const
 +---------------+---------------+---------------+---------------+---------------+------*/        
 void ElementAutoHandledPropertiesECInstanceAdapter::_ClearValues()
     {
-    //if (m_structInstances)
-    //    m_structInstances->clear ();
+    if (nullptr != m_element.m_structInstances)
+        m_element.m_structInstances->clear ();
 
     InitializeMemory(GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize);
 
@@ -914,12 +1103,12 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation()
 
     //    }
 
-    //if (m_structInstances)
-    //    {
-    //    m_structInstances->clear ();
-    //    delete m_structInstances;
-    //    m_structInstances = NULL;
-    //    }
+    if (nullptr != m_element.m_structInstances)
+        {
+        m_element.m_structInstances->clear();
+        delete m_element.m_structInstances;
+        m_element.m_structInstances = nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

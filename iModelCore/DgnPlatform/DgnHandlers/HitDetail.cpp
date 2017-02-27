@@ -141,6 +141,147 @@ void GeomDetail::SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToW
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool clipCurvePrimitive(bvector<ICurvePrimitivePtr>& partials, ICurvePrimitiveR curve, ClipVectorCR clip)
+    {
+    // NOTE: Modified from SimplifyCurveClipper which is more complicated as it needs clip a CurveVector...
+    DRange3d curveRange;
+                             
+    if (!curve.GetRange(curveRange))
+        return false;
+
+    curveRange.Extend(DgnUnits::OneMillimeter());
+
+    bvector<double> intersectParams;
+
+    for (ClipPrimitivePtr const& thisClip : clip)
+        {
+        DRange3d clipRange;                                                                                             
+
+        // Don't intersect with planes from clips that are disjoint from the current curve.
+        if (thisClip->GetRange(clipRange, nullptr, true) && !curveRange.IntersectsWith(clipRange))
+            continue;
+
+        ClipPlaneSetCP clipPlaneSet;
+
+        if (nullptr != (clipPlaneSet = thisClip->GetMaskOrClipPlanes())) // Use mask planes if they exist.
+            {
+            for (ConvexClipPlaneSetCR convexPlaneSet : *clipPlaneSet)
+                {
+                for (ClipPlaneCR plane : convexPlaneSet)
+                    {
+                    // NOTE: It would seem that it would not be necessary to calculate intersections with "interior" planes. However, we use 
+                    //       that designation to mean any plane that should not generate cut geometry so "interior" is not really correct
+                    //       and we need to intersect with these planes as well. Interior intersections do not really cause a problem as we 
+                    //       discard them below if insidedness does not change. (RayB TR#244943)
+                    bvector<CurveLocationDetailPair> intersections;
+                
+                    curve.AppendCurvePlaneIntersections(plane.GetDPlane3d(), intersections); // NOTE: Method calls clear in output vector!!!
+
+                    // Get curve index for sorting, can disregard 2nd detail in pair as both should be identical...
+                    for (CurveLocationDetailPair pair : intersections)
+                        intersectParams.push_back(pair.detailA.fraction);
+                    }
+                }
+            }
+        }
+
+    if (0 == intersectParams.size())
+        {
+        DPoint3d  testPoint;
+
+        if (!curve.FractionToPoint(0.5, testPoint))
+            return false;
+
+        return !clip.PointInside(testPoint, 1.0e-5);
+        }
+
+    std::sort(intersectParams.begin(), intersectParams.end());
+    intersectParams.push_back(1.0); // Add final param for end of curve...
+
+    bool   lastInside = false;
+    double insideStartParam = 0.0;
+    double lastParam = 0.0;
+
+    for (double thisParam : intersectParams)
+        {
+        if ((thisParam - lastParam) < 1.0e-4)
+            continue;
+
+        bool     thisInside = false;
+        DPoint3d midPoint;
+
+        if (curve.FractionToPoint((lastParam + thisParam) / 2.0, midPoint))
+            thisInside = clip.PointInside(midPoint, 1.0e-5);
+
+        if (thisInside)
+            {
+            if (!lastInside)
+                insideStartParam = lastParam;
+            }
+        else
+            {
+            if (lastInside)
+                {
+                ICurvePrimitivePtr partialCurve = ICurvePrimitive::CreatePartialCurve(&curve, insideStartParam, lastParam);
+
+                partials.push_back(partialCurve);
+                }
+            }
+
+        lastParam  = thisParam;
+        lastInside = thisInside;
+        }
+
+    if (lastInside)
+        {
+        ICurvePrimitivePtr partialCurve = ICurvePrimitive::CreatePartialCurve(&curve, insideStartParam, lastParam);
+
+        partials.push_back(partialCurve);
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeomDetail::ClipCurvePrimitive(ClipVectorCP clip)
+    {
+    // NOTE: Snap point locations need to be computed from the clipped curve...
+    if (nullptr == clip || !m_primitive.IsValid() || HitGeomType::Surface == m_geomType)
+        return;
+
+    double   fraction;
+    DPoint3d closePoint;
+
+    if (!m_primitive->ClosestPointBounded(m_closePoint, fraction, closePoint))
+        return;
+
+    bvector<ICurvePrimitivePtr> partials;
+
+    if (!clipCurvePrimitive(partials, *m_primitive, *clip) || 0 == partials.size())
+        return;
+
+    int64_t tag;
+    double fractionA, fractionB;
+    ICurvePrimitivePtr parentCurve;
+
+    for (ICurvePrimitivePtr& partialCurve : partials)
+        {
+        if (!partialCurve->TryGetPartialCurveData(fractionA, fractionB, parentCurve, tag))
+            continue;
+
+        if (fraction < fractionA || fraction > fractionB)
+            continue;
+
+        m_primitive = partialCurve->CloneDereferenced();
+        break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomDetail::GetSegment(DSegment3dR segment) const

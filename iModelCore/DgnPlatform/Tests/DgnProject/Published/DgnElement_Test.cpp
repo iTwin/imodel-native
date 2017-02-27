@@ -1190,6 +1190,238 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
     EXPECT_EQ(DgnDbStatus::Success, Element->GetPropertyValue(checkValue, "ArrayOfString", PropertyArrayIndex(1)));
     EXPECT_STREQ("second", checkValue.ToString().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Caleb.Shafer      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
+    {
+    SetupSeedProject();
+    DgnElementId elementId;
+    uint32_t iArrayOfStructs;
+    ECN::ECValue checkValue;
+    ECN::IECInstancePtr checkInstance;
+    {
+    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+    TestElement el(params);
+
+    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfStructs, "ArrayOfStructs"));
+
+    // Set an array property
+    EXPECT_EQ(DgnDbStatus::Success, el.InsertPropertyArrayItems(iArrayOfStructs, 0, 4));
+
+    EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "ArrayOfStructs"));
+    EXPECT_TRUE(checkValue.IsArray());
+    EXPECT_EQ(4, checkValue.GetArrayInfo().GetCount());
+
+    for (int i = 0; i < 4; i++)
+        {
+        checkValue.Clear();
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(i)));
+        EXPECT_TRUE(checkValue.IsNull());
+        }
+
+    ECN::ECClassCP locationStruct = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
+    ASSERT_TRUE(nullptr != locationStruct);
+    ECN::StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
+    
+    ECN::IECInstancePtr extonLocInstance = locationEnabler->CreateInstance().get();
+    extonLocInstance->SetValue("Street", ECN::ECValue("690 Pennsylvania Drive"));
+    extonLocInstance->SetValue("City.Name", ECN::ECValue("Exton"));
+    extonLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    extonLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    extonLocInstance->SetValue("City.Zip", ECN::ECValue(19341));
+    
+    ECN::ECValue extonLocValue;
+    extonLocValue.SetStruct(extonLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", extonLocValue, PropertyArrayIndex(1)));
+
+    ECN::IECInstancePtr phillyLocInstance = locationEnabler->CreateInstance().get();
+    phillyLocInstance->SetValue("Street", ECN::ECValue("1601 Cherry Street"));
+    phillyLocInstance->SetValue("City.Name", ECN::ECValue("Philadelphia"));
+    phillyLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    phillyLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    phillyLocInstance->SetValue("City.Zip", ECN::ECValue(19102));
+
+    ECN::ECValue phillyLocValue;
+    phillyLocValue.SetStruct(phillyLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", phillyLocValue, PropertyArrayIndex(2)));
+
+    // Insert the element
+    DgnDbStatus stat;
+    DgnElementCPtr persistentEl = el.Insert(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    // Check that we see the stored value in memory 
+    checkValue.Clear();
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19341, checkValue.GetInteger());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    elementId = persistentEl->GetElementId();
+    m_db->SaveChanges();
+    }
+
+    // Before updatation of element check what stored in DB
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    TestElementPtr element = m_db->Elements().GetForEdit<TestElement>(elementId);
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+    }
+    
+    {
+    // Get ready to modify the element
+    TestElementPtr editEl = m_db->Elements().GetForEdit<TestElement>(elementId);
+    ASSERT_TRUE(editEl.IsValid());
+    // initially we still see the initial/stored value
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    // Remove array item from memory
+    EXPECT_EQ(DgnDbStatus::Success, editEl->RemovePropertyArrayItem(iArrayOfStructs, 1));
+    //Verfiy the array item is removed from memory by getting its value
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_NE(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    
+    // Update the element
+    DgnDbStatus stat;
+    DgnElementCPtr updated_element=editEl->Update(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(updated_element.IsValid());
+    m_db->SaveChanges();
+    }
+
+    // REALLY check that the stored value was changed
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    TestElementCPtr Element = m_db->Elements().Get<TestElement>(elementId);
+    ASSERT_TRUE(Element.IsValid());
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, Element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/

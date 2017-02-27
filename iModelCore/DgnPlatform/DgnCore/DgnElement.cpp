@@ -809,43 +809,6 @@ DrawingGraphicPtr DrawingGraphic::Create(GraphicalModel2dCR model, DgnCategoryId
     return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-NestedTypeLocation2dPtr NestedTypeLocation2d::Create(GraphicalModel2dCR model, DgnCategoryId categoryId, GraphicalType2dCR nestedType, DPoint2dCR location)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::NestedTypeLocation2d::GetHandler());
-    DgnClassId relClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_NestedTypeLocation2dRefersToType);
-
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
-        return nullptr;
-
-    NestedTypeLocation2dPtr nestedTypeLocation = new NestedTypeLocation2d(CreateParams(db, model.GetModelId(), classId, categoryId));
-    if (!nestedTypeLocation.IsValid())
-        return nullptr;
-
-    ICurvePrimitivePtr point = ICurvePrimitive::CreateLine(DSegment3d::From(location, location));
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*nestedTypeLocation);
-    if (!point.IsValid() || !builder.IsValid() || !builder->Append(*point))
-        return nullptr;
-
-    if (BentleyStatus::SUCCESS != builder->Finish(*nestedTypeLocation))
-        return nullptr;
-
-    nestedTypeLocation->SetNestedType(nestedType.GetElementId(), relClassId);
-    nestedTypeLocation->SetLocation(location);
-    return nestedTypeLocation;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicalType2dCPtr NestedTypeLocation2d::GetNestedType() const
-    {
-    return GetDgnDb().Elements().Get<GraphicalType2d>(GetNestedTypeId());
-    }
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -2524,31 +2487,43 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
-#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3d plc = el.GetPlacement(); EXPR; return el.SetPlacement(plc);}
+#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
+            {                                                                            \
+            if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
+                return DgnDbStatus::BadArg;                                              \
+            ECN::ECValue value(valueIn);                                                 \
+            if (!value.ConvertToPrimitiveType(PTYPE))                                    \
+                return DgnDbStatus::BadArg;                                              \
+            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            Placement3d plc = el.GetPlacement();                                         \
+            EXPR;                                                                        \
+            return el.SetPlacement(plc);                                                 \
+            }
+
 
     params.RegisterPropertyAccessors(layout, GEOM3_Yaw, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Pitch,
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Roll, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM_Origin, 
         GETGEOMPLCPROPPT3(plc.GetOrigin()),
-        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetOriginR() = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
         GETGEOMPLCPROPPT3(plc.GetElementBox().low),
-        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().low = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
         GETGEOMPLCPROPPT3(plc.GetElementBox().high),
-        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().high = value.GetPoint3d()));
 
 #undef GETGEOMPLCPROPDBL
 #undef GETGEOMPLCPROPPT3
@@ -2564,7 +2539,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
         [](DgnElementR elIn, ECValueCR value)
             {
-            if (value.IsNull())
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
@@ -2605,7 +2580,7 @@ void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& pa
 
         [](DgnElementR elIn, ECValueCR value)
             {
-            if (value.IsNull())
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
@@ -2683,8 +2658,13 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
-#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value)\
+#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
             {                                                                            \
+            if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
+                return DgnDbStatus::BadArg;                                              \
+            ECN::ECValue value(valueIn);                                                 \
+            if (!value.ConvertToPrimitiveType(PTYPE))                                    \
+                return DgnDbStatus::BadArg;                                              \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
@@ -2693,19 +2673,19 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
     params.RegisterPropertyAccessors(layout, GEOM_Origin, 
         GETGEOMPLCPROPPT2(plc.GetOrigin()),
-        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetOriginR() = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM2_Rotation, 
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
-        SETGEOMPLCPROP(plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
-        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().low = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
         GETGEOMPLCPROPPT2(plc.GetElementBox().high),
-        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().high = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Category, 
         [](ECValueR value, DgnElementCR elIn)
@@ -2714,9 +2694,10 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetLong(el.GetCategoryId().GetValueUnchecked());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR elIn, ECValueCR value)
+        [](DgnElementR elIn, ECValueCR valueIn)
             {
-            if (value.IsNull())
+            ECN::ECValue value(valueIn);
+            if (value.IsNull() || !value.ConvertToPrimitiveType(PRIMITIVETYPE_Long))
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
