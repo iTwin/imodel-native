@@ -280,7 +280,7 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         if (jsonObject["properties"].isMember("Key_InstanceId") && !jsonObject["properties"]["Key_InstanceId"].isNull())
             m_instanceId = jsonObject["properties"]["Key_InstanceId"].asCString();
         }
-    if(m_rootId.length() == 0)
+    if(rootNode.length() == 0) //navRoot
         {
         m_rootNode = m_navString;
         m_rootId = m_instanceId;
@@ -348,6 +348,12 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 {
     nodePath.ReplaceAll("/", "~2F");
 
+    bvector<Utf8String> lines;
+    BeStringUtilities::Split(nodePath.c_str(), "~", lines);
+    Utf8String rootNode = lines[0];
+
+    Utf8String rootId = rootNode.substr(rootNode.length() - 36, rootNode.length()); // 36 = size of GUID
+
     bvector<NavNode> returnVector = bvector<NavNode>();
     WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, nodePath);
     int status = RequestType::Body;
@@ -359,7 +365,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         return returnVector;
 
     for (auto instance : instances["instances"])
-        returnVector.push_back(NavNode(instance));//, parentNode.GetRootNode(), parentNode.GetRootId()));
+        returnVector.push_back(NavNode(instance, rootNode, rootId));
 
     return returnVector;
 }
