@@ -759,6 +759,9 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     PrimitiveType basePrimitiveType;
     if (baseProperty.GetIsArray())
         basePrimitiveType = baseProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+
+    else if (baseProperty.GetIsNavigation())
+        return false;
     else
         basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->GetType();
         
