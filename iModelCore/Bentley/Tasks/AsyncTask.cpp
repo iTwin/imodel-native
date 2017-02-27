@@ -47,7 +47,7 @@ void AsyncTask::SetPriority (Priority priority)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::RegisterOnCompletedListener (std::shared_ptr<OnAsyncTaskCompletedListener> listener)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
     m_onCompletedListeners.insert (listener);
     }
 
@@ -56,7 +56,7 @@ void AsyncTask::RegisterOnCompletedListener (std::shared_ptr<OnAsyncTaskComplete
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::UnregisterOnCompletedListener (std::shared_ptr<OnAsyncTaskCompletedListener> listener)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
     m_onCompletedListeners.erase (listener);
     }
 
@@ -67,7 +67,7 @@ void AsyncTask::Execute ()
     {
     _OnExecute ();
 
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     m_executed = true;
 
@@ -129,7 +129,7 @@ void AsyncTask::ProcessTaskCompletion ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::AddParentTask (std::shared_ptr<AsyncTask> task)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     AddParentTaskNoLock(task);
     }
@@ -147,7 +147,7 @@ void AsyncTask::AddParentTaskNoLock (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::RemoveParentTask (std::shared_ptr<AsyncTask> task)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     m_parentTasks.erase (task);
     }
@@ -157,7 +157,7 @@ void AsyncTask::RemoveParentTask (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bset<std::shared_ptr<AsyncTask>> AsyncTask::GetParentTasks ()
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     return m_parentTasks;
     }
@@ -190,7 +190,7 @@ void AsyncTask::AddSubTask (std::shared_ptr<AsyncTask> task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::RemoveSubTask (std::shared_ptr<AsyncTask> task)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     task->RemoveParentTask (shared_from_this ());
 
@@ -261,7 +261,7 @@ void AsyncTask::NotifyOnCompletedListeners ()
         return;
         }
 
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     bvector<std::shared_ptr<OnAsyncTaskCompletedListener>> aliveListeners;
 
@@ -304,7 +304,7 @@ bool AsyncTask::IsCompleted () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AsyncTask::AddThenTask (std::shared_ptr<AsyncTask> task, std::shared_ptr<ITaskScheduler> scheduler)
     {
-    BeMutexHolder lock (m_completedCV.GetMutex());
+    BeMutexHolder lock (m_mutex);
 
     if (scheduler == nullptr)
         {
