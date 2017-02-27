@@ -547,7 +547,7 @@
             <Class class="PhysicalType"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PhysicalRecipe" modifier="Abstract" displayLabel="Physical Type Recipe" description="Defines a recipe for generating Physical Types.">
+    <ECEntityClass typeName="PhysicalRecipe" modifier="Abstract" displayLabel="Physical Recipe" description="Defines a recipe for generating Physical Types.">
         <BaseClass>RecipeElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
@@ -570,17 +570,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="NestedTypeLocation2d" displayLabel="2D Nested Type Location" description="Identifies the location where a nested Type inserts into a Recipe.">
-        <!-- WIP: Remove? -->
-        <BaseClass>GraphicalElement2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECNavigationProperty propertyName="NestedType" relationshipName="NestedTypeLocation2dRefersToType" direction="Forward" displayLabel="Nested Type">
-        </ECNavigationProperty>
-        <ECProperty propertyName="Location" typeName="point2d">
-        </ECProperty>
-    </ECEntityClass>
     <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -589,18 +578,6 @@
             <Class class="GraphicalElement2d" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
-            <Class class="GraphicalType2d"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="NestedTypeLocation2dRefersToType" strength="referencing" modifier="None">
-        <!-- WIP: Remove? -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
-            <Class class="NestedTypeLocation2d" />
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="defines" polymorphic="true">
             <Class class="GraphicalType2d"/>
         </Target>
     </ECRelationshipClass>
@@ -1442,20 +1419,20 @@
     <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates that child elements are "hidden" -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="encapsulates" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is encapsulated by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PhysicalElementAssemblesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="assembles" polymorphic="true">
             <Class class="PhysicalElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is assembled by" polymorphic="true">
             <Class class="PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
@@ -1999,7 +1976,9 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Source" typeName="int"/>
+        <ECProperty propertyName="IsPrivate" typeName="boolean">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>

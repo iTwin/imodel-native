@@ -696,14 +696,15 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
     if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
-    worldPoint.z = GetEyePoint().z;
-    DPoint3d targetPoint = GetCameraViewDefinition().GetTargetPoint();
+    auto& camera = GetCameraViewDefinition();
+    worldPoint.z = camera.GetEyePoint().z;
+    DPoint3d targetPoint = camera.GetTargetPoint();
     targetPoint.z = worldPoint.z;
     DVec3d newViewZ;
     newViewZ.DifferenceOf(targetPoint, worldPoint);
     newViewZ.Normalize();
-    targetPoint.SumOf(worldPoint, newViewZ, GetFocusDistance());
-    LookAt(worldPoint, targetPoint, DVec3d::From(0.0, 0.0, 1.0));
+    targetPoint.SumOf(worldPoint, newViewZ, camera.GetFocusDistance());
+    camera.LookAt(worldPoint, targetPoint, DVec3d::From(0.0, 0.0, 1.0));
 
     return true;
     }
@@ -931,17 +932,18 @@ bool OrthographicViewController::_OnOrientationEvent(RotMatrixCR orientation, Or
 //---------------------------------------------------------------------------------------
 bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
-    if (!IsCameraOn())
+    auto& camera = GetCameraViewDefinition();
+    if (!camera.IsCameraOn())
         return T_Super::_OnOrientationEvent(orientation, mode, ui);
 
     DVec3d forward, up;
     if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
         return false;
 
-    DPoint3d eyePoint = GetEyePoint(), newTarget;
-    newTarget.SumOf(eyePoint, forward, -GetFocusDistance());
+    DPoint3d eyePoint = camera.GetEyePoint(), newTarget;
+    newTarget.SumOf(eyePoint, forward, -camera.GetFocusDistance());
 
-    LookAt(eyePoint, newTarget, up);
+    camera.LookAt(eyePoint, newTarget, up);
 
     return true;
     }

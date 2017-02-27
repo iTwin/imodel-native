@@ -105,7 +105,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"Parent\" : null,"
         "\"Pitch\" : -35.264389682754654,"
         "\"Roll\" : -45.000000000000007,"
-        "\"Source\" : 2,"
+        "\"IsPrivate\" : false,"
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null,"
         "\"Yaw\" : 29.999999999999986"

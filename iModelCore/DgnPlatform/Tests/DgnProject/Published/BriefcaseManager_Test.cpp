@@ -1073,6 +1073,20 @@ public:
         }
 };
 
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   02/17
+//=======================================================================================
+struct LockableSchemas
+{
+private:
+    DgnDbR m_dgndb;
+public:
+    LockableSchemas(DgnDbR dgndb) : m_dgndb(dgndb) {}
+    DgnDbR GetDgnDb() const { return m_dgndb; }
+};
+
+typedef LockableSchemas const& LockableSchemasCR;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1081,6 +1095,7 @@ struct LocksManagerTest : RepositoryManagerTest
     static LockableId MakeLockableId(DgnElementCR el) { return LockableId(el.GetElementId()); }
     static LockableId MakeLockableId(DgnModelCR model) { return LockableId(model.GetModelId()); }
     static LockableId MakeLockableId(DgnDbCR db) { return LockableId(db); }
+    static LockableId MakeLockableId(LockableSchemasCR lockableSchemas) { return LockableId(lockableSchemas.GetDgnDb().Schemas()); }
 
     static Utf8String MakeLockableName(LockableId lid)
         {
@@ -1089,6 +1104,7 @@ struct LocksManagerTest : RepositoryManagerTest
             {
             case LockableType::Db: typeName = "DgnDb"; break;
             case LockableType::Model: typeName = "Model"; break;
+            case LockableType::Schemas: typeName = "Schemas"; break;
             default: typeName = "Element"; break;
             }
 
@@ -1107,6 +1123,7 @@ struct LocksManagerTest : RepositoryManagerTest
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryLockLevel(actualLevel, id));
         EXPECT_EQ(expLevel, actualLevel) << MakeLockableName(id).c_str();
         }
+
     template<typename T> void ExpectLevel(T const& obj, LockLevel level)
         {
         ExpectLevel(MakeLockableId(obj), level, ExtractDgnDb(obj));
@@ -1217,6 +1234,13 @@ struct LocksManagerTest : RepositoryManagerTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<> DgnDbR LocksManagerTest::ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
 
+template<> RepositoryManager::Response LocksManagerTest::AcquireResponse(LockableSchemasCR const& lockableSchemas, LockLevel level)
+    {
+    LockRequest req;
+    req.InsertSchemasLock(lockableSchemas.GetDgnDb());
+    return AcquireResponse(req, lockableSchemas.GetDgnDb(), ResponseOptions::LockState);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1263,6 +1287,13 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
 
     DgnModelCR model = *pModel;
     DgnElementCR el = *cpEl;
+    LockableSchemas lockableSchemas(db);
+
+    ExpectAcquire(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
 
     ExpectAcquire(model, LockLevel::Shared);
     ExpectLevel(model, LockLevel::Shared);
@@ -1285,12 +1316,14 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(el, LockLevel::Exclusive);  // shared lock automatically upgraded to exclusive for elements, currently
     ExpectLevel(model, LockLevel::Shared);
     ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
 
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
     
     ExpectAcquire(model, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
 
     ExpectAcquire(model, LockLevel::Shared);
     ExpectLevel(model, LockLevel::Exclusive);
@@ -1308,12 +1341,13 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(el, LockLevel::None);
     ExpectLevel(db, LockLevel::None);
 
-    // An exclusive db lock results in exclusive locks on all models and elements
+    // An exclusive db lock results in exclusive locks on all models, elements and schemas
     ExpectAcquire(db, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(el, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Exclusive);
-    
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+
     // If we obtain an exclusive lock on a model, exclusive locks on its elements should be retained after refresh
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
     ExpectAcquire(model, LockLevel::Exclusive);
