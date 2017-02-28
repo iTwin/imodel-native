@@ -482,6 +482,32 @@ public:
 };
 
 //=======================================================================================
+//! A TemplateViewController3d is used to view a single 3d template model.
+//! @ingroup GROUP_DgnView
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
+{
+    DEFINE_T_SUPER(ViewController3d);
+
+protected:
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
+    GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+    bool _Allow3dManipulations() const override {return true;}
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+
+public:
+    TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}
+    TemplateViewDefinition3dCR GetTemplateViewDefinition3d() const {return static_cast<TemplateViewDefinition3dCR>(*m_definition);}
+    TemplateViewDefinition3dR GetTemplateViewDefinition3dR() {return static_cast<TemplateViewDefinition3dR>(*m_definition);}
+
+    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition3d().GetTemplateModelId();}
+    GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
+};
+
+//=======================================================================================
 //! A SpatialViewController controls views of SpatialModels.
 //! It shows %DgnElements selected by an SQL query that can combine spatial criteria with business and graphic criteria.
 //! @ingroup GROUP_DgnView
@@ -490,11 +516,9 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController3d, BeSQLite::VirtualSet
 {
     DEFINE_T_SUPER(ViewController3d);
+    friend struct SpatialRedlineViewController;
 
-    friend struct  SpatialRedlineViewController;
 public:
-    
-
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   05/16
     //=======================================================================================
@@ -739,7 +763,7 @@ protected:
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
-    DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+    GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
