@@ -10,8 +10,8 @@
 #include <Logging/bentleylogging.h>
 
 #define PERFLOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
-#define PERFLOG_START(application,feature) PERFLOG.infov("%s,%s,Start,%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
-#define PERFLOG_FINISH(application,feature) PERFLOG.infov("%s,%s,Finish,%" PRIu64, (application), (feature), BeTimeUtilities::QueryMillisecondsCounter())
+#define PERFLOG_START(application,feature) PERFLOG.infov("%s,%s,Start,%" PRIu64, (application), (feature), BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+#define PERFLOG_FINISH(application,feature) PERFLOG.infov("%s,%s,Finish,%" PRIu64, (application), (feature), BeTimeUtilities::GetCurrentTimeAsUnixMillis())
 
 /*
  * Usage Examples:
