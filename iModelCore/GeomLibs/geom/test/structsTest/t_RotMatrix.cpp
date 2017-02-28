@@ -1453,7 +1453,7 @@ TEST(RotMatrix, RotTransformOnPointArray)
     rotMat.SolveArray(outPointsVec, inPointsVec);
     DPoint3d testOut;
 
-    for (int i = 0; i < 4; i++) 
+    for (size_t i = 0; i < 4; i++) 
         {
         rotMat.Solve(testOut, inPoints[i]);
         Check::Near(testOut, outPoints[i]);
