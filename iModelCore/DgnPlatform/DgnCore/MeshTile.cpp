@@ -3054,3 +3054,18 @@ uint16_t FeatureAttributesMap::GetIndex(TileGeometryCR geom)
     return GetIndex(geom.GetAttributes());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureAttributesMap::RemoveUndefined()
+    {
+    // Cesium's instanced models require that indices range from [0, nInstances). Must remove the "undefined" entry for that to work.
+    BeAssert(AnyDefined());
+
+    FeatureAttributes undefined;
+    m_map.erase(undefined);
+
+    for (auto& kvp : m_map)
+        kvp.second -= 1;
+    }
+

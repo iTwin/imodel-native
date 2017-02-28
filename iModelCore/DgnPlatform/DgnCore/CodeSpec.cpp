@@ -253,7 +253,7 @@ CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpec::CodeSpec(CreateParams const& params)
-    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec)
+    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec), m_registrySuffix(params.m_registrySuffix)
     {
     }
 
@@ -271,6 +271,9 @@ void CodeSpec::ToPropertiesJson(JsonValueR json) const
 
     json["specVersion"] = BeVersion(1, 0).ToMajorMinorString();
     json["scopeSpecType"] = (int)GetScope().GetType();
+
+    if (!m_registrySuffix.empty())
+        json["registrySuffix"] = m_registrySuffix;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,6 +291,10 @@ void CodeSpec::FromPropertiesJson(JsonValueCR json)
     JsonValueCR scopeSpecTypeJson = json["scopeSpecType"];
     if (!scopeSpecTypeJson.isNull())
         SetScope(CodeScopeSpec((CodeScopeSpec::Type)scopeSpecTypeJson.asInt()));
+
+    JsonValueCR registrySuffixJson = json["registrySuffix"];
+    if (!registrySuffixJson.isNull())
+        m_registrySuffix = registrySuffixJson.asCString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,10 +340,10 @@ CodeSpecHandlerR CodeSpec::GetCodeSpecHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec)
+CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec, Utf8CP registrySuffix)
     {
     CodeSpecHandlerR handler = dgn_CodeSpecHandler::CodeSpec::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), codeSpecName, CodeSpecId(), scopeSpec);
+    CreateParams params(db, db.Domains().GetClassId(handler), codeSpecName, CodeSpecId(), scopeSpec, registrySuffix);
     return handler.Create(params).get();
     }
 
