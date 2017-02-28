@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
+// unused - static size_t s_maxFacetDensity;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
@@ -218,9 +219,9 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
-static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
-static const double s_minToleranceRatio = 100.0;
+static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -1201,7 +1202,7 @@ T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override
         if (!glyphCurve->IsAnyRegionType())
             collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
-    if (!strokePoints.empty())
+    if (!strokePoints.empty())             
         strokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
 
     return strokes;
@@ -1711,7 +1712,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext  context(*cache, model, collector, leafTolerance, surfacesOnly, maxPointsPerTile);
+    ElementTileContext  context(*cache, model, collector, leafTolerance, model.Is3dModel() && surfacesOnly, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGeneratorStatus status)
         {
@@ -2131,7 +2132,8 @@ public:
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
-    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
     bool DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&) const  { return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
 
 
@@ -2191,26 +2193,34 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const
+    {
+    Transform               partToTile = Transform::FromProduct(m_transformFromDgn, graphic.GetLocalToWorldTransform(), subToGraphic);
+    DRange3d                partTileRange;
+
+    partToTile.Multiply (partTileRange, geomPart.GetBoundingBox());
+
+    return partTileRange.IsContained (m_tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
+void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(graphicParams, geomParams);
     DRange3d                range;
-    auto const&             foundPart = m_geomParts.find (partId);
+    auto const&             foundPart = m_geomParts.find (geomPart.GetId());
 
     if (foundPart == m_geomParts.end())
         {
-        DgnGeometryPartCPtr geomPart = m_dgndb.Elements().Get<DgnGeometryPart>(partId);
-
-        if (!geomPart.IsValid())
-            return;
-
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
-        GeometryStreamIO::Collection    collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
+        GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
         
         inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
 
@@ -2218,9 +2228,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         TileGeometryList                saveCurrGeometries = m_curElemGeometries;;
         
         m_curElemGeometries.clear();
-        collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
+        collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
 
-        m_geomParts.Insert (partId, tileGeomPart = TileGeomPart::Create(geomPart->GetBoundingBox(), m_curElemGeometries));
+        m_geomParts.Insert (geomPart.GetId(), tileGeomPart = TileGeomPart::Create(geomPart.GetBoundingBox(), m_curElemGeometries));
         m_curElemGeometries = saveCurrGeometries;
         }
     else
@@ -2249,7 +2259,7 @@ TileGeomPart::TileGeomPart(DRange3dCR range, TileGeometryList const& geometries)
 bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
     {
     static size_t               s_minInstanceCount = 2;
-    static size_t               s_minFacetCompression = 5000;
+    static size_t               s_minFacetCompression = 50000;
 
     if (GetInstanceCount() < s_minInstanceCount)
         return false;
@@ -2628,12 +2638,20 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    if (graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
+    DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().template Get<DgnGeometryPart>(partId);
+
+    if (!geomPart.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    if (m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
 
-        m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
+        m_processor.AddGeomPart(graphic, *geomPart, subToGraphic, geomParams, graphicParams, *this);
         }
     else
         {
@@ -2736,9 +2754,10 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     // Extract instances first...
     for (auto& geom : m_geometries)
         {
-        auto const&   part = geom->GetPart();
+        auto const&     part = geom->GetPart();
+        static bool     s_disableInstancing = false;
 
-        if (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance())))
+        if (!s_disableInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
             {
             auto const&         found = partMap.find(part.get());
             TileMeshPartPtr     meshPart;
@@ -2808,12 +2827,29 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
+#ifdef VALIDATE_POLYFACE_DENSITY
+        size_t          facetCount = 0;
+        static size_t   s_maxFacetDensityLimit = 1000;
+
+        for (auto& polyface : polyfaces)
+            facetCount += polyface.m_polyface->GetFaceCount();
+
+        size_t     facetDensity = facetCount / rangePixels;
+    
+        if (facetDensity > s_maxFacetDensity)
+            s_maxFacetDensity = facetDensity;
+
+        BeAssert (facetCount / rangePixels > s_maxFacetDensityLimit && "Facet Density Limit exceeded");
+#endif
+
+
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+            // unused - size_t                  pointCount = polyface->GetPointCount();
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -2831,8 +2867,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate          = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
-                bool        doVertexCluster     = !doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels;
+                static bool s_forceVertexCluster = false;
+                bool        doDecimate           = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                bool        doVertexCluster      = s_forceVertexCluster || (doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels);
 
                 if (doDecimate)
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);

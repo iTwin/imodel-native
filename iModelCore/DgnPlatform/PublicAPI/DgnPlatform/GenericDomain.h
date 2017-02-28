@@ -134,11 +134,11 @@ public:
     //! Look up the ViewAttachmentLabel that labels the specified ViewAttachment. This is the reverse of GetViewAttachment.
     static DgnElementId FindFromViewAttachment(Sheet::ViewAttachmentCR va) {return FindFromViewAttachment(va.GetDgnDb(), va.GetElementId());}
 
-    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of this ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
-    DgnElementId FindCallout() const {auto va = GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): DgnElementId();}
+    //! Look up the Callouts that point to the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    DGNPLATFORM_EXPORT static bvector<DgnElementId> FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment);
 
-    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
-    DGNPLATFORM_EXPORT static DgnElementId FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+    //! Look up the Callouts that point to the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    bvector<DgnElementId> FindCallout() const {auto va = GetViewAttachmentElement(); return va.IsValid()? FindCalloutsFor(*va): bvector<DgnElementId>();}
 };
 
 //=======================================================================================
@@ -182,11 +182,11 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutLocation
     public:
     //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
     //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
-    DGNPLATFORM_EXPORT static GenericCalloutLocation FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+    DGNPLATFORM_EXPORT static bvector<GenericCalloutLocation> FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment);
 
     //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
     //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
-    static GenericCalloutLocation FindCalloutFor(GenericViewAttachmentLabelCR label) {auto va = label.GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): GenericCalloutLocation();}
+    static bvector<GenericCalloutLocation> FindCalloutsFor(GenericViewAttachmentLabelCR label) {auto va = label.GetViewAttachmentElement(); return va.IsValid()? FindCalloutsFor(*va): bvector<GenericCalloutLocation>();}
 
     //! The callout. The sheet that contains the callout is the model of the returned element.
     GenericCalloutCP GetCallout() const {return m_callout.get();}

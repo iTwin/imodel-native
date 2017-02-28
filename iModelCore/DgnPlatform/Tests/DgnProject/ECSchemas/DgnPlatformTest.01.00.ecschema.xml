@@ -50,6 +50,7 @@
         <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="ArrayOfStructs" typeName="LocationStruct" minOccurs="0" maxOccurs="unbounded"/>
         <!-- The rest of the properties are custom-handled -->
         <ECProperty propertyName="TestElementProperty" typeName="string">
             <ECCustomAttributes>

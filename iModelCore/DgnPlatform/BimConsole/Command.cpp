@@ -558,6 +558,7 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n"
         COMMAND_USAGE_IDENT "nodelimiterescaping: By default, delimiters are escaped if they are enclosed by double-quotes. If this parameter\r\n"
         COMMAND_USAGE_IDENT "is set, delimiters are not escaped. Default: false\r\n";
+        COMMAND_USAGE_IDENT "If the specified table already exists, rows are inserted into the existing table\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -717,12 +718,6 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
             }
 
-        for (Utf8StringR token : tokens)
-            {
-            token.ReplaceAll("[", "(");
-            token.ReplaceAll("]", ")");
-            }
-
         if (isFirstLine)
             {
             columnCount = (int) tokens.size();
@@ -752,48 +747,83 @@ BentleyStatus ImportCommand::SetupCsvImport(Session& session, Statement& stmt, U
     if (header != nullptr && (uint32_t) header->size() != columnCount)
         return ERROR;
 
-    Utf8String createTableSql("CREATE TABLE [");
-    createTableSql.append(tableName).append("] (");
     Utf8String insertSql("INSERT INTO [");
     insertSql.append(tableName).append("](");
     Utf8String insertValuesClauseSql("VALUES(");
+
+    Utf8String createTableSql;
+    bvector<Utf8String> existingTableColNames;
+    {
+    if (session.GetFile().GetHandle().GetColumns(existingTableColNames, tableName.c_str()))
+        {
+        //table exists. Check whether col count matches with CSV file
+        if ((uint32_t) existingTableColNames.size() != columnCount)
+            {
+            BimConsole::WriteErrorLine("Table '%s' already exists but its column count differs from the column count in CSV file '%s'.",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        //table does not exists
+        createTableSql.assign("CREATE TABLE [").append(tableName).append("] (");
+        }
+    }
+    
+    const bool tableExists = createTableSql.empty();
+
     bool isFirstCol = true;
     for (uint32_t i = 0; i < columnCount; i++)
         {
         if (!isFirstCol)
             {
-            createTableSql.append(",");
+            if (!tableExists)
+                createTableSql.append(",");
+
             insertSql.append(",");
             insertValuesClauseSql.append(",");
             }
 
-        if (header == nullptr)
+        if (tableExists)
             {
-            Utf8String colName;
-            colName.Sprintf("Column%" PRIu32, i + 1);
-            createTableSql.append(colName);
-            insertSql.append(colName);
+            insertSql.append(existingTableColNames[(size_t) i]);
             }
         else
             {
-            Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
-            createTableSql.append("[").append(colName).append("]");
-            insertSql.append("[").append(colName).append("]");
+            if (header == nullptr)
+                {
+                Utf8String colName;
+                colName.Sprintf("Column%" PRIu32, i + 1);
+                createTableSql.append(colName);
+                insertSql.append(colName);
+                }
+            else
+                {
+                Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
+                createTableSql.append("[").append(colName).append("]");
+                insertSql.append("[").append(colName).append("]");
+                }
             }
 
         insertValuesClauseSql.append("?");
         isFirstCol = false;
         }
 
-    createTableSql.append(")");
+    if (!tableExists)
+        createTableSql.append(")");
+
     insertValuesClauseSql.append(")");
     insertSql.append(") ").append(insertValuesClauseSql);
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+    if (!tableExists)
         {
-        BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
-                               tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
-        return ERROR;
+        if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+            {
+            BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
         }
 
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), insertSql.c_str()))
@@ -1494,10 +1524,10 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 //---------------------------------------------------------------------------------------
 Utf8String ValidateCommand::_GetUsage() const
     {
-    return " .validate legacyclassinheritance <output csv filepath>\r\n"
-        COMMAND_USAGE_IDENT "Checks the current file for data corrupting issues introduced\r\n"
-        COMMAND_USAGE_IDENT "by invalid legacy class inheritance. Issues are written as\r\n"
-        COMMAND_USAGE_IDENT "CSV file to the specified location.\r\n";
+    return " .validate dbmapping <output csv filepath>\r\n"
+        COMMAND_USAGE_IDENT "Checks the current file for data corrupting mapping issues\r\n"
+        COMMAND_USAGE_IDENT "They might be introduced by invalid legacy class inheritance.\r\n"
+        COMMAND_USAGE_IDENT "Issues are written as CSV file to the specified location.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1517,9 +1547,9 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8StringCR switchArg = args[0];
 
-    if (switchArg.EqualsIAscii("legacyclassinheritance"))
+    if (switchArg.EqualsIAscii("dbmapping"))
         {
-        CheckForLegacyClassInheritanceIssues(session, args);
+        ValidateDbMappings(session, args);
         return;
         }
 
@@ -1530,7 +1560,7 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     02/2017
 //---------------------------------------------------------------------------------------
-void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std::vector<Utf8String> const& args) const
+void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8String> const& args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1563,21 +1593,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
     BeAssert(csvFile != nullptr);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(),
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
-        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString,'|') || ']'
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=0 AND (ec_Column.ColumnKind & 128=128)
-        GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1)sql"))
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), ECDbSchemaManager::GetValidateDbMappingSql()))
         {
         BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -1591,7 +1607,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         if (issueCount == 1)
             {
             //write header line
-            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Column, Mapped ECProperties", true))
+            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Issue Type, Issue Type Description, Issue", true))
                 {
                 BimConsole::WriteErrorLine("Failed to write header line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
                 return;
@@ -1599,8 +1615,8 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
             }
 
         Utf8String csvLine;
-        csvLine.Sprintf("%s,%s,%s,%s,%s,%s", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
-                        stmt.GetValueText(4), stmt.GetValueText(5));
+        csvLine.Sprintf("%s,%s,%s,%s,%d,%s,\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
+                        stmt.GetValueInt(4), stmt.GetValueText(5), stmt.GetValueText(6));
         if (TextFileWriteStatus::Success != csvFile->PutLine(WString(csvLine.c_str(), BentleyCharEncoding::Utf8).c_str(), true))
             {
             BimConsole::WriteErrorLine("Failed to write line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
@@ -1612,10 +1628,10 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         {
         csvFile->Close();
         csvFilePath.BeDeleteFile();
-        BimConsole::WriteLine("No legacy class inheritance issues found in the current file.");
+        BimConsole::WriteLine("No DB mapping issues found in the current file.");
         }
     else
-        BimConsole::WriteLine("%d legacy class inheritance issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("%d DB mapping issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
     }
 
 //******************************* DebugCommand ******************

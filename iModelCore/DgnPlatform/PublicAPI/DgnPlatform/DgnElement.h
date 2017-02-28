@@ -1108,6 +1108,7 @@ protected:
     Utf8String m_userLabel;
     ECN::AdHocJsonValue m_jsonProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+    ECN::StructInstanceVector* m_structInstances;
 
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;} //!< @private
