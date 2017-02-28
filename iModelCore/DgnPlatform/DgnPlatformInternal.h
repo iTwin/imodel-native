@@ -2,7 +2,7 @@
 |
 |     $Source: DgnPlatformInternal.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __DGNCOREINTERNAL_H__
@@ -42,6 +42,7 @@
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/DisplayMetrics.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ElementGraphics.h>

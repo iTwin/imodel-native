@@ -157,10 +157,11 @@ public:
         CodeSpecId      m_id;
         DgnClassId      m_classId;
         Utf8String      m_name;
+        Utf8String      m_registrySuffix;
         CodeScopeSpec   m_scopeSpec;
 
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec(), Utf8CP registrySuffix="") :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec), m_registrySuffix(registrySuffix) {}
     };
 
 private:
@@ -171,6 +172,7 @@ private:
     CodeSpecId      m_codeSpecId;
     DgnClassId      m_classId;
     Utf8String      m_name;
+    Utf8String      m_registrySuffix;
 
     CodeScopeSpec m_scopeSpec;
     CodeFragmentSpecList m_fragmentSpecs;
@@ -191,6 +193,7 @@ public:
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
     DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
+    Utf8StringCR GetRegistrySuffix() const {return m_registrySuffix;}
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}
@@ -201,7 +204,7 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
+    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope(), Utf8CP registrySuffix="");
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
