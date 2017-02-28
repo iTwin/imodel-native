@@ -63,6 +63,7 @@ struct TypeTests : public DgnDbTestFixture
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
+    DgnViewId InsertTemplateView3d(GeometricModel3dR, Utf8CP);
 };
 
 //---------------------------------------------------------------------------------------
@@ -815,6 +816,24 @@ DgnDbStatus TypeTests::DropSpatialElementToGeometry(SpatialModelR model, Spatial
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
+DgnViewId TypeTests::InsertTemplateView3d(GeometricModel3dR model, Utf8CP name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(model, name);
+    if (view.IsValid())
+        {
+        view->SetStandardViewRotation(StandardView::Iso);
+        view->LookAtVolume(model.QueryModelRange());
+        view->Insert();
+        }
+
+    BeAssert(view.IsValid() && view->GetViewId().IsValid());
+    return view.IsValid() ? view->GetViewId() : DgnViewId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2017
+//---------------------------------------------------------------------------------------
 DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
     {
     DgnDbR db = model.GetDgnDb();
@@ -938,6 +957,10 @@ TEST_F(TypeTests, CreateSampleBim)
     ASSERT_TRUE(elementToDrop.IsValid());
     DgnDbStatus dropStatus = DropSpatialElementToGeometry(*drop3B1, *elementToDrop);
     ASSERT_EQ(DgnDbStatus::Success, dropStatus);
-
     InsertSpatialView(*drop3B1, "Drop 3B1 View");
+
+    InsertTemplateView3d(*templateModel3A, "Template View 3-A");
+    InsertTemplateView3d(*templateModel3B, "Template View 3-B");
+    InsertTemplateView3d(*templateModel3C, "Template View 3-C");
+    InsertTemplateView3d(*templateModel3E, "Template View 3-E");
     }
