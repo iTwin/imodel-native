@@ -952,6 +952,7 @@ static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
+    opts->SetBsplineSurfaceEdgeHiding(0);
 
     return opts;
     }
@@ -2157,8 +2158,9 @@ public:
     TileGeneratorStatus OutputGraphics(ViewContextR context);
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
-    bool DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&) const  { return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
     void FlushPolyfaceCache();
+    virtual bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&, SimplifyGraphic&) const override {  return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
+
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
