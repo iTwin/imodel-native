@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
-static size_t s_maxFacetDensity;
+// unused - static size_t s_maxFacetDensity;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
@@ -2659,12 +2659,12 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
+    DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().template Get<DgnGeometryPart>(partId);
 
     if (!geomPart.IsValid())
         {
         BeAssert(false);
-        return false;
+        return nullptr;
         }
 
     if (m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
@@ -2871,7 +2871,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
-            size_t                  pointCount = polyface->GetPointCount();
+            // unused - size_t                  pointCount = polyface->GetPointCount();
 
             if (0 == polyface->GetPointCount())
                 continue;
