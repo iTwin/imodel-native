@@ -1451,17 +1451,26 @@ TEST(PolyfaceConstruction, BsplineSurfaceEdgeHiding)
     size_t numX = 15;
     size_t numY = 20;
     auto surface = SurfaceWithSinusoidalControlPolygon (4, 5, numX, numY,    0.0, 0.3, 0.0, -0.25);
+    DRange3d surfaceRange;
+    surface->GetPoleRange (surfaceRange);
+    double dX = surfaceRange.XLength () + 1;
+    double dY = surfaceRange.YLength () + 2;
     Check::SaveTransformed (surface);
     IFacetOptionsPtr options = CreateFacetOptions ();
-    Check::ShiftToLowerRight (1.0);
-    for (int hiding : bvector <int>{0,1,2})
+    Check::Shift (dX, 0, 0);
+    for (bool smooth : bvector<bool> {false, true})
         {
-        options->SetBsplineSurfaceEdgeHiding (hiding);
-        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-        builder->Add (*surface);
-        Check::SaveTransformed (builder->GetClientMeshR ());
-        Check::ShiftToLowerRight (1.0);
-
+        SaveAndRestoreCheckTransform shifter (0,dY,0);
+        options->SetSmoothTriangleFlowRequired (smooth);
+        for (int hiding : bvector <int>{0,1,2})
+            {
+           SaveAndRestoreCheckTransform shifter (dX,0,0);
+            options->SetBsplineSurfaceEdgeHiding (hiding);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            builder->Add (*surface);
+            Check::SaveTransformed (builder->GetClientMeshR ());
+            Check::ShiftToLowerRight (1.0);
+            }
         }
     Check::ClearGeometry ("PolyfaceConstruction.BsplineSurfaceEdgeHiding");
     
