@@ -2020,29 +2020,65 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes16, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
+    {
+    Utf8String suffix(name);
+    suffix.append(idStr);
+
+    Utf8String bvId = Concat("bv", suffix);
+    Utf8String accId = Concat("acc", suffix);
+
+    primitive["attributes"][semantic] = accId;
+
+    // Use uint8 if possible to save space in tiles and memory in browser
+    bvector<uint8_t> attributes8;
+    auto componentType = GLTF_UNSIGNED_BYTE;
+    for (auto attribute : attributes16)
+        {
+        if (attribute > 0xff)
+            {
+            componentType = GLTF_UNSIGNED_SHORT;
+            break;
+            }
+        }
+
+    size_t nBytes = attributes16.size() * sizeof(uint16_t);
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        {
+        attributes8.reserve(attributes16.size());
+        for (auto attribute : attributes16)
+            attributes8.push_back(static_cast<uint8_t>(attribute));
+
+        nBytes /= 2;
+        }
+
+    auto& bv = tileData.m_json["bufferViews"][bvId];
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        tileData.AddBinaryData(attributes8.data(), nBytes);
+    else
+        tileData.AddBinaryData(attributes16.data(), nBytes);
+
+    auto& acc = tileData.m_json["accessors"][accId];
+    acc["bufferView"] = bvId;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = componentType;
+    acc["count"] = attributes16.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
     {
-    Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
-                accBatchId       = Concat("accBatch_", idStr);
-
-    primitive["attributes"]["BATCHID"] = accBatchId;
-
-    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    tileData.m_json["bufferViews"][bvBatchId] = Json::objectValue;
-    tileData.m_json["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-    tileData.m_json["bufferViews"][bvBatchId]["byteOffset"] = tileData.BinaryDataSize();
-    tileData.m_json["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-    tileData.m_json["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
-
-    tileData.AddBinaryData (batchIds.data(), nBatchIdBytes);
-    tileData.m_json["accessors"][accBatchId] = Json::objectValue;
-    tileData.m_json["accessors"][accBatchId]["bufferView"] = bvBatchId;
-    tileData.m_json["accessors"][accBatchId]["byteOffset"] = 0;
-    tileData.m_json["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-    tileData.m_json["accessors"][accBatchId]["count"] = batchIds.size();
-    tileData.m_json["accessors"][accBatchId]["type"] = "SCALAR";
+    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "BATCHID");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2050,27 +2086,7 @@ void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& pri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colorIds, Utf8StringCR idStr)
     {
-    // ###TODO: Consolidate shared code with AddMeshBatchIds()
-    Utf8String bvColor = Concat("bvColorIndex_", idStr),
-               accColor = Concat("accColorIndex_", idStr);
-
-    primitive["attributes"]["_COLORINDEX"] = accColor;
-
-    auto nColorBytes = colorIds.size() * sizeof(uint16_t);
-    auto& bv = tileData.m_json["bufferViews"][bvColor];
-    bv["buffer"] = "binary_glTF";
-    bv["byteOffset"] = tileData.BinaryDataSize();
-    bv["byteLength"] = nColorBytes;
-    bv["target"] = GLTF_ARRAY_BUFFER;
-
-    tileData.AddBinaryData(colorIds.data(), nColorBytes);
-
-    auto& acc = tileData.m_json["accessors"][accColor];
-    acc["bufferView"] = bvColor;
-    acc["byteOffset"] = 0;
-    acc["componentType"] = GLTF_UNSIGNED_SHORT;
-    acc["count"] = colorIds.size();
-    acc["type"] = "SCALAR";
+    AddMeshUInt16Attributes(tileData, primitive, colorIds, idStr, "ColorIndex_", "_COLORINDEX");
     }
 
 /*---------------------------------------------------------------------------------**//**
