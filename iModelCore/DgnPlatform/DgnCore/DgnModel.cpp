@@ -120,6 +120,9 @@ bool ModelIteratorEntry::GetInGuiList() const {return 0 != m_statement->GetValue
 ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
     {
     DgnClassId classId = model.GetClassId();
+
+    BeDbMutexHolder lock(m_mutex);
+
     auto found = m_classInfos.find(classId);
     if (found != m_classInfos.end())
         return found->second;

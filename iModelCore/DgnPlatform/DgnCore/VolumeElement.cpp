@@ -329,9 +329,9 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
 
     ViewControllerPtr viewController = spatialView->LoadViewController();
 
-    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
-    if (nullptr != cameraViewController)
-        cameraViewController->GetCameraViewDefinition().SetCameraOn(false);
+    auto camera = viewController->GetViewDefinition().ToCameraViewP();
+    if (nullptr != camera)
+        camera->SetCameraOn(false);
 
     return new NonVisibleViewport (nullptr, *viewController);
     }
@@ -415,12 +415,12 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     // Turn camera off
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
     bool wasCameraOn = false;
-    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
-    if (nullptr != cameraViewController)
+    auto camera = viewController->GetViewDefinition().ToCameraViewP();
+    if (nullptr != camera)
         {
-        wasCameraOn = cameraViewController->IsCameraOn();
-        cameraViewController->SetCameraOn (false); 
-        viewport.SynchWithViewController (false); 
+        wasCameraOn = camera->IsCameraOn();
+        camera->SetCameraOn(false); 
+        viewport.SynchWithViewController(false); 
         }
 
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
@@ -457,8 +457,8 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     // Turn camera back on
     if (wasCameraOn)
         {
-        cameraViewController->SetCameraOn (wasCameraOn);
-        viewport.SynchWithViewController (false);
+        camera->SetCameraOn(wasCameraOn);
+        viewport.SynchWithViewController(false);
         }
     }
 

@@ -81,7 +81,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnElementId sheetTemplate, Utf8CP name)
     {
-    DgnDbR db = model.GetDgnDb();
+    DgnDbR db = model.GetDgnDb();       
     DgnClassId classId = db.Domains().GetClassId(Handlers::Element::GetHandler());
 
     if (!model.GetModelId().IsValid() || !classId.IsValid() || !name || !*name)
@@ -684,11 +684,7 @@ Transform Viewport::GetTransformToSheet(DgnViewportCR sheetVp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
     {
-    auto findViewOfSheet = db.GetPreparedECSqlStatement(
-        "SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView"
-        " WHERE (sheetView.BaseModel.Id = ?)");
+    auto findViewOfSheet = db.GetPreparedECSqlStatement("SELECT sheetView.ECInstanceId FROM bis.SheetViewDefinition sheetView WHERE (sheetView.BaseModel.Id=?)");
     findViewOfSheet->BindId(1, mid);
-    if (BE_SQLITE_ROW != findViewOfSheet->Step())
-        return DgnElementId();
-    return findViewOfSheet->GetValueId<DgnElementId>(0);
+    return BE_SQLITE_ROW != findViewOfSheet->Step() ?  DgnElementId() : findViewOfSheet->GetValueId<DgnElementId>(0);
     }

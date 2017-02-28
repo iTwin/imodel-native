@@ -68,6 +68,8 @@
 #define DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "TestMultiAspectProperty"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 
+#define DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME  "LocationStruct"
+
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
@@ -624,7 +626,6 @@ private:
 public:
     static Dgn::DgnDbStatus Register();
     static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
-    static Dgn::DgnDbStatus ImportDummySchema(Dgn::DgnDbR);
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

@@ -25,13 +25,11 @@ protected:
     IGeometryProcessorR m_processor;
     ViewContextR m_context;
     IFacetOptionsPtr m_facetOptions;
-    bool m_inPatternDraw;
-    bool m_inSymbolDraw;
-    bool m_inTextDraw;
     bool m_isOpen = true;
     Render::GraphicParams m_currGraphicParams;
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
+    ClipVectorPtr m_currClip;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
@@ -113,7 +111,7 @@ public:
     //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
     DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
-    ClipVectorCP GetCurrentClip() const {return nullptr;}
+    ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);
     DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);
@@ -123,20 +121,15 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(IBRepEntityCR);
     DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
 
-    DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
     Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
-    GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;} // Direct access from PickContext without making builder...
+    GeometryStreamEntryIdCR GetCurrentGeometryStreamEntryId() const {return m_currGeomEntryId;}
     IGeometryProcessorR GetGeometryProcesor() const {return m_processor;}
 
     DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range) const;
     DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const;
-
-    bool GetIsPatternGraphics() const {return m_inPatternDraw;}
-    bool GetIsSymbolGraphics() const {return m_inSymbolDraw;}
-    bool GetIsTextGraphics() const {return m_inTextDraw;}
 
 }; // SimplifyGraphic
 

@@ -270,16 +270,6 @@ public:
     virtual SpatialViewControllerCP _ToSpatialView() const {return nullptr;}
     SpatialViewControllerP ToSpatialViewP() {return const_cast<SpatialViewControllerP>(_ToSpatialView());}
 
-    //! perform the equivalent of a dynamic_cast to a OrthographicViewController.
-    //! @return a valid OrthographicViewControllerCP, or nullptr if this is not a spatial view based on an orthographic project
-    virtual OrthographicViewControllerCP _ToOrthographicView() const {return nullptr;}
-    OrthographicViewControllerP ToOrthographicViewP() {return const_cast<OrthographicViewControllerP>(_ToOrthographicView());}
-
-    //! perform the equivalent of a dynamic_cast to a CameraViewController.
-    //! @return a valid CameraViewControllerCP, or nullptr if this is not a spatial view with a camera
-    virtual CameraViewControllerCP _ToCameraView() const {return nullptr;}
-    CameraViewControllerP ToCameraViewP() {return const_cast<CameraViewControllerP>(_ToCameraView());}
-
     //! perform the equivalent of a dynamic_cast to a DrawingViewController.
     //! @return a valid DrawingViewControllerCP, or nullptr if this is not a drawing view
     virtual DrawingViewControllerCP _ToDrawingView() const {return nullptr;}
@@ -295,9 +285,6 @@ public:
 
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
-
-    //! determine whether this is a camera view
-    bool IsCameraView() const {return nullptr != _ToCameraView();}
 
     //! determine whether this is a drawing view
     bool IsDrawingView() const {return nullptr != _ToDrawingView();}
@@ -656,7 +643,6 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewControlle
 protected:
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-    OrthographicViewControllerCP _ToOrthographicView() const override {return this;}
 
     //! Construct a new OrthographicViewController
     //! @param[in] definition the view definition
@@ -678,7 +664,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
     friend struct CameraViewDefinition;
 
 protected:
-    CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
 
@@ -688,180 +673,7 @@ protected:
 
 public:
     CameraViewDefinitionR GetCameraViewDefinition() const {return static_cast<CameraViewDefinitionR>(*m_definition);}
-
-    /** @name Camera */
-/** @{ */
-
-    //! Determine whether the camera is on for this view
-    bool IsCameraOn() const {return GetCameraViewDefinition().IsCameraOn();}
-
-    //! Determine whether the camera is valid for this view
-    bool IsCameraValid() const {return GetCameraViewDefinition().IsCameraValid();}
-
-    //! Turn the camera on or off for this view
-    //! @param[in] val whether the camera is to be on or off
-    void SetCameraOn(bool val) {GetCameraViewDefinition().SetCameraOn(val);}
-
-    //! Calculate the lens angle formed by the current delta and focus distance
-    double CalcLensAngle() const {return GetCameraViewDefinition().CalcLensAngle();}
-
-    //! Position the camera for this view and point it at a new target point.
-    //! @param[in] eyePoint The new location of the camera.
-    //! @param[in] targetPoint The new location to which the camera should point. This becomes the center of the view on the focus plane.
-    //! @param[in] upVector A vector that orients the camera's "up" (view y). This vector must not be parallel to the vector from eye to target.
-    //! @param[in] viewDelta The new size (width and height) of the view rectangle. The view rectangle is on the focus plane centered on the targetPoint.
-    //! If viewDelta is nullptr, the existing size is unchanged.
-    //! @param[in] frontDistance The distance from the eyePoint to the front plane. If nullptr, the existing front distance is used.
-    //! @param[in] backDistance The distance from the eyePoint to the back plane. If nullptr, the existing back distance is used.
-    //! @return a status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note If the aspect ratio of viewDelta does not match the aspect ratio of a DgnViewport into which this view is displayed, it will be
-    //! adjusted when the DgnViewport is synchronized from this view.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, DVec2dCP viewDelta=nullptr, double const* frontDistance=nullptr, double const* backDistance=nullptr)
-                    {return GetCameraViewDefinition().LookAt(eyePoint, targetPoint, upVector, viewDelta, frontDistance, backDistance);}
-
-    //! Position the camera for this view and point it at a new target point, using a specified lens angle.
-    //! @param[in] eyePoint The new location of the camera.
-    //! @param[in] targetPoint The new location to which the camera should point. This becomes the center of the view on the focus plane.
-    //! @param[in] upVector A vector that orients the camera's "up" (view y). This vector must not be parallel to the vector from eye to target.
-    //! @param[in] fov The angle, in radians, that defines the field-of-view for the camera. Must be between .0001 and pi.
-    //! @param[in] frontDistance The distance from the eyePoint to the front plane. If nullptr, the existing front distance is used.
-    //! @param[in] backDistance The distance from the eyePoint to the back plane. If nullptr, the existing back distance is used.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note The aspect ratio of the view remains unchanged.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector, double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr)
-                    {return GetCameraViewDefinition().LookAtUsingLensAngle(eyePoint, targetPoint, upVector, fov, frontDistance, backDistance);}
-
-    //! Move the camera relative to its current location by a distance in camera coordinates.
-    //! @param[in] distance to move camera. Length is in world units, direction relative to current camera orientation.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus MoveCameraLocal(DVec3dCR distance) {return GetCameraViewDefinition().MoveCameraLocal(distance);}
-
-    //! Move the camera relative to its current location by a distance in world coordinates.
-    //! @param[in] distance in world units.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus MoveCameraWorld(DVec3dCR distance) {return GetCameraViewDefinition().MoveCameraWorld(distance);}
-
-    //! Rotate the camera from its current location about an axis relative to its current orientation.
-    //! @param[in] angle The angle to rotate the camera, in radians.
-    //! @param[in] axis The axis about which to rotate the camera. The axis is a direction relative to the current camera orientation.
-    //! @param[in] aboutPt The point, in world coordinates, about which the camera is rotated. If aboutPt is nullptr, the camera rotates in place
-    //! (i.e. about the current eyePoint).
-    //! @note Even though the axis is relative to the current camera orientation, the aboutPt is in world coordinates, \b not relative to the camera.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus RotateCameraLocal(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinition().RotateCameraLocal(angle, axis, aboutPt);}
-
-    //! Rotate the camera from its current location about an axis in world coordinates.
-    //! @param[in] angle The angle to rotate the camera, in radians.
-    //! @param[in] axis The world-based axis (direction) about which to rotate the camera.
-    //! @param[in] aboutPt The point, in world coordinates, about which the camera is rotated. If aboutPt is nullptr, the camera rotates in place
-    //! (i.e. about the current eyePoint).
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
-    //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
-    //! to see the new changes in the DgnViewport.
-    ViewportStatus RotateCameraWorld(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr) {return GetCameraViewDefinition().RotateCameraWorld(angle, axis, aboutPt);}
-
-    //! Get the distance from the eyePoint to the back plane for this view.
-    double GetBackDistance() const {return GetCameraViewDefinition().GetBackDistance();}
-
-    //! Place the eyepoint of the camera so it is centered in the view. This removes any 1-point perspective skewing that may be
-    //! present in the current view.
-    //! @param[in] backDistance optional, If not nullptr, the new the distance from the eyepoint to the back plane. Otherwise the distance from the
-    //! current eyepoint is used.
-    void CenterEyePoint(double const* backDistance=nullptr) {GetCameraViewDefinition().CenterEyePoint(backDistance);}
-
-    //! Center the focus distance of the camera halfway between the front plane and the back plane, keeping the eyepont,
-    //! lens angle, rotation, back distance, and front distance unchanged.
-    //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
-    void CenterFocusDistance() {GetCameraViewDefinition().CenterFocusDistance();}
-
-    //! Get the distance from the eyePoint to the front plane for this view.
-    double GetFrontDistance() const {return GetCameraViewDefinition().GetFrontDistance();}
-
-    //! Get the lens angle for this view.
-    double GetLensAngle() const {return GetCameraViewDefinition().GetLensAngle();}
-
-    //! Set the lens angle for this view.
-    //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
-    //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
-    //! is subsequently modified and the lens angle is used to position the eyepoint.
-    //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraViewDefinition().SetLensAngle(angle);}
-
-    //! Get the distance from the eyePoint to the focus plane for this view.
-    double GetFocusDistance() const {return GetCameraViewDefinition().GetFocusDistance();}
-
-    //! Set the focus distance for this view.
-    //! @note Changing the focus distance changes the plane on which the delta.x and delta.y values lie. So, changing focus distance
-    //! without making corresponding changes to delta.x and delta.y essentially changes the lens angle, causing a "zoom" effect.
-    void SetFocusDistance(double dist) {GetCameraViewDefinition().SetFocusDistance(dist);}
-
-    //! Get the current location of the eyePoint for camera in this view.
-    DPoint3dCR GetEyePoint() const {return GetCameraViewDefinition().GetEyePoint();}
-
-    //! Change the location of the eyePoint for the camera in this view.
-    //! @param[in] pt The new eyepoint.
-    //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
-    //! The most common method for user-level camera positioning is #LookAt.
-    void SetEyePoint(DPoint3dCR pt) {GetCameraViewDefinition().SetEyePoint(pt);}
-/** @} */
 };
-
-#ifdef WIP_VIEW_DEFINITION
-//=======================================================================================
-//! A SectioningViewController is a spatial view with a clip that defines a section cut.
-//! @ingroup GROUP_DgnView
-// @bsiclass                                                    Keith.Bentley   03/12
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectioningViewController : SpatialViewController
-{
-    DEFINE_T_SUPER(SpatialViewController);
-
-protected:
-    IViewClipObjectPtr m_clip; // a SectionClipObject
-    mutable bool m_hasAnalyzedCutPlanes;
-    mutable uint32_t m_cutPlaneCount;
-    mutable uint32_t m_foremostCutPlaneIndex;
-    mutable DPlane3d m_foremostCutPlane;
-    ClipVolumePass m_pass;
-
-    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
-    DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
-
-    void SetOverrideGraphicParams(ViewContextR) const;
-    void DrawViewInternal(ViewContextR);
-    ClipVectorPtr GetClipVectorInternal(ClipVolumePass) const;
-
-    void AnalyzeCutPlanes() const;
-
-public:
-    void SetClip(IViewClipObject& clip) {m_clip = &clip;}
-
-    //! Construct a new SectioningViewController.
-    //! @remarks This constructor is normally used only as part of creating a new view in the project.
-    //! @remarks Use this constructor only to create a new camera view controller. To load an existing view controller,
-    //! call SpatialViewController::Create.
-    //! @param[in] definition the view definition
-    DGNPLATFORM_EXPORT SectioningViewController(SectionViewDefinition& definition);
-
-    DGNPLATFORM_EXPORT DPlane3d GetForemostCutPlane() const;
-
-    DGNPLATFORM_EXPORT bool HasDogLeg() const;
-
-    ClipVectorPtr GetInsideForwardClipVector() const {return GetClipVectorInternal(ClipVolumePass::InsideForward);}
-};
-#endif
 
 //=======================================================================================
 //! A ViewController2d is used to control views of 2d models.

@@ -1589,6 +1589,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
+    GraphicListPtr m_normal;         // drawn with zbuffer, with scene lighting
     GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units

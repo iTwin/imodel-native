@@ -226,7 +226,7 @@ public:
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SetupFromViewController(); SaveViewUndo();}
+    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
@@ -242,9 +242,6 @@ public:
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
     CameraViewDefinition::Camera const& GetCamera() const {return m_camera;}
-
-    //! @return the camera target for this DgnViewport
-    DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
 
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
@@ -472,10 +469,6 @@ public:
     SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
     SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
-    //! If this view is a camera view, get the camera physical view controller.
-    CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
-    //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
-    CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
@@ -484,12 +477,6 @@ public:
     Sheet::ViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     Sheet::ViewControllerP GetSheetViewControllerP() {return (Sheet::ViewControllerP) GetSheetViewControllerCP();}
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
-    //! If this view is a query view, get the query view controller.
-    DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
-    //! If this view is a query view, get a writeable pointer to the query view controller.
-    DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
-    */
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.

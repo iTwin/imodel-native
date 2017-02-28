@@ -17,6 +17,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 BEGIN_UNNAMED_NAMESPACE
 
 constexpr double s_half2dDepthRange = 10.0;
+// unused - static size_t s_maxFacetDensity;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
@@ -214,9 +215,9 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 
-static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
-static const double s_minToleranceRatio = 100.0;
+static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
@@ -396,11 +397,27 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
+bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const
     {
-    COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (m_rasterWidth, rhs.m_rasterWidth);                                                           
-    COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
+    if (m_fillColor != rhs.m_fillColor)
+        {
+        if (compareFillColor)
+            return m_fillColor < rhs.m_fillColor;
+
+        // cannot batch translucent and opaque meshes
+        ColorDef lhsColor(m_fillColor), rhsColor(rhs.m_fillColor);
+        bool lhsHasAlpha = 0 != lhsColor.GetAlpha(),
+             rhsHasAlpha = 0 != rhsColor.GetAlpha();
+
+        if (lhsHasAlpha != rhsHasAlpha)
+            return lhsHasAlpha;
+        }
+
+    if (m_rasterWidth != rhs.m_rasterWidth)
+        return m_rasterWidth < rhs.m_rasterWidth;
+
+    if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
+        return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();
 
     // Note - do not compare category and subcategory - These are used only for 
     // extracting BRep face attachments.  Comparing them would create seperate
@@ -497,6 +514,7 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
     if (!mesh.m_attributes.empty())
         m_attributes.insert(m_attributes.end(), mesh.m_attributes.begin(), mesh.m_attributes.end());
 
+    uint32_t fillColor = mesh.GetDisplayParams()->GetFillColor(); // ###TODO: only if untextured...
     for (auto& triangle : mesh.m_triangles)
         AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
     }
@@ -623,7 +641,7 @@ bool    TileMesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute)
+uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t color)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
@@ -635,6 +653,8 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
 
     if (nullptr != param)
         m_uvParams.push_back(*param);
+    else
+        m_colors.push_back(m_colorIndex.GetIndex(color));
 
     m_validIdsPresent |= (0 != attribute);
     return index;
@@ -647,6 +667,8 @@ bool TileMeshBuilder::VertexKey::Comparator::operator()(VertexKey const& lhs, Ve
     {
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
+
+    COMPARE_VALUES(lhs.m_fillColor, rhs.m_fillColor);
 
     COMPARE_VALUES (lhs.m_attributes.GetElementId(), rhs.m_attributes.GetElementId());
     COMPARE_VALUES (lhs.m_attributes.GetSubCategoryId(), rhs.m_attributes.GetSubCategoryId());
@@ -763,7 +785,7 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -798,7 +820,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes, fillColor);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -819,7 +841,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), attributes, fillColor);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -831,26 +853,26 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster)
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster, uint32_t fillColor)
     {
     TilePolyline    newPolyline;
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, attributes);
-
+        VertexKey vertex(point, nullptr, nullptr, attributes, fillColor);
         newPolyline.m_indices.push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
+
     m_mesh->AddPolyline (newPolyline);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams);
+        AddTriangle(*visitor, materialId, dgnDb, attributes, false, twoSidedTriangles, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -862,7 +884,7 @@ uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_fillColor);
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -876,7 +898,7 @@ uint32_t TileMeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes));
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), m_attributes.GetIndex(vertex.m_attributes), vertex.m_fillColor);
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1197,7 +1219,7 @@ T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override
         if (!glyphCurve->IsAnyRegionType())
             collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
-    if (!strokePoints.empty())
+    if (!strokePoints.empty())             
         strokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
 
     return strokes;
@@ -1707,7 +1729,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext  context(*cache, model, collector, leafTolerance, surfacesOnly, maxPointsPerTile);
+    ElementTileContext  context(*cache, model, collector, leafTolerance, model.Is3dModel() && surfacesOnly, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGeneratorStatus status)
         {
@@ -2127,7 +2149,8 @@ public:
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
-    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
     bool DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&) const  { return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
 
 
@@ -2187,26 +2210,34 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const
+    {
+    Transform               partToTile = Transform::FromProduct(m_transformFromDgn, graphic.GetLocalToWorldTransform(), subToGraphic);
+    DRange3d                partTileRange;
+
+    partToTile.Multiply (partTileRange, geomPart.GetBoundingBox());
+
+    return partTileRange.IsContained (m_tileRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
+void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(graphicParams, geomParams);
     DRange3d                range;
-    auto const&             foundPart = m_geomParts.find (partId);
+    auto const&             foundPart = m_geomParts.find (geomPart.GetId());
 
     if (foundPart == m_geomParts.end())
         {
-        DgnGeometryPartCPtr geomPart = m_dgndb.Elements().Get<DgnGeometryPart>(partId);
-
-        if (!geomPart.IsValid())
-            return;
-
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
-        GeometryStreamIO::Collection    collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
+        GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
         
         inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
 
@@ -2214,9 +2245,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         TileGeometryList                saveCurrGeometries = m_curElemGeometries;;
         
         m_curElemGeometries.clear();
-        collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
+        collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
 
-        m_geomParts.Insert (partId, tileGeomPart = TileGeomPart::Create(geomPart->GetBoundingBox(), m_curElemGeometries));
+        m_geomParts.Insert (geomPart.GetId(), tileGeomPart = TileGeomPart::Create(geomPart.GetBoundingBox(), m_curElemGeometries));
         m_curElemGeometries = saveCurrGeometries;
         }
     else
@@ -2245,7 +2276,7 @@ TileGeomPart::TileGeomPart(DRange3dCR range, TileGeometryList const& geometries)
 bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
     {
     static size_t               s_minInstanceCount = 2;
-    static size_t               s_minFacetCompression = 5000;
+    static size_t               s_minFacetCompression = 50000;
 
     if (GetInstanceCount() < s_minInstanceCount)
         return false;
@@ -2624,12 +2655,20 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    if (graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
+    DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().template Get<DgnGeometryPart>(partId);
+
+    if (!geomPart.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    if (m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
 
-        m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
+        m_processor.AddGeomPart(graphic, *geomPart, subToGraphic, geomParams, graphicParams, *this);
         }
     else
         {
@@ -2728,13 +2767,15 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     PublishableTileGeometry     publishedTileGeometry;
     TileMeshList&               meshes = publishedTileGeometry.Meshes();
     size_t                      minInstanceCount = m_geometries.size() / 50;               // If the part will include 1/50th of geometry, do instancing (even if part does not deem it worthy).
+    minInstanceCount = std::max(minInstanceCount, (size_t)2);
 
     // Extract instances first...
     for (auto& geom : m_geometries)
         {
-        auto const&   part = geom->GetPart();
+        auto const&     part = geom->GetPart();
+        static bool     s_disableInstancing = false;
 
-        if (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance())))
+        if (!s_disableInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
             {
             auto const&         found = partMap.find(part.get());
             TileMeshPartPtr     meshPart;
@@ -2804,12 +2845,29 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
+#ifdef VALIDATE_POLYFACE_DENSITY
+        size_t          facetCount = 0;
+        static size_t   s_maxFacetDensityLimit = 1000;
+
+        for (auto& polyface : polyfaces)
+            facetCount += polyface.m_polyface->GetFaceCount();
+
+        size_t     facetDensity = facetCount / rangePixels;
+    
+        if (facetDensity > s_maxFacetDensity)
+            s_maxFacetDensity = facetDensity;
+
+        BeAssert (facetCount / rangePixels > s_maxFacetDensityLimit && "Facet Density Limit exceeded");
+#endif
+
+
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsPtr    displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+            // unused - size_t                  pointCount = polyface->GetPointCount();
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -2827,8 +2885,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 {
                 // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
                 // A polyface with many points is likely a tesselation from an outside source.
-                bool        doDecimate          = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
-                bool        doVertexCluster     = !doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels;
+                static bool s_forceVertexCluster = false;
+                bool        doDecimate           = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                bool        doVertexCluster      = s_forceVertexCluster || (doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels);
 
                 if (doDecimate)
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
@@ -2837,7 +2896,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture);
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, twoSidedTriangles, hasTexture, hasTexture ? 0 : displayParams->GetFillColor());
                         }
                     }
                 }
@@ -2860,7 +2919,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels);
+                    meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels, displayParams->GetFillColor());
                 }
             }
         }
@@ -2945,30 +3004,11 @@ FeatureAttributesMap::FeatureAttributesMap()
     FeatureAttributes undefined;
     m_map[undefined] = 0;
 
-    BeAssert(1 == GetCount());
+    BeAssert(1 == GetNumIndices());
     BeAssert(0 == GetIndex(undefined));
-    BeAssert(1 == GetCount());
+    BeAssert(1 == GetNumIndices());
     BeAssert(!AnyDefined());
     BeAssert(!IsFull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t FeatureAttributesMap::GetIndex(FeatureAttributesCR attr)
-    {
-    auto iter = m_map.find(attr);
-    if (m_map.end() != iter)
-        return iter->second;
-    else if (IsFull())
-        return 0;
-
-    auto index = GetCount();
-    m_map[attr] = index;
-
-    BeAssert(GetCount() == index+1);
-    
-    return index;
     }
 
 /*---------------------------------------------------------------------------------**//**

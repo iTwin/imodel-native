@@ -535,7 +535,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         auto pView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
         if (pView.IsValid())
             {
-            pView->SetSource(DgnViewSource::Private);
+            pView->SetIsPrivate(true);
             pView->Update();
             }
         }
@@ -745,8 +745,6 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
-    view->SetSource(DgnViewSource::User);
-
     view->SetCode(code);
 
     //  The origin of a RedlineViewDefinition is always 0,0.
@@ -837,7 +835,7 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, OrthographicViewController& subjectView)
     {
-    DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName(), NULL, DgnViewSource::Generated);
+    DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName());
 
     auto rc = model.GetDgnMarkupProject()->Views().InsertView(view);
     if (BE_SQLITE_OK != rc)

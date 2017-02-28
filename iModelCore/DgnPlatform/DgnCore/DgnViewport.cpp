@@ -351,13 +351,13 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewControllerR controller)
+static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefinitionR cameraDef)
     {
     camera.ValidateLens();
     if (camera.IsFocusValid())
-         return;
+        return;
 
-    DPoint3dCR vDelta = controller.GetDelta();
+    DPoint3dCR vDelta = cameraDef.GetExtents();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
     double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
 
@@ -369,8 +369,8 @@ static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewContr
     eyePoint.y = vDelta.y/2.0;
     eyePoint.z = vDelta.z/2.0 + focusDistance;
 
-    controller.GetRotation().MultiplyTranspose(eyePoint);
-    eyePoint.Add(controller.GetOrigin());
+    cameraDef.GetRotation().MultiplyTranspose(eyePoint);
+    eyePoint.Add(cameraDef.GetOrigin());
 
     camera.SetEyePoint(eyePoint);
     camera.SetFocusDistance(focusDistance);
@@ -466,7 +466,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     SpatialViewControllerP physicalView = GetSpatialViewControllerP();
     if (nullptr != physicalView)
         {
-        CameraViewControllerP cameraView = GetCameraViewControllerP();
+        auto cameraView = m_viewController->GetViewDefinition().ToCameraViewP();
         if (!Allow3dManipulations())
             {
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
@@ -491,7 +491,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             if (cameraView)
                 {
                 m_isCameraOn = cameraView->IsCameraOn();
-                m_camera = cameraView->GetCameraViewDefinition().GetCameraR();
+                m_camera = cameraView->GetCameraR();
 
                 if (m_isCameraOn)
                     validateCamera(m_camera, *cameraView);
@@ -609,7 +609,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     DVec3d delta;
     delta.DifferenceOf(range.high, range.low);
 
-    CameraViewControllerP cameraView = GetCameraViewControllerP();
+    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
@@ -626,15 +626,13 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         npcPts[0].z = npcPts[1].z = high;
         NpcToWorld(worldPts, npcPts, 2);
 
-        auto& cameraDef = cameraView->GetCameraViewDefinition();
-
-        double lensAngle = cameraDef.GetLensAngle();
+        double lensAngle = cameraView->GetLensAngle();
         double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
 
         DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
-        DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraDef.GetZVector(), focusDist);
+        DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
 
-        auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraDef.GetYVector(), lensAngle);
+        auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraView->GetYVector(), lensAngle);
         if (ViewportStatus::Success != stat)
             return stat;
         }
@@ -718,7 +716,7 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     double low, high;
 
     if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
-        return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
+        return m_viewController->GetViewDefinition().GetTargetPoint(); // if there are no elements in the view and the camera is on, use the camera target point
 
     return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
     }
@@ -736,7 +734,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
-    CameraViewControllerP cameraView = GetCameraViewControllerP();
+    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
     if (cameraView && cameraView->IsCameraOn())
         {
         // get current box in view coordinates
@@ -744,7 +742,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
         frust.Translate(offset);
         ViewToWorld(frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
 
-        cameraView->SetupFromFrustum(frust);
+        m_viewController->SetupFromFrustum(frust);
         cameraView->CenterEyePoint();
 
         return SetupFromViewController();
@@ -771,24 +769,11 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnViewport::GetCameraTarget() const
-    {
-    DVec3d viewZ;
-    m_rotMatrix.GetRow(viewZ, 2);
-
-    DPoint3d target;
-    target.SumOf(m_camera.GetEyePoint(), viewZ, -1.0 * m_camera.GetFocusDistance());
-    return target;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnViewport::GetFocusPlaneNpc()
     {
-    double npcZ = WorldToNpc(GetCameraTarget()).z;
+    double npcZ = WorldToNpc(m_viewController->GetViewDefinition().GetTargetPoint()).z;
 
     if (npcZ < 0.0 || npcZ > 1.0)
         npcZ = WorldToNpc(DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,1.0)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,0.0)))).z;
@@ -808,7 +793,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    CameraViewControllerP cameraView = GetCameraViewControllerP();
+    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
@@ -836,7 +821,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 
         NpcToWorld(frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
 
-        cameraView->SetupFromFrustum(frust);
+        m_viewController->SetupFromFrustum(frust);
         cameraView->CenterEyePoint();
         return SetupFromViewController();
         }
@@ -1184,6 +1169,8 @@ void DgnViewport::ClearUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
+    ClearUndo();
+
     if (m_viewController.IsValid())
         {
         bool dropGraphics = true;
@@ -1213,10 +1200,10 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
             }
         }
 
-    ClearUndo();
-
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
+    SetupFromViewController();
+    SaveViewUndo();
 
     InvalidateScene();
     m_sync.InvalidateController();
