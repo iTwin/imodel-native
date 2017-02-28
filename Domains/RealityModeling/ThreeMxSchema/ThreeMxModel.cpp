@@ -349,8 +349,8 @@ struct  PublishTileNode : ModelTileNode
         
         ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder, bool twoSidedTriangles) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb), m_twoSidedTriangles(twoSidedTriangles) { }
 
-        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true); return SUCCESS; }
-        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true); return SUCCESS; }
+        virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true, 0); return SUCCESS; }
+        virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, FeatureAttributes(), m_twoSidedTriangles, true, 0); return SUCCESS; }
         };
     
 /*---------------------------------------------------------------------------------**//**
@@ -436,7 +436,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                 }
             else
                 {
-                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, FeatureAttributes(), twoSidedTriangles, true);
+                builder->AddPolyface(*polyface, DgnMaterialId(), dgnDb, FeatureAttributes(), twoSidedTriangles, true, 0);
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
