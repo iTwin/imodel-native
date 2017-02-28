@@ -287,7 +287,7 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileTriangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
@@ -330,7 +330,7 @@ struct TileMesh : RefCountedBase
 private:
     TileDisplayParamsPtr        m_displayParams;
     bvector<TileTriangle>       m_triangles;
-    bvector<TilePolyline>       m_polylines;
+    bvector<TilePolyline>       m_polylines;                             
     bvector<DPoint3d>           m_points;
     bvector<DVec3d>             m_normals;
     bvector<DPoint2d>           m_uvParams;
@@ -384,7 +384,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t fillColor);
+    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t fillColor);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -557,8 +557,6 @@ struct TileGeometry : RefCountedBase
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
     typedef bvector<TileStrokes>    T_TileStrokes;
-
-
 
 private:
     TileDisplayParamsPtr    m_params;
