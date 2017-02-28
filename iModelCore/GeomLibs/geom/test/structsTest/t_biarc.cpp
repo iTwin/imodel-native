@@ -161,6 +161,20 @@ bvector<DPoint3d> CreateArrow (DPoint3dCR startPoint, DVec3dCR vectorA, double h
     }
 
 
+#ifdef MultiRadiusRamp
+CurveVectorPtr ConstructMultiRadiusTurnToStraightRampPerpendicularIntersection
+(
+DPoint3dCR startPoint,
+DVec3dCR   startTangent,
+double     startDistance,
+bvector<double> const &radii,
+DPoint3dCR    intersectionLinePoint,
+DVec3dCR      intersectionLineTangent
+)
+    {
+
+    }
+#endif
 TEST(Biarc,LoopBack)
     {
     DPoint3d startPoint = DPoint3d::From (0,0,0);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Vu/VuOps.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -106,6 +106,17 @@ VuMask          leftMask,
 VuMask          rightMask,
 double          abstol = 0.0
 );
+
+static GEOMDLLIMPEXP void MakeEdges
+(
+VuSetP          graph,
+bvector<bvector<DPoint3d>> const &xyz,
+VuMask          leftMask,
+VuMask          rightMask,
+double          abstol = 0.0
+);
+
+
 //! Make a loop with coordinates in an array.
 static GEOMDLLIMPEXP void MakeLoop
 (
@@ -117,6 +128,17 @@ VuMask          leftMask,
 VuMask          rightMask,
 double          abstol = 0.0
 );
+
+//! Make loops with coordinates in an array.
+static GEOMDLLIMPEXP void MakeLoops
+(
+VuSetP          graph,
+bvector<bvector<DPoint3d>> const &xyz,
+VuMask          leftMask,
+VuMask          rightMask,
+double          abstol = 0.0
+);
+
 
 //! Add a rectangle (with subdivided edges) "outside" of the given range, using long edge count to control exterior subdivision.
 static GEOMDLLIMPEXP VuP AddRangeBase
@@ -141,7 +163,41 @@ double expansionFracton,//!< [in] added edges are on a rectangle expanded by thi
 VuMask insideMask,      //!< [in] mask for inside of rectangle.
 VuMask outsideMask      //!< [in] mask for outside of rectangle.
 );
+//! Create a vu graph with multiple kinds of input coordinate constraints.
+//!<ul>
+//!<li> parityBoundaries edges are marked VU_BOUNDARY_EDGE on both sides, with VU_EXTERIOR_EDGE on the outside
+//!<li> openChains are marked VU_RULE_EDGE
+//!</ul>
+static GEOMDLLIMPEXP VuSetP CreateTriangulatedGrid
+(
+bvector<bvector<DPoint3d>>  const &parityBoundaries,  //!< [in] closed loops which serve as boundaries in parity logic. (i.e. outer and hole boundaries)
+bvector<bvector<DPoint3d>>  const &openChains,  //!< [in] chains that are fixed edges but do not separate inside from outside.
+bvector<DPoint3d>           const &isolatedPoints,  //!< [in] (NOT IMPLEMENTED) isolated points to appear as vertices.
+bvector <double>            const &xBreaks,  //!< [in]  x values that are to appear in the graph as fixed linework
+bvector <double>            const &yBreaks,  //!< [in]  y values that are to appear in the graph as fixed linework
+double              maxEdgeXLength,  //!< [in]  if nonzero, split edges so their x length is at most maxEdgeXLength
+double              maxEdgeYLength,  //!< [in] if nonzoer, split edges so y length is at most maxEdgeYLength
+double              meshXLength,  //!< [in]     x size of initial grid
+double              meshYLength,  //!< [in]     y size of initial grid
+bool                isometricGrid,  //!< [in]   true to stagger the grid for honeycomb pattern
+bool                laplacianSmoothing  //!< [in]   true to apply a laplace smoothing step.
+);
 
+//!<ul>
+//!<li> Collect all face loops in the graph.
+//!<li> Return each as a polygon with simple coordinates.
+//!<li> In the tagged polygon, the given mask is inspected at each edge.
+//!<ul>
+//!<li>m_indexA is the AND of the masks around the face.
+//!</ul>m_indexB is the OR of the masks around the face.
+//!</ul>
+static GEOMDLLIMPEXP void CollectLoopsWithMaskSummary
+(
+VuSetP graph,
+TaggedPolygonVectorR polygons,
+VuMask mask,            //!< [in] mask to test around each face.
+bool wrap = false       //!< [in] true to add wraparound point to each polygon
+);
 };
 #endif
 
