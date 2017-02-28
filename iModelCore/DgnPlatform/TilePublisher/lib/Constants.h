@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*-------------------------------------------------------------------------------1-------+
 |
 |     $Source: TilePublisher/lib/Constants.h $
 |
@@ -189,7 +189,7 @@ static std::string s_unlitFragmentShader =
 "void main(void) {gl_FragColor = vec4(u_color);}\n";
 
 // Polyline shaders.
-static std::string s_polylineVertexShader =
+static std::string s_tesselatedPolylineVertexShader =
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_direction;\n"
 "attribute vec3 a_vertexDelta;\n"
@@ -213,7 +213,7 @@ static std::string s_polylineVertexShader =
 "}\n";
 
 
-static std::string s_polylineFragmentShader =
+static std::string s_tesselatedPolylineFragmentShader =
 "uniform float u_feather;\n"
 
 "bool computePolylineColor (vec4 color, float distance)\n"
@@ -249,6 +249,25 @@ static std::string s_polylineFragmentShader =
 "if (!computePolylineColor (u_color, centerDistance))\n"
 "       discard;\n"
 "}\n";
+
+static std::string s_simplePolylineVertexShader =
+"attribute vec3 a_pos;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"uniform float u_width;\n"
+"varying vec2 v_windowPos;\n"
+"void main(void) {\n"
+"vec4 modelPos = vec4(a_pos, 1.0);\n"
+"gl_Position =  czm_modelViewProjection * modelPos;\n"
+"vec4 windowPos = czm_modelToWindowCoordinates(modelPos);\n"
+"v_windowPos = windowPos.xy / windowPos.w;\n"
+"}\n";
+
+
+static std::string s_simplePolylineFragmentShader =
+"uniform vec4 u_color;\n"
+"varying vec2 v_windowPos;\n"
+"void main(void) {gl_FragColor = u_color;}\n";
 
 
 // From DgnViewMaterial.cpp

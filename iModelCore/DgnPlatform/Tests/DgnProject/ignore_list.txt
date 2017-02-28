@@ -37,6 +37,9 @@ PerformanceDgnECTests.*
 DgnECInstanceTests.*
 ImportTests.*
 
+#TFS 666963
+GetSetCustomHandledProprty.GeometryPart
+
 DependencyRevisionTest.Conflict
 DependencyRevisionTest.DirectAndIndirectChangesToSameElement
 DependencyRevisionTest.Merge
