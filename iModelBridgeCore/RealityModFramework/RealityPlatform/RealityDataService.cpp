@@ -691,8 +691,8 @@ void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
 
 UploadReport::~UploadReport()
     {
-    for (bmap<Utf8String, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
-        delete (it->second);
+    for (int i = 0; i < results.size(); ++i)
+        delete (results[i]);
     }
 
 void UploadReport::ToXml(Utf8StringR report)
@@ -705,12 +705,12 @@ void UploadReport::ToXml(Utf8StringR report)
         {
         writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
 
-        for (bmap<Utf8String, UploadResult*>::iterator it = results.begin(); it != results.end(); ++it)
+        for (int i = 0; i < results.size(); ++i)
             {
             writer->WriteElementStart("File");
                 {
-                UploadResult* ur = it->second;
-                writer->WriteAttribute("FileName", Utf8String(it->first).c_str());
+                UploadResult* ur = results[i];
+                writer->WriteAttribute("FileName", ur->name.c_str());
                 writer->WriteAttribute("timeSpent", (long)ur->timeSpent);
                 writer->WriteAttribute("CURLcode", ur->errorCode);
                 writer->WriteAttribute("uploadProgress", ur->uploadProgress);
@@ -854,12 +854,12 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     {
     RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
     Utf8String response;
-    if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == BentleyStatus::ERROR) //file does not exist, need POST Create
+    if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
         {
         RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
-        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == BentleyStatus::ERROR)
+        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
             {
             ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters");
             return BentleyStatus::ERROR;
@@ -907,6 +907,9 @@ BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
 
 UploadReport* RealityDataServiceUpload::Perform()
     {
+    m_currentUploadedAmount = 0;
+    m_progress = 0.0;
+
     m_ulReport = UploadReport();
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
@@ -985,15 +988,15 @@ UploadReport* RealityDataServiceUpload::Perform()
                         {
                         if(!fileUp->FinishedSending())
                             {
-                            if(m_pProgressFunc)
-                                m_pProgressFunc(fileUp->GetFilename(), (float)fileUp->GetUploadedSize() / (float)fileUp->GetFileSize());
+                            if(m_pProgressFunc && UpdateUploadedAmount(fileUp->GetMessageSize()))
+                                m_pProgressFunc(fileUp->GetFilename(), ((double)fileUp->GetUploadedSize()) / fileUp->GetFileSize(), m_progress);
                             SetupCurlforFile(fileUp, 0);
                             still_running++;
                             }
                         else
                             {
-                            if (m_pProgressFunc)
-                                m_pProgressFunc(fileUp->GetFilename(), 1.0f);
+                            if (m_pProgressFunc && UpdateUploadedAmount(fileUp->GetMessageSize()))
+                                m_pProgressFunc(fileUp->GetFilename(), 1.0, m_progress);
                             ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                             fileUp->CloseFile();
                             }  
@@ -1122,8 +1125,8 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
     ur->errorCode = ErrorCode;
     ur->uploadProgress = (100 * pEntry->GetUploadedSize() / pEntry->GetFileSize());
     ur->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
-
-    m_ulReport.results.Insert(pEntry->GetFilename(), ur);
+    ur->name = pEntry->GetFilename();
+    m_ulReport.results.push_back(ur);
 
     delete pEntry;
     }
@@ -1141,13 +1144,29 @@ Utf8String RealityDataServiceUpload::GetAzureToken()
     return m_azureToken;
     }
 
+bool RealityDataServiceUpload::UpdateUploadedAmount(uint64_t uploadedAmount)
+    {
+    m_currentUploadedAmount += uploadedAmount;
+    m_progress = ((double)m_currentUploadedAmount) / m_fullUploadSize;
+    bool sendProgressCallback = false;
+    if(m_progress > m_progressThreshold)
+        {
+        sendProgressCallback = true;
+        m_progressThreshold += m_progressStep;
+        }
+    return sendProgressCallback;
+    }
+
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
-    m_id(id), m_overwrite(overwrite), m_azureTokenTimer(0)
+    m_id(id), m_overwrite(overwrite), m_azureTokenTimer(0), m_progress(0.0), m_progressStep(0.01), m_progressThreshold(0.01),
+    m_currentUploadedAmount(0)
     { 
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
     m_handshakeRequest = new AzureWriteHandshake(m_id);
     GetAzureToken();
+
+    RealityDataFileUpload* fileUp;
 
     if(uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {
@@ -1169,12 +1188,18 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
             if(!uploadPath.IsDirectory() && duplicateSet.find(fileName.GetNameUtf8()) == duplicateSet.end())
                 {
                 duplicateSet.insert(fileName.GetNameUtf8());
-                m_filesToUpload.push_back(new RealityDataFileUpload(fileName, root, m_azureServer, i++));
+                fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
+                m_filesToUpload.push_back(fileUp);
+                m_fullUploadSize += fileUp->GetFileSize();
                 }
             }
         }
     else if (uploadPath.DoesPathExist())
-         m_filesToUpload.push_back(new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0));
+        {
+        fileUp = new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
+        m_filesToUpload.push_back(fileUp);
+        m_fullUploadSize = fileUp->GetFileSize();
+        }
 
     m_pCurlHandle = curl_multi_init();
     }
@@ -1199,31 +1224,34 @@ Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaNam
 const int RealityDataService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequest& request, BentleyStatus& status)
+bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
-
+    status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status != BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         { 
         std::cout << "RealityDataPagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         }
     else
+        {
         RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        if ((uint8_t)entities.size() > request.GetPageSize())
+            status = RequestStatus::NOMOREPAGES;
+        }
 
     return entities;
     }
 
-SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, BentleyStatus& status)
+SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
     
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status != BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1234,12 +1262,12 @@ SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& reque
     return entities[0];
     }
 
-RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, BentleyStatus& status)
+RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
 
-    if (status != BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataDocumentByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1252,7 +1280,7 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
     return RealityDataDocument::Create(instances["instances"][0]);
     }
 
-void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, BentleyStatus& status)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RequestStatus& status)
     {
     int stat = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1266,21 +1294,21 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
     else
         resultString = WSGRequest::GetInstance().PerformRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
 
-    status = BentleyStatus::SUCCESS;
+    status = RequestStatus::SUCCESS;
     if(stat != CURLE_OK)
         {
-        status = BentleyStatus::ERROR;
+        status = RequestStatus::ERROR;
         std::cout << "RealityDataDocumentContentByIdRequest failed with response" << std::endl;
         std::cout << resultString << std::endl;
         }
     }
 
-RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, BentleyStatus& status)
+RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
 
-    if(status == BentleyStatus::SUCCESS)
+    if(status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataFolderByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1293,24 +1321,28 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
     return RealityDataFolder::Create(instances["instances"][0]);
     }
 
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, BentleyStatus& status)
+bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status == BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataListByEnterprisePagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         }
     else
+        {
         RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        if ((uint8_t)entities.size() > request.GetPageSize())
+            status = RequestStatus::NOMOREPAGES;
+        }
 
     return entities;
     }
 
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, BentleyStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status)
 {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
@@ -1319,7 +1351,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
     Json::Reader::Parse(jsonString, instances);
 
     bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
-    if (status == BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataProjectRelationshipByProjectIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1333,7 +1365,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
     return relations;
 }
 
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, BentleyStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status)
     {   
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
@@ -1342,7 +1374,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
     Json::Reader::Parse(jsonString, instances);
 
     bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
-    if (status == BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataProjectRelationshipByProjectIdPagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1351,12 +1383,14 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
         {
         for(auto instance : instances["instances"])
             relations.push_back(RealityDataProjectRelationship::Create(instance));
+        if((uint8_t)relations.size() > request.GetPageSize())
+            status = RequestStatus::NOMOREPAGES;
         }
 
     return relations;
     }
 
-BentleyStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse)
+RequestStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1364,14 +1398,14 @@ BentleyStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* re
 
     Json::Value instances(Json::objectValue);
     if((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return BentleyStatus::ERROR;
+        return RequestStatus::ERROR;
 
     request->AdvancePage();
 
-    return BentleyStatus::SUCCESS;
+    return RequestStatus::SUCCESS;
     }
 
-BentleyStatus RealityDataService::RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse)
+RequestStatus RealityDataService::RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1379,7 +1413,7 @@ BentleyStatus RealityDataService::RequestToJSON(RealityDataUrl* request, Utf8Str
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return BentleyStatus::ERROR;
+        return RequestStatus::ERROR;
 
-    return BentleyStatus::SUCCESS;
+    return RequestStatus::SUCCESS;
     }

@@ -17,10 +17,11 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-static void progressFunc(Utf8String filename, float progress)
+static void progressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
     char progressString[1024];
-    sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
+    //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
+    sprintf(progressString, "upload percent : %f", repoProgress * 100.0);
     std::cout << progressString << std::endl;
     }
 
@@ -62,6 +63,7 @@ int main(int argc, char *argv[])
     if (upload->IsValidUpload())
         {
         upload->SetProgressCallBack(progressFunc);
+        upload->SetProgressStep(0.05);
         time_t time = std::time(nullptr);
         UploadReport* ur = upload->Perform();
         time_t time2 = std::time(nullptr);

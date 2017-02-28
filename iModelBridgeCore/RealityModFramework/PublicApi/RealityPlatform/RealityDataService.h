@@ -21,7 +21,7 @@
 #include <sql.h>
 #include <sqlext.h>
 
-//#define CHUNK_SIZE                  (512*1024) - 1 //512Kb CURL_MAX_READ_SIZE
+#define CHUNK_SIZE                  (4*1024*1024) //4Mb 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
@@ -370,7 +370,7 @@ private:
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
 //! @param[in] progress    Percentage uploaded.
-typedef std::function<void(Utf8String filename, float progress)> RealityDataServiceUpload_ProgressCallBack;
+typedef std::function<void(Utf8String filename, double fileProgress, double repoProgress)> RealityDataServiceUpload_ProgressCallBack;
 
 // ErrorCode --> Curl error code.
 //! Callback function to follow the download progression.
@@ -399,7 +399,7 @@ struct RealityDataFileUpload : public RealityDataUrl
     {
 public:
     RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
-        m_azureServer(azureServer), m_index(index), m_chunkSize(4 * 1024 * 1024), m_filename(filename.GetNameUtf8()),
+        m_azureServer(azureServer), m_index(index), m_chunkSize(CHUNK_SIZE), m_filename(filename.GetNameUtf8()),
         m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true), nbRetry(0)
         {
         m_validRequestString = false;
@@ -410,15 +410,18 @@ public:
         m_fileUrl.ReplaceAll("\\","/");
 
         m_requestType = HttpRequestType::PUT_Request;
+
+        filename.GetFileSize(m_fileSize);
         }
 
     REALITYDATAPLATFORM_EXPORT void ReadyFile()
         {
+        m_chunkSize = CHUNK_SIZE;
         BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
         BeAssert(status == BeFileStatus::Success);
 
-        status = m_fileStream.GetSize((uint64_t)m_fileSize);
-        BeAssert(status == BeFileStatus::Success);
+        /*status = m_fileStream.GetSize((uint64_t)m_fileSize);
+        BeAssert(status == BeFileStatus::Success);*/
         m_singleChunk = m_fileSize < m_chunkSize;
 
         if(!m_singleChunk)
@@ -546,12 +549,13 @@ struct UploadResult
     int                     errorCode; //code returned by curl
     size_t                  uploadProgress; //a percentage of how much of the file was successfully downloaded
     time_t                  timeSpent;
+    Utf8String              name;
     };
 
 struct UploadReport
     {
     size_t                  packageId;
-    bmap<Utf8String, UploadResult*> results;
+    bvector<UploadResult*>  results;
     ~UploadReport();
 
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report);
@@ -620,6 +624,10 @@ struct RealityDataServiceUpload : public CurlConstructor
     //! Set callback to follow progression of the upload.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func)
                                                                    { m_pProgressFunc = pi_func; }
+
+    //! Set interval at which to send a progress callback. Default 1% (0.01)
+    REALITYDATAPLATFORM_EXPORT void SetProgressStep(double step) { m_progressThreshold = m_progressStep = step; }
+
     //! Set callback to allow the user to mass cancel all uploads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceUpload_HeartbeatCallBack pi_func)
                                                                    { m_pHeartbeatFunc = pi_func; }
@@ -628,6 +636,8 @@ struct RealityDataServiceUpload : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
     
     REALITYDATAPLATFORM_EXPORT bool IsValidUpload() { return m_filesToUpload.size() > 0; }
+
+    REALITYDATAPLATFORM_EXPORT bool UpdateUploadedAmount(uint64_t uploadedAmount);
 
     //! Start the upload progress for all links.
     REALITYDATAPLATFORM_EXPORT UploadReport* Perform();
@@ -658,7 +668,9 @@ private:
     Utf8String                  m_proxyCreds;
     BeFileName                  m_certPath;
     RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
-    float                       m_progressStep;
+    double                      m_progressStep;
+    double                      m_progress;
+    double                      m_progressThreshold;
     RealityDataServiceUpload_StatusCallBack m_pStatusFunc;
     RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
 
@@ -671,6 +683,17 @@ private:
     UploadReport                m_ulReport;
     size_t                      m_curEntry;
     time_t                      m_azureTokenTimer;
+
+    uint64_t                    m_fullUploadSize;
+    uint64_t                    m_currentUploadedAmount;
+    };
+
+
+enum class RequestStatus
+    {
+    SUCCESS = 0,
+    ERROR = 1,
+    NOMOREPAGES = 2
     };
 
 //=====================================================================================
@@ -749,42 +772,42 @@ public:
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, RequestStatus& status);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request, RequestStatus& status);
 
     //! Returns a RealityDataDocument or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status);
 
     //! Returns the content of a RealityData Service document
-    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static void Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RequestStatus& status);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Request(const RealityDataFolderByIdRequest& request, RequestStatus& status);
 
     //! Returns a list of RealityData objects that belongs to the enterprise.
     //! Notice that the enterprise is not usually provided and the enterprise of the currently
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static BentleyStatus PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static BentleyStatus RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse);
 
 private:
     static Utf8String s_realityDataServer;
