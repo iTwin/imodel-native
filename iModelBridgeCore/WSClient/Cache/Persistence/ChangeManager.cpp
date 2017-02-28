@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -386,7 +386,8 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     if (info.GetFilePath() != filePath)
         {
         FileCache location = info.GetLocation(FileCache::Persistent);
-        if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, location, copyFile))
+        Utf8String cacheTag = info.GetFileCacheTag();
+        if (SUCCESS != m_fileStorage.CacheFile(info, filePath, cacheTag.c_str(), location, copyFile))
             return ERROR;
         }
 
@@ -826,6 +827,7 @@ ChangeManager::FileRevisionPtr ChangeManager::ReadFileRevision(ECInstanceKeyCR i
         {
         SetupRevisionChanges(info, *revision);
         revision->SetFilePath(info.GetFilePath());
+        revision->SetFileCacheTag(info.GetFileCacheTag());
         }
 
     return revision;
@@ -1071,6 +1073,7 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
+    info.SetFileCacheTag(revision.GetFileCacheTag());
     if (SUCCESS != m_fileInfoManager.SaveInfo(info))
         return ERROR;
 

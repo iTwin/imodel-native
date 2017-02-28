@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/SyncCachedInstancesSeperatelyTask.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -79,7 +79,9 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
                  result.GetError().GetId() == WSError::Id::NotEnoughRights)
             {
             AddFailedObject(txn, objectId, result.GetError());
-            if (CacheStatus::OK != txn.GetCache().RemoveInstance(objectId))
+            auto status = txn.GetCache().RemoveInstance(objectId);
+            if (CacheStatus::OK != status &&
+                CacheStatus::DataNotCached != status)
                 {
                 SetError();
                 }

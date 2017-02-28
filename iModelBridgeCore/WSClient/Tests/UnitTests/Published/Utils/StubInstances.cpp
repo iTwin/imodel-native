@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/StubInstances.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StubInstances.h"
@@ -145,7 +145,7 @@ Utf8String StubInstances::ToChangesetResponseJson() const
     return dataJson.toStyledString();
     }
 
-WSCreateObjectResult StubInstances::ToWSCreateObjectResult() const
+WSCreateObjectResult StubInstances::ToWSCreateObjectResult(Utf8StringCR fileETag) const
     {
     if (m_instances.empty())
         {
@@ -154,7 +154,7 @@ WSCreateObjectResult StubInstances::ToWSCreateObjectResult() const
         }
     Json::Value dataJson;
     dataJson["changedInstance"]["instanceAfterChange"] = ConvertStubInstanceToJson(m_instances.front());
-    return WSCreateObjectResult::Success(dataJson);
+    return WSCreateObjectResult::Success({HttpStringBody::Create(Json::FastWriter::ToString(dataJson)), fileETag});
     }
 
 StubInstances::StubRelationshipInstances::StubRelationshipInstances(bvector<std::shared_ptr<StubRelationshipInstance>>& relationships) :

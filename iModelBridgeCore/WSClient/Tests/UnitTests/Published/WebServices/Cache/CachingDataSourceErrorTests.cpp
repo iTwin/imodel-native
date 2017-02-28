@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceErrorTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,32 +19,40 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescripti
     {
     auto error = CachingDataSource::Error(WSError());
 
-    EXPECT_EQ("", error.GetDescription());
     EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::Success);
 
-    EXPECT_EQ("", error.GetDescription());
     EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError);
 
-    EXPECT_EQ("", error.GetDescription());
     ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDescription)
+    {
+    auto error = CachingDataSource::Error(ICachingDataSource::Status::SchemaError);
+
+    ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::DataNotCached);
 
-    EXPECT_EQ("", error.GetDescription());
     ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErrorAndMessageSet)
@@ -138,5 +146,23 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusDataNotCachedStatusPassed_Se
 
     ASSERT_EQ(ICachingDataSource::Status::DataNotCached, error.GetStatus());
     EXPECT_FALSE(error.GetMessage().empty());
+    EXPECT_TRUE(error.GetDescription().empty());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCanceledCancellationTokenPassed_SetsInternalCacheErrorWithMessage)
+    {
+    auto error = CachingDataSource::Error(CacheStatus::Error, SimpleCancellationToken::Create(false));
+
+    ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, error.GetStatus());
+    EXPECT_FALSE(error.GetMessage().empty());
+    EXPECT_TRUE(error.GetDescription().empty());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_CanceledCancellationTokenPassed_SetsStatusCanceled)
+    {
+    auto error = CachingDataSource::Error(CacheStatus::OK, SimpleCancellationToken::Create(true));
+
+    ASSERT_EQ(ICachingDataSource::Status::Canceled, error.GetStatus());
+    EXPECT_TRUE(error.GetMessage().empty());
     EXPECT_TRUE(error.GetDescription().empty());
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -165,12 +165,12 @@ WSError::WSError(HttpErrorCR httpError)
 BentleyStatus WSError::ParseBody(Http::ResponseCR httpResponse)
     {
     Utf8String contentType = httpResponse.GetHeaders().GetContentType();
-    if (contentType.find("application/json") != Utf8String::npos)
+    if (contentType.find(REQUESTHEADER_ContentType_ApplicationJson) != Utf8String::npos)
         {
         // JSON is main error format
         return ParseJsonError(httpResponse);
         }
-    else if (contentType.find("application/xml") != Utf8String::npos)
+    else if (contentType.find(REQUESTHEADER_ContentType_ApplicationXml) != Utf8String::npos)
         {
         // XML format can occur when requesting XML ECSchema from v1.x server.
         return ParseXmlError(httpResponse);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSClient.h>
@@ -60,6 +60,34 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl
     client->GetServerInfo()->Wait();
     }
 
+TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError_SendsGetInfoUrl)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::BadRequest, "Foo Error Message"));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->GetServerInfo()->Wait();
+    }
+
+TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsNotNotFoundAndWSGError_ReturnsError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+   
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSErrorHttpResponse(HttpStatus::BadRequest, "Foo", "Boo", "Goo"));
+
+    auto result = client->GetServerInfo()->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ("Boo", result.GetError().GetMessage());
+    EXPECT_EQ("Goo", result.GetError().GetDescription());
+    }
+
 TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsGetAboutPageUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
@@ -85,7 +113,7 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -100,7 +128,7 @@ TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageT
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -112,7 +140,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_Retries
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(3);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "some other html", {{"Content-Type", "text/html"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "some other html", {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::NotFound));
 

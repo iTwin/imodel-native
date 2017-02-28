@@ -8,9 +8,7 @@
 #include <DgnDbServer/Client/DgnDbClient.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <json/json.h>
-#include <DgnPlatform/TxnManager.h>
 #include <DgnPlatform/RevisionManager.h>
-#include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <DgnDbServer/Client/Logging.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
@@ -402,7 +400,9 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
 #endif
         if (createRepositoryResult.IsSuccess())
             {
-            JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            Json::Value json;
+            createRepositoryResult.GetValue().GetJson(json);
+            JsonValueCR repositoryInstance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             auto repositoryInfo = RepositoryInfo::Parse(repositoryInstance, m_serverUrl);
             finalResult->SetSuccess(repositoryInfo);
             return;
@@ -633,7 +633,6 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    FileInfoPtr fileInfo = FileInfo::Create(*db, "");
     auto readResult = RepositoryInfo::ReadRepositoryInfo(*db);
     BeBriefcaseId briefcaseId = db->GetBriefcaseId();
     if (!readResult.IsSuccess() || briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
@@ -658,6 +657,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
             return;
             }
 
+        FileInfoPtr fileInfo = FileInfo::Create(*db, "");
         auto connection = connectionResult.GetValue();
         connection->ValidateBriefcase(fileInfo->GetFileId(), briefcaseId, cancellationToken)
             ->Then([=] (DgnDbServerStatusResultCR validationResult)
@@ -668,7 +668,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
                 finalResult->SetError(validationResult.GetError());
                 return;
                 }
-            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
+            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connection);
             if (doSync)
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
@@ -753,7 +753,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
     downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
-    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken);
+    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, callback, cancellationToken);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDownloadBriefcaseFile);
 #endif
@@ -809,9 +809,9 @@ DgnDbServerStatusResult DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnection
     {
     const Utf8String methodName = "DgnDbClient::DownloadBriefcase";
     if (!doSync)
-        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
+        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
 
-    DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
+    DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
@@ -912,9 +912,11 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(briefcaseResult.GetError()));
         }
 
-            JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::Parse(instance);
-            FileInfoPtr fileInfo = FileInfo::Parse(instance);
+    Json::Value json;
+    briefcaseResult.GetValue().GetJson(json);
+    JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+    DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::Parse(instance);
+    FileInfoPtr fileInfo = FileInfo::Parse(instance);
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 

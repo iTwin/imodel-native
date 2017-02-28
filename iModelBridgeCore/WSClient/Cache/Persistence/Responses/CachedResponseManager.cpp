@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -625,7 +625,7 @@ BentleyStatus CachedResponseManager::AddAdditionalInstance(ResponseKeyCR respons
         {
         if (SUCCESS != InsertInfo(info))
             return ERROR;
-        if (SUCCESS != SetResponseCompleted(responseKey, true))
+        if (CacheStatus::OK != SetResponseCompleted(responseKey, true))
             return ERROR;
         }
 
@@ -885,12 +885,12 @@ BentleyStatus CachedResponseManager::TrimPages(ResponseKeyCR responseKey, uint64
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus CachedResponseManager::SetResponseCompleted(ResponseKeyCR responseKey, bool isCompleted)
+CacheStatus CachedResponseManager::SetResponseCompleted(ResponseKeyCR responseKey, bool isCompleted)
     {
     ECInstanceKey infoKey = FindInfo(responseKey);
     if (!infoKey.IsValid())
         {
-        return ERROR;
+        return CacheStatus::DataNotCached;
         }
 
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::SetResponseCompleted", [&]
@@ -907,10 +907,10 @@ BentleyStatus CachedResponseManager::SetResponseCompleted(ResponseKeyCR response
     if (BE_SQLITE_DONE != status) // WIP06
         {
         BeAssert(false);
-        return ERROR;
+        return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

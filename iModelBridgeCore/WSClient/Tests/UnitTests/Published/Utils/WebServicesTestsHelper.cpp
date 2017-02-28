@@ -136,7 +136,7 @@ Response StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::ma
 Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body, const std::map<Utf8String, Utf8String>& headers)
     {
     auto newHeaders = headers;
-    newHeaders["Content-Type"] = "application/json";
+    newHeaders["Content-Type"] = REQUESTHEADER_ContentType_ApplicationJson;
     return StubHttpResponse(httpStatus, body, newHeaders);
     }
 
@@ -159,7 +159,7 @@ Http::Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, 
     errorJson["errorMessage"] = message;
     errorJson["errorDescription"] = description;
 
-    return StubHttpResponse(status, errorJson.toStyledString(), {{"Content-Type", "application/json"}});
+    return StubHttpResponse(status, errorJson.toStyledString(), {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
     }
 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
@@ -187,7 +187,7 @@ WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
 Http::Response StubWSInfoHttpResponseBentleyConnectV1()
     {
     auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
-    return StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}});
+    return StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}});
     }
 
 Http::Response StubWSInfoHttpResponseWebApi11()
@@ -382,14 +382,14 @@ BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
     return filePath;
     }
 
-BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName)
+BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName)
     {
     BeFileName filePath = StubFilePath();
 
     BeFile file;
     EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));
 
-    uint32_t kbCount = bytesCount / 1024;
+    uint64_t kbCount = bytesCount / 1024;
     char kbBuffer[1024];
     memset(kbBuffer, 'X', 1024);
 

@@ -22,6 +22,8 @@ using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+#define HEADER_MasFileETag "Mas-File-ETag"
+
 Json::Value StubWSObjectCreationJson()
     {
     return ToJson(
@@ -791,7 +793,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
         {
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
-        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
+        {{"SkipToken", "ServerSkipToken"}, {"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     auto result = client->SendQueryRequest(StubWSQuery(), nullptr, "SomeSkipToken")->GetResult();
@@ -982,7 +984,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_C
         {
         EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/$query", request.GetUrl());
         EXPECT_EQ("POST", request.GetMethod());
-        EXPECT_STREQ("application/json", request.GetHeaders().GetContentType());
+        EXPECT_STREQ(REQUESTHEADER_ContentType_ApplicationJson, request.GetHeaders().GetContentType());
         EXPECT_STREQ("$filter=filter", request.GetRequestBody()->AsString().c_str());
         return StubHttpResponse();
         });
@@ -1506,7 +1508,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2F
                 }
             })");
 
-    EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    Json::Value jsonBody;
+    response.GetValue().GetJson(jsonBody);
+    EXPECT_EQ(expectedObject, jsonBody);
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_ConstructsWSG2FormatResponseFromResponseId)
@@ -1543,7 +1547,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectId_Con
                 }
             })");
 
-    EXPECT_EQ(expectedObject, response.GetValue().GetObject());
+    Json::Value json;
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(json));
+    EXPECT_EQ(expectedObject, json);
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationshipWithWSChangeset_ConstructsWSG2FormatResponseForWSChangeset)
@@ -1565,9 +1571,8 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithRelationship
     ASSERT_TRUE(response.IsSuccess());
 
     // Assert
-    auto a = response.GetValue().GetObject().toStyledString();
     rapidjson::Document responseJson;
-    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+    response.GetValue().GetJson(responseJson);
 
     bmap<ObjectId, ObjectId> ids;
     EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
@@ -1607,9 +1612,8 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithObjectIdAndR
     ASSERT_TRUE(response.IsSuccess());
 
     // Assert
-    auto a = response.GetValue().GetObject().toStyledString();
     rapidjson::Document responseJson;
-    JsonUtil::ToRapidJson(response.GetValue().GetObject(), responseJson);
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(responseJson));
 
     bmap<ObjectId, ObjectId> ids;
     EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(responseJson, [&] (ObjectId oldId, ObjectId newId)
@@ -1650,7 +1654,23 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponseJ
     auto response = client->SendCreateObjectRequest(creationJson)->GetResult();
 
     ASSERT_TRUE(response.IsSuccess());
-    EXPECT_EQ(responseObject, response.GetValue().GetObject());
+    Json::Value jsonBody;
+    response.GetValue().GetJson(jsonBody);
+    EXPECT_EQ(responseObject, jsonBody);
+    }
+
+TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::Created, "", {{HEADER_MasFileETag, "NewTag"}}));
+
+    auto result = client->SendCreateObjectRequest(StubWSObjectCreationJson(), StubFile())->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_PassesResponseJsonAsObject)
@@ -1676,7 +1696,9 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithObjectId_Pas
     auto response = client->SendCreateObjectRequest(objectId, creationJson)->GetResult();
 
     ASSERT_TRUE(response.IsSuccess());
-    EXPECT_EQ(responseObject, response.GetValue().GetObject());
+    Json::Value json;
+    EXPECT_EQ(SUCCESS, response.GetValue().GetJson(json));
+    EXPECT_EQ(responseObject, json);
     }
 
 #ifdef USE_GTEST
@@ -2060,6 +2082,20 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_Ad
     }
 #endif
 
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", {{HEADER_MasFileETag, "NewTag"}}));
+
+    auto result = client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue, nullptr, StubFile())->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
+    }
+
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2158,6 +2194,20 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     client->SendUpdateFileRequest({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"))->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", {{HEADER_MasFileETag, "NewTag"}}));
+
+    auto result = client->SendUpdateFileRequest(StubObjectId(), StubFile())->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_EQ("NewTag", result.GetValue().GetFileETag());
+    }
+
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24_SendsPutRequestWithAllowRedirect)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -2244,6 +2294,43 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
     EXPECT_TRUE(response.IsSuccess());
     }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndUploadReturnsETag_ReturnsNewFileETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+            {"Location", "https://foozure.com/boo"},
+            {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"},
+            {"Mas-Upload-Confirmation-Id", "TestUploadId"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "WSGTag"}, {HEADER_MasFileETag, "WSGTag"}}));
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    ASSERT_TRUE(response.IsSuccess());
+    EXPECT_EQ("NewTag", response.GetValue().GetFileETag());
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_ReturnsNewFileETag)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+            {"Location", "https://foozure.com/boo"},
+            {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    ASSERT_TRUE(response.IsSuccess());
+    EXPECT_EQ("NewTag", response.GetValue().GetFileETag());
+    }
+
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndUnknownUrlType_ReturnsError)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());

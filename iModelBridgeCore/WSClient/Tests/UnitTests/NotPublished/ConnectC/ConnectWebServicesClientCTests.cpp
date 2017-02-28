@@ -1076,7 +1076,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsClassNotF
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId><errorMessage>TestMessage</errorMessage><errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1128,7 +1128,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSchemaNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1180,7 +1180,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsRepositor
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1232,7 +1232,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsPropertyN
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1284,7 +1284,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsInstanceN
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1336,7 +1336,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsNotEnough
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1388,7 +1388,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSslRequir
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
 
@@ -1434,7 +1434,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsServerErr
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
 
@@ -1481,7 +1481,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsConflict_
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
 
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
 
@@ -1527,7 +1527,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsBadReques
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
 
@@ -1577,7 +1577,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsClassNotFou
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId><errorMessage>TestMessage</errorMessage><errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1640,7 +1640,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSchemaNotFo
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1703,7 +1703,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsRepositoryN
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1766,7 +1766,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsPropertyNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1829,7 +1829,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsNotEnoughRi
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1892,7 +1892,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSslRequired
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -1949,7 +1949,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsServerError
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2004,7 +2004,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsConflict_AP
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
 
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2062,7 +2062,7 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsBadRequest_
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2120,7 +2120,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsClassNotFound
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId><errorMessage>TestMessage</errorMessage><errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2172,7 +2172,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSchemaNotFoun
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2224,7 +2224,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsRepositoryNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2276,7 +2276,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsPropertyNotFo
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2328,7 +2328,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsInstanceNotFo
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2380,7 +2380,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsNotEnoughRigh
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2432,7 +2432,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSslRequired_A
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2478,7 +2478,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsServerError_A
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2525,7 +2525,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsConflict_APIR
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
 
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2571,7 +2571,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsBadRequest_AP
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";
@@ -2621,7 +2621,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsClassNotFou
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId><errorMessage>TestMessage</errorMessage><errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2685,7 +2685,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSchemaNotFo
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2746,7 +2746,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsRepositoryN
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2807,7 +2807,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsPropertyNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2868,7 +2868,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2932,7 +2932,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsNotEnoughRi
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -2994,7 +2994,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSslRequired
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -3052,7 +3052,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsServerError
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/instanceId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -3109,7 +3109,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsConflict_AP
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/instanceId", request.GetUrl().c_str());
 
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -3164,7 +3164,7 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsBadRequest_
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/instanceId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WString UltimateRefId(L"2c6f18fc-1ce8-4baf-a2eb-2f99b738eda1");
@@ -3223,7 +3223,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsClassNotFou
                       xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
                         <errorId>ClassNotFound</errorId><errorMessage>TestMessage</errorMessage><errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3274,7 +3274,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSchemaNotFo
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3325,7 +3325,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsRepositoryN
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3376,7 +3376,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsPropertyNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3427,7 +3427,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsInstanceNot
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3478,7 +3478,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsNotEnoughRi
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3529,7 +3529,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSslRequired
                         <errorMessage>TestMessage</errorMessage>
                         <errorDescription>TestDescription</errorDescription>
                     </ModelError>)");
-        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}});
+        return StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3574,7 +3574,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsServerError
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3620,7 +3620,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsConflict_AP
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
 
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";
@@ -3665,7 +3665,7 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsBadRequest_
         {
         EXPECT_STREQ("https://qa-wsg20-eus.cloudapp.net/v2.0/Repositories/BentleyCONNECT.Global--CONNECT.GLOBAL/GlobalSchema/Project_V4/blahId", request.GetUrl().c_str());
         auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";
-        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", "application/json"}});
+        return StubHttpResponse(HttpStatus::BadRequest, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}});
         });
 
     WCharP instanceId = L"blahId";

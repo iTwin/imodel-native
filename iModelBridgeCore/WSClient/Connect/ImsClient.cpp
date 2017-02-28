@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ImsClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -127,7 +127,7 @@ uint64_t lifetime
     HttpClient client(m_clientInfo, UrlProvider::GetSecurityConfigurator(m_httpHandler));
     Http::Request request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetAuthorization(authorization);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
     request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
 
@@ -138,7 +138,7 @@ uint64_t lifetime
 
         if (response.GetHttpStatus() == HttpStatus::InternalServerError)
             LOG.errorv("ImsClient: Received server error. Make sure that relying party URI '%s' is correct and registered for IMS service '%s'",
-            rpUri.c_str(), stsUrl.c_str());
+                rpUri.c_str(), stsUrl.c_str());
 
         if (response.GetHttpStatus() != HttpStatus::OK)
             return SamlTokenResult::Error({response});

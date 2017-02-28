@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbAdapterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -604,20 +604,26 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
             <ECClass typeName="B">
                 <BaseClass>Base</BaseClass>
             </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
             <ECClass typeName="AA">
                 <BaseClass>A</BaseClass>
             </ECClass>
             <ECClass typeName="BB">
                 <BaseClass>B</BaseClass>
             </ECClass>
+            <ECClass typeName="CC">
+                <BaseClass>C</BaseClass>
+            </ECClass>
             <ECRelationshipClass typeName="AB1" >
                 <Source polymorphic="True"><Class class="A"/></Source>
                 <Target polymorphic="True"><Class class="B"/></Target>
             </ECRelationshipClass>
             
-            <ECRelationshipClass typeName="AABB1" strength="referencing" strengthDirection="backward" >
+            <ECRelationshipClass typeName="AACC1">
                 <Source polymorphic="True"><Class class="AA"/></Source>
-                <Target polymorphic="True"><Class class="BB"/></Target>
+                <Target polymorphic="True"><Class class="CC"/></Target>
             </ECRelationshipClass>           
         </ECSchema>)");
 
@@ -717,6 +723,141 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
             <ECRelationshipClass typeName="AB1" >
                 <Source polymorphic="True"><Class class="A"/></Source>
                 <Target polymorphic="True"><Class class="Base"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
+
+    ECDbAdapter adapter(db);
+    auto sourceClass = adapter.GetECClass("TestSchema.A");
+    auto targetClass = adapter.GetECClass("TestSchema.B");
+
+    ECRelationshipClassCP relationshipClass = adapter.FindClosestRelationshipClassWithSource(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_NE(nullptr, relationshipClass);
+    EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
+    }
+
+TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneOppositeRelationshipClosest_ReturnsClosestMatching)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AC1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="C"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="BA1">
+                <Source polymorphic="True"><Class class="B"/></Source>
+                <Target polymorphic="True"><Class class="A"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="Base"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
+
+    ECDbAdapter adapter(db);
+    auto sourceClass = adapter.GetECClass("TestSchema.A");
+    auto targetClass = adapter.GetECClass("TestSchema.B");
+
+    ECRelationshipClassCP relationshipClass = adapter.FindClosestRelationshipClassWithSource(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_NE(nullptr, relationshipClass);
+    EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
+    }
+
+TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardOppositeRelationshipClosest_ReturnsMatchingFirstClass)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AC1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="C"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="BA1">
+                <Source polymorphic="True"><Class class="B"/></Source>
+                <Target polymorphic="True"><Class class="A"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="Base"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
+
+    ECDbAdapter adapter(db);
+    auto sourceClass = adapter.GetECClass("TestSchema.A");
+    auto targetClass = adapter.GetECClass("TestSchema.B");
+
+    ECRelationshipClassCP relationshipClass = adapter.FindClosestRelationshipClassWithSource(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_NE(nullptr, relationshipClass);
+    EXPECT_EQ(adapter.GetECRelationshipClass("TestSchema.BA1"), relationshipClass);
+    }
+
+TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardOppositeRelationshipClosest_ReturnsMatchingSecondClass)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AC1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="C"/></Target>
+            </ECRelationshipClass>         
+            <ECRelationshipClass typeName="AB1" >
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="Base"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="BA1">
+                <Source polymorphic="True"><Class class="B"/></Source>
+                <Target polymorphic="True"><Class class="A"/></Target>
             </ECRelationshipClass>
         </ECSchema>)");
 

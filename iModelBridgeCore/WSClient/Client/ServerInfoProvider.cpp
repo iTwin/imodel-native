@@ -15,7 +15,6 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 ServerInfoProvider::ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration) :
 m_configuration(configuration),
-m_thread(WorkerThread::Create("ServerInfoProvider")),
 m_serverInfo(Http::Response()),
 m_serverInfoUpdated(0),
 m_enableWsgServerHeader(false)
@@ -41,10 +40,8 @@ void ServerInfoProvider::EnableWsgServerHeader(bool enable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener)
     {
-    m_thread->ExecuteAsync([=]
-        {
-        m_listeners.push_back(listener);
-        });
+    BeMutexHolder lock(m_mutex);
+    m_listeners.push_back(listener);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -52,16 +49,14 @@ void ServerInfoProvider::RegisterServerInfoListener(std::weak_ptr<IWSClient::ISe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener)
     {
-    m_thread->ExecuteAsync([=]
+    BeMutexHolder lock(m_mutex);
+    auto listenerPtr = listener.lock();
+    m_listeners.erase(std::remove_if(m_listeners.begin(), m_listeners.end(),
+        [=] (std::weak_ptr<IWSClient::IServerInfoListener> candidateWeakPtr)
         {
-        auto listenerPtr = listener.lock();
-        m_listeners.erase(std::remove_if(m_listeners.begin(), m_listeners.end(),
-            [=] (std::weak_ptr<IWSClient::IServerInfoListener> candidateWeakPtr)
-            {
-            auto candidatePtr = candidateWeakPtr.lock();
-            return nullptr == candidatePtr || candidatePtr == listenerPtr;
-            }), m_listeners.end());
-        });
+        auto candidatePtr = candidateWeakPtr.lock();
+        return nullptr == candidatePtr || candidatePtr == listenerPtr;
+        }), m_listeners.end());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -69,7 +64,6 @@ void ServerInfoProvider::UnregisterServerInfoListener(std::weak_ptr<IWSClient::I
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::NotifyServerInfoUpdated(WSInfoCR info) const
     {
-    ASSERT_CURRENT_THREAD(m_thread);
     for (auto& listenerWeakPtr : m_listeners)
         {
         auto listenerPtr = listenerWeakPtr.lock();
@@ -91,7 +85,7 @@ bool ServerInfoProvider::CanUseCachedInfo() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ServerInfoProvider::UpdateInfo(WSInfoCR info) const
+void ServerInfoProvider::UpdateInfo(WSInfoCR info)
     {
     m_serverInfo = info;
     m_serverInfoUpdated = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -112,14 +106,11 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
             finalResult->SetSuccess(result.GetValue());
             return;
             }
-        if (result.GetError().GetConnectionStatus() != Http::ConnectionStatus::OK)
+
+        WSError error(result.GetError());
+        if (error.GetStatus() != WSError::Status::ServerNotSupported)
             {
-            finalResult->SetError(result.GetError());
-            return;
-            }
-        if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
-            {
-            finalResult->SetError(result.GetError());
+            finalResult->SetError(error);
             return;
             }
 
@@ -178,41 +169,34 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo
-(
-bool forceQuery,
-ICancellationTokenPtr ct
-) const
+AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, ICancellationTokenPtr ct)
     {
-    return m_thread->ExecuteAsync <WSInfoResult>([=]
+    BeMutexHolder lock(m_mutex);
+    if (!forceQuery && CanUseCachedInfo())
+        return CreateCompletedAsyncTask(WSInfoResult::Success(m_serverInfo));
+
+    return m_getInfoExecutor.GetTask([=]
         {
-        if (!forceQuery && CanUseCachedInfo())
+        return GetInfo(ct)->Then<WSInfoResult>([=] (WSInfoResult result)
             {
+            BeMutexHolder lock(m_mutex);
+
+            if (!result.IsSuccess())
+                return WSInfoResult::Error(result.GetError());
+
+            UpdateInfo(result.GetValue());
+            NotifyServerInfoUpdated(result.GetValue());
+
             return WSInfoResult::Success(m_serverInfo);
-            }
-
-        // Block so additional GetServerInfo tasks would queue to m_thread
-        WSInfoResult result = GetInfo(ct)->GetResult();
-
-        if (!result.IsSuccess())
-            {
-            return WSInfoResult::Error(result.GetError());
-            }
-
-        UpdateInfo(result.GetValue());
-        NotifyServerInfoUpdated(result.GetValue());
-
-        return WSInfoResult::Success(m_serverInfo);
+            });
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> ServerInfoProvider::InvalidateInfo() const
+void ServerInfoProvider::InvalidateInfo()
     {
-    return m_thread->ExecuteAsync([this]
-        {
-        m_serverInfoUpdated = 0;
-        });
+    BeMutexHolder lock(m_mutex);
+    m_serverInfoUpdated = 0;
     }

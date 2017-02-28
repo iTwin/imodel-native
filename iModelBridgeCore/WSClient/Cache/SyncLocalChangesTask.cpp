@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -400,12 +400,12 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize);
 
         m_ds->GetClient()->SendCreateObjectRequest(creationJson, filePath, guard->GetProgressCallback(), guard)
-            ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& objectsResult)
+            ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& creationResult)
             {
-            if (!objectsResult.IsSuccess())
+            if (!creationResult.IsSuccess())
                 {
                 m_totalBytesToUpload -= currentFileSize;
-                HandleSyncError(objectsResult.GetError(), changeGroup, objectLabel);
+                HandleSyncError(creationResult.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
@@ -419,11 +419,9 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
                 return SUCCESS;
                 };
 
-            //! TODO: return HttpBody from WSCreateObjectResult
-            rapidjson::Document rapidJsonBody;
-            JsonUtil::ToRapidJson(objectsResult.GetValue().GetObject(), rapidJsonBody);
-
-            if (SUCCESS != changeset->ExtractNewIdsFromResponse(rapidJsonBody, handler))
+            rapidjson::Document jsonBody;
+            creationResult.GetValue().GetJson(jsonBody);
+            if (SUCCESS != changeset->ExtractNewIdsFromResponse(jsonBody, handler))
                 {
                 SetError();
                 return;
@@ -440,6 +438,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(CacheChangeG
 
             if (nullptr != fileRevision)
                 {
+                fileRevision->SetFileCacheTag(creationResult.GetValue().GetFileETag());
                 if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*fileRevision))
                     {
                     SetError();
@@ -595,6 +594,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(CacheChangeGroupPt
 
             auto txn = m_ds->StartCacheTransaction();
             m_totalBytesUploaded += currentFileSize;
+            revision->SetFileCacheTag(result.GetValue().GetFileETag());
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*revision))
                 {
                 SetError();
@@ -637,7 +637,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr 
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, false);
 
         m_ds->GetClient()->SendDeleteObjectRequest(revision->GetObjectId(), guard)
-            ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateFileResult& result)
+            ->Then(m_ds->GetCacheAccessThread(), [=] (WSDeleteObjectResult& result)
             {
             if (!result.IsSuccess())
                 {

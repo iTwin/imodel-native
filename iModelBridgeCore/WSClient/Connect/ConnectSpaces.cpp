@@ -2,7 +2,7 @@
  |
  |     $Source: Connect/ConnectSpaces.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -134,7 +134,7 @@ Http::Request ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson,
 
     if (acceptJson)
         {
-        request.GetHeaders().SetValue("Accept", "application/json");
+        request.GetHeaders().SetValue("Accept", REQUESTHEADER_ContentType_ApplicationJson);
         }
 
     return request;
@@ -242,7 +242,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
     usernameLowerCase.ToLower();
     Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + usernameLowerCase;
     Http::Request request = m_client.CreatePostRequest(url);
-    request.GetHeaders().SetValue("Content-Type", "application/json");
+    request.GetHeaders().SetValue("Content-Type", REQUESTHEADER_ContentType_ApplicationJson);
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     bmap<Utf8String, Utf8String> attributes;
@@ -482,7 +482,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
 
     Utf8String url = sm_eulaUrlBase + "/state";
     Http::Request request = m_client.CreatePostRequest(url);
-    request.GetHeaders().SetValue("Content-Type", "application/json");
+    request.GetHeaders().SetValue("Content-Type", REQUESTHEADER_ContentType_ApplicationJson);
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
 

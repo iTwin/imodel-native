@@ -2,7 +2,7 @@
  |
  |     $Source: Licensing/FeatureTracking.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -79,7 +79,7 @@ StatusInt FeatureTracking::RegisterFeatureUsage(bvector<FeatureTrackingData> usa
 
     HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreatePostRequest(GetServiceUrl());
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     Utf8String body = Json::FastWriter().write(usageList);
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
@@ -117,7 +117,7 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
 
     HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreateGetRequest(getURL);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
     HttpResponse httpResponse = request.Perform().get();
@@ -138,7 +138,7 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
 
     HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreateGetRequest(url);
-    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
     HttpResponse httpResponse = request.Perform().get();

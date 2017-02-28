@@ -74,35 +74,46 @@ void* EventManagerThread(void* arg)
 unsigned __stdcall EventManagerThread(void* arg)
 #endif
     {
-    DgnDbServerEventManagerContextPtr* managerContextPtr = (DgnDbServerEventManagerContextPtr*)arg;
-    DgnDbServerEventManagerContextPtr managerContext = *managerContextPtr;
-    DgnDbRepositoryConnectionP repositoryConnectionP = managerContext->GetRepositoryConnectionP();
-    DgnDbServerEventManagerP eventManager = managerContext->GetEventManagerP();
-    ICancellationTokenPtr cancellationTokenPtr = managerContext->GetCancellationTokenPtr();
-
-    while (true)
-        {
-        if (!managerContext)
+    try {
+        DgnDbServerEventManagerContextPtr* managerContextPtr = (DgnDbServerEventManagerContextPtr*)arg;
+        DgnDbServerEventManagerContextPtr managerContext = *managerContextPtr;
+        if (nullptr == managerContext)
             return 0;
 
-        if (cancellationTokenPtr->IsCanceled()) 
-            return 0;
+        DgnDbRepositoryConnectionP repositoryConnectionP = managerContext->GetRepositoryConnectionP();
+        DgnDbServerEventManagerP eventManager = managerContext->GetEventManagerP();
+        ICancellationTokenPtr cancellationTokenPtr = managerContext->GetCancellationTokenPtr();
 
-        auto eventResult = repositoryConnectionP->GetEvent(true, cancellationTokenPtr)->GetResult();
-        if (!cancellationTokenPtr->IsCanceled() && eventResult.IsSuccess())
+        while (true)
             {
-            auto eventType = eventResult.GetValue()->GetEventType();
-            for (auto callback : eventManager->GetCallbacks())
+            if (!managerContext)
+                return 0;
+
+            if (cancellationTokenPtr->IsCanceled()) 
+                return 0;
+
+            auto eventResult = repositoryConnectionP->GetEvent(true, cancellationTokenPtr)->GetResult();
+            if (!cancellationTokenPtr->IsCanceled() && eventResult.IsSuccess())
                 {
-                if (callback.second.empty() || EventListContainsEvent(callback.second, eventType))
+                auto eventType = eventResult.GetValue()->GetEventType();
+                for (auto callback : eventManager->GetCallbacks())
                     {
-                    auto callbackForEvent = *callback.first;
-                    callbackForEvent(eventResult.GetValue());
+                    if (callback.second.empty() || EventListContainsEvent(callback.second, eventType))
+                        {
+                        auto callbackForEvent = *callback.first;
+                        callbackForEvent(eventResult.GetValue());
+                        }
                     }
                 }
             }
-        }
         
+        return 0;
+        }
+    catch (const std::exception &e)
+        {
+        DgnDbServerLogHelper::Log(NativeLogging::SEVERITY::LOG_ERROR, "EventManagerThread", e.what());
+        }
+    
     return 0;
     }
 

@@ -2,7 +2,7 @@
 #
 #     $Source: xliffs.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #------------------------------------------------------------------------------
 %include mdl.mki
@@ -12,6 +12,7 @@ ContextDeliveryDir  = $(OutputRootDir)BuildContexts/WSClient/Delivery/
 SQLANG_Xliff = $(OutputRootDir)build/WSClient/xliffs/WebServicesCache_en.xliff
 SQLANG_CHeader =
 SQLANG_CHeader + $(_MakeFilePath)Cache/ICachingDataSource.xliff.h
+SQLANG_CHeader + $(_MakeFilePath)Cache/Persistence/DataSourceCache.xliff.h
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
 
 SQLANG_Xliff = $(OutputRootDir)build/WSClient/xliffs/WebServicesClient_en.xliff

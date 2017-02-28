@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,7 +45,9 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
 
-    auto result = client->SendQueryRequest(WSQuery("GlobalSchema", "Project"))->GetResult();
+    WSQuery query("GlobalSchema", "Project");
+    query.SetTop(100);
+    auto result = client->SendQueryRequest(query)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     auto resultStr = RapidJsonToString(result.GetValue().GetRapidJsonDocument());
     }
@@ -199,15 +201,14 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
     BeDebugLog(curl_version_info(CURLversion::CURLVERSION_FIRST)->version);
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest2-5/ws22";
-
-    Utf8String repositoryId = "Bentley.eB--viltest2-5~2CeB_Mobile";
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
+    Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
     Credentials credentials("admin", "admin");
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(credentials);
 
-    // Create in VR/upload/ folder
+    // Attempt to create many duplicate files to WSRepositoryClientTests-TestDocument
     Json::Value objectCreationJson = ToJson(
         R"( {
             "instance" :
@@ -216,7 +217,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
                 "schemaName" : "eB",
                 "properties" : 
                     {
-                    "name" : "HiResImage.jpg"
+                    "name" : "TestFile.JPG"
                     },
                 "relationshipInstances" : 
                     [{
@@ -225,7 +226,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
                     "direction" : "backward",
                     "relatedInstance" : 
                         {
-                        "instanceId" : "1165",
+                        "instanceId" : "314",
                         "className" : "Document",
                         "schemaName" : "eB"
                         }

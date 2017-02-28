@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/CWSCCPrivate.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@ class ConnectWebServicesClientC_internal
         static WSLocalState             s_localState;
         Utf8String                      m_lastStatusDescription;
         Utf8String                      m_lastStatusMessage;
-        WSCreateObjectResponse          m_lastCreatedObjectResponse;
+        WSUploadResponse                m_lastCreatedObjectResponse;
         WSObjectsResponse               m_lastObjectsResponse;
         ConnectSignInManagerPtr         m_connectSignInManager;
         ClientInfoPtr                   m_clientInfo;
@@ -120,7 +120,7 @@ class ConnectWebServicesClientC_internal
         CharCP       GetLastCreatedObjectInstanceId ();
         void SetStatusMessage(Utf8String message);
         void SetStatusDescription(Utf8String desc);
-        void SetCreatedObjectResponse (WSCreateObjectResponse response);
+        void SetCreatedObjectResponse (WSUploadResponse response);
         void SetObjectsResponse (WSObjectsResponse response);
     };
 
