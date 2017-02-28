@@ -289,7 +289,7 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
 )RAW_STRING";
 
 // Polyline shaders.
-static std::string s_tesselatedPolylineVertexShader = R"RAW_STRING(
+static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     attribute vec3 a_direction;
     attribute vec3 a_vertexDelta;
@@ -315,13 +315,13 @@ static std::string s_tesselatedPolylineVertexShader = R"RAW_STRING(
         v_texture.y = a_vertexDelta.y;
 
         gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);
+        v_color = computeColor();
         }
 )RAW_STRING";
 
-
 static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
     uniform float u_feather;
-    uniform vec4 u_color;
+    varying vec4 v_color;
     varying vec2 v_texture;
     varying float v_length;
     varying float v_widthScale;
@@ -355,12 +355,12 @@ static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
             centerDistance = abs (v_texture.y);
             }
 
-        if (!computePolylineColor (u_color, centerDistance))
+        if (!computePolylineColor (v_color, centerDistance))
             discard;
         }
 )RAW_STRING";
 
-static std::string s_simplePolylineVertexShader = R"RAW_STRING(
+static std::string s_simplePolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
@@ -373,18 +373,33 @@ static std::string s_simplePolylineVertexShader = R"RAW_STRING(
         gl_Position =  czm_modelViewProjection * modelPos;
         vec4 windowPos = czm_modelToWindowCoordinates(modelPos);
         v_windowPos = windowPos.xy / windowPos.w;
+        v_color = computeColor();
         }
 )RAW_STRING";
 
 static std::string s_simplePolylineFragmentShader = R"RAW_STRING(
-uniform vec4 u_color;
+varying vec4 v_color;
 varying vec2 v_windowPos;
 
 void main(void)
     {
-    gl_FragColor = u_color;
+    gl_FragColor = v_color;
     }
 )RAW_STRING";
+
+static std::string s_simplePolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_simplePolylineVertexCommon,
+    s_computeIndexedColor[1] + s_simplePolylineVertexCommon,
+    s_computeIndexedColor[2] + s_simplePolylineVertexCommon
+    };
+
+static std::string s_tesselatedPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_tesselatedPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_tesselatedPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_tesselatedPolylineVertexCommon
+    };
 
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,
