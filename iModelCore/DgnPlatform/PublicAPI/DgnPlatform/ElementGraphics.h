@@ -16,9 +16,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct WireframeGeomUtil
 {
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
-    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false, GeometryStreamEntryIdCP entryId = nullptr);
 
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, ISolidPrimitiveCR, CheckStop* stopTester = nullptr, bool includeEdges = true, bool includeFaceIso = true);
     DGNPLATFORM_EXPORT static void Draw(Render::GraphicBuilderR, MSBsplineSurfaceCR, CheckStop* stopTester = nullptr, bool includeEdges = true, bool includeFaceIso = true);
