@@ -346,7 +346,7 @@ struct ValidateCommand final : public Command
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
-        void CheckForLegacyClassInheritanceIssues(Session&, std::vector<Utf8String> const& args) const;
+        void ValidateDbMappings(Session&, std::vector<Utf8String> const& args) const;
 
     public:
         ValidateCommand() : Command() {}
