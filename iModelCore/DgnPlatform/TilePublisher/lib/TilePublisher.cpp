@@ -1863,13 +1863,16 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR point2)
     {
-    bvector<DPoint3d> const&    meshPoints = mesh.Points();
+    DVec3d              normal = DVec3d::FromNormalizedCrossProductToPoints(p1, p0, p2);
+    static double       s_minNormal = 1.0E-10;
 
-
-    for (size_t i=0, count = indices.size(); i<count; i++)
+    if (normal.Normalize() < s_minNormal)
         {
-        
+        // TODO -- 2 point segment from p0 to p1...
+        return;
         }
+    DVec3d      d0 = DVec3d::FromStartEndNormalize(p0, p1), d1 = DVec3d::FromStartEndNormalize(p2, p1);
+    DVec3d      n0 = DVec3d::FromNormalizedCrossProduct(normal, d0), n1 = DVec3d::FromNormalizedStartEnd(normal, d1); 
     }
 
 #endif

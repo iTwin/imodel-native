@@ -2082,6 +2082,8 @@ private:
     bool                        m_surfacesOnly;
     GeomPartMap                 m_geomParts;
     SolidPrimitivePartMap       m_solidPrimitiveParts;
+    TileDisplayParamsPtr        m_polyfaceCacheDisplay;
+    IPolyfaceConstructionPtr    m_polyfaceCache;
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
@@ -2135,7 +2137,7 @@ public:
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
     bool DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&) const  { return lineStyleSymb.GetStyleWidth() > m_minLineStyleWidth; }
-
+    void FlushPolyfaceCache();
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
@@ -2229,6 +2231,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         
         m_curElemGeometries.clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
+        FlushPolyfaceCache();
 
         m_geomParts.Insert (geomPart.GetId(), tileGeomPart = TileGeomPart::Create(geomPart.GetBoundingBox(), m_curElemGeometries));
         m_curElemGeometries = saveCurrGeometries;
@@ -2354,6 +2357,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             {
             m_curElemId = elemId;
             context.VisitElement(elemId, false);
+            FlushPolyfaceCache();
             }
         for (auto& geom : m_curElemGeometries)
             PushGeometry(*geom);
@@ -2470,15 +2474,36 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
-    DRange3d range = clone->PointRange();
-
     TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
-    IGeometryPtr geom = IGeometry::Create(clone);
-    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, m_dgndb));
-
+    if (!m_polyfaceCache.IsValid() || (*displayParams < *m_polyfaceCacheDisplay || *m_polyfaceCacheDisplay <  *displayParams))
+        {
+        FlushPolyfaceCache();
+        m_polyfaceCache = IPolyfaceConstruction::Create(m_facetOptions);
+        m_polyfaceCacheDisplay = displayParams;
+        }
+    m_polyfaceCache->Add(*clone);
+ 
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::FlushPolyfaceCache ()
+    {
+    if (m_polyfaceCache.IsValid())
+        {
+        DRange3d range = m_polyfaceCache->GetClientMeshR().PointRange();
+
+        IGeometryPtr geom = IGeometry::Create(m_polyfaceCache->GetClientMeshPtr());
+        AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, m_polyfaceCacheDisplay, false, m_dgndb));
+
+        m_polyfaceCache = nullptr;
+        m_polyfaceCacheDisplay = nullptr;
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -2521,7 +2546,6 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
     return true;
-
     }
 
 //=======================================================================================
@@ -2646,7 +2670,11 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
         return false;
         }
 
-    if (m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
+    static  size_t s_minInstancePartSize = 2000;
+
+    if (geomPart->GetGeometryStream().size() > s_minInstancePartSize &&
+        m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && 
+        graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
@@ -2827,6 +2855,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
+//#define VALIDATE_POLYFACE_DENSITY
 #ifdef VALIDATE_POLYFACE_DENSITY
         size_t          facetCount = 0;
         static size_t   s_maxFacetDensityLimit = 1000;

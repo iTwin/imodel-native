@@ -506,8 +506,6 @@ struct TileGeometry : RefCountedBase
     typedef bvector<TilePolyface>   T_TilePolyfaces;
     typedef bvector<TileStrokes>    T_TileStrokes;
 
-
-
 private:
     TileDisplayParamsPtr    m_params;
     Transform               m_transform;
