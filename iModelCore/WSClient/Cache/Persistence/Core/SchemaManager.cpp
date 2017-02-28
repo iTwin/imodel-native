@@ -129,7 +129,7 @@ ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& contex
     ECSchemaPtr schema = context.LocateSchema(key, SchemaMatchType::Exact);
     if (!schema.IsValid())
         {
-        LOG.errorv(L"Could not load schema: %s.%s. Check assets or dependencies",
+        LOG.errorv("Could not load schema: %s.%s. Check assets or dependencies",
                    key.m_schemaName.c_str(),
                    ECSchema::FormatSchemaVersion(key.m_versionRead, key.m_versionMinor).c_str());
         BeAssert(false);

@@ -55,13 +55,14 @@ struct WSQuery
         //! Construct query for given class.
         //! @param[in] schemaName - schema name ("SchemaName")
         //! @param[in] className - class name only ("ClassName")
-        WSCLIENT_EXPORT WSQuery(Utf8StringCR schemaName, Utf8StringCR className);
+        //! @param[in] polymorphic - set true to add !poly to class name
+        WSCLIENT_EXPORT WSQuery(Utf8StringCR schemaName, Utf8StringCR className, bool polymorphic = false);
 
         //! Construct query for given class.
         WSCLIENT_EXPORT WSQuery(ECN::ECClassCR ecClass, bool polymorphic = false);
 
         //! Construct query for given object
-        WSCLIENT_EXPORT WSQuery(ObjectIdCR objectId);
+        WSCLIENT_EXPORT WSQuery(ObjectIdCR objectId, bool polymorphic = false);
 
         WSCLIENT_EXPORT Utf8StringCR GetSchemaName() const;
         WSCLIENT_EXPORT const std::set<Utf8String>& GetClasses() const;

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/ICachingDataSource.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,16 +40,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             NetworkErrorsOccured,
             FunctionalityNotSupported,
             DependencyNotSynced,
-            RepositorySchemaError,
-            ApplicationError        // Used by application logic to pass user-readable error messages
+            ApplicationError, //! Used by application logic to pass user-readable error messages
+            SchemaError
             };
 
         enum DataOrigin
             {
-            CachedData = 1,         // Only Cached needed, no cached data will result in error
-            RemoteData = 2,         // Download and cache, connection issues will result in error
-            CachedOrRemoteData = 3, // Use cached if exists, else - download, connection issues will result in an error.
-            RemoteOrCachedData = 4  // If online, download, else - get from cache
+            CachedData = 1,         // Only return if data is cached, do not query server 
+            RemoteData = 2,         // Always query server to update the cache
+            CachedOrRemoteData = 3, // Return data if it's cached or query server if it's not
+            RemoteOrCachedData = 4  // Query server first to update the cache or return cached data if query failed 
             };
 
         struct SelectProvider;
@@ -61,7 +61,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct FileData;
 
         struct FailedObject;
-        typedef bvector<FailedObject> FailedObjects;
+        struct FailedObjects;
 
         typedef Error& ErrorR;
         typedef const Error& ErrorCR;
@@ -75,6 +75,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef std::function<void(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel)> LabeledProgressCallback;
 
         //! synced - percentage (0.0 -> 1.0) of total sync done based on instances count
+        //! TODO: change synced to instancesSynced & instancesTotal to give more contorl for consumers
         //! currentLabel - label of instance being synced
         //! fileBytesTransfered - files bytes already synced to server. 0 if no files are being synced
         //! fileBytesTotal - total files bytes to sync. 0 if no files are being synced
@@ -95,7 +96,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         virtual AsyncTaskPtr<void> CancelAllTasks() = 0;
 
-        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) = 0;
+        //! Check server for schema changes and update if needed.
+        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) = 0;
 
         //! Get read/write transaction for local data cache storage. Must be called in cache access thread.
         //! READ/WRITE:
@@ -158,8 +160,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            std::shared_ptr<const ISelectProvider> cachedSelectProvider,
-            ICancellationTokenPtr ct
+            std::shared_ptr<const ISelectProvider> cachedSelectProvider = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
@@ -172,7 +174,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Get navigation instances.
@@ -184,7 +186,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR parentId,
             DataOrigin origin,
-            std::shared_ptr<const SelectProvider> readOptions,
+            std::shared_ptr<const SelectProvider> readOptions = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -192,7 +194,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR parentId,
             DataOrigin origin,
-            std::shared_ptr<const ISelectProvider> remoteSelectProvider,
+            std::shared_ptr<const ISelectProvider> remoteSelectProvider = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -200,26 +202,27 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR fileId,
             DataOrigin origin,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<BatchResult> CacheFiles
             (
             const bvector<ObjectId>& filesIds,
-            bool skipCachedFiles,
-            FileCache fileCacheLocation,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            bool skipCachedFiles = false,
+            FileCache fileCacheLocation = FileCache::Auto,
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<Result> DownloadAndCacheChildren
             (
             const bvector<ObjectId>& parentIds,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Push all local changes to server with SyncStatus::Ready.
+        //! Note that created instances could change ECInstanceKey if class changes after sync.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param ct - cancelling sync task
         //! @param options - additonal configuration for sync
@@ -228,12 +231,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct,
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
 
-        //! Push specific local changes to server
+        //! Push specific local changes to server. See SyncLocalChages() for more.
         //! @param instancesToSync - locally changed instances to sync. Changes with SyncStatus::NotReady are also synced if specified.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param ct - cancelling sync task
@@ -244,8 +247,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct,
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
 
@@ -266,8 +269,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! DEPRECATED - Use SyncCachedData ().
@@ -288,8 +291,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             const bvector<ObjectId>& persistenceNavigationTrees,
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
     };
 
@@ -328,20 +331,29 @@ struct ICachingDataSource::Error : public AsyncError
 
     private:
         static ICachingDataSource::Status ConvertCacheStatus(CacheStatus status);
+        void HandleStatusCanceled(ICancellationTokenPtr ct);
 
     public:
+        //! Constructs error with Status::Success.
         WSCACHE_EXPORT Error();
+        //! Constructs error with specified status and localized message.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status);
+        //! Constructs error with matching status and localized message.
         WSCACHE_EXPORT Error(CacheStatus status);
+        //! Constructs error with matching status and or status Canceled if cancellation token is non null and already canceled.
+        //! Used when operation might have been canceled but status does not indicate that.
+        WSCACHE_EXPORT Error(CacheStatus status, ICancellationTokenPtr ct);
+        //! Constructs error with specificed server error with status NetworkErrorsOccured or Canceled.
         WSCACHE_EXPORT Error(WSErrorCR error);
-        //! Constructs error with status InternalCacheError message and desription from error
+        //! Constructs error with status InternalCacheError and message with desription from specified error.
         WSCACHE_EXPORT Error(AsyncErrorCR error);
-        //! Constructs error with status and message with description from error
+        //! Constructs error with status and message with desription from specified error.
+        //! Can be used with Status::ApplicationError to pass localized error message to user.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status, AsyncErrorCR error);
         //! Constructs error with status InternalCacheError and specified message.
         WSCACHE_EXPORT Error(Utf8StringCR message);
         //! Constructs error with supplied status or status Canceled if cancellation token is non null and already canceled.
-        //! Used when operation might have been canceled but status does not indicated that.
+        //! Used when operation might have been canceled but status does not indicate that.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status, ICancellationTokenPtr ct);
         WSCACHE_EXPORT ~Error();
 
@@ -422,6 +434,21 @@ struct ICachingDataSource::FailedObject
         WSCACHE_EXPORT ObjectIdCR   GetObjectId() const;
         WSCACHE_EXPORT Utf8StringCR GetObjectLabel() const;
         WSCACHE_EXPORT ErrorCR      GetError() const;
+    };
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ICachingDataSource::FailedObjects : public bvector<FailedObject>
+    {
+    public:
+        FailedObjects& AppendFailures(FailedObjectsCR failedObjects)
+            {
+            if (!failedObjects.empty())
+                this->insert(this->end(), failedObjects.begin(), failedObjects.end());
+            return *this;
+            }
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

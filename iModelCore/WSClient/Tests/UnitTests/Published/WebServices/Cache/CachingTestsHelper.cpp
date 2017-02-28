@@ -230,18 +230,18 @@ WSCreateObjectResult StubWSCreateObjectResult()
     return WSCreateObjectResult::Error(StubHttpResponse(ConnectionStatus::CouldNotConnect));
     }
 
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId)
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR objectId, Utf8StringCR fileEtag)
     {
     StubInstances instances;
     instances.Add(objectId);
-    return instances.ToWSCreateObjectResult();
+    return instances.ToWSCreateObjectResult(fileEtag);
     }
 
-WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId)
+WSCreateObjectResult StubWSCreateObjectResult(ObjectIdCR sourceId, ObjectIdCR relationshipId, ObjectIdCR targetId, Utf8StringCR fileETag)
     {
     StubInstances instances;
     instances.Add(sourceId).AddRelated(relationshipId, targetId);
-    return instances.ToWSCreateObjectResult();
+    return instances.ToWSCreateObjectResult(fileETag);
     }
 
 CacheEnvironment StubCacheEnvironemnt()
@@ -373,7 +373,7 @@ ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR object
 CachedResponseKey StubInstancesInCache(IDataSourceCache& cache, StubInstances& instances, Utf8StringCR root, Utf8String responseName)
     {
     CachedResponseKey resultsKey(cache.FindOrCreateRoot(root), responseName);
-    if (SUCCESS != cache.CacheResponse(resultsKey, instances.ToWSObjectsResponse()))
+    if (CacheStatus::OK != cache.CacheResponse(resultsKey, instances.ToWSObjectsResponse()))
         {
         EXPECT_TRUE(false);
         }

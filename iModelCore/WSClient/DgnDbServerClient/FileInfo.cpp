@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/FileInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/FileInfo.h>
@@ -46,9 +46,9 @@ FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(de
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
-                   Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date) :
+    Utf8StringCR description, uint64_t size, Utf8StringCR user, DateTimeCR date) :
     m_index(index), m_fileName(fileName), m_mergedRevisionId(mergedRevisionId), m_description(description),
-    m_fileUrl(url), m_fileSize(size), m_userUploaded(user), m_uploadedDate(date), m_areFileDetailsAvailable(false)
+    m_fileSize(size), m_userUploaded(user), m_uploadedDate(date), m_areFileDetailsAvailable(false)
     {
     m_fileId.FromString(fileId.c_str());
     }
@@ -58,7 +58,7 @@ FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Ut
 //---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::Create(BeGuid fileId)
     {
-    return FileInfoPtr (new FileInfo (fileId));
+    return FileInfoPtr(new FileInfo(fileId));
     }
 
 //---------------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ FileInfoPtr FileInfo::Create(BeGuid fileId)
 //---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::Create(Dgn::DgnDbCR db, Utf8StringCR description)
     {
-    return FileInfoPtr (new FileInfo (db, description));
+    return FileInfoPtr(new FileInfo(db, description));
     }
 
 //---------------------------------------------------------------------------------------
@@ -107,14 +107,6 @@ Utf8StringCR FileInfo::GetMergedRevisionId() const
 Utf8StringCR FileInfo::GetDescription() const
     {
     return m_description;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
-Utf8StringCR FileInfo::GetFileURL() const
-    {
-    return m_fileUrl;
     }
 
 //---------------------------------------------------------------------------------------
@@ -198,11 +190,6 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
     if (!description.empty())
         info->m_description = description;
 
-    Utf8String url = GetProperty(properties, ServerSchema::Property::URL);
-
-    if (!url.empty())
-        info->m_fileUrl = url;
-
     Utf8String sizeString = GetProperty(properties, ServerSchema::Property::FileSize);
 
     if (!sizeString.empty())
@@ -237,7 +224,6 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
 FileInfoPtr FileInfo::Parse(JsonValueCR json, FileInfoCR fileInfo)
     {
     JsonValueCR properties = json[ServerSchema::Properties];
-
     auto rapidJson = ToRapidJson(properties);
 
     return Parse(rapidJson, json[ServerSchema::InstanceId].asString(), fileInfo);
@@ -248,7 +234,7 @@ FileInfoPtr FileInfo::Parse(JsonValueCR json, FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::Parse(WSObjectsReader::Instance instance, FileInfoCR fileInfo)
     {
-    return Parse(instance.GetProperties(), instance.GetObjectId().remoteId, fileInfo);
+    return Parse(instance.GetProperties(), instance.GetObjectId().remoteId, fileInfo);;
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,4 +268,147 @@ WebServices::ObjectId FileInfo::GetObjectId() const
 bool FileInfo::AreFileDetailsAvailable() const
     {
     return m_areFileDetailsAvailable;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            02/2017
+//---------------------------------------------------------------------------------------
+bool FileInfo::GetContainsFileAccessKey()
+    {
+    return m_containsFileAccessKey;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            02/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerFileAccessKeyPtr FileInfo::GetFileAccessKey() const
+    {
+    return m_fileAccessKey;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            02/2017
+//---------------------------------------------------------------------------------------
+void FileInfo::SetFileAccessKey(DgnDbServerFileAccessKeyPtr fileAccessKey)
+    {
+    m_containsFileAccessKey = true;
+    m_fileAccessKey = fileAccessKey;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(JsonValueCR json)
+    {
+    if (!json.isMember(ServerSchema::RelationshipInstances))
+        return nullptr;
+
+    auto relationships = json[ServerSchema::RelationshipInstances];
+    for (auto relationshipInstance : relationships)
+        {
+        if (!relationshipInstance.isMember(ServerSchema::RelatedInstance))
+            continue;
+
+        auto relatedInstance = relationshipInstance[ServerSchema::RelatedInstance];
+        if (!relatedInstance.isMember(ServerSchema::Properties) ||
+            !relatedInstance.isMember(ServerSchema::ClassName) ||
+            !relatedInstance[ServerSchema::ClassName].isString() ||
+            relatedInstance[ServerSchema::ClassName].asString() != ServerSchema::Class::AccessKey)
+            continue;
+
+        JsonValueCR properties = relatedInstance[ServerSchema::Properties];
+        auto rapidJson = ToRapidJson(properties);
+
+        return Parse(rapidJson);
+        }
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::ParseFromRelated(WSObjectsReader::Instance instance)
+    {
+    auto relationshipInstances = instance.GetRelationshipInstances();
+    if (0 == relationshipInstances.Size())
+        return nullptr;
+
+    for (auto relationshipInstance : relationshipInstances)
+        {
+        auto relatedInstance = relationshipInstance.GetRelatedInstance();
+        if (!relatedInstance.IsValid())
+            continue;
+
+        if (relatedInstance.GetObjectId().className != ServerSchema::Class::AccessKey)
+            continue;
+
+        return Parse(relatedInstance.GetProperties());
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerFileAccessKey::GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
+    {
+    if (properties.HasMember(member.c_str()))
+        {
+        if (properties[member.c_str()].IsString())
+            {
+            return properties[member.c_str()].GetString();
+            }
+        }
+    return "";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerFileAccessKeyPtr DgnDbServerFileAccessKey::Parse(RapidJsonValueCR properties)
+    {
+    auto result = std::make_shared<DgnDbServerFileAccessKey>();
+
+    Utf8String downloadUrl = GetProperty(properties, ServerSchema::Property::DownloadUrl);
+    if (!downloadUrl.empty())
+        result->m_downloadUrl = downloadUrl;
+
+    Utf8String uploadUrl = GetProperty(properties, ServerSchema::Property::UploadUrl);
+    if (!uploadUrl.empty())
+        result->m_uploadUrl = uploadUrl;
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+void DgnDbServerFileAccessKey::AddDownloadAccessKeySelect(Utf8StringR selectString)
+    {
+    selectString.Sprintf("%s,%s-forward-%s.DownloadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+void DgnDbServerFileAccessKey::AddUploadAccessKeySelect(Utf8StringR selectString)
+    {
+    selectString.Sprintf("%s,%s-forward-%s.UploadURL", selectString.c_str(), ServerSchema::Relationship::FileAccessKey, ServerSchema::Class::AccessKey);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+Utf8StringCR DgnDbServerFileAccessKey::GetDownloadUrl() const
+    {
+    return m_downloadUrl;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             02/2017
+//---------------------------------------------------------------------------------------
+Utf8StringCR DgnDbServerFileAccessKey::GetUploadUrl() const
+    {
+    return m_uploadUrl;
     }

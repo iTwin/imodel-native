@@ -10,6 +10,7 @@
 #include <WebServices/Client/WSClient.h>
 #include <Bentley/Tasks/WorkerThread.h>
 #include <Bentley/Tasks/AsyncTask.h>
+#include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <set>
 
 #include "ClientConnection.h"
@@ -24,8 +25,10 @@ typedef AsyncResult<WSInfo, Http::Response> WSInfoHttpResult;
 struct ServerInfoProvider
     {
     private:
+        BeMutex m_mutex;
+        UniqueTaskHolder<WSInfoResult> m_getInfoExecutor;
+
         std::shared_ptr<const ClientConfiguration> m_configuration;
-        std::shared_ptr<WorkerThread> m_thread;
         std::vector<std::weak_ptr<IWSClient::IServerInfoListener>> m_listeners;
 
         mutable WSInfo m_serverInfo;
@@ -36,7 +39,7 @@ struct ServerInfoProvider
 
     private:
         bool CanUseCachedInfo() const;
-        void UpdateInfo(WSInfoCR info) const;
+        void UpdateInfo(WSInfoCR info);
         void NotifyServerInfoUpdated(WSInfoCR info) const;
 
         AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
@@ -52,8 +55,8 @@ struct ServerInfoProvider
         void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct) const;
-        AsyncTaskPtr<void> InvalidateInfo() const;
+        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct);
+        void InvalidateInfo();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

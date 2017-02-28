@@ -547,7 +547,7 @@ void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectWebServicesClientC_internal::SetCreatedObjectResponse (WSCreateObjectResponse response)
+void ConnectWebServicesClientC_internal::SetCreatedObjectResponse (WSUploadResponse response)
     {
     m_lastCreatedObjectResponse = response;
     }
@@ -581,10 +581,11 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId ()
     {
-    if (m_lastCreatedObjectResponse.GetObject ()["changedInstance"]["instanceAfterChange"]["instanceId"].isString())
-        {
-        return m_lastCreatedObjectResponse.GetObject ()["changedInstance"]["instanceAfterChange"]["instanceId"].asCString ();
-        }
-    else
-        return "";
+    Json::Value json;
+    m_lastCreatedObjectResponse.GetJson(json);
+
+    if (json["changedInstance"]["instanceAfterChange"]["instanceId"].isString())
+        return json["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+
+    return "";
     }

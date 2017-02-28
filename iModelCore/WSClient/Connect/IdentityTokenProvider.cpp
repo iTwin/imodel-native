@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/IdentityTokenProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -89,35 +89,38 @@ void IdentityTokenProvider::RenewTokenIfNeeded()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<SamlTokenResult> IdentityTokenProvider::RenewToken()
     {
-    auto oldToken = m_store->GetToken();
-    if (nullptr == oldToken)
-        return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
-
-    LOG.infov("Renewing identity token");
-
-    // TODO: avoid launching twice - use UniqueTaskHolder once its fixed
     auto thisPtr = shared_from_this();
-    return m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
-        ->Then<SamlTokenResult>([=] (SamlTokenResult result)
+    return m_tokenRetrieveTask.GetTask([=] ()->AsyncTaskPtr<SamlTokenResult>
         {
-        if (result.IsSuccess())
+        auto oldToken = m_store->GetToken();
+        if (nullptr == oldToken)
+            return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
+
+        LOG.infov("Renewing identity token");
+        return m_client->RequestToken(*oldToken, nullptr, m_tokenLifetime)
+            ->Then<SamlTokenResult>([=] (SamlTokenResult result)
             {
-            auto newToken = result.GetValue();
-            m_store->SetToken(newToken);
-            LOG.infov("Renewed identity token lifetime %d minutes", newToken->GetLifetime());
+            if (result.IsSuccess())
+                {
+                auto newToken = result.GetValue();
+                m_store->SetToken(newToken);
+                LOG.infov("Renewed identity token lifetime %d minutes", newToken->GetLifetime());
+                return result;
+                }
+
+            if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+                {
+                LOG.infov("Identity token expired");
+                if (m_tokenExpiredHandler)
+                    m_tokenExpiredHandler();
+                }
+
             return result;
-            }
-
-        if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+            });
+        })->Then<SamlTokenResult>([thisPtr] (SamlTokenResult result)
             {
-            LOG.infov("Identity token expired");
-            if (m_tokenExpiredHandler)
-                m_tokenExpiredHandler();
-            }
-
-        thisPtr.get();
-        return result;
-        });
+            return result;
+            });
     }
 
 /*--------------------------------------------------------------------------------------+

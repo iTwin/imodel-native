@@ -45,6 +45,7 @@ struct WebApiV2 : public WebApi
         WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
         WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
+        WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
         WSObjectsResult ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId = nullptr) const;
 
         Http::Request CreateFileDownloadRequest

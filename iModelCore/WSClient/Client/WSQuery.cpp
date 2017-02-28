@@ -31,8 +31,8 @@ m_aliasNumber(0)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSQuery::WSQuery(Utf8StringCR schemaName, Utf8StringCR className) :
-WSQuery(schemaName, std::set<Utf8String> {className})
+WSQuery::WSQuery(Utf8StringCR schemaName, Utf8StringCR className, bool polymorphic) :
+WSQuery(schemaName, std::set<Utf8String> {Utf8PrintfString("%s%s", className.c_str(), polymorphic ? "!poly" : "")})
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -42,15 +42,16 @@ WSQuery::WSQuery(ECClassCR ecClass, bool polymorphic) :
 WSQuery
 (
 Utf8String(ecClass.GetSchema().GetName()),
-Utf8PrintfString("%s%s", Utf8String(ecClass.GetName()).c_str(), polymorphic ? "!poly" : "")
+Utf8String(ecClass.GetName()),
+polymorphic
 )
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSQuery::WSQuery(ObjectIdCR objectId) :
-WSQuery(objectId.schemaName, objectId.className)
+WSQuery::WSQuery(ObjectIdCR objectId, bool polymorphic) :
+WSQuery(objectId.schemaName, objectId.className, polymorphic)
     {
     SetFilter("$id+in+['" + EscapeValue(objectId.remoteId) + "']");
     }

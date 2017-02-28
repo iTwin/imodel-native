@@ -12,22 +12,26 @@ using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+#ifdef USE_GTEST
 TEST_F(WSQueryTests, Ctor_SchemaAndClassesPassed_SetsSchemaAndClasses)
     {
     WSQuery query("TestSchema", set<Utf8String> {"A", "B"});
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
-#ifdef USE_GTEST
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"A", "B"}));
-#endif
     }
 
 TEST_F(WSQueryTests, Ctor_SchemaAndClass_SetsSchemaAndClass)
     {
     WSQuery query("TestSchema", "TestClass");
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
-#ifdef USE_GTEST
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
-#endif
+    }
+
+TEST_F(WSQueryTests, Ctor_SchemaAndClassWithPolymorphicTrue_SetsSchemaAndPolymorphicClass)
+    {
+    WSQuery query("TestSchema", "TestClass", true);
+    EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
+    EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
     }
 
 TEST_F(WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
@@ -39,9 +43,7 @@ TEST_F(WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
 
     WSQuery query (*schema->GetClassCP ("TestClass"));
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
-#ifdef USE_GTEST
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
-#endif
     }
 
 TEST_F(WSQueryTests, Ctor_ECClassPassedWithPolymorphictrue_SetsSchemaAndPolymorphicClass)
@@ -53,20 +55,25 @@ TEST_F(WSQueryTests, Ctor_ECClassPassedWithPolymorphictrue_SetsSchemaAndPolymorp
 
     WSQuery query (*schema->GetClassCP ("TestClass"), true);
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
-#ifdef USE_GTEST
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
-#endif
     }
 
 TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     {
     WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"));
     EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
-#ifdef USE_GTEST
     EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass"}));
-#endif
     EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['TestId']");
     }
+
+TEST_F(WSQueryTests, Ctor_ObjectIdPassedWithPolymorphicTrue_SetsSchemaAndClassAndFilter)
+    {
+    WSQuery query(ObjectId("TestSchema", "TestClass", "TestId"), true);
+    EXPECT_STREQ(query.GetSchemaName().c_str(), "TestSchema");
+    EXPECT_THAT(query.GetClasses(), ContainerEq(set<Utf8String>{"TestClass!poly"}));
+    EXPECT_STREQ(query.GetFilter().c_str(), "$id+in+['TestId']");
+    }
+#endif
 
 TEST_F(WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndEscapesRemoteId)
     {

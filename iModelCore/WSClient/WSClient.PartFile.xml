@@ -14,8 +14,10 @@
     
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PC"/>
+        
+        <!-- N.B. Do NOT add LibType="Static" here. See comments on WebServicesClient-Android-Shim as to why. -->
         <SubPart PartName="WebServicesClient-iOS"/>
-        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
+        <SubPart PartName="WebServicesClient-Android-Shim"/>
     </Part>
     
     <Part Name="WebServicesClient-PC" ExcludePlatforms="iOS*, Android*">
@@ -29,6 +31,20 @@
         <SubPart PartName="WebServicesClient-PublicAPI" LibType="Static"/>
         <SubPart PartName="WebServicesClient-Library" LibType="Static"/>
         <SubPart PartName="WSClient-Xliffs" LibType="Static"/>
+    </Part>
+
+    <!--
+        Cannot directly add a SubPart in WebServicesClient to
+        WebServicesClient-Android/LibType=Static due to LKGs. The issue arises
+        on Windows, for example, which does not build anything in wsclient
+        statically, and thus will not post anything in the static LKG for
+        wsclient (good). Because there is no static LKG at all,
+        WebServicesClient cannot go searching for the static partfile to see
+        that this is Android-only. The workaround is to add a "shim" dynamic
+        part in the middle with the platform filter first.
+    -->
+    <Part Name="WebServicesClient-Android-Shim" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Android" LibType="Static"/>
     </Part>
 
     <Part Name="WebServicesClient-Android" OnlyPlatforms="Android*">
@@ -70,7 +86,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
-            <Assemblies>Delivery/$(libprefix)WebServicesClient.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -108,7 +124,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache.so</Libs>
-            <Assemblies>Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -156,7 +172,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnDbServerClient.so</Libs>
-            <Assemblies>Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -205,7 +221,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC.so</Libs>
-            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
+            <Assemblies ProductDirectoryName="AndroidSO">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -410,7 +426,8 @@
 
         <!-- Ensure that builds, run manually if needed -->
       <!-- 
-        <SubPart PartName="WSClientIntegrationTests"/>
+        <SubPart PartName="WSClientIntegrationTests" />
+        <SubPart PartName="WSClientCompatibilityTestTool" />
       -->
       </Part>
 
@@ -543,20 +560,20 @@
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-  <Product Name="WSClient-IntegrationGTest" OnlyPlatforms="x64">
-    <SubPart PartName="WSClientIntegrationTests"/>
-    <Directories DirectoryListName="IntegrationGTestDirectories"/>
-  </Product>
+    <Product Name="WSClient-IntegrationGTest" OnlyPlatforms="x64">
+        <SubPart PartName="WSClientIntegrationTests"/>
+        <Directories DirectoryListName="IntegrationGTestDirectories"/>
+    </Product>
   
-  <ProductDirectoryList ListName="IntegrationGTestDirectories">
-    <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
-    <ProductDirectory Name="Assemblies" Path=""/>
-    <ProductDirectory Name="Assets" Path="Assets"/>
-    <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
-    <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
-    <ProductDirectory Name="VendorNotices" Deliver="false" />
-    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
-  </ProductDirectoryList>
+    <ProductDirectoryList ListName="IntegrationGTestDirectories">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    </ProductDirectoryList>
   
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>        
@@ -578,11 +595,75 @@
     <!-- // Compatibility Tests - tool for WSG server developers                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x86,x64">
+    <Part Name="WSClientCompatibilityTestTool" OnlyPlatforms="x64" >
+        <SubProduct ProductName="WSClientCompatibilityTestTool" />
+    </Part>
+    
+    <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
+    </Product>
+
+    <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
+
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
+
+        <ProductDirectory Name="BeCurlAssemblies"                   Path=""/>
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Path=""/>
+        <ProductDirectory Name="http"                               Path="http"/>
+
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
+
+        <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
+        <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
+
+        <ProductDirectory Name="sqlang"                             Path="sqlang/platform"/>
+
+        <!-- TODO: Remove dependency on SDK -->
+        <ProductDirectory Name="CordovaLibs"                        Path=""/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path=""/>
+        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
+        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false"/>
+        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false"/>
+        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false"/>
+        <ProductDirectory Name="StdThemes"                          Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <Bindings>
+            <Files ProductDirectoryName="WSClientCompatibilityTests">
+                Delivery/WSClientCompatibilityTests$(exeext)
+            </Files>
+        </Bindings>
     </Part>
 
 </BuildContext>

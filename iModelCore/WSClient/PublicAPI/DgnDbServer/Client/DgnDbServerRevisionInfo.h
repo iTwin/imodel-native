@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <DgnDbServer/Client/FileInfo.h>
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerResult.h>
@@ -19,7 +20,6 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionInfoPtr, DgnDbServerRevisionInfo);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionInfoPtr>, DgnDbServerRevisionsInfo);
 typedef bvector<Dgn::DgnRevisionPtr> DgnRevisions;
 DEFINE_TASK_TYPEDEFS(DgnRevisions, DgnRevisions);
-typedef std::shared_ptr<struct DgnDbServerRevisionInfo> DgnDbServerRevisionInfoPtr;
 DEFINE_TASK_TYPEDEFS(Dgn::DgnRevisionPtr, DgnRevision);
 
 //=======================================================================================
@@ -41,7 +41,6 @@ struct DgnDbServerRevisionInfo
         Utf8String m_parentRevisionId;
         Utf8String m_dbGuid;
         uint64_t   m_index;
-        Utf8String m_url;
         Utf8String m_description;
         uint64_t   m_fileSize;
         Utf8String m_userCreated;
@@ -49,10 +48,19 @@ struct DgnDbServerRevisionInfo
         BeSQLite::BeBriefcaseId m_briefcaseId;
         ContainingChanges       m_containingChanges;
 
+        friend struct DgnDbRepositoryConnection;
+        friend struct DgnDbServerPreDownloadManager;
+        DgnDbServerFileAccessKeyPtr m_fileAccessKey;
+        bool                        m_containsFileAccessKey;
+
+        bool GetContainsFileAccessKey ();
+        DgnDbServerFileAccessKeyPtr GetFileAccessKey ();
+        void SetFileAccessKey (DgnDbServerFileAccessKeyPtr fileAccessKey);
+
         //__PUBLISH_SECTION_START__
     public:
-        
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionInfo(Utf8String id, Utf8String parentRevisionId, Utf8String dbGuid, int64_t index, Utf8String url,
+
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionInfo(Utf8String id, Utf8String parentRevisionId, Utf8String dbGuid, int64_t index,
             Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges);
 
         //__PUBLISH_SECTION_END__
@@ -65,7 +73,6 @@ struct DgnDbServerRevisionInfo
         DGNDBSERVERCLIENT_EXPORT Utf8String GetParentRevisionId() const;
         DGNDBSERVERCLIENT_EXPORT Utf8String GetDbGuid() const;
         DGNDBSERVERCLIENT_EXPORT uint64_t   GetIndex() const;
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetUrl() const;
         DGNDBSERVERCLIENT_EXPORT Utf8String GetDescription() const;
         DGNDBSERVERCLIENT_EXPORT uint64_t   GetFileSize() const;
         DGNDBSERVERCLIENT_EXPORT Utf8String GetUserCreated() const;

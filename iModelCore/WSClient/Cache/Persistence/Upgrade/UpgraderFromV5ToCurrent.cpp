@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -177,7 +177,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
     auto response = RawWSObjectsReader::CreateWSObjectsResponse(instances);
     CachedResponseKey responseKey(newCache.FindOrCreateRoot(""), CachedResultsName_Schemas);
 
-    if (SUCCESS != newCache.CacheResponse(responseKey, response))
+    if (CacheStatus::OK != newCache.CacheResponse(responseKey, response))
         {
         return ERROR;
         }
@@ -353,7 +353,7 @@ JsonValueCR oldParentInfo
         CachedResponseKey responseKey(newCache.FindInstance(oldParentObjectId), CachedResultsName_Navigation);
         auto response = RawWSObjectsReader::CreateWSObjectsResponse(navigationResponseInstances, childrenCacheTag.asString());
 
-        if (SUCCESS != newCache.CacheResponse(responseKey, response))
+        if (CacheStatus::OK != newCache.CacheResponse(responseKey, response))
             {
             return ERROR;
             }

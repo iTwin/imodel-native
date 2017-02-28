@@ -13,10 +13,10 @@
 #define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
 #define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
 #define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
+#define HEADER_MasFileETag              "Mas-File-ETag"
 
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
-#define VALUE_ContentType_Json          "application/json"
 
 #define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
@@ -251,12 +251,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
 WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(Http::Response& response) const
     {
     if (HttpStatus::Created == response.GetHttpStatus())
-        {
-        Json::Value infoJson;
-        if (!Json::Reader::Parse(response.GetBody().AsString(), infoJson))
-            infoJson = Json::Value::null;
-        return WSCreateObjectResult::Success(infoJson);
-        }
+        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
     return WSCreateObjectResult::Error(response);
     }
 
@@ -266,10 +261,18 @@ WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(Http::Response& respo
 WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
-        {
-        return WSUpdateObjectResult::Success();
-        }
+        return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
     return WSUpdateObjectResult::Error(response);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+WSUploadResponse WebApiV2::ResolveUploadResponse(Http::Response& response) const
+    {
+    auto body = response.GetContent()->GetBody();
+    auto eTag = response.GetHeaders().GetValue(HEADER_MasFileETag);
+    return WSUploadResponse(body, eTag);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -489,7 +492,7 @@ ICancellationTokenPtr ct
             url = GetUrl(CreatePostQueryPath(CreateClassSubPath(query.GetSchemaName(), classes)), "");
             request = m_configuration->GetHttpClient().CreatePostRequest(url);
             request.SetRequestBody(HttpStringBody::Create(query.ToQueryString()));
-            request.GetHeaders().SetContentType(VALUE_ContentType_Json);
+            request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
             }
         else
             {
@@ -535,7 +538,7 @@ IWSRepositoryClient::RequestOptionsPtr options
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
         }
 
-    request.GetHeaders().SetContentType(VALUE_ContentType_Json);
+    request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
     request.SetRequestBody(changeset);
     request.SetCancellationToken(ct);
@@ -600,7 +603,7 @@ ICancellationTokenPtr ct
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), VALUE_ContentType_Json);
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), REQUESTHEADER_ContentType_ApplicationJson);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -650,7 +653,7 @@ ICancellationTokenPtr ct
     instanceJson["instanceId"] = objectId.remoteId;
     instanceJson["properties"] = propertiesJson;
 
-    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), VALUE_ContentType_Json);
+    request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(updateJson)), REQUESTHEADER_ContentType_ApplicationJson);
     if (!filePath.empty())
         {
         request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
@@ -682,9 +685,9 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
-            return WSUpdateObjectResult::Success();
+            return WSDeleteObjectResult::Success();
             }
-        return WSUpdateObjectResult::Error(httpResponse);
+        return WSDeleteObjectResult::Error(httpResponse);
         });
     }
 
@@ -725,7 +728,7 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::OK == response.GetHttpStatus())
             {
-            finalResult->SetSuccess();
+            finalResult->SetSuccess(ResolveUploadResponse(response));
             return;
             }
 
@@ -746,30 +749,24 @@ ICancellationTokenPtr ct
             return;
             }
 
-        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult result)
+        m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult)
             {
-            if (!result.IsSuccess())
+            if (!azureResult.IsSuccess())
                 {
-                finalResult->SetError(result.GetError());
+                finalResult->SetError(azureResult.GetError());
                 return;
                 }
-
+                
+            finalResult->SetSuccess({nullptr, azureResult.GetValue().GetETag()});
             if (confirmationId.empty())
-                {
-                finalResult->SetSuccess();
                 return;
-                }
 
             Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
             request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
             request.PerformAsync()->Then([=] (Http::Response& response)
                 {
                 if (HttpStatus::OK != response.GetHttpStatus())
-                    {
                     finalResult->SetError(response);
-                    return;
-                    }
-                finalResult->SetSuccess();
                 });
             });
         })

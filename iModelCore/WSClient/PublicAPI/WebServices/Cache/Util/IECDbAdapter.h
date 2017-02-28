@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/IECDbAdapter.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,7 +80,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         //! Find relationship class that matches target exactly and source polymorphically. Will return null if found more or none.
         virtual ECRelationshipClassCP FindRelationshipClassWithTarget(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
-        //! Find relationship class that matches target exactly and source polymorphically. Will return closest matching if found more
+        //! Find relationship class that matches target exactly and source polymorphically. Will return closest matching if found more. 
+        //! Note: Both sides of relationship are compared with input source and for the same reason strength directions doesn't matter. 
         virtual ECRelationshipClassCP FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
         virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;

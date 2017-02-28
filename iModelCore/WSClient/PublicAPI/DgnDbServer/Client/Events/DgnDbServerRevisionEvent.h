@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionEvent : public DgnDbServerEven
         Utf8String m_fromEventSubscriptionId;
         Utf8String m_revisionId;
         Utf8String m_revisionIndex;
-		Utf8String m_briefcaseId;
+        int        m_briefcaseId;
 
         DgnDbServerRevisionEvent
                                 (
@@ -28,7 +28,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionEvent : public DgnDbServerEven
                                 Utf8String fromEventSubscriptionId,
                                 Utf8String revisionId, 
                                 Utf8String revisionIndex,
-								Utf8String briefcaseId
+                                int        briefcaseId
                                 );
 
     public:
@@ -38,14 +38,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionEvent : public DgnDbServerEven
                                                                                                Utf8String fromEventSubscriptionId,
                                                                                                Utf8String revisionId, 
                                                                                                Utf8String revisionIndex,
-																							   Utf8String briefcaseId
+                                                                                               int        briefcaseId
                                                                                                );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionIndex();
-		DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
+        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId();
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
