@@ -66,6 +66,7 @@
         <ProductDirectory Name="PlantDomainSchemasDir" Deliver="false"/>
         <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
         <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+        <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
         
     </ProductDirectoryList>
 
