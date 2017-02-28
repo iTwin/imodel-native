@@ -142,3 +142,30 @@ ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsin
 #          Expected: to be called once
 #            Actual: called twice - over-saturated and active
 # [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
+
+DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
+    # bim0200, x86, NDEBUG, PRG, seems random
+    # [ RUN      ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
+    # e:\Builds\dcsdk02000128\Source\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(237): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    #       Which is: BeFileNameStatus::FileNotFound
+    # e:\Builds\dcsdk02000128\Source\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(238): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    #       Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [12] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x17f0fd0)
+    # [11] testing::Test::Run (0x17feb70)
+    # [10] testing::TestInfo::Run (0x17fee00)
+    # [9] testing::TestCase::Run (0x17fec60)
+    # [8] testing::internal::UnitTestImpl::RunAllTests (0x17ff0a0)
+    # [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x17f13f0)
+    # [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x17f11b0)
+    # [5] testing::UnitTest::Run (0x17fef80)
+    # [4] main (0x1327800)
+    # [3] __scrt_common_main_seh (0x180a418)
+    # [2] BaseThreadInitThunk (0x76807be0)
+    # [1] RtlInitializeExceptionChain (0x77a4ab00)
+    # [0] RtlInitializeExceptionChain (0x77a4ab00)
+    # 
+    # [  FAILED  ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty (1916 ms)
