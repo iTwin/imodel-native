@@ -817,6 +817,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     DRange3d                positionRange = DRange3d::NullRange();
 
     bool validIdsPresent = false;
+    bool invalidIdsPresent = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
@@ -836,15 +837,17 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         rightFloats.push_back(right.y);
         rightFloats.push_back(right.z);
 
-
         upFloats.push_back(up.x);
         upFloats.push_back(up.y);
         upFloats.push_back(up.z);
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
-        validIdsPresent |= (0 != attributeIndices.back());
+        bool isValidId = (0 != attributeIndices.back());
+        validIdsPresent |= isValidId;
+        invalidIdsPresent |= !isValidId;
         }
+
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
     double              range = (double) (0xffff);
@@ -877,6 +880,14 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     if (validIdsPresent)
         {
+        if (!invalidIdsPresent)
+            {
+            // Cesium's instanced models require that indices range from [0, nInstances). Must remove the "undefined" entry for that to work.
+            attributesSet.RemoveUndefined();
+            for (auto& index : attributeIndices)
+                index--;
+            }
+
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
         }
