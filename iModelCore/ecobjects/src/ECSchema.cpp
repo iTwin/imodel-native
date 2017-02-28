@@ -1428,6 +1428,13 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
     {
+    // disallow adding a supplemental schema as a referenced schema
+    if (refSchema.IsSupplementalSchema())
+        {
+        LOG.warningv("%s is trying to add %s as a referenced schema.  Supplemental schemas are not allowed to be referenced.  Ignoring this reference.", this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str());
+        return ECObjectsStatus::Success; // returning success even though we didn't add it because this should not cause the entire serialization to fail
+        }
+
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
 
     if (GetSchemaKey() == refSchemaKey)
