@@ -37,6 +37,7 @@ static const uint32_t s_pointCloudVersion    = 1;
 #define GLTF_FLOAT 5126
 #define GLTF_RGB 6407
 #define GLTF_RGBA 6408
+#define GLTF_NEAREST 0x2600
 #define GLTF_LINEAR 9729
 #define GLTF_LINEAR_MIPMAP_LINEAR 9987
 #define GLTF_CLAMP_TO_EDGE 33071
@@ -66,209 +67,339 @@ static std::string  s_shaderPrecision        = "precision highp float;\n";
 
 static std::string  s_batchIdShaderAttribute = "attribute float a_batchId;\n";
 
-static std::string s_octDecode = 
-"float gltf_signNotZero(float value) { return value >= 0.0 ? 1.0 : -1.0; }\n"
-"vec2 gltf_signNotZero(vec2 value) { return vec2(gltf_signNotZero(value.x), gltf_signNotZero(value.y));}\n"
-" vec3 gltf_octDecode(vec2 encoded)\n"
-"  {\n"
-"     encoded = encoded / 255.0 * 2.0 - 1.0;\n"
-"     vec3 v = vec3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));\n"
-"     if (v.z < 0.0)\n"
-"         v.xy = (1.0 - abs(v.yx)) * gltf_signNotZero(v.xy);\n"
-"   return normalize(v);\n"
-"  }\n";
+static std::string s_octDecode = R"RAW_STRING(
+    float gltf_signNotZero(float value) { return value >= 0.0 ? 1.0 : -1.0; }
+    vec2 gltf_signNotZero(vec2 value) { return vec2(gltf_signNotZero(value.x), gltf_signNotZero(value.y));}
+    vec3 gltf_octDecode(vec2 encoded)
+        {
+        encoded = encoded / 255.0 * 2.0 - 1.0;
+        vec3 v = vec3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));
+        if (v.z < 0.0)
+         v.xy = (1.0 - abs(v.yx)) * gltf_signNotZero(v.xy);
+        return normalize(v);
+        }
+)RAW_STRING";
 
 //Shaders for display of mesh data
 static std::string s_litVertexCommon = 
-s_octDecode +
-"attribute vec3 a_pos;\n"
-"attribute vec2 a_n;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform mat3 u_nmx;\n"
-"varying vec3 v_n;\n"
-"varying vec3 v_pos;\n"
-"void main(void) {\n"
-"vec4 pos = u_mv * vec4(a_pos,1.0);\n"
-"vec3 decodeNormal = gltf_octDecode(a_n);\n"
-"v_n = u_nmx * decodeNormal;\n"
-"v_pos = pos.xyz;\n"
-"gl_Position = u_proj * pos;\n";
+s_octDecode + R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec2 a_n;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    uniform mat3 u_nmx;
+    varying vec3 v_n;
+    varying vec3 v_pos;
 
-static std::string s_texturedVertexShader =
-"attribute vec2 a_texc;\n"
-"varying vec2 v_texc;\n"
-+ s_litVertexCommon +
-"v_texc = a_texc;\n"
-"}\n";
+    void main(void)
+        {
+        vec4 pos = u_mv * vec4(a_pos,1.0);
+        vec3 decodeNormal = gltf_octDecode(a_n);
+        v_n = u_nmx * decodeNormal;
+        v_pos = pos.xyz;
+        gl_Position = u_proj * pos;
+)RAW_STRING";
 
-static std::string s_untexturedVertexShader =  
-s_litVertexCommon +
-"}\n";
+static std::string s_texturedVertexShader = R"RAW_STRING(
+    attribute vec2 a_texc;
+    varying vec2 v_texc;
+)RAW_STRING"
++ s_litVertexCommon + R"RAW_STRING(
+    v_texc = a_texc;
+    }
+)RAW_STRING";
 
-static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
-"attribute vec3 a_pos;\n"
-"attribute vec2 a_texc;\n"
-"varying vec2 v_texc;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"void main(void) {\n"
-"v_texc = a_texc;\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
+static std::string s_computeIndexedColor[3] =
+    {
+    R"RAW_STRING(
+        uniform vec4 u_color;
+        varying vec4 v_color;
+        vec4 computeColor() { return u_color; }
+    )RAW_STRING",
+
+    R"RAW_STRING(
+        attribute float a_colorIndex;
+        uniform vec2 u_texStep;
+        uniform sampler2D u_tex;
+        varying vec4 v_color;
+
+        vec2 computeColorSt(float colorIndex)
+            {
+            float stepX = u_texStep.x;
+            float centerX = u_texStep.y;
+            return vec2(centerX + (colorIndex * stepX), 0.5);
+            }
+
+        vec4 computeColor() { return texture2D(u_tex, computeColorSt(a_colorIndex)); }
+    )RAW_STRING",
+
+    R"RAW_STRING(
+        attribute float a_colorIndex;
+        uniform float u_texWidth;
+        uniform vec4 u_texStep;
+        uniform sampler2D u_tex;
+        varying vec4 v_color;
+
+        vec2 computeColorSt(float colorIndex)
+            {
+            float stepX = u_texStep.x;
+            float centerX = u_texStep.y;
+            float stepY = u_texStep.z;
+            float centerY = u_texStep.w;
+
+            float xId = mod(colorIndex, u_texWidth);
+            float yId = floor(colorIndex / u_texWidth);
+            return vec2(centerX + (xId * stepX), 1.0 - (centerY + (yId * stepY)));
+            }
+
+        vec4 computeColor() { return texture2D(u_tex, computeColorSt(a_colorIndex)); }
+    )RAW_STRING"
+    };
+
+static std::string s_assignIndexedColor = R"RAW_STRING(
+        v_color = computeColor();
+        }
+)RAW_STRING";
+
+static std::string s_untexturedVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_litVertexCommon + s_assignIndexedColor,
+    s_computeIndexedColor[1] + s_litVertexCommon + s_assignIndexedColor,
+    s_computeIndexedColor[2] + s_litVertexCommon + s_assignIndexedColor,
+    };
+
+// Used for reality meshes.
+static std::string s_unlitTextureVertexShader = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec2 a_texc;
+    varying vec2 v_texc;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    void main(void)
+        {
+        v_texc = a_texc;
+        gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        }
+)RAW_STRING";
+
+static std::string s_computeLighting = R"RAW_STRING(
+    void computeSingleLight (inout float diffuse, inout float specular, vec3 normal, vec3 toEye, vec3 lightDir, float lightIntensity, float specularExponent)
+        {
+        diffuse += lightIntensity * max(dot(normal,lightDir), 0.0);
+        vec3 toReflectedLight = reflect(lightDir, normal);
+        float specularDot = max(dot(toReflectedLight, toEye), 0.0);
+        specular += lightIntensity * pow(specularDot, specularExponent);
+        }
+
+    vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor)
+        {
+        vec3 normal = normalize(normalIn);
+        vec3 toEye = normalize (position);
+        normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);
+
+        float ambient = 0.2;
+        vec3 lightPos1 = vec3(-500, -200.0, 0.0);
+        vec3 lightPos2 = vec3(500, 200.0, 0.0);
+        vec3 lightDir1 = normalize(lightPos1 - position);
+        vec3 lightDir2 = normalize(lightPos2 - position);
+
+        float diffuseIntensity = 0.0;
+        float specularIntensity = 0.0;
+
+        computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir1, .35, specularExponent);
+        computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir2, .45, specularExponent);
+        computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, czm_sunDirectionEC, .25, specularExponent);
+
+        vec3   diffuseAndAmbient = inputColor.rgb * min (1.0, diffuseIntensity + ambient);
+        vec3   specular = specularColor.rgb * min (1.0, specularIntensity);
+
+        return vec4 (diffuseAndAmbient + specular, inputColor.a);
+        }
+)RAW_STRING";
 
 
-static std::string s_computeLighting = 
-"void computeSingleLight (inout float diffuse, inout float specular, vec3 normal, vec3 toEye, vec3 lightDir, float lightIntensity, float specularExponent)\n"
-"{\n"
-"diffuse += lightIntensity * max(dot(normal,lightDir), 0.0);\n"
-"vec3 toReflectedLight = reflect(lightDir, normal);\n"
-"float specularDot = max(dot(toReflectedLight, toEye), 0.0);\n"
-"specular += lightIntensity * pow(specularDot, specularExponent);\n"
-"}"
-"vec4 computeLighting (vec3 normalIn, vec3 position, float specularExponent, vec3 specularColor, vec4 inputColor)\n"
-"{\n"
-"vec3 normal = normalize(normalIn);\n"
-"vec3 toEye = normalize (position);\n"
-"normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);\n"
-"float ambient = 0.2;\n"
-"vec3 lightPos1 = vec3(-500, -200.0, 0.0);\n"
-"vec3 lightPos2 = vec3(500, 200.0, 0.0);\n"
-"vec3 lightDir1 = normalize(lightPos1 - position);\n"
-"vec3 lightDir2 = normalize(lightPos2 - position);\n"
-"float diffuseIntensity = 0.0;\n"
-"float specularIntensity = 0.0;\n"
-"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir1, .35, specularExponent);\n"
-"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, lightDir2, .45, specularExponent);\n"
-"computeSingleLight (diffuseIntensity, specularIntensity, normal, toEye, czm_sunDirectionEC, .25, specularExponent);\n"
-"vec3   diffuseAndAmbient = inputColor.rgb * min (1.0, diffuseIntensity + ambient);\n"
-"vec3   specular = specularColor.rgb * min (1.0, specularIntensity);\n"
-"return vec4 (diffuseAndAmbient + specular, inputColor.a);\n"
-"}\n";
+static std::string s_untexturedFragShader = R"RAW_STRING(
+    varying vec4 v_color;
+    varying vec3 v_n;
+    varying vec3 v_pos;
+    uniform float u_specularExponent;
+    uniform vec3 u_specularColor;
+)RAW_STRING"
++ s_computeLighting + R"RAW_STRING(
+    void main(void)
+        {
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, v_color);
+        }
+)RAW_STRING";
 
+static std::string s_texturedFragShader = R"RAW_STRING(
+    varying vec2 v_texc;  
+    uniform sampler2D u_tex; 
+    varying vec3 v_n;
+    varying vec3 v_pos;
+    uniform float u_specularExponent;
+    uniform vec3 u_specularColor;
+)RAW_STRING"
++ s_computeLighting + R"RAW_STRING(
+    void main(void)
+        {
+        vec4 textureColor = texture2D(u_tex, v_texc);
+        if (0.0 == textureColor.a) discard;
+        gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor);
+        }
+)RAW_STRING";
 
-
-static std::string s_untexturedFragShader = 
-"uniform vec4 u_color;\n"
-"varying vec3 v_n;\n"
-"varying vec3 v_pos;\n"
-"uniform float u_specularExponent;\n"
-"uniform vec3 u_specularColor;\n"
-+ s_computeLighting + 
-"void main(void) {\n"
-"gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, u_color);}\n";
-
-static std::string s_texturedFragShader =
-"varying vec2 v_texc;\n"  
-"uniform sampler2D u_tex;\n" 
-"varying vec3 v_n;\n"
-"varying vec3 v_pos;\n"
-"uniform float u_specularExponent;\n"
-"uniform vec3 u_specularColor;\n"
-+ s_computeLighting +    
-"void main(void) {\n"
-"vec4 textureColor = texture2D(u_tex, v_texc);\n"
-"if (0.0 == textureColor.a) discard;\n"
-"gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor); }\n";
-
-static std::string s_unlitTextureFragmentShader =
-"varying vec2 v_texc;\n"  
-"uniform sampler2D u_tex;\n" 
-"void main(void) {gl_FragColor = texture2D(u_tex, v_texc);}\n";
-
+static std::string s_unlitTextureFragmentShader = R"RAW_STRING(
+    varying vec2 v_texc;  
+    uniform sampler2D u_tex; 
+    void main(void)
+        {
+        gl_FragColor = texture2D(u_tex, v_texc);
+        }
+)RAW_STRING";
 
 // Unlit shaders....
-static std::string s_unlitVertexShader =
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"void main(void) {\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
+static std::string s_unlitVertexCommon = R"RAW_STRING(
+    attribute vec3 a_pos;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+)RAW_STRING";
 
-static std::string s_unlitFragmentShader =
-"uniform vec4 u_color;\n"
-"void main(void) {gl_FragColor = vec4(u_color);}\n";
+static std::string s_unlitVertexMain = R"RAW_STRING(
+    void main()
+        {
+        gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        v_color = computeColor();
+        }
+)RAW_STRING";
+
+static std::string s_unlitVertexShaders[3] =
+    {
+    s_unlitVertexCommon + s_computeIndexedColor[0] + s_unlitVertexMain,
+    s_unlitVertexCommon + s_computeIndexedColor[1] + s_unlitVertexMain,
+    s_unlitVertexCommon + s_computeIndexedColor[2] + s_unlitVertexMain,
+    };
+
+static std::string s_unlitFragmentShader = R"RAW_STRING(
+    varying vec4 v_color;
+    void main(void)
+        {
+        gl_FragColor = vec4(v_color);
+        }
+)RAW_STRING";
 
 // Polyline shaders.
-static std::string s_tesselatedPolylineVertexShader =
-"attribute vec3 a_pos;\n"
-"attribute vec3 a_direction;\n"
-"attribute vec3 a_vertexDelta;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform float u_width;\n"
-"varying vec2 v_texture;\n"
-"varying float v_length;\n"
-"varying float v_widthScale;\n"
-"void main(void) {\n"
-"v_length = length(a_direction);\n"
-"float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);\n"
-"vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);\n"
-"vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);\n"
-"float width = projection.w * u_width * pixelWidthRatio;\n"
-"v_widthScale = 1.0 / width;\n"
-"vec3 extrusion = normalize(cross (a_direction, toEye));\n"
-"v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;\n"
-"v_texture.y = a_vertexDelta.y;\n"
-"gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);\n"
-"}\n";
+static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec3 a_direction;
+    attribute vec3 a_vertexDelta;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    uniform float u_width;
+    varying vec2 v_texture;
+    varying float v_length;
+    varying float v_widthScale;
 
+    void main(void)
+        {
+        v_length = length(a_direction);
+        float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);
+        vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);
+        float width = projection.w * u_width * pixelWidthRatio;
+        v_widthScale = 1.0 / width;
 
-static std::string s_tesselatedPolylineFragmentShader =
-"uniform float u_feather;\n"
+        vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);
+        vec3 extrusion = normalize(cross (a_direction, toEye));
 
-"bool computePolylineColor (vec4 color, float distance)\n"
-"    {\n"
-"    if (distance > 1.0)\n"
-"        return false;\n"
-"    float alpha = distance > (1.0 - u_feather) ?  ((1.0 - distance)/u_feather) : 1.0;\n"
-"    gl_FragColor = vec4 (color.rgb, alpha);\n"
-"    return true;\n" 
-"    }\n"
-"uniform vec4 u_color;\n"
-"varying vec2 v_texture;\n"
-"varying float v_length;\n"
-"varying float v_widthScale;\n"
-"void main()\n"
-" {\n"
-" float centerDistance;\n"
-"\n"     
-" if (v_texture.x < 0.0)\n"
-"   {\n"
-"   float xTexture = -v_texture.x * v_widthScale;\n"
-"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
-"   }\n"
-"else if (v_texture.x > v_length)\n"
-"   {\n"
-"   float xTexture = (v_texture.x - v_length) * v_widthScale;\n"
-"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
-"   }\n"
-"else\n"
-"   {\n"
-"   centerDistance = abs (v_texture.y);\n"
-"   }\n"
-"if (!computePolylineColor (u_color, centerDistance))\n"
-"       discard;\n"
-"}\n";
+        v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;
+        v_texture.y = a_vertexDelta.y;
 
-static std::string s_simplePolylineVertexShader =
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform float u_width;\n"
-"varying vec2 v_windowPos;\n"
-"void main(void) {\n"
-"vec4 modelPos = vec4(a_pos, 1.0);\n"
-"gl_Position =  czm_modelViewProjection * modelPos;\n"
-"vec4 windowPos = czm_modelToWindowCoordinates(modelPos);\n"
-"v_windowPos = windowPos.xy / windowPos.w;\n"
-"}\n";
+        gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);
+        v_color = computeColor();
+        }
+)RAW_STRING";
 
+static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
+    uniform float u_feather;
+    varying vec4 v_color;
+    varying vec2 v_texture;
+    varying float v_length;
+    varying float v_widthScale;
 
-static std::string s_simplePolylineFragmentShader =
-"uniform vec4 u_color;\n"
-"varying vec2 v_windowPos;\n"
-"void main(void) {gl_FragColor = u_color;}\n";
+    bool computePolylineColor (vec4 color, float distance)
+        {
+        if (distance > 1.0)
+            return false;
 
+        float alpha = distance > (1.0 - u_feather) ? ((1.0 - distance)/u_feather) : 1.0;
+        gl_FragColor = vec4 (color.rgb, alpha);
+        return true; 
+        }
+
+    void main()
+        {
+        float centerDistance;
+             
+        if (v_texture.x < 0.0)
+            {
+            float xTexture = -v_texture.x * v_widthScale;
+            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
+            }
+        else if (v_texture.x > v_length)
+            {
+            float xTexture = (v_texture.x - v_length) * v_widthScale;
+            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
+            }
+        else
+            {
+            centerDistance = abs (v_texture.y);
+            }
+
+        if (!computePolylineColor (v_color, centerDistance))
+            discard;
+        }
+)RAW_STRING";
+
+static std::string s_simplePolylineVertexCommon = R"RAW_STRING(
+    attribute vec3 a_pos;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    uniform float u_width;
+    varying vec2 v_windowPos;
+
+    void main(void)
+        {
+        vec4 modelPos = vec4(a_pos, 1.0);
+        gl_Position =  czm_modelViewProjection * modelPos;
+        vec4 windowPos = czm_modelToWindowCoordinates(modelPos);
+        v_windowPos = windowPos.xy / windowPos.w;
+        v_color = computeColor();
+        }
+)RAW_STRING";
+
+static std::string s_simplePolylineFragmentShader = R"RAW_STRING(
+varying vec4 v_color;
+varying vec2 v_windowPos;
+
+void main(void)
+    {
+    gl_FragColor = v_color;
+    }
+)RAW_STRING";
+
+static std::string s_simplePolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_simplePolylineVertexCommon,
+    s_computeIndexedColor[1] + s_simplePolylineVertexCommon,
+    s_computeIndexedColor[2] + s_simplePolylineVertexCommon
+    };
+
+static std::string s_tesselatedPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_tesselatedPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_tesselatedPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_tesselatedPolylineVertexCommon
+    };
 
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,
@@ -279,12 +410,5 @@ static double const s_qvExponentMultiplier  = 48.0,
                     s_qvRefract             = 1.0,
                     s_qvDiffuse             = 0.6;
 
-
 static const WCharCP s_metadataExtension        = L"json";
-
-
-
-
-
-
 
