@@ -817,6 +817,7 @@ protected:
     void _SetOrigin(DPoint3dCR origin) override {m_origin = origin;}
     void _SetExtents(DVec3dCR extents) override {m_extents = extents;}
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
+    ViewDefinition3dCP _ToView3d() const override final {return this;}
 
 public:
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR); //!< @private
@@ -1077,7 +1078,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
-    void _OnTransform(TransformCR) override {}
     explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 
 public:

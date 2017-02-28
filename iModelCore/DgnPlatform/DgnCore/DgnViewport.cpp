@@ -463,10 +463,9 @@ ViewportStatus DgnViewport::SetupFromViewController()
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
 
-    SpatialViewControllerP physicalView = GetSpatialViewControllerP();
-    if (nullptr != physicalView)
+    auto cameraView = m_viewController->GetViewDefinition().ToView3dP();
+    if (nullptr != cameraView)
         {
-        auto cameraView = m_viewController->GetViewDefinition().ToView3dP();
         if (!Allow3dManipulations())
             {
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
