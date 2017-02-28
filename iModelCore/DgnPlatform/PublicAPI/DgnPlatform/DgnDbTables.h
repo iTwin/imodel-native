@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -694,7 +694,8 @@ public:
     static double const OneKilometer() {return 1000.0 * OneMeter();}
     static double const OneMillimeter() {return OneMeter() / 1000.0;}
     static double const OneCentimeter() {return OneMeter() / 100.0;}
-    static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
+    static double const DiameterOfEarth() {return 12742.0 * OneKilometer();} // approximate
+    static double const CircumferenceOfEarth() {return 40075.0 * OneKilometer();} // approximate
 };
 
 //=======================================================================================

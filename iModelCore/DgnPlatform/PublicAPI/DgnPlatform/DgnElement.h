@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1378,7 +1378,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = DgnUnits::DiameterOfEarth();
+        double maxCoord = DgnUnits::CircumferenceOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord || m_boundingBox.low.z < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord || m_boundingBox.high.z > maxCoord)
@@ -1441,7 +1441,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = DgnUnits::DiameterOfEarth();
+        double maxCoord = DgnUnits::CircumferenceOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord)
