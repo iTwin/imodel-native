@@ -189,7 +189,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
         return ERROR;
         }
 
-    LogInvalidLegacyClassInheritanceIssues();
+    LogInvalidDbMappings();
 
     ClearCache();
     m_schemaImportContext = nullptr;
@@ -944,9 +944,9 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                    02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
+BentleyStatus ECDbMap::LogInvalidDbMappings() const
     {
-    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidLegacyClassInheritance");
+    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidDbMappings");
     const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
     const NativeLogging::SEVERITY logSeverity = NativeLogging::LOG_ERROR;
     if (!diagLogger->isSeverityEnabled(diagSeverity) && !LOG.isSeverityEnabled(logSeverity))
@@ -975,7 +975,7 @@ BentleyStatus ECDbMap::LogInvalidLegacyClassInheritanceIssues() const
                              ecdbFileName, schemaName, schemaAlias,
                              className, tableName, issueType, issueTypeDesc, issue);
 
-        LOG.messagev(logSeverity, "ECClass with invalid class inheritance resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
+        LOG.messagev(logSeverity, "ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
                      schemaName, className, issueType, tableName, issue);
         }
 
