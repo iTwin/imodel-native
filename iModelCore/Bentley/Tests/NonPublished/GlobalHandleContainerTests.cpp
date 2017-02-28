@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GlobalHandleContainerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -21,9 +21,13 @@ class GlobalHandleContainerTest : public ::testing::Test
         virtual void SetUp()
             {
             offset = 16777215;//  0xFFFFFF
+            //  Don't let any other tests effect this.
+            GlobalHandleContainer::Destroy();
             }
         virtual void TearDown()
             {
+            //  Don't effect any other tests.
+            GlobalHandleContainer::Destroy();
             }
     };
 

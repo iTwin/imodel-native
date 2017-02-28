@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/GlobalHandleContainer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,6 +46,7 @@ public:
     BENTLEYDLL_EXPORT static uint32_t     AllocateHandle (void* pointer);
     BENTLEYDLL_EXPORT static void         ReleaseHandle (uint32_t handle);
     BENTLEYDLL_EXPORT static void*        GetPointer (uint32_t handle);
+    BENTLEYDLL_EXPORT static void         Destroy ();
     }; // GlobalHandleContainer
 
 END_BENTLEY_NAMESPACE
