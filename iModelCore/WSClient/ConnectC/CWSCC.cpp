@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/CWSCC.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
@@ -415,13 +415,16 @@ Utf8String applicationProductId
 
     BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
-    
+    BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
+
     BeFileName dgnClientFxSqlangFile = m_pathProvider.GetAssetsRootDirectory();
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
     BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile);
-
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
+
+    HttpClient::Initialize(m_pathProvider.GetAssetsRootDirectory());
+
     auto bclient = make_shared<BuddiClient>(m_customHandler);
 #if !defined (NDEBUG)
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &s_localState, bclient);
