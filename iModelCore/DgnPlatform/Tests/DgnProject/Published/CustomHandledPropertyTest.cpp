@@ -634,3 +634,141 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
     }
     m_db->CloseDb();
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Linkelement)
+    {
+    SetupSeedProject();
+    uint32_t ulindex, udescindex,rindex,enindex,edescindex;
+    ECN::ECValue checkValue;
+    DgnElementId linkid, emlinkid;
+
+    if (true)
+        {
+        LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(*m_db, "TestLinkModel");
+        //UrlLink
+        UrlLinkPtr link = UrlLink::Create(UrlLink::CreateParams(*linkModel));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyIndex(ulindex, "Url"));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyIndex(udescindex, "Descr"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, link->SetPropertyValue(ulindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(ulindex, ECN::ECValue("http://www.google.com")));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("http://www.google.com")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, link->SetPropertyValue(udescindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(udescindex, ECN::ECValue("Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+        checkValue.Clear();
+        UrlLinkCPtr linkele = link->Insert();
+        ASSERT_TRUE(linkele.IsValid());
+        linkid = linkele->GetElementId();
+        ASSERT_TRUE(linkid.IsValid());
+        //Repositorylink
+        RepositoryLinkPtr rlink = RepositoryLink::Create(*linkModel, "http://www.outlook.com", "Rlink Lable");
+        ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "RepositoryGuid"));
+        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->SetPropertyValue(rindex, ECN::ECValue("Descr")));
+        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->GetPropertyValue(checkValue, rindex));
+        ASSERT_TRUE(rlink->Insert().IsValid());
+        //EmbeddedFileLink
+        EmbeddedFileLinkPtr emlink = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, ""));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(enindex, "Name"));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(edescindex, "Descr"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, emlink->SetPropertyValue(enindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(enindex, ECN::ECValue("EmFile")));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile")));
+        checkValue.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, emlink->SetPropertyValue(edescindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(edescindex, ECN::ECValue("Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+        checkValue.Clear();
+        EmbeddedFileLinkCPtr emlinkele = emlink->Insert();
+        ASSERT_TRUE(emlinkele.IsValid());
+        emlinkid = emlinkele->GetElementId();
+        ASSERT_TRUE(emlinkid.IsValid());
+        m_db->SaveChanges();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    UrlLinkCPtr link = UrlLink::Get(*m_db,linkid);
+    ASSERT_TRUE(link.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("http://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkCPtr emlink = m_db->Elements().Get<EmbeddedFileLink>(emlinkid);
+    ASSERT_TRUE(emlink.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    UrlLinkPtr link = UrlLink::GetForEdit(*m_db,linkid);
+
+    ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(ulindex, ECN::ECValue("https://www.google.com")));
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("https://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(udescindex, ECN::ECValue("NDescr")));
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkPtr emlink = EmbeddedFileLink::GetForEdit(*m_db,emlinkid);
+    ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(enindex, ECN::ECValue("EmFile1")));
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile1")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(edescindex, ECN::ECValue("NDescr")));
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();;
+
+    ASSERT_TRUE(link->Update().IsValid());
+    ASSERT_TRUE(emlink->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    UrlLinkCPtr link = m_db->Elements().Get<UrlLink>(linkid);
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("https://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkCPtr emlink = m_db->Elements().Get< EmbeddedFileLink>(emlinkid);
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile1")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+    }
+    }
