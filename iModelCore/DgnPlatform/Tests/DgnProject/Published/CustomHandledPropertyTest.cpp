@@ -90,7 +90,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
+TEST_F(GetSetCustomHandledProprty, ThreedElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -242,7 +242,7 @@ TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
+TEST_F(GetSetCustomHandledProprty, TwodElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
