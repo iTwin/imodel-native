@@ -36,3 +36,6 @@ PerformanceElementTestFixture.*
 PerformanceDgnECTests.*
 DgnECInstanceTests.*
 ImportTests.*
+
+#TFS 666963
+GetSetCustomHandledProprty.GeometryPart
