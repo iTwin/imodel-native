@@ -87,7 +87,7 @@ void dgn_ElementHandler::LightDef::_RegisterPropertyAccessors(ECSqlClassInfo& pa
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (LightDefinition&) elIn;
-            value.SetUtf8CP(el.GetDescr().c_str());
+            value.SetUtf8CP(el.GetDescription().c_str());
             return DgnDbStatus::Success;
             },
         [] (DgnElementR elIn, ECValueCR value)
@@ -95,7 +95,7 @@ void dgn_ElementHandler::LightDef::_RegisterPropertyAccessors(ECSqlClassInfo& pa
             if (!value.IsString())
                 return DgnDbStatus::BadArg;
             auto& el = (LightDefinition&) elIn;
-            el.SetDescr(value.ToString());
+            el.SetDescription(value.ToString());
             return DgnDbStatus::Success;
             });
 

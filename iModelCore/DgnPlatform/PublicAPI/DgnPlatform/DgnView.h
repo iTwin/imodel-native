@@ -459,7 +459,7 @@ public:
         DgnViewId GetId() const {return m_statement->GetValueId<DgnViewId>(0);} //!< The view Id
         Utf8CP GetName() const {return m_statement->GetValueText(1);} //!< The name of the view
         bool IsPrivate() const {return m_statement->GetValueBoolean(2);} //!< Whether the view is private or not
-        Utf8CP GetDescr() const {return m_statement->GetValueText(3);} //!< The view's description
+        Utf8CP GetDescription() const {return m_statement->GetValueText(3);} //!< The view's description
         DgnClassId GetClassId() const {return m_statement->GetValueId<DgnClassId>(4);} //!< The view's ECClassId
 
         DGNPLATFORM_EXPORT bool IsOrthographicView() const;
