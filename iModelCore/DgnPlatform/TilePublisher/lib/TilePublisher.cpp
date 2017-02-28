@@ -416,6 +416,24 @@ void ColorIndex::Build(TileMeshCR mesh, MeshMaterial const& mat)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorIndex::ColorIndex(TileMeshCR mesh, PolylineMaterial const& mat)
+    {
+    ColorIndexMapCR map = mesh.GetColorIndexMap();
+    uint16_t nColors = map.GetNumIndices();
+    ComputeDimensions(nColors);
+    BeAssert(0 < m_width && 0 < m_height);
+
+    fillColorIndex(m_texture, map, nColors, [](uint32_t color)
+        {
+        ColorDef fill(color);
+        fill.SetAlpha(255 - fill.GetAlpha());
+        return fill;
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context) : m_centroid(tile.GetTileCenter()), m_tile(tile), m_context(context)
@@ -1414,6 +1432,59 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     data.m_json["techniques"][techniqueName.c_str()] = technique;
 
     return techniqueName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
+    : m_name(Utf8String("PolylineMaterial_")+suffix)
+    {
+    m_type = mesh.GetDisplayParams()->GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+
+    ColorIndexMapCR map = mesh.GetColorIndexMap();
+    m_hasAlpha = map.HasTransparency();
+
+    switch (map.GetNumIndices())
+        {
+        case 0:
+            BeAssert(false && "empty color map");
+            m_colorDimension = ColorIndex::Dimension::None;
+            break;
+        case 1:
+            m_colorDimension = ColorIndex::Dimension::Zero;
+            break;
+        default:
+            m_colorDimension = map.GetNumIndices() <= ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::One : ColorIndex::Dimension::Two;
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PolylineMaterial::GetTechniqueNamePrefix() const
+    {
+    Utf8String prefix = PolylineType::Simple == GetType() ? "Simple" : "Tesselated";
+    prefix.append("Polyline");
+    prefix.append(std::to_string(static_cast<uint8_t>(GetColorIndexDimension())).c_str());
+    return prefix;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& PolylineMaterial::GetVertexShaderString() const
+    {
+    return IsTesselated() ? s_tesselatedPolylineVertexShader : s_simplePolylineVertexShader;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& PolylineMaterial::GetFragmentShaderString() const
+    {
+    return IsTesselated() ? s_tesselatedPolylineFragmentShader : s_simplePolylineFragmentShader;
     }
 
 /*---------------------------------------------------------------------------------**//**

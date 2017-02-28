@@ -289,86 +289,102 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
 )RAW_STRING";
 
 // Polyline shaders.
-static std::string s_tesselatedPolylineVertexShader =
-"attribute vec3 a_pos;\n"
-"attribute vec3 a_direction;\n"
-"attribute vec3 a_vertexDelta;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform float u_width;\n"
-"varying vec2 v_texture;\n"
-"varying float v_length;\n"
-"varying float v_widthScale;\n"
-"void main(void) {\n"
-"v_length = length(a_direction);\n"
-"float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);\n"
-"vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);\n"
-"vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);\n"
-"float width = projection.w * u_width * pixelWidthRatio;\n"
-"v_widthScale = 1.0 / width;\n"
-"vec3 extrusion = normalize(cross (a_direction, toEye));\n"
-"v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;\n"
-"v_texture.y = a_vertexDelta.y;\n"
-"gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);\n"
-"}\n";
+static std::string s_tesselatedPolylineVertexShader = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec3 a_direction;
+    attribute vec3 a_vertexDelta;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    uniform float u_width;
+    varying vec2 v_texture;
+    varying float v_length;
+    varying float v_widthScale;
+
+    void main(void)
+        {
+        v_length = length(a_direction);
+        float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);
+        vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);
+        float width = projection.w * u_width * pixelWidthRatio;
+        v_widthScale = 1.0 / width;
+
+        vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);
+        vec3 extrusion = normalize(cross (a_direction, toEye));
+
+        v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;
+        v_texture.y = a_vertexDelta.y;
+
+        gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);
+        }
+)RAW_STRING";
 
 
-static std::string s_tesselatedPolylineFragmentShader =
-"uniform float u_feather;\n"
+static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
+    uniform float u_feather;
+    uniform vec4 u_color;
+    varying vec2 v_texture;
+    varying float v_length;
+    varying float v_widthScale;
 
-"bool computePolylineColor (vec4 color, float distance)\n"
-"    {\n"
-"    if (distance > 1.0)\n"
-"        return false;\n"
-"    float alpha = distance > (1.0 - u_feather) ?  ((1.0 - distance)/u_feather) : 1.0;\n"
-"    gl_FragColor = vec4 (color.rgb, alpha);\n"
-"    return true;\n" 
-"    }\n"
-"uniform vec4 u_color;\n"
-"varying vec2 v_texture;\n"
-"varying float v_length;\n"
-"varying float v_widthScale;\n"
-"void main()\n"
-" {\n"
-" float centerDistance;\n"
-"\n"     
-" if (v_texture.x < 0.0)\n"
-"   {\n"
-"   float xTexture = -v_texture.x * v_widthScale;\n"
-"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
-"   }\n"
-"else if (v_texture.x > v_length)\n"
-"   {\n"
-"   float xTexture = (v_texture.x - v_length) * v_widthScale;\n"
-"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
-"   }\n"
-"else\n"
-"   {\n"
-"   centerDistance = abs (v_texture.y);\n"
-"   }\n"
-"if (!computePolylineColor (u_color, centerDistance))\n"
-"       discard;\n"
-"}\n";
+    bool computePolylineColor (vec4 color, float distance)
+        {
+        if (distance > 1.0)
+            return false;
 
-static std::string s_simplePolylineVertexShader =
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform float u_width;\n"
-"varying vec2 v_windowPos;\n"
-"void main(void) {\n"
-"vec4 modelPos = vec4(a_pos, 1.0);\n"
-"gl_Position =  czm_modelViewProjection * modelPos;\n"
-"vec4 windowPos = czm_modelToWindowCoordinates(modelPos);\n"
-"v_windowPos = windowPos.xy / windowPos.w;\n"
-"}\n";
+        float alpha = distance > (1.0 - u_feather) ? ((1.0 - distance)/u_feather) : 1.0;
+        gl_FragColor = vec4 (color.rgb, alpha);
+        return true; 
+        }
 
+    void main()
+        {
+        float centerDistance;
+             
+        if (v_texture.x < 0.0)
+            {
+            float xTexture = -v_texture.x * v_widthScale;
+            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
+            }
+        else if (v_texture.x > v_length)
+            {
+            float xTexture = (v_texture.x - v_length) * v_widthScale;
+            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
+            }
+        else
+            {
+            centerDistance = abs (v_texture.y);
+            }
 
-static std::string s_simplePolylineFragmentShader =
-"uniform vec4 u_color;\n"
-"varying vec2 v_windowPos;\n"
-"void main(void) {gl_FragColor = u_color;}\n";
+        if (!computePolylineColor (u_color, centerDistance))
+            discard;
+        }
+)RAW_STRING";
 
+static std::string s_simplePolylineVertexShader = R"RAW_STRING(
+    attribute vec3 a_pos;
+    uniform mat4 u_mv;
+    uniform mat4 u_proj;
+    uniform float u_width;
+    varying vec2 v_windowPos;
+
+    void main(void)
+        {
+        vec4 modelPos = vec4(a_pos, 1.0);
+        gl_Position =  czm_modelViewProjection * modelPos;
+        vec4 windowPos = czm_modelToWindowCoordinates(modelPos);
+        v_windowPos = windowPos.xy / windowPos.w;
+        }
+)RAW_STRING";
+
+static std::string s_simplePolylineFragmentShader = R"RAW_STRING(
+uniform vec4 u_color;
+varying vec2 v_windowPos;
+
+void main(void)
+    {
+    gl_FragColor = u_color;
+    }
+)RAW_STRING";
 
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,
@@ -379,7 +395,5 @@ static double const s_qvExponentMultiplier  = 48.0,
                     s_qvRefract             = 1.0,
                     s_qvDiffuse             = 0.6;
 
-
 static const WCharCP s_metadataExtension        = L"json";
-
 

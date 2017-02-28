@@ -29,6 +29,7 @@ BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
 struct MeshMaterial;
+struct PolylineMaterial;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -54,6 +55,8 @@ public:
         {
         Build(mesh, mat);
         }
+
+    ColorIndex(TileMeshCR mesh, PolylineMaterial const& mat);
 
     static constexpr uint16_t GetMaxWidth() { return 256; }
 
@@ -88,6 +91,40 @@ struct  PublishTileData
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+enum class PolylineType : uint8_t
+{
+    Simple,
+    Tesselated,
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct PolylineMaterial
+{
+    Utf8String              m_name;
+    ColorIndex::Dimension   m_colorDimension;
+    bool                    m_hasAlpha;
+    PolylineType            m_type;
+
+    PolylineMaterial(TileMeshCR mesh, Utf8CP suffix);
+
+    ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
+    bool HasTransparency() const { return m_hasAlpha; }
+    PolylineType GetType() const { return m_type; }
+    Utf8StringCR GetName() const { return m_name; }
+
+    std::string const& GetVertexShaderString() const;
+    std::string const& GetFragmentShaderString() const;
+    Utf8String GetTechniqueNamePrefix() const;
+
+    bool IsSimple() const { return PolylineType::Simple == GetType(); }
+    bool IsTesselated() const { return PolylineType::Tesselated == GetType(); }
 };
 
 //=======================================================================================
