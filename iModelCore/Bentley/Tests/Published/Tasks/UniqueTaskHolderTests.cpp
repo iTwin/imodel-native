@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/UniqueTaskHolderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -132,3 +132,17 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledOnceAndExecutorDeleted_DoesN
     EXPECT_EQ (42, task->GetResult ());
     }
 
+TEST_F(UniqueTaskHolderTests, GetRunningTask_ReturnsCompletedTask_ExecutesAndPropogatesBack)
+    {
+    auto thread = WorkerThread::Create("TestThread");
+    auto taskHolder = new UniqueTaskHolder<int>();
+
+    thread->ExecuteAsync([&]
+        {
+        taskHolder->GetTask([]
+            {
+            return CreateCompletedAsyncTask(5);
+            });
+        })
+    ->Wait();
+    }

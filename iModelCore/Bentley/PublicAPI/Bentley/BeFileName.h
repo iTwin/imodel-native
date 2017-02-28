@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFileName.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -192,7 +192,12 @@ public:
 /** @name Convert to/from other encodings */
 /** @{ */
     //! Copy name into WChar buffer.
-    void GetName(WCharP name, size_t size) const {wcsncpy(name, c_str(), size-1); name[size-1] = 0;}
+    void GetName(WCharP name, size_t size) const
+        {
+PUSH_MSVC_IGNORE(4996)
+        wcsncpy(name, c_str(), size-1); name[size-1] = 0;
+POP_MSVC_IGNORE
+        }
 
     //! Convert the filename into a null-terminated multibyte string according to the current locale (ACP).
     //! @param[out] name The buffer into which the conversion is made. Must be of size MAX_PATH.

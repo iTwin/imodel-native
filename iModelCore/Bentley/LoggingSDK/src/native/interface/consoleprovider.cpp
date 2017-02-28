@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/consoleprovider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (ANDROID)
@@ -412,7 +412,7 @@ Utf8CP                  msg
         default:          asev = ANDROID_LOG_INFO;    break;
         }
 
-    __android_log_print (asev, nsUtf8.c_str (), msg);
+    __android_log_print (asev, nsUtf8.c_str (), "%s", msg);
 
 #elif defined (USE_SYSLOG)
 
@@ -611,12 +611,14 @@ private:
     static bool GetMaxPaneWidth(dim_t& maxWidth)
         {
         int value;
+PUSH_MSVC_IGNORE(4996)
         WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_MAX_WIDTH"), BentleyCharEncoding::Utf8);
         if (!envVar.empty() && 1 == BE_STRING_UTILITIES_SWSCANF(envVar.c_str(), L"%d", &value) && value > 0 && value <= maxWidth)
             {
             maxWidth = static_cast<dim_t>(value);
             return true;
             }
+POP_MSVC_IGNORE
 
         return false;
         }
@@ -644,11 +646,13 @@ private:
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, WCharCP msg ) override;
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) override;       // we have an optimized version for Android and iOS
 public:
+PUSH_MSVC_IGNORE(4996)
     SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr),
         m_sequenceId(0), m_wantSequenceId(nullptr != getenv("BENTLEY_SPLIT_CONSOLE_SHOW_SEQUENCE"))
         {
         InitPanes(paneNames);
         }
+POP_MSVC_IGNORE
 
     virtual ~SplitConsoleProvider(void) { }
 
