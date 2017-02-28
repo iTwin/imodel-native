@@ -114,7 +114,7 @@ const DgnDbCodeTemplateSet& DgnDbCodeTemplateSetResultInfo::GetTemplates() const
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
 const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes; }
-
+                    
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
