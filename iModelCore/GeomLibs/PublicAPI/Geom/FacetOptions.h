@@ -122,6 +122,9 @@ protected:
    GEOMAPI_VIRTUAL bool _GetHideSmoothEdgesWhenGeneratingNormals () const = 0;
    GEOMAPI_VIRTUAL void _SetHideSmoothEdgesWhenGeneratingNormals (bool ignoreFaceAttachments) = 0;
 
+   GEOMAPI_VIRTUAL int _GetBsplineSurfaceEdgeHiding () const = 0;
+   GEOMAPI_VIRTUAL void _SetBsplineSurfaceEdgeHiding (int edgeHiding) = 0;
+
    GEOMAPI_VIRTUAL IFacetOptionsPtr  _Clone() const = 0;
 
 // Protected signatures of public/protected methods
@@ -170,6 +173,17 @@ GEOMDLLIMPEXP int GetMaxPerFace () const;
 GEOMDLLIMPEXP void SetEdgeHiding (bool edgeHiding);
 //! Get the EdgeHiding facet control. 
 GEOMDLLIMPEXP bool GetEdgeHiding () const;
+
+//! Set edge hiding on bspline surface mesh.
+//!<ul>
+//!<li>0: Leave original edge hiding from the mesher.  This is probably (but not certainly) all edges visible.
+//!<li>1: (default) Exterior edges and edges with crease of 40 degrees or more are visible
+//!<li>2: All edges visible
+//!</ul>
+GEOMDLLIMPEXP void SetBsplineSurfaceEdgeHiding (int edgeHiding);
+//! Get the bspline surface edge Hiding control (see SetBsplineSurfaceEdgeHiding)
+GEOMDLLIMPEXP int GetBsplineSurfaceEdgeHiding () const;
+
 
 //! Set the NormalsRequired facet control. 
 GEOMDLLIMPEXP void SetNormalsRequired (bool normalsRequired);

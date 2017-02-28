@@ -1257,7 +1257,6 @@ TEST_NOTNOW(PolyfaceConstruction, BsplineSurface)
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     double mySize = SetTransformToNewGridSpot (*builder);
-    MSBsplineSurface surface;
     bvector<DPoint3d> points;
     int numU = 5;
     int numV = 7;
@@ -1270,15 +1269,18 @@ TEST_NOTNOW(PolyfaceConstruction, BsplineSurface)
             points.push_back (DPoint3d::FromXYZ (i * dx, j * dy, 0.0));
             }
         }
-    surface.Populate (
+    auto surface = MSBsplineSurface::CreateFromPolesAndOrder (
             points, NULL,
             NULL, 3, numU, false,
             NULL, 4, numV, false,
             false);
-    builder->Add (surface);
+    builder->Add (*surface);
     ExaminePolyface (builder->GetClientMeshR (), "BsplineSurface");
-    CheckSurfaceMesh (surface, *builder);
-    surface.ReleaseMem ();
+    CheckSurfaceMesh (*surface, *builder);
+    Check::SaveTransformed (surface);
+    Check::ShiftToLowerRight ();
+    Check::SaveTransformed (builder->GetClientMeshR ());
+    Check::ClearGeometry ("PolyfaceConstruction.BsplineSurface");
     }
 
 TEST(PolyfaceConstruction, BsplineSurface1)
@@ -1344,6 +1346,10 @@ TEST(PolyfaceConstruction, BsplineSurface1)
     builder->Add (*surface);
     ExaminePolyface (builder->GetClientMeshR (), "BsplineSurface");
 //    CheckSurfaceMesh (*surface, *builder);        // This is a goofy surface -- don't check normals
+    Check::SaveTransformed (surface);
+    Check::ShiftToLowerRight ();
+    Check::SaveTransformed (builder->GetClientMeshR ());
+    Check::ClearGeometry ("PolyfaceConstruction.BsplineSurface1");
     
     }
 
@@ -1439,6 +1445,36 @@ TEST(PolyfaceConstruction, BsplineSurface3)
     
     }
 
+TEST(PolyfaceConstruction, BsplineSurfaceEdgeHiding)
+    {
+        // Sort of a dtm ...
+    size_t numX = 15;
+    size_t numY = 20;
+    auto surface = SurfaceWithSinusoidalControlPolygon (4, 5, numX, numY,    0.0, 0.3, 0.0, -0.25);
+    DRange3d surfaceRange;
+    surface->GetPoleRange (surfaceRange);
+    double dX = surfaceRange.XLength () + 1;
+    double dY = surfaceRange.YLength () + 2;
+    Check::SaveTransformed (surface);
+    IFacetOptionsPtr options = CreateFacetOptions ();
+    Check::Shift (dX, 0, 0);
+    for (bool smooth : bvector<bool> {false, true})
+        {
+        SaveAndRestoreCheckTransform shifter (0,dY,0);
+        options->SetSmoothTriangleFlowRequired (smooth);
+        for (int hiding : bvector <int>{0,1,2})
+            {
+           SaveAndRestoreCheckTransform shifter (dX,0,0);
+            options->SetBsplineSurfaceEdgeHiding (hiding);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            builder->Add (*surface);
+            Check::SaveTransformed (builder->GetClientMeshR ());
+            Check::ShiftToLowerRight (1.0);
+            }
+        }
+    Check::ClearGeometry ("PolyfaceConstruction.BsplineSurfaceEdgeHiding");
+    
+    }
 
 TEST(PolyfaceConstruction, Bspline1)
     {

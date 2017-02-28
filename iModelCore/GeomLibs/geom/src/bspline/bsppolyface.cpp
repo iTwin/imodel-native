@@ -3541,13 +3541,13 @@ void IPolyfaceConstruction::Add (MSBsplineSurfaceCR surface)
                                 false,
                                 true);
 
-        PolyfaceHeaderPtr client = GetClientMeshPtr ();
-        static int s_mark = 1;
-        if (s_mark == 1)
-            client->MarkInvisibleEdges (s_defaultVisibleEdgeAngle);
-        else if(s_mark == 2)
-            client->MarkAllEdgesVisible ();
         }
+    PolyfaceHeaderPtr client = GetClientMeshPtr ();
+    int hiding = GetFacetOptionsR ().GetBsplineSurfaceEdgeHiding ();
+    if (hiding == 1)
+        client->MarkInvisibleEdges (s_defaultVisibleEdgeAngle);
+    else if(hiding == 2)
+        client->MarkAllEdgesVisible ();
 
     SetCurrentFaceParamDistanceRange (distanceUVRange);
     EndFace_internal ();

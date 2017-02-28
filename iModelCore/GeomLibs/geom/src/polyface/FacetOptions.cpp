@@ -110,6 +110,17 @@ bool IFacetOptions::GetEdgeHiding () const {return _GetEdgeHiding ();}
 
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2017
++--------------------------------------------------------------------------------------*/
+void IFacetOptions::SetBsplineSurfaceEdgeHiding (int edgeHiding) {_SetBsplineSurfaceEdgeHiding (edgeHiding);}
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2017
++--------------------------------------------------------------------------------------*/
+int IFacetOptions::GetBsplineSurfaceEdgeHiding () const {return _GetBsplineSurfaceEdgeHiding ();}
+
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 void IFacetOptions::SetNormalsRequired (bool normalsRequired) {_SetNormalsRequired (normalsRequired);}
@@ -453,6 +464,7 @@ struct FacetOptions : public IFacetOptions
 
     bool m_convexFacetsRequired;
 
+    int m_bsplineSurfaceEdgeHiding;
 
     FacetParamMode m_paramMode;
 
@@ -519,6 +531,12 @@ struct FacetOptions : public IFacetOptions
             {return m_edgeHiding;}
    void _SetEdgeHiding (bool edgeHiding) override
             {m_edgeHiding = edgeHiding;}
+
+    // Get/Set pair for BsplineSurfaceEdgeHiding.  Simple access to m_edgeHiding
+   int _GetBsplineSurfaceEdgeHiding () const override
+            {return m_bsplineSurfaceEdgeHiding;}
+   void _SetBsplineSurfaceEdgeHiding (int bsplineSurfaceEdgeHiding) override
+            {m_bsplineSurfaceEdgeHiding = bsplineSurfaceEdgeHiding;}
 
     // Get/Set pair for NormalsRequired.  Simple access to m_normalsRequired
    bool _GetNormalsRequired () const override
@@ -680,6 +698,7 @@ void _SetDefaults () override
     m_curvatureWeightFactor = 0.0;
     m_ignoreFaceAttachments = false;
     m_hideSmoothEdgesWhenGeneratingNormals = true;
+    m_bsplineSurfaceEdgeHiding = 1;
     }
 
 void _SetCurveDefaults () override
