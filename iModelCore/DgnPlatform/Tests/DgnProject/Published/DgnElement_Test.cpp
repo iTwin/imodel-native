@@ -1936,6 +1936,7 @@ TEST_F(DgnElementTests, FederationGuid)
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        EXPECT_FALSE(element->GetPropertyValueGuid("FederationGuid").IsValid()) << "FederationGuid expected to be initialized as invalid";
         EXPECT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
         EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
@@ -1959,6 +1960,8 @@ TEST_F(DgnElementTests, FederationGuid)
         EXPECT_TRUE(element.IsValid());
         element->SetFederationGuid(federationGuid);
         EXPECT_TRUE(element->GetFederationGuid().IsValid()) << "FederationGuid should be valid after SetFederationGuid";
+        EXPECT_EQ(element->GetFederationGuid(), federationGuid);
+        EXPECT_EQ(element->GetPropertyValueGuid("FederationGuid"), federationGuid);
         EXPECT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
         EXPECT_EQ(elementId.GetValue(), m_db->Elements().QueryElementByFederationGuid(federationGuid)->GetElementId().GetValue()) << "Should be able to query for an element by its FederationGuid";
