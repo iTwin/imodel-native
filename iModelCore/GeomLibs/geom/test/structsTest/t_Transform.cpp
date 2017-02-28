@@ -1651,7 +1651,7 @@ TEST(Transform, PlanarTransform)
                                DVec3d::From(0,1,0),
                                DVec3d::From(0,0,1)
                                };
-    for (int i = 0; i < tr.size(); i++)
+    for (size_t i = 0; i < tr.size(); i++)
         {
         if (i < 9)
             {
@@ -1680,7 +1680,7 @@ TEST(Transform, TransformOnPointArray)
     tr.SolveArray(outPoints, inPoints);
 
     DPoint3d testOut;
-    for (int i = 0; i < inPoints.size(); i++) 
+    for (size_t i = 0; i < inPoints.size(); i++) 
         {
         tr.Solve(testOut, inPoints[i]);
         Check::Near(testOut, outPoints[i]);
@@ -1701,7 +1701,7 @@ TEST(Transform, WeightedTransform)
     bvector<double> weights = { 6, 9, 1.8, 4 };
     tr.MultiplyWeighted(outPoints, inPoints, &weights);
     DPoint3d testOut;
-    for (int i = 0; i < inPoints.size(); i++) 
+    for (size_t i = 0; i < inPoints.size(); i++) 
         {
         testOut = inPoints[i];
         tr.MultiplyWeighted(testOut, weights[i]);
