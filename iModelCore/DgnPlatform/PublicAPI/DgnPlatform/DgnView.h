@@ -350,7 +350,7 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP str_Descr() {return "Descr";}
+    static constexpr Utf8CP str_Description() {return "Description";}
     static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
     static bool IsValidCode(DgnCodeCR code);
 
@@ -398,8 +398,8 @@ public:
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
-    Utf8String GetDescr() const {return GetPropertyValueString(str_Descr());} //!< Get description
-    DgnDbStatus SetDescr(Utf8StringCR value) {return SetPropertyValue(str_Descr(), value.c_str());} //!< Set description
+    Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
+    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
     bool IsPrivate() const {return m_isPrivate;} //!< Return true if this ViewDefinition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this ViewDefinition is private or not
 

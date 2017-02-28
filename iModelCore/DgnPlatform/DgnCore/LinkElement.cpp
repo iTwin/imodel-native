@@ -11,11 +11,11 @@
 
 #define URLLINK_Url "Url"
 #define URLLINK_UserLabel "UserLabel"
-#define URLLINK_Description "Descr"
+#define URLLINK_Description "Description"
 
 #define EMBEDDEDFILELINK_Name "Name"
 #define EMBEDDEDFILELINK_UserLabel "UserLabel"
-#define EMBEDDEDFILELINK_Description "Descr"
+#define EMBEDDEDFILELINK_Description "Description"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

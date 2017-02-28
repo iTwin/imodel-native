@@ -2934,9 +2934,9 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
-    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
+    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
     //! Set the description of this InformationPartitionElement
-    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 };
 
 //=======================================================================================
@@ -3123,8 +3123,8 @@ public:
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
 
-    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
-    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 };
 
 //=======================================================================================

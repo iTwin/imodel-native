@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define PROPNAME_Descr "Descr"
+#define PROPNAME_Description "Description"
 #define PROPNAME_Value "Value"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -27,7 +27,7 @@ DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)),
+        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Description)),
                value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));
 
         m_data.Init(value, descr);
@@ -42,7 +42,7 @@ DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
 void LightDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(PROPNAME_Description), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindText(stmt.GetParameterIndex(PROPNAME_Value), m_data.m_value.c_str(), IECSqlBinder::MakeCopy::No);
     }
 
@@ -65,7 +65,6 @@ LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8St
   : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, name)),
     m_data(value, descr)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,7 +83,7 @@ void dgn_ElementHandler::LightDef::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
     
-    params.RegisterPropertyAccessors(layout, PROPNAME_Descr,
+    params.RegisterPropertyAccessors(layout, PROPNAME_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (LightDefinition&) elIn;
