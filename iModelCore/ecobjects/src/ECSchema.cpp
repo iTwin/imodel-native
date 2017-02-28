@@ -935,10 +935,18 @@ ECClassP& targetClass,
 ECClassCR sourceClass
 )
     {
+    return CopyClass(targetClass, sourceClass, sourceClass.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, Utf8StringCR targetClassName)
+    {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     // first make sure the class doesn't already exist in the schema
-    if (NULL != this->GetClassCP(sourceClass.GetName().c_str()))
+    if (NULL != this->GetClassCP(targetClassName.c_str()))
         return ECObjectsStatus::NamedItemAlreadyExists;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
@@ -948,7 +956,7 @@ ECClassCR sourceClass
     if (NULL != sourceAsRelationshipClass)
         {
         ECRelationshipClassP newRelationshipClass;
-        status = this->CreateRelationshipClass(newRelationshipClass, sourceClass.GetName());
+        status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
         if (ECObjectsStatus::Success != status)
             return status;
         newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
@@ -961,7 +969,7 @@ ECClassCR sourceClass
     else if (nullptr != sourceAsStructClass)
         {
         ECStructClassP newStructClass;
-        status = this->CreateStructClass(newStructClass, sourceClass.GetName());
+        status = this->CreateStructClass(newStructClass, targetClassName);
         if (ECObjectsStatus::Success != status)
             return status;
         targetClass = newStructClass;
@@ -969,7 +977,7 @@ ECClassCR sourceClass
     else if (nullptr != sourceAsCAClass)
         {
         ECCustomAttributeClassP newCAClass;
-        status = this->CreateCustomAttributeClass(newCAClass, sourceClass.GetName());
+        status = this->CreateCustomAttributeClass(newCAClass, targetClassName);
         if (ECObjectsStatus::Success != status)
             return status;
         newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
@@ -978,7 +986,7 @@ ECClassCR sourceClass
     else
         {
         ECEntityClassP newEntityClass;
-        status = CreateEntityClass(newEntityClass, sourceClass.GetName());
+        status = CreateEntityClass(newEntityClass, targetClassName);
         if (ECObjectsStatus::Success != status)
             return status;
         targetClass = newEntityClass;
