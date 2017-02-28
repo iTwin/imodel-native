@@ -45,7 +45,7 @@ struct ECDbMap :NonCopyableClass
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
-        BentleyStatus LogInvalidLegacyClassInheritanceIssues() const;
+        BentleyStatus LogInvalidDbMappings() const;
 
     public:
         explicit ECDbMap(ECDbCR ecdb);
@@ -69,6 +69,7 @@ struct ECDbMap :NonCopyableClass
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

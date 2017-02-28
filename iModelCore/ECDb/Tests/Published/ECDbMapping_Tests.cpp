@@ -12931,7 +12931,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
             "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
             "      <ECCustomAttributes>"
             "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
             "          </IsMixin>"
             "      </ECCustomAttributes>"
             "      <ECProperty propertyName='www' typeName='long' />"
@@ -13023,7 +13023,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
             "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
             "      <ECCustomAttributes>"
             "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
             "          </IsMixin>"
             "      </ECCustomAttributes>"
             "      <ECProperty propertyName='www' typeName='string' />"
@@ -13121,7 +13121,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
             "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
             "      <ECCustomAttributes>"
             "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
             "          </IsMixin>"
             "      </ECCustomAttributes>"
             "      <ECProperty propertyName='www' typeName='string' />"
@@ -13188,7 +13188,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
         "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
         "      <ECCustomAttributes>"
         "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-        "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+        "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
         "          </IsMixin>"
         "      </ECCustomAttributes>"
         "      <ECProperty propertyName='www' typeName='string' />"
@@ -13269,7 +13269,7 @@ TEST_F(ECDbMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn
             "  <ECEntityClass typeName='IEndPoint' modifier='Abstract'>"
             "      <ECCustomAttributes>"
             "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
-            "              <AppliesToEntityClass>BaseClass</AppliesToEntityClass>"
+            "              <AppliesToEntityClass>Equipment</AppliesToEntityClass>"
             "          </IsMixin>"
             "      </ECCustomAttributes>"
             "      <ECProperty propertyName='www' typeName='long' />"
@@ -13418,7 +13418,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
         <ECEntityClass typeName='MxBase' modifier='Abstract'>
             <ECCustomAttributes>"
                 <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                    <AppliesToEntityClass>Base</AppliesToEntityClass>
                 </IsMixin>
             </ECCustomAttributes>
             <ECProperty propertyName='MxBase_Prop' typeName='long' />
@@ -13426,7 +13426,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
         <ECEntityClass typeName='MxA' modifier='Abstract'>
             <ECCustomAttributes>
                 <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                    <AppliesToEntityClass>Base</AppliesToEntityClass>
                 </IsMixin>
             </ECCustomAttributes>
             <BaseClass>MxBase</BaseClass>
@@ -13435,7 +13435,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
         <ECEntityClass typeName='MxB' modifier='Abstract'>
             <ECCustomAttributes>
                 <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                    <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                    <AppliesToEntityClass>Base</AppliesToEntityClass>
                 </IsMixin>
             </ECCustomAttributes>
             <BaseClass>MxBase</BaseClass>

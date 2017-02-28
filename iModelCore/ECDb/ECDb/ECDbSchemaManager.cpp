@@ -519,6 +519,12 @@ BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb(bvector<ECN::ECClassId> 
     return ViewGenerator::CreateECClassViews(m_ecdb, ecclassids);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   02/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8CP ECDbSchemaManager::GetValidateDbMappingSql() { return SQL_ValidateDbMapping; }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 

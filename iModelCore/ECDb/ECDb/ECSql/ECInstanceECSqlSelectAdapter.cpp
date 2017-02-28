@@ -312,6 +312,12 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement(ECValueR val, ECClassCR structType, IECSqlValue const& value) const
     {
+    if (value.IsNull())
+        {
+        val.SetStruct(nullptr);
+        return SUCCESS;
+        }
+
     val.Clear();
 
     if (value.IsNull())
