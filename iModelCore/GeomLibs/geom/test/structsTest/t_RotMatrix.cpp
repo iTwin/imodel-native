@@ -1399,7 +1399,7 @@ TEST(RotMatrix,IsRigidSignedScale)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                     Farhad.Kabir                    02/16
+// @bsimethod                                     Farhad.Kabir                    02/17
 //---------------------------------------------------------------------------------------
 TEST(RotMatrix, FromQuaternion)
     {
@@ -1431,4 +1431,74 @@ TEST(RotMatrix, FromQuaternion)
     Check::Near(subjectPointCpy.x, subjectPoint.x);
     Check::Near(subjectPointCpy.y, subjectPoint.y);
     Check::Near(subjectPointCpy.z, subjectPoint.z);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(RotMatrix, RotTransformOnPointArray)
+    {
+    RotMatrix rotMat = RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(178).Radians());
+    DPoint3d outPoints[4];
+    DPoint3d inPoints[4] = { DPoint3d::From(4,3,2),
+                             DPoint3d::From(5,5,9),
+                             DPoint3d::From(0.8,9,3.4),
+                             DPoint3d::From(8,9,11) };
+
+    rotMat.SolveArray(outPoints, inPoints, 4);
+    bvector<DPoint3d> outPointsVec;
+    bvector<DPoint3d> inPointsVec = { inPoints[0],
+                                      inPoints[1],
+                                      inPoints[2],
+                                      inPoints[3] };
+    rotMat.SolveArray(outPointsVec, inPointsVec);
+    DPoint3d testOut;
+
+    for (int i = 0; i < 4; i++) 
+        {
+        rotMat.Solve(testOut, inPoints[i]);
+        Check::Near(testOut, outPoints[i]);
+        Check::Near(outPoints[i], outPointsVec[i]);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(RotMatrix, Init)
+    {
+    RotMatrix rot;
+    rot.InitFromRowValuesXY(2, 3, 7, 1);
+    RotMatrix rotTest = RotMatrix::FromRowValues(2, 3, 0,
+                                                 7, 1, 0,
+                                                 0, 0, 1);
+
+    Check::Near(rot, rotTest);
+    double rowMajor[4] = { 2, 3, 7, 1 };
+    rot.InitFromRowValuesXY(rowMajor);
+    Check::Near(rot, rotTest);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(RotMatrix, ChangeRotation)
+    {
+    RotMatrix rot = RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(90).Radians());
+    double zRotVals[4];
+    rot.GetRowValuesXY(zRotVals);
+    Check::Near(zRotVals[0], Angle::FromDegrees(90).Cos());
+    Check::Near(zRotVals[1], -Angle::FromDegrees(90).Sin());
+    Check::Near(zRotVals[2], Angle::FromDegrees(90).Sin());
+    Check::Near(zRotVals[3], Angle::FromDegrees(90).Cos());
+
+    DPoint3d point = DPoint3d::From(4, 4, 2);
+    rot.Multiply(point);
+
+    RotMatrix rot2;
+    rot2.Zero();
+    rot2.SetColumn(0, Angle::FromDegrees(90).Cos(), Angle::FromDegrees(90).Sin(), 0);
+    rot2.SetColumn(1, -Angle::FromDegrees(90).Sin(), Angle::FromDegrees(90).Cos(), 0);
+    rot2.SetColumn(2, 0, 0, 1);
+
+    Check::Near(rot, rot2);
+    Check::Near(point, DPoint3d::From(-4, 4, 2));
     }

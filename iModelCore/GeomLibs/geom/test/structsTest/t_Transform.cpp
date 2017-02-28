@@ -1576,3 +1576,137 @@ TEST(Transform, TransformRay)
     trans.Multiply(rayStart);
     Check::Near(rayStart, ray3d.origin);
     }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, UnaffectedPoint)
+    {
+    //identity
+    Transform tr = Transform::FromIdentity();
+    
+    DPoint3d pnt;
+    tr.Multiply(pnt);
+
+    DPoint3d fixedPoint;
+    Check::False(tr.GetAnyFixedPoint(fixedPoint));
+
+    tr.SetTranslation(DPoint3d::From(4, 4.4, 3));
+    Check::False(tr.GetAnyFixedPoint(fixedPoint));
+    tr = Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(60).Radians()));
+    Check::True(tr.GetAnyFixedPoint(fixedPoint));
+   
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, PlanarTransform)
+    {
+    //if transformatin has 2d effect
+    bvector<Transform> tr = {
+                            //planar
+                            Transform::FromRowValues(1,0,0, 0 ,0,1,0,2,0,0,1,1),
+                            Transform::FromRowValues(1,0,0,3,0,1,0, 0 ,0,0,1,6),
+                            Transform::FromRowValues(1,0,0,3,0,1,0,2.2,0,0,1, 0 ),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians())),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(1, Angle::FromDegrees(270).Radians())),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(90).Radians())),
+                            Transform::FromScaleFactors(10, 2.3, 1),
+                            Transform::FromScaleFactors(3, 1, 3),
+                            Transform::FromScaleFactors(1, 2.3, 5.3),
+                            //non planar
+                            Transform::FromRowValues(1,0,0,3,0,1,0,2,0,0,1,3),
+                            Transform::FromRowValues(1,0,0,3,0,1,0,2,0,0,1,0),
+                            Transform::FromRowValues(1,0,0,0,0,1,0,2,0,0,1,3),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(60).Radians())),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians())),
+                            Transform::From(RotMatrix::FromAxisAndRotationAngle(1, Angle::FromDegrees(60).Radians())),
+                            Transform::FromScaleFactors(10, 2.3, 1),
+                            Transform::FromScaleFactors(1, 2.3, 5.3),
+                            Transform::FromScaleFactors(1.11, 1, 5.3)
+                            };
+    bvector <DVec3d> normals = {
+                               DVec3d::From(1,0,0),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(0,0,1),
+                               
+                               DVec3d::From(1,0,0),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(0,0,1),
+                               
+                               DVec3d::From(0,0,1),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(1,0,0),
+
+                               DVec3d::From(1,0,0),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(0,0,1),
+
+                               DVec3d::From(1,0,0),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(0,0,1),
+
+                               DVec3d::From(1,0,0),
+                               DVec3d::From(0,1,0),
+                               DVec3d::From(0,0,1)
+                               };
+    for (int i = 0; i < tr.size(); i++)
+        {
+        if (i < 9)
+            {
+            Check::True(tr[i].IsPlanar(normals[i]));
+            }
+        else
+            {
+            Check::False(tr[i].IsPlanar(normals[i]));
+            }
+        }
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, TransformOnPointArray) 
+    {
+    bvector<DPoint3d> outPoints;
+    bvector<DPoint3d> inPoints = { DPoint3d::From(4,4,4),
+                                  DPoint3d::From(7,8,2),
+                                  DPoint3d::From(-3,2,-3),
+                                  DPoint3d::From(0.4,0.2,0.2) };
+    Transform tr = Transform::FromRowValues(1, 0, 0, 4,
+                                            0, Angle::FromDegrees(60).Cos(), -Angle::FromDegrees(60).Sin(), 6,
+                                            0, Angle::FromDegrees(60).Sin(), Angle::FromDegrees(60).Cos(), 5);
+    tr.SolveArray(outPoints, inPoints);
+
+    DPoint3d testOut;
+    for (int i = 0; i < inPoints.size(); i++) 
+        {
+        tr.Solve(testOut, inPoints[i]);
+        Check::Near(testOut, outPoints[i]);
+        }
+    
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(Transform, WeightedTransform)
+    {
+    Transform tr = Transform::FromScaleFactors(0.7, 3, 5);
+    bvector<DPoint3d> outPoints;
+    bvector<DPoint3d> inPoints = { DPoint3d::From(4,5,2),
+                                   DPoint3d::From(8,7,8),
+                                   DPoint3d::From(3,7,9),
+                                   DPoint3d::From(0.87, 8.2, 90.1) };
+    bvector<double> weights = { 6, 9, 1.8, 4 };
+    tr.MultiplyWeighted(outPoints, inPoints, &weights);
+    DPoint3d testOut;
+    for (int i = 0; i < inPoints.size(); i++) 
+        {
+        testOut = inPoints[i];
+        tr.MultiplyWeighted(testOut, weights[i]);
+
+        Check::Near(testOut, outPoints[i]);
+        }
+
+    }

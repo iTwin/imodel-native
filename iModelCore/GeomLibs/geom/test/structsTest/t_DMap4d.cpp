@@ -91,3 +91,31 @@ TEST(DMap4d, Identity)
                               reverseMat);
     Check::True(map.IsIdentity());
     }
+
+void transformMap(DMap4d map, DPoint3d pnt) 
+    {
+
+    DPoint4d res =  map.M0.Multiply(pnt, 1);
+    //reverse
+    DPoint4d resReversed =  map.M1.Multiply(DPoint3d::From(res.x, res.y, res.z), 1);
+    Check::Near(resReversed.x, pnt.x);
+    Check::Near(resReversed.y, pnt.y);
+    Check::Near(resReversed.z, pnt.z);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                    02/17
+//---------------------------------------------------------------------------------------
+TEST(DMap4d, QuadrantRotation)
+    {
+    DMap4d map;
+    DPoint3d pnt = DPoint3d::From(4, 3, 4);
+    map.InitFromTransform(Transform::FromRowValues(1, 0, 0, 2,
+                                                   0, 1, 0, 2,
+                                                   0, 0, 1, 2), false);
+    transformMap( map, pnt);
+    map.InitFromTransform(Transform::From(DPoint3d::From(3, 2, 2)), false);
+    transformMap( map, pnt);
+    map.InitFromTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(60).Radians())), false);
+    transformMap( map, pnt);
+    }
+
