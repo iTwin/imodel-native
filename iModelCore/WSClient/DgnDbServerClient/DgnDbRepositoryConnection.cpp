@@ -960,18 +960,18 @@ bool                            includeOnlyExclusive = false,
 bool                            queryOnly = false
 )
     {
-    bvector<uint64_t> objects[9];
+    bvector<uint64_t> objects[12];
     for (auto& lock : locks)
         {
         if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel ())
             continue;
 
         int index = static_cast<int32_t>(lock.GetType ()) * 3 + static_cast<int32_t>(lock.GetLevel ());
-        if (index >= 0 && index <= 8)
+        if (index >= 0 && index <= 11)
             objects[index].push_back (lock.GetId ().GetValue ());
         }
 
-    for (int i = 0; i < 9; ++i)
+    for (int i = 0; i < 12; ++i)
         AddToInstance(changeset, changeState, objects[i], briefcaseId, masterFileId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3), queryOnly);
     }
 
