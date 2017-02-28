@@ -9,7 +9,7 @@
 #include "DgnCoreLog.h"
 #include <BeJpeg/BeJpeg.h>
 #include <DgnPlatform/DgnMarkupProject.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 #define QV_RGBA_FORMAT   0
 #define QV_BGRA_FORMAT   1

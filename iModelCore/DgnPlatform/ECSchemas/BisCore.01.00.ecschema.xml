@@ -2005,19 +2005,6 @@
         <ECProperty propertyName="Roll" typeName="double" description="Roll component of the view direction in degrees">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
-        <BaseClass>ViewDefinition3d</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="CameraViewDefinition" displayLabel="Camera View Definition" description="A spatial view that shows a perspective projection.">
-        <BaseClass>SpatialViewDefinition</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="IsCameraOn" typeName="boolean" displayLabel="Is Camera On" description="Is the camera actually turned on?">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
@@ -2032,7 +2019,15 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic View Definition" description="A spatial view that shows an orthographic parallel projection.">
+    <ECEntityClass typeName="SpatialViewDefinition" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
+        <BaseClass>ViewDefinition3d</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic Spatial View" description="A spatial view that always show an parallel projection.">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>

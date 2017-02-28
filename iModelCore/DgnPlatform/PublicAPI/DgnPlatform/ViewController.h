@@ -13,7 +13,7 @@
 #include "ViewContext.h"
 #include "SectionClip.h"
 #include "UpdatePlan.h"
-#include "DgnView.h"
+#include "ViewDefinition.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 
@@ -222,13 +222,6 @@ protected:
     //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
 
-    //! Used to notify derived classes of an attempt to locate the viewport around the specified
-    //! WGS84 location. Override to change how these points are interpreted.
-    //! @param[out] status Extra information about how this event was handled; ignored if return value is false.
-    //! @param[in] point the new location
-    //! @return true to indicate that the view was modified.
-    virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return false;}
-
     //! Used to notify derived classes of an attempt to orient the viewport around the specified
     //! rotation matrix from the device's orientation.
     //! @return true to indicate that the view was modified.
@@ -356,9 +349,8 @@ public:
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
-    DGNPLATFORM_EXPORT void ResetDeviceOrientation();
+    void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT void PointToStandardGrid(DgnViewportR, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
     DGNPLATFORM_EXPORT void PointToGrid(DgnViewportR, DPoint3dR point) const;
 
@@ -490,11 +482,10 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController3d, BeSQLite::VirtualSet
 {
     DEFINE_T_SUPER(ViewController3d);
-
     friend struct  SpatialRedlineViewController;
-public:
-    
+    friend struct SpatialViewDefinition;
 
+public:
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   05/16
     //=======================================================================================
@@ -634,6 +625,7 @@ protected:
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -648,6 +640,7 @@ protected:
     DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
 
 public:
+    DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off
@@ -690,7 +683,6 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewControlle
     friend struct OrthographicViewDefinition;
 
 protected:
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
 
     //! Construct a new OrthographicViewController
@@ -699,29 +691,6 @@ protected:
 
 public:
     OrthographicViewDefinitionR GetOrthographicViewDefinition() const {return static_cast<OrthographicViewDefinitionR>(*m_definition);}
-};
-
-//=======================================================================================
-//! A CameraViewController is used to control perspective projections of views of SpatialModels. A CameraViewController
-//! may have a camera enabled that displays world-coordinate geometry onto the image plane through a perspective projection.
-//! @ingroup GROUP_DgnView
-// @bsiclass                                                    Keith.Bentley   03/12
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
-{
-    DEFINE_T_SUPER(SpatialViewController);
-    friend struct CameraViewDefinition;
-
-protected:
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
-    DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-
-    //! Construct a new CameraViewController
-    //! @param[in] definition the view definition
-    CameraViewController(CameraViewDefinitionCR definition) : T_Super(definition) {}
-
-public:
-    CameraViewDefinitionR GetCameraViewDefinition() const {return static_cast<CameraViewDefinitionR>(*m_definition);}
 };
 
 //=======================================================================================
@@ -761,7 +730,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
     friend struct DrawingViewDefinition;
 protected:
     DrawingViewControllerCP _ToDrawingView() const override {return this;}
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
     //! Construct a new DrawingViewController.
     DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
@@ -806,14 +774,14 @@ struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewControll
 
     //! Specifies symbology for some aspects of the drawings when they are drawn in context.
     struct DrawingSymbology
-        {
+    {
         ColorDef  drawingBackgroundColor; //!< The background color of the drawing
         ColorDef  hatchColor; //!< The color of the fills where section cuts occur on planes other than the section plane closest to the eye.
-        };
+    };
 
     //! Specifies drawing elements to draw.
     enum Pass
-        {
+    {
         PASS_None        = 0,   //!< No drawing graphics specified
         PASS_Cut         = 2,   //!< Draw section cut graphics, including edges and fills
         PASS_Forward     = 4,   //!< Draw section forward graphics,
@@ -823,7 +791,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewControll
         PASS_CutOrAnnotation = (PASS_Cut|PASS_Annotation),
         PASS_ForPicking  = (PASS_Cut|PASS_Forward|PASS_Annotation),
         PASS_All  = 0xff
-        };
+    };
 
 private:
     SpatialViewControllerPtr m_physical;

@@ -170,7 +170,7 @@ void ChangeTestFixture::CreateDefaultView(DgnDbR db)
             models->AddModel(id);
         }
 
-    CameraViewDefinition view(db, "Default", *categories, *style, *models);
+    SpatialViewDefinition view(db, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());

@@ -235,7 +235,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraViewDefinition::Camera const* camera,
+StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, ViewDefinition3d::Camera const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
     DVec3d xVector, yVector, zVector;
@@ -351,7 +351,7 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefinitionR cameraDef)
+static void validateCamera(ViewDefinition3d::Camera& camera, ViewDefinition3dR cameraDef)
     {
     camera.ValidateLens();
     if (camera.IsFocusValid())
@@ -466,7 +466,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     SpatialViewControllerP physicalView = GetSpatialViewControllerP();
     if (nullptr != physicalView)
         {
-        auto cameraView = m_viewController->GetViewDefinition().ToCameraViewP();
+        auto cameraView = m_viewController->GetViewDefinition().ToView3dP();
         if (!Allow3dManipulations())
             {
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
@@ -609,7 +609,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     DVec3d delta;
     delta.DifferenceOf(range.high, range.low);
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto cameraView = viewController->GetViewDefinition().ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
@@ -734,7 +734,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto cameraView = viewController->GetViewDefinition().ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         // get current box in view coordinates
@@ -764,7 +764,6 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     newOrg.SumOf(oldOrg, dist);
     viewController->SetOrigin(newOrg);
 
-    _AdjustFencePts(viewController->GetRotation(), oldOrg, newOrg);
     return SetupFromViewController();
     }
 
@@ -793,7 +792,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto cameraView = viewController->GetViewDefinition().ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
@@ -856,7 +855,6 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     rotation.MultiplyTranspose(newOrg);
     viewController->SetOrigin(newOrg);
 
-    _AdjustFencePts(rotation, oldOrg, newOrg);
     return SetupFromViewController();
     }
 

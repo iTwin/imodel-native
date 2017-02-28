@@ -380,7 +380,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     ModelSelectorPtr modelSelector = new ModelSelector(db, "");
     modelSelector->AddModel(model.GetModelId());
 
-    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    SpatialViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
