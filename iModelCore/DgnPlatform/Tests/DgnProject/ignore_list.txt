@@ -121,3 +121,14 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # To be equal to: instance.MakeValueIterator().QueryCount()
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (69 ms)
+
+GetSetCustomHandledProprty.Linkelement
+    # bim0200dev, x64, DEBUG
+    # [ RUN      ] GetSetCustomHandledProprty.Linkelement
+    # 2017-02-28 10:34:12,108 ERROR [0x000058e0] BeAssert - F:\Bim0200Dev\src-staging\DgnPlatform\DgnCore\LinkElement.cpp(671): ASSERTION FAILURE (0): false && "TBD"
+    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(225): error: Failed
+    # F:\Bim0200Dev\src-staging\DgnPlatform\DgnCore\LinkElement.cpp(671): ASSERTION FAILURE (0): false && "TBD"
+    # 2017-02-28 10:34:12,124 ERROR [0x000058e0] BeAssert - F:\Bim0200Dev\src-staging\DgnPlatform\DgnCore\LinkElement.cpp(671): ASSERTION FAILURE (0): false && "TBD"
+    # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(225): error: Failed
+    # F:\Bim0200Dev\src-staging\DgnPlatform\DgnCore\LinkElement.cpp(671): ASSERTION FAILURE (0): false && "TBD"
+    # [  FAILED  ] GetSetCustomHandledProprty.Linkelement (637 ms)
