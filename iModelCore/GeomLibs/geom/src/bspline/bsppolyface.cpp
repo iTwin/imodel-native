@@ -3542,10 +3542,10 @@ void IPolyfaceConstruction::Add (MSBsplineSurfaceCR surface)
                                 true);
 
         PolyfaceHeaderPtr client = GetClientMeshPtr ();
-        static int s_mark = 1;
-        if (s_mark == 1)
+        int hiding = GetFacetOptionsR ().GetBsplineSurfaceEdgeHiding ();
+        if (hiding == 1)
             client->MarkInvisibleEdges (s_defaultVisibleEdgeAngle);
-        else if(s_mark == 2)
+        else if(hiding == 2)
             client->MarkAllEdgesVisible ();
         }
 

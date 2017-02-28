@@ -1446,6 +1446,18 @@ void Check::Shift (DVec3dCR shift)
     s_transform = Transform::From (shift.x, shift.y, shift.z) * s_transform;
     }
 
+void Check::ShiftToLowerRight (double dx)
+    {
+    auto range = DRange3d::NullRange ();
+    for (auto g : s_cache)
+        {
+        DRange3d gRange;
+        if (g->TryGetRange (gRange))
+            range.Extend (gRange);
+        }
+    auto frame = Transform::From (range.LocalToGlobal (1,0,0) + DVec3d::From (dx, 0, 0));
+    SetTransform (frame);
+    }
 
 Transform Check::GetTransform () {return s_transform;}
 void Check::SetTransform (TransformCR transform) {s_transform = transform;}

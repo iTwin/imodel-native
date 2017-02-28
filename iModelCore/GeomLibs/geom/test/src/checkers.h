@@ -390,6 +390,7 @@ static void SaveTransformed (bvector<DSegment3d> const &data);
 static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void Shift (double dx, double dy, double dz = 0.0);
 static void Shift (DVec3dCR shift);
+static void ShiftToLowerRight (double dx = 0.0);
 static Transform GetTransform ();
 static void SetTransform (TransformCR transform);
 
