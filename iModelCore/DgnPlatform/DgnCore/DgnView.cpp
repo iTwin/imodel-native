@@ -1465,6 +1465,66 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
     }
 
 }
+
+static DgnHost::Key s_displayMetricsRecorderKey;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+IDisplayMetricsRecorder* IDisplayMetricsRecorder::GetRecorder()
+    {
+    // This is normally NULL. It is only used when playing back a DisplayBenchmark
+    return static_cast<IDisplayMetricsRecorder*> (T_HOST.GetHostObject (s_displayMetricsRecorderKey));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void IDisplayMetricsRecorder::SetRecorder(IDisplayMetricsRecorder*recorder)
+    {
+    //  This should happen 0 or 1 times.
+    BeAssert(GetRecorder() == nullptr);
+
+    T_HOST.SetHostObject (s_displayMetricsRecorderKey, recorder);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+bool IDisplayMetricsRecorder::IsRecorderActive()
+    {
+    IDisplayMetricsRecorder*recorder = GetRecorder();
+    return recorder ? recorder->_IsActive() : false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsRecorder::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
+    {
+    if (!IDisplayMetricsRecorder::IsRecorderActive())
+        return;
+
+    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    Json::Value measurement(Json::objectValue);
+    measurement["seconds"] = seconds;
+    measurement["count"] = queryResults.GetCount();
+    if (queryResults.m_incomplete)
+        measurement["incomplete"] = 1;
+        
+    recorder->_RecordMeasurement("QuerySceneFinished", measurement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
+    {
+    if (!IDisplayMetricsRecorder::IsRecorderActive())
+        return;
+    }
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}

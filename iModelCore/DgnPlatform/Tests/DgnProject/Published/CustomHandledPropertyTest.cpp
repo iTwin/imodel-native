@@ -90,7 +90,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
+TEST_F(GetSetCustomHandledProprty, ThreedElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -242,7 +242,7 @@ TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
+TEST_F(GetSetCustomHandledProprty, TwodElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -769,6 +769,93 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
 
     ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, GeometryPart)
+    {
+    SetupSeedProject();
+    uint32_t gindex, blindex, bhindex;
+    ECN::ECValue checkValue;
+    DgnGeometryPartId existingPartId;
+    if (true)
+    {
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, DgnGeometryPart::CreateCode(GetDgnDb(), "GeomPart", "Test"));
+    EXPECT_TRUE(geomPartPtr != NULL);
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(gindex, "GeometryStream"));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(blindex, "BBoxLow"));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(bhindex, "BBoxHigh"));
+
+    ASSERT_EQ(DgnDbStatus::BadRequest, geomPartPtr->SetPropertyValue(gindex, ECN::ECValue(1234)));
+    ASSERT_EQ(DgnDbStatus::BadRequest, geomPartPtr->GetPropertyValue(checkValue, gindex));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::BadArg, geomPartPtr->SetPropertyValue(blindex, ECN::ECValue(true)));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->SetPropertyValue(blindex, ECN::ECValue(DPoint3d::From(0,1,2))));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::BadArg, geomPartPtr->SetPropertyValue(bhindex, ECN::ECValue(true)));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->SetPropertyValue(bhindex, ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
+    existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode());
+    EXPECT_TRUE(existingPartId.IsValid());
+    m_db->SaveChanges();
+    }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DgnGeometryPartCPtr geoele = m_db->Elements().Get<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update Properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DgnGeometryPartPtr geoele = m_db->Elements().GetForEdit<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->SetPropertyValue(blindex, ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, geoele->SetPropertyValue(bhindex, ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(geoele->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check updated Properties
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DgnGeometryPartPtr geoele = m_db->Elements().GetForEdit<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
     checkValue.Clear();
     }
     }
