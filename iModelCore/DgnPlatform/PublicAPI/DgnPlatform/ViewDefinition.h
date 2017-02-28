@@ -25,7 +25,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace ViewElementHandler
 {
-    struct View; struct View3d; struct View2d; struct CameraView; struct OrthographicView; struct DrawingView; struct SheetView;
+    struct View; struct View3d; struct View2d; struct CameraView; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
     struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle3d;
 }
 
@@ -1060,6 +1060,33 @@ public:
 };
 
 //=======================================================================================
+//! Defines a view of a single 3D template model.
+// @bsiclass                                                      Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
+    friend struct ViewElementHandler::TemplateView3d;
+
+protected:
+    DgnModelId m_templateModelId;
+
+    bool _ViewsModel(DgnModelId modelId) override final {return modelId == GetTemplateModelId();}
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    void _OnTransform(TransformCR) override {}
+    explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
+
+    DgnModelId GetTemplateModelId() const {return m_templateModelId;} //!< Get the model displayed in this view
+};
+
+//=======================================================================================
 //! Defines a view of a 2d model.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
@@ -1103,7 +1130,7 @@ public:
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
-    };
+};
 
 //=======================================================================================
 //! Defines a view of a DrawingModel.
@@ -1187,6 +1214,12 @@ namespace ViewElementHandler
         DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
+    struct TemplateView3d : View3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, TemplateViewDefinition3d, TemplateView3d, View3d, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
+    };
+
     struct SpatialView : View3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialView, View3d, DGNPLATFORM_EXPORT);
@@ -1250,6 +1283,18 @@ public:
     //! @param[in] view The ViewDefinition
     //! @return an instance of a ViewController for the supplied ViewDefinition, or nullptr if the ViewDefinition is not of interest.
     virtual ViewControllerPtr _SupplyController(ViewDefinitionCR view) const = 0;
+};
+
+//=======================================================================================
+// @bsiclass                                                      John.Gooding    01/17
+//=======================================================================================
+struct IDisplayMetricsLogger :  DgnHost::IHostObject
+{
+    DGNPLATFORM_EXPORT static bool IsLoggerActive();
+    DGNPLATFORM_EXPORT static IDisplayMetricsLogger* GetLogger();
+    DGNPLATFORM_EXPORT static void SetLogger(IDisplayMetricsLogger*logger);
+    virtual bool _IsActive() const = 0;
+    virtual void _RecordMeasurement(Utf8CP measurementType, JsonValueCR measurement) = 0;
 };
 
 END_BENTLEY_DGN_NAMESPACE

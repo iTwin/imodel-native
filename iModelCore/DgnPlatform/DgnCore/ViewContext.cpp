@@ -1148,6 +1148,15 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
         return;
         }
 
+    if (!m_isFlash)
+        {
+        if (!m_decorations.m_normal.IsValid())
+            m_decorations.m_normal = new GraphicList;
+
+        m_decorations.m_normal->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+        return;
+        }
+
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 

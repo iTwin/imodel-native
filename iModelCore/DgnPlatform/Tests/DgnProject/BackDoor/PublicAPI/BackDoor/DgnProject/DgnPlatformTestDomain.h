@@ -626,7 +626,6 @@ private:
 public:
     static Dgn::DgnDbStatus Register();
     static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
-    static Dgn::DgnDbStatus ImportDummySchema(Dgn::DgnDbR);
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

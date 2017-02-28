@@ -547,31 +547,6 @@ DgnDbStatus DgnPlatformTestDomain::ImportSchema(DgnDbR db)
     return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
-    {
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" DPTEST_DUMMY_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    BeFileName schemaDir = schemaFile.GetDirectoryName();
-
-    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
-    contextPtr->AddSchemaPath(schemaDir.GetName());
-
-    ECN::ECSchemaPtr schemaPtr;
-    ECN::SchemaReadStatus readSchemaStatus = ECN::ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (ECN::SchemaReadStatus::Success != readSchemaStatus)
-        return DgnDbStatus::ReadError;
-
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()))
-        return DgnDbStatus::BadSchema;
-
-    return DgnDbStatus::Success;
-    }
-
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
 
 //---------------------------------------------------------------------------------------

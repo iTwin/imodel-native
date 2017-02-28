@@ -1191,6 +1191,8 @@ void DgnViewport::ClearUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
+    ClearUndo();
+
     if (m_viewController.IsValid())
         {
         bool dropGraphics = true;
@@ -1220,10 +1222,10 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
             }
         }
 
-    ClearUndo();
-
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
+    SetupFromViewController();
+    SaveViewUndo();
 
     InvalidateScene();
     m_sync.InvalidateController();
