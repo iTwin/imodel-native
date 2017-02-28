@@ -659,11 +659,7 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 
     if (nullptr != inPoint)
         {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        LocalToView(vec, inPoint, 1); // convert point to pixels
-#else
         WorldToView(vec, inPoint, 1); // convert point to pixels
-#endif
         }
     else
         {
@@ -674,14 +670,8 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     vec[1] = vec[0];
     vec[1].x += 1.0;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Convert pixels back to local coordinates and use the length as tolerance
-    ViewToLocal(vec, vec, 2);
-#else
     // Convert pixels back to world coordinates and use the length as tolerance
     ViewToWorld(vec, vec, 2);
-#endif
-
     return vec[0].Distance(vec[1]);
     }
 
@@ -1155,6 +1145,15 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
     if (nullptr != m_viewlet)
         {
         m_viewlet->Add(graphic);
+        return;
+        }
+
+    if (!m_isFlash)
+        {
+        if (!m_decorations.m_normal.IsValid())
+            m_decorations.m_normal = new GraphicList;
+
+        m_decorations.m_normal->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
         return;
         }
 

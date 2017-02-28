@@ -38,9 +38,11 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CalloutRefersToDrawingModel" strengthDirection="Backward" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="refers to" >
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to" >
             <Class class="Callout"/>
         </Source>
+        <!-- 0..* - many callouts can refer to the same DrawingModel, or there may be no callouts that refer to a given DrawingModel. -->
+        <!-- 0..1 - a given callout refers to only on DrawingModel, or the callout may be a TBD and have no DrawingModel -->
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by" >
             <Class class="bis:DrawingModel"/>
         </Target>

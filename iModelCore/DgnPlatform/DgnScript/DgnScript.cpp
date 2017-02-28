@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScript.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -17,6 +17,7 @@
 #include <DgnPlatform/DgnJsApiProjection.h>
 #include <DgnPlatform/ScriptDomain.h>
 #include <regex>
+#include <sstream> 
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
@@ -32,6 +33,13 @@ struct ArgMarshallInfo
 }
 
 static bmap<DgnClassId, bvector<ArgMarshallInfo>> s_argMarshalling;
+static intptr_t s_homeThreadId;
+static size_t s_nonHomeThreadCount;
+static thread_local BeJsEnvironmentP s_jsenv;
+static thread_local BeJsContextP s_jscontext;
+static thread_local DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_jsnotificationHandler;
+static thread_local bmap<Utf8String, bpair<DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter*,bool>>* s_importers;
+static DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_defaultNotificationHandler;
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
 HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
@@ -66,6 +74,7 @@ struct DgnScriptContext : BeJsContext
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
     DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
@@ -270,9 +279,24 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
-    m_jsenv = nullptr;
-    m_jsContext = nullptr;
-    m_notificationHandler = new ScriptNotificationHandler;
+    s_homeThreadId = BeThreadUtilities::GetCurrentThreadId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
+    {
+    bool anyLeft = false;
+        {
+        BeSystemMutexHolder _thread_safe_;
+        anyLeft = (s_nonHomeThreadCount != 0);
+        }
+
+    if (!anyLeft)
+        return;
+    LOG.error("Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
+    BeAssert(false && "Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,40 +304,56 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
-    if (nullptr != m_jsContext)
-        delete m_jsContext;
-
-    if (nullptr != m_jsenv)
-        delete m_jsenv;
+    CheckCleanup();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
+void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     {
-    if (nullptr == m_jsenv)
-        m_jsenv = new BeJsEnvironment;
-    return *m_jsenv;
-    }
+    //  Already initialized?
+    if (nullptr != s_jsenv)
+        {
+        if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)      // To make this a little more foolproof, tolerate redundant calls to InitializeOnThread on home thread
+/*<=*/      return;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
-    {
-    if (nullptr != m_jsContext)
-        return *m_jsContext;
+        BeAssert(false && "Call ScriptAdmin::InitializeOnThread only once on a given thread");
+        return;
+        }
 
-    //  *************************************************************
-    //  Bootstrap the Bentley.Dgn "namespace"
-    //  *************************************************************
+    //  Try to detect missing calls to Terminate
+    bool tooMany = false;
+        {
+        BeSystemMutexHolder _thread_safe_;
+        if (BeThreadUtilities::GetCurrentThreadId() != s_homeThreadId)
+            {
+            ++s_nonHomeThreadCount;
+            tooMany = (s_nonHomeThreadCount > 20);
+            }
+        }
+
+    if (tooMany)
+        {
+        LOG.warningv("ScriptAdmin::InitializeOnThread called %lld times. Did you forget to call TerminateOnThread?", s_nonHomeThreadCount);
+        BeDataAssert(false && "ScriptAdmin::InitializeOnThread called many times. Did you forget to call TerminateOnThread?");
+        }
+
+    //  *********************************************
+    //  Set up to receive importers
+    s_importers = new bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>>();
+
+    //  *********************************************
+    //  Initialize the BeJsEnvironment
+    s_jsenv = new BeJsEnvironment;
+
+    //  *********************************************
     //  Initialize the DgnScriptContext
-    auto dgnScriptContext = new DgnScriptContext(GetBeJsEnvironment());
-    m_jsContext = dgnScriptContext;
+    auto dgnScriptContext = new DgnScriptContext(*s_jsenv);
+    s_jscontext = dgnScriptContext;
 
     // First, register DgnJsApi's projections
-    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*m_jsContext));
+    RegisterScriptLibraryImporter("Bentley.Dgn-Core", *new DgnJsApi(*dgnScriptContext));
     ImportScriptLibrary("Bentley.Dgn-Core");
 
     // Next, allow DgnScriptContext to do some one-time setup work. This will involve evaluating some JS expressions.
@@ -324,16 +364,107 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     dgnScriptContext->Initialize();
 
 
-    //  *************************************************************
     //  Register other core projections here
-    //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*m_jsContext));
+    //  v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v v
+    RegisterScriptLibraryImporter("Bentley.Dgn-Geom", *new GeomJsApi(*dgnScriptContext));
     ImportScriptLibrary("Bentley.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
 
 
-    //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //  ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+    }
 
-    return *m_jsContext;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
+    {
+    if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)  // To make this a little more foolproof, don't terminate the JS environment on the home thread.
+        return;
+
+    if (nullptr == s_jsenv)
+        {
+        BeAssert(false && "Call ScriptAdmin::TerminateOnThread only once on a given thread");
+        return;
+        }
+
+    if (true)
+        {
+        BeSystemMutexHolder _thread_safe_;
+        --s_nonHomeThreadCount;
+        }
+
+    // Free the BeJsEnvironment and BeJsContext that were set up on this thread
+    if (nullptr != s_jscontext)
+        {
+        delete s_jscontext;
+        s_jscontext = nullptr;
+        }
+
+    delete s_jsenv;
+    s_jsenv = nullptr;
+
+    if (nullptr != s_jsnotificationHandler)
+        s_jsnotificationHandler = nullptr;
+
+    if (nullptr != s_importers)
+        {
+        delete s_importers;
+        s_importers = nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
+    {
+    if ((nullptr == s_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
+        InitializeOnThread();
+
+    if (nullptr == s_jsenv)
+        throw "InitializeOnThread was not called";
+
+    return *s_jsenv;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
+    {
+    if ((nullptr == s_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
+        InitializeOnThread();
+
+    if (nullptr == s_jscontext)
+        throw "InitializeOnThread was not called";
+
+    return *s_jscontext;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/17
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
+    {
+    ScriptNotificationHandler* was = s_jsnotificationHandler;
+    s_jsnotificationHandler = &h;
+    return was;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/17
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
+    {
+    if (nullptr != s_jsnotificationHandler)
+        return s_jsnotificationHandler;
+
+    BeSystemMutexHolder _thread_safe_;
+
+    if (nullptr == s_defaultNotificationHandler)
+        s_defaultNotificationHandler = new ScriptNotificationHandler; // we should always have a default notification handler
+
+    return s_defaultNotificationHandler;
     }
 
 //---------------------------------------------------------------------------------------
@@ -341,7 +472,11 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer)
     {
-    m_importers[libName] = make_bpair(&importer, false);
+    if (nullptr == s_importers)
+        {
+        throw "InitializeOnThread was not called";
+        }
+    (*s_importers)[libName] = make_bpair(&importer, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -349,8 +484,10 @@ void DgnPlatformLib::Host::ScriptAdmin::RegisterScriptLibraryImporter(Utf8CP lib
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libName)
     {
-    auto ilib = m_importers.find(libName);
-    if (ilib == m_importers.end())
+    if (nullptr == s_importers)
+        return BSIERROR;
+    auto ilib = s_importers->find(libName);
+    if (ilib == s_importers->end())
         {
         HandleScriptError(ScriptNotificationHandler::Category::Other, "Missing library", libName);
         return BSIERROR;
@@ -368,9 +505,10 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details)
     {
-    if (nullptr == m_notificationHandler)
+    auto nh = GetScriptNotificationHandler();
+    if (nullptr == nh)
         return;
-    m_notificationHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
+    nh->_HandleScriptError(GetDgnScriptContext(), category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,9 +524,10 @@ void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleScript
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP message)
     {
-    if (nullptr == m_notificationHandler)
+    auto nh = GetScriptNotificationHandler();
+    if (nullptr == nh)
         return;
-    m_notificationHandler->_HandleLogMessage(category, sev, message);
+    nh->_HandleLogMessage(category, sev, message);
     }
 
 //---------------------------------------------------------------------------------------
@@ -404,14 +543,6 @@ void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleLogMes
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
     {
-    for (auto &entry : m_importers)
-        {
-        ON_HOST_TERMINATE(entry.second.first, px);
-        }
-
-    if (nullptr != m_notificationHandler)
-        ON_HOST_TERMINATE(m_notificationHandler, px);
-
     delete this;
     }
 
@@ -420,7 +551,10 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* DgnPlatformLib::Host::ScriptAdmin::GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName)
     {
-    for (auto const& entry : m_importers)
+    if (nullptr == s_importers)
+        return nullptr;
+
+    for (auto const& entry : *s_importers)
         {
         auto m = entry.second.first->_GetMarshallerForType(typeScriptTypeName);
         if (nullptr != m)

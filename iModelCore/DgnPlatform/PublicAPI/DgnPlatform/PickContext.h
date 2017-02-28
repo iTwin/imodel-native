@@ -12,11 +12,11 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-enum TestLStylePhase
+enum class TestLStylePhase
 {
-    TEST_LSTYLE_None        = 0,
-    TEST_LSTYLE_Component   = 1,
-    TEST_LSTYLE_BaseGeom    = 2,
+    None        = 0,
+    Component   = 1,
+    BaseGeom    = 2
 };
 
 /*=================================================================================**//**
@@ -146,13 +146,13 @@ private:
     bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
     bool _DoPatternStroke(PatternParamsCR, SimplifyGraphic&) const override {return true;} // locate/snap to pattern and line style geometry...
-    bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& options, SimplifyGraphic& graphic) const override {return TEST_LSTYLE_Component == m_testingLStyle;}
+    bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& options, SimplifyGraphic& graphic) const override {return TestLStylePhase::Component == m_testingLStyle;}
 
 public:
     double GetPickAperture() {return m_pickAperture;}
     HitListP GetHitList() {return m_hitList;}
     bool GetDoneSearching() {return m_doneSearching;}
-    void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TEST_LSTYLE_None == phase) m_unusableLStyleHit = false;}
+    void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TestLStylePhase::None == phase) m_unusableLStyleHit = false;}
     DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
     void InitStrokeForCache() {m_doLocateSilhouettes = false;}
     bool GetLocateSilhouettes() {return m_doLocateSilhouettes;}

@@ -50,6 +50,7 @@
         <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="ArrayOfStructs" typeName="LocationStruct" minOccurs="0" maxOccurs="unbounded"/>
         <!-- The rest of the properties are custom-handled -->
         <ECProperty propertyName="TestElementProperty" typeName="string">
             <ECCustomAttributes>
@@ -263,6 +264,12 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
+    <ECEntityClass typeName="TestPhysicalRecipe">
+        <BaseClass>bis:PhysicalRecipe</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestGraphicalType2d">
         <BaseClass>bis:GraphicalType2d</BaseClass>
         <ECCustomAttributes>
@@ -270,6 +277,12 @@
         </ECCustomAttributes>
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestGraphicalRecipe2d">
+        <BaseClass>bis:GraphicalRecipe2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
     <ECEntityClass typeName="PerfElement">

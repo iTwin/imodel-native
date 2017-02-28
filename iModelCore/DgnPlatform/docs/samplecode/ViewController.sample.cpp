@@ -32,20 +32,19 @@ DgnDbStatus viewControllerEdit(DgnViewportR viewport, DgnModelId newModel, DgnCa
     controller.GetViewDefinition().LookAtVolume(controller.GetDgnDb().GeoLocation().GetProjectExtents());
     
     // If this is a camera view, then you can also use specialized Camera functions
-    CameraViewControllerP cameraController = controller.ToCameraViewP();
-    if (nullptr == cameraController)
+    auto cameraView = controller.GetViewDefinition().ToCameraViewP();
+    if (nullptr == cameraView)
         return DgnDbStatus::BadRequest;
 
-    auto& cameraDef = cameraController->GetCameraViewDefinition();
     DVec3d offset = DVec3d::From(0, 0, 1); // Move the camera in 1 meter
-    ViewportStatus status = cameraDef.MoveCameraLocal(offset);
+    ViewportStatus status = cameraView->MoveCameraLocal(offset);
     if (ViewportStatus::Success != status)
         return DgnDbStatus::BadRequest;
 
     // If you don't want these changes to be persistent, then don't save them.
 
     // If you do want these changes to be persistent, then you must call the ViewDefinition's Update method.
-    cameraDef.Update();
+    cameraView->Update();
     return DgnDbStatus::Success;
     }
 //__PUBLISH_EXTRACT_END__

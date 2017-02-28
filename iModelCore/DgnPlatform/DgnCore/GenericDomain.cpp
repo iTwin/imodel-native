@@ -125,7 +125,7 @@ GenericSpatialLocationPtr GenericSpatialLocation::Create(PhysicalModelR model, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    09/2016
 //---------------------------------------------------------------------------------------
-GenericGroupPtr GenericGroup::Create(GenericGroupModelCR model, DgnCodeCR code)
+GenericGroupPtr GenericGroup::Create(GenericGroupModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId modelId = model.GetModelId();
@@ -226,17 +226,22 @@ DgnElementId GenericViewAttachmentLabel::FindFromViewAttachment(DgnDbR db, DgnEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<DgnElementId> GenericViewAttachmentLabel::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
     auto findCallout = db.GetPreparedECSqlStatement(
         "SELECT callout.ECInstanceId FROM bis.ViewDefinition2d view2d, generic.Callout callout"
         " WHERE (callout.DrawingModel.Id = view2d.BaseModel.Id) AND (view2d.ECInstanceId = ?)");
-    findCallout->BindId(1, viewAttachment.GetAttachedViewId());
-    if (BE_SQLITE_ROW != findCallout->Step())
-        return DgnElementId();
 
-    return findCallout->GetValueId<DgnElementId>(0);
+    findCallout->BindId(1, viewAttachment.GetAttachedViewId());
+    
+    bvector<DgnElementId> callouts;
+    while (BE_SQLITE_ROW == findCallout->Step())
+        {
+        callouts.push_back(findCallout->GetValueId<DgnElementId>(0));
+        }
+
+    return callouts;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,8 +263,11 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
     // check that the reverse lookup works
     if (dest.m_viewAttachmentLabel.IsValid())
         {
-        auto loc = GenericCalloutLocation::FindCalloutFor(*dest.m_viewAttachmentLabel);
-        BeAssert(loc.GetCallout() == &callout);
+        auto locs = GenericCalloutLocation::FindCalloutsFor(*dest.m_viewAttachmentLabel);
+        bool foundThis = false;
+        for (auto const& loc : locs)
+            foundThis |= (loc.GetCallout() == &callout);
+        BeAssert(foundThis);
         }
 #endif
 
@@ -269,13 +277,19 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericCalloutLocation GenericCalloutLocation::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<GenericCalloutLocation> GenericCalloutLocation::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
-    GenericCalloutLocation loc;
-    loc.m_callout = db.Elements().Get<GenericCallout>(GenericViewAttachmentLabel::FindCalloutFor(viewAttachment));
-    if (!loc.m_callout.IsValid())
-        return loc;
-    loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
-    return loc;
+    bvector<GenericCalloutLocation> locs;
+    auto callouts = GenericViewAttachmentLabel::FindCalloutsFor(viewAttachment);
+    for (auto callout : callouts)
+        {
+        GenericCalloutLocation loc;
+        loc.m_callout = db.Elements().Get<GenericCallout>(callout);
+        if (!loc.m_callout.IsValid())
+            continue;
+        loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
+        locs.push_back(loc);
+        }
+    return locs;
     }

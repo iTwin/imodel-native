@@ -1002,7 +1002,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_parentRelClassId(params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
-    m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0)
+    m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1602,6 +1602,35 @@ ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) con
         }
     return params;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR DgnElements::GetSelectEcPropsECSql(ECSqlClassInfo& classInfo, ECN::ECClassCR ecclass) const
+    {
+    BeMutexHolder _v(m_mutex);  // guard lazy initialization of classInfo.m_selectEcProps
+
+    if (!classInfo.m_selectEcProps.empty())
+        return classInfo.m_selectEcProps;
+
+    Utf8String props;
+    Utf8CP comma = "";
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : AutoHandledPropertiesCollection(ecclass, GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
+        {
+        Utf8StringCR propName = prop->GetName();
+        props.append(comma).append("[").append(propName).append("]");
+        comma = ",";
+        }
+
+    if (props.empty())
+        return classInfo.m_selectEcProps = "";
+
+    classInfo.m_selectEcProps = Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter", 
+                                                            props.c_str(), ecclass.GetECSqlName().c_str());
+    return classInfo.m_selectEcProps;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15

@@ -28,6 +28,96 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
 
-#TFS 663732
-GetSetCustomHandledProprty.2dElementProprties
-GetSetCustomHandledProprty.3dElementProprties
+#TFS 665028
+GetSetCustomHandledProprty.Annotation
+
+#TFS 666459
+PerformanceElementTestFixture.*
+PerformanceDgnECTests.*
+DgnECInstanceTests.*
+ImportTests.*
+
+#TFS 666963
+GetSetCustomHandledProprty.GeometryPart
+
+DependencyRevisionTest.Conflict
+DependencyRevisionTest.DirectAndIndirectChangesToSameElement
+DependencyRevisionTest.Merge
+DependencyRevisionTest.MergeDependencyPermutations
+DependencyRevisionTest.SingleRevision
+DependencyRevisionTest.UpdateCache
+RevisionTestFixture.Codes
+RevisionTestFixture.MoreWorkflow
+RevisionTestFixture.ReverseAndReinstate
+RevisionTestFixture.Workflow
+    # bim0200 x86 NDEBUG
+    # [ RUN      ] RevisionTestFixture.Workflow
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(260): error: Value of: initialRevision.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] RevisionTestFixture.Workflow (102 ms)
+    #  # [ RUN      ] RevisionTestFixture.MoreWorkflow
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(312): error: Value of: initialRevision.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] RevisionTestFixture.MoreWorkflow (73 ms)
+    #  # [ RUN      ] RevisionTestFixture.Codes
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [12] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x127e5d0)
+    # [11] testing::Test::Run (0x128c740)
+    # [10] testing::TestInfo::Run (0x128c9d0)
+    # [9] testing::TestCase::Run (0x128c830)
+    # [8] testing::internal::UnitTestImpl::RunAllTests (0x128cc70)
+    # [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x127e9f0)
+    # [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x127e7b0)
+    # [5] testing::UnitTest::Run (0x128cb50)
+    # [4] main (0x103e4c0)
+    # [3] __scrt_common_main_seh (0x1298d48)
+    # [2] BaseThreadInitThunk (0x760d62a0)
+    # [1] RtlSubscribeWnfStateChangeNotification (0x77c40ba0)
+    # [0] RtlSubscribeWnfStateChangeNotification (0x77c40ba0)
+    # [  FAILED  ] RevisionTestFixture.Codes (3266 ms)
+    #  # [ RUN      ] RevisionTestFixture.ReverseAndReinstate
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(1162): error: Value of: initialRevision.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] RevisionTestFixture.ReverseAndReinstate (112 ms)
+    #  # [ RUN      ] DependencyRevisionTest.SingleRevision
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(746): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.SingleRevision (122 ms)
+    #  # [ RUN      ] DependencyRevisionTest.Merge
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(792): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.Merge (125 ms)
+    #  # [ RUN      ] DependencyRevisionTest.Conflict
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(890): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.Conflict (109 ms)
+    #  # [ RUN      ] DependencyRevisionTest.DirectAndIndirectChangesToSameElement
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(932): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.DirectAndIndirectChangesToSameElement (86 ms)
+    #  # [ RUN      ] DependencyRevisionTest.UpdateCache
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(972): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.UpdateCache (169 ms)
+    #  # [ RUN      ] DependencyRevisionTest.MergeDependencyPermutations
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(1025): error: Value of: CreateRevision().IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DependencyRevisionTest.MergeDependencyPermutations (77 ms)
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, x64, NDEBUG
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(633): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (69 ms)

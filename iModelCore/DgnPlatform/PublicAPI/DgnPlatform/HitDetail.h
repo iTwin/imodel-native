@@ -149,6 +149,9 @@ public:
     //! @note Optional geomType can be explicity specified to override the default HitGeomType.
     //!       For example, an arc primitive with HitGeomType::Point denotes a hit on the arc center.
     DGNPLATFORM_EXPORT void SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToWorld = nullptr, HitGeomType geomType = HitGeomType::None);
+
+    //! @private
+    DGNPLATFORM_EXPORT void ClipCurvePrimitive(ClipVectorCP);
 };
 
 //=======================================================================================

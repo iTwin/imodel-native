@@ -457,9 +457,9 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
-    if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
+    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !label || !*label)
         return nullptr;
 
     SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
@@ -790,6 +790,23 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
         }
 
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingGraphicPtr DrawingGraphic::Create(GraphicalModel2dCR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::DrawingGraphic::GetHandler());
+
+    if (!model.GetModelId().IsValid() || !classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new DrawingGraphic(CreateParams(db, model.GetModelId(), classId, categoryId));
     }
 
 //=======================================================================================
@@ -2470,31 +2487,43 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
 #define GETGEOMPLCPROPDBL(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetDouble(EXPR); return DgnDbStatus::Success;}
 #define GETGEOMPLCPROPPT3(EXPR) [](ECValueR value, DgnElementCR elIn){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3dCR plc = el.GetPlacement(); value.SetPoint3d(EXPR); return DgnDbStatus::Success;}
-#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value){GeometricElement3d& el = (GeometricElement3d&)elIn; Placement3d plc = el.GetPlacement(); EXPR; return el.SetPlacement(plc);}
+#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
+            {                                                                            \
+            if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
+                return DgnDbStatus::BadArg;                                              \
+            ECN::ECValue value(valueIn);                                                 \
+            if (!value.ConvertToPrimitiveType(PTYPE))                                    \
+                return DgnDbStatus::BadArg;                                              \
+            GeometricElement3d& el = (GeometricElement3d&)elIn;                          \
+            Placement3d plc = el.GetPlacement();                                         \
+            EXPR;                                                                        \
+            return el.SetPlacement(plc);                                                 \
+            }
+
 
     params.RegisterPropertyAccessors(layout, GEOM3_Yaw, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Pitch,
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM3_Roll, 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
-        SETGEOMPLCPROP(plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
     params.RegisterPropertyAccessors(layout, GEOM_Origin, 
         GETGEOMPLCPROPPT3(plc.GetOrigin()),
-        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetOriginR() = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
         GETGEOMPLCPROPPT3(plc.GetElementBox().low),
-        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().low = value.GetPoint3d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
         GETGEOMPLCPROPPT3(plc.GetElementBox().high),
-        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint3d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().high = value.GetPoint3d()));
 
 #undef GETGEOMPLCPROPDBL
 #undef GETGEOMPLCPROPPT3
@@ -2510,7 +2539,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
         [](DgnElementR elIn, ECValueCR value)
             {
-            if (value.IsNull())
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
@@ -2551,7 +2580,7 @@ void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& pa
 
         [](DgnElementR elIn, ECValueCR value)
             {
-            if (value.IsNull())
+            if (value.IsNull() || !value.IsNavigation())
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
@@ -2629,8 +2658,13 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetPoint2d(EXPR);                                                      \
             return DgnDbStatus::Success;                                                 \
             }
-#define SETGEOMPLCPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value)\
+#define SETGEOMPLCPROP(PTYPE, EXPR) [](DgnElement& elIn, ECN::ECValueCR valueIn)\
             {                                                                            \
+            if (valueIn.IsNull() || valueIn.IsBoolean() || !valueIn.IsPrimitive())       \
+                return DgnDbStatus::BadArg;                                              \
+            ECN::ECValue value(valueIn);                                                 \
+            if (!value.ConvertToPrimitiveType(PTYPE))                                    \
+                return DgnDbStatus::BadArg;                                              \
             GeometricElement2d& el = (GeometricElement2d&)elIn;                          \
             Placement2d plc = el.GetPlacement();                                         \
             EXPR;                                                                        \
@@ -2639,19 +2673,19 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
     params.RegisterPropertyAccessors(layout, GEOM_Origin, 
         GETGEOMPLCPROPPT2(plc.GetOrigin()),
-        SETGEOMPLCPROP(plc.GetOriginR() = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetOriginR() = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM2_Rotation, 
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
-        SETGEOMPLCPROP(plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromRadians(value.GetDouble())));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
-        SETGEOMPLCPROP(plc.GetElementBoxR().low = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().low = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
         GETGEOMPLCPROPPT2(plc.GetElementBox().high),
-        SETGEOMPLCPROP(plc.GetElementBoxR().high = value.GetPoint2d()));
+        SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().high = value.GetPoint2d()));
 
     params.RegisterPropertyAccessors(layout, GEOM_Category, 
         [](ECValueR value, DgnElementCR elIn)
@@ -2660,9 +2694,10 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetLong(el.GetCategoryId().GetValueUnchecked());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR elIn, ECValueCR value)
+        [](DgnElementR elIn, ECValueCR valueIn)
             {
-            if (value.IsNull())
+            ECN::ECValue value(valueIn);
+            if (value.IsNull() || !value.ConvertToPrimitiveType(PRIMITIVETYPE_Long))
                 {
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
@@ -2915,11 +2950,43 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<RecipeElement>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
     {
     return GetDgnDb().Elements().Get<PhysicalType>(GetPhysicalTypeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalRecipeCPtr PhysicalType::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<PhysicalRecipe>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalRecipe, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2931,9 +2998,33 @@ GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalType2d, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicalRecipe2dCPtr GraphicalType2d::GetRecipe() const
+    {
+    return GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetRecipeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalRecipe2d, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false), m_preserveOriginalModels(true)
+ElementCopier::ElementCopier(DgnCloneContext& c) : m_context(c), m_copyChildren(true), m_copyGroups(false)
     {
     }
 
@@ -2978,7 +3069,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
             if (!sourceChildElement.IsValid())
                 continue;
 
-            MakeCopy(nullptr, m_preserveOriginalModels? *sourceChildElement->GetModel(): targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
+            MakeCopy(nullptr, targetModel, *sourceChildElement, DgnCode(), outputElement->GetElementId());
             }
         }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/LocksManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -15,6 +15,15 @@ static const BeInt64Id s_dbId((uint64_t)1);
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockableId::LockableId(DgnDbCR db)
     : m_id(s_dbId), m_type(LockableType::Db)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+LockableId::LockableId(ECDbSchemaManagerCR schemas)
+    : m_id(s_dbId), m_type(LockableType::Schemas)
     {
     //
     }
@@ -86,6 +95,15 @@ void LockRequest::Insert(DgnModelCR model, LockLevel level)
 void LockRequest::Insert(DgnDbCR db, LockLevel level)
     {
     InsertLock(LockableId(db), level);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::InsertSchemasLock(DgnDbCR db)
+    {
+    InsertLock(LockableId(db.Schemas()), LockLevel::Exclusive);
+    Insert(db, LockLevel::Shared); // Insert shared lock on the DgnDb to prevent it's deletion.
     }
 
 /*---------------------------------------------------------------------------------**//**

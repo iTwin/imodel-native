@@ -13,7 +13,6 @@
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
-#include <DgnPlatform/Sheet.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -150,6 +149,38 @@ LinkModelPtr DgnDbTestUtils::InsertLinkModel(DgnDbR db, Utf8CP partitionName)
     return model;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           02/2017
+//---------------------------------------------------------------------------------------
+DefinitionModelPtr DgnDbTestUtils::InsertDefinitionModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    DefinitionPartitionCPtr partition = DefinitionPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    DefinitionModelPtr model = DefinitionModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           02/2017
+//---------------------------------------------------------------------------------------
+GenericGroupModelPtr DgnDbTestUtils::InsertGroupInformationModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    GroupInformationPartitionCPtr partition = GroupInformationPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    GenericGroupModelPtr model = GenericGroupModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_TRUE(model->GetModelId().IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,6 +306,21 @@ DgnCategoryId DgnDbTestUtils::GetFirstSpatialCategoryId(DgnDbR db)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           02/2017
+//---------------------------------------------------------------------------------------
+DgnSubCategoryId DgnDbTestUtils::InsertSubCategory(DgnDbR db, DgnCategoryId categoryId, Utf8CP name, ColorDefCR color)
+    {
+    MUST_HAVE_HOST(DgnSubCategoryId());
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    DgnSubCategoryPtr newSubCategory = new DgnSubCategory(DgnSubCategory::CreateParams(db, categoryId, name, appearance));
+    EXPECT_TRUE(newSubCategory.IsValid());
+    DgnSubCategoryCPtr insertedSubCategory = newSubCategory->Insert();
+    EXPECT_TRUE(insertedSubCategory.IsValid());
+    return insertedSubCategory->GetSubCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
 CodeSpecId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP codeSpecName)
@@ -291,7 +337,7 @@ CodeSpecId DgnDbTestUtils::InsertCodeSpec(DgnDbR db, Utf8CP codeSpecName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Sam.Wilson      06/16
 //---------------------------------------------------------------------------------------
-ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
+ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
     {
     ModelSelector modSel(db, name);
     modSel.AddModel(model);
@@ -312,10 +358,11 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewDescr)
+DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewName)
     {
-    auto& db = model.GetDgnDb();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    DgnDbR db = model.GetDgnDb();
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    EXPECT_TRUE(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
@@ -329,8 +376,11 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
     {
-    auto& db = model.GetDgnDb();
-    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
+    DgnDbR db = model.GetDgnDb();
+    ModelSelectorPtr modelSelector = new ModelSelector(db, "");
+    modelSelector->AddModel(model.GetModelId());
+
+    CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());

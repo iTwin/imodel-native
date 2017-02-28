@@ -102,6 +102,7 @@ public:
     DGNPLATFORM_EXPORT bool IsXYPolygon() const;
     DGNPLATFORM_EXPORT bool ContainsZClip() const;
     DGNPLATFORM_EXPORT ClipPlaneContainment ClassifyPointContainment(DPoint3dCP points, size_t nPoints, bool ignoreMasks = false) const;
+    ClipPlaneContainment ClassifyFrustum(FrustumCR frust) const {return ClassifyPointContainment(frust.m_pts, NPC_CORNER_COUNT);}
     DGNPLATFORM_EXPORT void TransformToClip(DPoint3dR point) const;
     DGNPLATFORM_EXPORT void TransformFromClip(DPoint3dR point) const;
 

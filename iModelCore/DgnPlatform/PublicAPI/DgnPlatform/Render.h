@@ -1536,6 +1536,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
+    GraphicListPtr m_normal;         // drawn with zbuffer, with scene lighting
     GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
@@ -1838,7 +1839,7 @@ public:
     static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
     static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
-    static double DepthFromDisplayPriority(int32_t priority) {return 0;}// GetDisplayPriorityFactor() * (double) priority;}
+    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;
