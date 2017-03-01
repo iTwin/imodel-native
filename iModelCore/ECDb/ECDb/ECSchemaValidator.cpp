@@ -211,7 +211,7 @@ void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
             {
             if (LOG.isSeverityEnabled(NativeLogging::LOG_WARNING))
                 {
-                LOG.warningv("ECSchema '%s' contains ECClasses with base classes which are invalid but support for legacy reasons. "
+                LOG.warningv("ECSchema '%s' contains ECClasses with base classes which are invalid but supported for legacy reasons. "
                              "This can lead to data corruption. Violating ECClasses: %s",
                              schema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
                 }

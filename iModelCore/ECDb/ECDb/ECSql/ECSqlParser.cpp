@@ -34,7 +34,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 
     if (parseTree == nullptr || !error.empty())
         {
-        GetIssueReporter().Report(error.c_str());
+        GetIssueReporter().Report("Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
         return nullptr;
         }
 
