@@ -13,14 +13,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-// --------------------------------------------------------------------------------------
-//Back door for converter
-// @bsimethod                               Krischan.Eberle           02/2017
-//---------------+---------------+---------------+---------------+---------------+------
-extern "C" ECDB_EXPORT BentleyStatus ecdbV8Legacy_importECSchemas(ECDbCR ecdb, bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const* token)
-    {
-    return ecdb.Schemas().ImportECSchemas(schemas, true, token);
-    }
 
 //******************************** ECDbSchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
