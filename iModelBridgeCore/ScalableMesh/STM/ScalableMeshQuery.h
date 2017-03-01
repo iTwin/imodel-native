@@ -1322,7 +1322,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual void _UpdateData() override;
 
-        virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const override;
+        virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const override;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const override;
 

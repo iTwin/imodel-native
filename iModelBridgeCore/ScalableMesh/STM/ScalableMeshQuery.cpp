@@ -2525,9 +2525,9 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     return _IsClippingUpToDate();
     }
 
-void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
-    return _GetSkirtMeshes(meshes);
+    return _GetSkirtMeshes(meshes, activeClips);
     }
 
 #ifdef WIP_MESH_IMPORT
