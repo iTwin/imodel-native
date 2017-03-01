@@ -49,6 +49,25 @@ public:
     };
 
 //=====================================================================================
+//! @bsiclass                                         Donald.Morissette         03/2017
+//! RealityDataEnterpriseStat
+//! This class returns the size in KB currently used.
+//=====================================================================================
+struct RealityDataEnterpriseStat : public RealityDataUrl
+{
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat(Utf8StringCR enterpriseId) { m_validRequestString = false; m_id = enterpriseId; }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataEnterpriseStat() {}
+};
+
+
+//=====================================================================================
 //! Overview:
 //! The present classes serve as interfaces to the RealityDataService.
 //! Although the RealityData Service is based on a simple WSG-based
@@ -750,6 +769,10 @@ public:
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, BentleyStatus& status);
+
+    //! Returns the size in KB for the specify Enterprise, or the default one.
+    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, BentleyStatus& status);
+
 
     //! Returns the RealityData object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request, BentleyStatus& status);

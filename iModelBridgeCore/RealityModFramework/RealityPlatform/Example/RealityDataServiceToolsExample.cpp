@@ -28,7 +28,8 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 static Utf8String s_itemPath;
 #define CmdDownload             0x0100
 static Utf8String s_outputPath;
-#define CmdUpload               0x0800
+#define CmdUpload               0x0400
+#define CmdEntrStat             0x0800
 
 #define OptFilterOwner          0x0001
 static Utf8String s_filterOwner;
@@ -57,6 +58,7 @@ void Usage()
     //std::cout << "   -ListAll [ProjectId]  : **" << std::endl;
     std::cout << "   -Download NameId Output    : Download file(s) to Output directory" << std::endl;
     //std::cout << "   -Upload WindowsFolder guid  root  footprint type :  **" << std::endl;
+    std::cout << "   -EnterpriseStat            : Display statistic, like Space used, nb of realitydata..." << std::endl;
     std::cout << "   [options...]" << std::endl;
     std::cout << "   -Owner=...                 :  Filter" << std::endl;
     std::cout << "   -SortModDate               :  RealityData sorted by modification date" << std::endl;
@@ -121,6 +123,10 @@ void ParsingParamters (int argc, char* argv[])
                 s_outputPath = argv[currentParamPos];
             else
                 found = false;
+        }
+        else if (_stricmp(("-EnterpriseStat"), argv[currentParamPos]) == 0)
+        {
+            s_cmd = CmdEntrStat;
         }
         else if (_strnicmp(("-Owner="), argv[currentParamPos], 7) == 0)
         {
@@ -219,7 +225,10 @@ void ListCmd()
     {
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
+        BentleyStatus status;
+
         RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
+        enterpriseReq->SetPageSize(25);
 
         // Filters ?
         if (s_option & (OptFilterOwner))
@@ -238,29 +247,40 @@ void ListCmd()
         if (s_option & (OptSortGroup))
             enterpriseReq->SortBy(RealityDataField::Group, true);
 
-        BentleyStatus status;
         bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
-        for (SpatialEntityPtr pData : enterpriseVec)
-            {
-            std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
+        size_t EnterpriseSizeKB(0);
+        do {
+            if (BentleyStatus::SUCCESS != status)
+                exit(-1);
 
-            if (s_cmd & (CmdListDetail | CmdListAllDetail))
+            for (SpatialEntityPtr pData : enterpriseVec)
                 {
-                std::cout << "  " << 
-                    " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
-                    " Group          : " << pData->GetGroup() << std::endl << "  " <<
-                    " Classification : " << pData->GetClassification() << std::endl << "  " <<
-                    " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
-                    " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                    " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
-                    " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
-                    " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
-                    " Visibility     : " << pData->GetVisibility() << std::endl << "  " <<
-                    " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
-                    " Description    : " << pData->GetDescription() << std::endl;
+                std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
+
+                EnterpriseSizeKB += pData->GetApproximateFileSize();
+
+                if (s_cmd & (CmdListDetail | CmdListAllDetail))
+                    {
+                    std::cout << "  " << 
+                        " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
+                        " Group          : " << pData->GetGroup() << std::endl << "  " <<
+                        " Classification : " << pData->GetClassification() << std::endl << "  " <<
+                        " Size(KB)       : " << pData->GetApproximateFileSize() << std::endl << "  " <<
+                        " Owner          : " << pData->GetOwner() << std::endl << "  " <<
+                        " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
+                        " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
+                        " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
+                        " Visibility     : " << pData->GetVisibility() << std::endl << "  " <<
+                        " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
+                        " Description    : " << pData->GetDescription() << std::endl;
+                    }
                 }
+
+            enterpriseVec.clear();
             }
+        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
+        std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 
         if (s_cmd & (CmdListAll | CmdListAllDetail))
@@ -343,6 +363,20 @@ int main(int argc, char* argv[])
                                             
     if (s_cmd == CmdDownload)         
         DownloadCmd();                     
+
+    if (s_cmd == CmdEntrStat)
+        {
+        BentleyStatus status;
+        RealityDataEnterpriseStat* ptt = new RealityDataEnterpriseStat("");
+        uint64_t NbRealityData;
+        uint64_t TotalSizeKB;
+        RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
+
+        std::cout << "Enterprise statistics: " << std::endl;
+        std::cout << "   NbRealityData: " << NbRealityData << std::endl;
+        std::cout << "   TotalSize(KB): " << TotalSizeKB << std::endl;
+        }
+        
 
     std::cout << "Click a key to continue..." << std::endl;
     getch();

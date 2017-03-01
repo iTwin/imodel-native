@@ -49,6 +49,20 @@ Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetS
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 
+void RealityDataEnterpriseStat::_PrepareHttpRequestStringAndPayload() const
+{
+    m_serverName = RealityDataService::GetServerName();
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append("/Repositories/");
+    m_httpRequestString.append(RealityDataService::GetRepoName());
+    m_httpRequestString.append("/");
+    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append("/EnterpriseStat/");
+    m_httpRequestString.append(m_id);
+}
+
 void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -1216,6 +1230,22 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
 
     return entities;
     }
+
+void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, BentleyStatus& status)
+{
+    Utf8String jsonString;
+    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+
+    if (status != BentleyStatus::SUCCESS)
+    {
+        std::cout << "RealityDataEnterpriseStat failed with response" << std::endl;
+        std::cout << jsonString << std::endl;
+        status = BentleyStatus::ERROR;
+    }
+
+    RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
+}
+
 
 SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, BentleyStatus& status)
     {
