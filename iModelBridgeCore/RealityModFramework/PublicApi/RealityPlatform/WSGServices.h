@@ -304,7 +304,7 @@ public:
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object);
 
     REALITYDATAPLATFORM_EXPORT void SetPageSize(uint8_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
-    REALITYDATAPLATFORM_EXPORT uint8_t GetPageSize() {return m_pageSize;}
+    REALITYDATAPLATFORM_EXPORT uint8_t GetPageSize() const {return m_pageSize;}
   
     REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint16_t startIndex) {m_startIndex = startIndex;} 
 
@@ -315,7 +315,7 @@ public:
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
 
-    uint16_t m_startIndex;
+    mutable uint16_t m_startIndex;
     uint8_t m_pageSize;
     };
 

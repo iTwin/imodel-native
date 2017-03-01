@@ -158,6 +158,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDataServiceConsole" BentleyBuildMakeFile="RealityPlatform\RealityDataService\RealityDataServiceConsole.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceConsole.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -194,6 +204,7 @@
         <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
         <SubPart PartName="RealityDataServiceUploader"/>
+        <SubPart PartName="RealityDataServiceConsole"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
