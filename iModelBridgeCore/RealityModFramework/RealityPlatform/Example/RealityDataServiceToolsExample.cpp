@@ -28,7 +28,8 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 static Utf8String s_itemPath;
 #define CmdDownload             0x0100
 static Utf8String s_outputPath;
-#define CmdUpload               0x0800
+#define CmdUpload               0x0400
+#define CmdEntrStat             0x0800
 
 #define OptFilterOwner          0x0001
 static Utf8String s_filterOwner;
@@ -57,6 +58,7 @@ void Usage()
     //std::cout << "   -ListAll [ProjectId]  : **" << std::endl;
     std::cout << "   -Download NameId Output    : Download file(s) to Output directory" << std::endl;
     //std::cout << "   -Upload WindowsFolder guid  root  footprint type :  **" << std::endl;
+    std::cout << "   -EnterpriseStat            : Display statistic, like Space used, nb of realitydata..." << std::endl;
     std::cout << "   [options...]" << std::endl;
     std::cout << "   -Owner=...                 :  Filter" << std::endl;
     std::cout << "   -SortModDate               :  RealityData sorted by modification date" << std::endl;
@@ -122,6 +124,10 @@ void ParsingParamters (int argc, char* argv[])
             else
                 found = false;
         }
+        else if (_stricmp(("-EnterpriseStat"), argv[currentParamPos]) == 0)
+        {
+            s_cmd = CmdEntrStat;
+        }
         else if (_strnicmp(("-Owner="), argv[currentParamPos], 7) == 0)
         {
             s_option |= OptFilterOwner;
@@ -174,7 +180,8 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
                 {
                 Utf8String repoName(subNode.GetRootId() + "~2F" + subNode.GetInstanceId());
                 repoName.ReplaceAll("/", "~2F");
-                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName));
+                RequestStatus status;
+                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName), status);
                 std::cout << "  " << subNode.GetInstanceId() << 
                     std::setw(12) << " Size(KB): " << document->GetSize() <<
                     std::setw(16) << " ContentType: " << document->GetContentType() << std::endl;
@@ -218,7 +225,10 @@ void ListCmd()
     {
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
+        RequestStatus status;
+
         RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
+        enterpriseReq->SetPageSize(25);
 
         // Filters ?
         if (s_option & (OptFilterOwner))
@@ -237,29 +247,40 @@ void ListCmd()
         if (s_option & (OptSortGroup))
             enterpriseReq->SortBy(RealityDataField::Group, true);
 
+        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
-        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq);
+        size_t EnterpriseSizeKB(0);
+        do {
+            if (RequestStatus::SUCCESS != status)
+                exit(-1);
 
-        for (SpatialEntityPtr pData : enterpriseVec)
-            {
-            std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
-
-            if (s_cmd & (CmdListDetail | CmdListAllDetail))
+            for (SpatialEntityPtr pData : enterpriseVec)
                 {
-                std::cout << "  " << 
-                    " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
-                    " Group          : " << pData->GetGroup() << std::endl << "  " <<
-                    " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
-                    " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
-                    " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                    " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
-                    " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
-                    " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
-                    " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
-                    " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
-                    " Description    : " << pData->GetDescription() << std::endl;
+                std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
+
+                EnterpriseSizeKB += pData->GetApproximateFileSize();
+
+                if (s_cmd & (CmdListDetail | CmdListAllDetail))
+                    {
+                    std::cout << "  " << 
+                        " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
+                        " Group          : " << pData->GetGroup() << std::endl << "  " <<
+                        " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
+                        " Size(KB)       : " << pData->GetApproximateFileSize() << std::endl << "  " <<
+                        " Owner          : " << pData->GetOwner() << std::endl << "  " <<
+                        " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
+                        " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
+                        " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
+                        " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
+                        " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
+                        " Description    : " << pData->GetDescription() << std::endl;
+                    }
                 }
+
+            enterpriseVec.clear();
             }
+        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
+        std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 
         if (s_cmd & (CmdListAll | CmdListAllDetail))
@@ -269,7 +290,8 @@ void ListCmd()
 
             for (NavNode root : nodes)
                 {
-                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()));
+                RequestStatus status;
+                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
 
                 ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
                 }
@@ -279,7 +301,8 @@ void ListCmd()
     if (s_cmd == CmdListItem)
         {
         s_itemPath.ReplaceAll("/", "~2F");
-        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+        RequestStatus status;
+        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
 
         std::cout << document->GetFolderId() << document->GetName() <<
             std::setw(12) << " Size(KB): " << document->GetSize() <<
@@ -298,7 +321,8 @@ void DownloadCmd()
     std::cout << "Downloading : ";
 
     s_itemPath.ReplaceAll("/", "~2F");
-    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath));
+    RequestStatus status;
+    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
 
     std::cout << document->GetId() << std::endl;
 
@@ -310,7 +334,7 @@ void DownloadCmd()
     if (0 != pFile)
         {
         RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
-        RealityDataService::Request(*contentRequest, pFile);
+        RealityDataService::Request(*contentRequest, pFile, status);
         fclose (pFile);
         std::cout << "  Done." << std::endl;
         }
@@ -339,6 +363,20 @@ int main(int argc, char* argv[])
                                             
     if (s_cmd == CmdDownload)         
         DownloadCmd();                     
+
+    if (s_cmd == CmdEntrStat)
+        {
+        RequestStatus status;
+        RealityDataEnterpriseStat* ptt = new RealityDataEnterpriseStat("");
+        uint64_t NbRealityData;
+        uint64_t TotalSizeKB;
+        RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
+
+        std::cout << "Enterprise statistics: " << std::endl;
+        std::cout << "   NbRealityData: " << NbRealityData << std::endl;
+        std::cout << "   TotalSize(KB): " << TotalSizeKB << std::endl;
+        }
+        
 
     std::cout << "Click a key to continue..." << std::endl;
     getch();

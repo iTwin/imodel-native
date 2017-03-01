@@ -10,6 +10,41 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Donald.Morissette                       3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB)
+    {
+    // Make sure data exists.
+    if (Utf8String::IsNullOrEmpty(data))
+        return ERROR;
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    if (!Json::Reader::Parse(data, root))
+        return ERROR;
+
+    // Instances must be a root node.
+    if (!root.isMember("instances"))
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    if (!instance.isMember("properties"))
+        return ERROR;
+
+    const Json::Value properties = instance["properties"];
+
+    if (pNbRealityData != nullptr && properties.isMember("NumberOfRealityData") && !properties["NumberOfRealityData"].isNull())
+        *pNbRealityData = properties["NumberOfRealityData"].asInt64();
+
+    if (pTotalSizeKB != nullptr && properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
+        *pTotalSizeKB = properties["TotalSize"].asInt64();
+
+    return SUCCESS;
+    }
+
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/

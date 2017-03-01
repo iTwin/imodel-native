@@ -92,7 +92,7 @@ namespace IndexECPlugin.Source.Helpers
 
         public static string CreateEsriPolygonFromPolyModel (PolygonModel model)
             {
-            string esriPoly = "{\"rings\":[";
+            string esriPoly = "{\"rings\":[[";
             
             //This will give [x1,y1],[x2,y2],...[xn,yn]
             esriPoly += String.Join( ",", model.points.Select(p => "[" + p[0] + "," + p[1] + "]"));
@@ -100,12 +100,12 @@ namespace IndexECPlugin.Source.Helpers
             int count = model.points.Count;
 
             //We have to close the polygon, if it's not done already
-            if ( (model.points[0][0] != model.points[count][0]) || model.points[0][1] != model.points[count][1] )
+            if ( (model.points[0][0] != model.points[count-1][0]) || model.points[0][1] != model.points[count-1][1] )
                 {
                 esriPoly += ",[" + model.points[0][0] + "," + model.points[0][1] + "]";
                 }
 
-            esriPoly += "],\"spatialReference\":{\"wkid\":" + model.coordinate_system + "}}";
+            esriPoly += "]],\"spatialReference\":{\"wkid\":" + model.coordinate_system + "}}";
             return esriPoly;
             }
 
