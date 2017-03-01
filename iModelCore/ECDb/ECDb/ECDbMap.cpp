@@ -976,7 +976,7 @@ BentleyStatus ECDbMap::LogInvalidDbMappings() const
                              className, tableName, issueType, issueTypeDesc, issue);
 
         LOG.messagev(logSeverity, "ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
-                     schemaName, className, issueType, tableName, issue);
+                     schemaName, className, issueTypeDesc, tableName, issue);
         }
 
     return SUCCESS;
