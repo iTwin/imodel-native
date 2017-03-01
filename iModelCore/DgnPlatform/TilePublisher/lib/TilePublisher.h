@@ -352,8 +352,11 @@ private:
     Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
+
+    void AddMeshUInt16Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
     void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes, Utf8StringCR idStr);
     void AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colors, Utf8StringCR idStr);
+
     Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique(PublishTileData& tileData, MeshMaterial const& material, bool doBatchIds);
@@ -361,6 +364,7 @@ private:
     void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
+    void TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR point2, uint16_t attribute, uint32_t color);
 
     MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
 

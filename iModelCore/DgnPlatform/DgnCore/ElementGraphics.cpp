@@ -956,6 +956,7 @@ IBRepEntityCP           m_entity;
 
 bool                    m_includeEdges;
 bool                    m_includeFaceIso;
+GeometryStreamEntryIdCP m_entryId;
 
 CurveVectorPtr          m_curves;
 
@@ -964,7 +965,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-explicit RuleCollector(bool includeEdges, bool includeFaceIso)
+explicit RuleCollector(bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
     {
     m_surface   = nullptr;
     m_primitive = nullptr;
@@ -972,6 +973,7 @@ explicit RuleCollector(bool includeEdges, bool includeFaceIso)
 
     m_includeEdges   = includeEdges;
     m_includeFaceIso = includeFaceIso;
+    m_entryId        = entryId;
     }
 
 virtual ~RuleCollector() {}
@@ -979,17 +981,27 @@ virtual ~RuleCollector() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
+bool _ProcessCurvePrimitive(ICurvePrimitiveCR curve, bool closed, bool filled, SimplifyGraphic& graphic) override
     {
     if (m_curves.IsNull())
         m_curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
-    CurveVectorPtr  childCurve = curves.Clone();
+    ICurvePrimitivePtr childCurve = curve.Clone();
 
     if (!graphic.GetLocalToWorldTransform().IsIdentity())
         childCurve->TransformInPlace(graphic.GetLocalToWorldTransform());
 
-    m_curves->Add(childCurve);
+    m_curves->push_back(childCurve);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
+    {
+    graphic.ProcessAsCurvePrimitives(curves, isFilled);
 
     return true;
     }
@@ -1000,6 +1012,9 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& g
 void _OutputGraphics(ViewContextR context) override
     {
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+
+    if (nullptr != m_entryId && m_entryId->IsValid())
+        graphic->SetGeometryStreamEntryId(m_entryId);
 
     if (m_surface)
         WireframeGeomUtil::Draw(*graphic, *m_surface, &context, m_includeEdges, m_includeFaceIso);
@@ -1030,9 +1045,9 @@ END_UNNAMED_NAMESPACE
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso);
+    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
 
     rules.SetSolidPrimitive(primitive);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1043,9 +1058,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, Dgn
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso);
+    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
 
     rules.SetBsplineSurface(surface);
     GeometryProcessor::Process(rules, dgnDb);
@@ -1056,9 +1071,9 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr WireframeGeomUtil::CollectCurves(IBRepEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
+CurveVectorPtr WireframeGeomUtil::CollectCurves(IBRepEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso, GeometryStreamEntryIdCP entryId)
     {
-    RuleCollector   rules(includeEdges, includeFaceIso);
+    RuleCollector   rules(includeEdges, includeFaceIso, entryId);
 
     rules.SetSolidEntity(entity);
     GeometryProcessor::Process(rules, dgnDb);

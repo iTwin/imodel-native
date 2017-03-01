@@ -90,7 +90,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, ThreedElementProprties)
+TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -242,7 +242,7 @@ TEST_F(GetSetCustomHandledProprty, ThreedElementProprties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, TwodElementProprties)
+TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -669,9 +669,11 @@ TEST_F(GetSetCustomHandledProprty, Linkelement)
         //Repositorylink
         RepositoryLinkPtr rlink = RepositoryLink::Create(*linkModel, "http://www.outlook.com", "Rlink Lable");
         ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "RepositoryGuid"));
+        BeTest::SetFailOnAssert(false);
         ASSERT_EQ(DgnDbStatus::BadRequest, rlink->SetPropertyValue(rindex, ECN::ECValue("Descr")));
         ASSERT_EQ(DgnDbStatus::BadRequest, rlink->GetPropertyValue(checkValue, rindex));
         ASSERT_TRUE(rlink->Insert().IsValid());
+        BeTest::SetFailOnAssert(true);
         //EmbeddedFileLink
         EmbeddedFileLinkPtr emlink = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, ""));
         ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(enindex, "Name"));
@@ -856,6 +858,321 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
+    {
+    SetupSeedProject();
+    m_db->Schemas().CreateECClassViewsInDb();
+    uint32_t orindex,exindex,raindex;
+    ECN::ECValue checkValue;
+    DgnViewId viewId;
+    if (true)
+       {
+        auto categories = new CategorySelector(*m_db, "");
+        for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+        auto style = new DisplayStyle(*m_db, "");
+        auto flags = style->GetViewFlags();
+        flags.SetRenderMode(Render::RenderMode::SmoothShade);
+        style->SetViewFlags(flags);
+
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
+        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+
+        DrawingViewDefinition view(*m_db, "Default", drawingModel->GetModelId(),*categories, *style);
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(raindex, "RotationAngle"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(orindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(orindex, ECN::ECValue(DPoint2d::From(0, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, orindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(0, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(exindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(exindex, ECN::ECValue(DPoint2d::From(1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, exindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(raindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(raindex, ECN::ECValue(2.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, raindex));
+        ASSERT_EQ(checkValue.GetDouble(),ECN::ECValue(2.5).GetDouble());
+        checkValue.Clear();
+        ASSERT_TRUE(view.Insert().IsValid());
+
+        viewId = view.GetViewId();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DrawingViewDefinitionCPtr view= m_db->Elements().Get<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(0, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.5).GetDouble());
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //upadate properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DrawingViewDefinitionPtr view = m_db->Elements().GetForEdit<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint2d::From(1, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(exindex, ECN::ECValue(DPoint2d::From(2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(2, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(raindex, ECN::ECValue(2.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.8).GetDouble());
+    checkValue.Clear();
+    ASSERT_TRUE(view->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check upadated properties stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DrawingViewDefinitionCPtr view = m_db->Elements().Get<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(2,2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.8).GetDouble());
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
+    {
+    SetupSeedProject();
+    uint32_t orindex,exindex,yindex,pindex,rindex,caindex, laindex, fdindex,epindex;
+    ECN::ECValue checkValue;
+    DgnViewId viewId;
+    if (true)
+       {
+        auto categories = new CategorySelector(*m_db, "");
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_db))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+        auto style = new DisplayStyle3d(*m_db, "");
+        auto flags = style->GetViewFlags();
+        flags.SetRenderMode(Render::RenderMode::SmoothShade);
+        style->SetViewFlags(flags);
+
+        auto models = new ModelSelector(*m_db, "");
+        ModelIterator modIter = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+        for (ModelIteratorEntryCR entry : modIter)
+            {
+            auto id = entry.GetModelId();
+            auto model = m_db->Models().GetModel(id);
+
+            if (model.IsValid())
+                models->AddModel(id);
+             }
+
+        CameraViewDefinition view(*m_db, "Default", *categories, *style, *models);
+        view.SetStandardViewRotation(StandardView::Iso);
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(yindex, "Yaw"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(rindex, "Roll"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(pindex, "Pitch"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(caindex, "IsCameraOn"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(laindex, "LensAngle"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(epindex, "EyePoint"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(fdindex, "FocusDistance"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(orindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(0, 1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, orindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(exindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(exindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, exindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(yindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(yindex, ECN::ECValue(2.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, yindex));
+        ASSERT_EQ(checkValue,ECN::ECValue(2.5));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(pindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(pindex, ECN::ECValue(3.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, pindex));
+        ASSERT_EQ(checkValue,ECN::ECValue(3.5));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(rindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(rindex, ECN::ECValue(4.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, rindex));
+        ASSERT_EQ(checkValue, ECN::ECValue(4.5));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(caindex, ECN::ECValue(22)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(caindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success,view.GetPropertyValue(checkValue, caindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(true)));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(laindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(laindex, ECN::ECValue(5.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, laindex));
+        ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(5.5).GetDouble());
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(fdindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(fdindex, ECN::ECValue(7.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, fdindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(7.5)));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(epindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(epindex, ECN::ECValue(DPoint3d::From(0,1,2))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, epindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+        checkValue.Clear();
+        ASSERT_TRUE(view.Insert().IsValid());
+
+        viewId = view.GetViewId();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    CameraViewDefinitionCPtr view= m_db->Elements().Get< CameraViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(true)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(5.5).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(7.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //upadate properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    CameraViewDefinitionPtr view = m_db->Elements().GetForEdit< CameraViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(exindex, ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(yindex, ECN::ECValue(2.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(pindex, ECN::ECValue(3.0)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.0));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(rindex, ECN::ECValue(4.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(caindex, ECN::ECValue(false)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(laindex, ECN::ECValue(6.0)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(fdindex, ECN::ECValue(5.5)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(5.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(epindex, ECN::ECValue(DPoint3d::From(2, 1, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 1, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(view->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check upadated properties stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    CameraViewDefinitionCPtr view = m_db->Elements().Get< CameraViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.0));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(5.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 1, 2))));
     checkValue.Clear();
     }
     }
