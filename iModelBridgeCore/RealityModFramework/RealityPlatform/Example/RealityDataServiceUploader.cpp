@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
         {
         upload->SetProgressCallBack(progressFunc);
         upload->SetProgressStep(0.05);
+        upload->OnlyReportErrors(true);
         time_t time = std::time(nullptr);
         UploadReport* ur = upload->Perform();
         time_t time2 = std::time(nullptr);

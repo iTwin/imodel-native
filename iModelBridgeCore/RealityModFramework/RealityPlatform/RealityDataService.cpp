@@ -1113,6 +1113,9 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
 
 void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
+    if(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK))
+        return;
+
     if (m_pStatusFunc)
         m_pStatusFunc(index, pClient, ErrorCode, pMsg);
 
@@ -1159,7 +1162,7 @@ bool RealityDataServiceUpload::UpdateUploadedAmount(uint64_t uploadedAmount)
 
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
     m_id(id), m_overwrite(overwrite), m_azureTokenTimer(0), m_progress(0.0), m_progressStep(0.01), m_progressThreshold(0.01),
-    m_currentUploadedAmount(0)
+    m_currentUploadedAmount(0), m_fullUploadSize(0), m_onlyReportErrors(false)
     { 
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;

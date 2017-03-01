@@ -644,6 +644,8 @@ struct RealityDataServiceUpload : public CurlConstructor
 
     REALITYDATAPLATFORM_EXPORT Utf8String GenerateAzureHandshakeUrl();
 
+    REALITYDATAPLATFORM_EXPORT void OnlyReportErrors(bool onlyErrors) { m_onlyReportErrors = onlyErrors; }
+
 protected:
     BentleyStatus CreateUpload(Utf8String properties);
     BentleyStatus ParseHandshakeResponse(Utf8String json);
@@ -686,6 +688,7 @@ private:
 
     uint64_t                    m_fullUploadSize;
     uint64_t                    m_currentUploadedAmount;
+    bool                        m_onlyReportErrors;
     };
 
 
