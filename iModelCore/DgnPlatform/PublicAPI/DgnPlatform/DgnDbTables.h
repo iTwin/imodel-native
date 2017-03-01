@@ -93,6 +93,7 @@
 #define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_SubCategory               "SubCategory"
 #define BIS_CLASS_Subject                   "Subject"
+#define BIS_CLASS_TemplateViewDefinition3d  "TemplateViewDefinition3d"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
 #define BIS_CLASS_TrueColor                 "TrueColor"

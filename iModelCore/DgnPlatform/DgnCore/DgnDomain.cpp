@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -240,13 +240,6 @@ void DgnDomains::OnDbClose()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     {
-    if (!schemaFile.DoesPathExist())
-        {
-        LOG.errorv("DgnDomain::ImportSchema(): Schema file '%s' does not exist", schemaFile.c_str());
-        BeAssert(false && "DgnDomain::ImportSchema(): Schema file does not exist");
-        return DgnDbStatus::FileNotFound;
-        }
-
     BeFileName schemaBaseNameW;
     schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
     Utf8String schemaBaseName(schemaBaseNameW);
@@ -258,31 +251,16 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
         return DgnDbStatus::WrongDomain;
         }
 
-    BeFileName schemaDir = schemaFile.GetDirectoryName();
-
     ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
     contextPtr->AddSchemaLocater(db.GetSchemaLocater());
-    contextPtr->AddSchemaPath(schemaDir.GetName());
+    contextPtr->AddSchemaPath(schemaFile.GetDirectoryName().GetName());
 
     ECSchemaPtr schemaPtr;
     SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
     if (SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()))
-        return DgnDbStatus::BadSchema;
-
-    db.Domains().SyncWithSchemas();
-    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
-    {
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache.GetSchemas()))
+    if (DgnDbStatus::Success != db.ImportSchemas(contextPtr->GetCache().GetSchemas()))
         return DgnDbStatus::BadSchema;
 
     db.Domains().SyncWithSchemas();

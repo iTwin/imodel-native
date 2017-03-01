@@ -817,6 +817,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     DRange3d                positionRange = DRange3d::NullRange();
 
     bool validIdsPresent = false;
+    bool invalidIdsPresent = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
@@ -836,15 +837,17 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         rightFloats.push_back(right.y);
         rightFloats.push_back(right.z);
 
-
         upFloats.push_back(up.x);
         upFloats.push_back(up.y);
         upFloats.push_back(up.z);
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
-        validIdsPresent |= (0 != attributeIndices.back());
+        bool isValidId = (0 != attributeIndices.back());
+        validIdsPresent |= isValidId;
+        invalidIdsPresent |= !isValidId;
         }
+
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
     double              range = (double) (0xffff);
@@ -877,6 +880,14 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     if (validIdsPresent)
         {
+        if (!invalidIdsPresent)
+            {
+            // Cesium's instanced models require that indices range from [0, nInstances). Must remove the "undefined" entry for that to work.
+            attributesSet.RemoveUndefined();
+            for (auto& index : attributeIndices)
+                index--;
+            }
+
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
         }
@@ -1376,7 +1387,7 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
 PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
     : TileMaterial(Utf8String("PolylineMaterial_")+suffix)
     {
-    m_type = mesh.GetDisplayParams()->GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+    m_type = mesh.GetDisplayParams().GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
@@ -1441,8 +1452,7 @@ void PolylineMaterial::AddTechniqueParameters(Json::Value& tech, Json::Value& pr
 MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
     : TileMaterial(Utf8String("Material_")+suffix)
     {
-    BeAssert(nullptr != mesh.GetDisplayParams());
-    TileDisplayParamsCR params = *mesh.GetDisplayParams();
+    TileDisplayParamsCR params = mesh.GetDisplayParams();
     m_ignoreLighting = params.GetIgnoreLighting();
 
     params.ResolveTextureImage(db);
@@ -1652,7 +1662,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
 
     Json::Value& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
 
-    auto matId = mesh.GetDisplayParams()->GetMaterialId();
+    auto matId = mesh.GetDisplayParams().GetMaterialId();
     if (matId.IsValid())
         matJson["materialId"] = matId.ToString(); // Do we actually use this?
 
@@ -1729,7 +1739,7 @@ PolylineMaterial TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& 
     constexpr double s_minLineWidth = 1.0;
     constexpr double s_featherPixels = 1.0;
 
-    double halfWidthPixels = std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams()->GetRasterWidth())) / 2.0;
+    double halfWidthPixels = std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
     double featherPixels = std::min(halfWidthPixels/2.0, s_featherPixels);
     halfWidthPixels += featherPixels;
 
@@ -2009,29 +2019,65 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes16, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
+    {
+    Utf8String suffix(name);
+    suffix.append(idStr);
+
+    Utf8String bvId = Concat("bv", suffix);
+    Utf8String accId = Concat("acc", suffix);
+
+    primitive["attributes"][semantic] = accId;
+
+    // Use uint8 if possible to save space in tiles and memory in browser
+    bvector<uint8_t> attributes8;
+    auto componentType = GLTF_UNSIGNED_BYTE;
+    for (auto attribute : attributes16)
+        {
+        if (attribute > 0xff)
+            {
+            componentType = GLTF_UNSIGNED_SHORT;
+            break;
+            }
+        }
+
+    size_t nBytes = attributes16.size() * sizeof(uint16_t);
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        {
+        attributes8.reserve(attributes16.size());
+        for (auto attribute : attributes16)
+            attributes8.push_back(static_cast<uint8_t>(attribute));
+
+        nBytes /= 2;
+        }
+
+    auto& bv = tileData.m_json["bufferViews"][bvId];
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        tileData.AddBinaryData(attributes8.data(), nBytes);
+    else
+        tileData.AddBinaryData(attributes16.data(), nBytes);
+
+    auto& acc = tileData.m_json["accessors"][accId];
+    acc["bufferView"] = bvId;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = componentType;
+    acc["count"] = attributes16.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
     {
-    Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
-                accBatchId       = Concat("accBatch_", idStr);
-
-    primitive["attributes"]["BATCHID"] = accBatchId;
-
-    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    tileData.m_json["bufferViews"][bvBatchId] = Json::objectValue;
-    tileData.m_json["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-    tileData.m_json["bufferViews"][bvBatchId]["byteOffset"] = tileData.BinaryDataSize();
-    tileData.m_json["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-    tileData.m_json["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
-
-    tileData.AddBinaryData (batchIds.data(), nBatchIdBytes);
-    tileData.m_json["accessors"][accBatchId] = Json::objectValue;
-    tileData.m_json["accessors"][accBatchId]["bufferView"] = bvBatchId;
-    tileData.m_json["accessors"][accBatchId]["byteOffset"] = 0;
-    tileData.m_json["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-    tileData.m_json["accessors"][accBatchId]["count"] = batchIds.size();
-    tileData.m_json["accessors"][accBatchId]["type"] = "SCALAR";
+    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "BATCHID");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2039,27 +2085,7 @@ void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& pri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colorIds, Utf8StringCR idStr)
     {
-    // ###TODO: Consolidate shared code with AddMeshBatchIds()
-    Utf8String bvColor = Concat("bvColorIndex_", idStr),
-               accColor = Concat("accColorIndex_", idStr);
-
-    primitive["attributes"]["_COLORINDEX"] = accColor;
-
-    auto nColorBytes = colorIds.size() * sizeof(uint16_t);
-    auto& bv = tileData.m_json["bufferViews"][bvColor];
-    bv["buffer"] = "binary_glTF";
-    bv["byteOffset"] = tileData.BinaryDataSize();
-    bv["byteLength"] = nColorBytes;
-    bv["target"] = GLTF_ARRAY_BUFFER;
-
-    tileData.AddBinaryData(colorIds.data(), nColorBytes);
-
-    auto& acc = tileData.m_json["accessors"][accColor];
-    acc["bufferView"] = bvColor;
-    acc["byteOffset"] = 0;
-    acc["componentType"] = GLTF_UNSIGNED_SHORT;
-    acc["count"] = colorIds.size();
-    acc["type"] = "SCALAR";
+    AddMeshUInt16Attributes(tileData, primitive, colorIds, idStr, "ColorIndex_", "_COLORINDEX");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2174,8 +2200,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     if (!mesh.Colors().empty() && !isTextured && ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
         AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
-    if (!mesh.Normals().empty() &&
-        nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
+    if (!mesh.Normals().empty() && !mesh.GetDisplayParams().GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
         primitive["attributes"]["NORMAL"] = AddMeshVertexAttributes (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
         }
@@ -2186,20 +2211,61 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     primitivesNode.append(primitive);
     tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
     }
+//#define WIP_TESSELATION
 
 #ifdef WIP_TESSELATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR point2)
+void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, uint16_t attribute, uint32_t color)
     {
-    bvector<DPoint3d> const&    meshPoints = mesh.Points();
+    DVec3d              normal = DVec3d::FromNormalizedCrossProductToPoints(p1, p0, p2);
+    static double       s_minNormal = 1.0E-10;
 
-
-    for (size_t i=0, count = indices.size(); i<count; i++)
+    if (normal.Normalize() < s_minNormal)
         {
-        
+        // TODO -- 2 point segment from p0 to p1...
+        return;
         }
+    DVec3d          dir0 = DVec3d::FromStartEndNormalize(p0, p1), 
+                    dir1 = DVec3d::FromStartEndNormalize(p2, p1),
+                    cross = DVec3d::FromCrossProduct (dir0, dir1);
+    double          crossMagnitude = cross.Normalize(), 
+                    dot = dir0.DotProduct(dir1);
+
+    if (crossMagnitude < s_minNormal)
+        {
+        // TODO -- 2 point segment from p0 to p1...
+        return;
+        }
+    DVec3d          dir2 = DVec3d::FromSumOf(dir0, dir1),
+                    n0 = DVec3d::FromNormalizedCrossProduct(cross, dir0), 
+                    n1 = DVec3d::FromStartEndNormalize(cross, dir1); 
+    double          halfAngle = atan2(crossMagnitude, dot) / 2.0;
+    DPoint3d        pointOrigins[8]    = {p0, p0, p1, p1, p1, p2, p2, p1};
+    DVec3d          pointDirections[8];
+
+    pointDirections[0] = n0;
+    pointDirections[1] = DVec3d::FromScale(n0, - 1.0);
+    pointDirections[2] = n0;
+    pointDirections[3] = dir2;
+    pointDirections[4] = DVec3d::FromScale(dir2, -1.0 / tan(halfAngle));
+    pointDirections[5] = n1;
+    pointDirections[6] = DVec3d::FromScale(n1, -1.0);
+    pointDirections[7] = pointDirections[6];
+
+    double          width = 30;
+    uint32_t        indices[8];
+    for(size_t i=0; i<8; i++)
+        indices[i] = mesh.AddVertex(DPoint3d::FromSumOf(pointOrigins[i], pointDirections[i], width), &cross, nullptr, attribute, color);
+
+    mesh.AddTriangle(TileTriangle(0, 4, 1, false));
+    mesh.AddTriangle(TileTriangle(1, 4, 2, false));
+    mesh.AddTriangle(TileTriangle(4, 3, 2, false));
+    mesh.AddTriangle(TileTriangle(5, 6, 4, false));
+    mesh.AddTriangle(TileTriangle(6, 7, 4, false));
+    mesh.AddTriangle(TileTriangle(5, 7, 3, false));
+    
     }
 
 #endif
@@ -2212,7 +2278,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
-    if (mesh.GetDisplayParams()->GetRasterWidth() <= 1)
+    if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
         {
         AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
         return;
@@ -2225,18 +2291,19 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     for (auto const& polyline : mesh.Polylines())
         {
         DPoint3d        previousMidPoint, nextMidpoint;
+        bvector<uint32_t> const& indices = polyline.GetIndices();
 
-        for (size_t i=1, count = indices.size(), last = count - 2; i <= last; i++)
+            for (size_t i=1, count = indices.size(), last = count - 2; i <= last; i++)
             {
-            DPoint3dCR  thisPoint = meshPoints[i];
-            DPoint3d    start = i == 1    ? meshPoints[0]   : DPoint3d::FromInterpolation(meshPoints[i-1], .5, point);
-            DPoint3d    end   = i == last ? meshPoints[i+1] : DPoint3d::FromInterpolation(point, .5, meshPoints[i+1])
+            DPoint3dCR  thisPoint = meshPoints[indices[i]];
+            DPoint3d    start = i == 1    ? meshPoints[0]   : DPoint3d::FromInterpolate(meshPoints[indices[i-1]], .5, thisPoint);
+            DPoint3d    end   = i == last ? meshPoints[i+1] : DPoint3d::FromInterpolate(thisPoint, .5, meshPoints[indices[i+1]]);
 
-            TesselatePolylineSegment (mesh, start, thisPoint, end);
+            TesselatePolylineSegment(mesh, start, thisPoint, end, mesh.Attributes()[indices[i]], mesh.Colors()[indices[i]]);
             }
         }
 
-    AddMeshPrimitive (primitivesNode, mesh, index, doBatchIds);
+    AddMeshPrimitive (primitivesNode, tileData, mesh, index, doBatchIds);
 #else
     AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
 #endif
