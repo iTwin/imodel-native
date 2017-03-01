@@ -249,13 +249,13 @@ void ListCmd()
                 std::cout << "  " << 
                     " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
                     " Group          : " << pData->GetGroup() << std::endl << "  " <<
-                    " Classification : " << pData->GetClassification() << std::endl << "  " <<
+                    " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
                     " Size(KB)       : " << pData->GetDataset() << std::endl << "  " <<
                     " Owner          : " << pData->GetOwner() << std::endl << "  " <<
                     " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
                     " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
                     " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
-                    " Visibility     : " << pData->GetVisibility() << std::endl << "  " <<
+                    " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
                     " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
                     " Description    : " << pData->GetDescription() << std::endl;
                 }

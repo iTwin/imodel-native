@@ -38,7 +38,8 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntity)
     SpatialEntityPtr spatialData = spatialVector[0];
     ASSERT_TRUE(spatialData.IsValid());
 
-    ASSERT_EQ(spatialData->GetName(), "N38W093");
+    ASSERT_EQ(spatialData->GetName(), "N38W093");    
+    ASSERT_EQ(spatialData->GetIdentifier(), "14812");
     ASSERT_EQ(spatialData->GetDataType(), "hgt");
     ASSERT_EQ(spatialData->GetProvider(), "USGS");
     DateTime date;

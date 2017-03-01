@@ -288,7 +288,7 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
 
     // Classification
     // &&AR Since we currently only process rasters the file is bound to be imagery
-    pExtractedData->SetClassification("Imagery");
+    pExtractedData->SetClassification(SpatialEntity::Classification::IMAGERY);
 
 
 
@@ -318,7 +318,6 @@ SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8C
     {
     }
     pExtractedData->SetFootprint(shape);
-    pExtractedData->SetFootprintExtents(extents);
 
     SpatialEntityMetadataPtr newMetadata = SpatialEntityMetadata::CreateFromMetadata(metadataSeed);
     pExtractedData->SetMetadata(newMetadata.get());

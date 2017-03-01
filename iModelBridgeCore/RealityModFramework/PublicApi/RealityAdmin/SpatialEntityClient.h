@@ -59,7 +59,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFilePattern() const;
 
     //! Get classification.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetClassification() const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntity::Classification GetClassification() const;
 
     //! Get classification.
     REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCR GetMetadataSeed() const;
@@ -98,7 +98,7 @@ protected:
     static int m_retryCount;
     Utf8String m_filePattern;
     bool m_extractThumbnails;
-    Utf8String m_classification;
+    SpatialEntity::Classification m_classification;
     SpatialEntityMetadataCR m_metadataSeed;
 };
 
