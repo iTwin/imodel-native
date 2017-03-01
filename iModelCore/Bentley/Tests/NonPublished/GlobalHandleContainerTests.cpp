@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GlobalHandleContainerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -21,9 +21,13 @@ class GlobalHandleContainerTest : public ::testing::Test
         virtual void SetUp()
             {
             offset = 16777215;//  0xFFFFFF
+            //  Don't let any other tests effect this.
+            GlobalHandleContainer::Destroy();
             }
         virtual void TearDown()
             {
+            //  Don't effect any other tests.
+            GlobalHandleContainer::Destroy();
             }
     };
 
@@ -71,14 +75,14 @@ TEST_F(GlobalHandleContainerTest, ReallocateHandle)
     //reallocating 
     uint32_t dum4 = 2122;
     void* ptr4 = &dum4;
-    ASSERT_EQ((uint32_t)(2 * handleRelease), GlobalHandleContainer::AllocateHandle(ptr4));
+    ASSERT_EQ((uint32_t)(1 * handleRelease), GlobalHandleContainer::AllocateHandle(ptr4));
 
-    handleRelease = 2 * (offset + 1);
+    handleRelease = 1 * (offset + 1);
     GlobalHandleContainer::ReleaseHandle(handleRelease);
     ASSERT_EQ(NULL, GlobalHandleContainer::GetPointer(handleRelease));
 
     //reallocating 
     uint32_t dum5 = 2122;
     void* ptr5 = &dum5;
-    ASSERT_EQ((uint32_t)(3 * (offset + 1)), GlobalHandleContainer::AllocateHandle(ptr5));
+    ASSERT_EQ((uint32_t)(2 * (offset + 1)), GlobalHandleContainer::AllocateHandle(ptr5));
     }

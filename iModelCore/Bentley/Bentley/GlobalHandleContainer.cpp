@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/GlobalHandleContainer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BentleyInternal.h"
@@ -159,4 +159,13 @@ void* GlobalHandleContainer::GetPointer (uint32_t handle)
         return NULL;
 
     return s_handles->GetPointer (handle);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    02/2017
+//---------------------------------------------------------------------------------------
+void GlobalHandleContainer::Destroy() 
+    {
+    delete s_handles;
+    s_handles = NULL;
     }
