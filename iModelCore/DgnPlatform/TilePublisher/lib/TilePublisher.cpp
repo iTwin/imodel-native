@@ -676,7 +676,7 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
             AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
         if (!tileMesh->Polylines().empty())
-            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds); 
+            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex, doBatchIds); 
         }
     BeAssert (!primitives.empty());
     jsonMesh["primitives"] = primitives;
@@ -2217,16 +2217,9 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, uint16_t attribute, uint32_t color)
+void TilePublisher::TesselatePolylineSegment (Json::Value& primitivesNode, PublishTileData& tileData, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, uint16_t attribute, uint32_t color, size_t& index, bool doBatchIds, TileDisplayParamsCR displayParams)
     {
-    DVec3d              normal = DVec3d::FromNormalizedCrossProductToPoints(p1, p0, p2);
-    static double       s_minNormal = 1.0E-10;
-
-    if (normal.Normalize() < s_minNormal)
-        {
-        // TODO -- 2 point segment from p0 to p1...
-        return;
-        }
+    static double   s_minNormal = 1.0E-10;
     DVec3d          dir0 = DVec3d::FromStartEndNormalize(p0, p1), 
                     dir1 = DVec3d::FromStartEndNormalize(p2, p1),
                     cross = DVec3d::FromCrossProduct (dir0, dir1);
@@ -2240,32 +2233,35 @@ void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPo
         }
     DVec3d          dir2 = DVec3d::FromSumOf(dir0, dir1),
                     n0 = DVec3d::FromNormalizedCrossProduct(cross, dir0), 
-                    n1 = DVec3d::FromStartEndNormalize(cross, dir1); 
+                    n1 = DVec3d::FromNormalizedCrossProduct(cross, dir1); 
     double          halfAngle = atan2(crossMagnitude, dot) / 2.0;
     DPoint3d        pointOrigins[8]    = {p0, p0, p1, p1, p1, p2, p2, p1};
     DVec3d          pointDirections[8];
 
-    pointDirections[0] = n0;
-    pointDirections[1] = DVec3d::FromScale(n0, - 1.0);
+    dir2.Normalize();
+    pointDirections[0] = DVec3d::FromScale(n0, - 1.0);
+    pointDirections[1] = n0;
     pointDirections[2] = n0;
     pointDirections[3] = dir2;
-    pointDirections[4] = DVec3d::FromScale(dir2, -1.0 / tan(halfAngle));
+    pointDirections[4] = DVec3d::FromScale(dir2, -1.0 / sin(halfAngle));
     pointDirections[5] = n1;
     pointDirections[6] = DVec3d::FromScale(n1, -1.0);
     pointDirections[7] = pointDirections[6];
 
+    
+    TileMeshPtr     mesh = TileMesh::Create(displayParams);
     double          width = 30;
     uint32_t        indices[8];
     for(size_t i=0; i<8; i++)
-        indices[i] = mesh.AddVertex(DPoint3d::FromSumOf(pointOrigins[i], pointDirections[i], width), &cross, nullptr, attribute, color);
+        indices[i] = mesh->AddVertex(DPoint3d::FromSumOf(pointOrigins[i], pointDirections[i], width), &cross, nullptr, attribute, color);
 
-    mesh.AddTriangle(TileTriangle(0, 4, 1, false));
-    mesh.AddTriangle(TileTriangle(1, 4, 2, false));
-    mesh.AddTriangle(TileTriangle(4, 3, 2, false));
-    mesh.AddTriangle(TileTriangle(5, 6, 4, false));
-    mesh.AddTriangle(TileTriangle(6, 7, 4, false));
-    mesh.AddTriangle(TileTriangle(5, 7, 3, false));
-    
+    mesh->AddTriangle(TileTriangle(indices[0], indices[4], indices[1], false));
+    mesh->AddTriangle(TileTriangle(indices[1], indices[4], indices[2], false));
+    mesh->AddTriangle(TileTriangle(indices[4], indices[3], indices[2], false));
+    mesh->AddTriangle(TileTriangle(indices[5], indices[6], indices[4], false));
+    mesh->AddTriangle(TileTriangle(indices[6], indices[7], indices[4], false));
+    mesh->AddTriangle(TileTriangle(indices[4], indices[7], indices[3], false));
+    AddMeshPrimitive (primitivesNode, tileData, *mesh, index++, doBatchIds);
     }
 
 #endif
@@ -2273,14 +2269,14 @@ void TilePublisher::TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t& index, bool doBatchIds)
     {
     if (mesh.Polylines().empty())
         return;
 
     if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
         {
-        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index++, doBatchIds);
         return;
         }
                                                                                             
@@ -2299,20 +2295,19 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
             DPoint3d    start = i == 1    ? meshPoints[0]   : DPoint3d::FromInterpolate(meshPoints[indices[i-1]], .5, thisPoint);
             DPoint3d    end   = i == last ? meshPoints[i+1] : DPoint3d::FromInterpolate(thisPoint, .5, meshPoints[indices[i+1]]);
 
-            TesselatePolylineSegment(mesh, start, thisPoint, end, mesh.Attributes()[indices[i]], mesh.Colors()[indices[i]]);
+            TesselatePolylineSegment(primitivesNode, tileData, start, thisPoint, end, mesh.Attributes()[indices[i]], mesh.Colors()[indices[i]], index, doBatchIds, mesh.GetDisplayParams());
             }
         }
 
-    AddMeshPrimitive (primitivesNode, tileData, mesh, index, doBatchIds);
 #else
-    AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+    AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index++, doBatchIds);
 #endif
     }    
    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t& index, bool doBatchIds)
     {
     Utf8String idStr(std::to_string(index).c_str());
 

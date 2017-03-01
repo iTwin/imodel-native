@@ -2243,6 +2243,8 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
 
     if (foundPart == m_geomParts.end())
         {
+        FlushPolyfaceCache();
+
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
         GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
@@ -2499,7 +2501,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 
     TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
-#if defined(USE_POLYFACE_CACHE)
     if (m_polyfaceCache.IsNull() || !displayParams.IsStrictlyEqualTo(*m_polyfaceCacheDisplay))
         {
         FlushPolyfaceCache();
@@ -2508,11 +2509,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
         }
 
     m_polyfaceCache->Add(*clone);
-#else
-    DRange3d range = clone->PointRange();
-    IGeometryPtr geom = IGeometry::Create(clone);
-    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, m_dgndb));
-#endif
  
     return true;
     }
