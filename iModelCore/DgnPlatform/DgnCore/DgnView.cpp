@@ -1493,6 +1493,7 @@ void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutC
 
 }
 
+#if defined(TODO_ELEMENT_TILE)
 static DgnHost::Key s_displayMetricsRecorderKey;
 
 //---------------------------------------------------------------------------------------
@@ -1550,7 +1551,7 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     if (!IDisplayMetricsRecorder::IsRecorderActive())
         return;
     }
-
+#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -1630,5 +1631,10 @@ bool TemplateViewDefinition3d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr TemplateViewDefinition3d::_SupplyController() const
     {
+#if defined(TODO_ELEMENT_TILE)
     return new TemplateViewController3d(*this);
+#else
+    BeAssert(false && "TemplateViewController3d not implemented");
+    return nullptr;
+#endif
     }

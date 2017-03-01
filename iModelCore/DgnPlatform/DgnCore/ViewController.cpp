@@ -1784,6 +1784,7 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     obj->_Load(*m_definition);
     }
 
+#if defined(TODO_ELEMENT_TILE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1800,6 +1801,7 @@ ViewController::QueryResults TemplateViewController3d::_QueryScene(DgnViewportR 
 
     return results;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    02/17

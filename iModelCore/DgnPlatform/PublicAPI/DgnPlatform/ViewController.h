@@ -473,10 +473,8 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
     DEFINE_T_SUPER(ViewController3d);
 
 protected:
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 

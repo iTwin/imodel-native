@@ -16,6 +16,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+#if defined(TODO_ELEMENT_TILE)
 //=======================================================================================
 // @bsiclass                                                      John.Gooding    01/17
 //=======================================================================================
@@ -36,6 +37,7 @@ struct IDisplayMetricsRecorder :  DgnHost::IHostObject
     virtual bool _IsActive() const = 0;
     virtual void _RecordMeasurement(Utf8CP measurementType, JsonValueCR measurement) = 0;
 };
+#endif
 
 END_BENTLEY_DGN_NAMESPACE
 
