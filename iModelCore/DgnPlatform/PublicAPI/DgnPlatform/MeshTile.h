@@ -37,6 +37,7 @@ BENTLEY_RENDER_TYPEDEFS(TileGeomPart);
 BENTLEY_RENDER_TYPEDEFS(PublishableTileGeometry);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributes);
 BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
+BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -113,11 +114,12 @@ private:
     TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0) {}
 public:
     static TileDisplayParamsPtr Create() { return new TileDisplayParams(nullptr, nullptr, false); }
-    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(&graphicParams, &geometryParams, false); }
+    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(&graphicParams, &geometryParams, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
 
-    DGNPLATFORM_EXPORT bool operator<(TileDisplayParams const& rhs) const;
+    bool operator<(TileDisplayParams const& rhs) const { return IsLessThan(rhs, true); }
+    DGNPLATFORM_EXPORT bool IsLessThan(TileDisplayParams const& rhs, bool compareFillColor) const;
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
@@ -130,6 +132,62 @@ public:
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
     TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
     DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
+};
+
+//=======================================================================================
+//! For a tile, records unique attribute values and associates each with a 16-bit index.
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+template<typename T> struct AttributeIndexMap
+{
+    typedef bmap<T, uint16_t> Map;
+protected:
+    Map     m_map;
+
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+
+    uint16_t GetOrCreateIndex(T const& value)
+        {
+        auto iter = m_map.find(value);
+        if (m_map.end() != iter)
+            return iter->second;
+        else if (IsFull())
+            { BeAssert(false); return 0; }
+
+        auto index = GetNumIndices();
+        m_map[value] = index;
+        return index;
+        }
+public:
+    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
+    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+
+    typedef typename Map::const_iterator const_iterator;
+    typedef const_iterator iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   02/17
+//=======================================================================================
+struct ColorIndexMap : AttributeIndexMap<uint32_t>
+{
+private:
+    bool    m_hasAlpha = false;
+public:
+    uint16_t GetIndex(uint32_t color)
+        {
+        BeAssert(!IsFull());
+        BeAssert(empty() || (0 != ColorDef(color).GetAlpha()) == m_hasAlpha);
+        m_hasAlpha |= (!IsFull() && 0 != ColorDef(color).GetAlpha());
+        return GetOrCreateIndex(color);
+        }
+
+    bool HasTransparency() const { return m_hasAlpha; }
 };
 
 //=======================================================================================
@@ -172,30 +230,18 @@ public:
 //! Index 0 always corresponds to an undefined attribute.
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
-struct FeatureAttributesMap
+struct FeatureAttributesMap : AttributeIndexMap<FeatureAttributes>
 {
-    typedef bmap<FeatureAttributes, uint16_t> Map;
-private:
-    Map     m_map;
-
-    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+    DEFINE_T_SUPER(AttributeIndexMap<FeatureAttributes>);
 public:
     DGNPLATFORM_EXPORT FeatureAttributesMap();
 
-    DGNPLATFORM_EXPORT uint16_t GetIndex(FeatureAttributesCR attr);
+    uint16_t GetIndex(FeatureAttributesCR value) { return GetOrCreateIndex(value); }
     DGNPLATFORM_EXPORT uint16_t GetIndex(TileGeometryCR geom);
     uint16_t GetIndex(DgnElementId id, TileDisplayParamsCR params) { return GetIndex(FeatureAttributes(id, params)); }
 
     bool AnyDefined() const { BeAssert(m_map.size() > 0 && m_map.size() <= GetMaxIndex()); return m_map.size() > 1; }
-    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
-
-    typedef Map::const_iterator const_iterator;
-    typedef const_iterator iterator;
-
-    const_iterator begin() const { return m_map.begin(); }
-    const_iterator end() const { return m_map.end(); }
-    size_t size() const { return m_map.size(); }
-    uint16_t GetCount() const { return static_cast<uint16_t>(size()); }
+    DGNPLATFORM_EXPORT void RemoveUndefined();
 };
 
 //=======================================================================================
@@ -241,7 +287,7 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileTriangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
@@ -284,11 +330,13 @@ struct TileMesh : RefCountedBase
 private:
     TileDisplayParamsPtr        m_displayParams;
     bvector<TileTriangle>       m_triangles;
-    bvector<TilePolyline>       m_polylines;
+    bvector<TilePolyline>       m_polylines;                             
     bvector<DPoint3d>           m_points;
     bvector<DVec3d>             m_normals;
     bvector<DPoint2d>           m_uvParams;
     bvector<uint16_t>           m_attributes;
+    bvector<uint16_t>           m_colors;
+    ColorIndexMap               m_colorIndex;
     bool                        m_validIdsPresent = false;
 
     TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
@@ -309,10 +357,13 @@ public:
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t> const& Attributes() const { return m_attributes; } //!< Vertex attribute array specifying the subcategory, element, and class associated with the vertex
+    bvector<uint16_t> const& Colors() const { return m_colors; } //!< Indices into ColorIndexMap, for untextured meshes
     bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t>& AttributesR() { return m_attributes; }
+    bvector<uint16_t>& ColorsR() { return m_colors; }
+    ColorIndexMap const& GetColorIndexMap() const { return m_colorIndex; }
 
     TileTriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
@@ -333,7 +384,7 @@ public:
     void AddPolyline(TilePolyline polyline) { m_polylines.push_back(polyline); }
     
     DGNPLATFORM_EXPORT void AddMesh(TileMeshCR mesh);
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute);
+    DGNPLATFORM_EXPORT uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint16_t attribute, uint32_t fillColor);
     DGNPLATFORM_EXPORT void SetValidIdsPresent(bool validIdsPresent) { m_validIdsPresent = validIdsPresent; }
 };
 
@@ -359,7 +410,7 @@ struct TileMeshMergeKey
         if(m_hasFacets != rhs.m_hasFacets)
             return !m_hasFacets;
 
-        return *m_params < *rhs.m_params;
+        return m_params->IsLessThan(*rhs.m_params, false);  // don't compare fill colors.
         }
 };
 
@@ -377,11 +428,12 @@ struct TileMeshBuilder : RefCountedBase
         DVec3d              m_normal;
         DPoint2d            m_param;
         FeatureAttributes   m_attributes;
+        uint32_t            m_fillColor = 0;
         bool                m_normalValid = false;
         bool                m_paramValid = false;
 
         VertexKey() { }
-        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr)
+        VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureAttributesCR attr, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_attributes(attr), m_fillColor(fillColor)
             {
             if(m_normalValid) m_normal = *normal;
             if(m_paramValid) m_param = *param;
@@ -427,9 +479,9 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsPtr& params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TileTriangleCR triangle);
     void AddTriangle(TileTriangleCR triangle);
@@ -505,8 +557,6 @@ struct TileGeometry : RefCountedBase
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
     typedef bvector<TileStrokes>    T_TileStrokes;
-
-
 
 private:
     TileDisplayParamsPtr    m_params;

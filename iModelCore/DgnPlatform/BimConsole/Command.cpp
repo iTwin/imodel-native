@@ -1524,10 +1524,10 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 //---------------------------------------------------------------------------------------
 Utf8String ValidateCommand::_GetUsage() const
     {
-    return " .validate legacyclassinheritance <output csv filepath>\r\n"
-        COMMAND_USAGE_IDENT "Checks the current file for data corrupting issues introduced\r\n"
-        COMMAND_USAGE_IDENT "by invalid legacy class inheritance. Issues are written as\r\n"
-        COMMAND_USAGE_IDENT "CSV file to the specified location.\r\n";
+    return " .validate dbmapping <output csv filepath>\r\n"
+        COMMAND_USAGE_IDENT "Checks the current file for data corrupting mapping issues\r\n"
+        COMMAND_USAGE_IDENT "They might be introduced by invalid legacy class inheritance.\r\n"
+        COMMAND_USAGE_IDENT "Issues are written as CSV file to the specified location.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1547,9 +1547,9 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8StringCR switchArg = args[0];
 
-    if (switchArg.EqualsIAscii("legacyclassinheritance"))
+    if (switchArg.EqualsIAscii("dbmapping"))
         {
-        CheckForLegacyClassInheritanceIssues(session, args);
+        ValidateDbMappings(session, args);
         return;
         }
 
@@ -1560,7 +1560,7 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     02/2017
 //---------------------------------------------------------------------------------------
-void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std::vector<Utf8String> const& args) const
+void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8String> const& args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1628,10 +1628,10 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         {
         csvFile->Close();
         csvFilePath.BeDeleteFile();
-        BimConsole::WriteLine("No legacy class inheritance issues found in the current file.");
+        BimConsole::WriteLine("No DB mapping issues found in the current file.");
         }
     else
-        BimConsole::WriteLine("%d legacy class inheritance issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("%d DB mapping issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
     }
 
 //******************************* DebugCommand ******************

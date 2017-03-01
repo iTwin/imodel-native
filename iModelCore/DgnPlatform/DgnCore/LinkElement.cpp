@@ -648,6 +648,7 @@ void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECS
             return DgnDbStatus::Success;
             });
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                             02/17
 //---------------------------------------------------------------------------------------
@@ -666,8 +667,6 @@ void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSql
             BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
             });
 
-    NOT_AVAILABLE_VIA_PROPERTY_API("Url")
-    NOT_AVAILABLE_VIA_PROPERTY_API("Descr")
     NOT_AVAILABLE_VIA_PROPERTY_API("RepositoryGuid")
 
 #undef NOT_AVAILABLE_VIA_PROPERTY_API

@@ -1931,6 +1931,15 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="TemplateView3dDisplaysModel" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="displays" polymorphic="true">
+            <Class class="TemplateViewDefinition3d"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="is displayed by" polymorphic="true">
+            <Class class="GeometricModel3d"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="Sealed">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
@@ -2005,6 +2014,14 @@
         <ECProperty propertyName="Roll" typeName="double" description="Roll component of the view direction in degrees">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TemplateViewDefinition3d" displayLabel="3D Template View Definition" description="A view of a single 3D template model.">
+        <BaseClass>ViewDefinition3d</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="TemplateModel" relationshipName="TemplateView3dDisplaysModel" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
