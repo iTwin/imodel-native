@@ -287,8 +287,12 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         DataPropertyMap const* baseClassPropMap = nullptr;
         for (ClassMap const* baseClassMap : tphBaseClassMaps)
             {
-            if (baseClassPropMap = dynamic_cast<DataPropertyMap const*>(baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
+            PropertyMap const* baseClassPropMapRaw = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str());
+            if (baseClassPropMapRaw != nullptr && baseClassPropMapRaw->IsData())
+                {
+                baseClassPropMap = &baseClassPropMapRaw->GetAs<DataPropertyMap>();
                 break;
+                }
             }
 
         if (baseClassPropMap == nullptr)
@@ -309,8 +313,6 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
                 ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(const_cast<NavigationPropertyMap&>(navPropertyMap));
             }
         }
-
-    //GetColumnFactory().Update(false);
 
     for (ECPropertyCP property : propertiesToMap)
         {
@@ -491,7 +493,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
-    std::vector<DbColumn const*> const* mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    std::vector<DbColumn const*> const* mapColumnsList = dbLoadCtx.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_ECInstanceId));
     if (mapColumnsList == nullptr)
         return ERROR;
 
@@ -506,7 +508,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (GetPropertyMapsR().Insert(ecInstanceIdPropertyMap, 0) != SUCCESS)
         return ERROR;
 
-    mapColumnsList = dbLoadCtx.FindColumnByAccessString(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    mapColumnsList = dbLoadCtx.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_ECClassId));
     if (mapColumnsList == nullptr)
         return ERROR;
 
@@ -556,27 +558,29 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
-                if (tphBaseClassPropMap = dynamic_cast<DataPropertyMap const*> (baseClassMap->GetPropertyMaps().Find(property->GetName().c_str())))
+                PropertyMap const* propMap = baseClassMap->GetPropertyMaps().Find(property->GetName().c_str());
+                if (propMap != nullptr && propMap->IsData())
+                    {
+                    tphBaseClassPropMap = &propMap->GetAs<DataPropertyMap>();
                     break;
+                    }
                 }
             }
 
         if (tphBaseClassPropMap == nullptr)
             {
             if (ClassMapper::LoadPropertyMap(*this, *property, dbCtx) == nullptr)
-                {
                 m_failedToLoadProperties.push_back(property);
-                }
-            }
-        else
-            {
-            RefCountedPtr<PropertyMap> propMap = PropertyMapCopier::CreateCopy(*tphBaseClassPropMap,*this);
-            if (propMap == nullptr)
-                return ERROR;
 
-            if (GetPropertyMapsR().Insert(propMap) != SUCCESS)
-                return ERROR;
+            continue;
             }
+
+        RefCountedPtr<PropertyMap> propMap = PropertyMapCopier::CreateCopy(*tphBaseClassPropMap, *this);
+        if (propMap == nullptr)
+            return ERROR;
+
+        if (GetPropertyMapsR().Insert(propMap) != SUCCESS)
+            return ERROR;
         }
 
     return SUCCESS;
@@ -632,7 +636,7 @@ BentleyStatus ClassMap::Update()
 //---------------------------------------------------------------------------------------
 ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     {
-    PropertyMap const* propMap = GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    PropertyMap const* propMap = GetPropertyMaps().Find(ECDBSYS_PROP_ECInstanceId);
     if (propMap == nullptr)
         return nullptr;
 
@@ -644,7 +648,7 @@ ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     {
-    PropertyMap const* propMap = GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    PropertyMap const* propMap = GetPropertyMaps().Find(ECDBSYS_PROP_ECClassId);
     if (propMap == nullptr)
         return nullptr;
 

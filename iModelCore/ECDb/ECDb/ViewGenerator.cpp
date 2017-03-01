@@ -1146,7 +1146,7 @@ Utf8CP ConstraintECClassIdJoinInfo::GetSqlECClassIdColumnAlias()const
         return nullptr;
         }
 
-    return m_propertyMap->GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+    return m_propertyMap->GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
     }
 
 //---------------------------------------------------------------------------------------

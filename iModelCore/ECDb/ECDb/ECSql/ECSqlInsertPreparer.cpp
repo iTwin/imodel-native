@@ -76,7 +76,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     SystemPropertyExpIndexMap const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
     if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -169,7 +169,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             ECInstanceId id;
             if (SUCCESS != ECInstanceId::FromString(id, ecinstanceidStr))
                 {
-                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("'%s' is an invalid " ECDBSYS_PROP_ECInstanceId " value.", ecinstanceidStr);
                 return ECSqlStatus::InvalidECSql;
                 }
 
@@ -472,7 +472,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         }
     else
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
         return ECInstanceIdMode::Invalid;
         }
 

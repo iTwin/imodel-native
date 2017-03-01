@@ -20,9 +20,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsIdProperty(Utf8StringCR propertyName)
     {
-    return (0 == propertyName.CompareTo("ECInstanceId") || 0 == propertyName.CompareTo("ECClassId") ||
-            0 == propertyName.CompareTo("SourceECInstanceId") || 0 == propertyName.CompareTo("TargetECInstanceId") ||
-            0 == propertyName.CompareTo("SourceECClassId") || 0 == propertyName.CompareTo("TargetECClassId"));
+    return (0 == propertyName.CompareTo(ECDBSYS_PROP_ECInstanceId) || 0 == propertyName.CompareTo(ECDBSYS_PROP_ECClassId) ||
+            0 == propertyName.CompareTo(ECDBSYS_PROP_SourceECInstanceId) || 0 == propertyName.CompareTo(ECDBSYS_PROP_TargetECInstanceId) ||
+            0 == propertyName.CompareTo(ECDBSYS_PROP_SourceECClassId) || 0 == propertyName.CompareTo(ECDBSYS_PROP_TargetECClassId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -997,7 +997,7 @@ bool JsonECSqlSelectAdapter::JsonFromCell(JsonValueR jsonValue, IECSqlValue cons
             isInstanceIdColumn = true;
             BeAssert(pathLength == 1 && "Cannot have a instance id field as a member of a struct");
             }
-        else if (ecPropertyName.EqualsI("SourceECClassId") || ecPropertyName.EqualsI("TargetECClassId"))
+        else if (ecPropertyName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId) || ecPropertyName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
             ecPropertyName = "$" + ecPropertyName;
 
         currentCell = &((*currentCell)[ecPropertyName.c_str()]);

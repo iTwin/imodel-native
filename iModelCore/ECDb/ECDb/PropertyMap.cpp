@@ -324,7 +324,7 @@ BentleyStatus Point2dPropertyMap::Init(DbColumn const& x, DbColumn const& y)
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
     {
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_PointX);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<PrimitivePropertyMap>();
     }
@@ -334,7 +334,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetX() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point2dPropertyMap::GetY() const
     {
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_PointY);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<PrimitivePropertyMap>();
     }
@@ -411,7 +411,7 @@ BentleyStatus Point3dPropertyMap::Init(DbColumn const& x, DbColumn const& y, DbC
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
     {
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_PointX);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<PrimitivePropertyMap>();
     }
@@ -421,7 +421,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetX() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetY() const
     {
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_PointY);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<PrimitivePropertyMap>();
     }
@@ -431,7 +431,7 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetY() const
 //---------------------------------------------------------------------------------------
 PrimitivePropertyMap const& Point3dPropertyMap::GetZ() const
     {
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_PointZ);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<PrimitivePropertyMap>();
     }
@@ -488,7 +488,7 @@ RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(Cla
 NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdPropertyMap() const
     {
     BeAssert(m_isComplete);
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_NavPropId);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<IdPropertyMap>();
     }
@@ -499,7 +499,7 @@ NavigationPropertyMap::IdPropertyMap const& NavigationPropertyMap::GetIdProperty
 NavigationPropertyMap::RelECClassIdPropertyMap const& NavigationPropertyMap::GetRelECClassIdPropertyMap() const
     {
     BeAssert(m_isComplete);
-    PropertyMap const* propMap = Find(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    PropertyMap const* propMap = Find(ECDBSYS_PROP_NavPropRelECClassId);
     BeAssert(propMap != nullptr);
     return propMap->GetAs<RelECClassIdPropertyMap>();
     }

@@ -164,12 +164,12 @@ bool ECSqlPrepareContext::SelectClauseInfo::IsSelected(Utf8StringCR accessString
         return true;
 
     //these system properties are always selected (? is this true??)
-    return accessString.EqualsIAscii(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) ||
-        accessString.EqualsIAscii(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME) ||
-        accessString.EqualsIAscii(ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) ||
-        accessString.EqualsIAscii(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME) ||
-        accessString.EqualsIAscii(ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) ||
-        accessString.EqualsIAscii(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+    return accessString.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
+        accessString.EqualsIAscii(ECDBSYS_PROP_ECClassId) ||
+        accessString.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
+        accessString.EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
+        accessString.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
+        accessString.EqualsIAscii(ECDBSYS_PROP_TargetECClassId);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -301,7 +301,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
     if (!info->m_ecinstanceIdIsUserProvided)
         {
-        parentOfJoinedTableProperties.push_back(NativeSqlBuilder("ECInstanceId"));
+        parentOfJoinedTableProperties.push_back(NativeSqlBuilder(ECDBSYS_PROP_ECInstanceId));
         parentOfJoinedTableValues.push_back(NativeSqlBuilder("?"));
         info->m_parameterMap.GetPrimaryR().Add();
         info->m_primaryECInstanceIdParameterIndex = info->m_parameterMap.GetPrimaryR().Last();
@@ -309,7 +309,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
     if (joinedTableProperties.empty())
         {
-        joinedTableProperties.push_back(NativeSqlBuilder("ECInstanceId"));
+        joinedTableProperties.push_back(NativeSqlBuilder(ECDBSYS_PROP_ECInstanceId));
         joinedTableValues.push_back(NativeSqlBuilder("NULL"));
         }
 

@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include "DbSchema.h"
 #include "ECDbSchemaPersistenceHelper.h"
+#include "ECDbSystemSchemaHelper.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -221,7 +222,7 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
         INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId)sql" \
         " WHERE ec_Column.IsVirtual=" SQLVAL_False " AND " \
         "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") AND " \
-        "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SourceECInstanceId "=0) AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_TargetECInstanceId "=0) " \
+        "mappedpropertyschema.Alias='" ECSCHEMA_ALIAS_ECDbSystem "' " \
         "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT(DISTINCT ec_Column.Id) > 1"
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
