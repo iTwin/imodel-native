@@ -163,6 +163,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
 private:
     void Destroy();
+    bool ValidateSchemaForImport(bool& needsImport, ECN::ECSchemaCR appSchema) const;
 
 protected:
     friend struct Txns;
@@ -251,6 +252,13 @@ public:
     SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
 
+    //! Imports a set of EC Schemas into the Bim
+    //! @param[in] schemas Schemas to be imported. 
+    //! @remarks Only used for cases where the schemas are NOT paired with a domain. @see DgnDomain::ImportSchema().
+    //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an eror happens during the import, the new transaction is abandoned in the call. 
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> schemas);
+
     //! Inserts a new ECRelationship
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
@@ -260,7 +268,7 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
 
     //! Inserts a new ECRelationship between two elements.
     //! @param[out] relKey key of the new ECRelationship
@@ -271,16 +279,16 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
+    BeSQLite::DbResult InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
         {
-        return InsertECRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return InsertRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
     
     //! Update one or more properties of an existing ECRelationship instance. Note that you cannot change the source or target. @note this function only makes sense if the relationship instance is stored in a link table.
     //! @param key Identifies the relationship instance.
     //! @param props Contains the properties to be written. Note that this functions updates props by setting its InstanceId.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateECRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
 
     //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
     //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
@@ -289,17 +297,17 @@ public:
     //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
     //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
 
-    BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
+    BeSQLite::DbResult DeleteRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
         {
-        return DeleteECRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return DeleteRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
 
     //! Deletes a specific ECRelationship
     //! @param key Identifies the ECRelationship instance
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationship(BeSQLite::EC::ECInstanceKeyCR key);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
@@ -348,6 +356,9 @@ public:
     //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
     //! @private
     BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
+
+    //! @private internal use only (v8 importer)
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> schemas, bool doNotFailSchemaValidationForLegacyIssues);
 };
 
 END_BENTLEY_DGN_NAMESPACE

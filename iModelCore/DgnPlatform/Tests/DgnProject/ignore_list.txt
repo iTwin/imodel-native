@@ -31,11 +31,6 @@ DgnECNavigatorTest.GetElementInfo
 #TFS 665028
 GetSetCustomHandledProprty.Annotation
 
-#TFS 666459
-PerformanceElementTestFixture.*
-PerformanceDgnECTests.*
-DgnECInstanceTests.*
-ImportTests.*
 
 #TFS 666963
 GetSetCustomHandledProprty.GeometryPart

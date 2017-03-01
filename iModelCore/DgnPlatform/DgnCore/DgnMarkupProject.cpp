@@ -548,6 +548,8 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
+    SaveChanges();
+
     if (DgnDbStatus::Success != ImportMarkupSchema())
         return BE_SQLITE_ERROR;
 
