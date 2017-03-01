@@ -3152,6 +3152,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_materialId.GetValueUnchecked());
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
+    TEST_EQUAL(m_class);
 
     return true;
     }

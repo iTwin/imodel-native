@@ -451,7 +451,7 @@ struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
 #if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
 constexpr double s_half2dDepthRange = 10.0;
 #endif
-constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+constexpr double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
@@ -532,7 +532,7 @@ private:
     IGeometryPtr        m_geometry;
     bool                m_inCache;
 
-    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
+    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbP db)
         : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
@@ -541,7 +541,7 @@ private:
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
 public:
-    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbP db)
+    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, bool isCurved, DgnDbP db)
         {
         return new PrimitiveGeometry(geometry, tf, range, elemId, params, isCurved, db);
         }
@@ -556,13 +556,13 @@ private:
     IBRepEntityPtr      m_entity;
     BeMutex             m_mutex;
 
-    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
+    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)
         : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
 public:
-    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
+    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)
         {
         return new SolidKernelGeometry(solid, tf, range, elemId, params, db);
         }
@@ -577,7 +577,7 @@ private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
 
-    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
+    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)
         : Geometry(transform, range, elemId, params, true, db), m_text(&text) 
         { 
         InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
@@ -586,7 +586,7 @@ private:
     bool _DoVertexCluster() const override { return false; }
 
 public:
-    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)
         {
         return new TextStringGeometry(textString, transform, range, elemId, params, db);
         }
@@ -737,10 +737,10 @@ struct GeomPartInstanceGeometry : Geometry
 private:
     GeomPartPtr     m_part;
 
-    GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)
+    GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)
         : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
 public:
-    static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbP db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
+    static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbP db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     StrokesList _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
@@ -1046,8 +1046,8 @@ public:
     bool WantSurfacesOnly() const { return m_geometryListBuilder.WantSurfacesOnly(); }
     DgnElementId GetCurrentElementId() const { return m_geometryListBuilder.GetElementId(); }
     TransformCR GetTransformFromDgn() const { return m_geometryListBuilder.GetTransform(); }
-    DisplayParamsPtr CreateDisplayParams(SimplifyGraphic& gf, bool ignoreLighting) const { return DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), ignoreLighting); }
-    DisplayParamsPtr CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
+    DisplayParamsCR CreateDisplayParams(SimplifyGraphic& gf, bool ignoreLighting) const { return m_geometryListBuilder.GetDisplayParamsCache().Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), ignoreLighting); }
+    DisplayParamsCR CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
 };
 
 //=======================================================================================
@@ -1194,21 +1194,89 @@ DgnTextureCPtr DisplayParams::QueryTexture(DgnDbP db) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static int compareValues(T const& lhs, T const& rhs)
+    {
+    return lhs == rhs ? 0 : (lhs < rhs ? -1 : 1);
+    }
+
+#define TEST_LESS_THAN(LHS, RHS) \
+    { \
+    int cmp = compareValues(LHS, RHS); \
+    if (0 != cmp) \
+        return cmp < 0; \
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::operator<(DisplayParamsCR rhs) const
+bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) const
     {
-    COMPARE_VALUES (GetFillColor(), rhs.GetFillColor());
-    COMPARE_VALUES (GetRasterWidth(), rhs.GetRasterWidth());                                                           
-    COMPARE_VALUES (GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
+    if (GetIgnoreLighting() != rhs.GetIgnoreLighting())
+        return GetIgnoreLighting();
 
-    // Note - do not compare category and subcategory - These are used only for 
-    // extracting BRep face attachments.  Comparing them would create seperate
-    // meshes for geometry with same symbology but different category.
-    // This was determined (empirically) to degrade performance. 
+    TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
+    TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
+    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor()); // ###TODO: Later we will permit mixing colors within a single mesh...
 
-    // No need to compare textures -- if materials match then textures must too.
+    if (ComparePurpose::Merge == purpose)
+        return false;
+
+    TEST_LESS_THAN(GetCategoryId().GetValueUnchecked(), rhs.GetCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked(), rhs.GetSubCategoryId().GetValueUnchecked());
+    TEST_LESS_THAN(static_cast<uint32_t>(GetClass()), static_cast<uint32_t>(rhs.GetClass()));
+    TEST_LESS_THAN(GetTextureImage(), rhs.GetTextureImage());
+
     return false;
+    }
+
+#define TEST_EQUAL(MEMBER) if (MEMBER != rhs.MEMBER) return false
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
+    {
+    TEST_EQUAL(GetIgnoreLighting());
+    TEST_EQUAL(GetRasterWidth());
+    TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+    TEST_EQUAL(GetFillColor()); // ###TODO: Later we will permit mixing colors within a single mesh...
+
+    if (ComparePurpose::Merge == purpose)
+        return true;
+
+    TEST_EQUAL(GetCategoryId().GetValueUnchecked());
+    TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
+    TEST_EQUAL(GetTextureImage());
+    TEST_EQUAL(GetClass());
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::Clone() const
+    {
+    DisplayParamsPtr clone = new DisplayParams(GetGraphicParams(), GetGeometryParams(), GetIgnoreLighting());
+    clone->m_textureImage = m_textureImage;
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCR DisplayParamsCache::Get(DisplayParamsCR toFind)
+    {
+    BeAssert(0 == toFind.GetRefCount());    // allocated on stack...
+    toFind.AddRef();
+    DisplayParamsCPtr pToFind(&toFind);
+    auto iter = m_set.find(pToFind);
+    if (m_set.end() == iter)
+        iter = m_set.insert(toFind.Clone()).first;
+
+    return **iter;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1230,8 +1298,13 @@ void DisplayParams::ResolveTextureImage(DgnDbP db) const
 
     ImageSource renderImage  = TextureImage::Load(*this, *db);
 
+    static BeMutex s_mutex; // Because DisplayParams may be shared across threads...
     if (renderImage.IsValid())
-        m_textureImage = TextureImage::Create(std::move(renderImage));
+        {
+        BeMutexHolder lock(s_mutex);
+        if (m_textureImage.IsNull())
+            m_textureImage = TextureImage::Create(std::move(renderImage));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1763,7 +1836,7 @@ size_t GeomPart::GetFacetCount(FacetCounter& counter, GeometryCR instance) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, bool isCurved, DgnDbP db)
+Geometry::Geometry(TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbP db)
     : m_params(&params), m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved), m_facetCount(0), m_hasTexture(nullptr != db && params.QueryTexture(db).IsValid())
     {
     }
@@ -1941,7 +2014,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 #if defined(ELEMENT_TILE_FILL_COLOR_ONLY)
                 DisplayParamsPtr displayParams = DisplayParams::Create (GetDisplayParams().GetFillColorDef(), faceParams);
 #else
-                DisplayParamsPtr displayParams = GetDisplayParamsPtr();
+                DisplayParamsCPtr displayParams = GetDisplayParamsPtr();
 #endif
 
                 tilePolyfaces.push_back (Polyface(*displayParams, *polyface));
@@ -1971,7 +2044,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, DgnDbP db)
+GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbP db)
     {
     return TextStringGeometry::Create(textString, transform, range, entityId, params, db);
     }
@@ -1979,7 +2052,7 @@ GeometryPtr Geometry::Create(TextStringR textString, TransformCR transform, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, bool isCurved, DgnDbP db)
+GeometryPtr Geometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbP db)
     {
     return PrimitiveGeometry::Create(geometry, tf, range, entityId, params, isCurved, db);
     }
@@ -1987,7 +2060,7 @@ GeometryPtr Geometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR ran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, DgnDbP db)
+GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbP db)
     {
     return SolidKernelGeometry::Create(solid, tf, range, entityId, params, db);
     }
@@ -1996,7 +2069,7 @@ GeometryPtr Geometry::Create(IBRepEntityR solid, TransformCR tf, DRange3dCR rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, DgnDbP db)
+GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbP db)
     {
     return GeomPartInstanceGeometry::Create(part, transform, range, entityId, params, db);
     }
@@ -2342,7 +2415,7 @@ GeomPartPtr Root::GetGeomPart(DgnGeometryPartId partId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId) const
+GeomPartPtr Root::FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsCR displayParams, DgnElementId elemId) const
     {
     BeMutexHolder lock(m_mutex);
     return m_solidPrimitiveParts.FindOrInsert(prim, range, displayParams, elemId, GetDgnDb());
@@ -2351,7 +2424,7 @@ GeomPartPtr Root::FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId, DgnDbR db)
+GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsCR displayParams, DgnElementId elemId, DgnDbR db)
     {
     Key key(prim, range, displayParams);
 
@@ -2396,8 +2469,7 @@ bool Root::SolidPrimitivePartMap::Key::operator<(Key const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
     {
-    return !(*m_displayParams < *rhs.m_displayParams)
-        && !(*rhs.m_displayParams < *m_displayParams)
+    return m_displayParams->IsEqualTo(*rhs.m_displayParams, DisplayParams::ComparePurpose::Merge)
         && m_solidPrimitive->IsSameStructureAndGeometry(*rhs.m_solidPrimitive, s_solidPrimitivePartCompareTolerance);
     }
 
@@ -2642,7 +2714,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*const_cast<DisplayParamsP>(key.m_params), m_vertexTolerance, m_facetAreaTolerance);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -2751,7 +2823,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         return;
 
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
-    DisplayParamsR displayParams = *geom.GetDisplayParamsPtr();
+    DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.QueryTexture(&db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
 
@@ -2800,7 +2872,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     if (m_loadContext.WasAborted())
         return;
 
-    DisplayParamsR displayParams = *strokes.m_displayParams;
+    DisplayParamsCR displayParams = *strokes.m_displayParams;
     MeshMergeKey key(displayParams, false, false);
     MeshBuilderR builder = GetMeshBuilder(key);
 
@@ -3096,7 +3168,7 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
     if (curves.IsAnyRegionType() && !isCurved)
         return false;   // process as facets.
 
-    return m_geometryListBuilder.AddCurveVector(curves, filled, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddCurveVector(curves, filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3104,7 +3176,7 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
-    DisplayParamsPtr displayParams = CreateDefaultDisplayParams(gf);
+    DisplayParamsCR displayParams = CreateDefaultDisplayParams(gf);
 
     // ###TODO: Determine if the synchronization overhead of caching solid primitives is worth it.
     if (InstancingOptions::None != s_instancingOptions)
@@ -3116,13 +3188,13 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
         if (thisTileRange.IsContained(m_tileRange))
             {
             ISolidPrimitivePtr clone = prim.Clone();
-            GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, *displayParams, GetCurrentElementId());
-            AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), *displayParams, &GetDgnDb()));
+            GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, displayParams, GetCurrentElementId());
+            AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), displayParams, &GetDgnDb()));
             return true;
             }
         }
 
-    return m_geometryListBuilder.AddSolidPrimitive(prim, *displayParams, gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddSolidPrimitive(prim, displayParams, gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3130,7 +3202,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddSurface(surface, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddSurface(surface, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3138,7 +3210,7 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddPolyface(polyface, filled, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddPolyface(polyface, filled, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3146,7 +3218,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddBody(solid, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddBody(solid, CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3154,7 +3226,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, SimplifyGraphic& gf) 
     {
-    return m_geometryListBuilder.AddTextString(textString, *CreateDisplayParams(gf, true /*ignore lighting*/), gf.GetLocalToWorldTransform());
+    return m_geometryListBuilder.AddTextString(textString, CreateDisplayParams(gf, true /*ignore lighting*/), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3193,9 +3265,9 @@ void TileGeometryProcessor::PushGeometry(GeometryR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
     {
-    Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
-    DisplayParamsPtr        displayParams = DisplayParams::Create(graphicParams, geomParams);
-    DRange3d                range;
+    Transform partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+    DisplayParamsCR displayParams = m_geometryListBuilder.GetDisplayParamsCache().Get(graphicParams, geomParams);
+    DRange3d range;
 
     GeomPartPtr             tileGeomPart = m_root.GetGeomPart(partId);
     if (tileGeomPart.IsNull())
@@ -3231,7 +3303,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     Transform   tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     
     tf.Multiply(range, tileGeomPart->GetRange());
-    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), *displayParams, &GetDgnDb()));
+    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, &GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3350,7 +3422,7 @@ Render::GraphicPtr GeometryProcessorContext::_StrokeGeometry(GeometrySourceCR so
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -3365,7 +3437,7 @@ bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform, DRange3dCR range)
+bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range)
     {
     GeometryPtr geometry = Geometry::Create(geom, transform, range, GetElementId(), displayParams, isCurved, GetDgnDb());
     if (geometry.IsNull())
@@ -3378,7 +3450,7 @@ bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayPar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
@@ -3392,7 +3464,7 @@ bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, Disp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform)
     {
     bool isCurved = primitive.HasCurvedFaceOrEdge();
     ISolidPrimitivePtr clone = primitive.Clone();
@@ -3403,7 +3475,7 @@ bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, Display
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR displayParams, TransformCR transform)
     {
     MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
     clone->CopyFrom(surface);
@@ -3416,7 +3488,7 @@ bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
     PolyfaceHeaderPtr clone = polyface.Clone();
     if (!clone->IsTriangulated() && SUCCESS != clone->Triangulate())
@@ -3439,7 +3511,7 @@ bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, Dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform)
     {
     IBRepEntityPtr clone = const_cast<IBRepEntityP>(&body);
 
@@ -3454,7 +3526,7 @@ bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsR displayPara
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsR displayParams, TransformCR transform)
+bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform)
     {
     if (m_surfacesOnly)
         return true;
@@ -3495,7 +3567,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
 
-            DisplayParamsPtr displayParams = tilePolyface.m_displayParams;
+            DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->QueryTexture(GetDgnDb()).IsValid();
 
             MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), true);
@@ -3516,7 +3588,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             auto tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions(tolerance, NormalMode::Never));
             for (auto& tileStrokes : tileStrokesArray)
                 {
-                DisplayParamsPtr displayParams = tileStrokes.m_displayParams;
+                DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
                 MeshMergeKey key(*displayParams, false, false);
 
                 MeshBuilderPtr meshBuilder;
