@@ -193,7 +193,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
         ECInstanceId id;
         if (SUCCESS != ECInstanceId::FromString(id, value))
             {
-            LOG.error("Binding string value to Id parameter failed. Value cannot be converted to an ECInstanceId.");
+            LOG.error("Binding string value to Id parameter failed. Value cannot be converted to an " ECDBSYS_PROP_ECInstanceId ".");
             return ECSqlStatus::Error;
             }
 

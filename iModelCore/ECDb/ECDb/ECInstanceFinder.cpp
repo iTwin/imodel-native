@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceFinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -122,20 +122,20 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::GetPreparedECSqlStatement(s
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement(ECDbCR ecDb)
     {
-    Utf8String relSchemaName(m_relationshipClass->GetSchema().GetName());
-    Utf8String relClassName(m_relationshipClass->GetName());
+    Utf8CP relSchemaName = m_relationshipClass->GetSchema().GetName().c_str();
+    Utf8CP relClassName = m_relationshipClass->GetName().c_str();
     Utf8String relECSql;
     if (m_thisRelationshipEnd == ECRelationshipEnd_Source)
         {
-        relECSql.Sprintf("SELECT ECInstanceId, TargetECClassId, TargetECInstanceId "
-                         "FROM %s.%s WHERE SourceECClassId = %s AND SourceECInstanceId = ?",
-                         relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().ToString().c_str());
+        relECSql.Sprintf("SELECT " ECDBSYS_PROP_ECInstanceId "," ECDBSYS_PROP_TargetECClassId "," ECDBSYS_PROP_TargetECInstanceId 
+                         " FROM %s.%s WHERE " ECDBSYS_PROP_SourceECClassId "=%s AND " ECDBSYS_PROP_SourceECInstanceId "=?",
+                         relSchemaName, relClassName, m_thisClass->GetId().ToString().c_str());
         }
     else
         {
-        relECSql.Sprintf("SELECT ECInstanceId, SourceECClassId, SourceECInstanceId "
-                         "FROM %s.%s WHERE TargetECClassId = %s AND TargetECInstanceId = ?",
-                         relSchemaName.c_str(), relClassName.c_str(), m_thisClass->GetId().ToString().c_str());
+        relECSql.Sprintf("SELECT " ECDBSYS_PROP_ECInstanceId "," ECDBSYS_PROP_SourceECClassId "," ECDBSYS_PROP_SourceECInstanceId
+                         " FROM %s.%s WHERE " ECDBSYS_PROP_TargetECClassId "=%s AND " ECDBSYS_PROP_TargetECInstanceId "=?",
+                         relSchemaName, relClassName, m_thisClass->GetId().ToString().c_str());
         }
 
     m_cachedStatement = std::make_shared<ECSqlStatement>();

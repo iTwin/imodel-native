@@ -202,7 +202,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetECClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            GetIssueReporter().Report("FileInfo owner ECClass not found for ECClassId %s.", ownerClassId.ToString().c_str());
+            GetIssueReporter().Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
             return ERROR;
             }
 
@@ -210,7 +210,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
             purgeOwnershipByOwnersECSql.append(" OR ");
 
         Utf8String whereSnippet;
-        whereSnippet.Sprintf("(OwnerECClassId=%s AND OwnerId NOT IN (SELECT ECInstanceId FROM ONLY %s))", ownerClassId.ToString().c_str(), ownerClass->GetECSqlName().c_str());
+        whereSnippet.Sprintf("(OwnerECClassId=%s AND OwnerId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ONLY %s))", ownerClassId.ToString().c_str(), ownerClass->GetECSqlName().c_str());
         purgeOwnershipByOwnersECSql.append(whereSnippet);
 
         isFirstOwnerClassId = false;
@@ -226,7 +226,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT ECInstanceId FROM ecdbf.FileInfo)"))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE FileInfoId NOT IN (SELECT " ECDBSYS_PROP_ECInstanceId " FROM ecdbf.FileInfo)"))
         return ERROR;
 
     return BE_SQLITE_DONE == stmt.Step() ? SUCCESS : ERROR;

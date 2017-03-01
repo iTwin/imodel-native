@@ -1950,7 +1950,7 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
     {
     DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Physical, exclusiveRootClassId, primaryTable);
     
-    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName.empty() ? Utf8String("ECInstanceId") //default name for PK column
+    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName.empty() ? Utf8String(ECDBSYS_PROP_ECInstanceId) //default name for PK column
                                                                             : primaryKeyColumnName, 
                                              DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
     if (table->GetPersistenceType() == PersistenceType::Physical)
@@ -2042,7 +2042,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
         idColumn->SetKind(DbColumn::Kind::ECInstanceId);
     else
         {
-        LOG.errorv("ECInstanceId column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
+        LOG.errorv(ECDBSYS_PROP_ECInstanceId " column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
                    primaryKeyColName.c_str(), table->GetName().c_str());
         return nullptr;
         }

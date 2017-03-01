@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbExpressionSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -114,17 +114,17 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
         {
         case '0':
             direction = ECRelatedInstanceDirection::Forward; 
-            thisInstanceIdColumnName = "SourceECInstanceId";
-            thisClassIdColumnName = "SourceECClassId";
-            relatedInstanceIdColumnName = "TargetECInstanceId";
-            relatedClassIdColumnName = "TargetECClassId";
+            thisInstanceIdColumnName = ECDBSYS_PROP_SourceECInstanceId;
+            thisClassIdColumnName = ECDBSYS_PROP_SourceECClassId;
+            relatedInstanceIdColumnName = ECDBSYS_PROP_TargetECInstanceId;
+            relatedClassIdColumnName = ECDBSYS_PROP_TargetECClassId;
             break;
         case '1': 
             direction = ECRelatedInstanceDirection::Backward;
-            thisInstanceIdColumnName = "TargetECInstanceId";
-            thisClassIdColumnName = "TargetECClassId"; 
-            relatedInstanceIdColumnName = "SourceECInstanceId";
-            relatedClassIdColumnName = "SourceECClassId";
+            thisInstanceIdColumnName = ECDBSYS_PROP_TargetECInstanceId;
+            thisClassIdColumnName = ECDBSYS_PROP_TargetECClassId;
+            relatedInstanceIdColumnName = ECDBSYS_PROP_SourceECInstanceId;
+            relatedClassIdColumnName = ECDBSYS_PROP_SourceECClassId;
             break;
         default:  
             return ExpressionStatus::UnknownError;
@@ -144,12 +144,10 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
         return ExpressionStatus::UnknownError;
         }
     
-    static Utf8CP selectQueryFormat = ""
-        "SELECT related.%%s "
-        "  FROM %%s this, %s relationship, %s related "
-        " WHERE     this.ECInstanceId = ? "
-        "       AND this.ECInstanceId = relationship.[%s] AND this.ECClassId = relationship.[%s] "
-        "       AND related.ECInstanceId = relationship.[%s] AND related.ECClassId = relationship.[%s]";
+    static Utf8CP selectQueryFormat = "SELECT related.%%s FROM %%s this, %s relationship, %s related "
+        "WHERE this." ECDBSYS_PROP_ECInstanceId "=? AND "
+        "      this." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND this." ECDBSYS_PROP_ECClassId "=relationship.[%s] AND "
+        "      related." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND related." ECDBSYS_PROP_ECClassId "=relationship.[%s]";
 
     query = Utf8PrintfString(selectQueryFormat, 
                 relationshipClass->GetECSqlName().c_str(), relatedClass->GetECSqlName().c_str(),
@@ -164,7 +162,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
     {
     if (instanceData.empty())
         return ExpressionStatus::WrongType;
-    
+
     if (args.size() < 3)
         return ExpressionStatus::WrongNumberOfArguments;
 
@@ -173,23 +171,23 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
         if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
             return ExpressionStatus::WrongType;
         }
-    
+
     Utf8CP direction = args[1].GetECValue()->GetUtf8CP();
     Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
         relatedInstanceIdColumnName, relatedClassIdColumnName;
     if (0 == BeStringUtilities::Stricmp("Forward", direction))
         {
-        thisInstanceIdColumnName = "SourceECInstanceId";
-        thisClassIdColumnName = "SourceECClassId";
-        relatedInstanceIdColumnName = "TargetECInstanceId";
-        relatedClassIdColumnName = "TargetECClassId";
+        thisInstanceIdColumnName = ECDBSYS_PROP_SourceECInstanceId;
+        thisClassIdColumnName = ECDBSYS_PROP_SourceECClassId;
+        relatedInstanceIdColumnName = ECDBSYS_PROP_TargetECInstanceId;
+        relatedClassIdColumnName = ECDBSYS_PROP_TargetECClassId;
         }
     else if (0 == BeStringUtilities::Stricmp("Backward", direction))
         {
-        thisInstanceIdColumnName = "TargetECInstanceId";
-        thisClassIdColumnName = "TargetECClassId"; 
-        relatedInstanceIdColumnName = "SourceECInstanceId";
-        relatedClassIdColumnName = "SourceECClassId";
+        thisInstanceIdColumnName = ECDBSYS_PROP_TargetECInstanceId;
+        thisClassIdColumnName = ECDBSYS_PROP_TargetECClassId;
+        relatedInstanceIdColumnName = ECDBSYS_PROP_SourceECInstanceId;
+        relatedClassIdColumnName = ECDBSYS_PROP_SourceECClassId;
         }
     else
         {
@@ -203,25 +201,21 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
         BeAssert(false);
         return ExpressionStatus::UnknownError;
         }
-        
+
     Utf8String relatedClassSchemaName, relatedClassName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, args[2].GetECValue()->GetUtf8CP()))
         {
         BeAssert(false);
         return ExpressionStatus::UnknownError;
         }
-    
-    static Utf8CP selectQueryFormat = ""
-        "SELECT related.%%s "
-        "  FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
-        " WHERE     this.ECInstanceId = ? "
-        "       AND this.ECInstanceId = relationship.[%s] AND this.ECClassId = relationship.[%s] "
-        "       AND related.ECInstanceId = relationship.[%s] AND related.ECClassId = relationship.[%s]";
 
-    query = Utf8PrintfString(selectQueryFormat, 
-                relationshipSchemaName.c_str(), relationshipClassName.c_str(),
-                relatedClassSchemaName.c_str(), relatedClassName.c_str(),
-                thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
+    query = Utf8PrintfString("SELECT related.%%s FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
+                             "WHERE this." ECDBSYS_PROP_ECInstanceId "=? AND "
+                             "      this." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND this." ECDBSYS_PROP_ECClassId "=relationship.[%s] AND "
+                             "      related." ECDBSYS_PROP_ECInstanceId "=relationship.[%s] AND related." ECDBSYS_PROP_ECClassId "=relationship.[%s]",
+                             relationshipSchemaName.c_str(), relationshipClassName.c_str(),
+                             relatedClassSchemaName.c_str(), relatedClassName.c_str(),
+                             thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
     return ExpressionStatus::Success;
     }
 
@@ -242,7 +236,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
 
     for (IECInstancePtr const& instance : instanceData)
         {
-        Utf8PrintfString query(queryFormat.c_str(), "ECInstanceId", instance->GetClass().GetECSqlName().c_str());
+        Utf8PrintfString query(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
         
         ECSqlStatement stmt;
         ECSqlStatus status = stmt.Prepare(db, query.c_str());

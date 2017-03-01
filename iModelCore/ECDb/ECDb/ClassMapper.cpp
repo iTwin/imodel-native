@@ -246,7 +246,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
     if (m_loadContext != nullptr)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".X"));
+        columns = m_loadContext->FindColumnByAccessString((accessString + "." ECDBSYS_PROP_PointX));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -254,7 +254,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
             }
 
         x = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y"));
+        columns = m_loadContext->FindColumnByAccessString((accessString + "." ECDBSYS_PROP_PointY));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -266,8 +266,8 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
     else
         {
         DbColumn::CreateParams coordColParams;
-        coordColParams.Assign(colCreateParams.GetColumnName() + "_X", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + ".X");
+        coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointX, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
+        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointX);
         if (x == nullptr)
             {
             BeAssert(false);
@@ -276,8 +276,8 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
 
 
         DbColumn::CreateParams yColParams;
-        coordColParams.Assign(colCreateParams.GetColumnName() + "_Y", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + ".Y");
+        coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointY, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
+        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point2dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointY);
         if (x == nullptr)
             {
             BeAssert(false);
@@ -301,7 +301,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
     if (m_loadContext != nullptr)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".X"));
+        columns = m_loadContext->FindColumnByAccessString((accessString + "." ECDBSYS_PROP_PointX));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -309,7 +309,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         x = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y"));
+        columns = m_loadContext->FindColumnByAccessString((accessString + "." ECDBSYS_PROP_PointY));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -317,7 +317,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         y = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Z"));
+        columns = m_loadContext->FindColumnByAccessString((accessString + "." ECDBSYS_PROP_PointZ));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -329,24 +329,24 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
     else
         {
         DbColumn::CreateParams coordColParams;
-        coordColParams.Assign(colCreateParams.GetColumnName() + "_X", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + ".X");
+        coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointX, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
+        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointX);
         if (x == nullptr)
             {
             BeAssert(false);
             return nullptr;
             }
 
-        coordColParams.Assign(colCreateParams.GetColumnName() + "_Y", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + ".Y");
+        coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointY, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
+        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointY);
         if (y == nullptr)
             {
             BeAssert(false);
             return nullptr;
             }
 
-        coordColParams.Assign(colCreateParams.GetColumnName() + "_Z", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        z = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + ".Z");
+        coordColParams.Assign(colCreateParams.GetColumnName() + "_" ECDBSYS_PROP_PointZ, colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
+        z = m_classMap.GetColumnFactory().AllocateDataColumn(property, Point3dPropertyMap::COORDINATE_COLUMN_DATATYPE, coordColParams, accessString + "." ECDBSYS_PROP_PointZ);
         if (z == nullptr)
             {
             BeAssert(false);
@@ -435,14 +435,14 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 
     const DbColumn *id = nullptr, *relClassId = nullptr;
     std::vector<DbColumn const*> const* columns;
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME));
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropId));
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;
         }
 
     id = columns->front();
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME));
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDBSYS_PROP_NavPropRelECClassId));
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;

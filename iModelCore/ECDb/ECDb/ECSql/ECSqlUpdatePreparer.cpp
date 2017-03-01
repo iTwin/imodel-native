@@ -32,7 +32,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("ECInstanceId is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated ECInstanceIds.");
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_ECInstanceId " is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated " ECDBSYS_PROP_ECInstanceId "s.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -58,7 +58,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("SourceECInstanceId, TargetECInstanceId, SourceECClassId, or TargetECClassId are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
+            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
             return ECSqlStatus::InvalidECSql;
             }
         }

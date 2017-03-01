@@ -168,14 +168,14 @@ BeInt64Id IECSqlValue::GetNavigation(ECN::ECClassId* relationshipECClassId) cons
 
     if (relationshipECClassId != nullptr)
         {
-        IECSqlValue const& relClassIdVal = _GetStructMemberValue(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+        IECSqlValue const& relClassIdVal = _GetStructMemberValue(ECDBSYS_PROP_NavPropRelECClassId);
         if (relClassIdVal.IsNull())
             *relationshipECClassId = ECN::ECClassId();
         else
             *relationshipECClassId = relClassIdVal.GetId<ECN::ECClassId>();
         }
 
-    return _GetStructMemberValue(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME).GetId<BeInt64Id>();
+    return _GetStructMemberValue(ECDBSYS_PROP_NavPropId).GetId<BeInt64Id>();
     }
 
 //--------------------------------------------------------------------------------------

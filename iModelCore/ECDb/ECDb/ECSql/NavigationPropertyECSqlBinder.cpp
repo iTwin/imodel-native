@@ -91,20 +91,21 @@ ECSqlStatus NavigationPropertyECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(Utf8CP navPropMemberPropertyName)
     {
-    if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, navPropMemberPropertyName) == 0)
+    if (BeStringUtilities::StricmpAscii(ECDBSYS_PROP_NavPropId, navPropMemberPropertyName) == 0)
         {
         BeAssert(m_idBinder != nullptr);
         return *m_idBinder;
         }
 
-    if (BeStringUtilities::StricmpAscii(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME, navPropMemberPropertyName) == 0)
+    if (BeStringUtilities::StricmpAscii(ECDBSYS_PROP_NavPropRelECClassId, navPropMemberPropertyName) == 0)
         {
         BeAssert(m_relECClassIdBinder != nullptr);
         return *m_relECClassIdBinder;
         }
 
-    LOG.errorv("Cannot bind to NavigationECProperty member. Member %s is not valid. Only %s and %s are valid members.",
-                 navPropMemberPropertyName, ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    LOG.errorv("Cannot bind to NavigationECProperty member. Member %s is not valid. "
+               "Only " ECDBSYS_PROP_NavPropId " and " ECDBSYS_PROP_NavPropRelECClassId " are valid members.",
+                 navPropMemberPropertyName);
     return NoopECSqlBinder::Get();
     }
 
@@ -125,8 +126,9 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(ECN::ECPropertyId
         return *m_relECClassIdBinder;
         }
 
-    LOG.errorv("Cannot bind to NavigationECProperty member. Member with property index %s is not valid. Only %s and %s are valid members.",
-                                                       navPropMemberPropertyId.ToString().c_str(), ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    LOG.errorv("Cannot bind to NavigationECProperty member. Member with property index %s is not valid. "
+               "Only " ECDBSYS_PROP_NavPropId " and " ECDBSYS_PROP_NavPropRelECClassId " are valid members.",
+                  navPropMemberPropertyId.ToString().c_str());
     return NoopECSqlBinder::Get();
     }
 

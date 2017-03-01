@@ -312,16 +312,12 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement(ECValueR val, ECClassCR structType, IECSqlValue const& value) const
     {
+    val.Clear();
     if (value.IsNull())
         {
-        val.SetStruct(nullptr);
+        val.SetStruct(nullptr); // ECValue API seems to need this call to know that this is a struct value. Just Clear doesn't seem to suffice
         return SUCCESS;
         }
-
-    val.Clear();
-
-    if (value.IsNull())
-        return SUCCESS;
 
     IECInstancePtr structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance();
     for (IECSqlValue const& memberVal : value.GetStructIterable())

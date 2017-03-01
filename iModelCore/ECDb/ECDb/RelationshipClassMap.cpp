@@ -353,7 +353,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         //If ForeignEndClassId column is missing create a virtual one
         if (fkTableClassIdCol == nullptr)
             {
-            Utf8CP colName = GetForeignEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+            Utf8CP colName = GetForeignEnd() == ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
             DbColumn::Kind kind = GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId;
 
             fkTableClassIdCol = fkTable.FindColumn(colName);
@@ -386,7 +386,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         else
             {
             //referenced table doesn't have a class id col --> create a virtual one in the foreign end table
-            Utf8CP colName = GetReferencedEnd() == ECRelationshipEnd_Source ? ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME : ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME;
+            Utf8CP colName = GetReferencedEnd() == ECRelationshipEnd_Source ? ECDBSYS_PROP_SourceECClassId : ECDBSYS_PROP_TargetECClassId;
             DbColumn::Kind kind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId;
 
             DbColumn const* fkTableReferencedEndClassIdCol = fkTable.FindColumn(colName);
@@ -588,7 +588,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& 
         DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {relClassIdCol}, true, true, GetClass().GetId());
         if (index == nullptr)
             {
-            LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
+            LOG.errorv("Failed to create index on " ECDBSYS_PROP_NavPropRelECClassId " column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
             return nullptr;
             }
         }
@@ -769,10 +769,10 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
     ECClassId defaultTargetECClassId = relationshipClass.GetTarget().GetConstraintClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetConstraintClasses().front()->GetId();
 
     //SourceECInstanceId
-    std::vector<DbColumn const*> const* mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
+    std::vector<DbColumn const*> const* mapColumns = mapInfo.FindColumnByAccessString(ECDBSYS_PROP_SourceECInstanceId);
     if (mapColumns == nullptr)
         {
-        BeAssert(false && "Failed to deserialize SourceECInstanceId property map");
+        BeAssert(false);
         return ERROR;
         }
 
@@ -789,10 +789,10 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
     m_sourceConstraintMap.SetECInstanceIdPropMap(sourceECInstanceIdPropMap.get());
 
     //SourceECClassId
-    mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(ECDBSYS_PROP_SourceECClassId);
     if (mapColumns == nullptr)
         {
-        BeAssert(false && "Failed to deserialize SourceECClassId property map");
+        BeAssert(false);
         return ERROR;
         }
 
@@ -809,10 +809,10 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
     m_sourceConstraintMap.SetECClassIdPropMap(sourceClassIdPropMap.get());
 
     //TargetECInstanceId
-    mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(ECDBSYS_PROP_TargetECInstanceId);
     if (mapColumns == nullptr)
         {
-        BeAssert(false && "Failed to deserialize TargetECInstanceId property map");
+        BeAssert(false);
         return ERROR;
         }
 
@@ -829,10 +829,10 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
     m_targetConstraintMap.SetECInstanceIdPropMap(targetECInstanceIdPropMap.get());
 
     //TargetECClassId
-    mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(ECDBSYS_PROP_TargetECClassId);
     if (mapColumns == nullptr)
         {
-        BeAssert(false && "Failed to deserialize TargetECClassId property map");
+        BeAssert(false);
         return ERROR;
         }
 
@@ -1305,7 +1305,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
     Utf8String columnName = DetermineConstraintECInstanceIdColumnName(*mapInfo.GetLinkTableMappingInfo(), ECRelationshipEnd_Source);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
-        LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains SourceECInstanceId column named '%s'.",
+        LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
                    GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
         return ClassMappingStatus::Error;
         }
@@ -1335,7 +1335,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
     columnName = DetermineConstraintECInstanceIdColumnName(*mapInfo.GetLinkTableMappingInfo(), ECRelationshipEnd_Target);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
-        LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains TargetECInstanceId column named '%s'.",
+        LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",
                    GetClass().GetFullName(), GetPrimaryTable().GetName().c_str(), columnName.c_str());
         return ClassMappingStatus::Error;
         }
@@ -1482,7 +1482,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Source:
             {
             if (linkTableInfo.GetSourceIdColumnName().empty())
-                colName.assign(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
+                colName.assign(ECDBSYS_PROP_SourceECInstanceId);
             else
                 colName.assign(linkTableInfo.GetSourceIdColumnName());
 
@@ -1491,7 +1491,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Target:
             {
             if (linkTableInfo.GetTargetIdColumnName().empty())
-                colName.assign(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+                colName.assign(ECDBSYS_PROP_TargetECInstanceId);
             else
                 colName.assign(linkTableInfo.GetTargetIdColumnName());
 
@@ -1520,7 +1520,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
             case ECRelationshipEnd_Source:
             {
             if (linkTableInfo.GetSourceIdColumnName().empty())
-                colName.assign(ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
+                colName.assign(ECDBSYS_PROP_SourceECClassId);
             else
                 idColName = &linkTableInfo.GetSourceIdColumnName();
             
@@ -1530,7 +1530,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
             case ECRelationshipEnd_Target:
             {
             if (linkTableInfo.GetTargetIdColumnName().empty())
-                colName.assign(ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
+                colName.assign(ECDBSYS_PROP_TargetECClassId);
             else
                 idColName = &linkTableInfo.GetTargetIdColumnName();
             
@@ -1583,17 +1583,17 @@ bool RelationshipClassLinkTableMap::DetermineAllowDuplicateRelationshipsFlagFrom
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-    if (ClassMap::_Load(ctx, mapInfo) != BentleyStatus::SUCCESS)
+    if (ClassMap::_Load(ctx, mapInfo) != SUCCESS)
         return ERROR;
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
-    auto const& sourceConstraint = relationshipClass.GetSource();
-    auto const& targetConstraint = relationshipClass.GetTarget();
+    ECRelationshipConstraint const& sourceConstraint = relationshipClass.GetSource();
+    ECRelationshipConstraint const& targetConstraint = relationshipClass.GetTarget();
 
     ECClassId defaultSourceECClassId = sourceConstraint.GetConstraintClasses().empty() ? ECClassId() : sourceConstraint.GetConstraintClasses().front()->GetId();
     ECClassId defaultTargetECClassId = targetConstraint.GetConstraintClasses().empty() ? ECClassId() : targetConstraint.GetConstraintClasses().front()->GetId();
 
-    auto mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
+    std::vector<DbColumn const*> const* mapColumns = mapInfo.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_SourceECInstanceId));
     if (mapColumns == nullptr)
         {
         BeAssert(false && "Failed to deserialize property map");
@@ -1601,15 +1601,19 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
         }
 
 
-    auto sourceECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, *mapColumns);
-    PRECONDITION(sourceECInstanceIdPropMap.IsValid(), BentleyStatus::ERROR);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> sourceECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, *mapColumns);
+    if (sourceECInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     if (GetPropertyMapsR().Insert(sourceECInstanceIdPropMap) != SUCCESS)
         return ERROR;
 
     m_sourceConstraintMap.SetECInstanceIdPropMap(sourceECInstanceIdPropMap.get());
 
-
-    mapColumns = mapInfo.FindColumnByAccessString( ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_SourceECClassId));
     if (mapColumns == nullptr)
         {
         BeAssert(false && "Failed to deserialize property map");
@@ -1617,42 +1621,56 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
         }
 
 
-    auto sourceECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, defaultSourceECClassId, ECRelationshipEnd_Source, *mapColumns);
-    PRECONDITION(sourceECClassIdPropMap.IsValid(), ERROR);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> sourceECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, defaultSourceECClassId, ECRelationshipEnd_Source, *mapColumns);
+    if (sourceECClassIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     if (GetPropertyMapsR().Insert(sourceECClassIdPropMap) != SUCCESS)
         return ERROR;
 
     m_sourceConstraintMap.SetECClassIdPropMap(sourceECClassIdPropMap.get());
 
-    mapColumns = mapInfo.FindColumnByAccessString( ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_TargetECInstanceId));
     if (mapColumns == nullptr)
         {
         BeAssert(false && "Failed to deserialize property map");
         return ERROR;
         }
 
-    auto targetECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, *mapColumns);
-    PRECONDITION(targetECInstanceIdPropMap.IsValid(), BentleyStatus::ERROR);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap>  targetECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, *mapColumns);
+    if (targetECInstanceIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     if (GetPropertyMapsR().Insert(targetECInstanceIdPropMap) != SUCCESS)
         return ERROR;
 
     m_targetConstraintMap.SetECInstanceIdPropMap(targetECInstanceIdPropMap.get());
 
-    mapColumns = mapInfo.FindColumnByAccessString( ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME);
+    mapColumns = mapInfo.FindColumnByAccessString(Utf8String(ECDBSYS_PROP_TargetECClassId));
     if (mapColumns == nullptr)
         {
         BeAssert(false && "Failed to deserialize property map");
         return ERROR;
         }
 
-    auto targetECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, defaultTargetECClassId, ECRelationshipEnd_Target, *mapColumns);
-    PRECONDITION(targetECClassIdPropMap.IsValid(), BentleyStatus::ERROR);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> targetECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, defaultTargetECClassId, ECRelationshipEnd_Target, *mapColumns);
+    if (targetECClassIdPropMap == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }    
+    
     if (GetPropertyMapsR().Insert(targetECClassIdPropMap) != SUCCESS)
         return ERROR;
 
     m_targetConstraintMap.SetECClassIdPropMap(targetECClassIdPropMap.get());
-
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1680,7 +1698,7 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
         {
         if (columnKind == DbColumn::Kind::SourceECInstanceId || columnKind == DbColumn::Kind::TargetECInstanceId)
             {
-            LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for SourceECInstanceId or TargetECInstanceId in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.", 
+            LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for " ECDBSYS_PROP_SourceECInstanceId " or " ECDBSYS_PROP_TargetECInstanceId " in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.", 
                        GetClass().GetFullName(), table.GetName().c_str());
             return nullptr;
             }
