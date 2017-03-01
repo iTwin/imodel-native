@@ -342,7 +342,7 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileTriangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;

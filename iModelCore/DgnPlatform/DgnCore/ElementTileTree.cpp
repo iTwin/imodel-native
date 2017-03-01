@@ -1218,10 +1218,20 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
 
     TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
     TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
-    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor()); // ###TODO: Later we will permit mixing colors within a single mesh...
 
+#if defined(TODO_MULTICOLORED_MESHES)
+    if (ComparePurpose::Merge == purpose)
+        {
+        // We can merge meshes of differing colors, but can't mix opaque with translucent
+        return (HasTransparency() != rhs.HasTransparency()) && HasTransparency();
+        }
+
+    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor());
+#else
+    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor());
     if (ComparePurpose::Merge == purpose)
         return false;
+#endif
 
     TEST_LESS_THAN(GetCategoryId().GetValueUnchecked(), rhs.GetCategoryId().GetValueUnchecked());
     TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked(), rhs.GetSubCategoryId().GetValueUnchecked());
@@ -1241,10 +1251,17 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetIgnoreLighting());
     TEST_EQUAL(GetRasterWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
-    TEST_EQUAL(GetFillColor()); // ###TODO: Later we will permit mixing colors within a single mesh...
 
+#if defined(TODO_MULTICOLORED_MESHES)
+    if (ComparePurpose::Merge == purpose)
+        return HasTransparency() == rhs.HasTransparency();
+
+    TEST_EQUAL(GetFillColor());
+#else
+    TEST_EQUAL(GetFillColor());
     if (ComparePurpose::Merge == purpose)
         return true;
+#endif
 
     TEST_EQUAL(GetCategoryId().GetValueUnchecked());
     TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
@@ -1354,124 +1371,44 @@ bool Mesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddMesh (MeshCR mesh)
-    {
-    if (mesh.m_points.empty() ||
-        m_normals.empty() != mesh.m_normals.empty() ||
-        m_uvParams.empty() != mesh.m_uvParams.empty() ||
-        m_entityIds.empty() != mesh.m_entityIds.empty())
-        {
-        BeAssert (false && "add mesh empty or not compatible");
-        }
-
-    size_t      baseIndex = m_points.size();
-
-    m_points.insert (m_points.end(), mesh.m_points.begin(), mesh.m_points.end());
-    if (!mesh.m_normals.empty())
-        m_normals.insert (m_normals.end(), mesh.m_normals.begin(), mesh.m_normals.end());
-
-    if (!mesh.m_uvParams.empty())
-        m_uvParams.insert (m_uvParams.end(), mesh.m_uvParams.begin(), mesh.m_uvParams.end());
-
-    if (!mesh.m_entityIds.empty())
-        m_entityIds.insert (m_entityIds.end(), mesh.m_entityIds.begin(), mesh.m_entityIds.end());
-
-    for (auto& triangle : mesh.m_triangles)
-        AddTriangle (Triangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool    Mesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
-    {
-    bool                        deleteGeometryFound = false;
-    bmap<uint32_t, uint32_t>    indexRemap;
-    bvector<FPoint3d>           savePoints = m_points;
-    bvector<FPoint3d>           saveNormals = m_normals;
-    bvector<FPoint2d>           saveParams = m_uvParams;
-    bvector<DgnElementId>       saveEntityIds = m_entityIds;
-
-    m_points.clear();
-    m_normals.clear();
-    m_uvParams.clear();
-    m_entityIds.clear();
-
-    for (size_t index = 0; index<saveEntityIds.size(); index++)
-        {
-        auto&   entityId = saveEntityIds[index];
-
-        if (deleteIds.find(entityId) == deleteIds.end() &&
-            indexRemap.find(index) == indexRemap.end())
-            {
-            indexRemap.Insert(index, (uint32_t) m_points.size());
-            m_points.push_back(savePoints[index]);
-            m_entityIds.push_back(entityId);
-            if (!saveNormals.empty())
-                m_normals.push_back(saveNormals[index]);
-            if (!saveParams.empty())
-                m_uvParams.push_back(saveParams[index]);
-            }
-        else
-            {
-            deleteGeometryFound = true;
-            }
-        }
-    if (!deleteGeometryFound)
-        return false;
-        
-
-    for (bvector<Triangle>::iterator  triangle = m_triangles.begin(); triangle != m_triangles.end(); )
-        {
-        if (indexRemap.find(triangle->m_indices[0]) == indexRemap.end())
-            {
-            m_triangles.erase (triangle);
-            }
-        else
-            {
-            for (size_t i=0; i<3; i++)
-                triangle->m_indices[i] = indexRemap[triangle->m_indices[i]];
-
-            triangle++;
-            }
-        }
-    for (bvector<Polyline>::iterator  polyline = m_polylines.begin(); polyline != m_polylines.end(); )
-        {
-        auto& indices = polyline->GetIndices();
-        if (indexRemap.find(indices[0]) == indexRemap.end())
-            {
-            m_polylines.erase (polyline);
-            }
-        else
-            {
-            for (size_t i=0; i<indices.size(); i++)
-                indices[i] = indexRemap[indices[i]];
-
-            polyline++;
-            }                                                                                                         
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId)
+uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(toFPoint3d(point));
-    m_entityIds.push_back(entityId);
 
     if (nullptr != normal)
         m_normals.push_back(toFPoint3d(*normal));
                                                                                                                  
     if (nullptr != param)
+        {
         m_uvParams.push_back(toFPoint2d(*param));
+        }
+    else
+        {
+        // Don't allocate the color indices until we have non-uniform color...
+        if (m_colorTable.empty())
+            {
+            m_colorTable.GetIndex(fillColor);
+            BeAssert(m_colorTable.IsUniform());
+            BeAssert(0 == m_colorTable.GetIndex(fillColor));
+            }
+        else if (!m_colorTable.IsUniform() || m_colorTable.begin()->first != fillColor)
+            {
+            if (m_colors.empty())
+                {
+                // back-fill uniform color for existing vertices...
+                m_colors.resize(m_points.size()-1);
+                std::fill(m_colors.begin(), m_colors.end(), (uint16_t)0);
+                }
 
-    m_validIdsPresent |= entityId.IsValid();
+            m_colors.push_back(m_colorTable.GetIndex(fillColor));
+            BeAssert(!m_colorTable.IsUniform());
+            }
+        }
+
     return index;
     }
 
@@ -1577,6 +1514,7 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     static const double s_paramTolerance  = .1;
 
     COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
+    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
 
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
     COMPARE_VALUES_TOLERANCE (lhs.m_point.y, rhs.m_point.y, m_tolerance);
@@ -1621,7 +1559,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams)
+void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -1657,7 +1595,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId, fillColor);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -1677,7 +1615,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId, fillColor);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -1688,26 +1626,26 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doVertexCluster)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doVertexCluster, uint32_t fillColor)
     {
     Polyline    newPolyline;
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, entityId);
-
+        VertexKey vertex(point, nullptr, nullptr, entityId, fillColor);
         newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
+
     m_mesh->AddPolyline (newPolyline);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool twoSidedTriangles, bool includeParams)
+void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams);
+        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1719,7 +1657,7 @@ uint32_t MeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor);
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1733,7 +1671,7 @@ uint32_t MeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_entityId);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor);
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -2836,12 +2774,13 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (doDecimate)
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
 
+    uint32_t fillColor = displayParams.GetFillColor();
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
         if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
             {
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), &db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), &db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
         }
     }
@@ -2876,9 +2815,10 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     MeshMergeKey key(displayParams, false, false);
     MeshBuilderR builder = GetMeshBuilder(key);
 
+    uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& strokePoints : strokes.m_strokes)
-        builder.AddPolyline(strokePoints, elemId, rangePixels < GetVertexClusterThresholdPixels());
+        builder.AddPolyline(strokePoints, elemId, rangePixels < GetVertexClusterThresholdPixels(), fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3579,8 +3519,9 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             else
                 builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
 
+            uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetEntityId(), false, options.WantTwoSidedTriangles(), hasTexture);
+                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetEntityId(), false, options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
 
         if (!options.WantSurfacesOnly())
@@ -3598,8 +3539,9 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
                 else
                     builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
 
+                uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline(strokePoints, geom->GetEntityId(), false);
+                    meshBuilder->AddPolyline(strokePoints, geom->GetEntityId(), false, fillColor);
                 }
             }
         }
@@ -3644,6 +3586,32 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
 
         asSubGraphic = true;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint16_t ColorTable::GetIndex(uint32_t color)
+    {
+    BeAssert(!IsFull());
+    BeAssert(empty() || (0 != ColorDef(color).GetAlpha()) == m_hasAlpha);
+
+    auto iter = m_map.find(color);
+    if (m_map.end() != iter)
+        return iter->second;
+    else if (IsFull())
+        {
+        BeAssert(false);
+        return 0;
+        }
+
+    // The table should never contain a mix of opaque and translucent colors
+    if (empty())
+        m_hasAlpha = (0 != ColorDef(color).GetAlpha());
+
+    uint16_t index = GetNumIndices();
+    m_map[color] = index;
+    return index;
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
