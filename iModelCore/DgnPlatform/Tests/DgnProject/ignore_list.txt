@@ -117,3 +117,6 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (69 ms)
 
+#TFS 667456
+GetSetCustomHandledProprty.Viewdefinition2d
+GetSetCustomHandledProprty.Viewdefinition3d

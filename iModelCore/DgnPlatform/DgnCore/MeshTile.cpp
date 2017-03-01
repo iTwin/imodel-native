@@ -518,7 +518,6 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
     if (!mesh.m_attributes.empty())
         m_attributes.insert(m_attributes.end(), mesh.m_attributes.begin(), mesh.m_attributes.end());
 
-    uint32_t fillColor = mesh.GetDisplayParams()->GetFillColor(); // ###TODO: only if untextured...
     for (auto& triangle : mesh.m_triangles)
         AddTriangle (TileTriangle (triangle.m_indices[0] + baseIndex, triangle.m_indices[1] + baseIndex, triangle.m_indices[2] + baseIndex, triangle.m_singleSided));
     }
