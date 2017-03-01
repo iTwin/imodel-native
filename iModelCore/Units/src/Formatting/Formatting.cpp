@@ -58,7 +58,7 @@ void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
     {
     m_name = name;
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
-    m_minTreshold = FormatConstant::FPV_MinTreshold();
+    //m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = FormatConstant::DefaultPresentaitonType();
     m_signOption = FormatConstant::DefaultSignOption();
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
@@ -85,7 +85,7 @@ void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOpt
         m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
-    m_minTreshold = FormatConstant::FPV_MinTreshold();
+    //m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_roundFactor = 0.0;
@@ -126,7 +126,7 @@ NumericFormatSpec::NumericFormatSpec(NumericFormatSpecCR other)
     m_name = other.m_name;
     m_alias = other.m_alias;
     m_decPrecision = other.m_decPrecision;
-    m_minTreshold = FormatConstant::FPV_MinTreshold();
+    //m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = other.m_presentationType;
     m_signOption = other.m_signOption;
     m_fractPrecision = other.m_fractPrecision;
@@ -279,7 +279,7 @@ void NumericFormatSpec::SetExponentZero(bool empty)
 double NumericFormatSpec::RoundedValue(double dval, double round)
     {
     round = fabs(round);
-    if (round < m_minTreshold)
+    if (round < FormatConstant::FPV_MinTreshold())
         return dval;
     double val = floor(fabs(dval) / round) * round;
     return (0.0 < dval) ? val : -val;

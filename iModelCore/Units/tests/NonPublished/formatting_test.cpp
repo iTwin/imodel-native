@@ -46,7 +46,10 @@ TEST(FormattingTest, PhysValues)
     UnitCP metrUOM = UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
+
+
     Quantity const len = Quantity(22.7, *metrUOM);
+
     Quantity ang = Quantity(135.0 + 23.0 / 120.0, *degUOM);
 
     QuantityTriadSpec qtr = QuantityTriadSpec(len, yrdUOM, ftUOM, inUOM);

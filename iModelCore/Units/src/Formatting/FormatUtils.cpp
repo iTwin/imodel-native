@@ -720,6 +720,51 @@ POP_MSVC_IGNORE
      return Utf8String(buf);
      }
  
+//===================================================
+//
+// FormatUnitSet
+//
+//===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormatUnitSet::FormatUnitSet(NumericFormatSpecCP format, UnitCP unit)
+    {
+    m_format = format;
+    m_unit = unit;
+    if (nullptr == m_format)
+        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+    else if (nullptr == m_unit)
+        m_problemCode = FormatProblemCode::UnknownUnitName;
+    else
+        m_problemCode = FormatProblemCode::NoProblems;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
+    {
+    m_problemCode = FormatProblemCode::NoProblems;
+    m_unit = nullptr;
+    m_format = StdFormatSet::FindFormat(formatName);
+    if (nullptr == m_format)
+        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+    else
+        {
+        m_unit = UnitRegistry::Instance().LookupUnit(unitName);
+        if (nullptr == m_unit)
+            m_problemCode = FormatProblemCode::UnknownUnitName;
+        }
+    }
+
+Utf8String FormatUnitSet::FormatQuantity(QuantityCR qty)
+    {
+    Utf8String txt;
+
+    return txt;
+    }
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

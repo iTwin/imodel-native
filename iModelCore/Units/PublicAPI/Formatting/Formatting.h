@@ -29,7 +29,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormatSpec)
 FORMATTING_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
-
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 //===================================================
 //
 // Enumerations
@@ -240,6 +240,8 @@ enum class StdFormatCode
 enum class FormatProblemCode
     {
     NoProblems = 0,
+    UnknownStdFormatName = 11,
+    UnknownUnitName = 12,
     CNS_InconsistentFactorSet = 51,  //!< All ratio factors between units must be bigger than one
     CNS_InconsistentUnitSet = 52,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
     CNS_UncomparableUnits = 53,      //!< Units provided on the argument list are not comparable
@@ -261,6 +263,7 @@ enum class CompositeSpecType
     Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
     Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
     };
+
 struct Utils
     {
     UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
@@ -477,7 +480,7 @@ struct NumericFormatSpec
 private:
     Utf8String          m_name;                  // name or ID of the format
     Utf8String          m_alias;                 // short alternative name (alias)
-    double              m_minTreshold;
+    //double              m_minThreshold;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
     ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
@@ -577,6 +580,19 @@ public:
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
     UNITS_EXPORT Utf8String GetName() { return m_name; };
+    };
+
+struct FormatUnitSet
+    {
+private: 
+    NumericFormatSpecCP m_format;
+    UnitCP m_unit;
+    FormatProblemCode m_problemCode;
+
+public:
+    UNITS_EXPORT FormatUnitSet(NumericFormatSpecCP format, UnitCP unit);
+    UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
+    UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty);
     };
 
 //=======================================================================================
@@ -928,4 +944,22 @@ public:
     UNITS_EXPORT Utf8String LastIntervalMetrics(size_t amount);
     UNITS_EXPORT Utf8String LastInterval(double factor);
     };
+
+/*
+struct KindOfQuantity
+    {
+    friend struct ECSchema;
+    friend struct SchemaXmlWriter;
+    friend struct SchemaXmlReaderImpl;
+
+    private:
+        ECSchemaCR m_schema;
+        Utf8String m_fullName; //cached nsprefix:name representation
+        ECValidatedName m_validatedName; //wraps name and displaylabel
+        Utf8String m_description;
+        Quantity m_persistenceResolution;
+        bvector<FormatUnitSet> m_presentationFUS;
+        mutable KindOfQuantityId m_kindOfQuantityId;
+*/
+
 END_BENTLEY_FORMATTING_NAMESPACE

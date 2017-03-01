@@ -15,6 +15,7 @@ UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
 UNITS_TYPEDEFS(Phenomenon)
 UNITS_TYPEDEFS(Expression)
+UNITS_TYPEDEFS(SpecificAccuracy)
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 enum class UnitsProblemCode
@@ -25,7 +26,37 @@ enum class UnitsProblemCode
     InvertingZero = 33
     };
 
+enum class ComparisonCode
+    {
+    Indistinguishable = 0,
+    Lesser = 1, 
+    Greater = 2, 
+    Uncomparable  = 100    //!< Units provided on the argument list are not comparable
+    };
+
 typedef bvector<Utf8String> Utf8Vector;
+
+struct SpecificAccuracy
+    {
+private:
+    double m_minResoluton;
+    UnitCP m_minResolutionUnit;
+    double m_minErrorMargin;
+    size_t m_maxDecimalPrecision;  // i.e. number of reliable (significant) digits
+public:
+    SpecificAccuracy(double minRes, UnitCP resUnit, double errMargin, size_t prec): m_minResoluton(minRes),
+        m_minResolutionUnit(resUnit), m_minErrorMargin(errMargin), m_maxDecimalPrecision(prec){}
+    double GetMinResolution() { return m_minResoluton; }
+    double GetMinErrorMargin() { return m_minErrorMargin; }
+    UnitCP GetResolutionUnit() { return m_minResolutionUnit; }
+    size_t GetMaxDecimalPrecision() { return m_maxDecimalPrecision; }
+
+    //UNITS_EXPORT Quantity GetResolutionQuantity(){ return Quantity(m_minResoluton, m_minResolutionUnit); }
+
+    //UNITS_EXPORT static bool IsIndistinguishable(QuantityCR q1, QuantityCR q2);
+    //UNITS_EXPORT static ComparisonCode Compare(QuantityCR q1, QuantityCR q2);
+
+    };
 
 struct UnitRegistry;
 struct Expression;
@@ -146,6 +177,10 @@ friend struct Expression;
 
 private:
     bvector<UnitCP> m_units;
+
+
+
+
     void AddUnit(UnitCR unit);
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
 
