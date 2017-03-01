@@ -199,8 +199,10 @@
 <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
         <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
-        <ProductDirectory Name="http" Path="Dlls" Deliver="true"/>
+        <!--<ProductDirectory Name="http" Path="Dlls" Deliver="true"/>-->
         <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="DgnClientFxJavaScript"        Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="DgnClientFxJavaScriptIcons"   Path="Dlls" Deliver="true"/>    
         <ProductDirectory Name="WSClientAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>            
         <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
@@ -240,8 +242,8 @@
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
         <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
-        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
-        <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
+        <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>    
+        <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />        
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />

@@ -432,7 +432,7 @@ void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
     return _GetAllCoverages(coverageData);
     }
 
-void IScalableMesh::GetCoverageIds(bvector<uint64_t>& ids)
+void IScalableMesh::GetCoverageIds(bvector<uint64_t>& ids) const
     {
     return _GetCoverageIds(ids);
     }
@@ -2226,7 +2226,25 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
     fileName = BeFileName(m_baseExtraFilesPath);
     fileName.AppendString(L"_clips");
 
-    extraFileNames.push_back(fileName);        
+    extraFileNames.push_back(fileName);
+
+    //Coverage terrain files
+    bvector<uint64_t> ids;
+    GetCoverageIds(ids);
+
+    for (auto& id : ids)
+        { 
+        wchar_t idStr[1000];
+        swprintf(idStr, L"%zu", id);
+                    
+        //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
+        fileName.clear();
+        fileName = BeFileName(m_baseExtraFilesPath);
+        fileName.AppendString(L"_terrain_");
+        fileName.AppendString(idStr);
+        fileName.AppendString(L".3sm");
+        extraFileNames.push_back(fileName);        
+        }    
     }
 
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
@@ -2527,7 +2545,7 @@ template <class POINT> void ScalableMesh<POINT>::_GetAllCoverages(bvector<bvecto
     m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
     }
 
-template <class POINT> void ScalableMesh<POINT>::_GetCoverageIds(bvector<uint64_t>& ids)
+template <class POINT> void ScalableMesh<POINT>::_GetCoverageIds(bvector<uint64_t>& ids) const
     {
     if (nullptr == m_scmIndexPtr) return;
     m_scmIndexPtr->GetClipRegistry()->GetAllCoverageIds(ids);

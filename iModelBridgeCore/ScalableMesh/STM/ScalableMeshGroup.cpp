@@ -416,7 +416,7 @@ void                           ScalableMeshGroup::_GetAllCoverages(bvector<bvect
         }
     }
 
-void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids)
+void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids) const
     {
     for (auto& member : m_members)
         {
