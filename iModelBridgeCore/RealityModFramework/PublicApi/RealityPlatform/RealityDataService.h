@@ -684,7 +684,7 @@ private:
 
     UploadReport                m_ulReport;
     size_t                      m_curEntry;
-    time_t                      m_azureTokenTimer;
+    int64_t                    m_azureTokenTimer;
 
     uint64_t                    m_fullUploadSize;
     uint64_t                    m_currentUploadedAmount;

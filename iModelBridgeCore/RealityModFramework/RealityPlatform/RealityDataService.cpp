@@ -9,6 +9,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeFileListIterator.h>
 #include <Bentley/bset.h>
+#include <Bentley/DateTime.h>
 
 //#include <iostream>
 #include <RealityPlatform/RealityDataService.h>
@@ -899,6 +900,25 @@ BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
         //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
         m_azureServer = parts[0];
         m_azureToken = parts[1];
+
+        DateTime tokenExpiry = DateTime::GetCurrentTimeUtc();
+        parts.clear();
+        BeStringUtilities::Split(m_azureToken.c_str(), "&", parts);
+        for(Utf8String arg : parts)
+            {
+            if(arg.StartsWith("se=")) // se=2017-03-01T16%3A21%3A06Z
+                {
+                arg.ReplaceAll("se=",""); // 2017-03-01T16%3A21%3A06Z
+                arg.ReplaceAll("%3A", ":"); // 2017-03-01T16:21:06Z
+                DateTime::FromString(tokenExpiry, arg.c_str());
+                break;
+                }
+            }
+
+        tokenExpiry.ToUnixMilliseconds(m_azureTokenTimer);
+        
+        m_azureTokenTimer -= (10 * 60 * 1000); // renew token 10 minutes before it expires
+
         return BentleyStatus::SUCCESS;
         }
     else
@@ -971,7 +991,6 @@ UploadReport* RealityDataServiceUpload::Perform()
                     if (fileUp != nullptr && fileUp->nbRetry < 5)
                         {
                         ++fileUp->nbRetry;
-                        //ReportStatus((int)fileUp->index, pClient, 0, "Trying again...");
                         fileUp->Retry();
                         SetupCurlforFile((RealityDataUrl*)(fileUp), 0);
                         still_running++;
@@ -1014,7 +1033,6 @@ UploadReport* RealityDataServiceUpload::Perform()
                 ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
                 }
 
-            // Other URL to download ?
             if (m_curEntry < (int)m_filesToUpload.size() && still_running < MAX_NB_CONNECTIONS)
                 {
                 if (SetupNextEntry())
@@ -1136,13 +1154,13 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
 
 Utf8String RealityDataServiceUpload::GetAzureToken()
     {
-    if ((std::time(nullptr) - m_azureTokenTimer) > (50 * 60))
+    int64_t currentTime; 
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+    if ((m_azureTokenTimer - currentTime) < (0))
         {
         RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
         if(ParseHandshakeResponse(m_handshakeRequest->GetJsonResponse()) != BentleyStatus::SUCCESS)
             ReportStatus(0, nullptr, -1, "Failure retrieving Azure token");
-        else
-            m_azureTokenTimer = std::time(nullptr);
         }
     return m_azureToken;
     }
