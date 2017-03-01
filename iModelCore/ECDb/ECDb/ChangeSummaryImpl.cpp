@@ -1039,10 +1039,10 @@ bool ChangeExtractor::RecordRelInstance(ChangeSummary::InstanceCR instance, Chan
     ECClassId classId = instance.GetClassId();
     ECInstanceId instanceId = instance.GetInstanceId();
 
-    m_valuesTable.Insert(classId, instanceId, "SourceECClassId", oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClassId());
-    m_valuesTable.Insert(classId, instanceId, "SourceECInstanceId", oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetECInstanceId() : ECInstanceId());
-    m_valuesTable.Insert(classId, instanceId, "TargetECClassId", oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetECClassId() : ECClassId());
-    m_valuesTable.Insert(classId, instanceId, "TargetECInstanceId", oldTargetKey.IsValid() ? oldTargetKey.GetECInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetECInstanceId() : ECInstanceId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECClassId, oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClassId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECInstanceId, oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetECInstanceId() : ECInstanceId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECClassId, oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetECClassId() : ECClassId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECInstanceId, oldTargetKey.IsValid() ? oldTargetKey.GetECInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetECInstanceId() : ECInstanceId());
 
     return true;
     }
@@ -1420,12 +1420,12 @@ void ChangeSummary::Dump() const
             DbDupValue newValue = vEntry.GetNewValue();
 
             Utf8String oldValueStr, newValueStr;
-            if (accessString.Contains("ECInstanceId"))
+            if (accessString.Contains(ECDBSYS_PROP_ECInstanceId))
                 {
                 oldValueStr = FormatInstanceIdStr(oldValue.GetValueId<ECInstanceId>());
                 newValueStr = FormatInstanceIdStr(newValue.GetValueId<ECInstanceId>());
                 }
-            else if (accessString.Contains("ECClassId"))
+            else if (accessString.Contains(ECDBSYS_PROP_ECClassId))
                 {
                 oldValueStr = FormatClassIdStr(oldValue.GetValueId<ECClassId>());
                 newValueStr = FormatClassIdStr(newValue.GetValueId<ECClassId>());
@@ -1805,7 +1805,7 @@ void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, 
     {
     if (nArgs != 3 || args[0].IsNull() || args[1].IsNull() || args[2].IsNull())
         {
-        ctx.SetResultError("Arguments to IsChangedInstance must be (changeSummary, ECClassId, ECInstanceId) ", -1);
+        ctx.SetResultError("Arguments to IsChangedInstance must be (changeSummary, " ECDBSYS_PROP_ECClassId ", " ECDBSYS_PROP_ECInstanceId ")", -1);
         return;
         }
 

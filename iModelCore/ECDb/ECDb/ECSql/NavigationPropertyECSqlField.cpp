@@ -27,10 +27,10 @@ void NavigationPropertyECSqlField::SetMembers(std::unique_ptr<ECSqlField> idFiel
 //---------------------------------------------------------------------------------------
 IECSqlValue const& NavigationPropertyECSqlField::_GetStructMemberValue(Utf8CP memberName) const
     {
-    if (BeStringUtilities::StricmpAscii(memberName, ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME) == 0)
+    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropId) == 0)
         return *m_idField;
 
-    if (BeStringUtilities::StricmpAscii(memberName, ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME) == 0)
+    if (BeStringUtilities::StricmpAscii(memberName, ECDBSYS_PROP_NavPropRelECClassId) == 0)
         return *m_relClassIdField;
 
     LOG.errorv("Member name '%s' passed to navigation property IECSqlValue[Utf8CP] does not exist.", memberName);

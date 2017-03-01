@@ -9,6 +9,28 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDb.h>
 
+#define ECSCHEMA_ECDbSystem "ECDbSystem"
+#define ECSCHEMA_ALIAS_ECDbSystem "ecdbsys"
+
+#define ECDBSYS_CLASS_ClassECSqlSystemProperties "ClassECSqlSystemProperties"
+#define ECDBSYS_CLASS_RelationshipECSqlSystemProperties "RelationshipECSqlSystemProperties"
+#define ECDBSYS_CLASS_PointECSqlSystemProperties "PointECSqlSystemProperties"
+#define ECDBSYS_CLASS_NavigationECSqlSystemProperties "NavigationECSqlSystemProperties"
+
+#define ECDBSYS_PROP_ECInstanceId "ECInstanceId"
+#define ECDBSYS_PROP_ECClassId "ECClassId"
+#define ECDBSYS_PROP_SourceECInstanceId "SourceECInstanceId"
+#define ECDBSYS_PROP_SourceECClassId "SourceECClassId"
+#define ECDBSYS_PROP_TargetECInstanceId "TargetECInstanceId"
+#define ECDBSYS_PROP_TargetECClassId "TargetECClassId"
+#define ECDBSYS_PROP_NavPropId "Id"
+#define ECDBSYS_PROP_NavPropRelECClassId "RelECClassId"
+#define ECDBSYS_PROP_PointX "X"
+#define ECDBSYS_PROP_PointY "Y"
+#define ECDBSYS_PROP_PointZ "Z"
+
+
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -122,18 +144,6 @@ public:
 struct ECDbSystemSchemaHelper final : NonCopyableClass
     {
     public:
-        static Utf8CP const ECINSTANCEID_PROPNAME;
-        static Utf8CP const ECCLASSID_PROPNAME;
-        static Utf8CP const SOURCEECINSTANCEID_PROPNAME;
-        static Utf8CP const SOURCEECCLASSID_PROPNAME;
-        static Utf8CP const TARGETECINSTANCEID_PROPNAME;
-        static Utf8CP const TARGETECCLASSID_PROPNAME;
-        static Utf8CP const NAVPROP_ID_PROPNAME;
-        static Utf8CP const NAVPROP_RELECCLASSID_PROPNAME;
-        static Utf8CP const POINTPROP_X_PROPNAME;
-        static Utf8CP const POINTPROP_Y_PROPNAME;
-        static Utf8CP const POINTPROP_Z_PROPNAME;
-
         ECDb const& m_ecdb;
         mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
 

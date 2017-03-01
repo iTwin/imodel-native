@@ -282,7 +282,7 @@ void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bve
         return;
         }
 
-    ecsql.append(" WHERE ECInstanceId=?");
+    ecsql.append(" WHERE " ECDBSYS_PROP_ECInstanceId "=?");
     m_ecinstanceIdParameterIndex = parameterIndex;
 
     if (!Utf8String::IsNullOrEmpty(ecsqlOptions))
@@ -325,8 +325,9 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
         ECClassId newSourceClassId = relationshipInstance->GetSource()->GetClass().GetId();
         ECClassId newTargetClassId = relationshipInstance->GetTarget()->GetClass().GetId();
 
-        Utf8String ecSql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ");
-        ecSql.append(m_ecClass.GetECSqlName()).append(" WHERE ECInstanceId=?");
+        Utf8String ecSql("SELECT " ECDBSYS_PROP_SourceECInstanceId "," ECDBSYS_PROP_SourceECClassId "," 
+                         ECDBSYS_PROP_TargetECInstanceId "," ECDBSYS_PROP_TargetECClassId " FROM ");
+        ecSql.append(m_ecClass.GetECSqlName()).append(" WHERE " ECDBSYS_PROP_ECInstanceId "=?");
         ECSqlStatement statement;
         ECSqlStatus status = statement.Prepare(m_ecdb, ecSql.c_str());
         if (!status.IsSuccess())
@@ -364,7 +365,7 @@ DbResult ECInstanceUpdater::Impl::Update(IECInstanceCR instance) const
     if (SUCCESS != ECInstanceId::FromString(ecinstanceId, instance.GetInstanceId().c_str()))
         {
         Utf8String errorMessage;
-        errorMessage.Sprintf("ECInstanceId '%s' is empty or not a valid ECDb ECInstanceId.", instance.GetInstanceId().c_str());
+        errorMessage.Sprintf(ECDBSYS_PROP_ECInstanceId " '%s' is empty or not a valid ECDb " ECDBSYS_PROP_ECInstanceId ".", instance.GetInstanceId().c_str());
         ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage.c_str());
         return BE_SQLITE_ERROR;
         }

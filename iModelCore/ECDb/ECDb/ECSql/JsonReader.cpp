@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -138,7 +138,7 @@ BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInsta
         ECClassCP selectClass = m_ecDb.Schemas().GetECClass(selectClassId);
         BeAssert(selectClass != nullptr);
 
-        Utf8PrintfString ecSql("SELECT * FROM ONLY %s AS el WHERE el.ECInstanceId=?", selectClass->GetECSqlName().c_str());
+        Utf8PrintfString ecSql("SELECT * FROM ONLY %s AS el WHERE el." ECDBSYS_PROP_ECInstanceId "=?", selectClass->GetECSqlName().c_str());
 
         CachedECSqlStatementPtr statement = nullptr;
         if (SUCCESS != PrepareAndBindStatement(statement, ecSql, selectInstanceId))
@@ -188,7 +188,7 @@ BentleyStatus JsonReader::GenerateECSql(Utf8StringR ecSql, ECRelationshipPath co
     else
         selectClause.Sprintf("SELECT [%s].*", rootInfo.GetAlias().c_str());
 
-    ecSql.Sprintf("%s %s %s WHERE %s.ECInstanceId=?", selectClause.c_str(), fromClause.c_str(), joinClause.c_str(), leafInfo.GetAlias().c_str());
+    ecSql.Sprintf("%s %s %s WHERE %s." ECDBSYS_PROP_ECInstanceId "=?", selectClause.c_str(), fromClause.c_str(), joinClause.c_str(), leafInfo.GetAlias().c_str());
 
     return SUCCESS;
     }

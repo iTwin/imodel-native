@@ -572,7 +572,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             RelationshipMultiplicityCR referencedEndMult = foreignKeyEnd == ECRelationshipEnd_Source ? relClass->GetTarget().GetMultiplicity() : relClass->GetSource().GetMultiplicity();
             if (referencedEndMult.GetLowerLimit() == 0)
                 {
-                Issues().Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, which requires the %s multiplicity's lower bound to not be 0 because the ECInstanceId can never be NULL.",
+                Issues().Report("Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, which requires the %s multiplicity's lower bound to not be 0 because the " ECDBSYS_PROP_ECInstanceId " can never be NULL.",
                                 m_ecClass.GetFullName(), foreignKeyEnd == ECRelationshipEnd_Source ? "target" : "source");
                 return ERROR;
                 }

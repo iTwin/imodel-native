@@ -184,42 +184,39 @@ void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
     if (m_violatingClasses.empty() || !issues.IsEnabled())
         return;
 
-    Utf8String violatingClassesStr;
     for (auto const& kvPair : m_violatingClasses)
         {
-        ECSchemaCR schema = *kvPair.first;
         for (std::pair<ECClassCP, Kind> const& violatingClass : kvPair.second)
             {
-            violatingClassesStr.append(violatingClass.first->GetName()).append(": ");
-
+            Utf8CP className = violatingClass.first->GetFullName();
+            Utf8CP error = nullptr;
             switch (violatingClass.second)
                 {
                     case Kind::AbstractClassHasNonAbstractBaseClass:
-                        violatingClassesStr.append("An abstract class must not have a non-abstract base class.");
+                        error = "An abstract class must not have a non-abstract base class.";
                         break;
 
                     case Kind::MultiInheritance:
-                        violatingClassesStr.append("Multi-inheritance is not supported. Use mixins instead.");
+                        error = "Multi-inheritance is not supported. Use mixins instead.";
                         break;
 
                     default:
                         BeAssert(false);
                 }
-            }
 
-        if (m_doNotFailForLegacyIssues)
-            {
-            if (LOG.isSeverityEnabled(NativeLogging::LOG_WARNING))
+            if (m_doNotFailForLegacyIssues)
                 {
-                LOG.warningv("ECSchema '%s' contains ECClasses with base classes which are invalid but support for legacy reasons. "
-                             "This can lead to data corruption. Violating ECClasses: %s",
-                             schema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
+                if (LOG.isSeverityEnabled(NativeLogging::LOG_WARNING))
+                    {
+                    LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: %s",
+                                 className, error);
+                    }
                 }
-            return;
-            }
+            else
+                issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: %s",
+                              className, error);
 
-        issues.Report("ECSchema '%s' contains ECClasses with invalid base classes. Violating ECClasses: %s",
-                      schema.GetFullSchemaName().c_str(), violatingClassesStr.c_str());
+            }
         }
     }
 

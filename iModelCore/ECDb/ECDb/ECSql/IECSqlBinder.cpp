@@ -118,7 +118,7 @@ ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId)
     {
-    IECSqlBinder& idBinder = _BindStructMember(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
+    IECSqlBinder& idBinder = _BindStructMember(ECDBSYS_PROP_NavPropId);
     ECSqlStatus stat = idBinder.BindId(relatedInstanceId);
     if (stat != ECSqlStatus::Success)
         return stat;
@@ -126,7 +126,7 @@ ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECCla
     if (!relationshipECClassId.IsValid())
         return ECSqlStatus::Success;
 
-    IECSqlBinder& relClassIdBinder = _BindStructMember(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    IECSqlBinder& relClassIdBinder = _BindStructMember(ECDBSYS_PROP_NavPropRelECClassId);
     return relClassIdBinder.BindId(relationshipECClassId);
     }
 

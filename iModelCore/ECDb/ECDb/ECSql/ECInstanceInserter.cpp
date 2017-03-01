@@ -112,7 +112,7 @@ void ECInstanceInserter::Impl::Initialize(ECCrudWriteToken const* writeToken)
     {
     Utf8String ecsql("INSERT INTO ");
     //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one
-    ecsql.append(m_ecClass.GetECSqlName()).append("(ECInstanceId");
+    ecsql.append(m_ecClass.GetECSqlName()).append("(" ECDBSYS_PROP_ECInstanceId);
     Utf8String valuesClause(") VALUES(?");
 
     int parameterIndex = 1;
@@ -146,12 +146,12 @@ void ECInstanceInserter::Impl::Initialize(ECCrudWriteToken const* writeToken)
     if (m_ecClass.IsRelationshipClass())
         {
         //SourceECClassId and TargetECClassId are not needed during insert
-        ecsql.append(",").append(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
+        ecsql.append("," ECDBSYS_PROP_SourceECInstanceId);
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+        ecsql.append("," ECDBSYS_PROP_TargetECInstanceId);
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId, parameterIndex);
         }
@@ -200,7 +200,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
             if (!userProvidedECInstanceId->IsValid())
                 {
                 Utf8String errorMessage;
-                errorMessage.Sprintf("Invalid parameter for ECInstanceInserter::Insert. Parameter userprovidedECInstanceId is not a valid ECInstanceId.",
+                errorMessage.Sprintf("Invalid parameter for ECInstanceInserter::Insert. Parameter userprovidedECInstanceId is not a valid " ECDBSYS_PROP_ECInstanceId ".",
                                      m_ecClass.GetFullName());
 
                 LogFailure(instance, errorMessage.c_str());
@@ -216,7 +216,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
             if (instanceIdStr.empty())
                 {
                 Utf8String errorMessage;
-                errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id must be set when ECInstanceId auto-generation is disabled and no user provided ECInstanceId was given explicitly.",
+                errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id must be set when " ECDBSYS_PROP_ECInstanceId " auto-generation is disabled and no user provided " ECDBSYS_PROP_ECInstanceId " was given explicitly.",
                                      m_ecClass.GetFullName());
 
                 LogFailure(instance, errorMessage.c_str());
@@ -227,7 +227,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECInstanceKey& newInstanceKey, IECInst
             if (SUCCESS != ECInstanceId::FromString(actualUserProvidedInstanceId, instanceIdStr.c_str()))
                 {
                 Utf8String errorMessage;
-                errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id '%s' must be of type ECInstanceId when ECInstanceId auto-gneration is disabled and no user provided ECInstanceId was given explicitly.",
+                errorMessage.Sprintf("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id '%s' must be of type " ECDBSYS_PROP_ECInstanceId " when " ECDBSYS_PROP_ECInstanceId " auto-generation is disabled and no user provided " ECDBSYS_PROP_ECInstanceId " was given explicitly.",
                                      m_ecClass.GetFullName(), instanceIdStr.c_str());
 
                 LogFailure(instance, errorMessage.c_str());
@@ -334,7 +334,7 @@ DbResult ECInstanceInserter::Impl::InsertRelationship(ECInstanceKey& newInstance
             {
             if (!userProvidedECInstanceId->IsValid())
                 {
-                LOG.error("Failed to insert RelationshipECInstance: Parameter 'userprovidedECInstanceId' is not a valid ECInstanceId.");
+                LOG.error("Failed to insert RelationshipECInstance: Parameter 'userprovidedECInstanceId' is not a valid " ECDBSYS_PROP_ECInstanceId ".");
                 return BE_SQLITE_ERROR;
                 }
 

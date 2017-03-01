@@ -1125,13 +1125,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     Utf8CP toRelatedKey = nullptr;
     if (fromIsSource == TriState::True)
         {
-        fromRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
-        toRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
+        fromRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
+        toRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
         }
     else
         {
-        fromRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
-        toRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
+        fromRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
+        toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
         }
 
     ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClass();

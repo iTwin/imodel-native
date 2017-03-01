@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonInserter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -40,7 +40,7 @@ DbResult JsonInserter::Insert(JsonValueR jsonValue) const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    jsonValue["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
+    jsonValue["$" ECDBSYS_PROP_ECInstanceId] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
     return BE_SQLITE_OK;
     }
 

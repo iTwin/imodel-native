@@ -11,13 +11,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ECDBSYSTEM_SCHEMANAME "ECDbSystem"
-
-#define CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME "ClassECSqlSystemProperties"
-#define REL_ECSQLSYSTEMPROPERTIES_CLASSNAME "RelationshipECSqlSystemProperties"
-#define POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME "PointECSqlSystemProperties"
-#define NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME "NavigationECSqlSystemProperties"
-
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                01/2017
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -34,24 +27,6 @@ const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_navigationRelECClassId 
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_pointX = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::X);
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_pointY = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::Y);
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_pointZ = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::Z);
-
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                06/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-//static member variable initialization
-Utf8CP const ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME = "ECInstanceId";
-Utf8CP const ECDbSystemSchemaHelper::ECCLASSID_PROPNAME = "ECClassId";
-Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInstanceId";
-Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
-Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInstanceId";
-Utf8CP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME = "TargetECClassId";
-Utf8CP const ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME = "Id";
-Utf8CP const ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME = "RelECClassId";
-Utf8CP const ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME = "X";
-Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME = "Y";
-Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME = "Z";
-
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                12/2016
@@ -83,14 +58,14 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
         {
             case ECSqlSystemPropertyInfo::Type::Class:
             {
-            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_ClassECSqlSystemProperties);
             switch (sysPropInfo.GetClass())
                 {
                     case ECSqlSystemPropertyInfo::Class::ECInstanceId:
-                        propName = ECINSTANCEID_PROPNAME;
+                        propName = ECDBSYS_PROP_ECInstanceId;
                         break;
                     case ECSqlSystemPropertyInfo::Class::ECClassId:
-                        propName = ECCLASSID_PROPNAME;
+                        propName = ECDBSYS_PROP_ECClassId;
                         break;
 
                     default:
@@ -102,20 +77,20 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Relationship:
             {
-            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_RelationshipECSqlSystemProperties);
             switch (sysPropInfo.GetRelationship())
                 {
                     case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
-                        propName = SOURCEECINSTANCEID_PROPNAME;
+                        propName = ECDBSYS_PROP_SourceECInstanceId;
                         break;
                     case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
-                        propName = SOURCEECCLASSID_PROPNAME;
+                        propName = ECDBSYS_PROP_SourceECClassId;
                         break;
                     case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
-                        propName = TARGETECINSTANCEID_PROPNAME;
+                        propName = ECDBSYS_PROP_TargetECInstanceId;
                         break;
                     case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
-                        propName = TARGETECCLASSID_PROPNAME;
+                        propName = ECDBSYS_PROP_TargetECClassId;
                         break;
 
                     default:
@@ -127,14 +102,14 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Navigation:
             {
-            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_NavigationECSqlSystemProperties);
             switch (sysPropInfo.GetNavigation())
                 {
                     case ECSqlSystemPropertyInfo::Navigation::Id:
-                        propName = NAVPROP_ID_PROPNAME;
+                        propName = ECDBSYS_PROP_NavPropId;
                         break;
                     case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
-                        propName = NAVPROP_RELECCLASSID_PROPNAME;
+                        propName = ECDBSYS_PROP_NavPropRelECClassId;
                         break;
 
                     default:
@@ -146,17 +121,17 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Point:
             {
-            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_PointECSqlSystemProperties);
             switch (sysPropInfo.GetPoint())
                 {
                     case ECSqlSystemPropertyInfo::Point::X:
-                        propName = POINTPROP_X_PROPNAME;
+                        propName = ECDBSYS_PROP_PointX;
                         break;
                     case ECSqlSystemPropertyInfo::Point::Y:
-                        propName = POINTPROP_Y_PROPNAME;
+                        propName = ECDBSYS_PROP_PointY;
                         break;
                     case ECSqlSystemPropertyInfo::Point::Z:
-                        propName = POINTPROP_Z_PROPNAME;
+                        propName = ECDBSYS_PROP_PointZ;
                         break;
 
                     default:
