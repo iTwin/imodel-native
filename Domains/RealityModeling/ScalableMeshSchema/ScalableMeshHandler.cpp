@@ -1524,7 +1524,7 @@ void ScalableMeshModel::InitializeTerrainRegions()
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP != nullptr) && ((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
         {
         appData->m_smTerrainPhysicalModelP = this;
         appData->m_modelSearched = true;
