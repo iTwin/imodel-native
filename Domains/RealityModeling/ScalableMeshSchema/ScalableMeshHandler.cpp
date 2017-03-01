@@ -998,6 +998,42 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
         }
     }
 
+
+void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain)
+    {    
+    has3D = false; 
+    hasTerrain = false;
+    hasExtractedTerrain = false;
+
+    bvector<IMeshSpatialModelP> smModels;
+
+    GetAllScalableMeshes(dgnDb, smModels);
+
+    for (auto& smModel : smModels)
+        {
+        ScalableMeshModel* scalableMeshModel = (ScalableMeshModel*)smModel;
+
+        if (!scalableMeshModel->IsTerrain())
+            {
+            IScalableMesh* sm = scalableMeshModel->GetScalableMesh();
+
+            if (sm != nullptr)
+                {
+                bvector<uint64_t> ids;
+                sm->GetCoverageIds(ids);
+
+                if (ids.size() > 0) hasExtractedTerrain = true;
+                }
+
+            has3D = true;
+            }
+        else
+            {
+            hasTerrain = true;
+            }
+        }
+    }
+
 //NEEDS_WORK_SM : Should be at application level
 void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
     {    
@@ -1327,9 +1363,9 @@ BeFileName ScalableMeshModel::GetPath()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-IScalableMesh* ScalableMeshModel::GetScalableMesh()
+IScalableMesh* ScalableMeshModel::GetScalableMesh(bool wantGroup)
     {
-    if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty())
+    if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty() && wantGroup)
         return m_smPtr->GetGroup().get();
     return m_smPtr.get();
     }
