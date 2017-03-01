@@ -27,6 +27,7 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert(NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin();
     BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
     BeAssert(NULL == m_codeAdmin);             m_codeAdmin             = &_SupplyCodeAdmin();
+    BeAssert(NULL == m_sessionSettingsAdmin);  m_sessionSettingsAdmin  = &_SupplySessionSettingsAdmin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,6 +53,7 @@ void DgnPlatformLib::Host::Terminate(bool onProgramExit)
     ON_HOST_TERMINATE(m_scriptingAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_repositoryAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_codeAdmin, onProgramExit);
+    ON_HOST_TERMINATE(m_sessionSettingsAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
     IECSymbolProvider::UnRegisterExternalSymbolPublisher();
