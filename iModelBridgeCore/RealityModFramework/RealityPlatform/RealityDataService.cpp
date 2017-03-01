@@ -1262,16 +1262,16 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
     return entities;
     }
 
-void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, BentleyStatus& status)
+void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
 {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
 
-    if (status != BentleyStatus::SUCCESS)
+    if (status != RequestStatus::SUCCESS)
     {
         std::cout << "RealityDataEnterpriseStat failed with response" << std::endl;
         std::cout << jsonString << std::endl;
-        status = BentleyStatus::ERROR;
+        status = RequestStatus::ERROR;
     }
 
     RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
