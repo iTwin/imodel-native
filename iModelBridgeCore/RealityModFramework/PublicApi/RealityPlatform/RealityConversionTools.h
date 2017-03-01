@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityConversionTools.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,9 @@ public:
     //&&AR There can be Spatial Entities with the same name (see SRTM1, SRTM3)
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntity(Utf8CP data, bvector<SpatialEntityPtr>* outData);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntity(Utf8CP data, bmap<Utf8String, SpatialEntityPtr>* outData);
+
+    //! To retreive EnterpriseStat 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Utf8CP data, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB);
 
     //! Utility function to extract a SpatialEntity from a SpatialEntityWithDetailsView JSON fragment.
     //! This one takes the JSON value as input and created the SpatialEntity object.    

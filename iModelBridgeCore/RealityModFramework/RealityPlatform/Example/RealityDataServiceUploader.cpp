@@ -41,25 +41,44 @@ int main(int argc, char *argv[])
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
 
+#if (0) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Helsinki");
+    properties.Insert(RealityDataField::Name, "Performance Test 1");
     properties.Insert(RealityDataField::Dataset, "Terrain");
-    properties.Insert(RealityDataField::Group, "Exemple group");
-    properties.Insert(RealityDataField::Description, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
-    properties.Insert(RealityDataField::RootDocument, "Scene/Production_Helsinki_3MX_ok.3mx");
-    properties.Insert(RealityDataField::Classification, "Exemple classification");
+    properties.Insert(RealityDataField::Group, "Performance group");
+    properties.Insert(RealityDataField::Description, "Test_1");
+    properties.Insert(RealityDataField::RootDocument, "Test_1/SaltLake/3MX/Scene/Production_utsalt_3mx.3mx");
+    properties.Insert(RealityDataField::Classification, "Exemple Test 1");
     properties.Insert(RealityDataField::Type, "3mx");
     properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
     properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
     properties.Insert(RealityDataField::MetadataURL, "metadata.html");
-    properties.Insert(RealityDataField::AccuracyInMeters, "16.14");
-    properties.Insert(RealityDataField::ResolutionInMeters, "16.14x23.19");
-    properties.Insert(RealityDataField::OwnedBy, "francis.boily@bentley.com");
+    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
+    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
+    properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
+    BeFileName fName = BeFileName("J:/_Data_Tests/_RDS_Performance/Test_1");
+#endif
+#if (1) 
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, "Performance Test 2");
+    properties.Insert(RealityDataField::Dataset, "Images");
+    properties.Insert(RealityDataField::Group, "Performance group");
+    properties.Insert(RealityDataField::Description, "Test_2");
+    properties.Insert(RealityDataField::RootDocument, "");
+    properties.Insert(RealityDataField::Classification, "Exemple Test 2");
+    properties.Insert(RealityDataField::Type, "Images");
+//    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
+//    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
+//    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
+//    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
+//    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
+    properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
+    BeFileName fName = BeFileName("J:/_Data_Tests/_RDS_Performance/Test_2");
+#endif
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    BeFileName Montgomery = BeFileName("D:/Helsinki");
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(Montgomery, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
     if (upload->IsValidUpload())
         {
         upload->SetProgressCallBack(progressFunc);
