@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     RealityDataService::SetServerComponents("s3mxcloudservice.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
 
-    BentleyStatus status;
+    RequestStatus status;
 
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
     SpatialEntityPtr entity = RealityDataService::Request(*idReq, status);

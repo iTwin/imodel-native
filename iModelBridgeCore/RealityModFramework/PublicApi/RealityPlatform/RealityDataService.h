@@ -797,7 +797,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, RequestStatus& status);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, BentleyStatus& status);
+    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status);
 
 
     //! Returns the RealityData object requested or null if an error occured
