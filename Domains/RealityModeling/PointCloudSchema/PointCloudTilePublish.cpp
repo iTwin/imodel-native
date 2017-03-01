@@ -164,14 +164,14 @@ PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgn
         } 
     else
         {
-        TileDisplayParamsPtr                displayParams = TileDisplayParams::Create();
+        TileDisplayParamsCPtr               displayParams = TileDisplayParams::Create();
         static double                       s_clusterFraction = 1.0;
         double                              clusterTolerance = GetTolerance() * s_clusterFraction;
         Transform                           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_publishContext.m_model.GetSceneToWorld());
         bvector<uint16_t>                   packedColors(nPoints);
         TileMeshPointCloud::Rgb const*      colorCP = nullptr == queryBuffers->GetRgbChannel() ? nullptr : reinterpret_cast<TileMeshPointCloud::Rgb const*> (queryBuffers->GetRgbChannel()->GetChannelBuffer());
 
-        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(displayParams, pPoints, colorCP, nullptr, nPoints, sceneToTile, clusterTolerance)); 
+        publishableGeometry.PointClouds().push_back(TileMeshPointCloud::Create(*displayParams, pPoints, colorCP, nullptr, nPoints, sceneToTile, clusterTolerance)); 
         }
 
     return publishableGeometry;
