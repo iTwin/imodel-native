@@ -685,7 +685,8 @@ struct VuNode {
 
     GEOMDLLIMPEXP VuP FindNodeAroundFace(VuP node);
     GEOMDLLIMPEXP VuP FindNodeAroundVertex(VuP node);
-
+    // Return the (xy) cross product of vectors from this node to targets ..
+    GEOMDLLIMPEXP double CrossXY (VuP nodeA, VuP nodeB) const;
 
     GEOMDLLIMPEXP DPoint3d GetXYZ () const;
     GEOMDLLIMPEXP ptrdiff_t GetUserData1 () const;
@@ -810,6 +811,7 @@ typedef struct
                 {VuP Ploop=Pstart;      \
                 do{                     \
                 if ( (FilterCondition) ) {
-
+// extract faces from a graph into a polyface.
+GEOMDLLIMPEXP PolyfaceHeaderPtr vu_toPolyface (VuSetP graph, VuMask faceExclusionMask);
 END_BENTLEY_GEOMETRY_NAMESPACE
 
