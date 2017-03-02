@@ -11,6 +11,8 @@
 
 #include <Bentley/BeTest.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
+#include <RealityPlatform/SpatialEntity.h>
+#include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatform/RealityConversionTools.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -488,3 +490,126 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     EXPECT_TRUE(mySpatialEntity->GetMetadataCP() != NULL);
 
     }
+
+
+#if (0)
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            02/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
+    {
+    Utf8CP jsonString = "{"
+                          "instances\": [" 
+                            "{"
+                            "\"instanceId\": \"14812\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataProjectRelationship\","
+                            "\"properties\" : {"
+                                  "\"RealityDataId\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"ProjectId\" : \"504fc784-2b2d-465f-b1d9-de58bf6cf0f2\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "},"
+                            "{"
+                            "\"instanceId\": \"14813\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataProjectRelationship\","
+                            "\"properties\" : {"
+                                  "\"RealityDataId\": \"8411d048-78ec-495a-b263-cad44dba7a17\","
+                                  "\"ProjectId\" : \"73597d7f-e2fe-4704-8ee9-be37ed1f3d37\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "}"
+                       " ]"
+                     " }";
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+
+    // Instances must be a root node.
+    ASSERT_TRUE(root.isMember("instances"));
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    ASSERT_TRUE(instance.isMember("properties"));
+
+    RealityDataProjectRelationshipPtr myRelationShip = RealityDataProjectRelationship::Create(instance);
+    EXPECT_STREQ(myRelationShip->GetRealityDataId().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_STREQ(myRelationShip->GetProjectId().c_str(), "504fc784-2b2d-465f-b1d9-de58bf6cf0f2");
+
+    const Json::Value instance2 = root["instances"][1];
+    ASSERT_TRUE(instance.isMember("properties"));
+    RealityDataProjectRelationshipPtr myRelationShip2 = RealityDataProjectRelationship::Create(instance2);
+    EXPECT_STREQ(myRelationShip2->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
+    EXPECT_STREQ(myRelationShip2->GetProjectId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
+    }
+
+
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            02/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
+    {
+
+    Utf8CP jsonString = "{"
+                          "instances\": [" 
+                            "{"
+                            "\"instanceId\": \"14812\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataDocument\","
+                            "\"properties\" : {"
+                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"Name\" : \"RatherLargeRaster.tif\""
+                                  "\"Id\" : \"3333333\""
+                                  "\"FolderId\" : \"\""
+                                  "\"AccessUrl\" : \"?????\""
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\""
+                                  "\"ContentType\" : \"tif\""
+                                  "\"Size\" : \"\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "},"
+                            "{"
+                            "\"instanceId\": \"14813\","
+                            "\"schemaName\" : \"RealityModeling\","
+                            "\"className\" : \"RealityDataDocument\","
+                            "\"properties\" : {"
+                                  "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"Name\" : \"Marseille.3mx\""
+                                  "\"Id\" : \"TBD\""
+                                  "\"FolderId\" : \"\""
+                                  "\"AccessUrl\" : \"?????\""
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\""
+                                  "\"ContentType\" : \"3mx\""
+                                  "\"Size\" : \"\""
+                               " },"
+                            " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
+                           "}"
+                       " ]"
+                     " }";
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+
+    // Instances must be a root node.
+    ASSERT_TRUE(root.isMember("instances"));
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    ASSERT_TRUE(instance.isMember("properties"));
+
+    RealityDataDocumentPtr myDocument = RealityDataDocument::Create(instance);
+
+    EXPECT_STREQ(myDocument->GetContainerName().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_STREQ(myDocument->GetName().c_str(), "RatherLargeRaster.tif");
+    EXPECT_STREQ(myDocument->GetFolderId().c_str(), "");
+    EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "");
+    EXPECT_STREQ(myDocument->GetRealityDataId().c_str(), "");
+    EXPECT_STREQ(myDocument->GetContentType().c_str(), "");
+    EXPECT_STREQ(myDocument->GetSize().c_str(), "");
+
+    }
+
+#endif
