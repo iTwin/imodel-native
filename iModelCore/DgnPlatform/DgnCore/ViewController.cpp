@@ -177,8 +177,8 @@ Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySour
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewController::_IsPointAdjustmentRequired() const {return _Is3d();}
-bool ViewController::_IsSnapAdjustmentRequired(bool snapLockEnabled) const {return snapLockEnabled && _Is3d();}
+bool ViewController::_IsPointAdjustmentRequired() const {return Is3d();}
+bool ViewController::_IsSnapAdjustmentRequired(bool snapLockEnabled) const {return snapLockEnabled && Is3d();}
 bool ViewController::_IsContextRotationRequired(bool contextLockEnabled) const {return contextLockEnabled;}
 
 static bool equalOne(double r1) {return DoubleOps::AlmostEqual(r1, 1.0);}
