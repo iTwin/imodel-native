@@ -419,7 +419,6 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append(m_order);
         m_httpRequestString.append("&");
         }
-    if(hasFilter || hasOrder)
     m_httpRequestString.append("$skip=");
     Utf8P buf = new Utf8Char();
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
