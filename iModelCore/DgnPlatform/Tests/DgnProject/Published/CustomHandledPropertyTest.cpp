@@ -1166,8 +1166,6 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
         checkValue.Clear();
         ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(caindex, ECN::ECValue(22)));
         ASSERT_EQ(DgnDbStatus::ReadOnly, view.SetPropertyValue(caindex, ECN::ECValue(true)));
-        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(true)));
-        checkValue.Clear();
         ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(laindex, ECN::ECValue(true)));
         ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(laindex, ECN::ECValue(5.5)));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, laindex));

@@ -255,7 +255,7 @@ void SetUp () override
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................
-    SpatialViewDefinition view(CameraViewDefinition::CreateParams(GetDgnDb(), "LinearDimension3dTest",
+    SpatialViewDefinition view(SpatialViewDefinition::CreateParams(GetDgnDb(), "LinearDimension3dTest",
                 ViewDefinition::Data(m_modelId, DgnViewSource::Generated)));
     EXPECT_TRUE(view.Insert().IsValid());
 
