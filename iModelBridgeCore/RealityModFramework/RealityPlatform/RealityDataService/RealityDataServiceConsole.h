@@ -23,8 +23,12 @@ struct RealityDataConsole
 public:
     RealityDataConsole();
 
+    void ConfigureServer();
+    Utf8String Choice(bvector<Utf8String> options);
+    void InterpretCommand(Utf8String entry);
+
 private:    
-    WSGServer m_server;    
+    WSGServer*           m_server;
     };
 
 

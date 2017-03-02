@@ -18,18 +18,22 @@
 #include <sstream>
 #include <iostream>
 
+#include "RealityDataServiceConsole.h"
+
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-Utf8String CheckCommand(Utf8String entry)
+void RealityDataConsole::InterpretCommand(Utf8String entry)
     {
-    if(entry.Contains("quit"))
+    /*if(entry.Contains("quit"))
         return "quit";
     else if (entry.Contains("retry"))
         return "retry";
-    return "";
+    return "";*/
     }
 
-Utf8String Choice(bvector<Utf8String> options)
+RealityDataConsole::RealityDataConsole() {}
+
+Utf8String RealityDataConsole::Choice(bvector<Utf8String> options)
     {
     std::stringstream index;
     Utf8String fullOption;
@@ -80,6 +84,12 @@ int main(int argc, char* argv[])
     {
     SetConsoleTitle("RealityDataService Navigator");
 
+    RealityDataConsole console = RealityDataConsole();
+    console.ConfigureServer();
+    }
+
+void RealityDataConsole::ConfigureServer()
+    {
     std::cout << "Welcome to the RealityDataService Navigator. Please enter your server name" << std::endl;
     std::cout << "Example format : dev-realitydataservices-eus.cloudapp.net" << std::endl;
     Utf8String server;
@@ -109,12 +119,12 @@ int main(int argc, char* argv[])
 
     std::cout << "Retrieving version information. One moment..." << std::endl;
 
-    WSGServer wsgServer = WSGServer(server, verifyCertificate);
-    Utf8String version = wsgServer.GetVersion();
+    m_server = new WSGServer(server, verifyCertificate);
+    Utf8String version = m_server->GetVersion();
     Utf8String repo;
     Utf8String schema;
     
-    bvector<Utf8String> repoNames = wsgServer.GetRepositories();
+    bvector<Utf8String> repoNames = m_server->GetRepositories();
     if(repoNames.size() == 0)
         {
         std::cout << "There was an error contacting the server" << std::endl;
@@ -133,7 +143,7 @@ int main(int argc, char* argv[])
 
     if(repo.length() > 0)
         {
-        bvector<Utf8String> schemaNames = wsgServer.GetSchemaNames(repo);
+        bvector<Utf8String> schemaNames = m_server->GetSchemaNames(repo);
 
         if (schemaNames.size() == 0)
             {

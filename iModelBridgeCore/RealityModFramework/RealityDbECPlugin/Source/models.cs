@@ -739,7 +739,11 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// 
         /// </summary>
-        public AustraliaLayer Layer;
+        public AustraliaLayer Layer
+            {
+            get;
+            set;
+            }
         }
 
     /// <summary>

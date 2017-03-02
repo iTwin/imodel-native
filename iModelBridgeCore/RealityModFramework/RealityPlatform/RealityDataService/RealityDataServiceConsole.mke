@@ -22,7 +22,7 @@ always:
 #----------------------------------------------------------------------
 #   Build source files
 #----------------------------------------------------------------------
-$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp
+$(o)RealityDataServiceConsole$(oext) : $(baseDir)RealityDataServiceConsole.cpp $(baseDir)RealityDataServiceConsole.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DLL/LIB creation

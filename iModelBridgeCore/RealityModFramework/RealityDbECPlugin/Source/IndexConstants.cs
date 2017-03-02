@@ -24,6 +24,7 @@ namespace IndexECPlugin.Source
         public const string AUDataProviderString = "GeoscienceAUS";
         public const string AUDataProviderNameString = "Geoscience Australia";
         public const string AUSubAPIString = "AU";
+        public const string AUServerName = "ELVIS";
 
 
         //Rds Constants
