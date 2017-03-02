@@ -433,6 +433,9 @@ TEST(FormattingTest, DictionaryValidation)
     EXPECT_STREQ(FormatConstant::FPN_RightAlign().c_str(), dict.CodeToName(ParameterCode::RightAlign).c_str());
     EXPECT_STREQ(FormatConstant::FPN_MapName().c_str(), dict.CodeToName(ParameterCode::MapName).c_str());
 
+    NumericFormatSpecP fmtP = StdFormatSet::FindFormat("fract16");
+    Utf8String serT = dict.SerializeFormatDefinition(*fmtP);
+    LOG.infov("%s", serT.c_str());
     }
 
 

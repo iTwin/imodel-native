@@ -1120,31 +1120,31 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormatSpec format)
+Utf8String FormatDictionary::SerializeFormatDefinition(NumericFormatSpecCR format)
     {
-    Utf8StringP str = new Utf8String();
+    Utf8String str;
 
-    str->append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetName(), '\"', ""));
-    str->append(" " + Utils::PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
-    str->append(" " + Utils::SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
-    str->append(" " + Utils::DecimalPrecisionName(format.GetDecimalPrecision()));
-    str->append(" " + Utils::FractionallPrecisionName(format.GetFractionalPrecision()));
+    str.append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetNameAndAlias(), '\"', ""));
+    str.append(" " + Utils::PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
+    str.append(" " + Utils::SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    str.append(" " + Utils::DecimalPrecisionName(format.GetDecimalPrecision()));
+    str.append(" " + Utils::FractionallPrecisionName(format.GetFractionalPrecision()));
     if (format.IsKeepTrailingZeroes())
-        str->append(" " + FormatConstant::FPN_TrailingZeroes());
+        str.append(" " + FormatConstant::FPN_TrailingZeroes());
     if (format.IsUseLeadingZeroes())
-        str->append(" " + FormatConstant::FPN_LeadingZeroes());
+        str.append(" " + FormatConstant::FPN_LeadingZeroes());
     if (format.IsKeepDecimalPoint())
-        str->append(" " + FormatConstant::FPN_KeepDecimalPoint());
+        str.append(" " + FormatConstant::FPN_KeepDecimalPoint());
     if (format.IsKeepSingleZero())
-        str->append(" " + FormatConstant::FPN_KeepSingleZero());
+        str.append(" " + FormatConstant::FPN_KeepSingleZero());
     if(format.IsUse1000Separator())
-        str->append(" " + FormatConstant::FPN_Use1000Separ());
+        str.append(" " + FormatConstant::FPN_Use1000Separ());
     Utf8Char symb = format.GetThousandSeparator();
     if(symb != FormatConstant::FPV_ThousandSeparator()) 
-        str->append(*ParameterValuePair(FormatConstant::FPN_ThousandsSepar(), Utf8String(symb, 1), '\'', ""));
+        str.append(*ParameterValuePair(FormatConstant::FPN_ThousandsSepar(), Utf8String(symb, 1), '\'', ""));
     symb = format.GetDecimalSeparator();
     if (symb != FormatConstant::FPV_DecimalSeparator())
-        str->append(*ParameterValuePair(FormatConstant::FPN_DecimalSepar(), Utf8String(symb, 1), '\'', ""));
+        str.append(*ParameterValuePair(FormatConstant::FPN_DecimalSepar(), Utf8String(symb, 1), '\'', ""));
     return str;
     }
 

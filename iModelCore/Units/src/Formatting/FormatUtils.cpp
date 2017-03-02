@@ -130,13 +130,13 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
     switch (prec)
         {
         case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec4();
+        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec8();
+        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec16();
+        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec32();
+        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec64();
+        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec128();
+        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec256();
         default:
         case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
         }

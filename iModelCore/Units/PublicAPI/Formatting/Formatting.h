@@ -509,19 +509,19 @@ public:
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
     UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
-    bool IsKeepTrailingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
+    bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
     UNITS_EXPORT void SetUseLeadingZeroes(bool use);
-    bool IsUseLeadingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
+    bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
     UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
-    bool IsKeepDecimalPoint() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
+    bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
     UNITS_EXPORT void SetKeepSingleZero(bool keep);
-    bool IsKeepSingleZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
+    bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
     UNITS_EXPORT void SetExponentZero(bool keep);
-    bool IsExponentZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
+    bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
     UNITS_EXPORT void SetZeroEmpty(bool empty);
     bool IsZeroEmpty() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
     UNITS_EXPORT void SetUse1000Separator(bool use);
-    bool IsUse1000Separator() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
+    bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
     UNITS_EXPORT void SetApplyRounding(bool use);
     bool IsApplyRounding() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }
     bool IsInsertSeparator(bool confirm) { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
@@ -533,7 +533,7 @@ public:
     UNITS_EXPORT void SetAlias(Utf8CP alias);
     Utf8String GetAlias() { return m_alias; }
     void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-    DecimalPrecision GetDecimalPrecision() { return m_decPrecision; }
+    DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);
     UNITS_EXPORT double GetDecimalPrecisionFactor(int prec);
     FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
@@ -579,7 +579,8 @@ public:
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
-    UNITS_EXPORT Utf8String GetName() { return m_name; };
+    Utf8String GetName() const { return m_name; } ;
+    Utf8String GetNameAndAlias() const { return m_name +"(" + m_alias + ")"; };
     };
 
 struct FormatUnitSet
@@ -847,7 +848,7 @@ public:
     UNITS_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     UNITS_EXPORT FormatParameterP GetParameterByIndex(int index);
     UNITS_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
-    UNITS_EXPORT Utf8StringP SerializeFormatDefinition(NumericFormatSpec format);
+    UNITS_EXPORT Utf8String SerializeFormatDefinition(NumericFormatSpecCR format);
     };
 
 //=======================================================================================
