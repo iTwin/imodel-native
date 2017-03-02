@@ -709,7 +709,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(*testSchema);
-    project.GetEC().Schemas().ImportECSchemas(schemaList->GetSchemas());
+    project.ImportSchemas(schemaList->GetSchemas());
 
     bvector<IECInstancePtr> orphanedWidgets;
     bvector<IECInstancePtr> orphanedBars;

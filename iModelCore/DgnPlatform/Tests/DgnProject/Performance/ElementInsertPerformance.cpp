@@ -101,8 +101,9 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext))
         return ERROR;
 
-    if (SUCCESS != m_db->Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas()))
+    if (DgnDbStatus::Success != m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()))
         return ERROR;
+
     m_db->SaveChanges();
     return SUCCESS;
     }
