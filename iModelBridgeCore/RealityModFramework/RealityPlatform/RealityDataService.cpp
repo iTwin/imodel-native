@@ -419,7 +419,6 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append(m_order);
         m_httpRequestString.append("&");
         }
-    if(hasFilter || hasOrder)
     m_httpRequestString.append("$skip=");
     Utf8P buf = new Utf8Char();
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
@@ -1273,7 +1272,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
     else
         {
         RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
-        if ((uint8_t)entities.size() > request.GetPageSize())
+        if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
 
@@ -1386,7 +1385,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnt
     else
         {
         RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
-        if ((uint8_t)entities.size() > request.GetPageSize())
+        if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
 
@@ -1434,7 +1433,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
         {
         for(auto instance : instances["instances"])
             relations.push_back(RealityDataProjectRelationship::Create(instance));
-        if((uint8_t)relations.size() > request.GetPageSize())
+        if((uint8_t)relations.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
 
