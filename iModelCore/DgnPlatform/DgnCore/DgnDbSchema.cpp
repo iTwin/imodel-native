@@ -131,7 +131,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importBisCoreSchema(DgnDbCR db)
+static DgnDbStatus importBisCoreSchema(DgnDbR db)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
     ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
@@ -151,8 +151,8 @@ static void importBisCoreSchema(DgnDbCR db)
     ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
     BeAssert(bisCoreSchema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetECSchemaImportToken());
-    BeAssert(status == SUCCESS);
+    DgnDbStatus status = db.ImportSchemas(ecSchemaContext->GetCache().GetSchemas());
+    return status;
     }
 
 #define GEOM_IN_SPATIAL_INDEX_CLAUSE " 1 = new.InSpatialIndex "
@@ -321,7 +321,11 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    importBisCoreSchema(*this);
+    if (DgnDbStatus::Success != importBisCoreSchema(*this))
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
 
     // Every DgnDb has a few built-in CodeSpec for element codes
     CreateCodeSpecs();
@@ -339,7 +343,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))
         {
         BeAssert(false);
-        return BE_SQLITE_NOTFOUND;
+        return BE_SQLITE_ERROR;
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)

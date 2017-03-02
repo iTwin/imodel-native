@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/FunctionalDomain_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -199,8 +199,12 @@ void FunctionalDomainTests::SetupFunctionalTestDomain()
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain());
     DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain());
 
+    m_db->SaveChanges();
+
     DgnDbStatus importSchemaStatus = FunctionalDomain::ImportSchema(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
+
+    m_db->SaveChanges();
 
     importSchemaStatus = FunctionalTestDomain::ImportSchema(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
