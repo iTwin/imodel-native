@@ -424,6 +424,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         //+---------------+---------------+---------------+---------------+---------------+------
         ECObjectsStatus        ToElement (EditElementHandleR element)
             {
+            bool needsWrite = false;
             ElementRefP elementRef = element.GetElementRef ();
 
 
@@ -441,6 +442,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                     remapper->SetWeight (m_headerWeight);
 
                 remapper->Apply (element);
+                needsWrite = true;
                 }
 
             if (!m_isSTM)
@@ -662,13 +664,19 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
                     RedrawElement (element);
                     InitializeDataCache (element);
                     }
+                else
+                    needsWrite = true;
                 }
 
             if (m_originalName != m_name)
                 {
                 DTMElementHandlerManager::SetName (element, m_name.GetWCharCP());
                 m_originalName = m_name;
+                needsWrite = true;
                 }
+
+            if (needsWrite)
+                element.ReplaceInModel (elementRef);
 
             return ECOBJECTS_STATUS_Success;
             }
