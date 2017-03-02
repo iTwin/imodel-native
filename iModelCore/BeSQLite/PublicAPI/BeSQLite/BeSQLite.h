@@ -440,7 +440,10 @@ enum DbResult
     BE_SQLITE_ERROR_ProfileTooNew     = (BE_SQLITE_IOERR | (12<<24)),  //!< Profile (aka application level SQLite schema) of file is too new. Therefore file cannot be opened.
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
-
+    BE_SQLITE_ERROR_SchemaIncompatible = (BE_SQLITE_IOERR | 15 << 24), //!< Incompatible schemas found in the database
+	BE_SQLITE_ERROR_SchemaUpgradeRequired = (BE_SQLITE_IOERR | 16 << 24), //!< Require upgrade of schemas in the database
+	BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | 17 << 24), //!< Recommend upgrade of schemas in the database
+	
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
     BE_SQLITE_BUSY_RECOVERY           = (BE_SQLITE_BUSY     | (1<<8)),
