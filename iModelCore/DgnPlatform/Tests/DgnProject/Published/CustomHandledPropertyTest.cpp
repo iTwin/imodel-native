@@ -1194,7 +1194,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //Check what stored in Db 
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
-    CameraViewDefinitionCPtr view= m_db->Elements().Get< SpatialViewDefinition>(viewId);
+    SpatialViewDefinitionCPtr view= m_db->Elements().Get< SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
@@ -1229,7 +1229,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //upadate properties
     OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
     {
-    CameraViewDefinitionPtr view = m_db->Elements().GetForEdit< SpatialViewDefinition>(viewId);
+    SpatialViewDefinitionPtr view = m_db->Elements().GetForEdit< SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
@@ -1274,7 +1274,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //Check upadated properties stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
-    CameraViewDefinitionCPtr view = m_db->Elements().Get< SpatialViewDefinition>(viewId);
+    SpatialViewDefinitionCPtr view = m_db->Elements().Get< SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
