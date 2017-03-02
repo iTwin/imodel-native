@@ -1621,6 +1621,10 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
         CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
         }
+
+    GeometricElement2dCR other = static_cast<GeometricElement2dCR>(el);
+    m_typeDefinitionId = other.m_typeDefinitionId;
+    m_typeDefinitionRelClassId = other.m_typeDefinitionRelClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1635,6 +1639,10 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
         CopyFromGeometrySource(*src);
         m_placement = src->GetPlacement();
         }
+
+    GeometricElement3dCR other = static_cast<GeometricElement3dCR>(el);
+    m_typeDefinitionId = other.m_typeDefinitionId;
+    m_typeDefinitionRelClassId = other.m_typeDefinitionRelClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2536,7 +2544,6 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },
-
         [](DgnElementR elIn, ECValueCR value)
             {
             if (value.IsNull() || !value.IsNavigation())
@@ -2548,36 +2555,13 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
-    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 
-        [](ECValueR value, DgnElementCR el)
-            {
-            value.SetBoolean(!el.GetModel()->IsTemplate());
-            return DgnDbStatus::Success;
-            },
-
-        [](DgnElementR, ECValueCR)
-            {
-            return DgnDbStatus::ReadOnly;
-            });
-
-    GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, PHYSICAL_PhysicalType, 
+    params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
         [](ECValueR value, DgnElementCR elIn)
             {
-            auto& el = (PhysicalElement&)elIn;
-            value.SetNavigationInfo(el.GetPhysicalTypeId(), el.GetPhysicalTypeRelClassId());
+            GeometricElement3dCR el = static_cast<GeometricElement3dCR>(elIn);
+            value.SetNavigationInfo(el.m_typeDefinitionId, el.m_typeDefinitionRelClassId);
             return DgnDbStatus::Success;
             },
-
         [](DgnElementR elIn, ECValueCR value)
             {
             if (value.IsNull() || !value.IsNavigation())
@@ -2585,56 +2569,22 @@ void dgn_ElementHandler::Physical::_RegisterPropertyAccessors(ECSqlClassInfo& pa
                 BeAssert(false);
                 return DgnDbStatus::BadArg;
                 }
-            auto& el = (PhysicalElement&)elIn;
-            return el.SetPhysicalType(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
+            GeometricElement3dR el = static_cast<GeometricElement3dR>(elIn);
+            return el.SetTypeDefinition(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PhysicalElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success != status)
-        return status;
+    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 
+        [](ECValueR value, DgnElementCR el)
+            {
+            value.SetBoolean(!el.GetModel()->IsTemplate());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR, ECValueCR)
+            {
+            return DgnDbStatus::ReadOnly;
+            });
 
-    m_physicalTypeId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(PHYSICAL_PhysicalType), &m_physicalTypeRelClassId);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
-    {
-    T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindNavigationValue(stmt.GetParameterIndex(PHYSICAL_PhysicalType), m_physicalTypeId, m_physicalTypeRelClassId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalElement::_CopyFrom(DgnElementCR el)
-    {
-    T_Super::_CopyFrom(el);
-    auto src = dynamic_cast<PhysicalElement const*>(&el);
-    if (nullptr != src)
-        {
-        m_physicalTypeId = src->m_physicalTypeId;
-        m_physicalTypeRelClassId = src->m_physicalTypeRelClassId;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PhysicalElement::SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId)
-    {
-    // *** NEEDS_WORK: Validation?
-    m_physicalTypeId = physicalTypeId;
-    m_physicalTypeRelClassId = relClassId;
-    return DgnDbStatus::Success;
+    GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2704,6 +2654,24 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
                 }
             GeometricElement2d& el = (GeometricElement2d&)elIn;
             return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            });
+
+    params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
+        [](ECValueR value, DgnElementCR elIn)
+            {
+            GeometricElement2dCR el = static_cast<GeometricElement2dCR>(elIn);
+            value.SetNavigationInfo(el.m_typeDefinitionId, el.m_typeDefinitionRelClassId);
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR elIn, ECValueCR value)
+            {
+            if (value.IsNull() || !value.IsNavigation())
+                {
+                BeAssert(false);
+                return DgnDbStatus::BadArg;
+                }
+            GeometricElement2dR el = static_cast<GeometricElement2dR>(elIn);
+            return el.SetTypeDefinition(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
 
     GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
@@ -2950,6 +2918,28 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::SetTypeDefinition(DgnElementId typeDefinitionId, DgnClassId typeDefinitionRelClassId)
+    {
+    // WIP: Validation
+    m_typeDefinitionId = typeDefinitionId;
+    m_typeDefinitionRelClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::SetTypeDefinition(DgnElementId typeDefinitionId, DgnClassId typeDefinitionRelClassId)
+    {
+    // WIP: Validation
+    m_typeDefinitionId = typeDefinitionId;
+    m_typeDefinitionRelClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
@@ -2962,7 +2952,7 @@ RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
     {
-    return GetDgnDb().Elements().Get<PhysicalType>(GetPhysicalTypeId());
+    return GetDgnDb().Elements().Get<PhysicalType>(GetTypeDefinitionId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2971,6 +2961,22 @@ PhysicalTypeCPtr PhysicalElement::GetPhysicalType() const
 DgnCode PhysicalType::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
     return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalType, *model.GetModeledElement(), name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationTypeCPtr SpatialLocationElement::GetSpatialLocationType() const
+    {
+    return GetDgnDb().Elements().Get<SpatialLocationType>(GetTypeDefinitionId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_SpatialLocationType, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2994,7 +3000,7 @@ DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicalType2dCPtr GraphicalElement2d::GetGraphicalType() const
     {
-    return GetDgnDb().Elements().Get<GraphicalType2d>(GetGraphicalTypeId());
+    return GetDgnDb().Elements().Get<GraphicalType2d>(GetTypeDefinitionId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3632,6 +3638,7 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
+    m_typeDefinitionId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(GEOM_TypeDefinition), &m_typeDefinitionRelClassId);
     m_placement = Placement2d();
 
     auto originIndex = params.GetSelectIndex(GEOM_Origin);
@@ -3657,6 +3664,7 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
+    m_typeDefinitionId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(GEOM_TypeDefinition), &m_typeDefinitionRelClassId);
     m_placement = Placement3d();
 
     auto originIndex = params.GetSelectIndex(GEOM_Origin);
@@ -3673,7 +3681,6 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     m_placement = Placement3d(stmt.GetValuePoint3d(originIndex),
                               YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
                               ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
-
     return DgnDbStatus::Success;
     }
 
@@ -3683,6 +3690,7 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_TypeDefinition), m_typeDefinitionId, m_typeDefinitionRelClassId);
 
     if (!m_placement.IsValid())
         {
@@ -3717,6 +3725,7 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
     T_Super::_BindWriteParams(stmt, forInsert);
 
     stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
+    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_TypeDefinition), m_typeDefinitionId, m_typeDefinitionRelClassId);
 
     if (!m_placement.IsValid())
         {

@@ -2071,10 +2071,10 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
-        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        element->SetPhysicalType(physicalTypeId[0], physicalTypeRelClassId);
-        ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
+        element->SetTypeDefinition(physicalTypeId[0], physicalTypeRelClassId);
+        ASSERT_TRUE(element->GetTypeDefinitionId().IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
@@ -2086,9 +2086,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
-        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), physicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1], physicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(physicalTypeId[1], physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2098,9 +2098,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
-        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), physicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId(), physicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(DgnElementId(), physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2110,7 +2110,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         }
     }
 
@@ -2176,10 +2176,10 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
         TestElement2dPtr element = TestElement2d::Create(GetDgnDb(), drawingModel->GetModelId(), categoryId, DgnCode(), 2.0);
         ASSERT_TRUE(element.IsValid());
-        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        element->SetGraphicalType(graphicalTypeId[0], graphicalTypeRelClassId);
-        ASSERT_TRUE(element->GetGraphicalTypeId().IsValid());
+        element->SetTypeDefinition(graphicalTypeId[0], graphicalTypeRelClassId);
+        ASSERT_TRUE(element->GetTypeDefinitionId().IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
@@ -2191,9 +2191,9 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
-        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[0].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), graphicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1], graphicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(graphicalTypeId[1], graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2203,9 +2203,9 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
-        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[1].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), graphicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId(), graphicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(DgnElementId(), graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2215,7 +2215,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         }
     }
 

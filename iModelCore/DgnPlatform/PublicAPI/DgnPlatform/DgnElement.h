@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session;
+    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session; struct SpatialLocationType;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -2235,6 +2235,8 @@ public:
     };
 protected:
     Placement3d m_placement;
+    DgnElementId m_typeDefinitionId;
+    ECN::ECClassId m_typeDefinitionRelClassId;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2254,7 +2256,21 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    };
+
+public:
+    //! Set the TypeDefinitionElement associated with this GeometricElement3d
+    //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement3d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement3dHasTypeDefinition
+    DGNPLATFORM_EXPORT DgnDbStatus SetTypeDefinition(DgnElementId typeDefinitionId, ECN::ECClassId relClassId);
+
+    //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement3d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+
+    //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement3d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
+};
 
 //=======================================================================================
 //! Base class for elements with 2d geometry
@@ -2297,6 +2313,8 @@ public:
 
 protected:
     Placement2d m_placement;
+    DgnElementId m_typeDefinitionId;
+    ECN::ECClassId m_typeDefinitionRelClassId;
 
     explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2316,6 +2334,20 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+
+public:
+    //! Set the TypeDefinitionElement associated with this GeometricElement2d
+    //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement2d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement2dHasTypeDefinition
+    DGNPLATFORM_EXPORT DgnDbStatus SetTypeDefinition(DgnElementId typeDefinitionId, ECN::ECClassId relClassId);
+
+    //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement2d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+
+    //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement2d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
 };
 
 //=======================================================================================
@@ -2356,30 +2388,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
     friend struct dgn_ElementHandler::Physical;
 
-    DgnElementId m_physicalTypeId;
-    ECN::ECClassId m_physicalTypeRelClassId;
-
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-
 public:
-    //! Set the PhysicalType for this PhysicalElement
-    //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
-    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
-    DGNPLATFORM_EXPORT DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId);
-
-    //! Get the DgnElementId of the PhysicalType for this PhysicalElement
-    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    DgnElementId GetPhysicalTypeId() const {return m_physicalTypeId;}
-
-    //! Get the ID of the class of the PhysicalType for this PhysicalElement
-    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    ECN::ECClassId GetPhysicalTypeRelClassId() const {return m_physicalTypeRelClassId;}
-
     //! Get the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
     DGNPLATFORM_EXPORT PhysicalTypeCPtr GetPhysicalType() const;
@@ -2407,8 +2419,14 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialElement)
     friend struct dgn_ElementHandler::SpatialLocation;
+
 protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Get the SpatialLocationType for this SpatialLocationElement
+    //! @return Will be invalid if there is no SpatialLocationType associated with this SpatialLocationElement
+    DGNPLATFORM_EXPORT SpatialLocationTypeCPtr GetSpatialLocationType() const;
 };
 
 //=======================================================================================
@@ -2436,15 +2454,6 @@ protected:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Set the GraphicalType for this GraphicalElement2d
-    //! @param[in] graphicalTypeId The DgnElementId of the GraphicalType to be associated with this GraphicalElement2d
-    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of GraphicalElement2dIsOfType
-    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("GraphicalType", graphicalTypeId, relClassId);}
-
-    //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
-    //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
-    DgnElementId GetGraphicalTypeId() const {return GetPropertyValueId<DgnElementId>("GraphicalType");}
-
     //! Get the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
     DGNPLATFORM_EXPORT GraphicalType2dCPtr GetGraphicalType() const;
@@ -2851,6 +2860,25 @@ public:
     //! Get the PhysicalRecipe for this PhysicalType
     //! @return Will be invalid if there is no PhysicalRecipe associated with this PhysicalType
     DGNPLATFORM_EXPORT PhysicalRecipeCPtr GetRecipe() const;
+};
+
+//=======================================================================================
+//! The SpatialLocationType system is a database normalization strategy because properties that are the same
+//! across all instances are stored with the SpatialLocationType versus being repeated per SpatialLocationElement instance.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationType : TypeDefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationType, TypeDefinitionElement)
+    friend struct dgn_ElementHandler::SpatialLocationType;
+
+protected:
+    explicit SpatialLocationType(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a DgnCode for a SpatialLocationType element within the scope of the specified model
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
 };
 
 //=======================================================================================
