@@ -201,7 +201,7 @@ RevisionManagerR DgnDb::Revisions() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas)
+DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
     return ImportSchemas(schemas, false);
     }
@@ -209,18 +209,12 @@ DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas, bool doNotFailSchemaValidationForLegacyIssues)
+DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues)
     {
     if (IsReadonly())
         {
         BeAssert(false && "Cannot import schema into a ReadOnly Db");
         return DgnDbStatus::ReadOnly;
-        }
-
-    if (Txns().HasChanges())
-        {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return DgnDbStatus::TransactionActive;
         }
 
     bvector<ECSchemaCP> importSchemas;
