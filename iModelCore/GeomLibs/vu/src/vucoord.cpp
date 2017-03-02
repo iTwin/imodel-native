@@ -1037,6 +1037,17 @@ VuP node2P
     }
 
 /*---------------------------------------------------------------------------------**//**
+@bsimethod                              EarlinLutz      07/01
++----------------------------------------------------------------------*/
+double VuNode::CrossXY (VuP nodeA, VuP nodeB) const
+    {
+    return uv.CrossProductToPointsXY (nodeA->uv, nodeB->uv);
+    }
+
+
+
+
+/*---------------------------------------------------------------------------------**//**
 @description Test if the angle from incoming to outgoing edge of a node is a strict left turn.
 @param nodeP IN node to examine
 @return true if there is a left hand turn.
