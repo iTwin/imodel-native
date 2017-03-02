@@ -250,13 +250,13 @@ private:
     DgnDbServerRevisionsInfoTaskPtr GetRevisionsInternal(const WSQuery& query, bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the revisions.
-    DgnDbServerRevisionsInfoTaskPtr GetAllRevisionsInternal(bool parseFileAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsInfoTaskPtr GetAllRevisionsInternal(bool loadAccessKey, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the revisions after the specific revision id.
-    DgnDbServerRevisionsInfoTaskPtr GetRevisionsAfterIdInternal(Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), bool parseAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsInfoTaskPtr GetRevisionsAfterIdInternal(Utf8StringCR revisionId, BeGuidCR fileId = BeGuid(false), bool loadAccessKey = false, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets single revision by Id
-    DgnDbServerRevisionInfoTaskPtr GetRevisionByIdInternal(Utf8StringCR revisionId, bool parseAccessKey, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerRevisionInfoTaskPtr GetRevisionByIdInternal(Utf8StringCR revisionId, bool loadAccessKey, ICancellationTokenPtr cancellationToken) const;
 
     //! Download the revision files.
     DgnRevisionsTaskPtr DownloadRevisionsInternal(const bvector<DgnDbServerRevisionInfoPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -266,6 +266,9 @@ private:
     DgnRevisionsTaskPtr DownloadRevisions(std::deque<ObjectId>& revisionIds, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Download a copy of the file from the repository.
+    DgnDbServerStatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
+        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // This pointer needs to change to be generic
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -481,15 +484,6 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr GetMasterFileById(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download a copy of the file from the repository
-    //! @param[in] localFile Location where the downloaded file should be placed.
-    //! @param[in] fileId File id.
-    //! @param[in] callback
-    //! @param[in] cancellationToken
-    //! @return Asynchronous task that results in an error if the download failed.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
-                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a copy of the master file from the repository
     //! @param[in] localFile Location where the downloaded file should be placed.
