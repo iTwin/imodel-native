@@ -120,7 +120,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //only for legacy support which cannot yet follow the strict bim rules
-        ECDB_EXPORT  BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, ECSchemaImportToken const* token = nullptr) const;  //!< @private
+        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, ECSchemaImportToken const* token = nullptr) const;
 #endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.

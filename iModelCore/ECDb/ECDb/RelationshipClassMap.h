@@ -89,6 +89,9 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
     private:
+        static Utf8CP DEFAULT_FK_COL_PREFIX;
+        static Utf8CP RELECCLASSID_COLNAME_TOKEN;
+
         //======================================================================================
         // @bsiclass                                                     Affan.Khan      01/2015
         //===============+===============+===============+===============+===============+======
@@ -117,7 +120,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
                 std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
 
-                //Following are actaully create for each secondary table.
+                //Following are actually create for each secondary table.
                 std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
                 std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
 
@@ -151,7 +154,8 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             {
             private:
                 bool m_canImplyFromNavigationProperty;
-                Utf8String m_impliedColumnName;
+                Utf8String m_impliedFkColName;
+                Utf8String m_impliedRelClassIdColName;
                 bool m_appendToEnd;
                 PropertyMap const* m_propMapBeforeNavProp;
                 PropertyMap const* m_propMapAfterNavProp;
@@ -159,10 +163,11 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             public:
                 ForeignKeyColumnInfo() : m_canImplyFromNavigationProperty(false), m_appendToEnd(true), m_propMapBeforeNavProp(nullptr), m_propMapAfterNavProp(nullptr) {}
 
-                void Assign(Utf8CP impliedColName, bool appendToEnd, PropertyMap const* propMapBeforeNavProp, PropertyMap const* propMapAfterNavProp)
+                void Assign(Utf8StringCR impliedFkColName, Utf8StringCR impliedRelClassIdColName, bool appendToEnd, PropertyMap const* propMapBeforeNavProp, PropertyMap const* propMapAfterNavProp)
                     {
                     m_canImplyFromNavigationProperty = true;
-                    m_impliedColumnName.assign(impliedColName);
+                    m_impliedFkColName.assign(impliedFkColName);
+                    m_impliedRelClassIdColName.assign(impliedRelClassIdColName);
                     m_appendToEnd = appendToEnd;
                     m_propMapBeforeNavProp = propMapBeforeNavProp;
                     m_propMapAfterNavProp = propMapAfterNavProp;
@@ -171,14 +176,16 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 void Clear()
                     {
                     m_canImplyFromNavigationProperty = false;
-                    m_impliedColumnName.clear();
+                    m_impliedFkColName.clear();
+                    m_impliedRelClassIdColName.clear();
                     m_appendToEnd = true;
                     m_propMapBeforeNavProp = nullptr;
                     m_propMapAfterNavProp = nullptr;
                     }
 
                 bool CanImplyFromNavigationProperty() const { return m_canImplyFromNavigationProperty; }
-                Utf8StringCR GetImpliedColumnName() const { return m_impliedColumnName; }
+                Utf8StringCR GetImpliedFkColumnName() const { return m_impliedFkColName; }
+                Utf8StringCR GetImpliedRelClassIdColumnName() const { return m_impliedRelClassIdColName; }
                 bool AppendToEnd() const { return m_appendToEnd; }
                 PropertyMap const* GetPropertyMapBeforeNavProp() const { return m_propMapBeforeNavProp; }
                 PropertyMap const* GetPropertyMapAfterNavProp() const { return m_propMapAfterNavProp; }
@@ -189,12 +196,10 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         void AddIndexToRelationshipEnd();
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
-        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, Utf8StringCR colName, bool makeNotNull, int position) const;
+        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, ForeignKeyColumnInfo const&, DbColumn const& fkCol) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
-        BentleyStatus DetermineFkColumns(ColumnLists&, RelationshipMappingInfo const&);
-        Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
-        static Utf8String DetermineRelECClassIdColumnName(ECN::ECRelationshipClassCR, Utf8StringCR fkColumnName);
+        BentleyStatus DetermineFkColumns(ColumnLists&, ForeignKeyColumnInfo&, RelationshipMappingInfo const&);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&);
 
         BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd) const;

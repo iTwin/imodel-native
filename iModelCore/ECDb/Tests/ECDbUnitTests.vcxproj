@@ -135,13 +135,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\ECDbTest\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\ECDbTest\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECDbTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECDbTest\</BaseIntermediateOutputPath>
     <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
-    <NMakeIncludeSearchPath>$(ProjectDir)BackDoor\PublicAPI\BackDoor\;$(ProjectDir)Published\;$(ProjectDir)Performance;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)BackDoor\PublicAPI\BackDoor\ECDb\;$(ProjectDir)Published\;$(ProjectDir)Performance;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
