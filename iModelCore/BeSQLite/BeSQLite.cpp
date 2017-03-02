@@ -2503,14 +2503,16 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         {
         BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion) <= 0 && "Minimum auto-upgradable profile version must be less or equal expected profile version.");
 
-        LOG.errorv("Cannot open file: The file's %s profile is too old to be auto-upgraded.", profileName);
+        LOG.errorv("Cannot open file: The file's %s profile (%s) is too old to be auto-upgraded. Minimum upgradable profile version: %s", 
+                   profileName, actualProfileVersion.ToString().c_str(), minimumUpgradableProfileVersion.ToMajorMinorString().c_str());
         return BE_SQLITE_ERROR_ProfileTooOld;
         }
 
     //If major and minor of actual profile version is newer than expected, file cannot be opened.
     if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) > 0)
         {
-        LOG.errorv("Cannot open file: The file's %s profile is too new. Please upgrade your product to the latest version.", profileName);
+        LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s. Please upgrade your product to the latest version.", 
+                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_ERROR_ProfileTooNew;
         }
 
@@ -2525,12 +2527,13 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
 
         if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) < 0)
             {
-            LOG.debugv("File's %s profile is too old, but auto-upgradable.", profileName);
+            LOG.debugv("File's %s profile (%s) is too old, but auto-upgradable.", profileName, actualProfileVersion.ToString().c_str());
             return BE_SQLITE_ERROR_ProfileTooOld;
             }
         else
             {
-            LOG.debugv("File's %s profile is older than expected, but is compatible with the version of this software. It also is auto-upgradable.", profileName);
+            LOG.debugv("File's %s profile (%s) is older than expected, but is compatible with the version of this software (%s). It also is auto-upgradable.", 
+                       profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
             return BE_SQLITE_OK;
             }
         }
@@ -2545,11 +2548,13 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         {
         if (openModeIsReadonly)
             {
-            LOG.warningv("File's %s profile is newer than expected, but the file can be opened read-only. Please consider to upgrade your Bentley product to the latest version.", profileName);
+            LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file can be opened read-only. Please consider to upgrade your Bentley product to the latest version.", 
+                         profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
             return BE_SQLITE_OK;
             }
 
-        LOG.errorv("File's %s profile is newer than expected. The file can only be opened read-only. Re-open the file in read-only mode. Please consider to upgrade your Bentley product to the latest version.", profileName);
+        LOG.errorv("File's %s profile (%s) is newer than expected (%s). The file can only be opened read-only. Re-open the file in read-only mode. Please consider to upgrade your Bentley product to the latest version.", 
+                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_ERROR_ProfileTooNewForReadWrite;
         }
 
@@ -2557,13 +2562,16 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
 
     if (actualProfileVersion.GetSub2() > expectedProfileVersion.GetSub2())
         {
-        LOG.warningv("File's %s profile is newer than expected, but the file is backwards compatible with the version of this software. Please consider to upgrade your Bentley product to the latest version.", profileName);
+        LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file is backwards compatible with the version of this software. Please consider to upgrade your Bentley product to the latest version.",
+                     profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_OK;
         }
 
     BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion) == 0 && "Logical error in Db::CheckProfileVersion");
 
-    LOG.debugv("File's %s profile is up-to-date.", profileName);
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv("File's %s profile (%s) is up-to-date.", profileName, actualProfileVersion.ToString().c_str());
+
     return BE_SQLITE_OK;
     }
 
