@@ -220,7 +220,7 @@ void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
 
     vp.NpcToWorld(&origin, &origin, 1);
     m_auxCoordSys->SetOrigin(origin);
-    m_auxCoordSys->SetRotation(GetRotation());
+    m_auxCoordSys->SetRotation(m_definition->GetRotation());
 
     T_Super::_OnViewOpened(vp);
     }

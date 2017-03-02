@@ -13,7 +13,7 @@
 #include <ECObjects/DesignByContract.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*=================================================================================**//**
 * @bsistruct

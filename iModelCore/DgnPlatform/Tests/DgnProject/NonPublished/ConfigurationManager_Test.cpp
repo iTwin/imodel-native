@@ -16,7 +16,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DPTEST
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12

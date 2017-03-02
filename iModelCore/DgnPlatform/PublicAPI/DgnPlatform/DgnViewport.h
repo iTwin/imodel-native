@@ -120,11 +120,11 @@ protected:
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
     uint32_t m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
-    DPoint3d m_viewOrg;                  // view origin, potentially expanded
-    DVec3d m_viewDelta;                // view delta, potentially expanded
-    DPoint3d m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
-    DVec3d m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
-    RotMatrix m_rotMatrix;                // rotation matrix (from ViewController)
+    DPoint3d m_viewOrg;                 // view origin, potentially expanded
+    DVec3d m_viewDelta;                 // view delta, potentially expanded
+    DPoint3d m_viewOrgUnexpanded;       // view origin (from ViewController, unexpanded)
+    DVec3d m_viewDeltaUnexpanded;       // view delta (from ViewController, unexpanded)
+    RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
     ViewDefinition3d::Camera m_camera;
     Render::TargetPtr m_renderTarget;
     ColorDef m_hiliteColor = ColorDef::Magenta();

@@ -28,7 +28,6 @@
 #include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
 
-#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
 
@@ -233,6 +232,8 @@ DGNPLATFORM_TYPEDEFS(TxnManager)
 DGNPLATFORM_TYPEDEFS(UrlLink)
 DGNPLATFORM_TYPEDEFS(ViewContext)
 DGNPLATFORM_TYPEDEFS(ViewController)
+DGNPLATFORM_TYPEDEFS(ViewController2d)
+DGNPLATFORM_TYPEDEFS(ViewController3d)
 DGNPLATFORM_TYPEDEFS(ViewDefinition)
 DGNPLATFORM_TYPEDEFS(ViewDefinition2d)
 DGNPLATFORM_TYPEDEFS(ViewDefinition3d)

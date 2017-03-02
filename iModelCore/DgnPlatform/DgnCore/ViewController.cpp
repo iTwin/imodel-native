@@ -112,7 +112,6 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
-    m_defaultDeviceOrientation.InitIdentity();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,36 +133,6 @@ void ViewController::_StoreState()
     m_definition->SetViewClip(m_activeVolume);
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewController::SaveAs(Utf8CP newName)
-    {
-    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(GetDgnDb(), newName));
-
-    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
-    BeAssert(newView.IsValid());
-    if (newView.IsNull())
-        return DgnDbStatus::BadElement;
-
-    m_definition = newView;
-
-    DgnDbStatus stat;
-    m_definition->Insert(&stat);
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
-    {
-    auto wasDef = m_definition;
-    auto rc = SaveAs(newName);
-    m_definition = wasDef;
-    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,7 +503,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     if (cameraView /* && Allow3dManipulations() */ && isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
-        double diag = newDelta.MagnitudeXY ();
+        double diag = newDelta.MagnitudeXY();
         if (diag > newDelta.z)
             newDelta.z = diag;
         }
@@ -578,39 +547,6 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     cameraDef.SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
     cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
     cameraView->VerifyFocusPlane(); // changes delta/origin
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OrthographicViewDefinition::_OnTransform(TransformCR trans)
-    {
-    RotMatrix rMatrix;
-    trans.GetMatrix(rMatrix);
-    DVec3d scale;
-    rMatrix.NormalizeColumnsOf(rMatrix, scale);
-
-    trans.Multiply(m_origin);
-    m_rotation.InitProductRotMatrixRotMatrixTranspose(m_rotation, rMatrix);
-    m_extents.Scale(scale.x);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_OnTransform(TransformCR trans)
-    {
-    DPoint3d eye = m_cameraDef.GetEyePoint();
-    trans.Multiply(eye);
-    m_cameraDef.SetEyePoint(eye);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::TransformBy(TransformCR trans)
-    {
-    GetSpatialViewDefinition()._OnTransform(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,14 +636,14 @@ bool SpatialViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, G
         {
         // If there's no perspective, just center the current location in the view.
         RotMatrix viewInverse;
-        viewInverse.InverseOf(GetRotation());
+        viewInverse.InverseOf(camera.GetRotation());
 
-        DPoint3d delta = GetDelta();
+        DPoint3d delta = camera.GetExtents();
         delta.Scale(0.5);
         viewInverse.Multiply(delta);
 
         worldPoint.DifferenceOf(worldPoint, delta);
-        SetOrigin(worldPoint);
+        camera.SetOrigin(worldPoint);
         return true;
         }
 
@@ -725,31 +661,6 @@ bool SpatialViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, G
 
 static DVec3d s_defaultForward, s_defaultUp;
 static UiOrientation s_lastUi;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
-    {
-    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
-        {
-        if (nEventsSinceEnabled < 2)
-            {
-            // Hack to make this work properly. The first rotation received from CM seems
-            // to always be the reference frame - using that at best causes the camera to skip for a frame,
-            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
-            // up alongside s_defaultForward/s_defaultUp.
-            return false;
-            }
-        m_defaultDeviceOrientation = matrix;
-        m_defaultDeviceOrientationValid = true;
-        s_defaultUp = m_definition->GetYVector();
-        s_defaultForward = m_definition->GetZVector();
-        s_lastUi = ui;
-        }
-
-    return _OnOrientationEvent(matrix, mode, ui);
-    }
 
 //---------------------------------------------------------------------------------------
 // Gyro vector convention:
@@ -872,61 +783,67 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool OrthographicViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
-    DVec3d forward, up;
-    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
-        return false;
-
-    // No camera, have to manually define origin, etc.
-    RotMatrix viewMatrix = GetRotation();
-    RotMatrix viewInverse;
-    viewInverse.InverseOf(viewMatrix);
-
-    DVec3d delta = GetDelta();
-    delta.Scale(0.5);
-    DPoint3d worldDelta = delta;
-    viewInverse.Multiply(worldDelta);
-
-    // This is the point we want to rotate about.
-    DPoint3d eyePoint;
-    eyePoint.SumOf(GetOrigin(), worldDelta);
-
-    DVec3d xVector;
-    xVector.CrossProduct(forward, up);
-    viewMatrix.SetRow(xVector, 0);
-    viewMatrix.SetRow(up, 1);
-    viewMatrix.SetRow(forward, 2);
-    SetRotation(viewMatrix);
-
-    // Now that we have the new rotation, we can work backward from the eye point to get the new origin.
-    viewInverse.InverseOf(viewMatrix);
-    worldDelta = delta;
-    viewInverse.Multiply(worldDelta);
-    DPoint3d newOrigin;
-    newOrigin.DifferenceOf(eyePoint, worldDelta);
-    SetOrigin(newOrigin);
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool SpatialViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
-    {
-    auto& camera = GetViewDefinition3dR();
-    if (!camera.IsCameraOn())
-        return T_Super::_OnOrientationEvent(orientation, mode, ui);
+    auto& viewDef = GetSpatialViewDefinition();
+    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
+        {
+        if (nEventsSinceEnabled < 2)
+            {
+            // Hack to make this work properly. The first rotation received from CM seems
+            // to always be the reference frame - using that at best causes the camera to skip for a frame,
+            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
+            // up alongside s_defaultForward/s_defaultUp.
+            return false;
+            }
+        m_defaultDeviceOrientation = matrix;
+        m_defaultDeviceOrientationValid = true;
+        s_defaultUp = viewDef.GetYVector();
+        s_defaultForward = viewDef.GetZVector();
+        s_lastUi = ui;
+        }
 
     DVec3d forward, up;
-    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
+    if (!ViewVectorsFromOrientation(forward, up, matrix, mode, ui))
         return false;
 
-    DPoint3d eyePoint = camera.GetEyePoint(), newTarget;
-    newTarget.SumOf(eyePoint, forward, -camera.GetFocusDistance());
+    if (!viewDef.IsCameraOn())
+        {
+        // No camera, have to manually define origin, etc.
+        RotMatrix viewMatrix = viewDef.GetRotation();
+        RotMatrix viewInverse;
+        viewInverse.InverseOf(viewMatrix);
 
-    camera.LookAt(eyePoint, newTarget, up);
+        DVec3d delta = viewDef.GetExtents();
+        delta.Scale(0.5);
+        DPoint3d worldDelta = delta;
+        viewInverse.Multiply(worldDelta);
+
+        // This is the point we want to rotate about.
+        DPoint3d eyePoint;
+        eyePoint.SumOf(viewDef.GetOrigin(), worldDelta);
+
+        DVec3d xVector;
+        xVector.CrossProduct(forward, up);
+        viewMatrix.SetRow(xVector, 0);
+        viewMatrix.SetRow(up, 1);
+        viewMatrix.SetRow(forward, 2);
+        viewDef.SetRotation(viewMatrix);
+
+        // Now that we have the new rotation, we can work backward from the eye point to get the new origin.
+        viewInverse.InverseOf(viewMatrix);
+        worldDelta = delta;
+        viewInverse.Multiply(worldDelta);
+        DPoint3d newOrigin;
+        newOrigin.DifferenceOf(eyePoint, worldDelta);
+        viewDef.SetOrigin(newOrigin);
+        return true;
+        }
+
+
+    DPoint3d eyePoint = viewDef.GetEyePoint(), newTarget;
+    newTarget.SumOf(eyePoint, forward, -viewDef.GetFocusDistance());
+    viewDef.LookAt(eyePoint, newTarget, up);
 
     return true;
     }

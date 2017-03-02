@@ -25,7 +25,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace ViewElementHandler
 {
-    struct View; struct View3d; struct View2d; struct CameraView; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
+    struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
     struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle3d;
 }
 
@@ -820,7 +820,6 @@ protected:
     ViewDefinition3dCP _ToView3d() const override final {return this;}
 
 public:
-    DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR); //!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
@@ -848,7 +847,7 @@ public:
     void TurnCameraOff() {m_cameraOn = false;}
 
     //! If the camera is off, turn it on for this view using the supplied lens angle.
-    //! @note With th camera off, the camera position (eyepoint) is not updated as the view is modified. Therefore, it is not possible to simply turn
+    //! @note With the camera off, the camera position (eyepoint) is not updated as the view is modified. Therefore, it is not possible to simply turn
     //! the camera back on without somehow determining an appropriate camera position. That can be done either by supplying the position via #LookAt, or by 
     //! accepting a new nearly-arbitrary camera position calculated by this method. This method will attempt to place the camera slightly outside the existing
     //! view volume by moving back from the front plane along the view direction. The target point is arbitrarily set to the center of the visible volume of the orthographic
@@ -857,7 +856,6 @@ public:
 
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
-
 
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT double CalcLensAngle() const;
@@ -1029,8 +1027,7 @@ public:
 };
 
 //=======================================================================================
-//! Defines a spatial view that displays
-//! world-coordinate geometry on the image plane using a parallel orthographic projection.
+//! Defines a spatial view that displays geometry on the image plane using a parallel orthographic projection.
 // @bsiclass                                                      Sam.Wilson    08/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
@@ -1043,7 +1040,6 @@ protected:
     explicit OrthographicViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
-    DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
 public:
@@ -1061,7 +1057,7 @@ public:
 };
 
 //=======================================================================================
-//! Defines a view of a single 3D template model.
+//! Defines a view of a single 3d template model.
 // @bsiclass                                                      Shaun.Sewall    02/17
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
@@ -1128,7 +1124,6 @@ public:
     void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
-
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
 };
 
@@ -1266,7 +1261,7 @@ namespace ViewElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle3d, DisplayStyle3d, ViewDisplayStyle3d, ViewDisplayStyle, DGNPLATFORM_EXPORT);
     };
-};
+} // namespace ViewElementHandler
 
 typedef ViewElementHandler::SpatialView SpatialViewHandler;
 typedef ViewElementHandler::DrawingView DrawingViewHandler;
