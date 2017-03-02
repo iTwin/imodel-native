@@ -1950,6 +1950,16 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="PartitionOriginatesFromRepository" strength="referencing" modifier="Sealed">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="originates from" polymorphic="true">
+            <Class class="InformationPartitionElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is origin of" polymorphic="true">
+            <Class class="RepositoryLink"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
