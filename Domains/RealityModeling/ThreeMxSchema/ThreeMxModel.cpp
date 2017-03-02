@@ -473,8 +473,8 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                 if (found == builderMap.end())
                     {
                     TileTextureImagePtr     tileTexture = TileTextureImage::Create(publishTexture->m_source);
-                    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
-                    builder = TileMeshBuilder::Create(displayParams, 0.0, 0.0, const_cast<FeatureAttributesMapR>(GetAttributes()));
+                    TileDisplayParamsCPtr   displayParams = TileDisplayParams::Create(0xffffff, tileTexture.get(), s_ignoreLighting);
+                    builder = TileMeshBuilder::Create(*displayParams, 0.0, 0.0, const_cast<FeatureAttributesMapR>(GetAttributes()));
 
                     builderMap.Insert(publishTexture, builder);
                     }
