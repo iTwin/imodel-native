@@ -83,17 +83,11 @@ public:
     //! Generates a string from this BeVersion.
     //! @param[in] format Format string. <b>Only "%" PRIu16 is permitted as format specifier for the version digits.</b>
     //! @return Version string
-    Utf8String ToString(Utf8CP format = VERSION_FORMAT) const
-        {
-        return Utf8PrintfString(format, m_major, m_minor, m_sub1, m_sub2);
-        }
+    Utf8String ToString(Utf8CP format = VERSION_FORMAT) const { return Utf8PrintfString(format, m_major, m_minor, m_sub1, m_sub2); }
 
     //! Generates a 2-part version string from this BeVersion that only uses the major and minor version numbers.
     //! @param[in] format Format string. <b>Only "%" PRIu16 is permitted as format specifier for the version digits.</b>
-    Utf8String ToMajorMinorString(Utf8CP format = VERSION_FORMAT_MAJOR_MINOR) const
-        {
-        return Utf8PrintfString(format, m_major, m_minor);
-        }
+    Utf8String ToMajorMinorString(Utf8CP format = VERSION_FORMAT_MAJOR_MINOR) const { return Utf8PrintfString(format, m_major, m_minor); }
 
     //! Parses version string into a BeVersion.
     //! @param[in] versionStr Version string
