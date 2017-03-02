@@ -1127,7 +1127,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
                 models->AddModel(id);
              }
 
-        CameraViewDefinition view(*m_db, "Default", *categories, *style, *models);
+        SpatialViewDefinition view(*m_db, "Default", *categories, *style, *models);
         view.SetStandardViewRotation(StandardView::Iso);
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
@@ -1165,8 +1165,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
         ASSERT_EQ(checkValue, ECN::ECValue(4.5));
         checkValue.Clear();
         ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(caindex, ECN::ECValue(22)));
-        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(caindex, ECN::ECValue(true)));
-        ASSERT_EQ(DgnDbStatus::Success,view.GetPropertyValue(checkValue, caindex));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, view.SetPropertyValue(caindex, ECN::ECValue(true)));
         ASSERT_TRUE(checkValue.Equals(ECN::ECValue(true)));
         checkValue.Clear();
         ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(laindex, ECN::ECValue(true)));
@@ -1194,7 +1193,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //Check what stored in Db 
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
-    CameraViewDefinitionCPtr view= m_db->Elements().Get< CameraViewDefinition>(viewId);
+    SpatialViewDefinitionCPtr view= m_db->Elements().Get<SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
@@ -1212,7 +1211,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     ASSERT_EQ(checkValue, ECN::ECValue(4.5));
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
-    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(true)));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
     ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(5.5).GetDouble());
@@ -1229,7 +1228,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //upadate properties
     OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
     {
-    CameraViewDefinitionPtr view = m_db->Elements().GetForEdit< CameraViewDefinition>(viewId);
+    SpatialViewDefinitionPtr view = m_db->Elements().GetForEdit<SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
@@ -1251,10 +1250,6 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
     ASSERT_EQ(checkValue, ECN::ECValue(4.8));
     checkValue.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(caindex, ECN::ECValue(false)));
-    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
-    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
-    checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(laindex, ECN::ECValue(6.0)));
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
     ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
@@ -1274,7 +1269,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     //Check upadated properties stored in Db
     OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
     {
-    CameraViewDefinitionCPtr view = m_db->Elements().Get< CameraViewDefinition>(viewId);
+    SpatialViewDefinitionCPtr view = m_db->Elements().Get<SpatialViewDefinition>(viewId);
 
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
     ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
@@ -1290,9 +1285,6 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
     ASSERT_EQ(checkValue, ECN::ECValue(4.8));
-    checkValue.Clear();
-    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
-    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
     ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
