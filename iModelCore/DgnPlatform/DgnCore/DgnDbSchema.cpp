@@ -131,7 +131,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importBisCoreSchema(DgnDbR db)
+static ECSchemaReadContextPtr readBisCoreSchemaFromDisk(DgnDbR db)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
     ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
@@ -151,8 +151,7 @@ static DgnDbStatus importBisCoreSchema(DgnDbR db)
     ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
     BeAssert(bisCoreSchema != NULL);
 
-    DgnDbStatus status = db.ImportSchemas(ecSchemaContext->GetCache().GetSchemas());
-    return status;
+    return ecSchemaContext;
     }
 
 #define GEOM_IN_SPATIAL_INDEX_CLAUSE " 1 = new.InSpatialIndex "
@@ -321,7 +320,8 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    if (DgnDbStatus::Success != importBisCoreSchema(*this))
+    ECSchemaReadContextPtr schemaContext = readBisCoreSchemaFromDisk(*this);
+    if (DgnDbStatus::Success != ImportSchemas(schemaContext->GetCache().GetSchemas()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -555,6 +555,15 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
 
     bool profileIsAutoUpgradable = false;
     stat = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
+    
+    if (profileIsAutoUpgradable)
+        stat = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
 
-    return profileIsAutoUpgradable ?((DgnDb::OpenParams&)params).UpgradeSchema(*this) : stat;
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    // NEEDS_WORK: Need to reconcile profile and ECSchema versions
+    // NEEDS_WORK: Make use of "schema" and "profile" in the method names consistent. 
+    ECSchemaReadContextPtr schemaContext = readBisCoreSchemaFromDisk(*this);
+    return ValidateSchemas(schemaContext->GetCache().GetSchemas());
     }

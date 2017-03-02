@@ -163,7 +163,9 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
 private:
     void Destroy();
-    bool ValidateSchemaForImport(bool& needsImport, ECN::ECSchemaCR appSchema) const;
+    BeSQLite::DbResult ValidateSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
+    BeSQLite::DbResult PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
+    DgnDbStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8);
 
 protected:
     friend struct Txns;
@@ -259,7 +261,7 @@ public:
     //! @remarks Only used for cases where the schemas are NOT paired with a domain. @see DgnDomain::ImportSchema().
     //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an eror happens during the import, the new transaction is abandoned in the call. 
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> schemas);
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
     //! Inserts a new ECRelationship
     //! @param[out] relKey key of the new ECRelationship
@@ -361,7 +363,7 @@ public:
     BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
 
     //! @private internal use only (v8 importer)
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> schemas, bool doNotFailSchemaValidationForLegacyIssues);
+    DGNPLATFORM_EXPORT DgnDbStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
 };
 
 END_BENTLEY_DGN_NAMESPACE
