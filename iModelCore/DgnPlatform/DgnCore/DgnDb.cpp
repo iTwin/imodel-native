@@ -45,7 +45,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
-    ApplyECDbSettings(false /* requireECCrudWriteToken */, false /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
+    ApplyECDbSettings(false /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
 //--------------------------------------------------------------------------------------
@@ -198,6 +198,107 @@ RevisionManagerR DgnDb::Revisions() const
     return *m_revisionManager;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    return ImportSchemas(schemas, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues)
+    {
+    if (IsReadonly())
+        {
+        BeAssert(false && "Cannot import schema into a ReadOnly Db");
+        return DgnDbStatus::ReadOnly;
+        }
+
+    bvector<ECSchemaCP> importSchemas;
+    for (ECSchemaCP schema : schemas)
+        {
+        bool needsImport;
+        if (!ValidateSchemaForImport(needsImport, *schema))
+            {
+            BeAssert(false && "One or more schemas are incompatible");
+            return DgnDbStatus::InvalidSchemaVersion;
+            }
+
+        if (needsImport)
+            importSchemas.push_back(schema);
+        }
+
+    if (importSchemas.empty())
+        return DgnDbStatus::Success;
+
+    if (RepositoryStatus::Success != BriefcaseManager().LockSchemas().Result())
+        {
+        BeAssert(false && "Unable to obtain the schema lock");
+        return DgnDbStatus::LockNotHeld;
+        }
+
+    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(importSchemas, doNotFailSchemaValidationForLegacyIssues, GetECSchemaImportToken()))
+        {
+        DbResult result = AbandonChanges();
+        BeAssert(result == BE_SQLITE_OK);
+
+        return DgnDbStatus::BadSchema;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::ValidateSchemaForImport(bool& needsImport, ECSchemaCR appSchema) const
+    {
+    ECSchemaCP bimSchema = Schemas().GetECSchema(appSchema.GetName().c_str(), false);
+    if (!bimSchema)
+        {
+        LOG.infov("Importing schema %s: Schema wasn't found in the BIM, and needs to be imported", appSchema.GetSchemaKey().GetName().c_str());
+        needsImport = true; // Application needs to import the schema to the BIM
+        return true;
+        }
+        
+    SchemaKeyCR appSchemaKey = appSchema.GetSchemaKey();
+    SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
+
+    if (appSchemaKey.Matches(bimSchemaKey, SchemaMatchType::Identical)) // Check sum is set and exactly matches, *OR* it's not set but all version numbers exactly match
+        {
+        LOG.infov("Importing schema %s: Versions (and content) in the application and BIM are identical, and need not be re-imported.", appSchemaKey.GetName().c_str());
+        needsImport = false;
+        return true;
+        }
+
+    if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead())
+        {
+        LOG.errorv("Importing schema %s: Versions in the application and the BIM are read incompatible, and cannot be imported.", appSchemaKey.GetName().c_str());
+        return false;
+        }
+
+    if (appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
+        {
+        LOG.errorv("Importing schema %s: Versions in the application and the BIM are write incompatible (the BIM is newer), and cannot be re-imported.", appSchemaKey.GetName().c_str());
+        return false;
+        }
+
+    if (appSchemaKey.GetVersionWrite() >= bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() >= bimSchemaKey.GetVersionMinor())
+        {
+        LOG.warningv("Importing schema %s: Version in the application is newer than the one in the BIM, or their contents are not the same, and needs to be re-imported.", appSchemaKey.GetName().c_str());
+        needsImport = true;
+        return true;
+        }
+    
+    BeAssert(appSchemaKey.GetVersionMinor() < bimSchemaKey.GetVersionMinor());
+    LOG.warningv("Importing schema %s: Version in the application has an older minor version than the one in the BIM, but cannot (and need not) be re-imported.", appSchemaKey.GetName().c_str());
+    needsImport = false;
+    return true;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   02/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -217,7 +318,7 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
     //WIP this might need a cache of inserters if called often
@@ -231,7 +332,7 @@ DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::E
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::UpdateECRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+DbResult DgnDb::UpdateRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -248,7 +349,7 @@ DbResult DgnDb::UpdateECRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IEC
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
+DbResult DgnDb::DeleteRelationship(EC::ECInstanceKeyCR key)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -268,7 +369,7 @@ DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
+DbResult DgnDb::DeleteRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {

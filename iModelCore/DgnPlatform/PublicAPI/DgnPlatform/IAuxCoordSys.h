@@ -128,12 +128,12 @@ DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, R
 DGNPLATFORM_EXPORT void SendEvent(IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
 DGNPLATFORM_EXPORT void DisplayCurrent(DecorateContextR, bool isCursorView);
 
-DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
-DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
+DGNPLATFORM_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
+DGNPLATFORM_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
+DGNPLATFORM_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
 
-DGNVIEW_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
+DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS);
+DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS);
 
 //__PUBLISH_SECTION_START__
 public:

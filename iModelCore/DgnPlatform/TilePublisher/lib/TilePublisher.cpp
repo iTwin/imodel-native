@@ -1387,7 +1387,7 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
 PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
     : TileMaterial(Utf8String("PolylineMaterial_")+suffix)
     {
-    m_type = mesh.GetDisplayParams()->GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+    m_type = mesh.GetDisplayParams().GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
@@ -1452,8 +1452,7 @@ void PolylineMaterial::AddTechniqueParameters(Json::Value& tech, Json::Value& pr
 MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db)
     : TileMaterial(Utf8String("Material_")+suffix)
     {
-    BeAssert(nullptr != mesh.GetDisplayParams());
-    TileDisplayParamsCR params = *mesh.GetDisplayParams();
+    TileDisplayParamsCR params = mesh.GetDisplayParams();
     m_ignoreLighting = params.GetIgnoreLighting();
 
     params.ResolveTextureImage(db);
@@ -1663,7 +1662,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
 
     Json::Value& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
 
-    auto matId = mesh.GetDisplayParams()->GetMaterialId();
+    auto matId = mesh.GetDisplayParams().GetMaterialId();
     if (matId.IsValid())
         matJson["materialId"] = matId.ToString(); // Do we actually use this?
 
@@ -1740,7 +1739,7 @@ PolylineMaterial TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& 
     constexpr double s_minLineWidth = 1.0;
     constexpr double s_featherPixels = 1.0;
 
-    double halfWidthPixels = std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams()->GetRasterWidth())) / 2.0;
+    double halfWidthPixels = std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
     double featherPixels = std::min(halfWidthPixels/2.0, s_featherPixels);
     halfWidthPixels += featherPixels;
 
@@ -2201,8 +2200,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     if (!mesh.Colors().empty() && !isTextured && ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
         AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
-    if (!mesh.Normals().empty() &&
-        nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
+    if (!mesh.Normals().empty() && !mesh.GetDisplayParams().GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
         primitive["attributes"]["NORMAL"] = AddMeshVertexAttributes (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
         }
@@ -2280,7 +2278,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
-    if (mesh.GetDisplayParams()->GetRasterWidth() <= 1)
+    if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
         {
         AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
         return;

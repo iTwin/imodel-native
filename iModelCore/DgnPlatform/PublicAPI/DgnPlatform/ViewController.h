@@ -163,24 +163,24 @@ protected:
 
     //! @return true to project un-snapped points to the view's ACS plane.
     //! @note Normally true for a 3d view. A 3d digitizier supplying real z values would not want this...maybe this would be a special ViewController?
-    DGNPLATFORM_EXPORT virtual bool _IsPointAdjustmentRequired(DgnViewportR vp) const;
+    DGNPLATFORM_EXPORT virtual bool _IsPointAdjustmentRequired() const;
 
     //! @return true to project snap points to the view's ACS plane.
     //! @note Normally true for a 3d view only when ACS plane snap is enabled.
-    DGNPLATFORM_EXPORT virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const;
+    DGNPLATFORM_EXPORT virtual bool _IsSnapAdjustmentRequired(bool snapLockEnabled) const;
 
     //! @return true to automatically orient AccuDraw to the view's ACS plane when initially made active.
     //! @note Normally true for a view only when ACS context lock is enabled.
-    DGNPLATFORM_EXPORT virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const;
+    DGNPLATFORM_EXPORT virtual bool _IsContextRotationRequired(bool contextLockEnabled) const;
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
     //! Grid display and point adjustment.
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
-    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor(DgnViewportR) const;
-    DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DgnViewportR, DPoint2dR, uint32_t& gridsPerRef) const;
-    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DgnViewportR, DPoint2dR roundingDistance) const;
+    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor() const;
+    DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DPoint2dR, uint32_t& gridsPerRef) const;
+    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DPoint2dR roundingDistance) const;
 
     //! Display grid for this view.
     DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
@@ -301,8 +301,8 @@ public:
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    DGNPLATFORM_EXPORT void PointToStandardGrid(DgnViewportR, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
-    DGNPLATFORM_EXPORT void PointToGrid(DgnViewportR, DPoint3dR point) const;
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
+    DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
 
     //! Get the Appearance of a DgnSubCategory for this view.
     //! @param[in] id the DgnSubCategoryId of interest
