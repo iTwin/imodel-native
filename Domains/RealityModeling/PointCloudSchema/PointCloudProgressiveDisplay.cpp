@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 

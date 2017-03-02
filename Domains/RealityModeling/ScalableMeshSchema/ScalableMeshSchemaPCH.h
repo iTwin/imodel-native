@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshSchemaPCH.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __SCALABLEMESH_SCHEMAINTERNAL_H__
@@ -15,7 +15,7 @@
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnPlatform.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>

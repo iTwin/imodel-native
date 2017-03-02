@@ -2,11 +2,11 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshSchemaPCH.h"
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include <ScalableMeshSchema\ScalableMeshSchemaApi.h>
