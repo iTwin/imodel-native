@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerRevisionCreateEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerRevisionCreateEvent : public DgnDbServerEvent::GenericEvent
     {

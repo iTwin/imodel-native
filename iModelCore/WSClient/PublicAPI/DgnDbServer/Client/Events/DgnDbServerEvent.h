@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerEvent.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@
 #include <DgnDbServer/Client/DgnDbServerResult.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Arvind.Venkateswaran   06/2016
@@ -32,7 +32,7 @@ namespace DgnDbServerEvent
         {
         static Utf8CP RevisionId = "RevisionId";
         static Utf8CP RevisionIndex = "RevisionIndex";
-		static Utf8CP BriefcaseId = "BriefcaseId";
+        static Utf8CP BriefcaseId = "BriefcaseId";
         }
     namespace CodeEventProperties
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbRepositoryManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbRepositoryManager.h>
@@ -11,7 +11,7 @@
 #include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*---------------------------------------------------------------------------------**//**

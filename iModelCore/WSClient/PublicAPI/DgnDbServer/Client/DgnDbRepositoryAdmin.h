@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbRepositoryAdmin.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGN
 
 typedef struct DgnDbClient* DgnDbClientP;
