@@ -694,7 +694,7 @@ virtual void    /*AuxCoordSys::*/_PointToGrid(DgnViewportR viewport, DPoint3dR p
     GetOrigin(origin);
     GetRotation(rMatrix);
 
-    viewport.GetViewController().PointToStandardGrid(viewport, point, origin, rMatrix);
+    viewport.GetViewController().PointToStandardGrid(point, origin, rMatrix);
     }
 
 public:
@@ -805,7 +805,6 @@ static AuxCoordSys* /*AuxCoordSys::*/CreateNew(ACSData& acsData)
     return new AuxCoordSys(acsData);
     }
 
-
 }; // AuxCoordSys
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,11 +814,9 @@ double          IAuxCoordSys::GetGridScaleFactor(DgnViewportR vp) const
     {
     double      scaleFactor = 1.0;
 
-#ifdef WIP_V10_MODEL_ACS
     // Apply ACS scale to grid if ACS Context Lock active...
-    if (TO_BOOL (vp.GetTargetModel()->GetModelFlag(MODELFLAG_ACS_LOCK)))
+    if (DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())
         scaleFactor *= GetScale();
-#endif
 
     return scaleFactor;
     }
@@ -833,7 +830,7 @@ StatusInt       IAuxCoordSys::GetGridSpacing(DPoint2dR spacing, uint32_t& gridPe
 
     if (SUCCESS != _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef))
         {
-        vp.GetViewController()._GetGridSpacing(vp, spacing, gridPerRef); // Inherit view controller settings if not specified...
+        vp.GetViewController()._GetGridSpacing(spacing, gridPerRef); // Inherit view controller settings if not specified...
 
         return ERROR;
         }
@@ -1193,6 +1190,30 @@ IACSManager::IACSManager()
     m_inhibitCurrentACSDisplay  = false;
     m_extenders = nullptr;
     m_listeners = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsPointAdjustmentRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsPointAdjustmentRequired();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsSnapAdjustmentRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsContextRotationRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());
     }
 
 /*---------------------------------------------------------------------------------**//**
