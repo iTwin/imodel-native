@@ -25,7 +25,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct     ILineStyleComponent
+struct ILineStyleComponent
 {
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
@@ -39,7 +39,7 @@ struct     ILineStyleComponent
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct  ILineStyle
+struct ILineStyle
 {
     virtual Utf8CP _GetName() const = 0;
     virtual ILineStyleComponent const* _GetComponent() const = 0;

@@ -1568,10 +1568,10 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
         }
 
     double pixelSize = builder.GetPixelSize();
+    double maxWidth = (0.0 != pixelSize ? lsSymb.GetStyleWidth() : 0.0);
 
-    if (0.0 != pixelSize)
+    if (0.0 != maxWidth)
         {
-        double maxWidth = lsSymb.GetStyleWidth();
         double pixelThreshold = 5.0;
 
         if ((maxWidth / pixelSize) < pixelThreshold)
@@ -1584,7 +1584,7 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
         builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
         }
 
-    return true; // Width discernable...
+    return true; // Width discernable (or no width)...
     }
 
 /*---------------------------------------------------------------------------------**//**

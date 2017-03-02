@@ -228,7 +228,7 @@ public:
 
         //! Provides paths to known locations
         struct IKnownLocationsAdmin : IHostObject
-            {
+        {
         protected:
             virtual ~IKnownLocationsAdmin() {}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
@@ -252,7 +252,7 @@ public:
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
-            };
+        };
 
         //=======================================================================================
         // @bsiclass                                                    Keith.Bentley   07/13

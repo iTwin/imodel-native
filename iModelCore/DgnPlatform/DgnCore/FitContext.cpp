@@ -15,7 +15,6 @@ StatusInt FitContext::_InitContextForView()
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
-    BeAssert(m_viewport); // must call Attach!
     m_trans.InitFrom(nullptr != m_params.m_rMatrix ? *m_params.m_rMatrix : m_viewport->GetRotMatrix());
     return SUCCESS;
     }

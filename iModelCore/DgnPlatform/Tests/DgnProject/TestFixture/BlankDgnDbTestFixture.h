@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/BlankDgnDbTestFixture.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 
 #define LOCALIZED_STR(str) str
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
 

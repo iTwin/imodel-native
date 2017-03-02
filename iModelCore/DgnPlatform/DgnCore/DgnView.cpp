@@ -21,7 +21,6 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(SpatialView);
     HANDLER_DEFINE_MEMBERS(TemplateView3d);
     HANDLER_DEFINE_MEMBERS(OrthographicView);
-    HANDLER_DEFINE_MEMBERS(CameraView);
     HANDLER_DEFINE_MEMBERS(ViewModels);
     HANDLER_DEFINE_MEMBERS(ViewCategories);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle);
@@ -282,19 +281,19 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr SpatialViewDefinition::_SupplyController() const
+    {
+    return new SpatialViewController(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
     {
     return new OrthographicViewController(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr CameraViewDefinition::_SupplyController() const
-    {
-    return new CameraViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -477,7 +476,7 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::Entry::IsOrthographicView() const {return isEntryOfClass<OrthographicViewDefinition>(*this);}
-bool ViewDefinition::Entry::IsCameraView() const {return isEntryOfClass<CameraViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsView3d() const {return isEntryOfClass<ViewDefinition3d>(*this);}
 bool ViewDefinition::Entry::IsSpatialView() const {return isEntryOfClass<SpatialViewDefinition>(*this);}
 bool ViewDefinition::Entry::IsDrawingView() const {return isEntryOfClass<DrawingViewDefinition>(*this);}
 bool ViewDefinition::Entry::IsSheetView() const {return isEntryOfClass<SheetViewDefinition>(*this);}
@@ -749,6 +748,15 @@ void ViewDefinition3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     stmt.BindDouble(stmt.GetParameterIndex(str_Yaw()), angles.GetYaw().Degrees());
     stmt.BindDouble(stmt.GetParameterIndex(str_Pitch()), angles.GetPitch().Degrees());
     stmt.BindDouble(stmt.GetParameterIndex(str_Roll()), angles.GetRoll().Degrees());
+
+    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -758,6 +766,13 @@ bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
     {
     auto& other = (ViewDefinition3dR) in;
     if (!m_origin.IsEqual(other.m_origin) || !m_extents.IsEqual(other.m_extents) || !m_rotation.IsEqual(other.m_rotation))
+        return false;
+
+    if (IsCameraOn() != other.IsCameraOn())
+        return false;
+    
+    // if camera is off, don't compare cameras
+    if (IsCameraOn() && !m_cameraDef.IsEqual(other.m_cameraDef))
         return false;
 
     return T_Super::_EqualState(other);
@@ -776,6 +791,12 @@ DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
            roll  = stmt.GetValueDouble(params.GetSelectIndex(str_Roll()));
 
     m_rotation = YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)).ToRotMatrix();
+
+    m_cameraDef.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
+    m_cameraDef.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
+    m_cameraDef.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
+    m_cameraOn = stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn()));
+
     return T_Super::_ReadSelectParams(stmt, params);
     }
 
@@ -790,6 +811,8 @@ void ViewDefinition3d::_CopyFrom(DgnElementCR el)
     m_origin = other.m_origin;
     m_extents = other.m_extents;
     m_rotation = other.m_rotation;
+    m_cameraDef = other.m_cameraDef;
+    m_cameraOn = other.m_cameraOn;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -920,66 +943,6 @@ DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
     {
     m_modelSelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_ModelSelector()));
     return T_Super::_ReadSelectParams(stmt, params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
-    {
-    T_Super::_BindWriteParams(stmt, forInsert);
-    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
-    BeAssert(ECSqlStatus::Success == stat);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::_CopyFrom(DgnElementCR el)
-    {
-    T_Super::_CopyFrom(el);
-    auto other = static_cast<CameraViewDefinitionCP>(&el);
-    m_camera = other->m_camera;
-    m_isCameraOn = other->m_isCameraOn;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_camera.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
-    m_camera.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
-    m_camera.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
-    SetCameraOn(stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn())));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
-    {
-    if (!T_Super::_EqualState(in))
-        return false;
-
-    auto& other = (CameraViewDefinition&) in;
-    if (IsCameraOn() != other.IsCameraOn())
-        return false;
-    
-    // if camera is off, don't compare cameras
-    return !IsCameraOn() || m_camera.IsEqual(other.m_camera);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1294,6 +1257,70 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
+
+    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetPoint3d(viewDef.GetEyePoint());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsPoint3d())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetEyePoint(value.GetPoint3d());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetLong(viewDef.GetLensAngle());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsDouble())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetLensAngle(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetDouble(viewDef.GetFocusDistance());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsDouble())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetFocusDistance(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetBoolean(viewDef.IsCameraOn());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            });
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1411,82 +1438,6 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
 
             SpatialViewDefinitionR viewDef = (SpatialViewDefinitionR)el;
             viewDef.SetModelSelector(*modelSel->MakeCopy<ModelSelector>());
-            return DgnDbStatus::Success;
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetPoint3d(viewDef.GetEyePoint());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsPoint3d())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetEyePoint(value.GetPoint3d());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetLong(viewDef.GetLensAngle());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetLensAngle(value.GetDouble());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetDouble(viewDef.GetFocusDistance());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetFocusDistance(value.GetDouble());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetBoolean(viewDef.IsCameraOn());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsBoolean())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetCameraOn(value.GetBoolean());
             return DgnDbStatus::Success;
             });
     }

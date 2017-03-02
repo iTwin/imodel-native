@@ -1,12 +1,12 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ExampleTestGroup.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include "../TestFixture/DgnPlatformSeedManager.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DPTEST
 
 #define EXAMPLE_MODEL_NAME  "Example"

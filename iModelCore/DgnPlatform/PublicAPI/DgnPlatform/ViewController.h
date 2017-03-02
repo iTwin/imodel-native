@@ -13,7 +13,7 @@
 #include "ViewContext.h"
 #include "SectionClip.h"
 #include "UpdatePlan.h"
-#include "DgnView.h"
+#include "ViewDefinition.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 
@@ -55,9 +55,7 @@ enum class UiOrientation
 //=======================================================================================
 //! @ingroup GROUP_DgnView
 /**
- A ViewController provides the behavior for a type of view. It also provides the persistent information
- about how the view relates to a DgnDb (e.g. what models/categories are displayed, the ViewFlags that control how graphics
- are represented, etc.)
+ A ViewController provides the behavior for a type of view.
  <p>
  When a ViewController is paired with a DgnViewport, it then controls the operation of that view. Generally there will
  be a 1-1 relationship between ViewControllers and Viewports and a DgnViewport holds a reference-counted-pointer to its 
@@ -140,8 +138,6 @@ protected:
     DgnDbR m_dgndb;
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
-    RotMatrix m_defaultDeviceOrientation;
-    bool m_defaultDeviceOrientationValid = false;
     bool m_noQuery = false;
     SpecialElements m_special;
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
@@ -159,7 +155,6 @@ protected:
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
-    virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
     virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
     virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
@@ -222,18 +217,6 @@ protected:
     //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
 
-    //! Used to notify derived classes of an attempt to locate the viewport around the specified
-    //! WGS84 location. Override to change how these points are interpreted.
-    //! @param[out] status Extra information about how this event was handled; ignored if return value is false.
-    //! @param[in] point the new location
-    //! @return true to indicate that the view was modified.
-    virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return false;}
-
-    //! Used to notify derived classes of an attempt to orient the viewport around the specified
-    //! rotation matrix from the device's orientation.
-    //! @return true to indicate that the view was modified.
-    virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) {return false;}
-
     //! Get the extent of the model(s) viewed by this view
     virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const = 0;
 
@@ -272,20 +255,6 @@ public:
     //! @see SaveDefinition
     void StoreState() {_StoreState();}
 
-    //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
-    //! directed at the new view, and the previous view's state is unchanged.
-    //! @param[in] newName The name for the new view. Must be unique.
-    //! @return SUCCESS if the view was successfully saved, error code otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus SaveAs(Utf8CP newName);
-
-    //! Save the current state of this ViewController to a new view name. After this call succeeds, the new view will exist in the
-    //! database with this ViewController's state, but this ViewController remains directed at the existing view (future calls to Save
-    //! will be written to the existing not new view). However, the current state will not have been saved.
-    //! @param[in] newName The name for the new view. Must be unique.
-    //! @param[out] newId On success, the DgnViewId of the newly created view.
-    //! @return SUCCESS if the view was successfully saved, error code otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus SaveTo(Utf8CP newName, DgnViewId& newId);
-
     //! perform the equivalent of a dynamic_cast to a SpatialViewController.
     //! @return a valid SpatialViewControllerCP, or nullptr if this is not a physical view
     virtual SpatialViewControllerCP _ToSpatialView() const {return nullptr;}
@@ -301,8 +270,9 @@ public:
     virtual Sheet::ViewControllerCP _ToSheetView() const {return nullptr;}
     Sheet::ViewControllerP ToSheetViewP() {return const_cast<Sheet::ViewControllerP>(_ToSheetView());}
 
+    virtual ViewController3dCP _ToView3d() const {return nullptr;}
     //! determine whether this view is a 3d view
-    bool Is3d() const {return _Is3d();}
+    bool Is3d() const {return nullptr != _ToView3d();}
 
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
@@ -326,39 +296,11 @@ public:
     //! @param[in] color The new background color
     void SetBackgroundColor(ColorDef color) {m_definition->GetDisplayStyle().SetBackgroundColor(color);}
 
-    //! Get the origin (lower, left, back) point of of the ViewDefinition
-    DPoint3d GetOrigin() const {return m_definition->GetOrigin();}
-
-    //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the ViewDefinition.
-    DVec3d GetDelta() const {return m_definition->GetExtents();}
-
-    //! Get the 3x3 orthonormal rotation matrix for this ViewDefinition.
-    RotMatrix GetRotation() const {return m_definition->GetRotation();}
-
-    //! Change the origin (lower, left, front) in the ViewDefinition of this view
-    //! @param[in] viewOrg The new origin for this view.
-    void SetOrigin(DPoint3dCR viewOrg) {m_definition->SetOrigin(viewOrg);}
-
-    //! Change the extents in the ViewDefinition of this view.
-    //! @param[in] viewDelta the new size for the view.
-    void SetDelta(DVec3dCR viewDelta) {m_definition->SetExtents(viewDelta);}
-
-    //! Change the rotation in the ViewDefinition of this view.
-    //! @param[in] viewRot The new rotation matrix.
-    //! @note viewRot must be orthonormal. For 2d views, only the rotation angle about the z axis is used.
-    void SetRotation(RotMatrixCR viewRot){m_definition->SetRotation(viewRot);}
-
-    //! Get the center point from the ViewDefinition.
-    DPoint3d GetCenter() const {return m_definition->GetCenter();}
-
     //! Change whether a DgnCatetory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
-    DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
-    DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
 
@@ -386,32 +328,12 @@ public:
     //! @return the ViewName.
     DGNPLATFORM_EXPORT static Utf8String GetStandardViewName(StandardView standardView);
 
-    //! Change the view orientation to one of the standard views.
-    //! @param[in] standardView the rotation to which the view should be set.
-    //! @return SUCCESS if the view was changed.
-    BentleyStatus SetStandardViewRotation(StandardView standardView) {return m_definition->SetStandardViewRotation(standardView);}
-
     //! Get the RotMatrix for a standard view by name.
     //! @param[out] rotMatrix   The rotation of the standard view (optional)
     //! @param[out] standardId  The identifier of the standard view (optional)
     //! @param[in]  viewName    The name of the standard view to look up. Note that the comparison is case-insensitive.
     //! @return SUCCESS if viewName was interpreted correctly and rotMatrix and standardId are valid.
     DGNPLATFORM_EXPORT static BentleyStatus GetStandardViewByName(RotMatrixP rotMatrix, StandardView* standardId, Utf8CP viewName);
-
-    //! Change the volume that this view displays, keeping its current rotation.
-    //! @param[in] worldVolume The new volume, in world-coordinates, for the view. The resulting view will show all of worldVolume, by fitting a
-    //! view-axis-aligned bounding box around it. For views that are not aligned with the world coordinate system, this will sometimes
-    //! result in a much larger volume than worldVolume.
-    //! @param[in] aspectRatio The X/Y aspect ratio of the view into which the result will be displayed. If the aspect ratio of the volume does not
-    //! match aspectRatio, the shorter axis is lengthened and the volume is centered. If aspectRatio is nullptr, no adjustment is made.
-    //! @param[in] margin The amount of "white space" to leave around the view volume (which essentially increases the volume
-    //! of space shown in the view.) If nullptr, no additional white space is added.
-    //! @param[in] expandClippingPlanes If false, the front and back clipping planes are not moved. This is rarely desired.
-    //! @note For 3d views, the camera is centered on the new volume and moved along the view z axis using the default lens angle
-    //! such that the entire volume is visible.
-    //! @note, for 2d views, only the X and Y values of volume are used.
-    void LookAtVolume(DRange3dCR worldVolume, double const* aspectRatio=nullptr, ViewDefinition::MarginPercent const* margin=nullptr, bool expandClippingPlanes=true) 
-            {m_definition->LookAtVolume(worldVolume, aspectRatio, margin, expandClippingPlanes);}
 
     //! @return true if this view supports 3d viewing operations. Otherwise the z-axis of the view must remain aligned with the world z axis, even
     //! if the view is a physical view.
@@ -473,7 +395,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController3d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    bool _Is3d() const override {return true;}
+    ViewController3dCP _ToView3d() const override final {return this;}
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
 public:
@@ -517,6 +439,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController3d, BeSQLit
 {
     DEFINE_T_SUPER(ViewController3d);
     friend struct SpatialRedlineViewController;
+    friend struct SpatialViewDefinition;
 
 public:
     //=======================================================================================
@@ -632,8 +555,10 @@ private:
 
 protected:
     bool m_loading = false;
+    bool m_defaultDeviceOrientationValid = false;
     Render::MaterialPtr m_skybox;
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
+    RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
@@ -672,6 +597,9 @@ protected:
     DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
 
 public:
+    void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
+    DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
+    DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off
@@ -682,8 +610,6 @@ public:
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
-
-    DGNPLATFORM_EXPORT void TransformBy(TransformCR);
 
     //! Gets the Auxiliary Coordinate System for this view.
     IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
@@ -714,38 +640,12 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewControlle
     friend struct OrthographicViewDefinition;
 
 protected:
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
-    DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-
     //! Construct a new OrthographicViewController
     //! @param[in] definition the view definition
     OrthographicViewController(OrthographicViewDefinitionCR definition) : T_Super(definition) {}
 
 public:
     OrthographicViewDefinitionR GetOrthographicViewDefinition() const {return static_cast<OrthographicViewDefinitionR>(*m_definition);}
-};
-
-//=======================================================================================
-//! A CameraViewController is used to control perspective projections of views of SpatialModels. A CameraViewController
-//! may have a camera enabled that displays world-coordinate geometry onto the image plane through a perspective projection.
-//! @ingroup GROUP_DgnView
-// @bsiclass                                                    Keith.Bentley   03/12
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
-{
-    DEFINE_T_SUPER(SpatialViewController);
-    friend struct CameraViewDefinition;
-
-protected:
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
-    DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
-
-    //! Construct a new CameraViewController
-    //! @param[in] definition the view definition
-    CameraViewController(CameraViewDefinitionCR definition) : T_Super(definition) {}
-
-public:
-    CameraViewDefinitionR GetCameraViewDefinition() const {return static_cast<CameraViewDefinitionR>(*m_definition);}
 };
 
 //=======================================================================================
@@ -785,7 +685,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
     friend struct DrawingViewDefinition;
 protected:
     DrawingViewControllerCP _ToDrawingView() const override {return this;}
-    DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
     //! Construct a new DrawingViewController.
     DrawingViewController(DrawingViewDefinitionCR def) : ViewController2d(def) {}
@@ -830,14 +729,14 @@ struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewControll
 
     //! Specifies symbology for some aspects of the drawings when they are drawn in context.
     struct DrawingSymbology
-        {
+    {
         ColorDef  drawingBackgroundColor; //!< The background color of the drawing
         ColorDef  hatchColor; //!< The color of the fills where section cuts occur on planes other than the section plane closest to the eye.
-        };
+    };
 
     //! Specifies drawing elements to draw.
     enum Pass
-        {
+    {
         PASS_None        = 0,   //!< No drawing graphics specified
         PASS_Cut         = 2,   //!< Draw section cut graphics, including edges and fills
         PASS_Forward     = 4,   //!< Draw section forward graphics,
@@ -847,7 +746,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewControll
         PASS_CutOrAnnotation = (PASS_Cut|PASS_Annotation),
         PASS_ForPicking  = (PASS_Cut|PASS_Forward|PASS_Annotation),
         PASS_All  = 0xff
-        };
+    };
 
 private:
     SpatialViewControllerPtr m_physical;
@@ -871,7 +770,6 @@ private:
 
     DRange3d GetDrawingRange(DrawingViewControllerR) const;
     void DrawFakeSheetBorder(ViewContextR, DrawingViewControllerR) const;
-
     bool ShouldDraw(Pass p) const {return (m_passesToDraw & p) == p;}
 
 public:
