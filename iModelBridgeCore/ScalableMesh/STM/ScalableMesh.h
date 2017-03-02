@@ -132,6 +132,10 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     IScalableMesh* m_scMesh;
     Transform m_transformToUors;
     IDTMVolume* m_dtmVolume;
+    TerrainModel::BcDTMPtr m_dtm; //Maximum 5M points bcDtm representation of a ScalableMesh
+    bool                   m_tryCreateDtm; 
+
+
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
