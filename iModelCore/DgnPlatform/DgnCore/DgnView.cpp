@@ -1631,10 +1631,6 @@ bool TemplateViewDefinition3d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr TemplateViewDefinition3d::_SupplyController() const
     {
-#if defined(TODO_ELEMENT_TILE)
     return new TemplateViewController3d(*this);
-#else
-    BeAssert(false && "TemplateViewController3d not implemented");
-    return nullptr;
-#endif
     }
+

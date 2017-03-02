@@ -473,10 +473,13 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
     DEFINE_T_SUPER(ViewController3d);
 
 protected:
+    TileTree::RootPtr   m_root;
+
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
     bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}

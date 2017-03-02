@@ -1784,24 +1784,21 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     obj->_Load(*m_definition);
     }
 
-#if defined(TODO_ELEMENT_TILE)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
+* @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults TemplateViewController3d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+BentleyStatus TemplateViewController3d::_CreateScene(RenderContextR context)
     {
-    QueryResults results;
-    GeometricModelP model = GetViewedModel();
-
-    if (nullptr != model)
+    if (m_root.IsNull())
         {
-        SingleModelSceneContext context(vp, DrawPurpose::CreateScene, results);
-        context.VisitDgnModel(*model);
+        auto model = GetViewedModel();
+        if (nullptr == model || (m_root = model->CreateTileTree(context, *this)).IsNull())
+            return ERROR;
         }
 
-    return results;
+    m_root->DrawInView(context);
+    return SUCCESS;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    02/17
