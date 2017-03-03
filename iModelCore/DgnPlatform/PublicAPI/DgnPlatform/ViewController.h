@@ -386,7 +386,7 @@ public:
 };
 
 //=======================================================================================
-//! A ViewController3d is used to control 3d views.
+//! A ViewController3d is used to control views of 3d models.
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================

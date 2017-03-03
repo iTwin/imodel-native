@@ -133,7 +133,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     ASSERT_TRUE(inserted.IsValid());
     } // make sure we release pointer to inserted
 
-    m_db->Memory().PurgeUntil(0); // to makes ure we re-read the element from the db
+    m_db->Memory().PurgeUntil(0); // to make sure we re-read the element from the db
 
     auto camera = m_db->Elements().Get<SpatialViewDefinition>(viewElement->GetElementId());
     ASSERT_TRUE(camera.IsValid());
@@ -142,7 +142,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     ASSERT_EQ(69.335060236322079, eyepoint.y);
     ASSERT_EQ(68.339134990346963, eyepoint.z);
     ASSERT_EQ(100.610733542977, camera->GetFocusDistance());
-    ASSERT_EQ(0.802851455917392, camera->GetLensAngle());
+    ASSERT_EQ(0.802851455917392, camera->GetLensAngle().Radians());
 
     DPoint3d origin = camera->GetOrigin();
     ASSERT_EQ(338.90639657040640, origin.x);
