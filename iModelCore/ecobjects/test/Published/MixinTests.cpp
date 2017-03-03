@@ -501,5 +501,103 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByMixinInheritance)
         "Should have been able to add base relationship because source constraint is a mixin that derives from the base constraint class";
 
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                    02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlDeserialization)
+    {
+    Utf8CP schemaXmlBad = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+          <ECEntityClass typeName="Mixin0" modifier="Abstract">
+            <ECCustomAttributes>
+              <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <AppliesToEntityClass>ts:Entity1</AppliesToEntityClass>
+              </IsMixin>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mixin1" modifier="Abstract">
+            <ECCustomAttributes>
+              <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <AppliesToEntityClass>ts:Entity2</AppliesToEntityClass>
+              </IsMixin>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Entity0" />
+          <ECEntityClass typeName="Entity1">
+            <BaseClass>Entity0</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="Entity2" />
+          <ECRelationshipClass typeName="BaseRel" displayLabel="Base Rel" modifier="None" strength="referencing">
+              <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity0"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity2"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECRelationshipClass typeName="DerivedRel" displayLabel="Derived Rel" modifier="None" strength="referencing">
+              <BaseClass>BaseRel</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+                  <Class class="Mixin1"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity2"/>
+              </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )xml";
+
+    Utf8CP schemaXmlGood = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+          <ECEntityClass typeName="Mixin0" modifier="Abstract">
+            <ECCustomAttributes>
+              <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <AppliesToEntityClass>ts:Entity1</AppliesToEntityClass>
+              </IsMixin>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Mixin1" modifier="Abstract">
+            <ECCustomAttributes>
+              <IsMixin xmlns="CoreCustomAttributes.01.00">
+                <AppliesToEntityClass>ts:Entity2</AppliesToEntityClass>
+              </IsMixin>
+            </ECCustomAttributes>
+          </ECEntityClass>
+          <ECEntityClass typeName="Entity0" />
+          <ECEntityClass typeName="Entity1">
+            <BaseClass>Entity0</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="Entity2" />
+          <ECRelationshipClass typeName="BaseRel" displayLabel="Base Rel" modifier="None" strength="referencing">
+              <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity0"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity2"/>
+              </Target>
+          </ECRelationshipClass>
+          <ECRelationshipClass typeName="DerivedRel" displayLabel="Derived Rel" modifier="None" strength="referencing">
+              <BaseClass>BaseRel</BaseClass>
+              <Source multiplicity="(0..*)" roleLabel="references" polymorphic="true">
+                  <Class class="Mixin0"/>
+              </Source>
+              <Target multiplicity="(0..1)" roleLabel="references" polymorphic="true">
+                  <Class class="Entity2"/>
+              </Target>
+          </ECRelationshipClass>
+        </ECSchema>
+        )xml";
+
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema;
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(ecSchema, schemaXmlBad, *schemaContext)) << "Deserialization should fail because 'Mixin1' applies to 'Entity2' but is used on a constraint which must narrow 'Entity0'";
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' applies to 'Entity1' but is used on a constraint which must narrow 'Entity0', 'Entity1' derives from 'Entity0'";
+    }
+
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

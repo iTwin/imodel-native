@@ -577,7 +577,7 @@ bool ECSchema::Validate(bool resolveIssues)
             isValid = false;
         }
 
-    if (m_originalECXmlVersionMajor == 2 && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
+    if (OriginalECXmlVersionLessThan(ECVersion::V3_1) && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
         {
         for (ECClassP ecClass : GetClasses())
             {
@@ -590,7 +590,7 @@ bool ECSchema::Validate(bool resolveIssues)
     if (!isValid)
         {
         // If the validation fails and the schema is read from an ECXML 3.1 or greater, fail to validate.
-        if ((m_originalECXmlVersionMajor == 3 && m_originalECXmlVersionMinor >= 1) || m_originalECXmlVersionMajor > 3)
+        if (OriginalECXmlVersionAtLeast(ECVersion::V3_1))
             return false;
 
         if (!IsECVersion(ECVersion::V3_0))

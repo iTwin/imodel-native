@@ -1032,7 +1032,7 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
     // of override.  So need to check if this is one of those schemas before returning an error
     if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
-        if (m_schema.GetOriginalECXmlVersionMajor() != 2 || !SchemaAllowsOverridingArrays(&this->GetSchema()))
+        if (m_schema.OriginalECXmlVersionAtLeast(ECVersion::V3_1) || !SchemaAllowsOverridingArrays(&this->GetSchema()))
             {
             LOG.errorv("The property %s:%s cannot override %s:%s because an array property cannot override a non-array property or vice-versa.",
                        newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str());
@@ -1499,7 +1499,7 @@ bool ECClass::Is (ECClassCP targetClass) const
 bool ECClass::ClassesAreEqualByName (ECClassCP thisClass, const void * arg)
     {
     ECClassCP thatClass = static_cast<ECClassCP> (arg);
-    if (NULL == arg)
+    if (nullptr == arg)
         return true;
         
     return ((thisClass == thatClass) ||
@@ -1645,9 +1645,8 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
-    // Modifier is only required on ECRelationshipClasses in ecxml versions is greater than 3.1
-    else if (IsRelationshipClass() &&
-                ((m_schema.GetOriginalECXmlVersionMajor() == 3 && m_schema.GetOriginalECXmlVersionMinor() >= 1) || m_schema.GetOriginalECXmlVersionMajor() > 3))
+    // Modifier is required on ECRelationshipClasses in ecxml versions 3.1 and greater
+    else if (IsRelationshipClass() && m_schema.OriginalECXmlVersionAtLeast (ECVersion::V3_1))
         {
         LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass %s must contain a %s attribute", this->GetFullName(), MODIFIER_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -1725,7 +1724,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty;
-            if (2 == m_schema.GetOriginalECXmlVersionMajor())
+            if (m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0))
                 {
                 Utf8String boolStr;
                 bool isStruct = false;
@@ -1861,7 +1860,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
+    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0);
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
@@ -1912,7 +1911,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
+    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0);
     if (nullptr != conversionSchema)
         {
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
@@ -2338,7 +2337,8 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     ECClassCP appliesToClass = resolvedSchema->GetClassCP(className.c_str());
     if (nullptr == appliesToClass)
         {
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), resolvedSchema->GetFullSchemaName().c_str());
+        Utf8String fullSchemaName = resolvedSchema->GetFullSchemaName();
+        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), fullSchemaName.c_str());
         return nullptr;
         }
 
@@ -2358,6 +2358,24 @@ bool ECEntityClass::CanApply(ECEntityClassCR mixinClass) const
         return false;
 
     return Is(appliesToEntityClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  03/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEntityClass::IsOrAppliesTo(ECEntityClassCP entityClass) const
+    {
+    if (nullptr == entityClass)
+        return false;
+
+    if (Is(entityClass))
+        return true;
+
+    ECEntityClassCP appliesToConstraintClass = GetAppliesToClass();
+    if (nullptr == appliesToConstraintClass)
+        return false;
+
+    return appliesToConstraintClass->Is(entityClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2618,13 +2636,9 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
 
     if (GetConstraintClasses().size() == 0)
         {
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
-                             (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
-        if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-            LOG.warningv(errorMessage.c_str());
-        else
-            LOG.errorv(errorMessage.c_str());
+        LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_0)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
+            "Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
         }
@@ -2652,8 +2666,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const
     {
-    ECEntityClassCP abstractConstraint = GetAbstractConstraint();
-    if (nullptr != abstractConstraint && !baseConstraint.SupportsClass(*abstractConstraint))
+    if (nullptr != m_abstractConstraint && !baseConstraint.SupportsClass(*m_abstractConstraint))
         {
         LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
                     GetAbstractConstraint()->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
@@ -2663,14 +2676,13 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
 
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
-        for(ECClassCP constraintClass : m_constraintClasses)
+        for(ECEntityClassCP constraintClass : m_constraintClasses)
             {
             if (!baseConstraint.SupportsClass(*constraintClass))
                 {
                 LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not compatible with the constraint specified in Class '%s'",
                            constraintClass->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                            baseConstraint.GetRelationshipClass().GetFullName());
-
                 return ECObjectsStatus::BaseClassUnacceptable;
                 }
             }
@@ -2720,23 +2732,22 @@ static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues) 
+ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues)
     {
+    resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
     if (abstractConstraint == nullptr)
         {
         if (m_constraintClasses.size() == 0)
             return ECObjectsStatus::Success;
 
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
-                             (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
+        LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+            "Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
+                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
 
-        if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
+        if (resolveIssues)
             {
-            LOG.warningv(errorMessage.c_str());
-
             // Attempt to resolve the issue by finding a common base class between all constraint classes
-            if (resolveIssues && m_constraintClasses.size() > 1)
+            if (m_constraintClasses.size() > 1)
                 {
                 LOG.warningv("Attempting to find a common base class between all constraint classes to use as the abstract constraint...");
 
@@ -2754,12 +2765,10 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
                         }
                     }
                 else
-                    LOG.warningv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'", 
+                    LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'", 
                                 (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
-        else
-            LOG.errorv(errorMessage.c_str());
         
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
@@ -2768,20 +2777,13 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
     for (const auto &baseClass : m_relClass->GetBaseClasses())
         {
         ECRelationshipClassCP baseRelClass = baseClass->GetRelationshipClassCP();
-        ECEntityClassCP baseAbstractConstraint = (m_isSource) ? baseRelClass->GetSource().GetAbstractConstraint()
-                                                        : baseRelClass->GetTarget().GetAbstractConstraint();
-
-        if (baseAbstractConstraint != nullptr && !abstractConstraint->Is(baseAbstractConstraint))
+        auto baseConstraint = (m_isSource) ? baseRelClass->GetSource() : baseRelClass->GetTarget();
+        if (!baseConstraint.SupportsClass(*abstractConstraint))
             {
-            Utf8String errorMsg;
-            errorMsg.Sprintf("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the base class's abstract constraint class '%s'",
-                             abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                             baseAbstractConstraint->GetFullName());
-
-            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-                LOG.warningv(errorMsg.c_str());
-            else
-                LOG.errorv(errorMsg.c_str());
+            LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                         "Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'",
+                         abstractConstraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                         baseConstraint.GetRelationshipClass().GetFullName());
 
             valid = false;
             }
@@ -2789,18 +2791,13 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
 
     for (const auto &constraint : m_constraintClasses)
         {
-        if (!constraint->Is(abstractConstraint))
+        if (!constraint->IsOrAppliesTo(abstractConstraint))
             {
-            Utf8String errorMsg;
-            errorMsg.Sprintf("Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'. "
-                             "All constraint classes must be derived from the abstract constraint in EC3.1 or higher.",
-                                constraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                                abstractConstraint->GetFullName());
-
-            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-                LOG.warningv(errorMsg.c_str());
-            else
-                LOG.errorv(errorMsg.c_str());
+            LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                "Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'. "
+                "All constraint classes must be derived from the abstract constraint in EC3.1 or higher.",
+                constraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                abstractConstraint->GetFullName());
 
             valid = false;
             }
@@ -2829,23 +2826,19 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECEntityClassCR constraintClass) const
     {
-    if (!m_relClass->HasBaseClasses())
-        return ECObjectsStatus::Success;
-
     ECEntityClassCP abstractConstraint = GetAbstractConstraint();
-    if (abstractConstraint != nullptr && !constraintClass.Is(abstractConstraint))
+    if (abstractConstraint != nullptr && !constraintClass.IsOrAppliesTo(abstractConstraint))
         {
-        Utf8String errorMessage;
-        errorMessage.Sprintf("Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not derived from the Abstract Constraint Class '%s'.",
-                   constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
+        LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
+            "Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not derived from the Abstract Constraint Class '%s'.",
+                constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
 
-        if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-            LOG.warningv(errorMessage.c_str());
-        else
-            LOG.errorv(errorMessage.c_str());
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
 
+    if (!m_relClass->HasBaseClasses())
+        return ECObjectsStatus::Success;
+    
     // Check if this is the source or target constraint. Then iterate over the base classes and check 
     // if the constraintClass is equal to or larger in scope than the possibly defined scope on the
     // baseclasses. 
@@ -2853,33 +2846,10 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECEntityClassC
         {
         // Get the relationship base class
         ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
-        ECRelationshipConstraintCP baseClassConstraint = (m_isSource) ? &relationshipBaseClass->GetSource() 
-                                                                              : &relationshipBaseClass->GetTarget();
+        auto baseConstraint = (m_isSource) ? relationshipBaseClass->GetSource() : relationshipBaseClass->GetTarget();
 
-        // Validate against the base class again...
-        ECObjectsStatus validationStatus = baseClassConstraint->ValidateClassConstraint(constraintClass);
-        if (validationStatus != ECObjectsStatus::Success)
-            {
-            return validationStatus;
-            }
-
-        // Iterate over the constraint classes and check if they meet the scopeing requirements.
-        for (ECClassCP baseConstraintClass : baseClassConstraint->GetConstraintClasses())
-            {
-            if (!constraintClass.Is(baseConstraintClass))
-                {
-                Utf8String errorMessage;
-                errorMessage.Sprintf("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not derived from Class '%s' as specified in Class '%s'",
-                                     constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                                     baseConstraintClass->GetFullName(), relationshipBaseClass->GetFullName());
-
-                if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
-                    LOG.warningv(errorMessage.c_str());
-                else
-                    LOG.errorv(errorMessage.c_str());
-                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-                }
-            }
+        if (ECObjectsStatus::Success != ValidateBaseConstraint(baseConstraint))
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
 
     return ECObjectsStatus::Success;
@@ -2914,28 +2884,20 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
         // since the left side is the current multiplicity and the right side the base class, it is expected the baseclass is bigger.
         if (RelationshipMultiplicity::Compare(RelationshipMultiplicity(lowerLimit, upperLimit), baseClassConstraint->GetMultiplicity()) == -1)
             {
-            Utf8String errorMessage;
-            errorMessage.Sprintf("Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                                  lowerLimit, upperLimit, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
-                                  relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
+            resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
+            LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
+                "Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                    lowerLimit, upperLimit, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                    relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
-            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3)
-                {
-                LOG.errorv(errorMessage.c_str());
+            if (!resolveIssues)
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-                }
-            else
-                {
-                LOG.warningv(errorMessage.c_str());
-                if (!resolveIssues)
-                    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
-                // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
-                LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
-                             m_relClass->GetFullName(), relationshipBaseClass->GetFullName(),
-                             baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
-                baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
-                }
+            // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
+            LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
+                            m_relClass->GetFullName(), relationshipBaseClass->GetFullName(),
+                            baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
+            baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
             }
         }
 
@@ -2949,7 +2911,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
     {
     if (Utf8String::IsNullOrEmpty(GetInvariantRoleLabel().c_str()))
         {
-        if (resolveIssues && (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0))
+        if (resolveIssues && m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
             m_roleLabel = m_relClass->GetInvariantDisplayLabel();
             if (!m_isSource)
@@ -2959,7 +2921,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
             }
 
         LOG.errorv("Invalid ECSchemaXML: The %s-Constraint of ECRelationshipClass %s must contain or inherit a %s attribute", (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT,
-                   m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
+                    m_relClass->GetFullName(), ROLELABEL_ATTRIBUTE);
         return ECObjectsStatus::Error;
         }
 
@@ -2978,9 +2940,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     _SetRoleLabel(roleLabel.c_str());
 
     Utf8String value;  // needed for macros.
-    uint32_t ecXmlVersionMajor = m_relClass->GetSchema().GetOriginalECXmlVersionMajor();
-    uint32_t ecXmlVersionMinor = m_relClass->GetSchema().GetOriginalECXmlVersionMinor();
-    if ((ecXmlVersionMajor == 3 && ecXmlVersionMinor >= 1) || ecXmlVersionMajor > 3)
+    if (m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1))
         {
         READ_REQUIRED_XML_ATTRIBUTE(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic, constraintNode.GetName());
 
@@ -3074,7 +3034,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             {
             if (0 == strcmp(keyNode->GetName(), EC_CONSTRAINTKEY_ELEMENT))
                 {
-                if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
+                if (m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
                     {
                     LOG.warningv("Key properties are no longer supported on constraint classes. All key properties have been dropped from the constraint class '%s' on the %s-Constraint of relationship '%s'.",
                                  constraintClass->GetName().c_str(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
@@ -3305,39 +3265,36 @@ ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraint
     return m_constraintClasses;
     }
 
+bool classCompatibleWithConstraint(ECEntityClassCP constraintClass, ECEntityClassCP testClass, bool isPolymorphic)
+    {
+    if (nullptr == testClass || nullptr == constraintClass)
+        return false;
+    return (isPolymorphic && testClass->IsOrAppliesTo(constraintClass) // only poly constraints support mixins so OK to combine check
+            || ECClass::ClassesAreEqualByName(constraintClass, testClass));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
     {
-    for (ECClassCP constraintClass : GetConstraintClasses())
+    ECEntityClassCP entityClass = ecClass.GetEntityClassCP();
+    if (nullptr == entityClass) // Only entity classes may be endpoint constraints, mixins are entity classes
+        return false;
+
+    if (classCompatibleWithConstraint(GetAbstractConstraint(), entityClass, m_isPolymorphic))
+        return true;
+
+    for (ECEntityClassCP constraintClass : GetConstraintClasses())
         {
         if (constraintClass->GetName().EqualsI("AnyClass"))
             return true;
         
-        if (ECClass::ClassesAreEqualByName(constraintClass, &ecClass) || (m_isPolymorphic && ecClass.Is(constraintClass)))
-            return true;
-
-        ECEntityClassCP casEntity = constraintClass->GetEntityClassCP();
-        if (nullptr == casEntity)
-            continue;
-
-        ECEntityClassCP appliesToConstraintClass = casEntity->GetAppliesToClass();
-        if (nullptr == appliesToConstraintClass)
-            continue;
-
-        if (ecClass.Is(appliesToConstraintClass))
+        if (classCompatibleWithConstraint(constraintClass, entityClass, m_isPolymorphic))
             return true;
         }
-    ECEntityClassCP asEntity = ecClass.GetEntityClassCP();
-    if (nullptr == asEntity)
-        return false;
 
-    ECEntityClassCP appliesToClass = asEntity->GetAppliesToClass();
-    if (nullptr == appliesToClass)
-        return false;
-
-    return SupportsClass(*appliesToClass);
+    return false;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3794,8 +3751,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             }
         }
     
-    if (GetSchema().GetOriginalECXmlVersionMajor() == 2 ||
-        (GetSchema().GetOriginalECXmlVersionMajor() == 3 && GetSchema().GetOriginalECXmlVersionMinor() == 0))
+    if (GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
         {
         if (HasBaseClasses())
             {

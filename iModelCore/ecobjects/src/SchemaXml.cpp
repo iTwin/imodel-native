@@ -139,7 +139,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             }
 
         Utf8String alias;
-        if ((schemaOut->GetOriginalECXmlVersionMajor() == 3 && schemaOut->GetOriginalECXmlVersionMinor() >= 1) || schemaOut->GetOriginalECXmlVersionMajor() > 3)
+        if (schemaOut->OriginalECXmlVersionAtLeast(ECVersion::V3_1))
             {
             if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE))
                 {

@@ -677,7 +677,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                if (fallBackSchema.GetOriginalECXmlVersionMajor() >= 3)
+                if (fallBackSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
                     status = CustomAttributeReadStatus::InvalidCustomAttributes;
                 else if (CustomAttributeReadStatus::Success == status) 
                     status = CustomAttributeReadStatus::SkippedCustomAttributes;
@@ -692,7 +692,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                 if (ECObjectsStatus::Success != caSetStatus)
                     {
                     // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                    if (fallBackSchema.GetOriginalECXmlVersionMajor() >= 3)
+                    if (fallBackSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
                     else if (CustomAttributeReadStatus::Success == status)
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;

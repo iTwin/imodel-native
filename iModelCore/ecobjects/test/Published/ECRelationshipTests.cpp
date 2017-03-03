@@ -552,7 +552,9 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     ecSchema->CreateRelationshipClass(relationClassBase, "RelBaseClass");
     relationClassBase->SetStrength(StrengthType::Referencing);
     relationClassBase->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    
+    relationClassBase->GetSource().SetRoleLabel("Source");
+    relationClassBase->GetTarget().SetRoleLabel("Target");
+
     relationClassBase->GetSource().AddClass(*classB);
     
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
@@ -563,7 +565,13 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
 
     relationClass->GetTarget().AddClass(*classA);
 
-    EXPECT_TRUE(relationClass->Verify()) << "The relationship class should not be fully defined and should verify.";
+    EXPECT_FALSE(relationClassBase->Verify()) << "The base relationship class should not verify because it does not define both constraints.";
+    EXPECT_FALSE(relationClass->Verify()) << "The derived relationship class should not verify because the base relationship does not define both constraints.";
+
+    EXPECT_EQ(ECObjectsStatus::Success, relationClassBase->GetTarget().AddClass(*classA)) << "Should have been able to add a target constraint to the base relationship class";
+    EXPECT_TRUE(relationClassBase->Verify()) << "The base relationship class should  verify because it defines both constraints.";
+    EXPECT_TRUE(relationClass->Verify()) << "The derived relationship class should not verify because the base relationship defines both constraints and they are compatible.";
+
     }
 
 /*---------------------------------------------------------------------------------**//**

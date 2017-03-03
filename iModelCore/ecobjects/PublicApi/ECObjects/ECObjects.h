@@ -273,7 +273,7 @@ enum class SupplementedSchemaStatus
 //=======================================================================================
 //! Represents all of the valid EC Specification Versions.
 //=======================================================================================
-enum class ECVersion
+enum class ECVersion : uint32_t
     {
     V2_0 = (0x02 << 16),
     V3_0 = (0x03 << 16),

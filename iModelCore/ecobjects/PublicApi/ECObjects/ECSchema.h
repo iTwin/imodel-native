@@ -1954,6 +1954,9 @@ public:
 
     //! If the class is a mixin, returns the ECEntityClass which restricts where the mixin can be applied, else nullptr. 
     ECOBJECTS_EXPORT ECEntityClassCP GetAppliesToClass() const;
+    
+    //! Returns true if the class is the type specified, derived from it or is a mixin which applies to the type specified
+    ECOBJECTS_EXPORT bool IsOrAppliesTo(ECEntityClassCP entityClass) const;
 };
 
 //---------------------------------------------------------------------------------------
@@ -2134,7 +2137,7 @@ private:
 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
         : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
-            m_isPolymorphic(true), m_abstractConstraint(nullptr) {}
+            m_isPolymorphic(true), m_abstractConstraint(nullptr), m_verified(false) {}
 
 /*__PUBLISH_SECTION_END__*/
 protected:
@@ -3192,12 +3195,14 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value); //!< Sets the minor version of this schema, check SchemaKey for detailed description.
     uint32_t GetVersionMinor() const {return m_key.m_versionMinor;} //!< Gets the minor version of this schema, check SchemaKey for detailed description.
 
-    uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the major version of the original ECXml.
-    uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the minor version of the original ECXml.
+    //! Returns true if the original xml version is greater or equal to the input ECVersion
+    bool OriginalECXmlVersionAtLeast(ECVersion version) const { return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) >= static_cast<uint32_t>(version); }
+    //! Returns true if the original xml version is less than the input ECVersion
+    bool OriginalECXmlVersionLessThan(ECVersion version) const { return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) < static_cast<uint32_t>(version); }
 
     ECVersion GetECVersion() const {return m_ecVersion;} //!< Gets the EC Version of the schema.
     bool IsECVersion(ECVersion ecVersion) const {return m_ecVersion == ecVersion;} //!< Returns true if this schema's EC version matches the given ECVersion
-    
+
     ECClassContainerCR GetClasses() const {return m_classContainer;} //!< Returns an iterable container of ECClasses sorted by name.                                 
     uint32_t GetClassCount() const {return (uint32_t) m_classMap.size();} //!< Gets the number of classes in the schema
 

@@ -1450,7 +1450,11 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->GetTarget().SetAbstractConstraint(*baseClass);
     EXPECT_EQ(baseClass->GetName().c_str(), relationshipClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
-    relationshipClass->GetTarget().AddClass(*class2);
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationshipClass->GetTarget().AddClass(*class2)) << "Should not be able to add target constraint class because it is not compatible with the abstract constraint";
+    EXPECT_EQ(1, relationshipClass->GetTarget().GetConstraintClasses().size());
+
+    EXPECT_EQ(ECObjectsStatus::Success, class2->AddBaseClass(*baseClass)) << "Expected to be able to add base class";
+    EXPECT_EQ(ECObjectsStatus::Success, relationshipClass->GetTarget().AddClass(*class2)) << "Expected to be able to add class2 to the target constraint because 'class2' derives from the abstract constraint";
     EXPECT_EQ(2, relationshipClass->GetTarget().GetConstraintClasses().size());
 
     EXPECT_EQ(0, relationshipClass->GetSource().GetMultiplicity().GetLowerLimit());
