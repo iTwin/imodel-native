@@ -3386,20 +3386,11 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 entryId.SetActiveGeometryPart(geomPartId);
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                Render::GraphicPtr partGraphic = context.AddSubGraphic(mainGraphic, geomPartId, geomToSource, geomParams);
+                context.AddSubGraphic(mainGraphic, geomPartId, geomToSource, geomParams);
 
                 entryId.SetActiveGeometryPart(DgnGeometryPartId());
                 currGraphic->SetGeometryStreamEntryId(&entryId);
 
-                if (!partGraphic.IsValid())
-                    break;
-
-                // NOTE: MainGraphic controls what pixel range is used for all parts.
-                //       Since we can't have independent pixel range for parts, choose most restrictive...
-                double partMin, partMax;
-
-                partGraphic->GetPixelSizeRange(partMin, partMax);
-                mainGraphic.UpdatePixelSizeRange(partMin, partMax);
                 break;
                 }
 
@@ -3904,13 +3895,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
             subGraphic->Close(); // Make sure graphic is closed...
             mainGraphic.AddSubGraphic(*subGraphic, Transform::FromIdentity(), subGraphicParams);
 
-            // NOTE: Main graphic controls what pixel range is used for all sub-graphics.
-            //       Since we can't have independent pixel range for sub-graphics, choose most restrictive...
-            double subMin, subMax;
-
-            subGraphic->GetPixelSizeRange(subMin, subMax);
-            mainGraphic.UpdatePixelSizeRange(subMin, subMax);
-
             currGraphic = &mainGraphic;
             subGraphic = nullptr;
             }
@@ -3936,7 +3920,7 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) const
     {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform()));
     Render::GeometryParams params;
 
     params.SetCategoryId(GetCategoryId());

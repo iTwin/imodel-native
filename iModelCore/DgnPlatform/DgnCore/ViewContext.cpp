@@ -334,12 +334,12 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
 
     if (!partGeometry.IsValid())
-        return nullptr;
+        return;
 
     bool isSimplify = graphic.IsSimplifyGraphic();
 
@@ -351,7 +351,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
         partToWorld.Multiply(range, range);
 
         if (!IsRangeVisible(range))
-            return nullptr; // Part range doesn't overlap pick...
+            return; // Part range doesn't overlap pick...
         }
 
     BeAssert(isSimplify || nullptr != m_viewport);
@@ -363,7 +363,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
     collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
         
     if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-        return nullptr;
+        return;
 
     partBuilder->Close(); 
 
@@ -371,8 +371,6 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
     graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
-
-    return partGraphic;
     }
 
 /*---------------------------------------------------------------------------------**//**

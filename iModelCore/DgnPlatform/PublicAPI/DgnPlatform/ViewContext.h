@@ -113,7 +113,7 @@ protected:
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
@@ -171,7 +171,7 @@ public:
 
     Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, TransformCP trans=nullptr, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, trans, clips);}
-    Render::GraphicPtr AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
+    void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
     Render::MaterialPtr GetMaterial(DgnMaterialId id) const { return _GetMaterial(id); }

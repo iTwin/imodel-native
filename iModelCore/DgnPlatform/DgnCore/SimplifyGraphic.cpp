@@ -45,7 +45,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -58,7 +58,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom,
 static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -71,7 +71,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom
 static CurveVectorPtr Process(Render::GraphicCR graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform(), graphic.GetPixelSize()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -388,7 +388,7 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;

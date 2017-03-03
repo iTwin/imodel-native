@@ -612,7 +612,7 @@ private:
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
-    Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
+    void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
 
     Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
@@ -1980,7 +1980,7 @@ Render::ViewFlags GeometryProcessorContext::GetDefaultViewFlags()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
+void GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
     if (InstancingOptions::None != s_instancingOptions)
         {
@@ -1991,9 +1991,8 @@ Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuild
         }
     else
         {
-        return T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
+        T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
         }
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

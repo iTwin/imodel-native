@@ -1141,15 +1141,11 @@ struct Graphic : RefCounted<NonCopyableClass>
     {
         DgnViewportCP m_vp;
         Transform     m_placement;
-        double        m_pixelSize;
-        CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
+        CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity()) : m_vp(vp), m_placement(placement) {}
     };
 
 protected:
     DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
-    double        m_pixelSize; //! Pixel size to use for stroke
-    double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
-    double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     Transform     m_localToWorldTransform;
 
     virtual ~Graphic() {}
@@ -1158,33 +1154,12 @@ protected:
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_localToWorldTransform(params.m_placement) { }
 
-    bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
-        {
-        if (nullptr != m_vp && m_vp != &vp)
-            return false;
-
-        if (0.0 == metersPerPixel || (0.0 == m_minSize && 0.0 == m_maxSize))
-            return true;
-
-        return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
-        }
-
-    bool IsSpecificToViewport(DgnViewportCR vp) const {return nullptr != m_vp && m_vp == &vp;}
     DgnViewportCP GetViewport() const {return m_vp;}
 
     //! Get current local to world transform (ex. GeometrySource placement transform).
     TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
-
-    double GetPixelSize() const {return m_pixelSize;}
-    void GetPixelSizeRange(double& min, double& max) const {min = m_minSize; max = m_maxSize;}
-    void SetPixelSizeRange(double min, double max) {m_minSize = min; m_maxSize = max;}
-    void UpdatePixelSizeRange(double newMin, double newMax) //! Update min/max only if more restrictive than current value.
-        {
-        m_minSize = (0.0 == m_minSize ? newMin : DoubleOps::Max(m_minSize, newMin));
-        m_maxSize = (0.0 == m_maxSize ? newMax : DoubleOps::Min(m_maxSize, newMax));
-        }
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
@@ -1334,10 +1309,6 @@ public:
     operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
     DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
     TransformCR GetLocalToWorldTransform() const {return m_graphic->GetLocalToWorldTransform();}
-    double GetPixelSize() const {return m_graphic->GetPixelSize();}
-    void GetPixelSizeRange(double& min, double& max) const {m_graphic->GetPixelSizeRange(min, max);}
-    void SetPixelSizeRange(double min, double max) {m_graphic->SetPixelSizeRange(min, max);}
-    void UpdatePixelSizeRange(double newMin, double newMax) {m_graphic->UpdatePixelSizeRange(newMin, newMax);}
     bool IsSimplifyGraphic() const {return m_graphic->IsSimplifyGraphic();}
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}

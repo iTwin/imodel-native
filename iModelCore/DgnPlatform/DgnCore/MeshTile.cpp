@@ -2682,14 +2682,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
+void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
     DgnGeometryPartCPtr     geomPart = m_processor.GetDgnDb().Elements().template Get<DgnGeometryPart>(partId);
 
     if (!geomPart.IsValid())
         {
         BeAssert(false);
-        return nullptr;
+        return;
         }
 
     static  size_t s_minInstancePartSize = 2000;
@@ -2705,9 +2705,8 @@ Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPa
         }
     else
         {
-        return T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
+        T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
         }
-    return nullptr;
     }
 
 };

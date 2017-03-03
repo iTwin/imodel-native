@@ -1567,6 +1567,8 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
         return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
         }
 
+#if defined(TODO_ELEMENT_TILE)
+    // ###TODO: This probably just goes away...
     double pixelSize = builder.GetPixelSize();
 
     if (0.0 != pixelSize)
@@ -1583,6 +1585,7 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
 
         builder.UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
         }
+#endif
 
     return true; // Width discernable...
     }
