@@ -2884,7 +2884,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
         // since the left side is the current multiplicity and the right side the base class, it is expected the baseclass is bigger.
         if (RelationshipMultiplicity::Compare(RelationshipMultiplicity(lowerLimit, upperLimit), baseClassConstraint->GetMultiplicity()) == -1)
             {
-            resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
+            resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0);
             LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
                 "Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
                     lowerLimit, upperLimit, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
