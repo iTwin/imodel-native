@@ -94,7 +94,7 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     Render::GraphicBuilderPtr graphic = context.CreateGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddShape(5, pts, true);
-    context.AddWorldDecoration(*graphic);
+    context.AddWorldDecoration(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,7 +321,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     flags.SetIgnoreLighting(true);
 
     GraphicBranch branch;
-    branch.Add(*skyGraphic); // put the mesh into the branch
+    branch.Add(*skyGraphic->Finish()); // put the mesh into the branch
     branch.SetViewFlags(flags); // and set its Viewflags
 
     // now add the skybox branch to the terrain context.

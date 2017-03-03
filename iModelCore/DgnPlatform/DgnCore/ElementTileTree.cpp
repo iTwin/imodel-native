@@ -782,11 +782,9 @@ BentleyStatus Loader::_LoadTile()
                     polylineArgs.InitAndApply(*subGraphic, *mesh);
                     }
 
-                subGraphic->Close();
-
                 for (auto const& instance : part->Instances())
                     {
-                    graphic->AddSubGraphic(*subGraphic, instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
+                    graphic->AddSubGraphic(*subGraphic->Finish(), instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
                     }
                 }
             }
@@ -818,8 +816,7 @@ BentleyStatus Loader::_LoadTile()
                     else
                         polylineArgs.Apply(*instanceGraphic);
 
-                    instanceGraphic->Close();
-                    tile.AddGraphic(*instanceGraphic);
+                    tile.AddGraphic(*instanceGraphic->Finish());
                     }
                 }
             }
@@ -867,8 +864,7 @@ BentleyStatus Loader::_LoadTile()
                         polylineArgs.Apply(*instanceGraphic);
                         }
 
-                    instanceGraphic->Close();
-                    graphic->AddSubGraphic(*instanceGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                    graphic->AddSubGraphic(*instanceGraphic->Finish(), Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
                     }
 
                 // The mesh's vertices are const and reused...if we applied a transform, undo it.
@@ -908,8 +904,7 @@ BentleyStatus Loader::_LoadTile()
 
         if (addAsSubGraphics)
             {
-            thisGraphic->Close();
-            graphic->AddSubGraphic(*thisGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+            graphic->AddSubGraphic(*thisGraphic->Finish(), Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
             }
 
         addAsSubGraphics = true;
@@ -936,14 +931,10 @@ BentleyStatus Loader::_LoadTile()
                 rangeGraphic->ActivateGraphicParams(gfParams);
                 rangeGraphic->AddRangeBox(tile.GetRange());
                 if (addAsSubGraphics)
-                    {
-                    rangeGraphic->Close();
-                    graphic->AddSubGraphic(*rangeGraphic, Transform::FromIdentity(), gfParams);
-                    }
+                    graphic->AddSubGraphic(*rangeGraphic->Finish(), Transform::FromIdentity(), gfParams);
             }
 
-        graphic->Close();
-        tile.AddGraphic(*graphic);
+        tile.AddGraphic(*graphic->Finish());
         }
 
     // No point subdividing empty nodes - improves performance if we don't

@@ -264,8 +264,7 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
         viewContext.CookGeometryParams(tmpGeomParams, graphicParams);
         }
 
-    symbolGraphic->Close();
-    mainGraphic.AddSubGraphic(*symbolGraphic, transform, graphicParams, clip);
+    mainGraphic.AddSubGraphic(*symbolGraphic->Finish(), transform, graphicParams, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**

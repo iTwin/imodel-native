@@ -304,9 +304,7 @@ Render::GraphicPtr Stroke(ViewContextR context) const
     if (lsContext.GetHasTextureColors())
         m_useTextureColors = true;
 
-    graphic->Close();
-
-    return graphic;
+    return graphic->Finish();
     }
 };
 

@@ -442,7 +442,7 @@ bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& 
         if (0 != perFacePolyfaces.size())
             {
             AutoRestore<bool> savePolyEdges(&m_testPolyEdges, true);
-            Render::GraphicBuilder(graphic).AddPolyface(*perFacePolyfaces.front());
+            graphic.AddPolyface(*perFacePolyfaces.front());
             }
 
         break;

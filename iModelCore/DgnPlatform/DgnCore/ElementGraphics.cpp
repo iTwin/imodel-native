@@ -1023,7 +1023,7 @@ void _OutputGraphics(ViewContextR context) override
     else if (m_entity)
         WireframeGeomUtil::Draw(*graphic, *m_entity, &context, m_includeEdges, m_includeFaceIso);
 
-    graphic->Close();
+    graphic->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1560,10 +1560,9 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
 
     if (builder.IsSimplifyGraphic())
         {
-        Graphic& graphic = builder;
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
+        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
 
-        BeAssert(nullptr != sGraphic);
         return sGraphic->GetGeometryProcesor()._DoLineStyleStroke(lsSymb, facetOptions, *sGraphic);
         }
 

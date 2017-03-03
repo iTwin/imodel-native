@@ -61,7 +61,7 @@ void ImageGraphic::AddToGraphic(Render::GraphicBuilderR graphic) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImageGraphic::AddToGraphic2d(Render::GraphicBuilderR graphic, double displayPriority) const
     {
-    IGraphicBuilder::TileCorners corners = m_corners;
+    GraphicBuilder::TileCorners corners = m_corners;
 
     corners.m_pts[0].z = corners.m_pts[1].z = corners.m_pts[2].z = corners.m_pts[3].z = displayPriority;
 
@@ -209,7 +209,7 @@ bool GeometricPrimitive::GetLocalCoordinateFrame(TransformR localToWorld) const
 
         case GeometryType::Image:
             {
-            IGraphicBuilder::TileCorners const& corners = GetAsImage()->GetTileCorners();
+            GraphicBuilder::TileCorners const& corners = GetAsImage()->GetTileCorners();
             DPoint3d origin = corners.m_pts[0];
             DVec3d xVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[1]);
             DVec3d yVec = DVec3d::FromStartEnd(corners.m_pts[0], corners.m_pts[2]);
@@ -1689,7 +1689,7 @@ void GeometryStreamIO::Writer::Append(ImageGraphicCR source)
     auto byteData = fbb.CreateVector(source.GetImage().GetByteStream().GetData(), source.GetImage().GetByteStream().GetSize());
 
     FB::ImageBuilder builder(fbb);
-    IGraphicBuilder::TileCorners const& corners = source.GetTileCorners();
+    GraphicBuilder::TileCorners const& corners = source.GetTileCorners();
 
     builder.add_tileCorner0((FB::DPoint3d*) &corners.m_pts[0]);
     builder.add_tileCorner1((FB::DPoint3d*) &corners.m_pts[1]);
@@ -2246,7 +2246,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ImageGraphicPtr& out) 
 
     ByteStream byteData(ppfb->byteData()->Data(), ppfb->byteData()->Length());
     Render::Image image(ppfb->width(), ppfb->height(), std::move(byteData), (Render::Image::Format) ppfb->format());
-    IGraphicBuilder::TileCorners corners;
+    GraphicBuilder::TileCorners corners;
 
     corners.m_pts[0] = (nullptr == ppfb->tileCorner0() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner0()));
     corners.m_pts[1] = (nullptr == ppfb->tileCorner1() ? DPoint3d::FromZero() : *((DPoint3dCP) ppfb->tileCorner1()));
@@ -3892,8 +3892,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
         if (subGraphic.IsValid())
             {
-            subGraphic->Close(); // Make sure graphic is closed...
-            mainGraphic.AddSubGraphic(*subGraphic, Transform::FromIdentity(), subGraphicParams);
+            mainGraphic.AddSubGraphic(*subGraphic->Finish(), Transform::FromIdentity(), subGraphicParams);
 
             currGraphic = &mainGraphic;
             subGraphic = nullptr;
@@ -3926,7 +3925,7 @@ Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) 
     params.SetCategoryId(GetCategoryId());
     GeometryStreamIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(*graphic, context, params, true, ToElement());
 
-    return graphic;
+    return graphic->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3981,7 +3980,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetSourceToWorld()));
                 context.AddSubGraphic(*graphic, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
 
-                return graphic;
+                return graphic->Finish();
                 }
 
             case SubSelectionMode::Segment:
@@ -4026,7 +4025,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 else
                     graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
 
-                return graphic;
+                return graphic->Finish();
                 }
 
             case SubSelectionMode::Primitive:
@@ -4075,12 +4074,12 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
                     }
 
-                return graphic; // Done with part...
+                return graphic->Finish(); // Done with part...
                 }
             }
         }
 
-    return graphic;
+    return graphic->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5194,7 +5193,7 @@ void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR contex
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     annotationDraw.Draw(*graphic, context, geomParams);
-    graphic->Close();
+    graphic->Finish();
     }
 
 END_UNNAMED_NAMESPACE

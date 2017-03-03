@@ -327,7 +327,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         rangeGraphic->AddRangeBox2d(DRange2d::From(DPoint2d::From(range.low), DPoint2d::From(range.high)), 0.0);
         }
 
-    _OutputGraphic(*rangeGraphic, &source);
+    _OutputGraphic(*rangeGraphic->Finish(), &source);
     return SUCCESS;
     }
 
@@ -359,18 +359,15 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
     auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
-    Render::GraphicPtr partGraphic = partBuilder;
     collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
         
     if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
         return;
 
-    partBuilder->Close(); 
-
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
-    graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
+    graphic.AddSubGraphic(*partBuilder->Finish(), subToGraphic, graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1560,5 +1557,5 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
-    AddWorldDecoration(*graphic);
+    AddWorldDecoration(*graphic->Finish());
     }

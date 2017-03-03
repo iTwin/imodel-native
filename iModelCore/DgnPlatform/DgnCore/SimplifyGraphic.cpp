@@ -42,7 +42,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
@@ -55,7 +55,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, ISolidPrimitiveCR geom,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
@@ -68,7 +68,7 @@ static CurveVectorPtr Process(Render::GraphicCR graphic, MSBsplineSurfaceCR geom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(Render::GraphicCR graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
@@ -370,7 +370,8 @@ bool IsUnclipped() {return m_unclipped;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params), m_processor(processor), m_context(context)
+SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
+    : m_processor(processor), m_context(context), m_vp(params.m_vp), m_localToWorldTransform(params.m_placement)
     {
     m_facetOptions = m_processor._GetFacetOptionsP();
 
@@ -1241,11 +1242,10 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
                 if (0 == polyfaces[i]->GetPointCount())
                     continue;
 
-                GraphicBuilder builder(*this);
                 GeometryParams faceParams;
 
                 params[i].ToGeometryParams(faceParams, m_currGeometryParams);
-                m_context.CookGeometryParams(faceParams, builder);
+                m_context.CookGeometryParams(faceParams, *this);
 
                 if (!doClipping)
                     {
@@ -1327,7 +1327,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        Render::GraphicPtr graphic = _CreateSubGraphic(Transform::FromIdentity(), nullptr);
+        Render::GraphicBuilderPtr graphic = _CreateSubGraphic(Transform::FromIdentity(), nullptr);
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
@@ -1341,7 +1341,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
         Render::GraphicBuilderPtr graphic = _CreateSubGraphic(text.ComputeTransform(), nullptr);
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.GetGraphic());
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
             return;
@@ -2328,25 +2328,13 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
     context.VisitGeometry(source);
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr SimplifyGraphic::_Finish()
+    {
+    BeAssert(false && "Adding a SimplifyGraphic to a display list?");
+    m_isOpen = false;
+    return new Base(Render::Graphic::CreateParams(m_vp, m_localToWorldTransform), m_processor, m_context);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                                                                                                                      

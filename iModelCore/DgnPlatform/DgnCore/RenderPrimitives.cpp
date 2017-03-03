@@ -1247,10 +1247,7 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
             subGf->AddTriMesh(meshArgs);
 
         if (asSubGraphic)
-            {
-            subGf->Close();
-            gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-            }
+            gf.AddSubGraphic(*subGf->Finish(), Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
 
         asSubGraphic = true;
         }
@@ -1906,27 +1903,30 @@ GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR, ClipVectorCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PrimitiveBuilder::_Close()
+GraphicPtr PrimitiveBuilder::_Finish()
     {
     // ###TODO: Once we separate the low-level primitives from the high-level primitives, this "closing" state can go away...
     BeAssert(!IsClosing());
+#if defined(TODO_ELEMENT_TILE)
+    // ###TODO: Gotta ask m_system to create a GraphicBuilder...CreateParams?
     if (IsOpen())
         {
         m_state = State::Closing;
         if (!m_geomList.IsEmpty())
             {
             // ###TODO: Similar to above...
-            BeAssert(nullptr != dynamic_cast<GraphicP>(this));
-            GraphicBuilder graphicBuilder(*dynamic_cast<GraphicP>(this), *this);
             GeometryOptions options;
-            m_geomList.SaveToGraphic(graphicBuilder, m_system, options);
+            m_geomList.SaveToGraphic(*this, m_system, options);
             }
         }
 
     m_geomList.Clear();
     m_state = State::Closed;
 
-    return SUCCESS;
+#else
+    BeAssert(false && "PrimitiveBuilder::_Finish()...");
+    return nullptr;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

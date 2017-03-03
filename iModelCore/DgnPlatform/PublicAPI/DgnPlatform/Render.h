@@ -21,8 +21,6 @@
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-struct GraphicBuilderPtr;
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
@@ -1150,7 +1148,6 @@ protected:
 
     virtual ~Graphic() {}
     virtual bool _IsSimplifyGraphic() const {return false;}
-    virtual StatusInt _EnsureClosed() = 0;
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
@@ -1163,14 +1160,13 @@ public:
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
-    StatusInt EnsureClosed() {return _EnsureClosed();} //!< Called when this Graphic is added to a display list, to ensure it is fully constructed and ready for display
 };
 
 //=======================================================================================
-//! Interface adopted by an object which can build a Graphic from the Graphic primitives.
-// @bsiclass
+//! Exposes methods for constructing a Graphic from graphic primitives.
+// @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
-struct IGraphicBuilder
+struct GraphicBuilder : RefCountedBase
 {
     //=======================================================================================
     //! Information needed to draw a triangle mesh
@@ -1245,7 +1241,7 @@ protected:
     friend struct GraphicBuilder;
 
     virtual bool _IsOpen() const = 0;
-    virtual StatusInt _Close() = 0;
+    virtual GraphicPtr _Finish() = 0;
     virtual GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const {return nullptr;}
     virtual void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP) {}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
@@ -1278,85 +1274,64 @@ protected:
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual PrimitivePtr _ToPrimitive() { BeAssert(false); return nullptr; }
-};
-
-//=======================================================================================
-//! Exposes methods for constructing a Graphic from graphic primitives.
-// @bsistruct                                                   Paul.Connelly   05/16
-//=======================================================================================
-struct GraphicBuilder
-{
-    typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
-    typedef IGraphicBuilder::IndexedPolylineArgs IndexedPolylineArgs;
-    typedef IGraphicBuilder::TileCorners TileCorners;
-private:
-    friend struct GraphicBuilderPtr;
-
-    GraphicPtr          m_graphic;
-    IGraphicBuilderP    m_builder;
-
-    GraphicBuilder() : m_builder(nullptr) {}
-    template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) {}
-
-    bool IsValid() const {return m_graphic.IsValid();}
+    virtual DgnViewportCP _GetViewport() const = 0;
+    virtual TransformCR _GetLocalToWorldTransform() const = 0;
+    virtual bool _IsSimplifyGraphic() const { return false; }
 public:
-    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
-    GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
-    template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
+    // NOTE: subToGraphic is provided to allow stroking in world coords...
+    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
 
-    DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
+    // ###TODO_ELEMENT_TILE: Temporary...
+    GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
+    DgnViewportCP GetViewport() const {return _GetViewport();}
+    TransformCR GetLocalToWorldTransform() const {return _GetLocalToWorldTransform();}
+    bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
 
-    operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
-    DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
-    TransformCR GetLocalToWorldTransform() const {return m_graphic->GetLocalToWorldTransform();}
-    bool IsSimplifyGraphic() const {return m_graphic->IsSimplifyGraphic();}
+    bool IsOpen() const {return _IsOpen();}
 
-    StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
-    bool IsOpen() const {return m_builder->_IsOpen();}
-
-    //! Close the graphic builder and return a Primitive suitable for rendering
-    PrimitivePtr ToPrimitive() { return SUCCESS == Close() ? m_builder->_ToPrimitive() : nullptr; }
+    //! ###TODO_ELEMENT_TILE...Close the graphic builder and return a Primitive suitable for rendering
+    PrimitivePtr ToPrimitive() { return _ToPrimitive(); }
 
     //! Get the current GeometryStreamEntryId.
     //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
-    GeometryStreamEntryIdCP GetGeometryStreamEntryId() const {return m_builder->_GetGeometryStreamEntryId();}
+    GeometryStreamEntryIdCP GetGeometryStreamEntryId() const {return _GetGeometryStreamEntryId();}
 
     //! Set the current GeometryStreamEntryId.
-    void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {m_builder->_SetGeometryStreamEntryId(entry);}
+    void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {_SetGeometryStreamEntryId(entry);}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
     //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
-    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {m_builder->_ActivateGraphicParams(graphicParams, geomParams);}
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
-    void AddLineString(int numPoints, DPoint3dCP points) {m_builder->_AddLineString(numPoints, points);}
+    void AddLineString(int numPoints, DPoint3dCP points) {_AddLineString(numPoints, points);}
 
     //! Draw a 2D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the line string.
     //! @param[in]          zDepth      Z depth value in local coordinates.
-    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddLineString2d(numPoints, points, zDepth);}
+    void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddLineString2d(numPoints, points, zDepth);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
-    void AddPointString(int numPoints, DPoint3dCP points) {m_builder->_AddPointString(numPoints, points);}
+    void AddPointString(int numPoints, DPoint3dCP points) {_AddPointString(numPoints, points);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
     //! @param[in]          numPoints   Number of vertices in points array.
     //! @param[in]          points      Array of vertices in the point string.
     //! @param[in]          zDepth      Z depth value.
-    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddPointString2d(numPoints, points, zDepth);}
+    void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {_AddPointString2d(numPoints, points, zDepth);}
 
     //! Draw a closed 3D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
     //!                                     additional vertex will be added to close the shape.
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    void AddShape(int numPoints, DPoint3dCP points, bool filled) {m_builder->_AddShape(numPoints, points, filled);}
+    void AddShape(int numPoints, DPoint3dCP points, bool filled) {_AddShape(numPoints, points, filled);}
 
     //! Draw a 2D shape.
     //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
@@ -1364,82 +1339,82 @@ public:
     //! @param[in]          points      Array of vertices of the shape.
     //! @param[in]          zDepth      Z depth value.
     //! @param[in]          filled      If true, the shape will be drawn filled.
-    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {m_builder->_AddShape2d(numPoints, points, filled, zDepth);}
+    void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {_AddShape2d(numPoints, points, filled, zDepth);}
 
     //! Draw a 3D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {m_builder->_AddArc(ellipse, isEllipse, filled);}
+    void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {_AddArc(ellipse, isEllipse, filled);}
 
     //! Draw a 2D elliptical arc or ellipse.
     //! @param[in]          ellipse     arc data.
     //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
     //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
     //! @param[in]          zDepth      Z depth value
-    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {m_builder->_AddArc2d(ellipse, isEllipse, filled, zDepth);}
+    void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {_AddArc2d(ellipse, isEllipse, filled, zDepth);}
 
     //! Draw a BSpline curve.
-    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {m_builder->_AddBSplineCurve(curve, filled);}
+    void AddBSplineCurve(MSBsplineCurveCR curve, bool filled) {_AddBSplineCurve(curve, filled);}
 
     //! Draw a BSpline curve as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {m_builder->_AddBSplineCurve2d(curve, filled, zDepth);}
+    void AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) {_AddBSplineCurve2d(curve, filled, zDepth);}
 
     //! Draw a curve vector.
-    void AddCurveVector(CurveVectorCR curves, bool isFilled) {m_builder->_AddCurveVector(curves, isFilled);}
+    void AddCurveVector(CurveVectorCR curves, bool isFilled) {_AddCurveVector(curves, isFilled);}
 
     //! Draw a curve vector as 2d geometry with display priority.
     //! @note Only necessary for non-ICachedDraw calls to support non-zero display priority.
-    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {m_builder->_AddCurveVector2d(curves, isFilled, zDepth);}
+    void AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) {_AddCurveVector2d(curves, isFilled, zDepth);}
 
     //! Draw a light-weight surface or solid primitive.
     //! @remarks Solid primitives can be capped or uncapped, they include cones, torus, box, spheres, and sweeps.
-    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {m_builder->_AddSolidPrimitive(primitive);}
+    void AddSolidPrimitive(ISolidPrimitiveCR primitive) {_AddSolidPrimitive(primitive);}
 
     //! Draw a BSpline surface.
-    void AddBSplineSurface(MSBsplineSurfaceCR surface) {m_builder->_AddBSplineSurface(surface);}
+    void AddBSplineSurface(MSBsplineSurfaceCR surface) {_AddBSplineSurface(surface);}
 
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
-    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {m_builder->_AddPolyface(meshData, filled);}
+    void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
 
-    void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
+    void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
 
-    void AddIndexedPolylines(IndexedPolylineArgs const& args) {m_builder->_AddIndexedPolylines(args);}
+    void AddIndexedPolylines(IndexedPolylineArgs const& args) {_AddIndexedPolylines(args);}
 
     //! Draw a 3D point cloud.
-    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}
+    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {_AddPointCloud(numPoints, origin, points, colors);}
 
     //! Draw a 3D point cloud from quantized points.
-    void AddPointCloud(int32_t numPoints, DRange3dCR range, IGraphicBuilder::QuantizedPoint const* quantizedPoints, ByteCP colors) {m_builder->_AddPointCloud(numPoints, range, quantizedPoints, colors);}
+    void AddPointCloud(int32_t numPoints, DRange3dCR range, GraphicBuilder::QuantizedPoint const* quantizedPoints, ByteCP colors) {_AddPointCloud(numPoints, range, quantizedPoints, colors);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    void AddBody(IBRepEntityCR entity) {m_builder->_AddBody(entity);}
+    void AddBody(IBRepEntityCR entity) {_AddBody(entity);}
 
     //! Draw a series of Glyphs.
     //! @param[in]          text        Text drawing parameters
-    void AddTextString(TextStringCR text) {m_builder->_AddTextString(text);}
+    void AddTextString(TextStringCR text) {_AddTextString(text);}
 
     //! Draw a series of Glyphs with display priority.
     //! @param[in] text   Text drawing parameters
     //! @param[in] zDepth Priority value in 2d
-    void AddTextString2d(TextStringCR text, double zDepth) {m_builder->_AddTextString2d(text, zDepth);}
+    void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in] numPoints   Number of vertices in \c points array.
     //! @param[in] points      Array of vertices.
     //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {m_builder->_AddTriStrip(numPoints, points, usageFlags);}
+    void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {_AddTriStrip(numPoints, points, usageFlags);}
 
     //! Draw a filled triangle strip from 2D points.
     //! @param[in] numPoints   Number of vertices in \c points array.
     //! @param[in] points      Array of vertices.
     //! @param[in] zDepth      Z depth value.
     //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
-    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {m_builder->_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
+    void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
-    void AddTile(TextureCR tile, TileCorners const& corners) {m_builder->_AddTile(tile, corners);}
+    void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
@@ -1483,9 +1458,9 @@ public:
         }
 
     //! Draw OLE object.
-    void AddDgnOle(DgnOleDraw* ole) {m_builder->_AddDgnOle(ole);}
+    void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {m_builder->_AddSubGraphic(graphic, subToGraphic, params, clip);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip=nullptr) {_AddSubGraphic(graphic, subToGraphic, params, clip);}
 
     //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
@@ -1511,29 +1486,6 @@ public:
 };
 
 //=======================================================================================
-//! A smart-pointer to a GraphicBuilder object.
-// @bsistruct                                                   Paul.Connelly   05/16
-//=======================================================================================
-struct GraphicBuilderPtr
-{
-private:
-    GraphicBuilder  m_builder;
-public:
-    GraphicBuilderPtr() {}
-    GraphicBuilderPtr(GraphicBuilderP builder) : m_builder(builder) {}
-
-    template<typename T> GraphicBuilderPtr(T* impl) : m_builder(impl) {}
-    operator GraphicPtr() {return m_builder.m_graphic;}
-
-    bool IsValid() const {return m_builder.IsValid();}
-    bool IsNull() const {return !IsValid();}
-    GraphicBuilderP get() {return IsValid() ? &m_builder : nullptr;}
-    GraphicBuilderP operator->() {return get();}
-    GraphicBuilderR operator*() {BeAssert(IsValid()); return *get();}
-    GraphicP GetGraphic() {return m_builder.m_graphic.get();}
-};
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct Primitive : RefCounted<NonCopyableClass>
@@ -1548,12 +1500,12 @@ protected:
 public:
     TransformCR GetLocalToWorldTransform() const { return m_transform; }
 
-    using TriMeshArgs = IGraphicBuilder::TriMeshArgs;
-    using IndexedPolylineArgs = IGraphicBuilder::IndexedPolylineArgs;
+    using TriMeshArgs = GraphicBuilder::TriMeshArgs;
+    using IndexedPolylineArgs = GraphicBuilder::IndexedPolylineArgs;
 
     struct PointCloudArgs
     {
-        using QuantizedPoint = IGraphicBuilder::QuantizedPoint;
+        using QuantizedPoint = GraphicBuilder::QuantizedPoint;
 
         QuantizedPoint const* m_points;
         ByteCP m_colors;
@@ -1762,7 +1714,7 @@ struct GraphicBranch
     ViewFlags m_viewFlags;
     bvector<GraphicPtr> m_entries;
 
-    void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
+    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
     void Clear() {m_entries.clear();}

@@ -719,7 +719,7 @@ struct IndexedPolyline : Primitive::IndexedPolylineArgs::Polyline
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct PolylineArgs : IGraphicBuilder::IndexedPolylineArgs
+struct PolylineArgs : GraphicBuilder::IndexedPolylineArgs
 {
     bvector<IndexedPolyline>    m_polylines;
 
@@ -735,7 +735,7 @@ struct PolylineArgs : IGraphicBuilder::IndexedPolylineArgs
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct PrimitiveBuilder : IGraphicBuilder
+struct PrimitiveBuilder : GraphicBuilder
 {
 protected:
     enum class State : uint8_t { Open, Closing, Closed };
@@ -783,7 +783,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
     DGNPLATFORM_EXPORT bool _IsOpen() const override { return State::Open == m_state; }
-    DGNPLATFORM_EXPORT StatusInt _Close() override;
+    DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
     DGNPLATFORM_EXPORT PrimitivePtr _ToPrimitive() override;
 
     bool IsOpen() const { return State::Open == m_state; }

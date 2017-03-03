@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                      Brien.Bastings  06/05
 //=======================================================================================
-struct SimplifyGraphic : Render::Graphic, Render::IGraphicBuilder
+struct SimplifyGraphic : Render::GraphicBuilder
 {
     DEFINE_T_SUPER(Render::Graphic);
 
@@ -25,11 +25,13 @@ protected:
     IGeometryProcessorR m_processor;
     ViewContextR m_context;
     IFacetOptionsPtr m_facetOptions;
-    bool m_isOpen = true;
     Render::GraphicParams m_currGraphicParams;
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
     ClipVectorPtr m_currClip;
+    DgnViewportCP m_vp;
+    Transform m_localToWorldTransform;
+    bool m_isOpen = true;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
@@ -60,10 +62,11 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
 
+    DgnViewportCP _GetViewport() const override {return m_vp;}
+    TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
     bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}
-    StatusInt _Close() override {m_isOpen = false; return SUCCESS;}
-    StatusInt _EnsureClosed() override {return m_isOpen ? _Close() : SUCCESS;}
+    Render::GraphicPtr _Finish() override;
 
     GeometryStreamEntryIdCP _GetGeometryStreamEntryId() const override {return &m_currGeomEntryId;}
     void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
@@ -131,6 +134,17 @@ public:
     DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const;
     DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const;
 
+    struct Base : Render::Graphic
+    {
+    private:
+        IGeometryProcessorR m_processor;
+        ViewContextR m_context;
+
+        bool _IsSimplifyGraphic() const override { return true; }
+    public:
+        Base(CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
+            : Render::Graphic(params), m_processor(processor), m_context(context) { }
+    };
 }; // SimplifyGraphic
 
 //=======================================================================================

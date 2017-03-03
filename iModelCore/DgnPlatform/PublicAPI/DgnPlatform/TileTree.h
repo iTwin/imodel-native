@@ -567,7 +567,7 @@ struct Tile : TileTree::Tile
 
     bool m_isLeaf;
     TileId m_id; 
-    Render::IGraphicBuilder::TileCorners m_corners; 
+    Render::GraphicBuilder::TileCorners m_corners; 
     mutable Render::GraphicPtr m_graphic;                   
 
     Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}

@@ -19,15 +19,22 @@ struct NullContext : ViewContext
 {
     DEFINE_T_SUPER(ViewContext)
 
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   03/17
+    //=======================================================================================
+    struct NullGraphic : Render::Graphic
+    {
+    //
+    };
+
     /*=================================================================================**//**
       @bsiclass                                                     Brien.Bastings  09/12
     +===============+===============+===============+===============+===============+======*/
-    struct NullGraphic : Render::Graphic, Render::IGraphicBuilder
+    struct NullGraphicBuilder : Render::GraphicBuilder
     {
+        Transform m_localToWorldTransform = Transform::FromIdentity();
         bool m_isOpen = true;
 
-        StatusInt _Close() override {m_isOpen = false; return SUCCESS;}
-        StatusInt _EnsureClosed() override {return m_isOpen ? _Close() : SUCCESS;}
         bool _IsOpen() const override {return m_isOpen;}
         void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
         void _AddLineString(int numPoints, DPoint3dCP points) override {}
@@ -56,11 +63,14 @@ struct NullContext : ViewContext
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override {return new NullGraphic();}
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override {return new NullGraphicBuilder();}
+        DgnViewportCP _GetViewport() const override {return nullptr;}
+        TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
+        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(); }
     };
 
 protected:
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphicBuilder();}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) override {return new NullGraphic();}
 
 public:

@@ -24,23 +24,23 @@ struct ImageGraphic : RefCountedBase
 {
 private:
     Render::Image m_image;
-    Render::IGraphicBuilder::TileCorners m_corners;
+    Render::GraphicBuilder::TileCorners m_corners;
     bool m_drawBorder;
     bool m_useFillTint;
     Render::TexturePtr m_texture;
 
 protected:
-    ImageGraphic(Render::Image&& image, Render::IGraphicBuilder::TileCorners const& corners, bool drawBorder, bool useFillTint) : m_image(image), m_corners(corners), m_drawBorder(drawBorder), m_useFillTint(useFillTint) {}
+    ImageGraphic(Render::Image&& image, Render::GraphicBuilder::TileCorners const& corners, bool drawBorder, bool useFillTint) : m_image(image), m_corners(corners), m_drawBorder(drawBorder), m_useFillTint(useFillTint) {}
 
 public:
-    static ImageGraphicPtr Create(Render::Image&& image, Render::IGraphicBuilder::TileCorners const& corners, bool drawBorder=false, bool useFillTint=false) {return new ImageGraphic(std::move(image), corners, drawBorder, useFillTint);}
+    static ImageGraphicPtr Create(Render::Image&& image, Render::GraphicBuilder::TileCorners const& corners, bool drawBorder=false, bool useFillTint=false) {return new ImageGraphic(std::move(image), corners, drawBorder, useFillTint);}
 
     ImageGraphicPtr Clone() const {Render::Image tmpImage = GetImage(); return new ImageGraphic(std::move(tmpImage), GetTileCorners(), GetDrawBorder(), GetUseFillTint());}
     void ApplyTransform(TransformCR transform) {transform.Multiply(m_corners.m_pts, 4);}
     DRange3d GetRange() const {DRange3d range = DRange3d::From(m_corners.m_pts, 4); return range;}
 
     Render::ImageCR GetImage() const {return m_image;}
-    Render::IGraphicBuilder::TileCorners const& GetTileCorners() const {return m_corners;}
+    Render::GraphicBuilder::TileCorners const& GetTileCorners() const {return m_corners;}
     bool GetDrawBorder() const {return m_drawBorder;}
     bool GetUseFillTint() const {return m_useFillTint;}
     Render::TexturePtr GetTexture() const {return m_texture;}

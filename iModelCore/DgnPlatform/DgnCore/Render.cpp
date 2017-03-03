@@ -296,7 +296,6 @@ Render::Queue& DgnViewport::RenderQueue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
     {
-    graphic.EnsureClosed();
     m_list.push_back(Node(graphic, ovr, ovrFlags));
     }
 
@@ -466,14 +465,6 @@ void GraphicBuilder::IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& 
         FPoint3d const& fpt = fpts[index];
         dpts.push_back(DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z));
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
-    {
-    return m_builder->_CreateSubGraphic(subToGraphic, clip);
     }
 
 /*---------------------------------------------------------------------------------**//**

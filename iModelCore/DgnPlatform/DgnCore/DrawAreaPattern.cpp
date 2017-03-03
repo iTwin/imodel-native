@@ -482,8 +482,7 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
             if (wasAborted = context.WasAborted())
                 break;
 
-            partBuilder->Close(); 
-            graphic.AddSubGraphic(*partBuilder, symbolTrans, graphicParams, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
+            graphic.AddSubGraphic(*partBuilder->Finish(), symbolTrans, graphicParams, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
             }
         }
 
@@ -956,10 +955,9 @@ void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR builder, CurveVectorC
 
     if (builder.IsSimplifyGraphic())
         {
-        Graphic& graphic = builder;
-        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&graphic);
+        BeAssert(nullptr != dynamic_cast<SimplifyGraphic*>(&builder));
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (&builder);
 
-        BeAssert(nullptr != sGraphic);
         if (!sGraphic->GetGeometryProcesor()._DoPatternStroke(*pattern, *sGraphic))
             return;
         }

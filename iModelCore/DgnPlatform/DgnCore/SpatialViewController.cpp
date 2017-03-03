@@ -110,7 +110,7 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
     textShape[3].Init(runningTextBounds.high.x, runningTextBounds.low.y);
     graphic->AddShape(_countof(textShape), textShape, true);
 
-    context.AddViewOverlay(*graphic);
+    context.AddViewOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**

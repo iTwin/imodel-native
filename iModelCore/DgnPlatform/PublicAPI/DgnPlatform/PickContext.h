@@ -115,7 +115,7 @@ private:
     void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
     void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP, ClipVectorCP) override {return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP, ClipVectorCP) override {return new SimplifyGraphic::Base(Render::Graphic::CreateParams(), *this, *this);}
     DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic) const;
     DPoint3d ConvertViewToLocal(DPoint4dCR viewPt, SimplifyGraphic const& graphic) const;
 

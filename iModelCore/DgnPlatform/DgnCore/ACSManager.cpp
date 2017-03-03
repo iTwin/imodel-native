@@ -1108,7 +1108,7 @@ GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3
         GraphicParams graphicParams;
 
         _AddAxisText(*labelGraphic, _GetName().data(), false, 0.0, -0.5, 0.25, 0.0, options);
-        graphic->AddSubGraphic(*labelGraphic, subToGraphic, graphicParams);
+        graphic->AddSubGraphic(*labelGraphic->Finish(), subToGraphic, graphicParams);
         }
 
     return graphic;
@@ -1182,7 +1182,7 @@ void            IAuxCoordSys::_DisplayInView(DecorateContextR context, ACSDispla
     if (!graphic.IsValid())
         return;
 
-    context.AddWorldOverlay(*graphic);
+    context.AddWorldOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**

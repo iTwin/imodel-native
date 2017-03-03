@@ -125,11 +125,8 @@ BentleyStatus MapTile::Loader::_LoadTile()
     graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-    BeAssert(SUCCESS==stat);
-    UNUSED_VARIABLE(stat);
-
-    tile.m_graphic = graphic;
+    tile.m_graphic = graphic->Finish();
+    BeAssert(tile.m_graphic.IsValid());
 
     tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
@@ -147,7 +144,7 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
     if (m_id.m_level < 1) // level 0 tile never re-projects properly
         return ERROR;
 
-    IGraphicBuilder::TileCorners corners;
+    GraphicBuilder::TileCorners corners;
     auto& units= m_root.GetDgnDb().GeoLocation();
     for (int i=0; i<4; ++i)
         {

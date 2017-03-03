@@ -1380,7 +1380,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
     graphic->AddLineString(2, segment.point);
-    context.AddWorldOverlay(*graphic);
+    context.AddWorldOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1412,7 +1412,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     white.SetAlpha(20);
     graphic->SetSymbology(white, white, 1);
     graphic->AddArc2d(ellipse, false, false, 0.0);
-    context.AddViewOverlay(*graphic);
+    context.AddViewOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**

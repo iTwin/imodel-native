@@ -303,11 +303,8 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->AddRangeBox(tile.m_range);
 #endif
 
-    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-    BeAssert(SUCCESS==stat);
-    UNUSED_VARIABLE(stat);
-
-    tile.m_graphic = graphic;
+    tile.m_graphic = graphic->Finish();
+    BeAssert(tile.m_graphic.IsValid());
 
     tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
@@ -621,7 +618,7 @@ void Sheet::ViewController::DrawBorder(ViewContextR context) const
     border->ActivateGraphicParams(params);
 
     border->AddShape2d(7, points, true, 0.0);
-    context.OutputGraphic(*border, nullptr);
+    context.OutputGraphic(*border->Finish(), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

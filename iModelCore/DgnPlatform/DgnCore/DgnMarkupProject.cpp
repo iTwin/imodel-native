@@ -782,7 +782,7 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
 
-    IGraphicBuilder::TileCorners corners;
+    GraphicBuilder::TileCorners corners;
     corners.m_pts[0] = DPoint3d::From(origin.x,           origin.y);            // lowerLeft
     corners.m_pts[1] = DPoint3d::From(origin.x + size.x,  origin.y);            // lowerRight
     corners.m_pts[2] = DPoint3d::From(origin.x,           origin.y + size.y);   // upperLeft
