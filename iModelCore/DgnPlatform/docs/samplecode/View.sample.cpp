@@ -8,7 +8,7 @@
 //__PUBLISH_EXTRACT_START__ View_Includes.sampleCode
 // Primary header file for the DgnPlatform API 
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 // helper macro for using the DgnPlatform namespace
 USING_NAMESPACE_BENTLEY_DGN
@@ -57,15 +57,12 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, Ca
     // Construct the ViewDefinition
     // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
     // That is why they are inputs to this function. 
-    CameraViewDefinition view(db, name, catSel, dstyle, modSel);
+    SpatialViewDefinition view(db, name, catSel, dstyle, modSel);
 
     view.SetStandardViewRotation(StandardView::Iso);
     view.LookAtVolume(db.GeoLocation().GetProjectExtents());
 
     // Write the ViewDefinition to the bim
-    if (!view.Insert().IsValid())
-        return DgnViewId();
-
-    return view.GetViewId();
+    return !view.Insert().IsValid() ? DgnViewId() : view.GetViewId();
     }
 //__PUBLISH_EXTRACT_END__

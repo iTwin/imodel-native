@@ -76,25 +76,25 @@ void ViewFlags::FromJson(JsonValueCR val)
 Json::Value ViewFlags::ToJson() const
     {
     Json::Value val;
-    if (!m_constructions) val[str_NoConstruction()] = true;
-    if (!m_text) val[str_NoText()] = true;
-    if (!m_dimensions) val[str_NoDimension()] = true;
-    if (!m_patterns) val[str_NoPattern()] = true;
-    if (!m_weights) val[str_NoWeight()] = true;
-    if (!m_styles) val[str_NoStyle()] = true;
-    if (!m_transparency) val[str_NoTransparency()] = true;
-    if (!m_fill) val[str_NoFill()] = true;
-    if (m_grid) val[str_Grid()] = true;
-    if (m_acsTriad) val[str_Acs()] = true;
-    if (!m_textures) val[str_NoTexture()] = true;
-    if (!m_materials) val[str_NoMaterial()] = true;
-    if (!m_sceneLights) val[str_NoSceneLight()] = true;
-    if (m_visibleEdges) val[str_VisibleEdges()] = true;
-    if (m_hiddenEdges) val[str_HiddenEdges()] = true;
-    if (m_shadows) val[str_Shadows()] = true;
-    if (!m_noClipVolume) val[str_ClipVolume()] = true;
-    if (m_ignoreLighting) val[str_NoLighting()] = true;
-    val[str_RenderMode()] = (uint8_t) m_renderMode;
+    if (!m_constructions) val[Json::StaticString(str_NoConstruction())] = true;
+    if (!m_text) val[Json::StaticString(str_NoText())] = true;
+    if (!m_dimensions) val[Json::StaticString(str_NoDimension())] = true;
+    if (!m_patterns) val[Json::StaticString(str_NoPattern())] = true;
+    if (!m_weights) val[Json::StaticString(str_NoWeight())] = true;
+    if (!m_styles) val[Json::StaticString(str_NoStyle())] = true;
+    if (!m_transparency) val[Json::StaticString(str_NoTransparency())] = true;
+    if (!m_fill) val[Json::StaticString(str_NoFill())] = true;
+    if (m_grid) val[Json::StaticString(str_Grid())] = true;
+    if (m_acsTriad) val[Json::StaticString(str_Acs())] = true;
+    if (!m_textures) val[Json::StaticString(str_NoTexture())] = true;
+    if (!m_materials) val[Json::StaticString(str_NoMaterial())] = true;
+    if (!m_sceneLights) val[Json::StaticString(str_NoSceneLight())] = true;
+    if (m_visibleEdges) val[Json::StaticString(str_VisibleEdges())] = true;
+    if (m_hiddenEdges) val[Json::StaticString(str_HiddenEdges())] = true;
+    if (m_shadows) val[Json::StaticString(str_Shadows())] = true;
+    if (!m_noClipVolume) val[Json::StaticString(str_ClipVolume())] = true;
+    if (m_ignoreLighting) val[Json::StaticString(str_NoLighting())] = true;
+    val[Json::StaticString(str_RenderMode())] = (uint8_t) m_renderMode;
     return val;
     }
 
@@ -112,7 +112,6 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
-    m_defaultDeviceOrientation.InitIdentity();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,36 +133,6 @@ void ViewController::_StoreState()
     m_definition->SetViewClip(m_activeVolume);
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewController::SaveAs(Utf8CP newName)
-    {
-    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(GetDgnDb(), newName));
-
-    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
-    BeAssert(newView.IsValid());
-    if (newView.IsNull())
-        return DgnDbStatus::BadElement;
-
-    m_definition = newView;
-
-    DgnDbStatus stat;
-    m_definition->Insert(&stat);
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
-    {
-    auto wasDef = m_definition;
-    auto rc = SaveAs(newName);
-    m_definition = wasDef;
-    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,8 +177,8 @@ Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySour
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewController::_IsPointAdjustmentRequired() const {return _Is3d();}
-bool ViewController::_IsSnapAdjustmentRequired(bool snapLockEnabled) const {return snapLockEnabled && _Is3d();}
+bool ViewController::_IsPointAdjustmentRequired() const {return Is3d();}
+bool ViewController::_IsSnapAdjustmentRequired(bool snapLockEnabled) const {return snapLockEnabled && Is3d();}
 bool ViewController::_IsContextRotationRequired(bool contextLockEnabled) const {return contextLockEnabled;}
 
 static bool equalOne(double r1) {return DoubleOps::AlmostEqual(r1, 1.0);}
@@ -409,7 +378,7 @@ ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus ViewDefinition3d::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
     if (ViewportStatus::Success != stat)
@@ -429,7 +398,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     double compression = xFront / xBack;
     if (compression >= (1.0 - s_flatViewFractionTolerance))
         {
-        SetCameraOn(false);
+        m_cameraOn = false;
         return ViewportStatus::Success;
         }
 
@@ -454,7 +423,7 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     SetFocusDistance(focusDistance);
     SetOrigin(viewOrg);
     SetExtents(viewDelta);
-    SetCameraOn(true);
+    m_cameraOn = true;
     SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
@@ -494,8 +463,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    auto physView   = _ToSpatialView();
-    auto cameraView = ToCameraViewP();
+    auto cameraView = ToView3dP();
     DPoint3d origNewDelta = newDelta;
 
     bool isCameraOn = cameraView && cameraView->IsCameraOn();
@@ -532,10 +500,10 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.Scale(1.04); // default "dilation"
         }
 
-    if (physView /* && Allow3dManipulations() */ && isCameraOn)
+    if (cameraView /* && Allow3dManipulations() */ && isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
-        double diag = newDelta.MagnitudeXY ();
+        double diag = newDelta.MagnitudeXY();
         if (diag > newDelta.z)
             newDelta.z = diag;
         }
@@ -553,7 +521,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
 
     // if they don't want the clipping planes to change, set them back to where they were
-    if (nullptr != physView && !expandClippingPlanes)
+    if (nullptr != cameraView && !expandClippingPlanes)
         {
         viewRot.Multiply(oldOrg);
         newOrigin.z = oldOrg.z;
@@ -582,51 +550,18 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OrthographicViewDefinition::_OnTransform(TransformCR trans)
-    {
-    RotMatrix rMatrix;
-    trans.GetMatrix(rMatrix);
-    DVec3d scale;
-    rMatrix.NormalizeColumnsOf(rMatrix, scale);
-
-    trans.Multiply(m_origin);
-    m_rotation.InitProductRotMatrixRotMatrixTranspose(m_rotation, rMatrix);
-    m_extents.Scale(scale.x);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::_OnTransform(TransformCR trans)
-    {
-    DPoint3d eye = m_camera.GetEyePoint();
-    trans.Multiply(eye);
-    m_camera.SetEyePoint(eye);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::TransformBy(TransformCR trans)
-    {
-    GetSpatialViewDefinition()._OnTransform(trans);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CameraViewDefinition::CalcLensAngle() const
+double ViewDefinition3d::CalcLensAngle() const
     {
     double maxDelta = std::max(m_extents.x, m_extents.y);
-    return 2.0 * atan2(maxDelta*0.5, m_camera.GetFocusDistance());
+    return 2.0 * atan2(maxDelta*0.5, m_cameraDef.GetFocusDistance());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::CenterEyePoint(double const* backDistanceIn)
+void ViewDefinition3d::CenterEyePoint(double const* backDistanceIn)
     {
     DVec3d delta = GetExtents();
     DPoint3d eyePoint;
@@ -636,13 +571,13 @@ void CameraViewDefinition::CenterEyePoint(double const* backDistanceIn)
     GetRotation().MultiplyTranspose(eyePoint);
     eyePoint.Add(GetOrigin());
 
-    m_camera.SetEyePoint(eyePoint);
+    m_cameraDef.SetEyePoint(eyePoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::CenterFocusDistance()
+void ViewDefinition3d::CenterFocusDistance()
     {
     double backDist  = GetBackDistance();
     double frontDist = GetFrontDistance();
@@ -654,7 +589,7 @@ void CameraViewDefinition::CenterFocusDistance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double SpatialViewDefinition::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
+double ViewDefinition3d::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     {
     // We are going to limit maximum depth to a value that will avoid subtractive cancellation
     // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
@@ -690,13 +625,28 @@ static bool convertToWorldPoint(DPoint3dR worldPoint, GeoLocationEventStatus& st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
+bool SpatialViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
     if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
         return false;
 
-    auto& camera = GetCameraViewDefinition();
+    auto& camera = *GetViewDefinition().ToView3dP();
+    if (!camera.IsCameraOn())
+        {
+        // If there's no perspective, just center the current location in the view.
+        RotMatrix viewInverse;
+        viewInverse.InverseOf(camera.GetRotation());
+
+        DPoint3d delta = camera.GetExtents();
+        delta.Scale(0.5);
+        viewInverse.Multiply(delta);
+
+        worldPoint.DifferenceOf(worldPoint, delta);
+        camera.SetOrigin(worldPoint);
+        return true;
+        }
+
     worldPoint.z = camera.GetEyePoint().z;
     DPoint3d targetPoint = camera.GetTargetPoint();
     targetPoint.z = worldPoint.z;
@@ -709,64 +659,8 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool OrthographicViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
-    {
-    DPoint3d worldPoint;
-    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
-        return false;
-
-    // If there's no perspective, just center the current location in the view.
-    RotMatrix viewInverse;
-    viewInverse.InverseOf(GetRotation());
-
-    DPoint3d delta = GetDelta();
-    delta.Scale(0.5);
-    viewInverse.Multiply(delta);
-
-    worldPoint.DifferenceOf(worldPoint, delta);
-    SetOrigin(worldPoint);
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-void ViewController::ResetDeviceOrientation()
-    {
-    m_defaultDeviceOrientationValid = false;
-    }
-
 static DVec3d s_defaultForward, s_defaultUp;
 static UiOrientation s_lastUi;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
-    {
-    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
-        {
-        if (nEventsSinceEnabled < 2)
-            {
-            // Hack to make this work properly. The first rotation received from CM seems
-            // to always be the reference frame - using that at best causes the camera to skip for a frame,
-            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
-            // up alongside s_defaultForward/s_defaultUp.
-            return false;
-            }
-        m_defaultDeviceOrientation = matrix;
-        m_defaultDeviceOrientationValid = true;
-        s_defaultUp = m_definition->GetYVector();
-        s_defaultForward = m_definition->GetZVector();
-        s_lastUi = ui;
-        }
-
-    return _OnOrientationEvent(matrix, mode, ui);
-    }
 
 //---------------------------------------------------------------------------------------
 // Gyro vector convention:
@@ -889,83 +783,67 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool OrthographicViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
-    DVec3d forward, up;
-    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
-        return false;
-
-    // No camera, have to manually define origin, etc.
-    RotMatrix viewMatrix = GetRotation();
-    RotMatrix viewInverse;
-    viewInverse.InverseOf(viewMatrix);
-
-    DVec3d delta = GetDelta();
-    delta.Scale(0.5);
-    DPoint3d worldDelta = delta;
-    viewInverse.Multiply(worldDelta);
-
-    // This is the point we want to rotate about.
-    DPoint3d eyePoint;
-    eyePoint.SumOf(GetOrigin(), worldDelta);
-
-    DVec3d xVector;
-    xVector.CrossProduct(forward, up);
-    viewMatrix.SetRow(xVector, 0);
-    viewMatrix.SetRow(up, 1);
-    viewMatrix.SetRow(forward, 2);
-    SetRotation(viewMatrix);
-
-    // Now that we have the new rotation, we can work backward from the eye point to get the new origin.
-    viewInverse.InverseOf(viewMatrix);
-    worldDelta = delta;
-    viewInverse.Multiply(worldDelta);
-    DPoint3d newOrigin;
-    newOrigin.DifferenceOf(eyePoint, worldDelta);
-    SetOrigin(newOrigin);
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
-    {
-    auto& camera = GetCameraViewDefinition();
-    if (!camera.IsCameraOn())
-        return T_Super::_OnOrientationEvent(orientation, mode, ui);
+    auto& viewDef = GetSpatialViewDefinition();
+    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
+        {
+        if (nEventsSinceEnabled < 2)
+            {
+            // Hack to make this work properly. The first rotation received from CM seems
+            // to always be the reference frame - using that at best causes the camera to skip for a frame,
+            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
+            // up alongside s_defaultForward/s_defaultUp.
+            return false;
+            }
+        m_defaultDeviceOrientation = matrix;
+        m_defaultDeviceOrientationValid = true;
+        s_defaultUp = viewDef.GetYVector();
+        s_defaultForward = viewDef.GetZVector();
+        s_lastUi = ui;
+        }
 
     DVec3d forward, up;
-    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
+    if (!ViewVectorsFromOrientation(forward, up, matrix, mode, ui))
         return false;
 
-    DPoint3d eyePoint = camera.GetEyePoint(), newTarget;
-    newTarget.SumOf(eyePoint, forward, -camera.GetFocusDistance());
+    if (!viewDef.IsCameraOn())
+        {
+        // No camera, have to manually define origin, etc.
+        RotMatrix viewMatrix = viewDef.GetRotation();
+        RotMatrix viewInverse;
+        viewInverse.InverseOf(viewMatrix);
 
-    camera.LookAt(eyePoint, newTarget, up);
+        DVec3d delta = viewDef.GetExtents();
+        delta.Scale(0.5);
+        DPoint3d worldDelta = delta;
+        viewInverse.Multiply(worldDelta);
 
-    return true;
-    }
+        // This is the point we want to rotate about.
+        DPoint3d eyePoint;
+        eyePoint.SumOf(viewDef.GetOrigin(), worldDelta);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     11/13
-//---------------------------------------------------------------------------------------
-bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
-    {
-    DPoint3d worldPoint;
-    if (!convertToWorldPoint(worldPoint, status, GetDgnDb().GeoLocation(), location))
-        return false;
+        DVec3d xVector;
+        xVector.CrossProduct(forward, up);
+        viewMatrix.SetRow(xVector, 0);
+        viewMatrix.SetRow(up, 1);
+        viewMatrix.SetRow(forward, 2);
+        viewDef.SetRotation(viewMatrix);
 
-    RotMatrix viewInverse;
-    viewInverse.InverseOf(GetRotation());
+        // Now that we have the new rotation, we can work backward from the eye point to get the new origin.
+        viewInverse.InverseOf(viewMatrix);
+        worldDelta = delta;
+        viewInverse.Multiply(worldDelta);
+        DPoint3d newOrigin;
+        newOrigin.DifferenceOf(eyePoint, worldDelta);
+        viewDef.SetOrigin(newOrigin);
+        return true;
+        }
 
-    DPoint3d delta = GetDelta();
-    delta.Scale(0.5);
-    viewInverse.Multiply(delta);
 
-    worldPoint.DifferenceOf(worldPoint, delta);
-    SetOrigin(worldPoint);
+    DPoint3d eyePoint = viewDef.GetEyePoint(), newTarget;
+    newTarget.SumOf(eyePoint, forward, -viewDef.GetFocusDistance());
+    viewDef.LookAt(eyePoint, newTarget, up);
 
     return true;
     }
@@ -974,12 +852,12 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 * Ensure the focus plane lies between the front and back planes. If not, center it.
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::VerifyFocusPlane()
+void ViewDefinition3d::VerifyFocusPlane()
     {
-    if (!m_isCameraOn)
+    if (!m_cameraOn)
         return;
 
-    DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
+    DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_cameraDef.GetEyePoint());
     m_rotation.Multiply(eyeOrg);
 
     double backDist = eyeOrg.z;
@@ -988,35 +866,35 @@ void CameraViewDefinition::VerifyFocusPlane()
     if (backDist<=0.0 || frontDist<=0.0)
         {
         // the camera location is invalid. Set it based on the view range.
-        double tanangle = tan(m_camera.GetLensAngle()/2.0);
+        double tanangle = tan(m_cameraDef.GetLensAngle()/2.0);
         backDist = m_extents.z / tanangle;
-        m_camera.SetFocusDistance(backDist/2);
+        m_cameraDef.SetFocusDistance(backDist/2);
         CenterEyePoint(&backDist);
         return;
         }
 
-    double focusDist = m_camera.GetFocusDistance();
+    double focusDist = m_cameraDef.GetFocusDistance();
     if (focusDist>frontDist && focusDist<backDist)
         return;
 
     // put it halfway between front and back planes
-    m_camera.SetFocusDistance((m_extents.z / 2.0) + frontDist);
+    m_cameraDef.SetFocusDistance((m_extents.z / 2.0) + frontDist);
 
     // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
-    double ratio = m_camera.GetFocusDistance() / focusDist;
+    double ratio = m_cameraDef.GetFocusDistance() / focusDist;
     m_extents.x *= ratio;
     m_extents.y *= ratio;
 
     DVec3d xVec, yVec, zVec;
     m_rotation.GetRows(xVec, yVec, zVec);
-    m_origin.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_extents.x, yVec, -0.5*m_extents.y); // this centers the camera too
+    m_origin.SumOf(m_cameraDef.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_extents.x, yVec, -0.5*m_extents.y); // this centers the camera too
     }
 
 /*---------------------------------------------------------------------------------**//**
-* See diagram in DgnView.h
+* See diagram in ViewDefinition.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                             DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
@@ -1063,10 +941,9 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 
     // The origin is defined as the lower left of the view rectangle on the focus plane, projected to the back plane.
     // Start at eye point, and move to center of back plane, then move left half of width. and down half of height
-    DPoint3d origin;
-    origin.SumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
+    DPoint3d origin = DPoint3d::FromSumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
 
-    SetCameraOn(true);
+    m_cameraOn = true;
     SetEyePoint(eyePoint);
     SetRotation(rotation);
     SetFocusDistance(focusDist);
@@ -1080,7 +957,7 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus ViewDefinition3d::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   double lens, double const* frontDist, double const* backDist)
     {
     DVec3d zVec; // z defined by direction from eye to target
@@ -1105,8 +982,14 @@ ViewportStatus CameraViewDefinition::LookAtUsingLensAngle(DPoint3dCR eyePoint, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::MoveCameraWorld(DVec3dCR distance)
+ViewportStatus ViewDefinition3d::MoveCameraWorld(DVec3dCR distance)
     {
+    if (!m_cameraOn)
+        {
+        m_origin.SumOf(m_origin, distance);
+        return ViewportStatus::Success;
+        }
+
     DPoint3d newTarget, newEyePt;
     newTarget.SumOf(GetTargetPoint(), distance);
     newEyePt.SumOf(GetEyePoint(), distance);
@@ -1116,7 +999,7 @@ ViewportStatus CameraViewDefinition::MoveCameraWorld(DVec3dCR distance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::MoveCameraLocal(DVec3dCR distanceLocal)
+ViewportStatus ViewDefinition3d::MoveCameraLocal(DVec3dCR distanceLocal)
     {
     DVec3d distWorld = distanceLocal;
     GetRotation().MultiplyTranspose(distWorld);
@@ -1126,7 +1009,7 @@ ViewportStatus CameraViewDefinition::MoveCameraLocal(DVec3dCR distanceLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus ViewDefinition3d::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DPoint3d about = aboutPointIn ? *aboutPointIn : GetEyePoint();
     RotMatrix rotation = RotMatrix::FromVectorAndRotationAngle(axis, radAngle);
@@ -1143,7 +1026,7 @@ ViewportStatus CameraViewDefinition::RotateCameraWorld(double radAngle, DVec3dCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus CameraViewDefinition::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus ViewDefinition3d::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DVec3d axisWorld = axis;
     GetRotation().MultiplyTranspose(axisWorld);
@@ -1154,7 +1037,7 @@ ViewportStatus CameraViewDefinition::RotateCameraLocal(double radAngle, DVec3dCR
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CameraViewDefinition::GetBackDistance() const
+double ViewDefinition3d::GetBackDistance() const
     {
     // backDist is the z component of the vector from the eyePoint to the origin.
     DPoint3d eyeOrg;
@@ -1179,7 +1062,7 @@ DPoint3d ViewDefinition::GetCenter() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifer     04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d CameraViewDefinition::_GetTargetPoint() const
+DPoint3d ViewDefinition3d::_GetTargetPoint() const
     {
     if (!IsCameraOn())
         return T_Super::_GetTargetPoint();
@@ -1207,9 +1090,9 @@ void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
 
     double maxAbs = max(delta.x, delta.y);
 
-    // if all deltas are zero, set to 100 (what else can we do?)
+    // if all deltas are zero, set to 1m (what else can we do?)
     if (0.0 == maxAbs)
-        delta.x = delta.y = 100;
+        delta.x = delta.y = DgnUnits::OneMeter();
 
     // if either dimension is zero, set it to the other.
     if (delta.x == 0)
@@ -1234,7 +1117,7 @@ void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
 
     double maxExtent, minExtent;
     _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
+    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
         {
         double rtmp = delta.x / windowAspect;
         if (rtmp < maxExtent)
@@ -1275,9 +1158,9 @@ void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
 
     double maxAbs = max(m_delta.x, m_delta.y);
 
-    // if all deltas are zero, set to 100 (what else can we do?)
+    // if all deltas are zero, set to 1m (what else can we do?)
     if (0.0 == maxAbs)
-        m_delta.x = m_delta.y = 100;
+        m_delta.x = m_delta.y = DgnUnits::OneMeter();
 
     // if either dimension is zero, set it to the other.
     if (m_delta.x == 0)
@@ -1298,10 +1181,9 @@ void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
             m_delta.x = m_delta.y;
         }
 
-
     double maxExtent, minExtent;
     _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
+    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
         if (rtmp < maxExtent)
