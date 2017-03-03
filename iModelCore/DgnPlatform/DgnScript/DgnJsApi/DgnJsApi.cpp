@@ -17,7 +17,7 @@
 #include <Geom/SolidPrimitive.h>
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 size_t JsDgnElement::s_count;
 

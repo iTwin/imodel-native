@@ -24,12 +24,12 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 enum DgnDbProfileValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 15,   // WIP: Increment this (1.x) for intermediate profile changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 16,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
     DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the profile supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 15,
+    DGNDB_SUPPORTED_VERSION_Minor = 16,
 };
 
 //=======================================================================================
@@ -258,7 +258,8 @@ public:
     //! import. If an eror happens during the import, the new transaction is abandoned in the call. 
     DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
-    //! Inserts a new ECRelationship
+    //! Inserts a new non-Navigation ECRelationship. 
+    //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
     //! @param[in] sourceId SourceECInstanceId.
@@ -267,9 +268,10 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
 
-    //! Inserts a new ECRelationship between two elements.
+    //! Inserts a new non-Navigation ECRelationship between two elements.
+    //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
     //! @param[in] sourceId The "source" element.
@@ -278,35 +280,47 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    BeSQLite::DbResult InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
+    BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
         {
-        return InsertRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
     
-    //! Update one or more properties of an existing ECRelationship instance. Note that you cannot change the source or target. @note this function only makes sense if the relationship instance is stored in a link table.
+    //! Update one or more properties of an existing non-Navigation ECRelationship instance. 
+    //! Note that you cannot change the source or target. 
+    //! @note This function is only for ECRelationships that are stored in a link table. 
     //! @param key Identifies the relationship instance.
     //! @param props Contains the properties to be written. Note that this functions updates props by setting its InstanceId.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateNonNavigationRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
 
-    //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
+    //! Deletes non-Navigation ECRelationships which match the specified @p sourceId and @p targetId.
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
     //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
     //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
     //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
     //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
     //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
 
-    BeSQLite::DbResult DeleteRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
+    //! Deletes non-Navigation ECRelationships which match the specified @p sourceId and @p targetId.
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
+    //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
+    //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
+    //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
+    //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
+    //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    BeSQLite::DbResult DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
         {
-        return DeleteRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return DeleteNonNavigationRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
 
-    //! Deletes a specific ECRelationship
+    //! Deletes a specific non-Navigation ECRelationship
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
     //! @param key Identifies the ECRelationship instance
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteRelationship(BeSQLite::EC::ECInstanceKeyCR key);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteNonNavigationRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

@@ -128,6 +128,7 @@
 #define BIS_REL_PhysicalTypeHasRecipe               "PhysicalTypeHasRecipe"
 #define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
+#define BIS_REL_PartitionOriginatesFromRepository   "PartitionOriginatesFromRepository"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names

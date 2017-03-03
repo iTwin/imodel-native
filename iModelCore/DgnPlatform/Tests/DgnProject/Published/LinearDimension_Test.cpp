@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/LinearDimension_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (NEEDSWORK_DIMENSION)
@@ -13,7 +13,7 @@
 #include <ECObjects/DesignByContract.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*=================================================================================**//**
 * @bsistruct
@@ -255,7 +255,7 @@ void SetUp () override
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(GetDgnDb(), "LinearDimension3dTest",
+    SpatialViewDefinition view(SpatialViewDefinition::CreateParams(GetDgnDb(), "LinearDimension3dTest",
                 ViewDefinition::Data(m_modelId, DgnViewSource::Generated)));
     EXPECT_TRUE(view.Insert().IsValid());
 

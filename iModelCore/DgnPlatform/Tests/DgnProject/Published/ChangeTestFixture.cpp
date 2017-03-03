@@ -7,7 +7,7 @@
 
 // #define DEBUG_REVISION_TEST_COMPRESSION 1
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST 
@@ -170,7 +170,7 @@ void ChangeTestFixture::CreateDefaultView(DgnDbR db)
             models->AddModel(id);
         }
 
-    CameraViewDefinition view(db, "Default", *categories, *style, *models);
+    SpatialViewDefinition view(db, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());

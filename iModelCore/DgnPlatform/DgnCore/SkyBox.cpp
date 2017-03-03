@@ -202,8 +202,11 @@ static DPoint2d getUVForDirection(DPoint3dCR direction, double rotation, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d SpatialViewDefinition::_ComputeEyePoint(Frustum const& frustum) const
+DPoint3d ViewDefinition3d::ComputeEyePoint(Frustum const& frustum) const
     {
+    if (IsCameraOn())
+        return GetEyePoint();
+
     DVec3d delta = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftBottomRear), frustum.GetCorner(NPC_LeftBottomFront));
 
     double pseudoCameraHalfAngle = 22.5;         // Somewhat arbitrily chosen to match Luxology.

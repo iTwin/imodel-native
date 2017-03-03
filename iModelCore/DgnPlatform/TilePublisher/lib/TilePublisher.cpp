@@ -2902,7 +2902,7 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
- 			modelJson["extents"] = RangeToJson(modelRange);
+            modelJson["extents"] = RangeToJson(modelRange);
 
             if (nullptr == spatialModel && !modelTransform.IsIdentity())
                 modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
@@ -2947,7 +2947,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
+void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     auto spatialView = view.ToSpatialView();
     auto drawingView = nullptr == spatialView ? view.ToDrawingView() : nullptr;
@@ -2991,7 +2991,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         for (size_t j = 0; j < 3; j++)
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
-    auto cameraView = nullptr != spatialView ? view.ToCameraView() : nullptr;
+    auto cameraView = nullptr != spatialView ? view.ToView3d() : nullptr;
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
@@ -3000,7 +3000,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         transform.Multiply(eyePoint);
         json["eyePoint"] = PointToJson(eyePoint);
 
-        json["lensAngle"] = cameraView->GetLensAngle();
+        json["lensAngle"] = cameraView->GetLensAngle().Radians();
         json["focusDistance"] = cameraView->GetFocusDistance();
         }
     else if (nullptr != spatialView)
