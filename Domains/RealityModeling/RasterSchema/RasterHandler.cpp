@@ -28,7 +28,6 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
     virtual Placement3dCR _GetPlacement() const override { return m_placement; }
     virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
-    virtual Render::GraphicSet& _Graphics() const override { return m_graphics; };
     virtual DgnElement::Hilited _IsHilited() const override { return m_hilited; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
@@ -41,7 +40,6 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     DgnCategoryId               m_categoryId;
     Placement3d                 m_placement;
     GeometryStream              m_geom;
-    mutable Render::GraphicSet  m_graphics;
     mutable DgnElement::Hilited m_hilited;
     };
 
