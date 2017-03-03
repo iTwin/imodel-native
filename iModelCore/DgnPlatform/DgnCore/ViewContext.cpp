@@ -1504,10 +1504,11 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
         }
 
     double   refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
-    Point2d  repetitions;
+    DPoint2d refSpacing = DPoint2d::FromScale(spacing, refScale);
     DPoint3d gridOrg;
+    Point2d  repetitions;
 
-    if (NULL == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
+    if (nullptr == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
         {
         DPoint3d intersections[12];
         int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, vp);
@@ -1517,8 +1518,8 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
 
         DPoint2d min;
 
-        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, spacing.x, intersections, nIntersections) ||
-            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, spacing.y, intersections, nIntersections))
+        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, refSpacing.x, intersections, nIntersections) ||
+            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, refSpacing.y, intersections, nIntersections))
             return;
 
         gridOrg.SumOf(gridOrigin, xVec, min.x, yVec, min.y);
@@ -1533,8 +1534,8 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
         return;
 
     DVec3d gridX, gridY;
-    gridX.Scale(xVec, spacing.x);
-    gridY.Scale(yVec, spacing.y);
+    gridX.Scale(xVec, refSpacing.x);
+    gridY.Scale(yVec, refSpacing.y);
 
     DPoint3d testPt;
     testPt.SumOf(gridOrg,gridX, repetitions.x/2.0, gridY, repetitions.y/2.0);
@@ -1552,14 +1553,14 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     double minRefSeperation = 1000. / maxGridRefs;
     double uorPerPixel = vp.GetPixelSizeAtPoint(&testPt); // center of view
 
-    if ((spacing.x/uorPerPixel) < minRefSeperation || (spacing.y/uorPerPixel) < minRefSeperation)
+    if ((refSpacing.x/uorPerPixel) < minRefSeperation || (refSpacing.y/uorPerPixel) < minRefSeperation)
         gridsPerRef = 0;
 
     // Avoid z fighting with coincident geometry...let the wookie win...
     gridOrg.SumOf(gridOrg, viewZ, uorPerPixel);
     uorPerPixel *= refScale;
 
-    bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
+    bool drawDots = ((refSpacing.x/uorPerPixel) > minGridSeperationPixels) &&((refSpacing.y/uorPerPixel) > minGridSeperationPixels);
     Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);

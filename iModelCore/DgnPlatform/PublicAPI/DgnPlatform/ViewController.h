@@ -183,9 +183,7 @@ protected:
 
     //! Grid display and point adjustment.
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
-    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor() const;
     DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DPoint2dR, uint32_t& gridsPerRef) const;
-    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DPoint2dR roundingDistance) const;
 
     //! Display grid for this view.
     DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
@@ -359,7 +357,7 @@ public:
     bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
-    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
 
     //! Get the Appearance of a DgnSubCategory for this view.
