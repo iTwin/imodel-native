@@ -568,6 +568,24 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     delete buf;
     }
 
+AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("")
+    {
+    m_validRequestString = false; 
+    m_handshakeRequest = nullptr;
+
+    Utf8String id = rootId;
+    id.ReplaceAll("\\", "/");
+    id.ReplaceAll("~2F", "/");
+    bvector<Utf8String> parts;
+    BeStringUtilities::Split(id.c_str(), "/", parts);
+
+    m_id = parts[0];
+    m_filter = id;
+    id = parts[0];
+    id.append("/");
+    m_filter.ReplaceAll(id.c_str(),"");
+    }
+
 void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
     {
     //GetAzureRedirectionRequestUrl();
@@ -1247,6 +1265,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_onlyReportErrors = false; 
     m_currentTransferedAmount = 0;
     m_fullTransferSize = 0;
+    m_handshakeRequest = nullptr;
 
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
@@ -1300,19 +1319,11 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     m_progressThreshold = 0.01;
     m_onlyReportErrors = false;
     m_currentTransferedAmount = 0;
+    m_handshakeRequest = nullptr;
 
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();
 
-    if(id.Contains("/") || id.Contains("\\") || id.Contains("~2F"))
-        DownloadFromNavNode(targetLocation, id);
-    else
-        DownloadFullRepo(targetLocation,id);
-    m_fullTransferSize = m_filesToTransfer.size();
-    }
-
-void RealityDataServiceDownload::DownloadFullRepo(BeFileName targetLocation, Utf8String id)
-    {
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(id);
     RequestStatus status;
     bvector<Utf8String> filesInRepo = RealityDataService::Request(rdsRequest, status);
@@ -1327,11 +1338,8 @@ void RealityDataServiceDownload::DownloadFullRepo(BeFileName targetLocation, Utf
 
         RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i);
         }
-    }
 
-void RealityDataServiceDownload::DownloadFromNavNode(BeFileName targetLocation, Utf8String id)  
-    {
-
+    m_fullTransferSize = m_filesToTransfer.size();
     }
 
 Utf8String RealityDataService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
@@ -1399,24 +1407,29 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
     bool nextMarker;
     int stat = RequestType::BodyNoToken;
     WStringP value;
+    Utf8String utf8Value;
+    Utf8String xmlResponse;
+    Utf8String filter = request.GetFilter();
 
     do
         {
         WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-        Utf8String xmlResponse = WSGRequest::GetInstance().PerformAzureRequest(request, stat, RealityDataService::GetVerifyPeer());
+        xmlResponse = WSGRequest::GetInstance().PerformAzureRequest(request, stat, RealityDataService::GetVerifyPeer());
 
         BeXmlStatus xmlStatus = BEXML_Success;
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str());
         BeAssert(reader.IsValid());
-        Utf8String xmlNodeName;
 
         value = new WString();
 
         while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "Name", false, nullptr)))
             {
             reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
-            documents.push_back(Utf8String(value->c_str()));
+            utf8Value = Utf8String(value->c_str());
+            if(filter.length() > 0 && utf8Value.Contains(filter))
+                documents.push_back(utf8Value);
             }
+
         nextMarker = false;
         //the previous loop reaches the end of the file, so to find the "NextMarker" element, we need to restart from the top
         reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str()); 

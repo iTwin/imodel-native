@@ -208,7 +208,8 @@ private:
 struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : m_handshakeRequest(0)
+    { m_validRequestString = false; m_id = identifier; }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
@@ -410,15 +411,18 @@ private:
 struct AllRealityDataByRootId : public RealityDataDocumentContentByIdRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT AllRealityDataByRootId(Utf8StringCR rootId) { m_validRequestString = false; m_id = rootId; }
+    REALITYDATAPLATFORM_EXPORT AllRealityDataByRootId(Utf8StringCR rootId); 
 
     REALITYDATAPLATFORM_EXPORT void SetMarker(Utf8String marker) const { m_validRequestString = false; m_marker = marker; }
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFilter() const { return m_filter; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    mutable Utf8String m_marker;
+    mutable Utf8String  m_marker;
+    Utf8String          m_filter;
     AllRealityDataByRootId() {}
     };
 

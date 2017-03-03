@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     std::cout << RealityDataService::GetSchemaName() << std::endl << std::endl;
 
     /*BeFileName fName = BeFileName("D:\\RealityModFrameworkFolder");
-    RealityDataServiceDownload download = RealityDataServiceDownload(fName, "63a9b3a5-8c5a-4e6c-986b-d6ccd1397f37");
+    RealityDataServiceDownload download = RealityDataServiceDownload(fName, "604f9be9-e74f-4614-a23e-b02e2dc129f5/duplicates/Newf");
     download.Perform();*/
 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField,Utf8String>();
