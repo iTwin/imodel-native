@@ -297,6 +297,35 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
     return m_definition->_SetupFromFrustum(frustum);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
+    {
+    if (nullptr == m_vp)
+        return ViewportStatus::NotAttached;
+
+    // We need to figure out a new camera target. To do that, we need to know where the geometry is in the view.
+    // We use the depth of the center of the view for that.
+    double low, high;
+    m_vp->DetermineVisibleDepthNpc(low, high);
+    double middle = low + ((high - low) / 2.0);
+
+    DPoint3d corners[4];
+    corners[0].Init(0.0, 0.0, middle); // lower left, at target depth
+    corners[1].Init(1.0, 1.0, middle); // upper right at target depth
+    corners[2].Init(0.0, 0.0, high); // lower left, at closest npc
+    corners[3].Init(1.0, 1.0, high); // upper right at closest
+    m_vp->NpcToWorld(corners, corners, 4);
+
+    auto& cameraDef = GetViewDefinition3dR();
+
+    DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
+    DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
+    double backDist  = eye.Distance(target) * 2.0;
+    double frontDist = ViewDefinition3d::MinimumFrontDistance();
+    return cameraDef.LookAtUsingLensAngle(eye, target, cameraDef.GetYVector(), lensAngle, &frontDist, &backDist);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13

@@ -255,6 +255,11 @@ public:
     //! @see SaveDefinition
     void StoreState() {_StoreState();}
 
+    //! perform the equivalent of a dynamic_cast to a ViewController3d.
+    //! @return a valid ViewController3dCP, or nullptr if this is not a 3d view
+    virtual ViewController3dCP _ToView3d() const {return nullptr;}
+    ViewController3dP ToView3dP() {return const_cast<ViewController3dP>(_ToView3d());}
+
     //! perform the equivalent of a dynamic_cast to a SpatialViewController.
     //! @return a valid SpatialViewControllerCP, or nullptr if this is not a physical view
     virtual SpatialViewControllerCP _ToSpatialView() const {return nullptr;}
@@ -270,7 +275,6 @@ public:
     virtual Sheet::ViewControllerCP _ToSheetView() const {return nullptr;}
     Sheet::ViewControllerP ToSheetViewP() {return const_cast<Sheet::ViewControllerP>(_ToSheetView());}
 
-    virtual ViewController3dCP _ToView3d() const {return nullptr;}
     //! determine whether this view is a 3d view
     bool Is3d() const {return nullptr != _ToView3d();}
 
@@ -399,8 +403,10 @@ protected:
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
 public:
+    
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
+    DGNPLATFORM_EXPORT ViewportStatus TurnCameraOn(Angle lensAngle);
 };
 
 //=======================================================================================
