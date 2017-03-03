@@ -592,7 +592,7 @@ private:
     Transform                   m_transform;
     DgnDbP                      m_dgndb;
     DgnElementId                m_elementId;
-    mutable DisplayParamsCache  m_displayParams;
+    mutable DisplayParamsCache  m_displayParamsCache;
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
 
@@ -612,6 +612,7 @@ public:
     DGNPLATFORM_EXPORT bool AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform);
 
+    bool IsEmpty() const { return m_geometries.empty(); }
     void Clear() { m_geometries.clear(); }
     GeometryList const& GetGeometries() const { return m_geometries; }
     GeometryList& GetGeometries() { return m_geometries; }
@@ -623,7 +624,7 @@ public:
     void SetTransform(TransformCR tf) { m_transform = tf; m_haveTransform = !m_transform.IsIdentity(); }
 
     DgnDbP GetDgnDb() const { return m_dgndb; }
-    DisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParams; }
+    DisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParamsCache; }
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
@@ -646,11 +647,15 @@ struct ToleranceRatio
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
+// @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
+struct MeshArgs : Primitive::TriMeshArgs
 {
-    bvector<int32_t>   m_indices;
+    bvector<int32_t>    m_indices;
+
+    void Clear();
+    void Transform(TransformCR);
+    template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = 0 != src.size() ? src.data() : nullptr; }
 
     template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
         {
@@ -658,28 +663,9 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         Set(ptr, src);
         }
 
-    template<typename T, typename U> void Set(T& ptr, U const& src)
-        {
-        ptr = 0 != src.size() ? src.data() : nullptr;
-        }
-
-    void Clear()
-        {
-        m_indices.clear();
-        m_numIndices = 0;
-        m_vertIndex = nullptr;
-        m_numPoints = 0;
-        m_points = nullptr;
-        m_normals = nullptr;
-        m_textureUV = nullptr;
-        m_texture = nullptr;
-        m_flags = 0;
-        }
-
     bool Init(MeshCR mesh, Render::System const& system, DgnDbP db)
         {
         Clear();
-
         if (mesh.Triangles().empty())
             return false;
 
@@ -704,34 +690,12 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         return true;
         }
 
-    void Transform(TransformCR tf)
-        {
-        for (int32_t i = 0; i < m_numPoints; i++)
-            {
-            FPoint3d& fpt = const_cast<FPoint3d&>(m_points[i]);
-            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-            tf.Multiply(dpt);
-            fpt.x = dpt.x;
-            fpt.y = dpt.y;
-            fpt.z = dpt.z;
-
-            if (nullptr != m_normals)
-                {
-                FPoint3d& fnm = const_cast<FPoint3d&>(m_normals[i]);
-                dpt = DPoint3d::FromXYZ(fnm.x, fnm.y, fnm.z);
-                tf.MultiplyMatrixOnly(dpt);
-                fnm.x = dpt.x;
-                fnm.y = dpt.y;
-                fnm.z = dpt.z;
-                }
-            }
-        }
 };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct IndexedPolyline : IGraphicBuilder::IndexedPolylineArgs::Polyline
+struct IndexedPolyline : Primitive::IndexedPolylineArgs::Polyline
 {
     bool IsValid() const { return 0 < m_numIndices; }
 
@@ -755,73 +719,86 @@ struct IndexedPolyline : IGraphicBuilder::IndexedPolylineArgs::Polyline
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
+struct PolylineArgs : IGraphicBuilder::IndexedPolylineArgs
 {
     bvector<IndexedPolyline>    m_polylines;
 
     bool IsValid() const { return !m_polylines.empty(); }
 
-    void Reset()
-        {
-        m_numPoints = m_numLines = 0;
-        m_points = nullptr;
-        m_lines = nullptr;
-        m_polylines.clear();
-        }
+    void Reset();
+    bool Init(MeshCR mesh);
+    void Apply(Render::GraphicBuilderR gf);
+    bool InitAndApply(Render::GraphicBuilderR gf, MeshCR mesh);
+    void Transform(TransformCR tf);
+};
 
-    bool Init(MeshCR mesh)
-        {
-        Reset();
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PrimitiveBuilder : IGraphicBuilder
+{
+protected:
+    enum class State : uint8_t { Open, Closing, Closed };
 
-        m_numPoints = static_cast<uint32_t>(mesh.Points().size());
-        m_points = &mesh.Points()[0];
-        m_polylines.reserve(mesh.Polylines().size());
+    DgnDbP              m_dgndb;
+    System&             m_system;
+    GraphicPtr          m_graphic;
+    Transform           m_transform;
+    ClipVectorCPtr      m_clip;
+    GeometryListBuilder m_geomList;
+    PrimitiveList       m_primitives;
+    GraphicParams       m_graphicParams;
+    GeometryParams      m_geometryParams;
+    bool                m_geometryParamsValid = false;
+    State               m_state = State::Open;
 
-        for (auto const& polyline : mesh.Polylines())
-            {
-            IndexedPolyline indexedPolyline;
-            if (indexedPolyline.Init(polyline))
-                m_polylines.push_back(indexedPolyline);
-            }
+    DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
+    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
+    DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
+    DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
 
-        if (IsValid())
-            {
-            m_numLines = static_cast<uint32_t>(m_polylines.size());
-            m_lines = &m_polylines[0];
-            }
+    DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddLineString(int numPoints, DPoint3dCP points) override;
+    DGNPLATFORM_EXPORT void _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddPointString(int numPoints, DPoint3dCP points) override;
+    DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
+    DGNPLATFORM_EXPORT void _AddIndexedPolylines(IndexedPolylineArgs const&) override;
+    DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR) override;
+    DGNPLATFORM_EXPORT void _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddShape(int numPoints, DPoint3dCP points, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddTextString(TextStringCR) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) override;
+    DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
+    DGNPLATFORM_EXPORT void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve(MSBsplineCurveCR, bool filled) override;
+    DGNPLATFORM_EXPORT void _AddBSplineCurve2d(MSBsplineCurveCR, bool filled, double zDepth) override;
+    DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
+    DGNPLATFORM_EXPORT void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override;
+    DGNPLATFORM_EXPORT void _AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors) override;
+    DGNPLATFORM_EXPORT void _AddDgnOle(DgnOleDraw*) override;
+    DGNPLATFORM_EXPORT bool _IsOpen() const override { return State::Open == m_state; }
+    DGNPLATFORM_EXPORT StatusInt _Close() override;
+    DGNPLATFORM_EXPORT PrimitivePtr _ToPrimitive() override;
 
-        return IsValid();
-        }
+    bool IsOpen() const { return State::Open == m_state; }
+    bool IsClosed() const { return State::Closed == m_state; }
+    bool IsClosing() const { return State::Closing == m_state; }
+    DgnDbP GetDgnDb() const { return m_dgndb; }
 
-    void Apply(Render::GraphicBuilderR gf)
-        {
-        if (IsValid())
-            gf.AddIndexedPolylines(*this);
-        }
-
-    bool InitAndApply(Render::GraphicBuilderR gf, MeshCR mesh)
-        {
-        if (Init(mesh))
-            {
-            Apply(gf);
-            return true;
-            }
-
-        return false;
-        }
-
-    void Transform(TransformCR tf)
-        {
-        for (uint32_t i = 0; i < m_numPoints; i++)
-            {
-            FPoint3d fpt = m_points[i];
-            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-            tf.Multiply(dpt);
-            fpt.x = dpt.x;
-            fpt.y = dpt.y;
-            fpt.z = dpt.z;
-            }
-        }
+    GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
+    GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
+    DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
+    Primitive::DisplayParams GetPrimitiveDisplayParams() const;
+    TransformCR GetLocalToWorld() const { return m_graphic->GetLocalToWorldTransform(); }
+public:
+    PrimitiveBuilder(System& system, GraphicR graphic, DgnDbP dgndb)
+        : m_dgndb(dgndb), m_system(system), m_graphic(&graphic), m_geomList(dgndb) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

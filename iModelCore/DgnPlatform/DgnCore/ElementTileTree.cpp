@@ -751,8 +751,8 @@ BentleyStatus Loader::_LoadTile()
     if (loadContext.WasAborted())
         return ERROR;
 
-    TilePolylineArgs polylineArgs;
-    TileMeshArgs meshArgs;
+    PolylineArgs polylineArgs;
+    MeshArgs meshArgs;
     Render::GraphicBuilderPtr graphic;
 
     if (InstancingOptions::AsSubGraphics == s_instancingOptions)

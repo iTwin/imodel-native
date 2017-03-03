@@ -1321,11 +1321,11 @@ private:
     IGraphicBuilderP    m_builder;
 
     GraphicBuilder() : m_builder(nullptr) {}
-    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
     template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) {}
 
     bool IsValid() const {return m_graphic.IsValid();}
 public:
+    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
     GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
     template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
 
@@ -1578,7 +1578,7 @@ public:
     TransformCR GetLocalToWorldTransform() const { return m_transform; }
 
     using TriMeshArgs = IGraphicBuilder::TriMeshArgs;
-    using PolylineArgs = IGraphicBuilder::IndexedPolylineArgs;
+    using IndexedPolylineArgs = IGraphicBuilder::IndexedPolylineArgs;
 
     struct PointCloudArgs
     {
@@ -1842,7 +1842,7 @@ struct System
     virtual PrimitivePtr _CreatePrimitive(Primitive::TriMeshArgs const& args, Primitive::DisplayParams const& params) const = 0;
 
     //! Create an indexed polyline primitive
-    virtual PrimitivePtr _CreatePrimitive(Primitive::PolylineArgs const& args, Primitive::DisplayParams const& params) const = 0;
+    virtual PrimitivePtr _CreatePrimitive(Primitive::IndexedPolylineArgs const& args, Primitive::DisplayParams const& params) const = 0;
 
     //! Create a point cloud primitive
     virtual PrimitivePtr _CreatePrimitive(Primitive::PointCloudArgs const& args, Primitive::DisplayParams const& params) const = 0;

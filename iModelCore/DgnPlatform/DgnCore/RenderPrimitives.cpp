@@ -17,6 +17,24 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 BEGIN_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double priority)
+    {
+    double depth = Render::Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    for (int i = 0; i < numPoints; i++, pts3d++, pts2d++)
+        pts3d->Init(pts2d->x, pts2d->y, depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void copy2dTo3d(std::valarray<DPoint3d>& pts3d, DPoint2dCP pts2d, double priority)
+    {
+    copy2dTo3d(static_cast<int>(pts3d.size()), &pts3d[0], pts2d, priority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 static FPoint3d toFPoint3d(DPoint3dCR dpoint)
@@ -1208,8 +1226,8 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::System const& system, GeometryOptionsCR options, double tolerance) const
     {
-    TileMeshArgs meshArgs;
-    TilePolylineArgs polylineArgs;
+    MeshArgs meshArgs;
+    PolylineArgs polylineArgs;
 
     bool asSubGraphic = true;
     MeshList meshes = ToMeshes(options, tolerance);
@@ -1398,5 +1416,548 @@ void  TextStringGeometry::InitGlyphCurves() const
                 }
             }
         }                                                                                                           
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshArgs::Clear()
+    {
+    m_indices.clear();
+    m_numIndices = 0;
+    m_vertIndex = nullptr;
+    m_numPoints = 0;
+    m_points = nullptr;
+    m_normals = nullptr;
+    m_textureUV = nullptr;
+    m_texture = nullptr;
+    m_flags = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshArgs::Transform(TransformCR tf)
+    {
+    for (int32_t i = 0; i < m_numPoints; i++)
+        {
+        FPoint3d& fpt = const_cast<FPoint3d&>(m_points[i]);
+        DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+        tf.Multiply(dpt);
+        fpt.x = dpt.x;
+        fpt.y = dpt.y;
+        fpt.z = dpt.z;
+
+        if (nullptr != m_normals)
+            {
+            FPoint3d& fnm = const_cast<FPoint3d&>(m_normals[i]);
+            dpt = DPoint3d::FromXYZ(fnm.x, fnm.y, fnm.z);
+            tf.MultiplyMatrixOnly(dpt);
+            fnm.x = dpt.x;
+            fnm.y = dpt.y;
+            fnm.z = dpt.z;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineArgs::Reset()
+    {
+    m_numPoints = m_numLines = 0;
+    m_points = nullptr;
+    m_lines = nullptr;
+    m_polylines.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PolylineArgs::Init(MeshCR mesh)
+    {
+    Reset();
+
+    m_numPoints = static_cast<uint32_t>(mesh.Points().size());
+    m_points = &mesh.Points()[0];
+    m_polylines.reserve(mesh.Polylines().size());
+
+    for (auto const& polyline : mesh.Polylines())
+        {
+        IndexedPolyline indexedPolyline;
+        if (indexedPolyline.Init(polyline))
+            m_polylines.push_back(indexedPolyline);
+        }
+
+    if (IsValid())
+        {
+        m_numLines = static_cast<uint32_t>(m_polylines.size());
+        m_lines = &m_polylines[0];
+        }
+
+    return IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineArgs::Apply(Render::GraphicBuilderR gf)
+    {
+    if (IsValid())
+        gf.AddIndexedPolylines(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PolylineArgs::InitAndApply(Render::GraphicBuilderR gf, MeshCR mesh)
+    {
+    if (Init(mesh))
+        {
+        Apply(gf);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineArgs::Transform(TransformCR tf)
+    {
+    for (uint32_t i = 0; i < m_numPoints; i++)
+        {
+        FPoint3d fpt = m_points[i];
+        DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+        tf.Multiply(dpt);
+        fpt.x = dpt.x;
+        fpt.y = dpt.y;
+        fpt.z = dpt.z;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams)
+    {
+    m_graphicParams = gfParams;
+    m_geometryParamsValid = nullptr != geomParams;
+    if (m_geometryParamsValid)
+        m_geometryParams = *geomParams;
+    else
+        m_geometryParams = GeometryParams();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                1/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
+    {
+    TriMeshArgs rasterTile;
+
+    // corners
+    // [0] [1]
+    // [2] [3]
+    FPoint3d vertex[4];
+    for (uint32_t i = 0; i < 4; ++i)
+        {
+        vertex[i].x = corners.m_pts[i].x;
+        vertex[i].y = corners.m_pts[i].y;
+        vertex[i].z = corners.m_pts[i].z;
+        }
+
+    rasterTile.m_points = vertex;
+    rasterTile.m_numPoints = 4;
+
+    static int32_t indices[] = {0,1,2,2,1,3};
+    rasterTile.m_numIndices = 6;
+    rasterTile.m_vertIndex = indices;
+    
+    static FPoint2d textUV[] = 
+        {
+            {0.0f, 0.0f},
+            {1.0f, 0.0f},
+            {0.0f, 1.0f},
+            {1.0f, 1.0f},
+        };
+
+    rasterTile.m_textureUV = textUV;
+    rasterTile.m_texture = const_cast<Render::Texture*>(&tile);
+
+    _AddTriMesh(rasterTile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
+    _AddCurveVector(*curve, filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddArc(ellipse, isEllipse, filled);
+        }
+    else
+        {
+        auto ell = ellipse;
+        ell.center.z = zDepth;
+        _AddArc(ell, isEllipse, filled);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
+    {
+    CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
+    if (filled && !isEllipse && !ellipse.IsFullEllipse())
+        {
+        DSegment3d segment;
+        ICurvePrimitivePtr gapSegment;
+
+        ellipse.EvaluateEndPoints(segment.point[1], segment.point[0]);
+        gapSegment = ICurvePrimitive::CreateLine(segment);
+        gapSegment->SetMarkerBit(ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve, true);
+        curve->push_back(gapSegment);
+        }
+
+    _AddCurveVector(*curve, filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddLineString2d(int numPoints, DPoint2dCP points, double priority)
+    {
+    std::valarray<DPoint3d> pts3d(numPoints);
+    copy2dTo3d(pts3d, points, priority);
+    _AddLineString(numPoints, &pts3d[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddLineString(int numPoints, DPoint3dCP points)
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
+    _AddCurveVector(*curve, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddPointString2d(int numPoints, DPoint2dCP points, double priority)
+    {
+    std::valarray<DPoint3d> pts3d(numPoints);
+    copy2dTo3d(pts3d, points, priority);
+    _AddPointString(numPoints, &pts3d[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddPointString(int numPoints, DPoint3dCP points)
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
+    _AddCurveVector(*curve, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddPolyface(PolyfaceQueryCR meshDataIn, bool filled)
+    {
+    m_geomList.AddPolyface(meshDataIn, filled, GetDisplayParams(), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddBody(IBRepEntityCR entity)
+    {
+    m_geomList.AddBody(entity, GetDisplayParams(), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddShape2d(int numPoints, DPoint2dCP points, bool filled, double priority)
+    {
+    std::valarray<DPoint3d> pts3d(numPoints);
+    copy2dTo3d(numPoints, &pts3d[0], points, priority);
+    _AddShape(numPoints, &pts3d[0], filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTextString(TextStringCR text)
+    {
+    m_geomList.AddTextString(text, GetDisplayParams(true), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   06/03
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTextString2d(TextStringCR text, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddTextString(text);
+        }
+    else
+        {
+        TextStringPtr ts = text.Clone();
+        auto origin = ts->GetOrigin();
+        origin.z = zDepth;
+        ts->SetOrigin(origin);
+        _AddTextString(*ts);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
+    {
+    if (1 == usageFlags) // represents thickened line...
+        {
+        int nPt = 0;
+        auto tmpPts = reinterpret_cast<DPoint3dP>(_alloca((numPoints+1)*sizeof(DPoint3d)));
+        
+        for (int iPtS1 = 0; iPtS1 < numPoints; iPtS1 += 2)
+            tmpPts[nPt++] = points[iPtS1];
+
+        for (int iPtS2 = numPoints-1; iPtS2 > 0; iPtS2 -= 2)
+            tmpPts[nPt++] = points[iPtS2];
+
+        tmpPts[nPt] = tmpPts[0]; // Add closure point...simplifies drop of extrude thickness
+
+        _AddShape(numPoints+1, tmpPts, true);
+        }
+    else
+        {
+        // spew triangles
+        for (int iPt = 0; iPt < numPoints-2; iPt++)
+            _AddShape(3, points+iPt, true);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double priority)
+    {
+    std::valarray<DPoint3d> pts3d(numPoints);
+    copy2dTo3d(pts3d, points, priority);
+    _AddTriStrip(numPoints, &pts3d[0], usageFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
+    {
+    m_geomList.AddSolidPrimitive(primitive, GetDisplayParams(), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddCurveVector(CurveVectorCR curves, bool isFilled)
+    {
+    m_geomList.AddCurveVector(curves, isFilled, GetDisplayParams(), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddCurveVector(curves, isFilled);
+        }
+    else
+        {
+        Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
+        auto cv = curves.Clone(tf);
+        _AddCurveVector(*cv, isFilled);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
+    {
+    CurveVectorPtr cv = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
+    _AddCurveVector(*cv, filled);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double priority)
+    {
+    double zDepth = Target::DepthFromDisplayPriority(static_cast<int32_t>(priority));
+    if (0.0 == zDepth)
+        {
+        _AddBSplineCurve(bcurve, filled);
+        }
+    else
+        {
+        MSBsplineCurve bs;
+        bs.CopyFrom(bcurve);
+        int nPoles = bs.GetNumPoles();
+        DPoint3d* poles = bs.GetPoleP();
+        for (int i = 0; i < nPoles; i++)
+            poles[i].z = zDepth;
+
+        _AddBSplineCurve(bs, filled);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/03
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
+    {
+    m_geomList.AddSurface(surface, GetDisplayParams(), GetLocalToWorld());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   07/04
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
+    {
+    BeAssert("TODO");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTriMesh(TriMeshArgs const& args)
+    {
+    PrimitivePtr primitive = m_system._CreatePrimitive(args, GetPrimitiveDisplayParams());
+    BeAssert(primitive.IsValid());
+    if (primitive.IsValid())
+        m_primitives.Add(*primitive);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddIndexedPolylines(IndexedPolylineArgs const& args)
+    {
+    PrimitivePtr primitive = m_system._CreatePrimitive(args, GetPrimitiveDisplayParams());
+    BeAssert(primitive.IsValid());
+    if (primitive.IsValid())
+        m_primitives.Add(*primitive);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors)
+    {
+    BeAssert(false && "###TODO");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors)
+    {
+    BeAssert(false && "###TODO");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddSubGraphic(Graphic&, TransformCR, GraphicParamsCR, ClipVectorCP)
+    {
+    BeAssert(false && "NOOO....");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR, ClipVectorCP clip) const
+    {
+    BeAssert(false && "NOOO....");
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt PrimitiveBuilder::_Close()
+    {
+    // ###TODO: Once we separate the low-level primitives from the high-level primitives, this "closing" state can go away...
+    BeAssert(!IsClosing());
+    if (IsOpen())
+        {
+        m_state = State::Closing;
+        if (!m_geomList.IsEmpty())
+            {
+            // ###TODO: Similar to above...
+            BeAssert(nullptr != dynamic_cast<GraphicP>(this));
+            GraphicBuilder graphicBuilder(*dynamic_cast<GraphicP>(this), *this);
+            GeometryOptions options;
+            m_geomList.SaveToGraphic(graphicBuilder, m_system, options);
+            }
+        }
+
+    m_geomList.Clear();
+    m_state = State::Closed;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PrimitivePtr PrimitiveBuilder::_ToPrimitive()
+    {
+    switch (m_primitives.size())
+        {
+        case 0:
+            return nullptr;
+        case 1:
+            return *m_primitives.begin();
+        default:
+            return m_system._CreatePrimitive(std::move(m_primitives), &GetLocalToWorld());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCR PrimitiveBuilder::GetDisplayParams(bool ignoreLighting) const
+    {
+    return m_geomList.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Primitive::DisplayParams PrimitiveBuilder::GetPrimitiveDisplayParams() const
+    {
+    return Primitive::DisplayParams(GetGraphicParams(), GetLocalToWorld(), GetGeometryParams(), m_clip.get());
     }
 
