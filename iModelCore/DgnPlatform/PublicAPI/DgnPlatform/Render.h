@@ -1619,6 +1619,7 @@ public:
     PrimitiveList(List&& list) : m_primitives(std::move(list)) { }
 
     void Add(PrimitiveR primitive) { m_primitives.push_back(&primitive); }
+    void Add(PrimitivePtr primitive) { BeAssert(primitive.IsValid()); if (primitive.IsValid()) Add(*primitive); }
 
     typedef List::const_iterator const_iterator;
 

@@ -219,8 +219,6 @@ static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we 
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
-static Render::GraphicSet s_unusedDummyGraphicSet;
-
 END_UNNAMED_NAMESPACE
 
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
@@ -1969,7 +1967,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement3dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
@@ -2001,7 +1998,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement2dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:

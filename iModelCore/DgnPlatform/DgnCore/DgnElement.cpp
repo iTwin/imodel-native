@@ -3580,11 +3580,6 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 void  GeometricElement::_OnDeleted() const 
     {
     T_Super::_OnDeleted();
-    if (m_graphics.IsEmpty())
-        return;
-        
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3592,12 +3587,6 @@ void  GeometricElement::_OnDeleted() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_OnAppliedDelete() const 
     {
-    T_Super::_OnAppliedDelete();
-    if (m_graphics.IsEmpty())
-        return;
-        
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3616,11 +3605,6 @@ void GeometricElement::_OnUpdateFinished() const
     {
     T_Super::_OnUpdateFinished(); 
     T_HOST.GetTxnAdmin()._OnGraphicElementAdded(GetDgnDb(), m_elementId);
-
-    if (m_graphics.IsEmpty())
-        return;
-    T_HOST.GetTxnAdmin()._OnGraphicsRemoved(m_graphics);
-    m_graphics.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**

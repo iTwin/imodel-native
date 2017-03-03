@@ -115,7 +115,6 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
-    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
@@ -320,7 +319,6 @@ public:
 
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
-    Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(branch, trans, clips);}

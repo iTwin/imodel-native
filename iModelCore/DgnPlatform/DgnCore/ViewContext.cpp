@@ -293,10 +293,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
         pixelSize = m_viewport->GetPixelSizeAtPoint(&origin);
         }
 
-    Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
-    if (!graphic.IsValid())
-        graphic = _StrokeGeometry(source, pixelSize);
-
+    Render::GraphicPtr graphic = _StrokeGeometry(source, pixelSize);
     if (!graphic.IsValid())
         return ERROR;
 
@@ -358,23 +355,17 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
         }
 
     BeAssert(isSimplify || nullptr != m_viewport);
-    Render::GraphicPtr partGraphic = (isSimplify ? nullptr : partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()));
 
-    if (!partGraphic.IsValid())
-        {
-        GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
+    GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
-        auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
-        partGraphic = partBuilder;
-        collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
-            
-        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
-            return nullptr;
+    auto partBuilder = graphic.CreateSubGraphic(subToGraphic);
+    Render::GraphicPtr partGraphic = partBuilder;
+    collection.Draw(*partBuilder, *this, geomParams, false, partGeometry.get());
+        
+    if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+        return nullptr;
 
-        partBuilder->Close(); 
-        if (!isSimplify) // NOTE: QvGraphic is the only Render::Graphic that doesn't sub-class SimplifyGraphic currently...and this element graphic cache probably goes away with mesh tiles anyway...
-            partGeometry->Graphics().Save(*partGraphic);
-        }
+    partBuilder->Close(); 
 
     // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
     GraphicParams graphicParams;

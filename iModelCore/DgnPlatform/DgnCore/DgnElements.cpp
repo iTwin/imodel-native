@@ -1682,26 +1682,6 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    m_tree->VisitElements([&viewport](DgnElementCR el)
-        {
-        auto geom = el.ToGeometrySource();
-        if (nullptr != geom)
-            {
-            geom->Graphics().DropFor(viewport);
-            return;
-            }
-
-        DgnGeometryPartCP part = el.ToGeometryPart();
-        if (nullptr != part)
-            part->Graphics().DropFor(viewport);
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SessionR SessionManager::GetCurrent() const

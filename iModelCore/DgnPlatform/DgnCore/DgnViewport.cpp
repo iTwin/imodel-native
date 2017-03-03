@@ -26,11 +26,7 @@ void DgnViewport::SuspendViewport()
         RenderQueue().WaitForIdle();
 
     if (m_viewController.IsValid())
-        {
         m_viewController->RequestAbort(true);
-        m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-        }
 
     SetRenderTarget(nullptr);
     }
@@ -1170,35 +1166,6 @@ void DgnViewport::ClearUndo()
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
     ClearUndo();
-
-    if (m_viewController.IsValid())
-        {
-        bool dropGraphics = true;
-
-        if (m_viewController->GetViewDefinition().GetElementClassId() == viewController.GetViewDefinition().GetElementClassId())
-            {
-            ViewFlags oldFlags = m_viewController->GetViewFlags();
-            ViewFlags newFlags = viewController.GetViewFlags();
-
-            // Check for view flag changes that may require us to re-generate cached graphic...
-            if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
-                newFlags.ShowConstructions() == oldFlags.ShowConstructions() &&
-                newFlags.ShowText() == oldFlags.ShowText() &&
-                newFlags.ShowDimensions() == oldFlags.ShowDimensions() &&
-                newFlags.ShowFill() == oldFlags.ShowFill())
-                {
-                // Both sub-category visibility and appearance gets baked into cached graphic...
-                if (!m_viewController->GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride() && !viewController.GetViewDefinition().GetDisplayStyle().HasSubCategoryOverride())
-                    dropGraphics = false;
-                }
-            }
-
-        if (dropGraphics)
-            {
-            m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
-            m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-            }
-        }
 
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);

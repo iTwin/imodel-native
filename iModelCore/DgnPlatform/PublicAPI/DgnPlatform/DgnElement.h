@@ -15,22 +15,6 @@
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
 DEFINE_REF_COUNTED_PTR(Graphic)
-
-//=======================================================================================
-// Cached set of Render::Graphics for a GeometrySource
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct GraphicSet
-{
-    struct PtrCompare{bool operator()(Render::GraphicPtr first, Render::GraphicPtr second) const {return first.get()<second.get();}};
-    mutable bset<Render::GraphicPtr, PtrCompare, 8> m_graphics;
-    DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
-    DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
-    DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
-    void Clear() {m_graphics.clear();}
-    bool IsEmpty() const {return m_graphics.empty();}
-};
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -2036,7 +2020,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
     friend struct GeometryBuilder;
 
 protected:
-    virtual Render::GraphicSet& _Graphics() const = 0;
     virtual DgnDbR _GetSourceDgnDb() const = 0;
     virtual DgnElementCP _ToElement() const = 0;
     virtual GeometrySource2dCP _GetAsGeometrySource2d() const = 0; // Either this method or _GetAsGeometrySource3d must return non-null.
@@ -2077,7 +2060,6 @@ public:
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
-    Render::GraphicSet& Graphics() const {return _Graphics();}
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
     Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
@@ -2158,7 +2140,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 protected:
     DgnCategoryId               m_categoryId;
     GeometryStream              m_geom;
-    mutable Render::GraphicSet  m_graphics;
     mutable bool                m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
@@ -2235,7 +2216,6 @@ protected:
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
-    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DgnDbR _GetSourceDgnDb() const override final {return GetDgnDb();}
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
@@ -2307,7 +2287,6 @@ protected:
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
-    Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -3389,12 +3368,6 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-
-    //! For all loaded elements, drops any cached graphics associated with the specified viewport.
-    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
-    //! no longer reflect its state.
-    //! @param[in]      viewport The viewport for which to drop graphics
-    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 
 //=======================================================================================

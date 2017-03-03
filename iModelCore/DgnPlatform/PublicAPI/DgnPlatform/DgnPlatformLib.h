@@ -261,7 +261,6 @@ public:
             virtual void _OnNothingToUndo() {}
             virtual void _OnPrepareForUndoRedo() {}
             virtual void _OnNothingToRedo() {}
-            virtual void _OnGraphicsRemoved(Render::GraphicSet&) {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);

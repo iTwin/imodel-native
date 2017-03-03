@@ -1234,18 +1234,6 @@ DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
     return dgnModel.IsValid() ? dgnModel : LoadDgnModel(modelId);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void DgnModels::DropGraphicsForViewport(DgnViewportCR viewport)
-    {
-    for (auto iter : m_models)
-        {
-        if (iter.second.IsValid())
-            iter.second->_DropGraphicsForViewport(viewport);
-        }        
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -252,7 +252,6 @@ enum class InstancingOptions
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
 constexpr InstancingOptions s_instancingOptions = InstancingOptions::MergeIntoMeshes;
-static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -342,7 +341,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement3dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:
@@ -374,7 +372,6 @@ private:
     GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
     Placement2dCR _GetPlacement() const override { return m_placement; }
 
-    Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
     DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
 public:

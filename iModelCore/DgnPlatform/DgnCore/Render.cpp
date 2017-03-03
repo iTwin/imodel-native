@@ -292,45 +292,6 @@ Render::Queue& DgnViewport::RenderQueue()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
-    {
-    for (auto graphic : m_graphics)
-        {
-        if (graphic->IsValidFor(vp, metersPerPixel))
-            return graphic.get();
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicSet::DropFor(DgnViewportCR vp)
-    {
-    // NB: Note there can be more than one Graphic for a viewport
-    for (auto it=m_graphics.begin(); it!=m_graphics.end(); )
-        {
-        if ((*it)->IsSpecificToViewport(vp))
-            it = m_graphics.erase(it);
-        else
-            ++it;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicSet::Drop(Render::Graphic& graphic)
-    {
-    auto size = m_graphics.erase(&graphic);
-    UNUSED_VARIABLE(size);
-    BeAssert(0 != size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) 
