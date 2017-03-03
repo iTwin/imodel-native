@@ -33,12 +33,39 @@ static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, Real
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
     {
-    AzureWriteHandshake* handshake = (AzureWriteHandshake*)userp;
+    AzureHandshake* handshake = (AzureHandshake*)userp;
     if (handshake != nullptr)
         handshake->GetJsonResponse().append((char*)contents, size * nmemb);
     else
         ((Utf8String*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
+    }
+
+static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, void *pClient)
+    {
+    if (NULL == pClient)
+        return 0;
+
+    RealityDataFileDownload *fileDown = (RealityDataFileDownload *)pClient;
+    if (!(fileDown->GetFileStream().IsOpen()))
+        {
+        if (fileDown->iAppend)
+            {
+            if (fileDown->GetFileStream().Open(fileDown->GetFilename().c_str(), BeFileAccess::Write) != BeFileStatus::Success)
+                return 0;   // failure, can't open file to write
+            }
+        else
+            {
+            if (fileDown->GetFileStream().Create(fileDown->GetFilename().c_str(), true) != BeFileStatus::Success)
+                return 0;   // failure, can't open file to write
+            }
+        }
+    fileDown->iAppend += nmemb;
+    uint32_t byteWritten;
+    if (fileDown->GetFileStream().Write(&byteWritten, buffer, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
+        byteWritten = 0;
+
+    return byteWritten;
     }
 
 Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::GetServerName(); }
@@ -127,50 +154,21 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
     m_validRequestString = false;
     }
 
-void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl()
+void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
-    //https://s3mxcloudservice.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2FScene~2FProduction_Graz_3MX.3mx/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
-    Utf8String url = "https://";
-    url.append(RealityDataService::GetServerName());
-    url.append("/");
-    url.append(RealityDataService::GetWSGProtocol());
-    url.append("/Repositories/");
-    url.append(RealityDataService::GetRepoName());
-    url.append("/");
-    url.append(RealityDataService::GetSchemaName());
-    url.append("/RealityData/");
-    
-    bvector<Utf8String> lines;
-    BeStringUtilities::Split(m_id.c_str(), "~", lines);
-    Utf8String root = lines[0];
-
-    url.append(root);
-    url.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true ");
-    m_allowAzureRedirection = false;
-
-    WSGURL wsgurl = WSGURL(url);
-
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, RealityDataService::GetVerifyPeer());
-
-    Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || (!Json::Reader::Parse(jsonString, instances) || (!instances.isMember("errorMessage") && !instances.isMember("instances")) || instances.isMember("errorMessage")))
-        return;
-
-    for (auto instance : instances["instances"])
+    if(m_handshakeRequest == nullptr)
         {
-        if (instance.isMember("properties") && instance["properties"].isMember("Url") && !instance["properties"]["Url"].isNull())
-            {
-            bvector<Utf8String> parts;
-            Utf8String AzureUrl = instance["properties"]["Url"].asCString();
-            BeStringUtilities::Split(AzureUrl.c_str(), "\?", parts);
-            //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
-            m_azureServer = parts[0];
-            m_azureToken = parts[1];
-            m_allowAzureRedirection = true;
-            }
+        bvector<Utf8String> lines;
+        BeStringUtilities::Split(m_id.c_str(), "~", lines);
+        Utf8String root = lines[0];
+
+        m_handshakeRequest = new AzureHandshake(root, false);
         }
+
+    RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
+    if (m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
+        m_allowAzureRedirection = true;
+           
     }
 
 /*void RealityDataDocumentContentByIdRequest::SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl)
@@ -570,6 +568,22 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     delete buf;
     }
 
+void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
+    {
+    //GetAzureRedirectionRequestUrl();
+    m_httpRequestString = m_azureServer;
+    m_httpRequestString.append("?");
+    m_httpRequestString.append(m_azureToken);
+    m_httpRequestString.append("&restype=container&comp=list");
+    if(m_marker.length() > 0)
+        {
+        m_httpRequestString.append("&marker=");
+        m_httpRequestString.append(m_marker);
+        }
+
+    m_validRequestString = true;
+    }
+
 RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties)
     { 
     m_id = realityDataId; 
@@ -619,14 +633,14 @@ bool RealityDataFileUpload::FinishedSending()
     if(!m_singleChunk)
         return !m_moreToSend; 
     else
-        return (m_uploadProgress >= m_fileSize);
+        return (m_transferProgress >= m_fileSize);
     }
 
-void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
+void RealityDataFileUpload::UpdateTransferedSize()//uint32_t amount, void* ptr)
     {
-    if(m_uploadProgress < m_fileSize - 1)
+    if(m_transferProgress < m_fileSize - 1)
         {
-        uint64_t uploadStep = m_uploadProgress + m_chunkSize;
+        uint64_t uploadStep = m_transferProgress + m_chunkSize;
         if(m_fileSize > uploadStep)
             {
         m_chunkStop = uploadStep;
@@ -634,7 +648,7 @@ void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
         else
             {
             m_chunkStop = m_fileSize;
-            m_chunkSize = m_fileSize - m_uploadProgress;
+            m_chunkSize = m_fileSize - m_transferProgress;
             }
 
         if(!m_singleChunk)
@@ -647,7 +661,7 @@ void RealityDataFileUpload::UpdateUploadedSize()//uint32_t amount, void* ptr)
             m_blockList.append(m_chunkNumberString);
             m_blockList.append("</Latest>");
             }
-        m_uploadProgress = m_chunkStop;
+        m_transferProgress = m_chunkStop;
         ++m_chunkNumber;
         }
     else if (!m_singleChunk)
@@ -675,19 +689,32 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
     return bytesRead;
     }
 
-void RealityDataFileUpload::StartTimer()
-    {
-    m_startTime = std::time(nullptr);
-    }
-
 void RealityDataFileUpload::Retry()
     {
     CloseFile();
-    m_chunkSize = 4*1024*1024;
+    m_chunkSize = CHUNK_SIZE;
     ReadyFile();
     }
 
-void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
+void RealityDataFileDownload::Retry()
+    {
+    iAppend = 0;
+    CloseFile();
+    ReadyFile();
+    }
+
+void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
+    {
+    m_httpRequestString = m_azureServer;
+    m_httpRequestString.append(m_fileUrl);
+    m_httpRequestString.append("?");
+    m_httpRequestString.ReplaceAll("//", "/"); 
+    m_validRequestString = true;
+
+    m_requestHeader.clear();
+    }
+
+void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     {
     //https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/RealityData/cc5421e5-a80e-469f-a459-8c76da351fe5/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
     m_serverName = RealityDataService::GetServerName();
@@ -700,22 +727,21 @@ void AzureWriteHandshake::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(RealityDataService::GetSchemaName());
     m_httpRequestString.append("/RealityData/");
     m_httpRequestString.append(m_id);
-    m_httpRequestString.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+'Write'&api.singleurlperinstance=true");
+    m_httpRequestString.append("/FileAccess.FileAccessKey?$filter=Permissions+eq+");
+    if(m_isWrite)
+        m_httpRequestString.append("'Write'");
+    else
+        m_httpRequestString.append("'Read'");
+    m_httpRequestString.append("&api.singleurlperinstance=true");
     }
 
-UploadReport::~UploadReport()
-    {
-    for (int i = 0; i < results.size(); ++i)
-        delete (results[i]);
-    }
-
-void UploadReport::ToXml(Utf8StringR report)
+void TransferReport::ToXml(Utf8StringR report)
     {
     BeXmlWriterPtr writer = BeXmlWriter::Create();
     BeAssert(writer.IsValid());
     writer->SetIndentation(2);
 
-    writer->WriteElementStart("RealityDataService_UploadReport");
+    writer->WriteElementStart("RealityDataService_Report");
         {
         writer->WriteAttribute("Date", Utf8String(DateTime::GetCurrentTimeUtc().ToString()).c_str());
 
@@ -723,11 +749,11 @@ void UploadReport::ToXml(Utf8StringR report)
             {
             writer->WriteElementStart("File");
                 {
-                UploadResult* ur = results[i];
-                writer->WriteAttribute("FileName", ur->name.c_str());
-                writer->WriteAttribute("timeSpent", (long)ur->timeSpent);
-                writer->WriteAttribute("CURLcode", ur->errorCode);
-                writer->WriteAttribute("uploadProgress", ur->uploadProgress);
+                TransferResult* tr = results[i];
+                writer->WriteAttribute("FileName", tr->name.c_str());
+                writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
+                writer->WriteAttribute("CURLcode", tr->errorCode);
+                writer->WriteAttribute("progress", tr->progress);
                 }
             writer->WriteElementEnd();
             }
@@ -895,10 +921,10 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
+BentleyStatus AzureHandshake::ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer)
     {
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(json, instances);
+    Json::Reader::Parse(m_jsonResponse, instances);
 
     Json::Value instance;
     
@@ -911,12 +937,12 @@ BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
         bvector<Utf8String> parts;
         BeStringUtilities::Split(url.c_str(), "\?", parts);
         //https://realityblobdeveussa01.blob.core.windows.net/cc5421e5-a80e-469f-a459-8c76da351fe5?sv=2015-04-05&sr=c&sig=6vtz14nV4FsCidf9XCWm%2FAS48%2BJozxk3zpd1FKwUmnI%3D&se=2017-02-10T15%3A36%3A43Z&sp=r
-        m_azureServer = parts[0];
-        m_azureToken = parts[1];
+        azureServer = parts[0];
+        azureToken = parts[1];
 
         DateTime tokenExpiry = DateTime::GetCurrentTimeUtc();
         parts.clear();
-        BeStringUtilities::Split(m_azureToken.c_str(), "&", parts);
+        BeStringUtilities::Split(azureToken.c_str(), "&", parts);
         for(Utf8String arg : parts)
             {
             if(arg.StartsWith("se=")) // se=2017-03-01T16%3A21%3A06Z
@@ -928,9 +954,9 @@ BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
                 }
             }
 
-        tokenExpiry.ToUnixMilliseconds(m_azureTokenTimer);
+        tokenExpiry.ToUnixMilliseconds(tokenTimer);
         
-        m_azureTokenTimer -= (10 * 60 * 1000); // renew token 10 minutes before it expires
+        tokenTimer -= (10 * 60 * 1000); // renew token 10 minutes before it expires
 
         return BentleyStatus::SUCCESS;
         }
@@ -938,18 +964,18 @@ BentleyStatus RealityDataServiceUpload::ParseHandshakeResponse(Utf8String json)
         return BentleyStatus::ERROR;
     }
 
-UploadReport* RealityDataServiceUpload::Perform()
+TransferReport* RealityDataServiceTransfer::Perform()
     {
-    m_currentUploadedAmount = 0;
+    m_currentTransferedAmount = 0;
     m_progress = 0.0;
 
-    m_ulReport = UploadReport();
+    m_report = TransferReport();
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
     m_curEntry = 0;
 
-    for (int i = 0; i < min(MAX_NB_CONNECTIONS, (int)m_filesToUpload.size()); ++i)
+    for (int i = 0; i < min(MAX_NB_CONNECTIONS, (int)m_filesToTransfer.size()); ++i)
         {
         SetupNextEntry();
         }   
@@ -996,45 +1022,54 @@ UploadReport* RealityDataServiceUpload::Perform()
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
 
+                RealityDataFileTransfer *fileTrans = (RealityDataFileTransfer *)pClient;
                 RealityDataFileUpload *fileUp = (RealityDataFileUpload *)pClient;
                 
                 // Retry on error
                 if (msg->data.result == 56 || msg->data.result == 28)     // Recv failure, try again
                     {
-                    if (fileUp != nullptr && fileUp->nbRetry < 5)
+                    if (fileTrans != nullptr && fileTrans->nbRetry < 5)
                         {
-                        ++fileUp->nbRetry;
-                        fileUp->Retry();
-                        SetupCurlforFile((RealityDataUrl*)(fileUp), 0);
+                        ++fileTrans->nbRetry;
+                        fileTrans->Retry();
+                        if(fileUp != nullptr)
+                            UpdateTransferAmount((int64_t)fileTrans->GetTransferedSize() * -1);
+                        SetupCurlforFile((RealityDataUrl*)(fileTrans), 0);
                         still_running++;
                         }
                     else
                         {
                         // Maximun retry done, return error.
-                        ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                         }
                     }
-                else if(fileUp != nullptr)
+                else if(fileTrans != nullptr)
                     {
                     if(msg->data.result == CURLE_OK)
                         {
-                        if(!fileUp->FinishedSending())
+                        if(fileUp != nullptr && !fileUp->FinishedSending())
                             {
-                            if(m_pProgressFunc && UpdateUploadedAmount(fileUp->GetMessageSize()))
-                                m_pProgressFunc(fileUp->GetFilename(), ((double)fileUp->GetUploadedSize()) / fileUp->GetFileSize(), m_progress);
+                            if(m_pProgressFunc && UpdateTransferAmount((int64_t)fileUp->GetMessageSize()))
+                                m_pProgressFunc(fileUp->GetFilename(), ((double)fileUp->GetTransferedSize()) / fileUp->GetFileSize(), m_progress);
                             SetupCurlforFile(fileUp, 0);
                             still_running++;
                             }
                         else
                             {
-                            if (m_pProgressFunc && UpdateUploadedAmount(fileUp->GetMessageSize()))
-                                m_pProgressFunc(fileUp->GetFilename(), 1.0, m_progress);
-                            ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            if (m_pProgressFunc) 
+                                {
+                                if(fileUp!= nullptr)
+                                    UpdateTransferAmount((int64_t)fileUp->GetMessageSize());
+                                else
+                                    UpdateTransferAmount(1);
+                                m_pProgressFunc(fileTrans->GetFilename(), 1.0, m_progress);
+                                }
+                            ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                             fileUp->CloseFile();
                             }  
                         }
                     else
-                        ReportStatus((int)fileUp->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                     }
                            
                     
@@ -1046,7 +1081,7 @@ UploadReport* RealityDataServiceUpload::Perform()
                 ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
                 }
 
-            if (m_curEntry < (int)m_filesToUpload.size() && still_running < MAX_NB_CONNECTIONS)
+            if (m_curEntry < (int)m_filesToTransfer.size() && still_running < MAX_NB_CONNECTIONS)
                 {
                 if (SetupNextEntry())
                     still_running++;
@@ -1055,19 +1090,19 @@ UploadReport* RealityDataServiceUpload::Perform()
 
         } while (still_running);
 
-    return &m_ulReport;
+    return &m_report;
     }
 
-bool RealityDataServiceUpload::SetupNextEntry()
+bool RealityDataServiceTransfer::SetupNextEntry()
     {
     if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
         return false;
 
-    if (m_curEntry < (int)m_filesToUpload.size())
+    if (m_curEntry < (int)m_filesToTransfer.size())
         {
-        RealityDataFileUpload* fUp = m_filesToUpload[m_curEntry];
-        fUp->ReadyFile();
-        SetupCurlforFile((RealityDataUrl*)(fUp), 0);//SetupCurlandFile(&m_pEntries[m_curEntry]);
+        RealityDataFileTransfer* fTrans = (RealityDataFileTransfer*)m_filesToTransfer[m_curEntry];
+        fTrans->ReadyFile();
+        SetupCurlforFile((RealityDataUrl*)(fTrans), 0);
         ++m_curEntry;
         }
     else
@@ -1076,24 +1111,27 @@ bool RealityDataServiceUpload::SetupNextEntry()
     return true;
     }
 
-void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int verifyPeer)
+void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, int verifyPeer)
     {
     // If cancel requested, don't queue new files
-    /*if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
-        return SetupCurlStatus::Success;*/
+    if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
+        return;
 
     int code = 2; //BodyNoToken
-    AzureWriteHandshake* handshake = dynamic_cast<AzureWriteHandshake*>(request);
-    RealityDataFileUpload* fileUpload = dynamic_cast<RealityDataFileUpload*>(request);
+    AzureHandshake* handshake = dynamic_cast<AzureHandshake*>(request);
+    RealityDataFileTransfer* fileTransfer = dynamic_cast<RealityDataFileTransfer*>(request);
     if (handshake != nullptr)
         code = 0;
-    else if(fileUpload != nullptr)
+    else if(fileTransfer != nullptr)
         {
-        fileUpload->SetAzureToken(GetAzureToken());
-        fileUpload->UpdateUploadedSize();
+        fileTransfer->SetAzureToken(GetAzureToken());
+        fileTransfer->UpdateTransferedSize();
         }
     else
         return; //unexpected request
+
+    RealityDataFileUpload* fileUpload = dynamic_cast<RealityDataFileUpload*>(request);
+    RealityDataFileDownload* fileDownload = dynamic_cast<RealityDataFileDownload*>(request);
 
     CURL *pCurl = PrepareCurl(*request, code, verifyPeer, nullptr);
     if (pCurl)
@@ -1129,6 +1167,13 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
             curl_easy_setopt(pCurl, CURLOPT_INFILESIZE_LARGE, fileUpload->GetMessageSize());
             fileUpload->StartTimer();
             }
+        else if (fileDownload != nullptr)
+            {
+            /* Define our callback to get called when there's data to be written */
+            curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
+            /* Set a pointer to our struct to pass to the callback */
+            curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fileDownload);
+            }
         else if (handshake != nullptr)
             {
             /* Define our callback to get called when there's data to be written */
@@ -1142,7 +1187,7 @@ void RealityDataServiceUpload::SetupCurlforFile(RealityDataUrl* request, int ver
     }
 
 
-void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
+void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK))
         return;
@@ -1150,38 +1195,38 @@ void RealityDataServiceUpload::ReportStatus(int index, void *pClient, int ErrorC
     if (m_pStatusFunc)
         m_pStatusFunc(index, pClient, ErrorCode, pMsg);
 
-    RealityDataFileUpload* pEntry = (RealityDataFileUpload*)pClient;
+    RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
     if(pEntry == nullptr)
         return;
 
-    UploadResult* ur = new UploadResult();
-    ur->errorCode = ErrorCode;
-    ur->uploadProgress = (100 * pEntry->GetUploadedSize() / pEntry->GetFileSize());
-    ur->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
-    ur->name = pEntry->GetFilename();
-    m_ulReport.results.push_back(ur);
+    TransferResult* tr = new TransferResult();
+    tr->errorCode = ErrorCode;
+    tr->progress = (100 * pEntry->GetTransferedSize() / pEntry->GetFileSize());
+    tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
+    tr->name = pEntry->GetFilename();
+    m_report.results.push_back(tr);
 
     delete pEntry;
     }
 
-Utf8String RealityDataServiceUpload::GetAzureToken()
+Utf8String RealityDataServiceTransfer::GetAzureToken()
     {
     int64_t currentTime; 
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
     if ((m_azureTokenTimer - currentTime) < (0))
         {
         RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
-        if(ParseHandshakeResponse(m_handshakeRequest->GetJsonResponse()) != BentleyStatus::SUCCESS)
+        if(m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) != BentleyStatus::SUCCESS)
             ReportStatus(0, nullptr, -1, "Failure retrieving Azure token");
         }
     return m_azureToken;
     }
 
-bool RealityDataServiceUpload::UpdateUploadedAmount(uint64_t uploadedAmount)
+bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
     {
-    m_currentUploadedAmount += uploadedAmount;
-    m_progress = ((double)m_currentUploadedAmount) / m_fullUploadSize;
+    m_currentTransferedAmount += transferedAmount;
+    m_progress = ((double)m_currentTransferedAmount) / m_fullTransferSize;
     bool sendProgressCallback = false;
     if(m_progress > m_progressThreshold)
         {
@@ -1192,12 +1237,20 @@ bool RealityDataServiceUpload::UpdateUploadedAmount(uint64_t uploadedAmount)
     }
 
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
-    m_id(id), m_overwrite(overwrite), m_azureTokenTimer(0), m_progress(0.0), m_progressStep(0.01), m_progressThreshold(0.01),
-    m_currentUploadedAmount(0), m_fullUploadSize(0), m_onlyReportErrors(false)
+    m_overwrite(overwrite)
     { 
+    m_id = id;
+    m_azureTokenTimer = 0;
+    m_progress = 0.0; 
+    m_progressStep = 0.01; 
+    m_progressThreshold = 0.01;
+    m_onlyReportErrors = false; 
+    m_currentTransferedAmount = 0;
+    m_fullTransferSize = 0;
+
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
-    m_handshakeRequest = new AzureWriteHandshake(m_id);
+    m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();
 
     RealityDataFileUpload* fileUp;
@@ -1223,19 +1276,62 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
                 {
                 duplicateSet.insert(fileName.GetNameUtf8());
                 fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
-                m_filesToUpload.push_back(fileUp);
-                m_fullUploadSize += fileUp->GetFileSize();
+                m_filesToTransfer.push_back(fileUp);
+                m_fullTransferSize += fileUp->GetFileSize();
                 }
             }
         }
     else if (uploadPath.DoesPathExist())
         {
         fileUp = new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
-        m_filesToUpload.push_back(fileUp);
-        m_fullUploadSize = fileUp->GetFileSize();
+        m_filesToTransfer.push_back(fileUp);
+        m_fullTransferSize = fileUp->GetFileSize();
         }
 
     m_pCurlHandle = curl_multi_init();
+    }
+
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String id)
+    {
+    m_id = id;
+    m_azureTokenTimer = 0;
+    m_progress = 0.0;
+    m_progressStep = 0.01;
+    m_progressThreshold = 0.01;
+    m_onlyReportErrors = false;
+    m_currentTransferedAmount = 0;
+
+    m_handshakeRequest = new AzureHandshake(m_id, true);
+    GetAzureToken();
+
+    if(id.Contains("/") || id.Contains("\\") || id.Contains("~2F"))
+        DownloadFromNavNode(targetLocation, id);
+    else
+        DownloadFullRepo(targetLocation,id);
+    m_fullTransferSize = m_filesToTransfer.size();
+    }
+
+void RealityDataServiceDownload::DownloadFullRepo(BeFileName targetLocation, Utf8String id)
+    {
+    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(id);
+    RequestStatus status;
+    bvector<Utf8String> filesInRepo = RealityDataService::Request(rdsRequest, status);
+    BeFileName downloadLocation;
+    WString wPath;
+
+    for( int i = 0; i < filesInRepo.size(); ++i)
+        {
+        downloadLocation = targetLocation;
+        BeStringUtilities::Utf8ToWChar(wPath, filesInRepo[i].c_str());
+        downloadLocation.AppendToPath(wPath.c_str());
+
+        RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i);
+        }
+    }
+
+void RealityDataServiceDownload::DownloadFromNavNode(BeFileName targetLocation, Utf8String id)  
+    {
+
     }
 
 Utf8String RealityDataService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
@@ -1280,20 +1376,73 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
     }
 
 void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
-{
+    {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
 
     if (status != RequestStatus::SUCCESS)
-    {
+        {
         std::cout << "RealityDataEnterpriseStat failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         status = RequestStatus::ERROR;
-    }
+        }
 
     RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
-}
+    }
+    
+bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& request, RequestStatus& status)
+    {
+    bvector<Utf8String> documents = bvector<Utf8String>();
+    request.GetAzureRedirectionRequestUrl();
+    int64_t timer = request.GetTokenTimer();
 
+    bool nextMarker;
+    int stat = RequestType::BodyNoToken;
+    WStringP value;
+
+    do
+        {
+        WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+        Utf8String xmlResponse = WSGRequest::GetInstance().PerformAzureRequest(request, stat, RealityDataService::GetVerifyPeer());
+
+        BeXmlStatus xmlStatus = BEXML_Success;
+        BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str());
+        BeAssert(reader.IsValid());
+        Utf8String xmlNodeName;
+
+        value = new WString();
+
+        while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "Name", false, nullptr)))
+            {
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
+            documents.push_back(Utf8String(value->c_str()));
+            }
+        nextMarker = false;
+        //the previous loop reaches the end of the file, so to find the "NextMarker" element, we need to restart from the top
+        reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str()); 
+        if((IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "NextMarker", false, nullptr))))
+            {
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
+            if(value->length() > 0)
+                {
+                request.SetMarker(Utf8String(value->c_str()));
+                nextMarker = true;
+                }
+            }
+
+        int64_t currentTime;
+        DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
+        if(timer < currentTime)
+            {
+            request.GetAzureRedirectionRequestUrl();
+            timer = request.GetTokenTimer();
+            }
+
+        }while(nextMarker);
+
+    delete value;
+    return documents;
+    }
 
 SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {

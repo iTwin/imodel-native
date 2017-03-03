@@ -57,6 +57,7 @@ Utf8String RealityDataConsole::Choice(bvector<Utf8String> options)
     do
         {
         std::getline(std::cin, str);
+        args.clear();
         BeStringUtilities::ParseArguments(args, Utf8CP(str.c_str()));
         if(args.size() != 2)
             {
@@ -117,7 +118,7 @@ void RealityDataConsole::ConfigureServer()
             std::cout << "invalid answer" << std::endl;
         }
 
-    std::cout << "Retrieving version information. One moment..." << std::endl;
+    std::cout << "Retrieving version information. One moment..." << std::endl << std::endl;
 
     m_server = new WSGServer(server, verifyCertificate);
     Utf8String version = m_server->GetVersion();
@@ -143,6 +144,8 @@ void RealityDataConsole::ConfigureServer()
 
     if(repo.length() > 0)
         {
+        std::cout << std::endl;
+
         bvector<Utf8String> schemaNames = m_server->GetSchemaNames(repo);
 
         if (schemaNames.size() == 0)
