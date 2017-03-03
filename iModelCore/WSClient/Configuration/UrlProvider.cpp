@@ -38,6 +38,22 @@ uint32_t s_regionsId[3] = {
 // Managed urls
 bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMCollaborationServices(
+    "BIMCollaborationServices",
+    "https://dev-dgndbserver-eus.cloudapp.net",
+    "https://qa-dgndbserver-eus.cloudapp.net",
+    "https://connect-dgndbserver.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
+    "BIMReviewShare",
+    "https://dev-bimreviewshare.bentley.com",
+    "https://qa-bimreviewshare.bentley.com",
+    "https://bimreviewshare.bentley.com",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
@@ -173,14 +189,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "connect-xmppcollab.bentley.com",
     &s_urlRegistry
     );
-
-const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
-    "BIMReviewShare",
-    "https://dev-bimreviewshare.bentley.com",
-    "https://qa-bimreviewshare.bentley.com",
-    "https://bimreviewshare.bentley.com",
-    &s_urlRegistry
-);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
