@@ -163,7 +163,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 
 private:
     void Destroy();
-    BeSQLite::DbResult ValidateSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
     BeSQLite::DbResult PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
     DgnDbStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8);
 
@@ -256,7 +255,14 @@ public:
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
-    //! Imports a set of EC Schemas into the Bim
+    //! Validates EC Schemas against the versions held in the DgnDb
+    //! @param[in] schemas Schemas to be validated.
+    //! @return BE_SQLITE_OK if all schemas are valid. Depending on the validation issue
+    //! returns one of the error states - BE_SQLITE_ERROR_SchemaIncompatible, 
+    //! BE_SQLITE_ERROR_SchemaUpgradeRequired or BE_SQLITE_ERROR_SchemaUpgradeRecommended
+    BeSQLite::DbResult ValidateSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
+
+    //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 
     //! @remarks Only used for cases where the schemas are NOT paired with a domain. @see DgnDomain::ImportSchema().
     //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 

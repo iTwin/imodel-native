@@ -22,7 +22,7 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/BisCore.01.01.ecschema.xml
+                ECSchemas/BisCore.01.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
                 ECSchemas/Markup.01.00.ecschema.xml
             </Files>

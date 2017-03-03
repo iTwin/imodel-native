@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
-#define BIS_ECSCHEMA_READ_VER 1
-#define BIS_ECSCHEMA_WRITE_VER 0
-#define BIS_ECSCHEMA_MINOR_VER 0
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -130,33 +126,6 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 
         ++m_i;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 02/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaReadContextPtr readBisCoreSchema(DgnDbR db)
-    {
-    ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
-   
-    BeFileName schemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    schemaPath.AppendToPath(L"ECSchemas");
-
-    BeFileName dgnSchemaPath = schemaPath;
-    dgnSchemaPath.AppendToPath(L"Dgn");
-    schemaContext->AddSchemaPath(dgnSchemaPath);
-
-    BeFileName standardSchemaPath = schemaPath;
-    standardSchemaPath.AppendToPath(L"Standard");
-    schemaContext->AddSchemaPath(standardSchemaPath);
-
-    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
-
-    SchemaKey bisCoreSchemaKey(BIS_ECSCHEMA_NAME, BIS_ECSCHEMA_READ_VER, BIS_ECSCHEMA_WRITE_VER, BIS_ECSCHEMA_MINOR_VER);
-    ECSchemaPtr bisCoreSchema = schemaContext->LocateSchema(bisCoreSchemaKey, SchemaMatchType::LatestWriteCompatible);
-    BeAssert(bisCoreSchema != NULL);
-
-    return schemaContext;
     }
 
 #define GEOM_IN_SPATIAL_INDEX_CLAUSE " 1 = new.InSpatialIndex "
@@ -325,8 +294,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    ECSchemaReadContextPtr schemaContext = readBisCoreSchema(*this);
-    if (DgnDbStatus::Success != ImportSchemas(schemaContext->GetCache().GetSchemas()))
+    if (DgnDbStatus::Success != BisCoreDomain::ImportSchema(*this))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -540,13 +508,13 @@ DgnVersion DgnDb::GetSchemaVersion() {return m_schemaVersion;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     {
-    DbResult stat = T_Super::_VerifySchemaVersion(params);
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    DbResult result = T_Super::_VerifySchemaVersion(params);
+    if (BE_SQLITE_OK != result)
+        return result;
 
     Utf8String versionString;
-    stat = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
-    if (BE_SQLITE_ROW != stat)
+    result = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
+    if (BE_SQLITE_ROW != result)
         {
         if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbSchemaVersion::LegacyDbSchemaVersionProperty()))
             return BE_SQLITE_ERROR_ProfileTooOld; // report Graphite05 and DgnDb0601 as too old rather than invalid
@@ -559,16 +527,19 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     DgnVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool profileIsAutoUpgradable = false;
-    stat = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
-    
+    result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
     if (profileIsAutoUpgradable)
-        stat = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
+        result = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
+    if (result != BE_SQLITE_OK)
+        return result;
 
-    if (stat != BE_SQLITE_OK)
-        return stat;
+    result = BisCoreDomain::ValidateSchema(*this);
+    if (result != BE_SQLITE_OK)
+        return result;
 
-    // NEEDS_WORK: Need to reconcile profile and ECSchema versions
-    // NEEDS_WORK: Make use of "schema" and "profile" in the method names consistent. 
-    ECSchemaReadContextPtr schemaContext = readBisCoreSchema(*this);
-    return ValidateSchemas(schemaContext->GetCache().GetSchemas());
+    result = GenericDomain::ValidateSchema(*this);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    return BE_SQLITE_OK;
     }
