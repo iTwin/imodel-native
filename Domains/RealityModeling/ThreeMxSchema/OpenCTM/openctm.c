@@ -32,6 +32,9 @@
 #include "openctm.h"
 #include "internal.h"
 
+#if defined (_MSC_VER)
+    #pragma warning (disable : 4996)  // 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead.
+#endif
 
 // The C99 macro isfinite() is not supported on all platforms (specifically,
 // MS Visual Studio does not support C99)
