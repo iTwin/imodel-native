@@ -291,95 +291,75 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
 // Polyline shaders.
 static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
-    attribute vec3 a_direction;
-    attribute vec3 a_vertexDelta;
+    attribute vec3 a_prev;
+    attribute vec3 a_next;
+    attribute vec3 a_delta;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
     uniform float u_width;
-    varying vec2 v_texture;
-    varying float v_length;
-    varying float v_widthScale;
 
     void main(void)
         {
-        v_length = length(a_direction);
-        float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);
-        vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);
-        float width = projection.w * u_width * pixelWidthRatio;
-        v_widthScale = 1.0 / width;
+        mat4 mvProj     = u_proj * u_mv;
+        vec4 viewPos    = mvProj * vec4(a_pos,  1.0);
+        vec4 viewPrev   = mvProj * vec4(a_prev, 1.0);
+        vec4 viewNext   = mvProj * vec4(a_next, 1.0);
+        vec2 projPos    = vec2(viewPos.x/viewPos.w, viewPos.y/viewPos.w);
+        vec2 projPrev   = vec2(viewPrev.x/viewPrev.w, viewPrev.y/viewPrev.w);
+        vec2 projNext   = vec2(viewNext.x/viewNext.w, viewNext.y/viewNext.w);
+        vec2 prevDir    = normalize(projPos - projPrev);
+        vec2 nextDir    = normalize(projNext - projPos);
+        vec2 thisDir    = (a_delta.z < .5) ? nextDir : prevDir;
+        vec2 perp       = vec2 (-thisDir.y, thisDir.x);
+        float distance  = 2.0 * u_width * a_delta.y;
+        
+        if (prevDir != nextDir)
+            {
+            vec2    bisector = normalize(prevDir - nextDir);
+            float   dotP     = dot(bisector, perp);
 
-        vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);
-        vec3 extrusion = normalize(cross (a_direction, toEye));
+            if (dotP < 0.0)
+                {
+                distance /= -dotP;
+                perp = -bisector;
+                }
+            else
+                {
+                perp = bisector;
+                distance /= dotP;
+                }
+            }
 
-        v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;
-        v_texture.y = a_vertexDelta.y;
-
-        gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);
+        gl_Position = vec4((projPos.x + perp.x * distance / czm_viewport.z) * viewPos.w, (projPos.y + perp.y * distance / czm_viewport.w) * viewPos.w, viewPos.z, viewPos.w);
         v_color = computeColor();
         }
 )RAW_STRING";
 
 static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
-    uniform float u_feather;
-    varying vec4 v_color;
-    varying vec2 v_texture;
-    varying float v_length;
-    varying float v_widthScale;
+varying vec4 v_color;
+varying vec2 v_windowPos;
 
-    bool computePolylineColor (vec4 color, float distance)
-        {
-        if (distance > 1.0)
-            return false;
-
-        float alpha = distance > (1.0 - u_feather) ? ((1.0 - distance)/u_feather) : 1.0;
-        gl_FragColor = vec4 (color.rgb, alpha);
-        return true; 
-        }
-
-    void main()
-        {
-        float centerDistance;
-             
-        if (v_texture.x < 0.0)
-            {
-            float xTexture = -v_texture.x * v_widthScale;
-            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
-            }
-        else if (v_texture.x > v_length)
-            {
-            float xTexture = (v_texture.x - v_length) * v_widthScale;
-            centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);
-            }
-        else
-            {
-            centerDistance = abs (v_texture.y);
-            }
-
-        if (!computePolylineColor (v_color, centerDistance))
-            discard;
-        }
+void main(void)
+    {
+    gl_FragColor = v_color;
+    }
 )RAW_STRING";
 
 static std::string s_simplePolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
-    uniform float u_width;
-    varying vec2 v_windowPos;
 
     void main(void)
         {
         vec4 modelPos = vec4(a_pos, 1.0);
-        gl_Position =  czm_modelViewProjection * modelPos;
-        vec4 windowPos = czm_modelToWindowCoordinates(modelPos);
-        v_windowPos = windowPos.xy / windowPos.w;
+        gl_Position =  u_proj * u_mv  * modelPos;
         v_color = computeColor();
         }
 )RAW_STRING";
 
 static std::string s_simplePolylineFragmentShader = R"RAW_STRING(
 varying vec4 v_color;
-varying vec2 v_windowPos;
 
 void main(void)
     {
