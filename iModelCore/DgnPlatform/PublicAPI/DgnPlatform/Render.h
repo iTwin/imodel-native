@@ -1302,6 +1302,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors);
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
+    virtual PrimitivePtr _ToPrimitive() { BeAssert(false); return nullptr; }
 };
 
 //=======================================================================================
@@ -1341,6 +1342,9 @@ public:
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
     bool IsOpen() const {return m_builder->_IsOpen();}
+
+    //! Close the graphic builder and return a Primitive suitable for rendering
+    PrimitivePtr ToPrimitive() { return SUCCESS == Close() ? m_builder->_ToPrimitive() : nullptr; }
 
     //! Get the current GeometryStreamEntryId.
     //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
@@ -1559,6 +1563,91 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct Primitive : RefCounted<NonCopyableClass>
+{
+protected:
+    Transform   m_transform;
+
+    explicit Primitive(TransformCR localToWorld=Transform::FromIdentity()) : m_transform(localToWorld) { }
+
+    virtual ~Primitive() { }
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 1000000; }
+public:
+    TransformCR GetLocalToWorldTransform() const { return m_transform; }
+
+    using TriMeshArgs = IGraphicBuilder::TriMeshArgs;
+    using PolylineArgs = IGraphicBuilder::IndexedPolylineArgs;
+
+    struct PointCloudArgs
+    {
+        using QuantizedPoint = IGraphicBuilder::QuantizedPoint;
+
+        QuantizedPoint const* m_points;
+        ByteCP m_colors;
+        DPoint3d m_origin;
+        int32_t m_numPoints;
+
+        PointCloudArgs() : PointCloudArgs(DPoint3d::FromZero(), 0, nullptr, nullptr) { }
+        PointCloudArgs(DPoint3dCR origin, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
+            : m_points(points), m_colors(colors), m_origin(origin), m_numPoints(numPoints) { }
+    };
+
+    struct DisplayParams
+    {
+        GraphicParamsCR m_graphicParams;
+        GeometryParamsCP m_geometryParams;
+        Transform m_transform;
+        ClipVectorCP m_clip;
+
+        explicit DisplayParams(GraphicParamsCR graphicParams, TransformCR transform=Transform::FromIdentity(), GeometryParamsCP geometryParams=nullptr, ClipVectorCP clip=nullptr)
+            : m_graphicParams(graphicParams), m_geometryParams(geometryParams), m_transform(transform), m_clip(clip) { }
+    };
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PrimitiveList
+{
+    typedef bvector<PrimitivePtr> List;
+private:
+    List    m_primitives;
+public:
+    PrimitiveList() { }
+    PrimitiveList(List&& list) : m_primitives(std::move(list)) { }
+
+    void Add(PrimitiveR primitive) { m_primitives.push_back(&primitive); }
+
+    typedef List::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_primitives.begin(); }
+    const_iterator end() const { return m_primitives.end(); }
+    size_t size() const { return m_primitives.size(); }
+    bool empty() const { return m_primitives.empty(); }
+    void clear() { m_primitives.clear(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct PrimitiveBranch
+{
+    PrimitiveList   m_primitives;
+    ViewFlags       m_viewFlags;
+    bool            m_hasViewFlags = false;
+
+    PrimitiveBranch() { }
+    PrimitiveBranch(PrimitiveBranch&& src) : m_primitives(std::move(src.m_primitives)), m_viewFlags(src.m_viewFlags), m_hasViewFlags(src.m_hasViewFlags) { }
+    
+    void Add(PrimitiveR primitive) { m_primitives.Add(primitive); }
+    void Add(PrimitiveListCR primitives) { for (auto const& primitive : primitives) Add(*primitive); }
+    void SetViewFlags(ViewFlags flags) { m_viewFlags=flags; m_hasViewFlags=true; }
+    void Clear() { m_primitives.clear(); }
+};
+
+//=======================================================================================
 // An ordered list of RefCountedPtrs to a Render::Graphics, plus an override.
 // @bsiclass
 //=======================================================================================
@@ -1748,6 +1837,21 @@ struct System
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
+
+    //! Create a triangle mesh primitive
+    virtual PrimitivePtr _CreatePrimitive(Primitive::TriMeshArgs const& args, Primitive::DisplayParams const& params) const = 0;
+
+    //! Create an indexed polyline primitive
+    virtual PrimitivePtr _CreatePrimitive(Primitive::PolylineArgs const& args, Primitive::DisplayParams const& params) const = 0;
+
+    //! Create a point cloud primitive
+    virtual PrimitivePtr _CreatePrimitive(Primitive::PointCloudArgs const& args, Primitive::DisplayParams const& params) const = 0;
+
+    //! Create a primitive consisting of a list of other primitives, with an optional transform applied to the list
+    virtual PrimitivePtr _CreatePrimitive(PrimitiveList&& primitives, TransformCP transform) const = 0;
+
+    //! Create a primitive consisting of a list of other primitives, with optional transform, clip, and view flag overrides applied to the list
+    virtual PrimitivePtr _CreatePrimitive(PrimitiveBranch&& branch, TransformCP transform, ClipVectorCP clips) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element

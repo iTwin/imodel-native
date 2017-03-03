@@ -233,6 +233,8 @@ $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp
 
 $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
 
+$(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitives.cpp $(DgnPlatformAPISrc)RenderPrimitives.h ${MultiCompileDepends}
+
 $(CoreObjs)QuantizedPoints$(oext) :                 $(DgnCoreDir)QuantizedPoints.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
 
 $(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}

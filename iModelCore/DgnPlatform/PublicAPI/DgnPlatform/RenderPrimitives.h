@@ -1,0 +1,828 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/RenderPrimitives.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+#include <DgnPlatform/Render.h>
+#include <DgnPlatform/DgnTexture.h>
+#include <DgnPlatform/RenderMaterial.h>
+
+#define BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Primitives {
+#define END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES using namespace BentleyApi::Dgn::Render::Primitives;
+
+BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureImage);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshPart);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyline);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMergeKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Strokes);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryCollection);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryListBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
+
+DEFINE_REF_COUNTED_PTR(DisplayParams);
+DEFINE_REF_COUNTED_PTR(TextureImage);
+DEFINE_REF_COUNTED_PTR(MeshPart);
+DEFINE_REF_COUNTED_PTR(Mesh);
+DEFINE_REF_COUNTED_PTR(MeshBuilder);
+DEFINE_REF_COUNTED_PTR(Geometry);
+DEFINE_REF_COUNTED_PTR(GeomPart);
+
+typedef bvector<MeshPtr>            MeshList;
+typedef bvector<MeshInstance>       MeshInstanceList;
+typedef bvector<MeshPartPtr>        MeshPartList;
+typedef bvector<GeometryPtr>        GeometryList;
+typedef bvector<Triangle>           TriangleList;
+typedef bvector<Polyline>           PolylineList;
+typedef bvector<Polyface>           PolyfaceList;
+typedef bvector<Strokes>            StrokesList;
+typedef bmap<double, PolyfaceList>  PolyfaceMap;
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+enum class NormalMode
+{
+    Never,              //!< Never generate normals
+    Always,             //!< Always generate normals
+    CurvedSurfacesOnly, //!< Generate normals only for curved surfaces
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct GeometryOptions
+{
+    enum class SurfacesOnly { Yes, No };
+    enum class TwoSidedTriangles { Yes, No };
+
+    NormalMode          m_normalMode;
+    SurfacesOnly        m_surfaces;
+    TwoSidedTriangles   m_twoSidedTriangles;
+
+    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
+        : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
+
+    bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
+    bool WantTwoSidedTriangles() const { return TwoSidedTriangles::Yes == m_twoSidedTriangles; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TextureImage : RefCountedBase
+{
+private:
+    Render::ImageSource     m_imageSource;
+
+    TextureImage(Render::ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
+public:
+    static TextureImagePtr Create(Render::ImageSource&& imageSource) { return new TextureImage(std::move(imageSource)); }
+    static TextureImagePtr Create(Render::ImageSourceCR imageSource) { return Create(Render::ImageSource(imageSource)); }
+    static Render::ImageSource Load(DisplayParamsCR params, DgnDbR db);
+
+    Render::ImageSourceCR GetImageSource() const { return m_imageSource; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct DisplayParams : RefCountedBase
+{
+    friend struct DisplayParamsCache;
+private:
+    Render::GraphicParams           m_graphicParams;
+    Render::GeometryParams          m_geometryParams;
+    mutable TextureImagePtr         m_textureImage;
+    bool                            m_ignoreLighting;
+    bool                            m_geometryParamsValid;
+
+    DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams) { if (nullptr != geometryParams) m_geometryParams = *geometryParams; }
+
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
+
+    static DisplayParamsCPtr Create() { return Create(Render::GraphicParams(), nullptr); }
+    static DisplayParamsCPtr Create(ColorDef fillColor, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
+        { Render::GraphicParams gfParams; gfParams.SetFillColor(fillColor); return Create(gfParams, geometryParams, ignoreLighting); }
+    static DisplayParamsCPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
+        { return Create(graphicParams, &geometryParams, ignoreLighting); }
+
+    DisplayParamsCPtr Clone() const;
+public:
+    static DisplayParamsCPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting=false)
+        { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
+
+    Render::GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
+    Render::GeometryParamsCP GetGeometryParams() const { return HasGeometryParams() ? &m_geometryParams : nullptr; }
+    bool GetIgnoreLighting() const { return m_ignoreLighting; }
+    bool HasGeometryParams() const { return m_geometryParamsValid; }
+    bool HasTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
+
+    DgnCategoryId GetCategoryId() const { return HasGeometryParams() ? m_geometryParams.GetCategoryId() : DgnCategoryId(); }
+    DgnSubCategoryId GetSubCategoryId() const { return HasGeometryParams() ? GetGeometryParams()->GetSubCategoryId() : DgnSubCategoryId(); }
+    DgnMaterialId GetMaterialId() const { return HasGeometryParams() ? GetGeometryParams()->GetMaterialId() : DgnMaterialId(); }
+    ColorDef GetFillColorDef() const { return GetGraphicParams().GetFillColor(); }
+    uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
+    uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
+    Render::DgnGeometryClass GetClass() const { return HasGeometryParams() ? GetGeometryParams()->GetGeometryClass() : Render::DgnGeometryClass::Primary; }
+
+    DgnTextureCPtr QueryTexture(DgnDbP db) const;
+    TextureImagePtr& TextureImage() { return m_textureImage; }
+    TextureImageCP GetTextureImage() const { return m_textureImage.get(); }
+    DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbP db) const;
+
+    enum class ComparePurpose
+    {
+        Merge,  // ignores category, subcategory, class, and considers fill colors equivalent if both have or both lack transparency
+        Strict  // compares all members
+    };
+
+    DGNPLATFORM_EXPORT bool IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+    DGNPLATFORM_EXPORT bool IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose=ComparePurpose::Strict) const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct DisplayParamsCache
+{
+private:
+    struct Comparator
+    {
+        bool operator()(DisplayParamsCPtr const& lhs, DisplayParamsCPtr const& rhs) const
+            {
+            return lhs->IsLessThan(*rhs);
+            }
+    };
+
+    typedef bset<DisplayParamsCPtr, Comparator> Set;
+
+    Set     m_set;
+
+    DisplayParamsCR Get(DisplayParamsCR params);
+public:
+    DisplayParamsCR GetDefault()
+        {
+        return Get(Render::GraphicParams(), nullptr);
+        }
+    DisplayParamsCR Get(ColorDef fill, Render::GeometryParamsCR geomParams, bool ignoreLighting=false)
+        {
+        Render::GraphicParams graphicParams;
+        graphicParams.SetFillColor(fill);
+        return Get(graphicParams, geomParams, ignoreLighting);
+        }
+    DisplayParamsCR Get(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geomParams, bool ignoreLighting=false)
+        {
+        return Get(graphicParams, &geomParams, ignoreLighting);
+        }
+    DisplayParamsCR Get(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams, bool ignoreLighting=false)
+        {
+        return Get(DisplayParams(graphicParams, geomParams, ignoreLighting));
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ColorTable
+{
+    typedef bmap<uint32_t, uint16_t> Map;
+protected:
+    Map         m_map;
+    bool        m_hasAlpha = false;
+
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+public:
+    DGNPLATFORM_EXPORT uint16_t GetIndex(uint32_t color);
+
+    bool HasTransparency() const { return m_hasAlpha; }
+    bool IsUniform() const { return 1 == size(); }
+
+    bool IsFull() const { return m_map.size() >= GetMaxIndex(); }
+    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+
+    typedef typename Map::const_iterator const_iterator;
+    typedef const_iterator iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MeshInstance
+{
+private:
+    DgnElementId        m_instanceId;
+    Transform           m_transform;
+public:
+    MeshInstance(DgnElementId instanceId, TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
+
+    DgnElementId GetId() const { return m_instanceId; }
+    TransformCR GetTransform() const { return m_transform; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MeshPart : RefCountedBase
+{
+private:
+    MeshList            m_meshes;
+    MeshInstanceList    m_instances;
+
+    MeshPart(MeshList&& meshes) : m_meshes(std::move(meshes)) { }
+
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; }
+public:
+    static MeshPartPtr Create(MeshList&& meshes) { return new MeshPart(std::move(meshes)); }
+
+    MeshList const& Meshes() const { return m_meshes; }
+    MeshInstanceList const& Instances() const { return m_instances; }
+    void AddInstance(MeshInstanceCR instance) { m_instances.push_back(instance); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Triangle
+{
+    uint32_t    m_indices[3];
+    bool        m_singleSided;
+
+    explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
+    Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
+    Triangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
+
+    void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
+    void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
+
+    bool IsDegenerate() const
+        {
+        return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2];
+        }                                   
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Polyline
+{
+private:
+    bvector<uint32_t>   m_indices;
+public:
+    bvector<uint32_t> const& GetIndices() const { return m_indices; }
+    bvector<uint32_t>& GetIndices() { return m_indices; }
+    void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
+    void Clear() { m_indices.clear(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Mesh : RefCountedBase
+{
+private:
+    DisplayParamsCPtr       m_displayParams;
+    TriangleList            m_triangles;
+    PolylineList            m_polylines;
+    bvector<FPoint3d>       m_points;
+    bvector<FPoint3d>       m_normals;
+    bvector<FPoint2d>       m_uvParams;
+    ColorTable              m_colorTable;
+    bvector<uint16_t>       m_colors;
+
+    explicit Mesh(DisplayParamsCR params) : m_displayParams(&params) { }
+
+    template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
+
+    DPoint3d GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const;
+public:
+    static MeshPtr Create(DisplayParamsCR params) { return new Mesh(params); }
+
+    DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
+    DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
+    DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
+
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
+    DisplayParamsCPtr GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
+    TriangleList const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
+    PolylineList const& Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
+    bvector<FPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
+    bvector<FPoint3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
+    bvector<FPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<uint16_t> const& Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
+    ColorTableCR GetColorTable() const { return m_colorTable; }
+
+    bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+
+    DGNPLATFORM_EXPORT DRange3d GetRange() const;
+    DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
+
+    void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
+    void AddPolyline(PolylineCR polyline) { m_polylines.push_back(polyline); }
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor);
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     06/2016
++===============+===============+===============+===============+===============+======*/
+struct MeshMergeKey
+{
+    DisplayParamsCP m_params;                                                                                                                                                     
+    bool            m_hasNormals;
+    bool            m_hasFacets;
+
+    MeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets(false) { }
+    MeshMergeKey(DisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets(hasFacets) { }
+    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
+
+    bool operator<(MeshMergeKey const& rhs) const
+        {
+        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+        if(m_hasNormals != rhs.m_hasNormals)
+            return !m_hasNormals;
+
+        if(m_hasFacets != rhs.m_hasFacets)
+            return !m_hasFacets;
+
+        return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct VertexKey
+{
+    DPoint3d        m_point;
+    DVec3d          m_normal;
+    DPoint2d        m_param;
+    DgnElementId    m_entityId;
+    uint32_t        m_fillColor = 0;
+    bool            m_normalValid = false;
+    bool            m_paramValid = false;
+
+    VertexKey() { }
+    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_entityId(entityId), m_fillColor(fillColor)
+        {
+        if(m_normalValid) m_normal = *normal;
+        if(m_paramValid) m_param = *param;
+        }
+
+    DVec3dCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
+    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
+
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   12/16
+    //=======================================================================================
+    struct Comparator
+    {
+        double  m_tolerance;
+
+        explicit Comparator(double tolerance) : m_tolerance(tolerance) { }
+        bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+    };
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TriangleKey
+{
+    uint32_t        m_sortedIndices[3];
+
+    TriangleKey() { }
+    explicit TriangleKey(TriangleCR triangle);
+
+    bool operator<(TriangleKeyCR rhs) const;
+};
+
+typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
+typedef bset<TriangleKey> TriangleSet;
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MeshBuilder : RefCountedBase
+{
+private:
+    MeshPtr             m_mesh;
+    VertexMap           m_clusteredVertexMap;
+    VertexMap           m_unclusteredVertexMap;
+    TriangleSet         m_triangleSet;
+    double              m_tolerance;
+    double              m_areaTolerance;
+    RenderingAssetCP    m_material = nullptr;
+
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance) : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+            m_tolerance(tolerance), m_areaTolerance(areaTolerance) {  }
+public:
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance) { return new MeshBuilder(params, tolerance, areaTolerance); }
+
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, DgnElementId entityId, bool doVertexClustering, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbP dgnDb, DgnElementId entityId, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+
+    void AddMesh(TriangleCR triangle);
+    void AddTriangle(TriangleCR triangle);
+    uint32_t AddClusteredVertex(VertexKey const& vertex);
+    uint32_t AddVertex(VertexKey const& vertex);
+
+    MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
+    double GetTolerance() const { return m_tolerance; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Polyface
+{
+    DisplayParamsCPtr   m_displayParams;
+    PolyfaceHeaderPtr   m_polyface;
+
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface) : m_displayParams(&displayParams), m_polyface(&polyface) { }
+
+    void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone()); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Strokes
+{
+    typedef bvector<bvector<DPoint3d>> PointLists;
+
+    DisplayParamsCPtr   m_displayParams;
+    PointLists          m_strokes;
+
+    Strokes(DisplayParamsCR displayParams, PointLists&& strokes) : m_displayParams(&displayParams), m_strokes(std::move(strokes)) { }
+
+    void Transform(TransformCR transform);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Geometry : RefCountedBase
+{
+private:
+    DisplayParamsCPtr       m_params;
+    Transform               m_transform;
+    DRange3d                m_tileRange;
+    DgnElementId            m_entityId;
+    mutable size_t          m_facetCount;
+    bool                    m_isCurved;
+    bool                    m_hasTexture;
+protected:
+    Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbP db);
+
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) = 0;
+    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) { return StrokesList(); }
+    virtual bool _DoDecimate() const { return false; }
+    virtual bool _DoVertexCluster() const { return true; }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
+    virtual GeomPartCPtr _GetPart() const { return nullptr; }
+    virtual void _SetInCache(bool inCache) { }
+
+    void SetFacetCount(size_t numFacets);
+public:
+    DisplayParamsCR GetDisplayParams() const { return *m_params; }
+    DisplayParamsCPtr GetDisplayParamsPtr() const { return m_params; }
+    TransformCR GetTransform() const { return m_transform; }
+    DRange3dCR GetTileRange() const { return m_tileRange; }
+    DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
+    size_t GetFacetCount(IFacetOptionsR options) const;
+    size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
+    
+    static IFacetOptionsPtr CreateFacetOptions(double chordTolerance);
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
+
+    bool IsCurved() const { return m_isCurved; }
+    bool HasTexture() const { return m_hasTexture; }
+
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions) { return _GetPolyfaces(facetOptions); }
+    PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode);
+    bool DoDecimate() const { return _DoDecimate(); }
+    bool DoVertexCluster() const { return _DoVertexCluster(); }
+    StrokesList GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
+    GeomPartCPtr GetPart() const { return _GetPart(); }
+    void SetInCache(bool inCache) { _SetInCache(inCache); }
+
+    //! Create a Geometry for an IGeometry
+    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbP db);
+    //! Create a Geometry for an IBRepEntity
+    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, DgnDbP db);
+    //! Create a Geometry for text.
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbP db);
+    //! Create a Geometry for a part instance.
+    static GeometryPtr Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsCR params, DgnDbP db);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct GeomPart : RefCountedBase
+{
+private:
+    DRange3d                m_range;
+    GeometryList            m_geometries;
+    mutable size_t          m_facetCount;
+
+    uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
+
+protected:
+    GeomPart(DRange3dCR range, GeometryList const& geometry);
+
+public:
+    static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance);
+    PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCP instance);
+    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance);
+    StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCP instance);
+    size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
+    bool IsCurved() const;
+    GeometryList const& GetGeometries() const { return m_geometries; }
+    DRange3d GetRange() const { return m_range; };
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct GeometryCollection
+{
+private:
+    MeshList            m_meshes;
+    MeshPartList        m_parts;
+public:
+    MeshList& Meshes()              { return m_meshes; }
+    MeshPartList& Parts()           { return m_parts; }
+    bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/17
+//=======================================================================================
+struct GeometryListBuilder
+{
+private:
+    GeometryList                m_geometries;
+    Transform                   m_transform;
+    DgnDbP                      m_dgndb;
+    DgnElementId                m_elementId;
+    mutable DisplayParamsCache  m_displayParams;
+    bool                        m_surfacesOnly;
+    bool                        m_haveTransform;
+
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range);
+public:
+    GeometryListBuilder(DgnDbP db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryListBuilder(DgnDbP db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+
+    void AddGeometry(GeometryR geom) { m_geometries.push_back(&geom); }
+    void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
+
+    DGNPLATFORM_EXPORT bool AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddSurface(MSBsplineSurfaceCR surface, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddBody(IBRepEntityCR body, DisplayParamsCR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddTextString(TextStringCR textString, DisplayParamsCR displayParams, TransformCR transform);
+
+    void Clear() { m_geometries.clear(); }
+    GeometryList const& GetGeometries() const { return m_geometries; }
+    GeometryList& GetGeometries() { return m_geometries; }
+
+    DgnElementId GetElementId() const { return m_elementId; }
+    void SetElementId(DgnElementId id) { m_elementId = id; }
+
+    TransformCR GetTransform() const { return m_transform; }
+    void SetTransform(TransformCR tf) { m_transform = tf; m_haveTransform = !m_transform.IsIdentity(); }
+
+    DgnDbP GetDgnDb() const { return m_dgndb; }
+    DisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParams; }
+    bool WantSurfacesOnly() const { return m_surfacesOnly; }
+
+    //! Convert the geometry accumulated by this builder into a set of meshes.
+    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
+
+    //! Convert the geometry accumulated by this builder into a set of meshes and add it to the specified Graphic as a set of sub-graphics.
+    //! The GraphicBuilder must support CreateSubGraphic() and AddSubGraphic()
+    //! The subgraphics must support ActivateGraphicParams(), AddTriMesh(), AddIndexedPolyline(), and Close()
+    //! No other GraphicBuilder methods will be invoked.
+    DGNPLATFORM_EXPORT void SaveToGraphic(Render::GraphicBuilderR graphic, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ToleranceRatio
+{
+    static constexpr double Vertex() { return .1; }
+    static constexpr double FacetArea() { return .1; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
+{
+    bvector<int32_t>   m_indices;
+
+    template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
+        {
+        count = static_cast<int32_t>(src.size());
+        Set(ptr, src);
+        }
+
+    template<typename T, typename U> void Set(T& ptr, U const& src)
+        {
+        ptr = 0 != src.size() ? src.data() : nullptr;
+        }
+
+    void Clear()
+        {
+        m_indices.clear();
+        m_numIndices = 0;
+        m_vertIndex = nullptr;
+        m_numPoints = 0;
+        m_points = nullptr;
+        m_normals = nullptr;
+        m_textureUV = nullptr;
+        m_texture = nullptr;
+        m_flags = 0;
+        }
+
+    bool Init(MeshCR mesh, Render::System const& system, DgnDbP db)
+        {
+        Clear();
+
+        if (mesh.Triangles().empty())
+            return false;
+
+        for (auto const& triangle : mesh.Triangles())
+            {
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
+            }
+
+        Set(m_numIndices, m_vertIndex, m_indices);
+        Set(m_numPoints, m_points, mesh.Points());
+        Set(m_textureUV, mesh.Params());
+        if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
+            Set(m_normals, mesh.Normals());
+
+        auto const& displayParams = mesh.GetDisplayParams();
+        displayParams.ResolveTextureImage(db);
+        if (nullptr != displayParams.GetTextureImage())
+            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
+
+        return true;
+        }
+
+    void Transform(TransformCR tf)
+        {
+        for (int32_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d& fpt = const_cast<FPoint3d&>(m_points[i]);
+            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+            tf.Multiply(dpt);
+            fpt.x = dpt.x;
+            fpt.y = dpt.y;
+            fpt.z = dpt.z;
+
+            if (nullptr != m_normals)
+                {
+                FPoint3d& fnm = const_cast<FPoint3d&>(m_normals[i]);
+                dpt = DPoint3d::FromXYZ(fnm.x, fnm.y, fnm.z);
+                tf.MultiplyMatrixOnly(dpt);
+                fnm.x = dpt.x;
+                fnm.y = dpt.y;
+                fnm.z = dpt.z;
+                }
+            }
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct IndexedPolyline : IGraphicBuilder::IndexedPolylineArgs::Polyline
+{
+    bool IsValid() const { return 0 < m_numIndices; }
+
+    void Reset()
+        {
+        m_numIndices = 0;
+        m_vertIndex = nullptr;
+        }
+
+    bool Init(PolylineCR line)
+        {
+        Reset();
+
+        m_numIndices = static_cast<uint32_t>(line.GetIndices().size());
+        m_vertIndex = &line.GetIndices()[0];
+
+        return IsValid();
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
+{
+    bvector<IndexedPolyline>    m_polylines;
+
+    bool IsValid() const { return !m_polylines.empty(); }
+
+    void Reset()
+        {
+        m_numPoints = m_numLines = 0;
+        m_points = nullptr;
+        m_lines = nullptr;
+        m_polylines.clear();
+        }
+
+    bool Init(MeshCR mesh)
+        {
+        Reset();
+
+        m_numPoints = static_cast<uint32_t>(mesh.Points().size());
+        m_points = &mesh.Points()[0];
+        m_polylines.reserve(mesh.Polylines().size());
+
+        for (auto const& polyline : mesh.Polylines())
+            {
+            IndexedPolyline indexedPolyline;
+            if (indexedPolyline.Init(polyline))
+                m_polylines.push_back(indexedPolyline);
+            }
+
+        if (IsValid())
+            {
+            m_numLines = static_cast<uint32_t>(m_polylines.size());
+            m_lines = &m_polylines[0];
+            }
+
+        return IsValid();
+        }
+
+    void Apply(Render::GraphicBuilderR gf)
+        {
+        if (IsValid())
+            gf.AddIndexedPolylines(*this);
+        }
+
+    bool InitAndApply(Render::GraphicBuilderR gf, MeshCR mesh)
+        {
+        if (Init(mesh))
+            {
+            Apply(gf);
+            return true;
+            }
+
+        return false;
+        }
+
+    void Transform(TransformCR tf)
+        {
+        for (uint32_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d fpt = m_points[i];
+            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+            tf.Multiply(dpt);
+            fpt.x = dpt.x;
+            fpt.y = dpt.y;
+            fpt.z = dpt.z;
+            }
+        }
+};
+
+END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
+
