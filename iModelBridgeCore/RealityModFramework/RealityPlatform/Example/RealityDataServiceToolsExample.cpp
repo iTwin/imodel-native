@@ -33,9 +33,12 @@ static Utf8String s_outputPath;
 
 #define OptFilterOwner          0x0001
 static Utf8String s_filterOwner;
+#define OptFilterProject        0x0002
+static Utf8String s_filterProject;
 
-#define OptSortModDate          0x0002
-#define OptSortGroup            0x0004
+
+#define OptSortModDate          0x0010
+#define OptSortGroup            0x0020
 
 
 static int s_cmd = CmdNone;
@@ -61,6 +64,7 @@ void Usage()
     std::cout << "   -EnterpriseStat            : Display statistic, like Space used, nb of realitydata..." << std::endl;
     std::cout << "   [options...]" << std::endl;
     std::cout << "   -Owner=...                 :  Filter" << std::endl;
+    std::cout << "   -Project=...               :  Filter" << std::endl;
     std::cout << "   -SortModDate               :  RealityData sorted by modification date" << std::endl;
     std::cout << "   -SortGroup                 :  RealityData sorted by group" << std::endl;
 
@@ -114,7 +118,7 @@ void ParsingParamters (int argc, char* argv[])
             }
         else if (_stricmp(("-Download"), argv[currentParamPos]) == 0)
         {
-            s_cmd = CmdDownload;
+            s_cmd = CmdDownload; 
             currentParamPos++;
             if (currentParamPos < argc)
                 s_itemPath = argv[currentParamPos];
@@ -136,6 +140,17 @@ void ParsingParamters (int argc, char* argv[])
 
             if ((pos=param.GetNextToken(s_filterOwner, "=", 0)) != Utf8String::npos)
                 s_filterOwner = &(argv[currentParamPos][pos]);
+            else
+                found = false;
+        }
+        else if (_strnicmp(("-Project="), argv[currentParamPos], 7) == 0)
+        {
+            s_option |= OptFilterProject;
+            Utf8String param(argv[currentParamPos]);
+            size_t pos;
+
+            if ((pos = param.GetNextToken(s_filterProject, "=", 0)) != Utf8String::npos)
+                s_filterProject = &(argv[currentParamPos][pos]);
             else
                 found = false;
         }
@@ -218,6 +233,21 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
         }
     }
 
+bool FilterByProject(Utf8StringCR RealityId, bvector<RealityDataProjectRelationshipPtr>& ProjectRelation)
+    {
+    // Option not set
+    if (!(s_option & OptFilterProject))
+        return true;
+
+    for (RealityDataProjectRelationshipPtr pData : ProjectRelation)
+    {
+        if (pData->GetRealityDataId() == RealityId)
+            return true;
+    }
+    return false;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Donald.Morissette                  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -249,6 +279,14 @@ void ListCmd()
 
         bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
+        bvector<RealityDataProjectRelationshipPtr> relationships;
+        if (s_option & (OptFilterProject))
+            {
+            RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(s_filterProject);
+            relationships = RealityDataService::Request(*relationReq, status);
+            }
+
+
         size_t EnterpriseSizeKB(0);
         do {
             if (RequestStatus::SUCCESS != status)
@@ -256,11 +294,23 @@ void ListCmd()
 
             for (SpatialEntityPtr pData : enterpriseVec)
                 {
-                std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
-
                 EnterpriseSizeKB += pData->GetApproximateFileSize();
 
-                if (s_cmd & (CmdListDetail | CmdListAllDetail))
+#if 0   // Validation only
+                RequestStatus status2;
+                RealityDataByIdRequest* idReq = new RealityDataByIdRequest(pData->GetIdentifier());
+                SpatialEntityPtr entity = RealityDataService::Request(*idReq, status2);
+
+                assert(entity->GetEnterprise() == pData->GetEnterprise());
+                assert(entity->GetApproximateFileSize() == pData->GetApproximateFileSize());
+                assert(entity->GetOwner() == pData->GetOwner());
+                assert(entity->GetRootDocument() == pData->GetRootDocument());
+
+#endif
+                if (FilterByProject(pData->GetIdentifier(), relationships))
+                    std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
+
+                if (s_cmd & (CmdListDetail | CmdListAllDetail) && FilterByProject(pData->GetIdentifier(), relationships))
                     {
                     std::cout << "  " << 
                         " Dataset        : " << pData->GetDataset() << std::endl << "  " <<

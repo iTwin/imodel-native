@@ -32,6 +32,10 @@ int main(int argc, char *argv[])
     std::cout << RealityDataService::GetRepoName() << std::endl;
     std::cout << RealityDataService::GetSchemaName() << std::endl << std::endl;
 
+    /*BeFileName fName = BeFileName("D:\\RealityModFrameworkFolder");
+    RealityDataServiceDownload download = RealityDataServiceDownload(fName, "604f9be9-e74f-4614-a23e-b02e2dc129f5/duplicates/Newf");
+    download.Perform();*/
+
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField,Utf8String>();
     properties.Insert(RealityDataField::Name, "exampleUpload");
     properties.Insert(RealityDataField::Classification, "Terrain");
@@ -46,7 +50,7 @@ int main(int argc, char *argv[])
     
     if(upload->IsValidUpload())
         {
-        UploadReport* ur = upload->Perform();
+        TransferReport* ur = upload->Perform();
         Utf8String report;
         ur->ToXml(report);
         std::cout << report << std::endl;
