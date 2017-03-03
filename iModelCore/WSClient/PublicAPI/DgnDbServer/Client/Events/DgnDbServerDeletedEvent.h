@@ -11,7 +11,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerDeletedEvent : public DgnDbServerEvent::GenericEvent
     {

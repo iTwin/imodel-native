@@ -17,7 +17,7 @@
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
 //---------------------------------------------------------------------------------------

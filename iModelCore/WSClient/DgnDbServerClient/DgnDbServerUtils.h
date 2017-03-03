@@ -12,7 +12,7 @@
 #include <DgnPlatform/LocksManager.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
