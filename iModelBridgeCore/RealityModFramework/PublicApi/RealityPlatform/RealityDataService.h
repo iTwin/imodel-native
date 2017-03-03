@@ -811,7 +811,9 @@ private:
 
 struct RealityDataServiceDownload : public RealityDataServiceTransfer
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String id);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId);
+
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList);
 
     //REALITYDATAPLATFORM_EXPORT TransferReport* Perform() override;
 

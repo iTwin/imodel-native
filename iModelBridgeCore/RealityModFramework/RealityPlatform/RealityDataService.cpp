@@ -1310,9 +1310,9 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_pCurlHandle = curl_multi_init();
     }
 
-RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String id)
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId)
     {
-    m_id = id;
+    m_id = serverId;
     m_azureTokenTimer = 0;
     m_progress = 0.0;
     m_progressStep = 0.01;
@@ -1324,7 +1324,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();
 
-    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(id);
+    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_id);
     RequestStatus status;
     bvector<Utf8String> filesInRepo = RealityDataService::Request(rdsRequest, status);
     BeFileName downloadLocation;
@@ -1336,8 +1336,27 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
         BeStringUtilities::Utf8ToWChar(wPath, filesInRepo[i].c_str());
         downloadLocation.AppendToPath(wPath.c_str());
 
-        RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i);
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i));
         }
+
+    m_fullTransferSize = m_filesToTransfer.size();
+    }
+
+RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList)
+    {
+    m_id = serverId;
+    m_azureTokenTimer = 0;
+    m_progress = 0.0;
+    m_progressStep = 0.01;
+    m_progressThreshold = 0.01;
+    m_onlyReportErrors = false;
+    m_currentTransferedAmount = 0;
+    m_handshakeRequest = nullptr;
+
+    m_handshakeRequest = new AzureHandshake(m_id, true);
+    GetAzureToken();
+
+    m_filesToTransfer = downloadList;
 
     m_fullTransferSize = m_filesToTransfer.size();
     }
