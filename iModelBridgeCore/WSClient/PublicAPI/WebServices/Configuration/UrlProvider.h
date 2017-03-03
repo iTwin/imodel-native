@@ -96,6 +96,8 @@ struct UrlProvider
         //! Available URLs
         struct Urls
             {
+            WSCLIENT_EXPORT static const UrlDescriptor BIMCollaborationServices;
+            WSCLIENT_EXPORT static const UrlDescriptor BIMReviewShare;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
@@ -113,7 +115,6 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor UsageAndFeatureTrackingAPI;
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
-            WSCLIENT_EXPORT static const UrlDescriptor BIMReviewShare;
             };
     };
 
