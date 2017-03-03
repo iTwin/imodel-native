@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,6 +52,7 @@ private:
     bvector<WString>                        m_cultureStrings;
     bool                                    m_preserveElementOrder = false;
     bool                                    m_preserveXmlComments = false;
+    bool                                    m_resolveConflicts = false;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -87,6 +88,8 @@ public:
 
     bool GetPreserveElementOrder() { return m_preserveElementOrder; }
     void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
+
+    bool ResolveConflicts() { return m_resolveConflicts; }
 
     bool GetPreserveXmlComments() { return m_preserveElementOrder; }
     void SetPreserveXmlComments(bool flag) 
@@ -163,6 +166,10 @@ public:
     //! @param[in] versionRead  The read version of the schema to look for
     //! @param[in] versionMinor The minor version of the schema to look for
     ECOBJECTS_EXPORT ECSchemaPtr        LocateConversionSchemaFor(Utf8CP schemaName, int versionRead, int versionMinor);
+
+    //! Whether conflicts should be resolved when deserializing the schema
+    //! @param[in] resolveConflicts true/false to resolve conflicts
+    ECOBJECTS_EXPORT void SetResolveConflicts(bool resolveConflicts);
 
 };
 

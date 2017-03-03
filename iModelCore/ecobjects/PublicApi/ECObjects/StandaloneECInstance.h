@@ -196,7 +196,7 @@ typedef RefCountedPtr<StandaloneECInstance>  StandaloneECInstancePtr;
 //! laid out according to the ClassLayout.
 //! @see IECInstance
 //=======================================================================================
-struct StandaloneECInstance : IECInstance, MemoryECInstanceBase
+struct EXPORT_VTABLE_ATTRIBUTE StandaloneECInstance : IECInstance, MemoryECInstanceBase
     {
 friend struct StandaloneECEnabler;
 private:

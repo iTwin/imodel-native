@@ -1860,7 +1860,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0);
+    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0) || context.ResolveConflicts();
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
@@ -1911,7 +1911,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0);
+    bool resolveConflicts = m_schema.OriginalECXmlVersionLessThan(ECVersion::V3_0) || context.ResolveConflicts();
     if (nullptr != conversionSchema)
         {
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))
