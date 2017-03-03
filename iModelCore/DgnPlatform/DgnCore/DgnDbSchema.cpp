@@ -287,6 +287,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                                 "Deleted BOOLEAN,"
                                 "Grouped BOOLEAN,"
                                 "Operation TEXT,"
+                                "IsSchemaChange BOOLEAN,"
                                 "Time TIMESTAMP DEFAULT(julianday('now')),"
                                 "Change BLOB");
 
