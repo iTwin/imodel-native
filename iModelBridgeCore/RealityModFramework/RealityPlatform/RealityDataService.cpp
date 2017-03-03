@@ -24,6 +24,193 @@
 
 #define MAX_NB_CONNECTIONS          10
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+
+struct RealityDataFileTransfer : public RealityDataUrl
+    {
+    public:
+        REALITYDATAPLATFORM_EXPORT virtual void ReadyFile() { m_transferProgress = 0; }
+
+        REALITYDATAPLATFORM_EXPORT void CloseFile()
+            {
+            if (m_fileStream.IsOpen())
+                m_fileStream.Close();
+            }
+
+        REALITYDATAPLATFORM_EXPORT virtual void Retry() = 0;
+
+        REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetHttpRequestString() const override
+        {
+            if (!m_validRequestString)
+                _PrepareHttpRequestStringAndPayload();
+
+            BeAssert(m_validRequestString);
+            BeAssert(m_httpRequestString.size() != 0);
+
+            m_requestWithToken = m_httpRequestString;
+            m_requestWithToken.append(m_azureToken);
+
+            return m_requestWithToken;
+        };
+
+        REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
+
+        REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFilename() const { return m_filename; }
+
+        REALITYDATAPLATFORM_EXPORT uint64_t GetFileSize() const { return m_fileSize; }
+
+        REALITYDATAPLATFORM_EXPORT uint64_t GetTransferedSize() const { return m_transferProgress; }
+
+        REALITYDATAPLATFORM_EXPORT BeFile& GetFileStream() { return m_fileStream; }
+
+        REALITYDATAPLATFORM_EXPORT void StartTimer() { m_startTime = std::time(nullptr); }
+
+        REALITYDATAPLATFORM_EXPORT time_t GetStartTime() const { return m_startTime; }
+
+        REALITYDATAPLATFORM_EXPORT virtual void UpdateTransferedSize() {}
+
+        size_t                  nbRetry;
+        size_t                  m_index;
+    protected:
+
+        Utf8String              m_fileUrl;
+        Utf8String              m_filename;
+
+        BeFile                  m_fileStream;
+        uint64_t                m_fileSize;
+
+        uint64_t                m_transferProgress;
+
+        Utf8String              m_azureServer;
+        float                   m_progressStep;
+        Utf8String              m_azureToken;
+        mutable Utf8String      m_requestWithToken;
+
+        time_t                  m_startTime;
+    };
+
+struct RealityDataFileUpload : public RealityDataFileTransfer
+    {
+public:
+    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
+        m_chunkSize(CHUNK_SIZE), m_chunkStop(0), m_chunkNumber(0), m_moreToSend(true) 
+        {
+        m_azureServer = azureServer;
+        m_index = index;
+        m_filename = filename.GetNameUtf8();
+        m_transferProgress = 0;
+        nbRetry = 0;
+        m_validRequestString = false;
+        Utf8String fileFromRoot = filename.GetNameUtf8();
+        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
+        m_fileUrl = "/";
+        m_fileUrl.append(fileFromRoot);
+        m_fileUrl.ReplaceAll("\\","/");
+
+        m_requestType = HttpRequestType::PUT_Request;
+
+        filename.GetFileSize(m_fileSize);
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ReadyFile() override
+        {
+        BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
+        BeAssert(status == BeFileStatus::Success);
+
+        m_transferProgress = 0;
+
+        m_chunkSize = CHUNK_SIZE;
+        m_singleChunk = m_fileSize < m_chunkSize;
+
+        if(!m_singleChunk)
+            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+        }
+
+    REALITYDATAPLATFORM_EXPORT void Retry() override;
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
+        {
+        
+        m_requestWithToken = RealityDataFileTransfer::GetHttpRequestString();
+
+        if(!m_singleChunk)
+            {
+            if(m_moreToSend)
+                {
+                m_requestWithToken.append("&comp=block&blockid=");
+                m_requestWithToken.append(m_chunkNumberString);
+                }
+            else
+                {
+                m_requestWithToken.append("&comp=blocklist");
+                }
+            }
+
+        return m_requestWithToken;
+        };
+
+    REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
+
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
+    
+    REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
+    
+    REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
+
+    REALITYDATAPLATFORM_EXPORT void UpdateTransferedSize() override;
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    mutable bool            m_moreToSend;
+    mutable bool            m_singleChunk;
+
+    uint64_t                m_chunkSize;
+    uint64_t                m_chunkStop;
+    uint32_t                m_chunkNumber;
+    Utf8String              m_chunkNumberString;
+
+    Utf8String              m_blockList;
+    };
+
+struct RealityDataFileDownload : public RealityDataFileTransfer
+{
+public:
+    RealityDataFileDownload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) :
+        iAppend(0)
+        {
+        m_azureServer = azureServer;
+        m_index = index;
+        m_filename = filename.GetNameUtf8();
+        m_transferProgress = 0;
+        nbRetry = 0;
+        m_validRequestString = false;
+        Utf8String fileFromRoot = filename.GetNameUtf8();
+        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
+        m_fileUrl = "/";
+        m_fileUrl.append(fileFromRoot);
+        m_fileUrl.ReplaceAll("\\", "/");
+
+        m_requestType = HttpRequestType::GET_Request;
+
+        filename.GetFileSize(m_fileSize);
+        }
+
+    REALITYDATAPLATFORM_EXPORT void Retry() override;
+
+    size_t                  iAppend;
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
+END_BENTLEY_REALITYPLATFORM_NAMESPACE
+
 
 
 static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityDataFileUpload* request)
@@ -630,6 +817,13 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
+RealityDataServiceTransfer::~RealityDataServiceTransfer()
+    {
+    for (int i = 0; i < m_filesToTransfer.size(); i++)
+        delete m_filesToTransfer[i];
+
+    delete m_handshakeRequest;
+    }
 
 void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
