@@ -76,13 +76,13 @@ public:
     ~GenericDomain();
 
     //! Validate the ECSchema for the GenericDomain against the specified DgnDb
-    static BeSQLite::DbResult ValidateSchema(DgnDbR);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult ValidateSchema(DgnDbR);
 
     //! Import the ECSchema for the GenericDomain into the specified DgnDb
-    static DgnDbStatus ImportSchema(DgnDbR);
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 
     //! Upgrade the ECSchema for the GenericDomain in the specified DgnDb
-    static DgnDbStatus UpgradeSchema(DgnDbR);
+    DGNPLATFORM_EXPORT static DgnDbStatus UpgradeSchema(DgnDbR);
 };
 
 //=======================================================================================

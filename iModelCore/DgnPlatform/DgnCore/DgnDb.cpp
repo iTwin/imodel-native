@@ -39,7 +39,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
@@ -58,7 +58,7 @@ ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettin
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSchemaImportToken const* DgnDb::GetECSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
+ECSchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -203,7 +203,7 @@ DgnDbStatus DgnDb::DoImportSchemas(bvector<ECSchemaCP> const& schemas, bool isIm
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false && "One or more schemas are incompatible.");
-        return DgnDbStatus::InvalidSchemaVersion;
+        return DgnDbStatus::InvalidProfileVersion;
         }
 
     if (schemasToImport.empty())
@@ -215,7 +215,7 @@ DgnDbStatus DgnDb::DoImportSchemas(bvector<ECSchemaCP> const& schemas, bool isIm
         return DgnDbStatus::LockNotHeld;
         }
     
-    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(schemasToImport, isImportingFromV8, GetECSchemaImportToken()))
+    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(schemasToImport, isImportingFromV8, GetSchemaImportToken()))
         {
         DbResult result = AbandonChanges();
         BeAssert(result == BE_SQLITE_OK);

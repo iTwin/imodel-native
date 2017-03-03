@@ -21,14 +21,14 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/13
 //=======================================================================================
-enum DgnDbSchemaValues : int32_t
+enum DgnDbProfileValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 15,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 15,   // WIP: Increment this (1.x) for intermediate profile changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
-    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the schema supported by the current api
+    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the profile supported by the current api
     DGNDB_SUPPORTED_VERSION_Minor = 15,
 };
 
@@ -36,49 +36,38 @@ enum DgnDbSchemaValues : int32_t
 //! A 4-digit number that specifies a serializable version of something in a DgnDb.
 // @bsiclass
 //=======================================================================================
-struct DgnVersion : BeSQLite::SchemaVersion
+struct DgnDbProfileVersion : BeSQLite::SchemaVersion
 {
-    DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
-    DgnVersion(Utf8CP val) : SchemaVersion(val){}
-};
-
-//=======================================================================================
-//! Class designed for extracting the DgnDb schema version from a BeFileName
-//! @see DgnDbSchemaVersion::Extract
-// @bsiclass
-//=======================================================================================
-struct DgnDbSchemaVersion : DgnVersion
-{
-    DEFINE_T_SUPER(DgnVersion)
+    DEFINE_T_SUPER(BeSQLite::SchemaVersion)
     friend struct DgnDb;
 
 private:
-    DgnDbSchemaVersion() : T_Super(0, 0, 0, 0) {}
-    DgnDbSchemaVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
-    DgnDbSchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : T_Super(major, minor, sub1, sub2) {}
-    explicit DgnDbSchemaVersion(Utf8CP json) : T_Super(json) {}
-
     //! Map from legacy version range into current version range
-    static DgnDbSchemaVersion FromLegacy(Utf8CP versionJson);
-    //! Former PropertySpec values of DgnProjectProperty::SchemaVersion.  Used for inspecting legacy .dgndb, .idgndb files.
-    static BeSQLite::PropertySpec LegacyDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Proj");}
-    //! Former PropertySpec values of DgnEmbeddedProjectProperty::SchemaVersion.  Used for inspecting legacy .imodel files.
-    static BeSQLite::PropertySpec LegacyEmbeddedDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnProj");}
+    static DgnDbProfileVersion FromLegacy(Utf8CP versionJson);
+    //! Former PropertySpec values of DgnProjectProperty::ProfileVersion.  Used for inspecting legacy .dgndb, .idgndb files.
+    static BeSQLite::PropertySpec LegacyDbProfileVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Proj");}
+    //! Former PropertySpec values of DgnEmbeddedProjectProperty::ProfileVersion.  Used for inspecting legacy .imodel files.
+    static BeSQLite::PropertySpec LegacyEmbeddedDbProfileVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnProj");}
 
 public:
+    DgnDbProfileVersion() : T_Super(0, 0, 0, 0) {}
+    DgnDbProfileVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
+    DgnDbProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
+    explicit DgnDbProfileVersion(Utf8CP json) : T_Super(json) {}
+
     bool IsValid() const {return !IsEmpty();}
     bool IsCurrent() const {return *this == GetCurrent();}
     bool IsPast() const {return *this < GetCurrent();}
     bool IsFuture() const {return *this > GetCurrent();}
-    bool IsVersion_1_5() const {return *this == DgnDbSchemaVersion::Version_1_5();}
-    bool IsVersion_1_6() const {return *this == DgnDbSchemaVersion::Version_1_6();}
+    bool IsVersion_1_5() const {return *this == DgnDbProfileVersion::Version_1_5();}
+    bool IsVersion_1_6() const {return *this == DgnDbProfileVersion::Version_1_6();}
 
-    //! Extract the DgnDbSchemaVersion from the specfied file
-    DGNPLATFORM_EXPORT static DgnDbSchemaVersion Extract(BeFileNameCR fileName);
-    static DgnDbSchemaVersion GetCurrent() {return DgnDbSchemaVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
-    static DgnDbSchemaVersion Version_1_0() {return DgnDbSchemaVersion(1, 0);} // DgnV8
-    static DgnDbSchemaVersion Version_1_5() {return DgnDbSchemaVersion(1, 5);} // Graphite05
-    static DgnDbSchemaVersion Version_1_6() {return DgnDbSchemaVersion(1, 6);} // DgnDb0601
+    //! Extract the DgnDbProfileVersion from the specfied file
+    DGNPLATFORM_EXPORT static DgnDbProfileVersion Extract(BeFileNameCR fileName);
+    static DgnDbProfileVersion GetCurrent() {return DgnDbProfileVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
+    static DgnDbProfileVersion Version_1_0() {return DgnDbProfileVersion(1, 0);} // DgnV8
+    static DgnDbProfileVersion Version_1_5() {return DgnDbProfileVersion(1, 5);} // Graphite05
+    static DgnDbProfileVersion Version_1_6() {return DgnDbProfileVersion(1, 6);} // DgnDb0601
 };
 
 //=======================================================================================
@@ -158,7 +147,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         virtual ~OpenParams() {}
 
         BeSQLite::DbResult UpgradeSchema(DgnDbR) const;
-        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
+        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnDbProfileVersion& from) const;
     };
 
 private:
@@ -173,7 +162,7 @@ protected:
     Utf8String m_fileName;
     DgnElements m_elements;
     DgnModels m_models;
-    DgnVersion m_schemaVersion;
+    DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
     DgnFonts m_fonts;
     DgnLineStylesPtr m_lineStyles;
@@ -204,7 +193,7 @@ protected:
     BeSQLite::DbResult CreateSessionModel(); //!< @private
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
-    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnDbSchemaVersion::GetCurrent()); //!< @private
+    BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:
@@ -215,8 +204,8 @@ public:
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
     BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
-    //! Get the schema version of an opened DgnDb.
-    DGNPLATFORM_EXPORT DgnVersion GetSchemaVersion();
+    //! Get the profile version of an opened DgnDb.
+    DGNPLATFORM_EXPORT DgnDbProfileVersion GetProfileVersion();
 
     //! Open an existing DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully opened, error code otherwise. May be NULL.
@@ -366,7 +355,7 @@ public:
     //! Gets the permission token to perform a ECSchema import/update
     //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
     //! @private
-    BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
+    BeSQLite::EC::ECSchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
 
     //! @private internal use only (v8 importer)
     DGNPLATFORM_EXPORT DgnDbStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);

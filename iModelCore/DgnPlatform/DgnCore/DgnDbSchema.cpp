@@ -347,64 +347,64 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::SaveDgnDbSchemaVersion(DgnVersion version)
+DbResult DgnDb::SaveDgnDbProfileVersion(DgnDbProfileVersion version)
     {
-    m_schemaVersion = version;
-    return  SavePropertyString(DgnProjectProperty::SchemaVersion(), m_schemaVersion.ToJson());
+    m_profileVersion = version;
+    return  SavePropertyString(DgnProjectProperty::ProfileVersion(), m_profileVersion.ToJson());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    12/2016
 //---------------------------------------------------------------------------------------
-DgnDbSchemaVersion DgnDbSchemaVersion::FromLegacy(Utf8CP legacyVersionString)
+DgnDbProfileVersion DgnDbProfileVersion::FromLegacy(Utf8CP legacyVersionString)
     {
-    SchemaVersion legacyVersion(legacyVersionString);
+    DgnDbProfileVersion legacyVersion(legacyVersionString);
 
     if (5 == legacyVersion.GetMajor())
-        return DgnDbSchemaVersion::Version_1_5(); // Graphite05
+        return DgnDbProfileVersion::Version_1_5(); // Graphite05
 
     if ((6 == legacyVersion.GetMajor()) && (1 == legacyVersion.GetMinor()))
-        return DgnDbSchemaVersion::Version_1_6(); // DgnDb0601
+        return DgnDbProfileVersion::Version_1_6(); // DgnDb0601
 
-    return DgnDbSchemaVersion(); // Unknown/Invalid
+    return DgnDbProfileVersion(); // Unknown/Invalid
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    12/2016
 //---------------------------------------------------------------------------------------
-DgnDbSchemaVersion DgnDbSchemaVersion::Extract(BeFileNameCR fileName)
+DgnDbProfileVersion DgnDbProfileVersion::Extract(BeFileNameCR fileName)
     {
     BeSQLite::Db db;
     if (BE_SQLITE_OK != db.OpenBeSQLiteDb(fileName, Db::OpenParams (Db::OpenMode::Readonly)))
-        return DgnDbSchemaVersion(); // not a BeSQLite database
+        return DgnDbProfileVersion(); // not a BeSQLite database
 
-    Utf8String packageSchemaVersion;
-    if (BE_SQLITE_ROW == db.QueryProperty(packageSchemaVersion, PackageProperty::SchemaVersion()))
+    Utf8String packageVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(packageVersion, PackageProperty::SchemaVersion()))
         {
-        // is a package, query DgnDbSchemaVersion from embedded DgnDb (use current PropertySpec)
-        Utf8String schemaVersion;
-        if (BE_SQLITE_ROW == db.QueryProperty(schemaVersion, DgnEmbeddedProjectProperty::SchemaVersion(), 1 /* first embedded file */))
-            return DgnDbSchemaVersion(schemaVersion.c_str());
+        // is a package, query DgnDbProfileVersion from embedded DgnDb (use current PropertySpec)
+        Utf8String profileVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(profileVersion, DgnEmbeddedProjectProperty::ProfileVersion(), 1 /* first embedded file */))
+            return DgnDbProfileVersion(profileVersion.c_str());
 
-        // is a package, query DgnDbSchemaVersion from embedded DgnDb (use legacy PropertySpec)
-        Utf8String legacySchemaVersion;
-        if (BE_SQLITE_ROW == db.QueryProperty(legacySchemaVersion, LegacyEmbeddedDbSchemaVersionProperty(), 1 /* first embedded file */))
-            return DgnDbSchemaVersion::FromLegacy(legacySchemaVersion.c_str());
+        // is a package, query DgnDbProfileVersion from embedded DgnDb (use legacy PropertySpec)
+        Utf8String legacyProfileVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(legacyProfileVersion, LegacyEmbeddedDbProfileVersionProperty(), 1 /* first embedded file */))
+            return DgnDbProfileVersion::FromLegacy(legacyProfileVersion.c_str());
 
-        return DgnDbSchemaVersion(); // valid package, but invalid or non-existent payload
+        return DgnDbProfileVersion(); // valid package, but invalid or non-existent payload
         }
 
-    // not a package, query DgnDbSchemaVersion directly (use current PropertySpec)
-    Utf8String schemaVersion;
-    if (BE_SQLITE_ROW == db.QueryProperty(schemaVersion, DgnProjectProperty::SchemaVersion()))
-        return DgnDbSchemaVersion(schemaVersion.c_str());
+    // not a package, query DgnDbProfileVersion directly (use current PropertySpec)
+    Utf8String profileVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(profileVersion, DgnProjectProperty::ProfileVersion()))
+        return DgnDbProfileVersion(profileVersion.c_str());
 
-    // not a package, query DgnDbSchemaVersion directly (use legacy PropertySpec)
-    Utf8String legacySchemaVersion;
-    if (BE_SQLITE_ROW == db.QueryProperty(legacySchemaVersion, LegacyDbSchemaVersionProperty()))
-        return DgnDbSchemaVersion::FromLegacy(legacySchemaVersion.c_str());
+    // not a package, query DgnDbProfileVersion directly (use legacy PropertySpec)
+    Utf8String legacyProfileVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(legacyProfileVersion, LegacyDbProfileVersionProperty()))
+        return DgnDbProfileVersion::FromLegacy(legacyProfileVersion.c_str());
 
-    return DgnDbSchemaVersion(); // unknown BeSQLite database type
+    return DgnDbProfileVersion(); // unknown BeSQLite database type
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -415,7 +415,7 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     if (params.GetGuid().IsValid())
         ChangeDbGuid(params.GetGuid());
 
-    SaveDgnDbSchemaVersion();
+    SaveDgnDbProfileVersion();
     SaveCreationDate();
 
     Domains().OnDbOpened();
@@ -437,8 +437,8 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 //=======================================================================================
 struct ProjectSchemaUpgrader
 {
-    virtual DgnVersion _GetVersion() = 0;
-    virtual DbResult _Upgrade(DgnDbR project, DgnVersion version) = 0;
+    virtual DgnDbProfileVersion _GetVersion() = 0;
+    virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
 };
 
 
@@ -455,7 +455,7 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 * Each call to _DoUpgrade will upgrade the schema from its stored version to the immediately succeeding version.
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnVersion& version) const
+DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnDbProfileVersion& version) const
     {
 #if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
@@ -471,7 +471,7 @@ DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnVersion& version) cons
         }
 
 #endif
-    version = DgnDbSchemaVersion::GetCurrent();
+    version = DgnDbProfileVersion::GetCurrent();
     return  BE_SQLITE_OK;
     }
 
@@ -484,24 +484,24 @@ DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
     if (!_ReopenForSchemaUpgrade(project))
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
 
-    DgnVersion version = project.GetSchemaVersion();
+    DgnDbProfileVersion version = project.GetProfileVersion();
     for (;;)
         {
         DbResult stat = _DoUpgrade(project, version);
         if (BE_SQLITE_OK != stat)
             return stat;
 
-        project.SaveDgnDbSchemaVersion(version);
+        project.SaveDgnDbProfileVersion(version);
 
         // Stop when we get to the current version.
-        if (DgnDbSchemaVersion::GetCurrent() == version)
+        if (DgnDbProfileVersion::GetCurrent() == version)
             break;
         }
 
     return project.SaveChanges();
     }
 
-DgnVersion DgnDb::GetSchemaVersion() {return m_schemaVersion;}
+DgnDbProfileVersion DgnDb::GetProfileVersion() {return m_profileVersion;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
@@ -513,21 +513,21 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
         return result;
 
     Utf8String versionString;
-    result = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
+    result = QueryProperty(versionString, DgnProjectProperty::ProfileVersion());
     if (BE_SQLITE_ROW != result)
         {
-        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbSchemaVersion::LegacyDbSchemaVersionProperty()))
+        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbProfileVersion::LegacyDbProfileVersionProperty()))
             return BE_SQLITE_ERROR_ProfileTooOld; // report Graphite05 and DgnDb0601 as too old rather than invalid
 
         return BE_SQLITE_ERROR_InvalidProfileVersion;
         }
 
-    m_schemaVersion.FromJson(versionString.c_str());
-    DgnVersion expectedVersion = DgnDbSchemaVersion::GetCurrent();
-    DgnVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    m_profileVersion.FromJson(versionString.c_str());
+    DgnDbProfileVersion expectedVersion = DgnDbProfileVersion::GetCurrent();
+    DgnDbProfileVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool profileIsAutoUpgradable = false;
-    result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
+    result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_profileVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
     if (profileIsAutoUpgradable)
         result = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
     if (result != BE_SQLITE_OK)
