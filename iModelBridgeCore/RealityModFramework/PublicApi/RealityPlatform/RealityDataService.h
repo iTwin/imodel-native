@@ -53,37 +53,37 @@ public:
 //! RealityDataEnterpriseStat
 //! This class returns the size in KB currently used.
 //=====================================================================================
-struct RealityDataEnterpriseStat : public RealityDataUrl
+struct RealityDataEnterpriseStatRequest : public RealityDataUrl
 {
 public:
     // Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat(Utf8StringCR enterpriseId) { m_validRequestString = false; m_id = enterpriseId; }
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStatRequest(Utf8StringCR enterpriseId) { m_validRequestString = false; m_id = enterpriseId; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataEnterpriseStat() {}
+    RealityDataEnterpriseStatRequest() {}
 };
 
 
 //=====================================================================================
 //! Overview:
-//! The present classes serve as interfaces to the RealityDataService.
+//! The present classes serves as an interfaces to the RealityDataService.
 //! Although the RealityData Service is based on a simple WSG-based
-//!  rest api, it relies on a variety of interrelated classes and the
+//!  REST api, it relies on a variety of interrelated classes and the
 //!  capacity to perform spatial or classification related queries renders the
 //!  construction of the request slightly tedious.
 //! The present classes provide three levels of simplification of accessing the service
 //!  and interpreting the results.
-//! Before continuing it's recommended to be familiar of the basic classes part of the
+//! Before continuing it is recommended to be familiar of the basic classes part of the
 //!  model definition (RealityData, RealityDataProjectRelationship, Folder, and Document).
 //! 
 //! The RealityData service API is based on equivalent EC Classes that represent mainly the
 //!  same concepts and the same fields.
 //!
 //! The first level of abstraction offered in the present higher level class organisation 
-//!  helps to compose rest api for common or custom queries. The second level of abstraction 
+//!  helps to compose REST api for common or custom queries. The second level of abstraction 
 //!  offers a mechanism to query the server for various common information without
 //!  requiring the client to compose the request itself or perform Http request or
 //!  interpret Http response.
@@ -231,6 +231,13 @@ private:
     Utf8String m_azureToken;
     };
 
+//=====================================================================================
+//! @bsiclass                                         Alain.Robert              12/2016
+//! RealityDataFilterCreator
+//! Helper module used to compose filter components for RealityData list extraction
+//! based on filter criteria such as a type or spatial overlap.
+//! The filter takes the form of a string that is provided to filtered request
+//=====================================================================================
 struct RealityDataFilterCreator
     { 
     //! Sets filtering upon the classification. The classification may contain
@@ -330,11 +337,12 @@ enum class RealityDataField
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert                    12/2016
-//! This class represents a spatial request for SpatialEntityWithDetails class object.
+//! This class represents a spatial request for Reality Data class object.
 //! This represents the most common RealityData Service request.
-//! This request returns the list of SpatialEntityWithDetails objects that 
+//! This request returns the list of SpatialEntity objects that 
 //!  are located within provided spatial area (usually the project area) for the 
-//!  incdicated classification. Additional parameters can be provided after creation.
+//!  incdicated classification. Additional parameters can be provided by adding a filter
+//!  created using the RealityDataFilterCreator module.
 //=====================================================================================
 struct RealityDataPagedRequest : public WSGPagedRequest
     {
@@ -365,6 +373,17 @@ protected:
     Utf8String m_sort;
     };
 
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A specialisation of a RealityDataPagedRequest that only obtains reality data
+//! for specific enterprise. Usually a CONENCT user only has access to its own enterprise 
+//! data only so the enterpriseId specified should be the identifeir of its enterprise.
+//! This request will not return public references to reality data from other enterprises
+//! marked as public.
+//! Note that the present request will only return Reality Data part of an enterprise
+//! for which the current CONNECT user has access to. 
+//=====================================================================================
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
@@ -374,6 +393,12 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A specialisation of a RealityDataPagedRequest that only obtains reality data
+//! explicitely linked to a specific CONNECT Project through the Reality Data Service
+//! RealityData/Project registry it maintains. 
+//=====================================================================================
 struct RealityDataProjectRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
@@ -385,6 +410,31 @@ protected:
 private:
     RealityDataProjectRelationshipByProjectIdPagedRequest() {}
     };
+
+
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A class used to create a new reality data in the reality data service.
+//=====================================================================================
+struct RealityDataServiceCreate : public RealityDataUrl
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    bool m_listable;
+    };
+
+
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! The Upload module.
+//! This module is in charge or providing higher level services to upload reality data
+//! to the Reality Data Service.
+//=====================================================================================
 
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
@@ -399,168 +449,17 @@ typedef std::function<void(Utf8String filename, double fileProgress, double repo
 //! @param[out] pMsg        Curl English message.
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataServiceUpload_StatusCallBack;
 
+
 //! Callback function to follow the download progression.
 //! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
 //! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
 typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
 
-struct RealityDataServiceCreate : public RealityDataUrl
-    {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
-protected:
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
-private:
-    bool m_listable;
-    };
 
-struct RealityDataFileUpload : public RealityDataUrl
-    {
-public:
-    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
-        m_azureServer(azureServer), m_index(index), m_chunkSize(CHUNK_SIZE), m_filename(filename.GetNameUtf8()),
-        m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true), nbRetry(0)
-        {
-        m_validRequestString = false;
-        Utf8String fileFromRoot = filename.GetNameUtf8();
-        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
-        m_fileUrl = "/";
-        m_fileUrl.append(fileFromRoot);
-        m_fileUrl.ReplaceAll("\\","/");
-
-        m_requestType = HttpRequestType::PUT_Request;
-
-        filename.GetFileSize(m_fileSize);
-        }
-
-    REALITYDATAPLATFORM_EXPORT void ReadyFile()
-        {
-        m_chunkSize = CHUNK_SIZE;
-        BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
-        BeAssert(status == BeFileStatus::Success);
-
-        /*status = m_fileStream.GetSize((uint64_t)m_fileSize);
-        BeAssert(status == BeFileStatus::Success);*/
-        m_singleChunk = m_fileSize < m_chunkSize;
-
-        if(!m_singleChunk)
-            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
-        }
-
-    REALITYDATAPLATFORM_EXPORT void CloseFile()
-        {
-        if(m_fileStream.IsOpen())
-            m_fileStream.Close();
-        }
-
-    REALITYDATAPLATFORM_EXPORT void Retry();
-
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
-        {
-        if (!m_validRequestString)
-            _PrepareHttpRequestStringAndPayload();
-
-        BeAssert(m_validRequestString);
-        BeAssert(m_httpRequestString.size() != 0);
-
-        m_requestWithToken = m_httpRequestString;
-        m_requestWithToken.append(m_azureToken);
-
-        if(!m_singleChunk)
-            {
-            if(m_moreToSend)
-                {
-                m_requestWithToken.append("&comp=block&blockid=");
-                m_requestWithToken.append(m_chunkNumberString);
-                }
-            else
-                {
-                m_requestWithToken.append("&comp=blocklist");
-                }
-            }
-
-        return m_requestWithToken;
-        };
-
-    REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
-
-    REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
-
-    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
-
-    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GetFilename() { return m_filename; }
-
-    REALITYDATAPLATFORM_EXPORT uint64_t GetFileSize() const { return m_fileSize; }
-
-    REALITYDATAPLATFORM_EXPORT uint64_t GetUploadedSize() const { return m_uploadProgress; }
-
-    REALITYDATAPLATFORM_EXPORT BeFile& GetFileStream() { return m_fileStream; }
-
-    REALITYDATAPLATFORM_EXPORT void StartTimer();
-
-    REALITYDATAPLATFORM_EXPORT time_t GetStartTime() { return m_startTime; }
-
-    REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
-
-    void UpdateUploadedSize();
-
-    REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
-        {
-        if (!m_validRequestString || !m_moreToSend)
-            _PrepareHttpRequestStringAndPayload();
-
-        BeAssert(m_validRequestString);
-
-        return m_requestHeader;
-        } 
-
-    REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
-
-    size_t                  nbRetry;
-    size_t                  m_index;
-protected:
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-
-private:
-    mutable bool            m_moreToSend;
-    mutable bool            m_singleChunk;
-
-    Utf8String              m_fileUrl;
-    Utf8String              m_filename;
-
-    BeFile                  m_fileStream;
-    uint64_t                m_fileSize;
-
-    uint64_t                m_chunkSize;
-    uint64_t                m_chunkStop;
-    uint32_t                m_chunkNumber;
-    Utf8String              m_chunkNumberString;
-    uint64_t                m_uploadProgress;
-
-    Utf8String              m_azureServer;
-    float                   m_progressStep;
-    Utf8String              m_azureToken;
-    mutable Utf8String      m_requestWithToken;
-
-    Utf8String              m_blockList;
-    time_t                  m_startTime;
-    };
-
-struct AzureWriteHandshake : public RealityDataUrl
-    {
-public:
-    AzureWriteHandshake(Utf8String sourcePath) { m_validRequestString = false; m_id = sourcePath; }
-    Utf8StringR GetJsonResponse() { return jsonResponse; }
-protected:
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-private:
-    Utf8String jsonResponse;
-    AzureWriteHandshake();
-    };
+// Predeclaration of internal upload control class.
+struct RealityDataFileUpload;
+struct AzureWriteHandshake;
 
 //where the curl upload ended, either in success or failure
 struct UploadResult
@@ -611,13 +510,8 @@ struct RealityDataServiceUpload : public CurlConstructor
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false);
 
-    REALITYDATAPLATFORM_EXPORT ~RealityDataServiceUpload()
-        {
-        for(int i=0; i < m_filesToUpload.size(); i++)
-            delete m_filesToUpload[i];
+    REALITYDATAPLATFORM_EXPORT ~RealityDataServiceUpload();
 
-        delete m_handshakeRequest;
-        }
 
     //! Set the source path which, all files and folders located in this path will be uploaded
     //!  to the designated reality data
@@ -797,7 +691,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, RequestStatus& status);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status);
 
 
     //! Returns the RealityData object requested or null if an error occured

@@ -367,7 +367,7 @@ int main(int argc, char* argv[])
     if (s_cmd == CmdEntrStat)
         {
         RequestStatus status;
-        RealityDataEnterpriseStat* ptt = new RealityDataEnterpriseStat("");
+        RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
         uint64_t NbRealityData;
         uint64_t TotalSizeKB;
         RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);

@@ -20,61 +20,55 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
 //! Overview:
-//! The following classes represents the foundation of the GeoCoordination Service
+//! The following classes represents the foundation of the Reality Data Service
 //! client SDK. These classes enable to represent the information related to spatial 
-//! entities as inventoried by the GeoCoordination Service.
+//! entities as inventoried by the Reality Data Service.
 //! The main class is SpatialEntity that represents a data that is geocoordinated. This class
 //! does not contain the data proper but rather represents the informative portion of the
 //! data. The class contains names, description, data provider, spatial footprint (2D),
 //! and so on and makes reference to additional information but a potention link to a 
 //! SpatialEntityMetadata instance. 
 //!
-//! The SpatialEntityMetadata class enables to represent a few fields extracted from 
-//! the metadata and possibly a reference to an external page or document containing this
-//! metadata. An instance of a metadata may or may not be shared by spatial entities.
+//! Along with Reality Data are provided classes to represent documents and folder.
 //!
-//! The spatial entity makes reference to a list of SpatialEntityDataSource. It 
-//! indicates the location of the various data sources (files or stream) where can
-//! be obtained the data. There can be many data source for a same spatial entity
-//! for example when mirror site are used for distribution or if the data
-//! is distributed through different file formats or different geographic coordinate
-//! system. A data source thus contains the file location (URL) and indications about the
-//! format of this file for example if it is a zip file that contains the final file 
-//! (a compound document) and the name of the file in the compound (Location in
-//! compound) as well as geographic coordinate system and file format (usually file
-//! extension).
-//!
-//! Spatial data sources refer to a SpatialEntityServer class that keeps information
-//! about the server. This class contains information about the server proper including
-//! authentication required, communication protocol (http, ftp) and data access 
-//! protocol (WMS, S3MX, ftp, http). It may contain statitics concerning the
-//! robustness of the server (uptime, last time checked, etc)
-//!
-//! An additional class is provided that is not used by the SpatialEntity model used
-//! to represent and store thumbnails. Although unused at the moment it may be
-//! in a future to manage thumbnails stored as part of the service.
+//! The reality data service is a services that:
+//!  - Exposes a list of reality data including footprint, type, name, description,
+//!    owner, enterprise, and so on. This data is descriptive and serves as an access
+//!    point to the data proper located in a dedicated Azure Blob Container.
+//!  - Each Reality Data is provided with a specific Azure Blob Container in which, 
+//!    documents are stored in a tree-like file struture like for any disc drive.
+//!  - Offers Bentley CONNECT integrated permission access to create, access, manage,
+//!    update or delete reality data according to rules defined within the CONNECT
+//!    environment by individual enterprise administrator according to the usual roles 
+//!    and permission system of Bentley CONNECT as well a to project related permission
+//!    using common project permissions defined through the role base access control (RBAC)
+//!    CONNECT sub-system
+//!  - Although Reality Data is managed as Enterprise Asset than can optionnally used
+//!    for CONNECT projects, the service offers a service maintaining a list of 
+//!    project/reality data relationship. This registry is required for project related
+//!    permissions and to ease the maintenance of the Enterprise Reality Data pool
+//!    by the administrator.
 //=====================================================================================
 
 
 
 //=====================================================================================
 //! @bsiclass                                           Spencer.Mason 2017/01
-//! This class is used to represent a pair RealityDataId/ProjectId indicating a relationship beteen them. 
+//! This class is used to represent a pair RealityDataId/ProjectId indicating a relationship between them. 
 //! RealityData can be linked with many projects and projects can link with many different reality data
 //=====================================================================================
 struct RealityDataProjectRelationship : public RefCountedBase
     {
 public:
-    //! Create invalid data.
+    //! Extracts a relationship from the given json instance.
     REALITYDATAPLATFORM_EXPORT static RealityDataProjectRelationshipPtr Create(Json::Value jsonInstance) { return new RealityDataProjectRelationship(jsonInstance); }
 
     //! Get/Set
     //! The RealityDataId of the RealityData linked to the project. Normally both RealityData and Project are of the same enterprise but if the RealityData is marked as public
-    //! it may be referenced by projects from external enterprises
+    //! it may be referenced by projects from external enterprises. (Not so sure about linking external projects to public data)
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
 
-    //! Get/Set
-    //! The project that is linked with reality data.
+    //! The project id that is linked with reality data.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProjectId() const;
     
 private:
@@ -87,12 +81,14 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                           Spencer.Mason 2017/01
-//! This class is used to represent a document
+//! This class is used to represent a document stored in the Reality Data Service.
+//! It does not contain the actual data of the document but only information about
+//! this document.
 //=====================================================================================
 struct RealityDataDocument : public RefCountedBase
     {
 public:
-    //! Create invalid data.
+    //! Create a document
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Create(Json::Value jsonInstance) { return new RealityDataDocument(jsonInstance); }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
@@ -127,12 +123,13 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                           Spencer.Mason 2017/01
-//! This class is used to represent a folder
+//! This class is used to represent a folder. Here the folder object only contains the
+//! information about this folder, not the list of sub-folder and documents it contains.
 //=====================================================================================
 struct RealityDataFolder : public RefCountedBase
     {
 public:
-    //! Create 
+    //! Creates a representation of the folder. 
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Create(Json::Value jsonInstance) { return new RealityDataFolder(jsonInstance); }
 
     //! Get/Set

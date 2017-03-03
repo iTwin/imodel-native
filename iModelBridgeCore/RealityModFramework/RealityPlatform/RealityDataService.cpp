@@ -26,20 +26,6 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
-static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityDataFileUpload* request)
-    {
-    return request->OnReadData(buffer, size * count);
-    }
-
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    AzureWriteHandshake* handshake = (AzureWriteHandshake*)userp;
-    if (handshake != nullptr)
-        handshake->GetJsonResponse().append((char*)contents, size * nmemb);
-    else
-        ((Utf8String*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-    }
 
 Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::GetServerName(); }
 
@@ -50,7 +36,7 @@ Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetS
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 
-void RealityDataEnterpriseStat::_PrepareHttpRequestStringAndPayload() const
+void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() const
 {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -598,6 +584,178 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
+
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+struct RealityDataFileUpload : public RealityDataUrl
+    {
+public:
+    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
+        m_azureServer(azureServer), m_index(index), m_chunkSize(CHUNK_SIZE), m_filename(filename.GetNameUtf8()),
+        m_chunkStop(0), m_chunkNumber(0), m_uploadProgress(0), m_moreToSend(true), nbRetry(0)
+        {
+        m_validRequestString = false;
+        Utf8String fileFromRoot = filename.GetNameUtf8();
+        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
+        m_fileUrl = "/";
+        m_fileUrl.append(fileFromRoot);
+        m_fileUrl.ReplaceAll("\\","/");
+
+        m_requestType = HttpRequestType::PUT_Request;
+
+        filename.GetFileSize(m_fileSize);
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ReadyFile()
+        {
+        m_chunkSize = CHUNK_SIZE;
+        BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
+        BeAssert(status == BeFileStatus::Success);
+
+        /*status = m_fileStream.GetSize((uint64_t)m_fileSize);
+        BeAssert(status == BeFileStatus::Success);*/
+        m_singleChunk = m_fileSize < m_chunkSize;
+
+        if(!m_singleChunk)
+            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+        }
+
+    REALITYDATAPLATFORM_EXPORT void CloseFile()
+        {
+        if(m_fileStream.IsOpen())
+            m_fileStream.Close();
+        }
+
+    REALITYDATAPLATFORM_EXPORT void Retry();
+
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
+        {
+        if (!m_validRequestString)
+            _PrepareHttpRequestStringAndPayload();
+
+        BeAssert(m_validRequestString);
+        BeAssert(m_httpRequestString.size() != 0);
+
+        m_requestWithToken = m_httpRequestString;
+        m_requestWithToken.append(m_azureToken);
+
+        if(!m_singleChunk)
+            {
+            if(m_moreToSend)
+                {
+                m_requestWithToken.append("&comp=block&blockid=");
+                m_requestWithToken.append(m_chunkNumberString);
+                }
+            else
+                {
+                m_requestWithToken.append("&comp=blocklist");
+                }
+            }
+
+        return m_requestWithToken;
+        };
+
+    REALITYDATAPLATFORM_EXPORT void SetAzureToken(Utf8String token) { m_azureToken = token; }
+
+    REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
+
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
+
+    REALITYDATAPLATFORM_EXPORT Utf8String GetFilename() { return m_filename; }
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetFileSize() const { return m_fileSize; }
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetUploadedSize() const { return m_uploadProgress; }
+
+    REALITYDATAPLATFORM_EXPORT BeFile& GetFileStream() { return m_fileStream; }
+
+    REALITYDATAPLATFORM_EXPORT void StartTimer();
+
+    REALITYDATAPLATFORM_EXPORT time_t GetStartTime() { return m_startTime; }
+
+    REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
+
+    void UpdateUploadedSize();
+
+    REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const override
+        {
+        if (!m_validRequestString || !m_moreToSend)
+            _PrepareHttpRequestStringAndPayload();
+
+        BeAssert(m_validRequestString);
+
+        return m_requestHeader;
+        } 
+
+    REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
+
+    size_t                  nbRetry;
+    size_t                  m_index;
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    mutable bool            m_moreToSend;
+    mutable bool            m_singleChunk;
+
+    Utf8String              m_fileUrl;
+    Utf8String              m_filename;
+
+    BeFile                  m_fileStream;
+    uint64_t                m_fileSize;
+
+    uint64_t                m_chunkSize;
+    uint64_t                m_chunkStop;
+    uint32_t                m_chunkNumber;
+    Utf8String              m_chunkNumberString;
+    uint64_t                m_uploadProgress;
+
+    Utf8String              m_azureServer;
+    float                   m_progressStep;
+    Utf8String              m_azureToken;
+    mutable Utf8String      m_requestWithToken;
+
+    Utf8String              m_blockList;
+    time_t                  m_startTime;
+    };
+
+
+struct AzureWriteHandshake : public RealityDataUrl
+    {
+public:
+    AzureWriteHandshake(Utf8String sourcePath) { m_validRequestString = false; m_id = sourcePath; }
+    Utf8StringR GetJsonResponse() { return jsonResponse; }
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+private:
+    Utf8String jsonResponse;
+    AzureWriteHandshake();
+    };
+
+
+END_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityPlatform::RealityDataFileUpload* request)
+    {
+    return request->OnReadData(buffer, size * count);
+    }
+
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+    {
+    AzureWriteHandshake* handshake = (AzureWriteHandshake*)userp;
+    if (handshake != nullptr)
+        handshake->GetJsonResponse().append((char*)contents, size * nmemb);
+    else
+        ((Utf8String*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+    }
+
+
+
 void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
@@ -734,6 +892,15 @@ void UploadReport::ToXml(Utf8StringR report)
         }
     writer->WriteElementEnd();
     writer->ToString(report);
+    }
+
+
+RealityDataServiceUpload::~RealityDataServiceUpload()
+    {
+    for(int i=0; i < m_filesToUpload.size(); i++)
+        delete m_filesToUpload[i];
+
+    delete m_handshakeRequest;
     }
 
 Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Utf8String> properties)
@@ -1279,14 +1446,14 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
     return entities;
     }
 
-void RealityDataService::Request(const RealityDataEnterpriseStat& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
+void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
 {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
 
     if (status != RequestStatus::SUCCESS)
     {
-        std::cout << "RealityDataEnterpriseStat failed with response" << std::endl;
+        std::cout << "RealityDataEnterpriseStatRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         status = RequestStatus::ERROR;
     }
