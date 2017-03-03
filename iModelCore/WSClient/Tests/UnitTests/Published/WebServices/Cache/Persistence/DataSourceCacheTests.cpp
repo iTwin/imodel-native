@@ -2897,6 +2897,23 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCache
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponseNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponsePageNotCached_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified(), nullptr, nullptr, 42));
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndHolderRootIsRemoved_QueryResultsAndHolderDeleted)
     {
     auto cache = GetTestCache();

@@ -1461,16 +1461,13 @@ ICancellationTokenPtr ct
     {
     LogCacheDataForMethod();
     if (!responseKey.IsValid())
-        {
         return CacheStatus::Error;
-        }
 
     if (!response.IsModified())
         {
-        if (SUCCESS != m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page))
-            {
-            return CacheStatus::Error;
-            }
+        auto status = m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page);
+        if (CacheStatus::OK != status)
+            return status;
         }
     else
         {
@@ -1480,15 +1477,10 @@ ICancellationTokenPtr ct
         if (nullptr != query)
             {
             if (nullptr == rejectedOut)
-                {
-                BeAssert(false);
                 return CacheStatus::Error;
-                }
 
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
-                {
                 return CacheStatus::Error;
-                }
 
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
@@ -1515,25 +1507,16 @@ ICancellationTokenPtr ct
             }
         }
 
-    if (response.IsFinal())
-        {
-        if (SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
-            {
-            return CacheStatus::Error;
-            }
-        }
+    if (response.IsFinal() && SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
+        return CacheStatus::Error;
 
     bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     bool nowCompleted = wasCompleted;
 
     if (response.IsFinal())
-        {
         nowCompleted = true;
-        }
     else if (response.IsModified())
-        {
         nowCompleted = false;
-        }
 
     if (wasCompleted != nowCompleted)
         {

@@ -496,11 +496,20 @@ BentleyStatus CachedResponseManager::InsertInfo(CachedResponseInfoR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::UpdatePageCachedDate(CachedResponseKeyCR responseKey, uint64_t page)
+CacheStatus CachedResponseManager::UpdatePageCachedDate(CachedResponseKeyCR responseKey, uint64_t page)
     {
     auto info = ReadInfo(responseKey);
+    if (!info.IsCached())
+        return CacheStatus::DataNotCached;
+
     ECInstanceKey pageKey = FindPage(info, page);
-    return UpdatePageCacheDate(pageKey.GetECInstanceId());
+    if (!pageKey.IsValid())
+        return CacheStatus::DataNotCached;
+
+    if (SUCCESS != UpdatePageCacheDate(pageKey.GetECInstanceId()))
+        return CacheStatus::Error;
+
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+
