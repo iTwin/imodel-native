@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/Angle.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -820,24 +820,6 @@ void Angle::TrigIntegrals (double theta0, double theta1, RotMatrixR integrals)
     integrals.Subtract (IndefiniteTrigIntegrals (theta0));
     }
 
-
-// Modern strongly typed methods
-
-/*---------------------------------------------------------------------------------**//**
-* Strongly typed angle internal (private) constructors
----------------------------------------------------------------------------------------*/
-Angle::Angle (double radians){m_radians = radians;}
-Angle::Angle (AngleCR other){m_radians = other.m_radians;}
-/*---------------------------------------------------------------------------------**//**
-* Strongly typed angle static (public) constructors and property extractors
----------------------------------------------------------------------------------------*/
-Angle Angle::FromDegrees (double degrees){return Angle (DegreesToRadians (degrees));}
-Angle Angle::FromRadians (double radians){return Angle (radians);}
-Angle::Angle (){m_radians = 0.0;}
-Angle Angle::FromAtan2 (double sine, double cosine){return Atan2 (sine, cosine);}
-double Angle::Radians () const   {return m_radians;}
-double Angle::Degrees () const  {return RadiansToDegrees (m_radians);}
-
 static double s_epsilon = 1.0e-12;
 double Angle::Cos () const
     {
@@ -871,71 +853,6 @@ double Angle::Sin () const
 
 double Angle::Tan () const {return tan (m_radians);}
 
-// Private constructor with degrees as input.  public users must specfiy FromDegrees or FromRadians
-// via the static methods.
-AngleInDegrees::AngleInDegrees (double degrees) : m_degrees (degrees) {}
-
-// Public default constructor.
-AngleInDegrees::AngleInDegrees () : m_degrees (0.0) {}
-
-// Public copy constructor
-AngleInDegrees::AngleInDegrees (AngleInDegrees const &other) : m_degrees (other.m_degrees) {}
-
-// Public conversion from radians-based Angle
-AngleInDegrees::AngleInDegrees (Angle const &other) : m_degrees (other.Degrees ()) {}
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator == (AngleInDegrees const &other) const
-    {
-    return m_degrees == other.m_degrees;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator < (AngleInDegrees const &other) const
-    {
-    return m_degrees < other.m_degrees;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator <= (AngleInDegrees const &other) const
-    {
-    return m_degrees <= other.m_degrees;
-    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator > (AngleInDegrees const &other) const
-    {
-    return m_degrees > other.m_degrees;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator >= (AngleInDegrees const &other) const
-    {
-    return m_degrees >= other.m_degrees;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-bool AngleInDegrees::operator != (AngleInDegrees const &other) const
-    {
-    return m_degrees != other.m_degrees;
-    }
-
-
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2015
 +--------------------------------------------------------------------------------------*/
@@ -943,32 +860,6 @@ bool AngleInDegrees::AlmostEqual (AngleInDegrees const &other)
     {
     return Angle::DegreesToRadians (fabs (m_degrees - other.m_degrees)) < Angle::SmallAngle ();
     }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-AngleInDegrees AngleInDegrees::FromRadians (double radians)
-    {
-    return AngleInDegrees (Angle::RadiansToDegrees (radians));
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-AngleInDegrees AngleInDegrees::FromDegrees (double degrees)
-    {
-    return AngleInDegrees (degrees);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-double AngleInDegrees::Radians () const { return Angle::DegreesToRadians (m_degrees);}
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      03/2015
-+--------------------------------------------------------------------------------------*/
-double AngleInDegrees::Degrees () const {return m_degrees;}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2015
