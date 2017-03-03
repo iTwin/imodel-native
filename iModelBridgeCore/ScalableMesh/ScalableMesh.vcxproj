@@ -642,6 +642,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
+    <ClCompile Include="STM\ImportPlugins\PODImporter_dgndb.cpp" />
     <ClCompile Include="stm\MapboxTextureProvider.cpp" />
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
