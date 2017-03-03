@@ -163,7 +163,10 @@ void SyncCachedDataTask::CacheFiles()
     bset<ObjectId> filesToDownload;
     for (ECInstanceKeyCR instanceKey : m_filesToDownload)
         {
-        filesToDownload.insert(txn.GetCache().FindInstance(instanceKey));
+        auto objectId = txn.GetCache().FindInstance(instanceKey);
+        if (!objectId.IsValid())
+            continue;
+        filesToDownload.insert(objectId);
         }
 
     txn.Commit();
