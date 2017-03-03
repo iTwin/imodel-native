@@ -58,6 +58,10 @@ namespace ViewProperties
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
     static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
+    static constexpr Utf8CP str_GridOrient() {return "GridOrient";}
+    static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
+    static constexpr Utf8CP str_GridSpaceY() {return "GridSpaceY";}
+    static constexpr Utf8CP str_GridPerRef() {return "GridPerRef";}
 };
 
 using namespace ViewProperties;
@@ -219,6 +223,50 @@ void ViewDefinition::SetViewClip(ClipVectorPtr clip)
 ClipVectorPtr ViewDefinition::GetViewClip() const
     {
     return ClipVector::FromJson(GetDetail(str_Clip()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
+    {
+    if (GridOrientationType::WorldXY != orientation)
+        SetDetail(str_GridOrient(), Json::Value((uint32_t) orientation));
+    else
+        RemoveDetail(str_GridOrient());
+
+    if (10 != gridsPerRef)
+        SetDetail(str_GridPerRef(), Json::Value(gridsPerRef));
+    else
+        RemoveDetail(str_GridPerRef());
+
+    if (1.0 != spacing.x)
+        SetDetail(str_GridSpaceX(), Json::Value(spacing.x));
+    else
+        RemoveDetail(str_GridSpaceX());
+
+    if (spacing.y != spacing.x)
+        SetDetail(str_GridSpaceY(), Json::Value(spacing.y));
+    else
+        RemoveDetail(str_GridSpaceY());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
+    {
+    JsonValueCR valO = GetDetail(str_GridOrient());
+    orientation = valO.isNull() ? GridOrientationType::WorldXY : (GridOrientationType) valO.asUInt();
+
+    JsonValueCR valR = GetDetail(str_GridPerRef());
+    gridsPerRef = valR.isNull() ? 10 : valR.asUInt();
+
+    JsonValueCR valX = GetDetail(str_GridSpaceX());
+    spacing.x = valX.isNull() ? 1.0 : valX.asDouble();
+
+    JsonValueCR valY = GetDetail(str_GridSpaceY());
+    spacing.y = valY.isNull() ? spacing.x : valY.asDouble();
     }
 
 /*---------------------------------------------------------------------------------**//**
