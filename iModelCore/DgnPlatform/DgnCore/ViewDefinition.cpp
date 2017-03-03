@@ -1150,7 +1150,7 @@ void DisplayStyle::_OnSaveJsonProperties()
         }
 
     if (ColorDef::Black() == GetBackgroundColor())
-        RemoveStyle(str_BackgroundColor());
+        RemoveStyle(str_BackgroundColor());    // black is the default
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,14 +1199,14 @@ static bool findNearbyStandardViewMatrix(RotMatrixR rMatrix)
 ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     {
     DPoint3dCP frustPts = frustum.GetPts();
-    DPoint3d viewOrg = frustPts[NPC_000];
+    DPoint3d viewOrg = frustPts[NPC_LeftBottomRear];
 
     // frustumX, frustumY, frustumZ are vectors along edges of the frustum. They are NOT unit vectors.
     // X and Y should be perpendicular, and Z should be right handed.
     DVec3d frustumX, frustumY, frustumZ;
-    frustumX.DifferenceOf(frustPts[NPC_100], viewOrg);
-    frustumY.DifferenceOf(frustPts[NPC_010], viewOrg);
-    frustumZ.DifferenceOf(frustPts[NPC_001], viewOrg);
+    frustumX.DifferenceOf(frustPts[NPC_RightBottomRear], viewOrg);
+    frustumY.DifferenceOf(frustPts[NPC_LeftTopRear], viewOrg);
+    frustumZ.DifferenceOf(frustPts[NPC_LeftBottomFront], viewOrg);
 
     RotMatrix   frustMatrix;
     frustMatrix.InitFromColumnVectors(frustumX, frustumY, frustumZ);
@@ -1257,11 +1257,12 @@ ViewportStatus ViewDefinition3d::_SetupFromFrustum(Frustum const& frustum)
     if (ViewportStatus::Success != stat)
         return stat;
 
+    TurnCameraOff();
     DPoint3dCP frustPts = frustum.GetPts();
 
     // use comparison of back, front plane X sizes to indicate camera or flat view ...
-    double xBack  = frustPts[NPC_000].Distance(frustPts[NPC_100]);
-    double xFront = frustPts[NPC_001].Distance(frustPts[NPC_101]);
+    double xBack  = frustPts[NPC_LeftBottomRear].Distance(frustPts[NPC_RightBottomRear]);
+    double xFront = frustPts[NPC_LeftBottomFront].Distance(frustPts[NPC_RightBottomFront]);
 
     static double const s_flatViewFractionTolerance = 1.0e-6;
     if (xFront > xBack *(1.0 + s_flatViewFractionTolerance))
@@ -1270,15 +1271,12 @@ ViewportStatus ViewDefinition3d::_SetupFromFrustum(Frustum const& frustum)
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
     if (compression >= (1.0 - s_flatViewFractionTolerance))
-        {
-        m_cameraOn = false;
         return ViewportStatus::Success;
-        }
 
-    DPoint3d viewOrg = frustPts[NPC_000];
+    DPoint3d viewOrg = frustPts[NPC_LeftBottomRear];
     DVec3d viewDelta = GetExtents();
     DVec3d zDir = GetZVector();
-    DVec3d frustumZ = DVec3d::FromStartEnd(viewOrg, frustPts[NPC_001]);
+    DVec3d frustumZ = DVec3d::FromStartEnd(viewOrg, frustPts[NPC_LeftBottomFront]);
     DVec3d frustOrgToEye = DVec3d::FromScale(frustumZ, 1.0 /(1.0 - compression));
     DPoint3d eyePoint = DPoint3d::FromSumOf(viewOrg, frustOrgToEye);
 
@@ -1336,9 +1334,9 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    auto cameraView = ToView3dP();
     DPoint3d origNewDelta = newDelta;
 
+    auto cameraView = ToView3dP();
     bool isCameraOn = cameraView && cameraView->IsCameraOn();
     if (isCameraOn)
         {
@@ -1373,7 +1371,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.Scale(1.04); // default "dilation"
         }
 
-    if (cameraView /* && Allow3dManipulations() */ && isCameraOn)
+    if (isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
         double diag = newDelta.MagnitudeXY();
@@ -1414,7 +1412,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     auto& cameraDef = cameraView->GetCameraR();
     cameraDef.ValidateLens();
     // move the camera back so the entire x,y range is visible at front plane
-    double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraDef.GetLensAngle().Radians()/2.0));
+    double frontDist = std::max(newDelta.x, newDelta.y) / (2.0*tan(cameraDef.GetLensAngle().Radians()/2.0));
     double backDist = frontDist + newDelta.z;
 
     cameraDef.SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
@@ -1428,7 +1426,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
 Angle ViewDefinition3d::CalcLensAngle() const
     {
     double maxDelta = std::max(m_extents.x, m_extents.y);
-    return Angle::FromRadians(2.0 * atan2(maxDelta*0.5, m_cameraDef.GetFocusDistance()));
+    return Angle::FromRadians(2.0 * Angle::Atan2(maxDelta*0.5, m_cameraDef.GetFocusDistance()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1485,7 +1483,7 @@ double ViewDefinition3d::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition3d::VerifyFocusPlane()
     {
-    if (!m_cameraOn)
+    if (!IsCameraOn())
         return;
 
     DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_cameraDef.GetEyePoint());
@@ -1536,7 +1534,7 @@ ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPo
     zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
-    if (focusDist <= DgnUnits::OneMillimeter())      // eye and target are too close together
+    if (focusDist <= MinimumFrontDistance())      // eye and target are too close together
         return ViewportStatus::InvalidTargetPoint;
 
     DVec3d xVec; // x is the normal to the Up-Z plane
@@ -1559,6 +1557,12 @@ ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPo
     if (backDist < focusDist) // make sure focus distance is in front of back distance.
         backDist = focusDist + DgnUnits::OneMillimeter();
 
+    if (frontDist > focusDist)
+        frontDist = focusDist - MinimumFrontDistance();
+
+    if (frontDist < MinimumFrontDistance())
+        frontDist = MinimumFrontDistance();
+         
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
 
@@ -1615,7 +1619,7 @@ ViewportStatus ViewDefinition3d::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewDefinition3d::MoveCameraWorld(DVec3dCR distance)
     {
-    if (!m_cameraOn)
+    if (!IsCameraOn())
         {
         m_origin.SumOf(m_origin, distance);
         return ViewportStatus::Success;
@@ -1678,7 +1682,7 @@ double ViewDefinition3d::GetBackDistance() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/06
+* @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ViewDefinition::GetCenter() const
     {
@@ -1691,7 +1695,7 @@ DPoint3d ViewDefinition::GetCenter() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifer     04/07
+* @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ViewDefinition3d::_GetTargetPoint() const
     {

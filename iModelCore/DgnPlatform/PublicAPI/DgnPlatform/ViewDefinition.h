@@ -827,6 +827,7 @@ protected:
     virtual void _EnableCamera() {m_cameraOn = true;}
 
 public:
+    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} // about 12 inches
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
@@ -850,16 +851,8 @@ public:
 
     //! Turn the camera off for this view. After this call, the camera parameters in this view definition are ignored and views that use it will
     //! display with an orthographic (infinite focal length) projection of the view volume from the view direction. 
-    //! @see #TurnCameraOn
+    //! @note To turn the camera back on, call LookAt
     void TurnCameraOff() {m_cameraOn = false;}
-
-    //! If the camera is off, turn it on for this view using the supplied lens angle.
-    //! @note With the camera off, the camera position (eyepoint) is not updated as the view is modified. Therefore, it is not possible to simply turn
-    //! the camera back on without somehow determining an appropriate camera position. That can be done either by supplying the position via #LookAt, or by 
-    //! accepting a new nearly-arbitrary camera position calculated by this method. This method will attempt to place the camera slightly outside the existing
-    //! view volume by moving back from the front plane along the view direction. The target point is arbitrarily set to the center of the visible volume of the orthographic
-    //! view. There is no guarantee that the new view with the camera on will very closely resemble the content of the orthographic view.
-    DGNPLATFORM_EXPORT void TurnCameraOn(Angle lensAngle);
 
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}

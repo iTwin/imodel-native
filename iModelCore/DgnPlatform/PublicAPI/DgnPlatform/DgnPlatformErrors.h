@@ -58,7 +58,7 @@ enum class DgnDbStatus : int
     InvalidId,
     InvalidName,
     InvalidParent,
-    InvalidSchemaVersion,
+    InvalidProfileVersion,
     IsCreatingRevision,
     LockNotHeld,
     Mismatch2d3d,
@@ -101,7 +101,7 @@ enum class DgnDbStatus : int
 //! Status Values for DgnViewport methods
 enum class ViewportStatus : int
 {
-        Success = SUCCESS,
+    Success = SUCCESS,
     ViewNotInitialized = VIEWPORT_ERROR_BASE + 1,
     AlreadyAttached,
     NotAttached,

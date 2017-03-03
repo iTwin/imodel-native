@@ -74,9 +74,15 @@ protected:
 public:
     GenericDomain();
     ~GenericDomain();
-    
+
+    //! Validate the ECSchema for the GenericDomain against the specified DgnDb
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult ValidateSchema(DgnDbR);
+
     //! Import the ECSchema for the GenericDomain into the specified DgnDb
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
+
+    //! Upgrade the ECSchema for the GenericDomain in the specified DgnDb
+    DGNPLATFORM_EXPORT static DgnDbStatus UpgradeSchema(DgnDbR);
 };
 
 //=======================================================================================
