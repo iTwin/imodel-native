@@ -178,9 +178,7 @@ protected:
 
     //! Grid display and point adjustment.
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
-    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor() const;
     DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DPoint2dR, uint32_t& gridsPerRef) const;
-    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DPoint2dR roundingDistance) const;
 
     //! Display grid for this view.
     DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
@@ -305,7 +303,7 @@ public:
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
 
-    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
 
     //! Get the Appearance of a DgnSubCategory for this view.

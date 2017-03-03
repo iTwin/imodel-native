@@ -58,7 +58,7 @@ enum class DgnDbStatus : int
     InvalidId,
     InvalidName,
     InvalidParent,
-    InvalidSchemaVersion,
+    InvalidProfileVersion,
     IsCreatingRevision,
     LockNotHeld,
     Mismatch2d3d,
