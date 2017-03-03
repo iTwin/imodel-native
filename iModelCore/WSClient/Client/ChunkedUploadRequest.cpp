@@ -2,7 +2,7 @@
  |
  |     $Source: Client/ChunkedUploadRequest.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -226,6 +226,13 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
     // That causes timeout and CURL connection reset until same pattern happens again.
     // 4MB requests stuck on every second request.
     request.SetUseNewConnection(true);
+
+    // TODO VRA: above workaround causes issues when connected Windows Server 2012. 
+    // (logged in https://github.com/curl/curl/issues/1294/)
+    // Random request fails after 100-900MB uploaded with "Unknown SSL protocol error"
+    // Workaround involves retrying request when connection is lost
+    // TFS#634012
+    request.SetRetryOnCouldNotConnect(true);
 
     request.GetHeaders().SetIfMatch(cuRequest->m_etag);
     request.GetHeaders().SetContentRange(Utf8PrintfString("bytes %llu-%llu/%llu", cuRequest->m_data->rangeFrom, rangeTo, cuRequest->m_data->contentLength));
