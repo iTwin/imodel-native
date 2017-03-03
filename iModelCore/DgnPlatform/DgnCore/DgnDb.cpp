@@ -9,6 +9,10 @@
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
 
+#ifndef NDEBUG
+#define CHECK_NON_NAVIGATION_PROPERTY_API
+#endif
+
 static WCharCP s_dgndbExt   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,12 +319,43 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
     return m_ecsqlCache.GetPreparedStatement(*this, ecsql, writeToken);
     }
 
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      03/17
+//--------------+---------------+---------------+---------------+---------------+------
+bool isNavigationPropertyOf(ECN::ECRelationshipClassCR relClass, DgnDbR db, BeSQLite::EC::ECInstanceId instid)
+    {
+    auto el = db.Elements().GetElement(DgnElementId(instid.GetValue()));
+    if (!el.IsValid())
+        return false;
+    auto eclass = el->GetElementClass();
+    for (auto ecprop : eclass->GetProperties())
+        {
+        auto navprop = ecprop->GetAsNavigationProperty();
+        if (navprop != nullptr)
+            {
+            if (navprop->GetRelationshipClass() == &relClass)
+                return true;
+            }
+        }
+    return false;
+    }
+#endif
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+    if (isNavigationPropertyOf(relClass, *this, sourceId) || isNavigationPropertyOf(relClass, *this, targetId))
+        {
+        BeAssert(false && "this API is for non-navigation properties only");
+        return BE_SQLITE_ERROR;
+        }
+#endif
+
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, relClass, GetECCrudWriteToken());
     if (!inserter.IsValid())
@@ -332,7 +367,7 @@ DbResult DgnDb::InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECR
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::UpdateRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -349,7 +384,7 @@ DbResult DgnDb::UpdateRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECIn
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteRelationship(EC::ECInstanceKeyCR key)
+DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -369,7 +404,7 @@ DbResult DgnDb::DeleteRelationship(EC::ECInstanceKeyCR key)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
+DbResult DgnDb::DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {
