@@ -280,7 +280,6 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
     {
     importSchemas.clear();
 
-    DbResult result = BE_SQLITE_OK;
     for (ECSchemaCP appSchema : schemas)
         {
         SchemaKeyCR appSchemaKey = appSchema->GetSchemaKey();
