@@ -354,6 +354,9 @@ HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid() || filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     BeVersion webApiVersion;
     bool isExternalFileAccessSupported = m_info.GetWebApiVersion() >= BeVersion(2, 4);
     if (isExternalFileAccessSupported)
