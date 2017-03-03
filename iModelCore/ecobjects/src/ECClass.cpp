@@ -1032,7 +1032,8 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
     // of override.  So need to check if this is one of those schemas before returning an error
     if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
-        if (m_schema.GetOriginalECXmlVersionMajor() != 2 || !SchemaAllowsOverridingArrays(&this->GetSchema()))
+        bool legacyVersion = m_schema.GetOriginalECXmlVersionMajor() == 2 || (m_schema.GetOriginalECXmlVersionMajor() == 3 && m_schema.GetOriginalECXmlVersionMinor() == 0);
+        if (! (SchemaAllowsOverridingArrays(&this->GetSchema()) && legacyVersion))
             {
             LOG.errorv("The property %s:%s cannot override %s:%s because an array property cannot override a non-array property or vice-versa.",
                        newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str());
@@ -1861,7 +1862,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
+    bool resolveConflicts = (m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false) || context.ResolveConflicts();
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
@@ -1912,7 +1913,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
+    bool resolveConflicts = (m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false) || context.ResolveConflicts();
     if (nullptr != conversionSchema)
         {
         if (conversionSchema->IsDefined("ResolvePropertyNameConflicts"))

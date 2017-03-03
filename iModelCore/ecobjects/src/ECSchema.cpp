@@ -577,7 +577,9 @@ bool ECSchema::Validate(bool resolveIssues)
             isValid = false;
         }
 
-    if (m_originalECXmlVersionMajor == 2 && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
+    bool legacyVersion = (2 == m_originalECXmlVersionMajor || (3 == m_originalECXmlVersionMajor && 0 == m_originalECXmlVersionMinor));
+
+    if (legacyVersion && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
         {
         for (ECClassP ecClass : GetClasses())
             {

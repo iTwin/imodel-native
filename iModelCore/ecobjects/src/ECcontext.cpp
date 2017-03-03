@@ -239,6 +239,10 @@ ECSchemaCacheR ECSchemaReadContext::GetCache ()
     return *m_knownSchemas;
     }
 
+void ECSchemaReadContext::SetResolveConflicts(bool resolveConflicts)
+    {
+    m_resolveConflicts = resolveConflicts;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
