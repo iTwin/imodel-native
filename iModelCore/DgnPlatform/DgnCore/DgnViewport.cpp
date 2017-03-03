@@ -359,7 +359,7 @@ static void validateCamera(ViewDefinition3d::Camera& camera, ViewDefinition3dR c
 
     DPoint3dCR vDelta = cameraDef.GetExtents();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
-    double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
+    double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle().Radians()/2.0));
 
     if (focusDistance < vDelta.z / 2.0)
         focusDistance = vDelta.z / 2.0;
@@ -625,8 +625,8 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         npcPts[0].z = npcPts[1].z = high;
         NpcToWorld(worldPts, npcPts, 2);
 
-        double lensAngle = cameraView->GetLensAngle();
-        double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
+        Angle lensAngle = cameraView->GetLensAngle();
+        double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle.Radians() / 2.0));
 
         DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
         DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);

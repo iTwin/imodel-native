@@ -757,20 +757,20 @@ public:
     struct Camera
     {
     private:
-        double   m_lensAngle = 0.0;
-        double   m_focusDistance = 0.0;
+        Angle m_lensAngle;
+        double m_focusDistance = 0.0;
         DPoint3d m_eyePoint = {0.0,0.0,0.0};
 
     public:
-        static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
+        static bool IsValidLensAngle(Angle val) {return val.Radians()>(Angle::Pi()/8.0) && val<Angle::AnglePi();}
         void InvalidateFocus() {m_focusDistance=0.0;}
         bool IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
         double GetFocusDistance() const {return m_focusDistance;}
         void SetFocusDistance(double dist) {m_focusDistance = dist;}
         bool IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
-        void ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::PiOver2();}
-        double GetLensAngle() const {return m_lensAngle;}
-        void SetLensAngle(double angle) {m_lensAngle = angle;}
+        void ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::FromRadians(Angle::PiOver2());}
+        Angle GetLensAngle() const {return m_lensAngle;}
+        void SetLensAngle(Angle angle) {m_lensAngle = angle;}
         DPoint3dCR GetEyePoint() const {return m_eyePoint;}
         void SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
         bool IsValid() const {return IsLensValid() && IsFocusValid();}
@@ -818,6 +818,7 @@ protected:
     void _SetExtents(DVec3dCR extents) override {m_extents = extents;}
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     ViewDefinition3dCP _ToView3d() const override final {return this;}
+    virtual void _EnableCamera() {m_cameraOn = true;}
 
 public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
@@ -852,13 +853,13 @@ public:
     //! accepting a new nearly-arbitrary camera position calculated by this method. This method will attempt to place the camera slightly outside the existing
     //! view volume by moving back from the front plane along the view direction. The target point is arbitrarily set to the center of the visible volume of the orthographic
     //! view. There is no guarantee that the new view with the camera on will very closely resemble the content of the orthographic view.
-    DGNPLATFORM_EXPORT void TurnCameraOn(double lensAngle);
+    DGNPLATFORM_EXPORT void TurnCameraOn(Angle lensAngle);
 
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
 
     //! Calculate the lens angle formed by the current delta and focus distance
-    DGNPLATFORM_EXPORT double CalcLensAngle() const;
+    DGNPLATFORM_EXPORT Angle CalcLensAngle() const;
 
     //! Position the camera for this view and point it at a new target point.
     //! @param[in] eyePoint The new location of the camera.
@@ -888,7 +889,7 @@ public:
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
     DGNPLATFORM_EXPORT ViewportStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
-                                             double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
+                                             Angle fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
 
     //! Move the camera relative to its current location by a distance in camera coordinates.
     //! @param[in] distance to move camera. Length is in world units, direction relative to current camera orientation.
@@ -946,14 +947,14 @@ public:
     DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}
 
     //! Get the lens angle for this view.
-    double GetLensAngle() const {return GetCamera().GetLensAngle();}
+    Angle GetLensAngle() const {return GetCamera().GetLensAngle();}
 
     //! Set the lens angle for this view.
     //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
     //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraR().SetLensAngle(angle);}
+    void SetLensAngle(Angle angle) {GetCameraR().SetLensAngle(angle);}
 
     //! Change the location of the eyePoint for the camera in this view.
     //! @param[in] pt The new eyepoint.
@@ -1041,6 +1042,7 @@ protected:
 
     OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    void _EnableCamera() override final {/* nope */}
 
 public:
     //! Construct a new OrthographicViewDefinition prior to inserting it
