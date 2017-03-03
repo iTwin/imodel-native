@@ -20,6 +20,57 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeTracker::RecordSchemaChange(Utf8CP ddl)
+    {
+    if (!IsTracking())
+        return BE_SQLITE_OK;
+
+    m_schemaChanges.AddDDL(ddl);
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaChangeSet::AddDDL(Utf8CP ddl)
+    {
+    if (Utf8String::IsNullOrEmpty(ddl))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    if (!m_ddl.empty())
+        m_ddl.append(";");
+
+    m_ddl.append(ddl);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SchemaChangeSet::Dump(Utf8CP label) const
+    {
+    if (label)
+        LOG.infov("%s", label);
+
+    if (IsEmpty())
+        {
+        LOG.info("Empty");
+        return;
+        }
+
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(m_ddl.c_str(), ";", tokens);
+    for (Utf8StringCR str : tokens)
+        {
+        LOG.info(str.c_str());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int filterCaller(void* tracker, Utf8CP tableName) {return (int) ((ChangeTracker*) tracker)->_FilterTable(tableName);}
@@ -59,6 +110,7 @@ void ChangeTracker::EndTracking()
         sqlite3session_delete(m_session);
         m_session = nullptr;
         }
+    m_schemaChanges.Clear();
     m_isTracking = false;
     }
 
@@ -93,7 +145,21 @@ void ChangeTracker::SetMode(Mode mode)
         sqlite3session_indirect(m_session, static_cast<int>(mode));
     }
 
-bool ChangeTracker::HasChanges() {return m_session && 0 == sqlite3session_isempty(m_session);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeTracker::HasDataChanges() const 
+    { 
+    return m_session && 0 == sqlite3session_isempty(m_session); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeTracker::HasChanges() const 
+    { 
+    return HasDataChanges() || HasSchemaChanges();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
@@ -614,7 +680,7 @@ DbResult ChangeGroup::AddChanges(int size, void const* data)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::_FromChangeGroup(ChangeGroup& changegroup)
+DbResult ChangeSet::_FromChangeGroup(ChangeGroupCR changegroup)
     {
     return (DbResult) sqlite3changegroup_output((sqlite3_changegroup*) changegroup.m_changegroup, &m_size, &m_changeset);
     }
@@ -743,7 +809,7 @@ DbResult ChangeStream::_FromChangeTrack(ChangeTracker& session, ChangeSet::SetTy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::_FromChangeGroup(ChangeGroup& changeGroup)
+DbResult ChangeStream::_FromChangeGroup(ChangeGroupCR changeGroup)
     {
     DbResult result = (DbResult) sqlite3changegroup_output_strm((sqlite3_changegroup*) changeGroup.m_changegroup, OutputCallback, this);
     _Reset();

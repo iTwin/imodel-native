@@ -2391,6 +2391,14 @@ public:
     //! Determine whether a table exists in this Db.
     BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName) const;
 
+    //! Add a column to a table
+    //! @param[in] tableName Name of the table. e.g., "test_Employee"
+    //! @param[in] columnName Name of the new column. e.g., "TitleId"
+    //! @param[in] columnDetails Details of the new column, e.g., "INTEGER REFERENCES test_Title(Id)"
+    //! @remarks Internally executes a DDL and records the schema change if necessary. 
+    //! e.g., "ALTER TABLE test_employee ADD COLUMN columnName INTEGER REFERENCES test_Title(Id)"
+    BE_SQLITE_EXPORT DbResult AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP columnDetails);
+
     //! Determine whether a column exists in a table in this Db.
     BE_SQLITE_EXPORT bool ColumnExists(Utf8CP tableName, Utf8CP columnName) const;
 
@@ -2402,7 +2410,15 @@ public:
     //! Rename existing table
     //! @param[in] tableName The name of existing table.
     //! @param[in] newTableName new name for the table.
-    BE_SQLITE_EXPORT bool RenameTable(Utf8CP tableName, Utf8CP newTableName);
+    BE_SQLITE_EXPORT DbResult RenameTable(Utf8CP tableName, Utf8CP newTableName);
+
+    //! Create an index on an existing table
+    //! @param[in] indexName Name of the new index
+    //! @param[in] tableName Name of the existing table
+    //! @param[in] isUnique Pass true to setup a unique index
+    //! @param[in] columnName1 Name of the column to create index on
+    //! @param[in] columnName2 Optional name of a second column to create a multi-column index
+    BE_SQLITE_EXPORT DbResult CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8CP columnName1, Utf8CP columnName2 = nullptr);
 
     //! Free non-essential memory associated with the DB. Typically used when going to the background state on a tablet computer.
     BE_SQLITE_EXPORT void FlushPageCache();

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -330,7 +330,7 @@ TEST_F(BeSQLiteDbTests, RenameAndDropTable)
 
     // Now rename the table
     Utf8CP newTableName = "TestTable2";
-    EXPECT_TRUE(m_db.RenameTable(testTableName, newTableName));
+    EXPECT_TRUE(BE_SQLITE_OK == m_db.RenameTable(testTableName, newTableName));
     EXPECT_FALSE(m_db.TableExists(testTableName)) << "Table '" << testTableName << "' is expected to not exist.";
     EXPECT_TRUE(m_db.TableExists(newTableName)) << "Table '" << testTableName << "' is expected to exist as it was created right before this check.";
 
