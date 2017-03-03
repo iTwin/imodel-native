@@ -2242,7 +2242,12 @@ bool ECEntityClass::VerifyMixinHierarchy(bool thisIsMixin, ECEntityClassCP baseA
             return false;
             }
         
-        return this->Is(baseAppliesToClass);
+        if(!this->Is(baseAppliesToClass))
+            {
+            LOG.errorv("Cannot add '%s' as a base class to '%s' because the base class is a mixin and the derived class does not derive from '%s' which is the applies to constraint",
+                       baseAsEntity->GetFullName(), GetFullName(), baseAppliesToClass->GetFullName());
+            return false;
+            }
         }
     
     return true;
