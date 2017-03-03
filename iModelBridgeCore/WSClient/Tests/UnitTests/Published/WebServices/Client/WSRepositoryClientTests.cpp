@@ -378,6 +378,56 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationP
     client->SendQueryRequest(query)->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndEmptyObjectId_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    BeFileName fileName = StubFilePath();
+    auto result = client->SendGetFileRequest(ObjectId(), fileName)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyObjectId_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    BeFileName fileName = StubFilePath();
+    auto result = client->SendGetFileRequest(ObjectId(), fileName)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndEmptyFilePath_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyFilePath_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithFollowRedirects)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
