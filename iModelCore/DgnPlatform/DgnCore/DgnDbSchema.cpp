@@ -7,6 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
+#define BIS_ECSCHEMA_READ_VER 1
+#define BIS_ECSCHEMA_WRITE_VER 0
+#define BIS_ECSCHEMA_MINOR_VER 0
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -131,27 +135,28 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaReadContextPtr readBisCoreSchemaFromDisk(DgnDbR db)
+static ECSchemaReadContextPtr readBisCoreSchema(DgnDbR db)
     {
-    ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
-    ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
+    ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+   
+    BeFileName schemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPath.AppendToPath(L"ECSchemas");
 
-    BeFileName ecSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    ecSchemaPath.AppendToPath(L"ECSchemas");
-
-    BeFileName dgnSchemaPath = ecSchemaPath;
+    BeFileName dgnSchemaPath = schemaPath;
     dgnSchemaPath.AppendToPath(L"Dgn");
-    ecSchemaContext->AddSchemaPath(dgnSchemaPath);
+    schemaContext->AddSchemaPath(dgnSchemaPath);
 
-    BeFileName standardSchemaPath = ecSchemaPath;
+    BeFileName standardSchemaPath = schemaPath;
     standardSchemaPath.AppendToPath(L"Standard");
-    ecSchemaContext->AddSchemaPath(standardSchemaPath);
+    schemaContext->AddSchemaPath(standardSchemaPath);
 
-    SchemaKey bisCoreSchemaKey("BisCore", 1, 0);
-    ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
+    schemaContext->AddSchemaLocater(db.GetSchemaLocater());
+
+    SchemaKey bisCoreSchemaKey(BIS_ECSCHEMA_NAME, BIS_ECSCHEMA_READ_VER, BIS_ECSCHEMA_WRITE_VER, BIS_ECSCHEMA_MINOR_VER);
+    ECSchemaPtr bisCoreSchema = schemaContext->LocateSchema(bisCoreSchemaKey, SchemaMatchType::LatestWriteCompatible);
     BeAssert(bisCoreSchema != NULL);
 
-    return ecSchemaContext;
+    return schemaContext;
     }
 
 #define GEOM_IN_SPATIAL_INDEX_CLAUSE " 1 = new.InSpatialIndex "
@@ -320,7 +325,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    ECSchemaReadContextPtr schemaContext = readBisCoreSchemaFromDisk(*this);
+    ECSchemaReadContextPtr schemaContext = readBisCoreSchema(*this);
     if (DgnDbStatus::Success != ImportSchemas(schemaContext->GetCache().GetSchemas()))
         {
         BeAssert(false);
@@ -564,6 +569,6 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
 
     // NEEDS_WORK: Need to reconcile profile and ECSchema versions
     // NEEDS_WORK: Make use of "schema" and "profile" in the method names consistent. 
-    ECSchemaReadContextPtr schemaContext = readBisCoreSchemaFromDisk(*this);
+    ECSchemaReadContextPtr schemaContext = readBisCoreSchema(*this);
     return ValidateSchemas(schemaContext->GetCache().GetSchemas());
     }

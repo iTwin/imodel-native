@@ -11,7 +11,7 @@
 //-----------------------------------------------------------------------------------------
 // Macros associated with the BisCore ECSchema
 //-----------------------------------------------------------------------------------------
-#define BIS_ECSCHEMA_NAME   "BisCore"
+#define BIS_ECSCHEMA_NAME     "BisCore"
 #define BIS_SCHEMA(name)    BIS_ECSCHEMA_NAME "." name
 #define BIS_TABLE(name)     "bis_" name
 
