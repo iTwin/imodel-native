@@ -120,6 +120,7 @@ ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), 
 void ViewController::_LoadState()
     {
     m_activeVolume = m_definition->GetViewClip();
+    m_definition->GetGridSettings(m_gridOrientation, m_gridSpacing, m_gridsPerRef);
 
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_Load(*m_definition);
@@ -131,6 +132,8 @@ void ViewController::_LoadState()
 void ViewController::_StoreState()
     {
     m_definition->SetViewClip(m_activeVolume);
+    m_definition->SetGridSettings(m_gridOrientation, m_gridSpacing, m_gridsPerRef);
+
     for (auto const& appdata : m_appData)
         appdata.second->_Save(*m_definition);
     }
@@ -679,11 +682,9 @@ static void roundGrid(double& num, double units)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMatrix, GridOrientationType orientation)
     {
-    DgnDbR db = vp.GetViewController().GetDgnDb();
-
-    // start with global origin (in world coords) and identity matrix
+    // start with global origin (for spatial views) and identity matrix
     rMatrix.InitIdentity();
-    origin = db.GeoLocation().GetGlobalOrigin();
+    origin = vp.GetViewController().IsSpatialView() ? vp.GetViewController().GetDgnDb().GeoLocation().GetGlobalOrigin() : DPoint3d::FromZero();
 
     DVec3d xVec, yVec, zVec;
 
@@ -775,9 +776,8 @@ static void gridFix(DgnViewportR vp, DPoint3dR point, RotMatrixCR rMatrix, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
-    // NEEDSWORK: DGNV10FORMAT_CHANGES_WIP grid settings...
-    gridsPerRef = 10;
-    spacing.Init(1.0, 1.0);
+    gridsPerRef = m_gridsPerRef;
+    spacing = m_gridSpacing;
 
     // Apply ACS scale to grid if ACS Context Lock active even if grid isn't aligned to ACS...
     if (!DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())

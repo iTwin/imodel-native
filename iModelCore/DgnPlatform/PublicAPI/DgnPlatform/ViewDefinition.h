@@ -592,6 +592,12 @@ public:
     //! Get the clipping volume for elements in this view
     DGNPLATFORM_EXPORT ClipVectorPtr GetViewClip() const;
 
+    //! Set the grid settings for this view
+    DGNPLATFORM_EXPORT void SetGridSettings(GridOrientationType, DPoint2dCR, uint32_t);
+
+    //! Get the grid settings for this view
+    DGNPLATFORM_EXPORT void GetGridSettings(GridOrientationType&, DPoint2dR, uint32_t&) const;
+
     /*=================================================================================**//**
     * Margins for "white space" to be left around view volumes for #LookAtVolume.
     * Values mean "percent of view" and must be between 0 and .25.
