@@ -116,7 +116,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Xml Include="LinearReferencing.01.00.00.ecschema.xml" />
+    <Xml Include="LinearReferencing.01.00.00.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="LinearReferencing.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>

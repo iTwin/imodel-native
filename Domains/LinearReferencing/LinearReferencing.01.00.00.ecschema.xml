@@ -6,12 +6,18 @@
     <ECEntityClass typeName="ILinearElement" description="Interface to be mixed-in by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
         <!--ECNavigationProperty propertyName="ILinearElementSource" relationshipName="ILinearElementSourceOwnsILinearElements" direction="backward"/-->
     </ECEntityClass>
-    <ECEntityClass typeName="ILinearElementSource" description="Interface to be mixed-in by Element-subclasses meant to provide Linear-Elements." modifier="Abstract"/>
+    <ECEntityClass typeName="ILinearElementSource" description="Interface to be mixed-in by Element-subclasses meant to provide Linear-Elements." modifier="Abstract">
+        <ECCustomAttributes>
+            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <!--ECRelationshipClass typeName="ILinearElementSourceOwnsILinearElements" strength="embedding">
         <Source multiplicity="(0..1)" polymorphic="true">
             <Class class="ILinearElementSource"/>
@@ -50,7 +56,7 @@
     <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
         <!--ECNavigationProperty propertyName="ILinearElement" relationshipName="ILinearlyLocatedAlongILinearElement" direction="forward">
@@ -75,7 +81,7 @@
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -83,14 +89,14 @@
         <BaseClass>ILinearlyLocated</BaseClass>
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="IReferent" description="Interface to be mixed-in by Element-subclasses that can play the role of a Referent (known location along a Linear-Element)." modifier="Abstract">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>
-                <AppliesToEntityClass>BaseClass</AppliesToEntityClass>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
         <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
