@@ -57,14 +57,11 @@ struct NullContext : ViewContext
         void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override {}
         void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
         void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
-        void _AddTriMesh(TriMeshArgs const& args)  override {}
-        void _AddIndexedPolylines(IndexedPolylineArgs const& args) override {}
         void _AddBody(IBRepEntityCR) override {}
         void _AddTextString(TextStringCR text) override {}
         void _AddTextString2d(TextStringCR text, double zDepth) override {}
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
-        void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
         Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::Graphic::CreateParams(GetDgnDb(), transform));}
         DgnDbR _GetDgnDb() const override {return m_dgndb;}

@@ -25,8 +25,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
     struct Material;
-    
 }
+    
 //=======================================================================================
 //! Defines a material. Material elements are stored in the dictionary model and identified
 //! by a palette name and material name. Each material's name must be unique within its

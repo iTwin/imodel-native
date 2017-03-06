@@ -634,9 +634,9 @@ struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
 protected:
-    bool                        m_isLeaf;
-    TileId                      m_id;
-    bvector<Render::GraphicPtr> m_graphics;
+    bool                m_isLeaf;
+    TileId              m_id;
+    Render::GraphicPtr  m_graphic;
 
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
     DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child) const;
@@ -650,14 +650,14 @@ public:
     
     TileId GetTileId() const { return m_id; }
     TileId GetRelativeTileId() const;
-    bool HasGraphics() const { return IsReady() && !m_graphics.empty(); }
+    bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
     Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
     Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
-    bvector<Render::GraphicPtr> const& GetGraphics() const { return m_graphics; }
+    Render::GraphicPtr GetGraphic() const { return m_graphic; }
     bool IsLeaf() const { return m_isLeaf; }
 
     void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }
-    void AddGraphic(Render::GraphicR graphic) { m_graphics.push_back(&graphic); }
+    void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
 };
 
 } // end OctTree

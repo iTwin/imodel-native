@@ -1632,28 +1632,6 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
-    {
-    PolyfaceHeaderPtr polyface = args.ToPolyface();
-    _AddPolyface(*polyface, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddIndexedPolylines(IndexedPolylineArgs const& args)
-    {
-    bvector<DPoint3d> line;
-    for (uint32_t i = 0; i < args.m_numLines; i++)
-        {
-        args.PolylineToPoints(line, args.m_lines[i]);
-        _AddLineString(static_cast<int>(line.size()), &line[0]);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
@@ -1694,45 +1672,6 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
 void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
     // NEEDSWORK...Draw box...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    john.gooding                    03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors)
-    {
-    // NEEDSWORK...Provide option to handle/ignore...
-    enum {MAX_POINTS_PER_BATCH = 300};
-    if (0 == numPoints)
-        return;
-
-    // Don't risk stack overflow to get points buffer
-    int32_t maxPointsPerIter = MAX_POINTS_PER_BATCH;
-
-    if (numPoints < maxPointsPerIter)
-        maxPointsPerIter = numPoints;
-
-    DPoint3dP pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
-
-    // Convert float points to DPoints and add offset
-    FPoint3dCP currIn = points;
-    while (numPoints > 0)
-        {
-        if (m_context.CheckStop())
-            return;
-
-        uint32_t pointsThisIter = numPoints > maxPointsPerIter ? maxPointsPerIter : numPoints;
-
-        for (DPoint3dP  curr = pointBuffer; curr < pointBuffer + pointsThisIter; curr++, currIn++)
-            {
-            curr->x = currIn->x + origin.x;
-            curr->y = currIn->y + origin.y;
-            curr->z = currIn->z + origin.z;
-            }
-
-        _AddPointString(pointsThisIter, pointBuffer);
-        numPoints -= pointsThisIter;
-        }
     }
 
 //----------------------------------------------------------------------------------------

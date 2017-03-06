@@ -416,7 +416,7 @@ static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr GraphicBuilder::TriMeshArgs::ToPolyface() const
+PolyfaceHeaderPtr TriMeshArgs::ToPolyface() const
     {
     PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
 
@@ -455,7 +455,7 @@ PolyfaceHeaderPtr GraphicBuilder::TriMeshArgs::ToPolyface() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicBuilder::IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& dpts, FPoint3d const* fpts) const
+void IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& dpts, FPoint3d const* fpts) const
     {
     dpts.clear();
     dpts.reserve(m_numIndices);

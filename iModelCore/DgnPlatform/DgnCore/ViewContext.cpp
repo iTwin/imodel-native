@@ -1162,7 +1162,7 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
     {
-    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
+    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency, GetDgnDb()), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

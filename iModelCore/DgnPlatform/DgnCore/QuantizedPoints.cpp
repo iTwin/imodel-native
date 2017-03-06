@@ -15,21 +15,7 @@ static const double     s_halfRangeScale       = (double) 0xffff / 2.0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::GraphicBuilder::_AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors)
-    {
-    bvector<FPoint3d>   unquantized(numPoints);
-    DPoint3d            center = range.LocalToGlobal(.5, .5, .5);
-
-    for (size_t i=0; i<numPoints; i++)
-        unquantized[i] = quantizedPoints[i].UnquantizedAboutCenter(range);
-
-    _AddPointCloud (numPoints, center, unquantized.data(), colors); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilder::QuantizedPoint::QuantizedPoint(DRange3dCR range, DPoint3dCR value)
+Render::QuantizedPoint::QuantizedPoint(DRange3dCR range, DPoint3dCR value)
     {
     DVec3d              diagonal = range.DiagonalVector();
     
@@ -41,7 +27,7 @@ Render::GraphicBuilder::QuantizedPoint::QuantizedPoint(DRange3dCR range, DPoint3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d Render::GraphicBuilder::QuantizedPoint::Unquantized(DRange3dCR range) const
+DPoint3d Render::QuantizedPoint::Unquantized(DRange3dCR range) const
     {
     DVec3d              diagonal = range.DiagonalVector();
 
@@ -53,7 +39,7 @@ DPoint3d Render::GraphicBuilder::QuantizedPoint::Unquantized(DRange3dCR range) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-FPoint3d Render::GraphicBuilder::QuantizedPoint::UnquantizedAboutCenter(DRange3dCR range) const
+FPoint3d Render::QuantizedPoint::UnquantizedAboutCenter(DRange3dCR range) const
     {
     DVec3d              diagonal = range.DiagonalVector();
     FPoint3d            fPoint;

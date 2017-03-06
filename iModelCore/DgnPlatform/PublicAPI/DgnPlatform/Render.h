@@ -1170,69 +1170,6 @@ public:
 //=======================================================================================
 struct GraphicBuilder : RefCountedBase
 {
-    //=======================================================================================
-    //! Information needed to draw a triangle mesh
-    // @bsiclass                                                    Keith.Bentley   06/16
-    //=======================================================================================
-    struct TriMeshArgs
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points= nullptr;
-        FPoint3d const* m_normals= nullptr;
-        FPoint2d const* m_textureUV= nullptr;
-        TexturePtr m_texture;
-        int32_t m_flags = 0; // don't generate normals
-        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
-    };
-
-    //=======================================================================================
-    //! Information needed to draw a set of indexed polylines using a shared vertex buffer.
-    // @bsistruct                                                   Paul.Connelly   01/17
-    //=======================================================================================
-    struct IndexedPolylineArgs
-    {
-        //! An individual polyline which indexes into a shared set of vertices
-        struct Polyline
-        {
-            uint32_t const* m_vertIndex = nullptr;
-            uint32_t        m_numIndices = 0;
-
-            Polyline() { }
-            Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
-
-            DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
-        };
-
-        FPoint3d const* m_points = nullptr;
-        Polyline const* m_lines = nullptr;
-        uint32_t        m_numPoints = 0;
-        uint32_t        m_numLines = 0;
-
-        IndexedPolylineArgs() { }
-        IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
-            : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines) { }
-
-        void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
-        bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
-    };
-    //=======================================================================================
-    // @bsistruct                                                   Ray.Bentley     01/2017
-    //=======================================================================================
-    struct QuantizedPoint
-    {
-        uint16_t        m_x;
-        uint16_t        m_y;
-        uint16_t        m_z;
-    
-        QuantizedPoint() { };
-        DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
-        DGNPLATFORM_EXPORT DPoint3d Unquantized(DRange3dCR range) const;
-        DGNPLATFORM_EXPORT FPoint3d UnquantizedAboutCenter(DRange3dCR range) const;
-    };
-
-
     struct TileCorners
     {
         DPoint3d m_pts[4];
@@ -1264,18 +1201,13 @@ protected:
     virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddIndexedPolylines(IndexedPolylineArgs const& args) = 0;
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
-    virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
-    DGNPLATFORM_EXPORT virtual void _AddPointCloud(int32_t numPoints, DRange3dCR range, QuantizedPoint const* quantizedPoints, ByteCP colors);
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
-    virtual PrimitivePtr _ToPrimitive() { BeAssert(false); return nullptr; }
     virtual DgnDbR _GetDgnDb() const = 0;
     virtual TransformCR _GetLocalToWorldTransform() const = 0;
     virtual bool _IsSimplifyGraphic() const { return false; }
@@ -1291,9 +1223,6 @@ public:
     Graphic::CreateParams GetCreateParams() const { return Graphic::CreateParams(GetDgnDb(), GetLocalToWorldTransform()); }
 
     bool IsOpen() const {return _IsOpen();}
-
-    //! ###TODO_ELEMENT_TILE...Close the graphic builder and return a Primitive suitable for rendering
-    PrimitivePtr ToPrimitive() { return _ToPrimitive(); }
 
     //! Get the current GeometryStreamEntryId.
     //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
@@ -1380,16 +1309,6 @@ public:
 
     //! @remarks Wireframe fill display supported for non-illuminated meshes.
     void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
-
-    void AddTriMesh(TriMeshArgs const& args) {_AddTriMesh(args);}
-
-    void AddIndexedPolylines(IndexedPolylineArgs const& args) {_AddIndexedPolylines(args);}
-
-    //! Draw a 3D point cloud.
-    void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {_AddPointCloud(numPoints, origin, points, colors);}
-
-    //! Draw a 3D point cloud from quantized points.
-    void AddPointCloud(int32_t numPoints, DRange3dCR range, GraphicBuilder::QuantizedPoint const* quantizedPoints, ByteCP colors) {_AddPointCloud(numPoints, range, quantizedPoints, colors);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
     void AddBody(IBRepEntityCR entity) {_AddBody(entity);}
@@ -1491,87 +1410,93 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct Primitive : RefCounted<NonCopyableClass>
+struct PrimitiveParams : Graphic::CreateParams
 {
-protected:
-    Transform   m_transform;
+    GraphicParams       m_graphicParams;
+    ClipVectorCPtr      m_clip;
 
-    explicit Primitive(TransformCR localToWorld=Transform::FromIdentity()) : m_transform(localToWorld) { }
+    PrimitiveParams(DgnDbR db, GraphicParamsCR graphicParams, Transform placement=Transform::FromIdentity(), ClipVectorCP clip=nullptr)
+        : Graphic::CreateParams(db, placement), m_graphicParams(graphicParams), m_clip(clip) { }
+    PrimitiveParams(Graphic::CreateParams const& createParams, GraphicParamsCR graphicParams, ClipVectorCP clip=nullptr)
+        : PrimitiveParams(createParams.m_dgndb, graphicParams, createParams.m_placement, clip) { }
+};
 
-    virtual ~Primitive() { }
-    uint32_t _GetExcessiveRefCountThreshold() const override { return 1000000; }
-public:
-    TransformCR GetLocalToWorldTransform() const { return m_transform; }
+//=======================================================================================
+//! Information needed to draw a triangle mesh
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct TriMeshArgs
+{
+    int32_t m_numIndices = 0;
+    int32_t const* m_vertIndex = nullptr;
+    int32_t m_numPoints = 0;
+    FPoint3d const* m_points= nullptr;
+    FPoint3d const* m_normals= nullptr;
+    FPoint2d const* m_textureUV= nullptr;
+    TexturePtr m_texture;
+    int32_t m_flags = 0; // don't generate normals
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+};
 
-    using TriMeshArgs = GraphicBuilder::TriMeshArgs;
-    using IndexedPolylineArgs = GraphicBuilder::IndexedPolylineArgs;
-
-    struct PointCloudArgs
+//=======================================================================================
+//! Information needed to draw a set of indexed polylines using a shared vertex buffer.
+// @bsistruct                                                   Paul.Connelly   01/17
+//=======================================================================================
+struct IndexedPolylineArgs
+{
+    //! An individual polyline which indexes into a shared set of vertices
+    struct Polyline
     {
-        using QuantizedPoint = GraphicBuilder::QuantizedPoint;
+        uint32_t const* m_vertIndex = nullptr;
+        uint32_t        m_numIndices = 0;
 
-        QuantizedPoint const* m_points;
-        ByteCP m_colors;
-        DPoint3d m_origin;
-        int32_t m_numPoints;
+        Polyline() { }
+        Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
 
-        PointCloudArgs() : PointCloudArgs(DPoint3d::FromZero(), 0, nullptr, nullptr) { }
-        PointCloudArgs(DPoint3dCR origin, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
-            : m_points(points), m_colors(colors), m_origin(origin), m_numPoints(numPoints) { }
+        DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
     };
 
-    struct DisplayParams
-    {
-        GraphicParamsCR m_graphicParams;
-        GeometryParamsCP m_geometryParams;
-        Transform m_transform;
-        ClipVectorCP m_clip;
+    FPoint3d const* m_points = nullptr;
+    Polyline const* m_lines = nullptr;
+    uint32_t        m_numPoints = 0;
+    uint32_t        m_numLines = 0;
 
-        explicit DisplayParams(GraphicParamsCR graphicParams, TransformCR transform=Transform::FromIdentity(), GeometryParamsCP geometryParams=nullptr, ClipVectorCP clip=nullptr)
-            : m_graphicParams(graphicParams), m_geometryParams(geometryParams), m_transform(transform), m_clip(clip) { }
-    };
+    IndexedPolylineArgs() { }
+    IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines) { }
+
+    void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
+    bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     01/2017
+//=======================================================================================
+struct QuantizedPoint
+{
+    uint16_t        m_x;
+    uint16_t        m_y;
+    uint16_t        m_z;
+
+    QuantizedPoint() { };
+    DGNPLATFORM_EXPORT QuantizedPoint(DRange3dCR range, DPoint3dCR value);
+    DGNPLATFORM_EXPORT DPoint3d Unquantized(DRange3dCR range) const;
+    DGNPLATFORM_EXPORT FPoint3d UnquantizedAboutCenter(DRange3dCR range) const;
 };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct PrimitiveList
+struct PointCloudArgs
 {
-    typedef bvector<PrimitivePtr> List;
-private:
-    List    m_primitives;
-public:
-    PrimitiveList() { }
-    PrimitiveList(List&& list) : m_primitives(std::move(list)) { }
+    QuantizedPoint const* m_points;
+    ByteCP m_colors;
+    DPoint3d m_origin;
+    int32_t m_numPoints;
 
-    void Add(PrimitiveR primitive) { m_primitives.push_back(&primitive); }
-    void Add(PrimitivePtr primitive) { BeAssert(primitive.IsValid()); if (primitive.IsValid()) Add(*primitive); }
-
-    typedef List::const_iterator const_iterator;
-
-    const_iterator begin() const { return m_primitives.begin(); }
-    const_iterator end() const { return m_primitives.end(); }
-    size_t size() const { return m_primitives.size(); }
-    bool empty() const { return m_primitives.empty(); }
-    void clear() { m_primitives.clear(); }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct PrimitiveBranch
-{
-    PrimitiveList   m_primitives;
-    ViewFlags       m_viewFlags;
-    bool            m_hasViewFlags = false;
-
-    PrimitiveBranch() { }
-    PrimitiveBranch(PrimitiveBranch&& src) : m_primitives(std::move(src.m_primitives)), m_viewFlags(src.m_viewFlags), m_hasViewFlags(src.m_hasViewFlags) { }
-    
-    void Add(PrimitiveR primitive) { m_primitives.Add(primitive); }
-    void Add(PrimitiveListCR primitives) { for (auto const& primitive : primitives) Add(*primitive); }
-    void SetViewFlags(ViewFlags flags) { m_viewFlags=flags; m_hasViewFlags=true; }
-    void Clear() { m_primitives.clear(); }
+    PointCloudArgs() : PointCloudArgs(DPoint3d::FromZero(), 0, nullptr, nullptr) { }
+    PointCloudArgs(DPoint3dCR origin, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
+        : m_points(points), m_colors(colors), m_origin(origin), m_numPoints(numPoints) { }
 };
 
 //=======================================================================================
@@ -1761,24 +1686,23 @@ struct System
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
 
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, Graphic::CreateParams const&, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Create a triangle mesh primitive
-    virtual PrimitivePtr _CreatePrimitive(Primitive::TriMeshArgs const& args, Primitive::DisplayParams const& params) const = 0;
+    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, PrimitiveParamsCR params) const = 0;
 
     //! Create an indexed polyline primitive
-    virtual PrimitivePtr _CreatePrimitive(Primitive::IndexedPolylineArgs const& args, Primitive::DisplayParams const& params) const = 0;
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, PrimitiveParamsCR params) const = 0;
 
     //! Create a point cloud primitive
-    virtual PrimitivePtr _CreatePrimitive(Primitive::PointCloudArgs const& args, Primitive::DisplayParams const& params) const = 0;
+    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, PrimitiveParamsCR params) const = 0;
 
-    //! Create a primitive consisting of a list of other primitives, with an optional transform applied to the list
-    virtual PrimitivePtr _CreatePrimitive(PrimitiveList&& primitives, TransformCP transform) const = 0;
+    //! Create a Graphic consisting of a list of Graphics, with an optional transform applied to the list
+    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, Graphic::CreateParams const& params) const = 0;
 
-    //! Create a primitive consisting of a list of other primitives, with optional transform, clip, and view flag overrides applied to the list
-    virtual PrimitivePtr _CreatePrimitive(PrimitiveBranch&& branch, TransformCP transform, ClipVectorCP clips) const = 0;
+    //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
+    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, Graphic::CreateParams const& params, ClipVectorCP clips) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1879,7 +1803,7 @@ public:
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
-    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
+    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}

@@ -231,28 +231,6 @@ constexpr size_t s_maxPointsPerTile = 10000;
 constexpr size_t s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
-enum class InstancingOptions
-{
-    // Add each instance as a top-level graphic.
-    // Downside: Scene creation is slower as we have to populate much larger lists of graphics
-    AsGraphics,
-    // Add each instance as a sub-graphic with a transform
-    // Downside: qv_pushTransclip() is inordinately slow.
-    // Upside: we're no longer using QVis, so downside is inapplicable
-    AsSubGraphics,
-    // Transform instanced geometry in place, then add as a subgraphic with identity transform
-    // Downside: Separate QvElem for each subgraphic; slower tile generation due to applying the transform. Probably best bet for now
-    AsPreTransformedSubGraphics,
-    // Cache instanced geometry, but merge it into the meshes rather than instancing it
-    MergeIntoMeshes,
-    // Don't do instancing
-    None
-};
-
-// avoid re-facetting repeated geometry - cache and reuse
-// Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
-constexpr InstancingOptions s_instancingOptions = InstancingOptions::MergeIntoMeshes;
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
@@ -514,7 +492,7 @@ public:
 #else
     TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
 #endif
-      : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(&root.GetDgnDb(), transformFromDgn, surfacesOnly), 
+      : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(root.GetDgnDb(), transformFromDgn, surfacesOnly), 
 #if defined(ELEMENT_TILE_REGENERATION)
         m_modelDelta(modelDelta),
 #endif
@@ -750,134 +728,7 @@ BentleyStatus Loader::_LoadTile()
 
     PolylineArgs polylineArgs;
     MeshArgs meshArgs;
-    Render::GraphicBuilderPtr graphic;
-
-    if (InstancingOptions::AsSubGraphics == s_instancingOptions)
-        {
-        for (auto const& part : geometry.Parts())
-            {
-            if (part->Instances().empty() || part->Meshes().empty())
-                continue;
-
-            for (auto const& mesh : part->Meshes())
-                {
-                bool haveMesh = !mesh->Triangles().empty();
-                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-                if (!haveMesh && !havePolyline)
-                    continue;
-
-                if (graphic.IsNull())
-                    graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
-
-                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-
-                if (haveMesh)
-                    {
-                    if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
-                        subGraphic->AddTriMesh(meshArgs);
-                    }
-                else
-                    {
-                    polylineArgs.InitAndApply(*subGraphic, *mesh);
-                    }
-
-                for (auto const& instance : part->Instances())
-                    {
-                    graphic->AddSubGraphic(*subGraphic->Finish(), instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
-                    }
-                }
-            }
-        }
-    else if (InstancingOptions::AsGraphics == s_instancingOptions)
-        {
-        for (auto const& part : geometry.Parts())
-            {
-            if (part->Instances().empty() || part->Meshes().empty())
-                continue;
-
-            for (auto const& mesh : part->Meshes())
-                {
-                bool haveMesh = !mesh->Triangles().empty();
-                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-                if (!haveMesh && !havePolyline)
-                    continue;
-                else if ((haveMesh && !meshArgs.Init(*mesh, system, &root.GetDgnDb())))
-                    continue;
-                else if ((havePolyline && !polylineArgs.Init(*mesh)))
-                    continue;
-
-                for (auto const& instance : part->Instances())
-                    {
-                    auto instanceGraphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb(), instance.GetTransform()));
-                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-                    if (haveMesh)
-                        instanceGraphic->AddTriMesh(meshArgs);
-                    else
-                        polylineArgs.Apply(*instanceGraphic);
-
-                    tile.AddGraphic(*instanceGraphic->Finish());
-                    }
-                }
-            }
-        }
-    else if (InstancingOptions::AsPreTransformedSubGraphics == s_instancingOptions)
-        {
-        for (auto const& part : geometry.Parts())
-            {
-            if (part->Instances().empty() || part->Meshes().empty())
-                continue;
-
-            for (auto const& mesh : part->Meshes())
-                {
-                bool haveMesh = !mesh->Triangles().empty();
-                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-                if (!haveMesh && !havePolyline)
-                    continue;
-                else if ((haveMesh && !meshArgs.Init(*mesh, system, &root.GetDgnDb())))
-                    continue;
-                else if ((havePolyline && !polylineArgs.Init(*mesh)))
-                    continue;
-
-                if (graphic.IsNull())
-                    graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
-
-                Transform invTransform = Transform::FromIdentity();
-                for (auto const& instance : part->Instances())
-                    {
-                    auto instanceGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-
-                    // Transform the geometry in-place for each instance. This way we avoid the surprising overhead of qv_pushTransClip() while
-                    // still keeping the scene's graphic list small by defining subgraphics
-                    TransformCR instanceTransform = Transform::FromProduct(instance.GetTransform(), invTransform);
-                    invTransform.InverseOf(instance.GetTransform());
-
-                    if (haveMesh)
-                        {
-                        meshArgs.Transform(instanceTransform);
-                        instanceGraphic->AddTriMesh(meshArgs);
-                        }
-                    else
-                        {
-                        polylineArgs.Transform(instanceTransform);
-                        polylineArgs.Apply(*instanceGraphic);
-                        }
-
-                    graphic->AddSubGraphic(*instanceGraphic->Finish(), Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-                    }
-
-                // The mesh's vertices are const and reused...if we applied a transform, undo it.
-                if (haveMesh && !invTransform.IsIdentity())
-                    {
-                    invTransform.InverseOf(invTransform);
-                    meshArgs.Transform(invTransform);
-                    }
-                }
-            }
-        }
-
-    bool addAsSubGraphics = true;
+    bvector<Render::GraphicPtr> graphics;
     for (auto const& mesh : geometry.Meshes())
         {
         bool haveMesh = !mesh->Triangles().empty();
@@ -885,56 +736,52 @@ BentleyStatus Loader::_LoadTile()
         if (!haveMesh && !havePolyline)
             continue;
 
-        if (graphic.IsNull())
-            graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
-
-        Render::GraphicBuilderPtr thisGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
-        thisGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-
+        Render::GraphicPtr thisGraphic;
+        PrimitiveParams primParams(root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams(), Transform::FromIdentity());
         if (haveMesh)
             {
-            if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
-                thisGraphic->AddTriMesh(meshArgs);
+            if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
+                thisGraphic = system._CreateTriMesh(meshArgs, primParams);
             }
         else
             {
             BeAssert(havePolyline);
-            polylineArgs.InitAndApply(*thisGraphic, *mesh);
+            if (polylineArgs.Init(*mesh))
+                thisGraphic = system._CreateIndexedPolylines(polylineArgs, primParams);
             }
 
-        if (addAsSubGraphics)
-            {
-            graphic->AddSubGraphic(*thisGraphic->Finish(), Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-            }
-
-        addAsSubGraphics = true;
+        if (thisGraphic.IsValid())
+            graphics.push_back(thisGraphic);
         }
 
-#if defined(DRAW_EMPTY_RANGE_BOXES)
-    if (graphic.IsNull())
-        graphic = system._CreateGraphic(Graphic::CreateParams());
-#endif
-
-    // ###TODO: Doesn't handle case in which all graphics were instanced...
-    if (graphic.IsValid())
+    if (!graphics.empty())
         {
         if (root.WantDebugRanges())
             {
             ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
-                GraphicParams gfParams;
-                gfParams.SetLineColor(color);
-                gfParams.SetFillColor(ColorDef::Green());
-                gfParams.SetWidth(0);
-                gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
+            GraphicParams gfParams;
+            gfParams.SetLineColor(color);
+            gfParams.SetFillColor(ColorDef::Green());
+            gfParams.SetWidth(0);
+            gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-                Render::GraphicBuilderPtr rangeGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
-                rangeGraphic->ActivateGraphicParams(gfParams);
-                rangeGraphic->AddRangeBox(tile.GetRange());
-                if (addAsSubGraphics)
-                    graphic->AddSubGraphic(*rangeGraphic->Finish(), Transform::FromIdentity(), gfParams);
+            Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
+            rangeGraphic->ActivateGraphicParams(gfParams);
+            rangeGraphic->AddRangeBox(tile.GetRange());
+            graphics.push_back(rangeGraphic->Finish());
             }
 
-        tile.AddGraphic(*graphic->Finish());
+        switch (graphics.size())
+            {
+            case 0:
+                break;
+            case 1:
+                tile.SetGraphic(**graphics.begin());
+                break;
+            default:
+                tile.SetGraphic(*system._CreateGraphicList(std::move(graphics), Graphic::CreateParams(root.GetDgnDb())));
+                break;
+            }
         }
 
     // No point subdividing empty nodes - improves performance if we don't
@@ -1053,7 +900,7 @@ GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRa
 
     IGeometryPtr geom = IGeometry::Create(&prim);
     GeometryList geomList;
-    geomList.push_back(Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), &db));
+    geomList.push_back(Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, prim.HasCurvedFaceOrEdge(), db));
     auto part = GeomPart::Create(range, geomList);
     m_map.Insert(key, part);
 
@@ -1441,7 +1288,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
     DisplayParamsCR displayParams = geom.GetDisplayParams();
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
-    bool hasTexture = displayParams.QueryTexture(&db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
+    bool hasTexture = displayParams.QueryTexture(db).IsValid(); // ###TODO: We need to reduce the number of texture/material queries...
 
     MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), true);
     MeshBuilderR builder = GetMeshBuilder(key);
@@ -1458,7 +1305,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
             {
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), &db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
         }
     }
@@ -1587,98 +1434,40 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR 
 Render::Primitives::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
     {
     Render::Primitives::GeometryCollection collection;
-    switch (s_instancingOptions)
+    bmap<GeomPartCP, bvector<GeometryCP>> parts;
+    MeshGenerator generator(*this, options, context);
+
+    for (auto const& geom : geometries)
         {
-        case InstancingOptions::None:
-            {
-            auto meshes = GenerateMeshes(options, geometries, true, context);
-            if (!context.WasAborted())
-                collection.Meshes() = std::move(meshes);
-
+        if (context.WasAborted())
             return collection;
-            }
-        case InstancingOptions::MergeIntoMeshes:
+
+        auto part = geom->GetPart();
+        if (part.IsNull())
             {
-            bmap<GeomPartCP, bvector<GeometryCP>> parts;
-            MeshGenerator generator(*this, options, context);
-            for (auto const& geom : geometries)
-                {
-                if (context.WasAborted())
-                    return collection;
-
-                auto part = geom->GetPart();
-                if (part.IsNull())
-                    {
-                    generator.AddMeshes(*geom, true);
-                    continue;
-                    }
-
-                auto iter = parts.find(part.get());
-                if (parts.end() == iter)
-                    iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
-
-                iter->second.push_back(geom.get());
-                }
-
-            for (auto& kvp : parts)
-                {
-                if (context.WasAborted())
-                    break;
-
-                generator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
-                }
-
-            if (!context.WasAborted())
-                collection.Meshes() = generator.GetMeshes();
-
-            return collection;
+            generator.AddMeshes(*geom, true);
+            continue;
             }
-        default:
-            {
-            GeometryList uninstancedGeometry;
-            bmap<GeomPartCP, MeshPartPtr> partMap;
 
-            // Extract instances first...
-            for (auto const& geom : geometries)
-                {
-                if (context.WasAborted())
-                    return collection;
+        auto iter = parts.find(part.get());
+        if (parts.end() == iter)
+            iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
 
-                auto const& part = geom->GetPart();
-                if (part.IsValid())
-                    {
-                    MeshPartPtr meshPart;
-                    auto found = partMap.find(part.get());
-
-                    if (partMap.end() == found)
-                        {
-                        MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false, context);
-                        if (partMeshes.empty())
-                            continue;
-
-                        collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
-                        partMap.Insert(part.get(), meshPart);
-                        }
-                    else
-                        {
-                        meshPart = found->second;
-                        }
-
-                    meshPart->AddInstance(MeshInstance(geom->GetEntityId(), geom->GetTransform()));
-                    }
-                else
-                    {
-                    uninstancedGeometry.push_back(geom);
-                    }
-                }
-
-            auto& meshes = collection.Meshes();
-            MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true, context);
-            meshes.insert(meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
-
-            return collection;
-            }
+        iter->second.push_back(geom.get());
         }
+
+    for (auto& kvp : parts)
+        {
+        if (context.WasAborted())
+            break;
+
+        generator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
+        }
+
+    if (!context.WasAborted())
+        collection.Meshes() = generator.GetMeshes();
+
+    return collection;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1797,19 +1586,16 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     DisplayParamsCR displayParams = CreateDefaultDisplayParams(gf);
 
     // ###TODO: Determine if the synchronization overhead of caching solid primitives is worth it.
-    if (InstancingOptions::None != s_instancingOptions)
+    DRange3d range, thisTileRange;
+    Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
+    prim.GetRange(range);
+    tf.Multiply(thisTileRange, range);
+    if (thisTileRange.IsContained(m_tileRange))
         {
-        DRange3d range, thisTileRange;
-        Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
-        prim.GetRange(range);
-        tf.Multiply(thisTileRange, range);
-        if (thisTileRange.IsContained(m_tileRange))
-            {
-            ISolidPrimitivePtr clone = prim.Clone();
-            GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, displayParams, GetCurrentElementId());
-            AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), displayParams, &GetDgnDb()));
-            return true;
-            }
+        ISolidPrimitivePtr clone = prim.Clone();
+        GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, displayParams, GetCurrentElementId());
+        AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), displayParams, GetDgnDb()));
+        return true;
         }
 
     return m_geometryListBuilder.AddSolidPrimitive(prim, displayParams, gf.GetLocalToWorldTransform());
@@ -1921,7 +1707,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     Transform   tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     
     tf.Multiply(range, tileGeomPart->GetRange());
-    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, &GetDgnDb()));
+    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1973,17 +1759,9 @@ Render::ViewFlags GeometryProcessorContext::GetDefaultViewFlags()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
-    if (InstancingOptions::None != s_instancingOptions)
-        {
-        GraphicParams graphicParams;
-        _CookGeometryParams(geomParams, graphicParams);
-
-        m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
-        }
-    else
-        {
-        T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
-        }
+    GraphicParams graphicParams;
+    _CookGeometryParams(geomParams, graphicParams);
+    m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

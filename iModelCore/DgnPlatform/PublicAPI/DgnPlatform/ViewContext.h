@@ -322,7 +322,7 @@ public:
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, Render::Graphic::CreateParams const& params, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(branch, params, clips);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, Render::Graphic::CreateParams const& params, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(std::move(branch), params, clips);}
     Render::TargetR GetTargetR() {return m_target;}
     DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
 };

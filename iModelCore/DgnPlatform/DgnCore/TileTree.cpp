@@ -1148,7 +1148,7 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     BeAssert(IsReady());
     if (HasGraphics())
-        args.m_graphics.Add(m_graphics);
+        args.m_graphics.Add(*m_graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
