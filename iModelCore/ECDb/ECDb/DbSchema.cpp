@@ -1901,6 +1901,8 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 //static
 DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
+    BeAssert(!primaryKeyColumnName.empty() && "should always be set (either to user value or default value) by this time");
+
     DbTable* table = dbSchema.FindTableP(tableName.c_str());
     if (table != nullptr)
         {
@@ -1950,9 +1952,7 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
     {
     DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Physical, exclusiveRootClassId, primaryTable);
     
-    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName.empty() ? Utf8String(ECDBSYS_PROP_ECInstanceId) //default name for PK column
-                                                                            : primaryKeyColumnName, 
-                                             DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
+    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
     if (table->GetPersistenceType() == PersistenceType::Physical)
         {
         std::vector<DbColumn*> pkColumns {pkColumn};
@@ -1980,7 +1980,7 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
 //static
 DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName)
     {
-    BeAssert(!existingTableName.empty() && !primaryKeyColName.empty());
+    BeAssert(!existingTableName.empty());
 
     //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
     //cases where schema authors want to map two ECClasses to the same existing table.
@@ -2057,8 +2057,5 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
     return table;
     }
-
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

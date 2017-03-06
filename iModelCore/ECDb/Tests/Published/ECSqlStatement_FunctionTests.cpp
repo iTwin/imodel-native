@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatement_FunctionTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -313,7 +313,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     //BeSQLite
     {
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
@@ -335,7 +335,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     {
     Utf8String sql;
-    sql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsqltest_P WHERE ECInstanceId=?", expectedBase64Str.c_str());
+    sql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsqltest_P WHERE Id=?", expectedBase64Str.c_str());
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str()));

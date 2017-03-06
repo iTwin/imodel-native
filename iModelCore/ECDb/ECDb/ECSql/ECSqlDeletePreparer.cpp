@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
@@ -41,11 +39,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare(ECSqlPrepareContext& ctx, DeleteStateme
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::PrepareForClass
-(
-    ECSqlPrepareContext& ctx,
-    NativeSqlSnippets& nativeSqlSnippets
-    )
+ECSqlStatus ECSqlDeletePreparer::PrepareForClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets)
     {
     BuildNativeSqlDeleteStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets);
     return ECSqlStatus::Success;
@@ -161,7 +155,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 DbColumn const* primaryTableIdCol = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
-                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",
                     primaryTableIdCol->GetName().c_str(),
                     primaryTable.GetName().c_str(),
                     primaryTableIdCol->GetName().c_str(),
@@ -179,7 +173,6 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
                 }
             }
         }
-
 
     //System WHERE clause
     //if option to disable class id filter is set, nothing more to do
@@ -205,11 +198,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlDeletePreparer::BuildNativeSqlDeleteStatement
-(
-    NativeSqlBuilder& deleteBuilder,
-    NativeSqlSnippets const& deleteNativeSqlSnippets
-    )
+void ECSqlDeletePreparer::BuildNativeSqlDeleteStatement(NativeSqlBuilder& deleteBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets)
     {
     deleteBuilder.Append("DELETE FROM ").Append(deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
 
@@ -238,12 +227,7 @@ void ECSqlDeletePreparer::BuildNativeSqlDeleteStatement
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlDeletePreparer::BuildNativeSqlUpdateStatement
-(
-    NativeSqlBuilder& updateBuilder,
-    NativeSqlSnippets const& deleteNativeSqlSnippets,
-    NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets
-    )
+void ECSqlDeletePreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& deleteNativeSqlSnippets, NativeSqlBuilder::List const& propNamesToUnsetNativeSqlSnippets)
     {
     updateBuilder.Append("UPDATE ").Append(deleteNativeSqlSnippets.m_classNameNativeSqlSnippet);
 
@@ -257,7 +241,7 @@ void ECSqlDeletePreparer::BuildNativeSqlUpdateStatement
         if (!isFirstItem)
             updateBuilder.AppendComma();
 
-        updateBuilder.Append(sqlSnippet).Append(" = NULL");
+        updateBuilder.Append(sqlSnippet).Append("=NULL");
         isFirstItem = false;
         }
 

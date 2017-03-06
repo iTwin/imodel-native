@@ -78,6 +78,9 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
     if (m_mapsToVirtualTable && m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
         m_mapsToVirtualTable = false;
 
+    if (m_ecInstanceIdColumnName.empty())
+        m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_ECInstanceId);
+
     return ClassMappingStatus::Success;
     }
 //---------------------------------------------------------------------------------------
@@ -337,13 +340,6 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 
         if (SUCCESS != classMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
             return ERROR;
-
-        if (strategy == MapStrategy::ExistingTable && m_ecInstanceIdColumnName.empty())
-            {
-            Issues().Report("Failed to map ECClass %s. 'ECInstanceIdColumn' must be set in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
         }
 
     if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, caCache.GetDbIndexListCA()))

@@ -1486,7 +1486,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Source:
             {
             if (linkTableInfo.GetSourceIdColumnName().empty())
-                colName.assign(ECDBSYS_PROP_SourceECInstanceId);
+                colName.assign(COL_DEFAULTNAME_SourceECInstanceId);
             else
                 colName.assign(linkTableInfo.GetSourceIdColumnName());
 
@@ -1495,7 +1495,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Target:
             {
             if (linkTableInfo.GetTargetIdColumnName().empty())
-                colName.assign(ECDBSYS_PROP_TargetECInstanceId);
+                colName.assign(COL_DEFAULTNAME_TargetECInstanceId);
             else
                 colName.assign(linkTableInfo.GetTargetIdColumnName());
 
@@ -1524,7 +1524,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
             case ECRelationshipEnd_Source:
             {
             if (linkTableInfo.GetSourceIdColumnName().empty())
-                colName.assign(ECDBSYS_PROP_SourceECClassId);
+                colName.assign(COL_SourceECClassId);
             else
                 idColName = &linkTableInfo.GetSourceIdColumnName();
             
@@ -1534,7 +1534,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
             case ECRelationshipEnd_Target:
             {
             if (linkTableInfo.GetTargetIdColumnName().empty())
-                colName.assign(ECDBSYS_PROP_TargetECClassId);
+                colName.assign(COL_TargetECClassId);
             else
                 idColName = &linkTableInfo.GetTargetIdColumnName();
             
