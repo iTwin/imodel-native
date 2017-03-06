@@ -8,6 +8,7 @@
 #include "TilePublisher.h"
 #include "Constants.h"
 #include <crunch/CrnLib.h>
+#include <Geom/OperatorOverload.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -1738,7 +1739,7 @@ PolylineMaterial TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& 
 
     constexpr double s_minLineWidth = 1.0;
 
-    double halfWidthPixels = std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
+    double halfWidthPixels = 40.0; // std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
 
     Json::Value& matValues = tileData.m_json["materials"][mat.GetName()]["values"];
     matValues["width"] = halfWidthPixels;
@@ -2213,15 +2214,6 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 
 #ifdef WIP_TESSELATION
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void addTriangleIndices(bvector<uint32_t>& indices, uint32_t baseIndex, uint32_t index0, uint32_t index1, uint32_t index2)
-    {
-    indices.push_back(baseIndex + index0);
-    indices.push_back(baseIndex + index1);
-    indices.push_back(baseIndex + index2);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
@@ -2238,101 +2230,6 @@ static Render::Image createPolylineImage()
 
     return Render::Image(s_width, s_height, std::move(bytes), Image::Format::Rgba);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::TesselatePolylineSegment(TileMeshR mesh, bvector<DPoint3d>& directions, DPoint3dCP prev, DPoint3dCR start, DPoint3dCR end, DPoint3dCP next, double& currLength, TileMeshR mesh, size_t meshIndex, bool doBatchIds)
-    {
-    DVec3d          normal, startNormal, endNormal, startPerp0, startPerp1, nextPerp0, nextPerp1;
-                    thisDir = DVec3d::FromStartEndNormalize(start, end), 
-                    prevDir = nullptr == prev ? thisDir : DVec3d::FromStartEndNormalize(*prev, start),
-                    nextDir = nullptr == next ? thisDir : DVec3d::FromStartEndNormalize(end, *next);
-    double          thisLength = start.Distance(end),
-                    startCross = startNormal.NormalizedCrossProduct(prevDir, thisDir),
-                    endCross   = endNormal.NormalizedCrossProduct(thisDir, nextDir);
-    static double   s_minCross;
-    
-    if (startCross < s_minCross && endCross < s_minCross)
-        {
-        startPerp0 = endPerp0 = thisDir;     // Will have to be crossed with view-Z in vertex shader.
-        endPerp1   = endPerp1 = -thisDir;
-        }
-    else
-        {
-        if (startCross < s_minCross)
-            {
-            normal   = endNormal;
-
-            startPerp0 = DVec3d::FromNormalizedCrossProduct (normal, thisDir);
-            startPerp1 = -startPerp0;
-
-            
-            }
-        else if (endCross < s_minCross) 
-            {
-            }
-
-        DVec3d      normal = startCross > endCross ? startNormal : endNormal;
-
-        if (startCross < 
-        }
-
-    currLength += thisLength;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     011/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
-    {
-    Utf8String                  idStr(std::to_string(index).c_str());
-    double                      currLength = 0.0;
-    DPoint3d                    normal;
-    Render::ImageSource         imageSource(createPolylineImage(), ImageSource::Format::Png);
-    TileTextureImagePtr         texture = TileTextureImage::Create(imageSource);
-    TileDisplayParamsCPtr       polylineDisplayParams = TileDisplayParams::Create(0xffffff, texture.get(), true);
-    bvector<DPoint3d>           points;
-    bvector<DVec3d>             directions;
-    bvector<DPoint2d>           params;
-    bvector<uint32_t>           indices;
-    bvector<uint16_t>           attributes;
-    bvector<uint16_t>           colors;
-
-    for (auto const& polyline : mesh.Polylines())
-        {
-        bvector<DPoint3d>       polylinePoints;
-        DPoint3d                
-
-        for (auto& polyIndex : polyline.GetIndices())
-            polylinePoints.push_back(mesh.Points().at(polyIndex));
-
-        if (!bsiGeom_planeThroughPointsTol(
-        bvector<uint32_t> const&    polyIndices = polyline.GetIndices();
-
-        for (size_t i=0, count = polyIndices.size(), last = count - 2; i <= last; i++)
-            {
-            DPoitn3dCP  prev  = i == 0 ? nullptr : &meshPoints[polyIndices[i]];
-            DPoint3dCR  start = meshPoints[polyIndices[i]];
-            DPoint3dCR  end   = meshPoints[polyIndices[i+1]];
-            DPoint3dCP  next  = i == last ? nullptr : &meshPoints[polyIndices[i+2]];
-
-            TesselatePolylineSegment(points, directions, params, colors, attributes, indices, prev, start, end, next, currLength, mesh, polyIndices[i], doBatchIds);
-            }
-        }
-    
-    TileMeshPtr                 testMesh = TileMesh::Create(*polylineDisplayParams);
-    double                      width = .
-    bvector<uint32_t>           tempIndices;
-    for(size_t i=0; i<points.size(); i++)
-        tempIndices.push_back (testMesh->AddVertex(DPoint3d::FromSumOf(points[i], directions[i], width), nullptr, &params[i], attributes[i], colors[i]));
-
-    for (size_t i=0; i<indices.size(); i+=3)
-        testMesh->AddTriangle(TileTriangle(tempIndices[indices[i]], tempIndices[indices[i+1]], tempIndices[indices[i+2]], false));
-
-    AddMeshPrimitive (primitivesNode, tileData, *testMesh, index, doBatchIds);
-    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -2344,11 +2241,63 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
         return;
 
     if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
-        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds && mesh.ValidIdsPresent());
     else
-        AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
+        AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds && mesh.ValidIdsPresent());
     }    
   
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     03/2017
++===============+===============+===============+===============+===============+======*/
+struct  PolylineTesselation
+    {
+    bvector<DPoint3d>           m_points;
+    bvector<DPoint3d>           m_prevPoints;
+    bvector<DPoint3d>           m_nextPoints;
+    bvector<DPoint3d>           m_deltas;
+    bvector<uint16_t>           m_attributes;
+    bvector<uint16_t>           m_colors;
+    bvector<uint32_t>           m_indices;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     03/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddPoint (DPoint3dCR point, DPoint3dCR prev, DPoint3dCR next, DVec3dCR delta, uint16_t attrib, uint16_t color)
+        {
+        m_points.push_back(point);
+        m_prevPoints.push_back(prev);
+        m_nextPoints.push_back(next);
+        m_deltas.push_back(delta);
+        m_attributes.push_back(attrib);
+        m_colors.push_back(color);
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     03/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddTriangle(uint32_t baseIndex, uint32_t index0, uint32_t index1, uint32_t index2)
+        {
+        m_indices.push_back(baseIndex + index0);
+        m_indices.push_back(baseIndex + index1);
+        m_indices.push_back(baseIndex + index2);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     02/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DPoint3dCR prev, DPoint3dCR next, uint16_t attribute, uint16_t color, double param)
+        {
+        static size_t   s_nPoints = 4;
+        double          paramDelta = 1.0 / (double) (s_nPoints - 1);
+        
+        for (size_t i=0; i < s_nPoints - 1; i++)
+            AddTriangle(0, index, m_points.size() + i + 1, m_points.size() + i);
+
+        for (size_t i=0; i < s_nPoints; i++)
+            AddPoint(p, prev, next, DVec3d::From(length, 1.0, param + (double) i * paramDelta), attribute, color); 
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2356,127 +2305,163 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     {
     Utf8String idStr(std::to_string(index).c_str());
 
-    bvector<DPoint3d>           points, prevPoints, nextPoints;
-    bvector<DPoint3d> const&    meshPoints = mesh.Points();
-    bvector<uint16_t>           attributes;
-    bvector<uint16_t>           colors;
-    bvector<uint32_t>           indices;
-    bvector<DPoint3d>           deltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
-
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
 
-    PolylineMaterial mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
-    bool doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+    PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    PolylineTesselation         tesselation;
+    bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
 
     for (auto const& polyline : mesh.Polylines())
         {
         bvector<DPoint3d>       polylinePoints;
+        bvector<uint16_t>       polylineColors, polylineAttributes;
         double                  cumulativeLength = 0.0;
 
         for (auto& index : polyline.m_indices)        // Gather polyline points, omitting degneeraet segments.
             {
-            DPoint3d    thisPoint = meshPoints[index];
+            DPoint3d    thisPoint = mesh.Points().at(index);
 
             if (polylinePoints.empty() || thisPoint.Distance(polylinePoints.back()) > s_degenerateSegmentTolerance)
+                {
                 polylinePoints.push_back(thisPoint);
+                if (doColors)
+                    polylineColors.push_back(mesh.Colors().at(index));
+
+                if (doBatchIds)
+                    polylineAttributes.push_back(mesh.Attributes().at(index));
+                }
             }
 
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
+            static double       s_adjacentDistance = .01;
             DPoint3d            p0 = polylinePoints[i], p1 = polylinePoints[i+1];
-            double              thisLength = p0.Distance(p1);
+            double              thisLength = p0.Distance(p1), 
+                                length0 = cumulativeLength, 
+                                length1 = (cumulativeLength += thisLength);
             DVec3d              direction = DVec3d::FromStartEndNormalize (p0, p1);
             bool                isStart  = (i == 0),
                                 isEnd    = (i == last - 1);
-
-            indices.push_back(points.size());
-            indices.push_back(points.size() + 2);
-            indices.push_back(points.size() + 1);
-
-            indices.push_back(points.size() + 1);
-            indices.push_back(points.size() + 2);
-            indices.push_back(points.size() + 3);
-
-
-            // Create adjacent points.
-            for (size_t j=0; j<4; j++)
-                {
-                DVec3d          prevDir, nextDir;
-                DPoint3d        point, prev, next, delta;
-                double          length;
-                static double   s_adjacentDistance = .01;
-                
-                if (j < 2)
-                    {   // Point at segment start
-                    point = p0;
-                    prevDir = isStart ? DVec3d::FromScale(direction, -1.0) : DVec3d::FromStartEndNormalize(p0, polylinePoints[i-1]);
-                    nextDir = direction;
-                    delta.x = cumulativeLength;
-                    delta.z = 0.0;
-                    }
-                else
-                    {   // Point at segment end
-                    point   = p1;
-                    prevDir = DVec3d::FromScale(direction, -1.0);
-                    nextDir = isEnd ? direction : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
-                    delta.x = cumulativeLength + thisLength;
-                    delta.z = 1.0;
-                    }
-                delta.y = (0 == (j & 0x0001)) ? -1.0 : 1.0;
-                
-                points.push_back (point);
-                prevPoints.push_back(DPoint3d::FromSumOf(point, prevDir, s_adjacentDistance));
-                nextPoints.push_back(DPoint3d::FromSumOf(point, nextDir, s_adjacentDistance));
-                deltas.push_back(delta);
-                }
-
-            if (doBatchIds && mesh.ValidIdsPresent())
-                {
-                auto&   attribute0 = mesh.Attributes().at(polyline.m_indices[i]);
-                auto&   attribute1 = mesh.Attributes().at(polyline.m_indices[i+1]);
-
-                attributes.push_back (attribute0);
-                attributes.push_back (attribute0);
-                attributes.push_back (attribute1);
-                attributes.push_back (attribute1);
-                }
-
-
+            uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
+            DVec3d              prevDir0 = isStart ? DVec3d::FromScale(direction, -1.0) : DVec3d::FromStartEndNormalize(p0, polylinePoints[i-1]),
+                                nextDir0 = direction,
+                                prevDir1 = DVec3d::FromScale(direction, -1.0),
+                                nextDir1 = isEnd ? direction : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
+            DPoint3d            prevPoint0 = DPoint3d::FromSumOf (p0, prevDir0, s_adjacentDistance),
+                                nextPoint0 = DPoint3d::FromSumOf (p0, nextDir0, s_adjacentDistance),
+                                prevPoint1 = DPoint3d::FromSumOf (p1, prevDir1, s_adjacentDistance),
+                                nextPoint1 = DPoint3d::FromSumOf (p1, nextDir1, s_adjacentDistance);
+            size_t              baseIndex = tesselation.m_points.size();
+                        
             if (doColors)
                 {
-                auto&   colors0 = mesh.Colors().at(polyline.m_indices[i]);
-                auto&   colors1 = mesh.Colors().at(polyline.m_indices[i+1]);
-
-                colors.push_back(colors0);
-                colors.push_back(colors0);
-                colors.push_back(colors1);
-                colors.push_back(colors1);
+                colors0 = polylineColors[i];
+                colors1 = polylineColors[i+1];
                 }
-            cumulativeLength += thisLength;
+
+            if (doBatchIds)
+                {
+                attributes0 = polylineAttributes[i];
+                attributes1 = polylineAttributes[i+1];
+                }
+
+            tesselation.AddTriangle(baseIndex, 2, 4, 1);
+            tesselation.AddTriangle(baseIndex, 2, 1, 0);
+            tesselation.AddTriangle(baseIndex, 0, 1, 5);
+            tesselation.AddTriangle(baseIndex, 0, 5, 3);
+
+            for (size_t j=0; j<6; j++)
+                {
+                static bool     basePoints[6]  = {true, false, true, true, false, false};
+                static double   deltaYs[6] = {0.0, 0.0, -1.0, 1.0, -1.0, 1.0 };
+                bool            basePoint = basePoints[j];
+                
+                tesselation.AddPoint (basePoint ? p0 : p1,
+                                      basePoint ? prevPoint0 : prevPoint1,
+                                      basePoint ? nextPoint0 : nextPoint1,
+                                      DVec3d::From(basePoint ? length0 : length1, deltaYs[j], basePoint ? 0.0 : 4.0),
+                                      basePoint ? colors0 : colors1,
+                                      basePoint ? attributes0 : attributes1);
+                }
+            
+
+            if (!isStart)
+                tesselation.AddJointTriangles(baseIndex, length0, p0, prevPoint0, nextPoint0, colors0, attributes0, 1.0);
+
+            if (!isEnd)
+                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevPoint1, nextPoint1, colors1, attributes1, 5.0);
             }
+        ;
+        }
+#ifdef SHADER_TESTING
+
+    bvector<DPoint3d>   tesselatedPoints;
+    for (size_t i=0; i<points.size(); i++)
+        {
+        DPoint3d    viewPos  = points[i];
+        DPoint3d    viewPrev = prevPoints[i];
+        DPoint3d    viewNext = nextPoints[i];
+        DPoint3d    a_delta = deltas[i];
+        DVec3d      prevDir  = DVec3d::FromStartEndNormalize(viewPrev, viewPos);
+        DVec3d      nextDir  = DVec3d::FromStartEndNormalize(viewPos, viewNext);
+        DVec3d      thisDir  = (a_delta.z < 2.0) ? nextDir : prevDir;
+        DVec3d      perp       = a_delta.y * DVec3d::From (-thisDir.y, thisDir.x, 0.0);
+
+        double      dist      = 1.0;
+        DVec3d      delta     = DVec3d::From(0.0, 0.0, 0.0);
+
+        if (!prevDir.IsEqual(nextDir))
+            {
+            DVec3d  bisector;
+            bisector.NormalizedDifference(prevDir, nextDir);
+            double  dotP       = bisector.DotProduct(perp);
+            double  jointParam = fmod(a_delta.z, 2.0);
+
+            if (0.0 == jointParam)
+                {
+                if (dotP < 0.0)
+                    delta = bisector * dist / dotP;
+                else
+                    delta = perp * dist;
+                }
+            else
+                {
+                delta = (1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp;
+                delta.Normalize();
+                delta = delta * dist;
+                }
+            }
+        else
+            {
+            delta = perp * dist;
+            }
+        tesselatedPoints.push_back(viewPos + delta);
         }
 
+#endif
+
+
     Json::Value     primitive = Json::objectValue;
-    DRange3d        pointRange = DRange3d::From(points), prevRange = DRange3d::From(prevPoints), nextRange = DRange3d::From(nextPoints), deltaRange = DRange3d::From(deltas);
+    DRange3d        pointRange = DRange3d::From(tesselation.m_points), prevRange = DRange3d::From(tesselation.m_prevPoints), nextRange = DRange3d::From(tesselation.m_nextPoints), deltaRange = DRange3d::From(tesselation.m_deltas);
 
     primitive["material"] = mat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
     VertexEncoding  encoding = VertexEncoding::UnquantizedDoubles; 
 
-    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", encoding, &pointRange.low.x, &pointRange.high.x);
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &tesselation.m_points.front().x, "Position", idStr.c_str(), 3, tesselation.m_points.size(), "VEC3", encoding, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
-    primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &prevPoints.front().x, "Prev", idStr.c_str(), 3, prevPoints.size(), "VEC3", encoding, &prevRange.low.x, &prevRange.high.x);
-    primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &nextPoints.front().x, "Next", idStr.c_str(), 3, nextPoints.size(), "VEC3", encoding, &nextRange.low.x, &nextRange.high.x);
-    primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &deltas.front().x, "Delta", idStr.c_str(), 3, deltas.size(), "VEC3", encoding, &deltaRange.low.x, &deltaRange.high.x);
-    primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
+    primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevPoints.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevPoints.size(), "VEC3", encoding, &prevRange.low.x, &prevRange.high.x);
+    primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextPoints.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextPoints.size(), "VEC3", encoding, &nextRange.low.x, &nextRange.high.x);
+    primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_deltas.front().x, "Delta", idStr.c_str(), 3, tesselation.m_deltas.size(), "VEC3", encoding, &deltaRange.low.x, &deltaRange.high.x);
+    primitive["indices"] = AddMeshIndices (tileData, "Index", tesselation.m_indices, idStr);
 
     if (doBatchIds)
-        AddMeshBatchIds(tileData, primitive, attributes, idStr);
+        AddMeshBatchIds(tileData, primitive, tesselation.m_attributes, idStr);
 
     if (doColors)
-        AddMeshColors(tileData, primitive, colors, idStr);
+        AddMeshColors(tileData, primitive, tesselation.m_colors, idStr);
 
     AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 

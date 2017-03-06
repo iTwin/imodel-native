@@ -309,28 +309,36 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
         vec2 projNext   = vec2(viewNext.x/viewNext.w, viewNext.y/viewNext.w);
         vec2 prevDir    = normalize(projPos - projPrev);
         vec2 nextDir    = normalize(projNext - projPos);
-        vec2 thisDir    = (a_delta.z < .5) ? nextDir : prevDir;
-        vec2 perp       = vec2 (-thisDir.y, thisDir.x);
-        float distance  = 2.0 * u_width * a_delta.y;
-        
-        if (prevDir != nextDir)
-            {
-            vec2    bisector = normalize(prevDir - nextDir);
-            float   dotP     = dot(bisector, perp);
+        vec2 thisDir    = (a_delta.z < 4.0) ? nextDir : prevDir;
+        vec2 perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
+        float dist      = 2.0 * u_width;
+        vec2 delta      = vec2(0.0, 0.0);
 
-            if (dotP < 0.0)
+        if (dot(prevDir, nextDir) < .99999)
+            {
+            vec2    bisector   = normalize(prevDir - nextDir);
+            float   dotP       = dot(bisector, perp);
+            float   jointParam = mod(a_delta.z, 4.0) - 1.0;
+
+            if (jointParam < 0.0)
                 {
-                distance /= -dotP;
-                perp = -bisector;
+                if (dotP < 0.0)
+                    delta = bisector * dist / dotP;
+                else
+                    delta = perp * dist;
                 }
             else
                 {
-                perp = bisector;
-                distance /= dotP;
+                delta = normalize((1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp) * dist;
                 }
             }
+        else
+            {
+            delta = perp * dist;
+            }
 
-        gl_Position = vec4((projPos.x + perp.x * distance / czm_viewport.z) * viewPos.w, (projPos.y + perp.y * distance / czm_viewport.w) * viewPos.w, viewPos.z, viewPos.w);
+
+        gl_Position = vec4((projPos.x + delta.x / czm_viewport.z) * viewPos.w, (projPos.y + delta.y / czm_viewport.w) * viewPos.w, viewPos.z, viewPos.w);
         v_color = computeColor();
         }
 )RAW_STRING";
