@@ -960,7 +960,7 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
 
     //DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
     branch.SetViewFlags(flags);
-    auto drawBranch = m_context.CreateBranch(branch, &GetLocation(), m_clip);
+    auto drawBranch = m_context.CreateBranch(branch, Render::Graphic::CreateParams(m_context.GetDgnDb(), GetLocation()), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
     m_context.OutputGraphic(*drawBranch, nullptr);
     }

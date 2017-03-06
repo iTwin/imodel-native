@@ -230,9 +230,9 @@ protected:
     DGNPLATFORM_EXPORT virtual uint32_t _GetTransparency(bool isFill, ACSDisplayOptions options) const;
     DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel(uint32_t axis) const;
 
-    DGNPLATFORM_EXPORT virtual void _AddZAxis(Render::GraphicBuilderR, ColorDef color, ACSDisplayOptions options) const;
-    DGNPLATFORM_EXPORT virtual void _AddXYAxis(Render::GraphicBuilderR, ColorDef color, Utf8CP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxisText(Render::GraphicBuilderR, Utf8CP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
+    DGNPLATFORM_EXPORT virtual void _AddZAxis(Render::GraphicBuilderR, ColorDef color, ACSDisplayOptions options, DgnViewportCR vp) const;
+    DGNPLATFORM_EXPORT virtual void _AddXYAxis(Render::GraphicBuilderR, ColorDef color, Utf8CP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags, DgnViewportCR vp) const;
+    DGNPLATFORM_EXPORT virtual void _AddAxisText(Render::GraphicBuilderR, Utf8CP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options, DgnViewportCR vp) const;
     DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
     DGNPLATFORM_EXPORT virtual void _DisplayInView(DecorateContextR, ACSDisplayOptions options, bool drawName) const;
 

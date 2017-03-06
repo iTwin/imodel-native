@@ -289,7 +289,7 @@ bool GetUseTextureColors() {return m_useTextureColors;}
 Render::GraphicPtr Stroke(ViewContextR context) const
     {
     // Create the graphic
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_transformForTexture));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetDgnDb(), m_transformForTexture));
     LineStyleContext lsContext(*graphic, m_geomParams, context);
 
     lsContext.SetCreatingTexture();

@@ -767,7 +767,7 @@ BentleyStatus Loader::_LoadTile()
                     continue;
 
                 if (graphic.IsNull())
-                    graphic = system._CreateGraphic(Graphic::CreateParams());
+                    graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
 
                 auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
                 subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
@@ -809,7 +809,7 @@ BentleyStatus Loader::_LoadTile()
 
                 for (auto const& instance : part->Instances())
                     {
-                    auto instanceGraphic = system._CreateGraphic(Graphic::CreateParams(nullptr, instance.GetTransform()));
+                    auto instanceGraphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb(), instance.GetTransform()));
                     instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                     if (haveMesh)
                         instanceGraphic->AddTriMesh(meshArgs);
@@ -840,7 +840,7 @@ BentleyStatus Loader::_LoadTile()
                     continue;
 
                 if (graphic.IsNull())
-                    graphic = system._CreateGraphic(Graphic::CreateParams());
+                    graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
 
                 Transform invTransform = Transform::FromIdentity();
                 for (auto const& instance : part->Instances())
@@ -886,7 +886,7 @@ BentleyStatus Loader::_LoadTile()
             continue;
 
         if (graphic.IsNull())
-            graphic = system._CreateGraphic(Graphic::CreateParams());
+            graphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
 
         Render::GraphicBuilderPtr thisGraphic = addAsSubGraphics ? graphic->CreateSubGraphic(Transform::FromIdentity()) : graphic;
         thisGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());

@@ -24,7 +24,7 @@ struct NullContext : ViewContext
     //=======================================================================================
     struct NullGraphic : Render::Graphic
     {
-    //
+        NullGraphic(Render::Graphic::CreateParams const& params) : Render::Graphic(params) { }
     };
 
     /*=================================================================================**//**
@@ -32,8 +32,11 @@ struct NullContext : ViewContext
     +===============+===============+===============+===============+===============+======*/
     struct NullGraphicBuilder : Render::GraphicBuilder
     {
-        Transform m_localToWorldTransform = Transform::FromIdentity();
+        Transform m_localToWorldTransform;
+        DgnDbR m_dgndb;
         bool m_isOpen = true;
+
+        NullGraphicBuilder(Render::Graphic::CreateParams const& params) : m_localToWorldTransform(params.m_placement), m_dgndb(params.m_dgndb) {}
 
         bool _IsOpen() const override {return m_isOpen;}
         void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
@@ -63,15 +66,15 @@ struct NullContext : ViewContext
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override {return new NullGraphicBuilder();}
-        DgnViewportCP _GetViewport() const override {return nullptr;}
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::Graphic::CreateParams(GetDgnDb(), transform));}
+        DgnDbR _GetDgnDb() const override {return m_dgndb;}
         TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
-        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(); }
+        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(GetCreateParams()); }
     };
 
 protected:
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphicBuilder();}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) override {return new NullGraphic();}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphicBuilder(params);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, Render::Graphic::CreateParams const& params, ClipVectorCP clips) override {return new NullGraphic(params);}
 
 public:
     NullContext() {m_ignoreViewRange = true;}

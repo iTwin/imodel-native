@@ -114,7 +114,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
-    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = mapRoot.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(mapRoot.GetDgnDb()));
 
     ImageSource source(mapRoot.m_format, std::move(m_tileBytes));
     Texture::CreateParams textureParams;

@@ -946,7 +946,7 @@ Utf8String IAuxCoordSys::_GetAxisLabel(uint32_t axis) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddAxisText(GraphicBuilderR graphic, Utf8CP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddAxisText(GraphicBuilderR graphic, Utf8CP labelStr, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options, DgnViewportCR vp) const
     {
     DPoint3d    textPt;
     RotMatrix   textMatrix;
@@ -969,11 +969,11 @@ void IAuxCoordSys::_AddAxisText(GraphicBuilderR graphic, Utf8CP labelStr, bool i
         textStr.ComputeBoundingShape(pts, (scale / 10.0));
         textStr.ComputeTransform().Multiply(pts, _countof(pts));
 
-        graphic.SetBlankingFill(graphic.GetViewport()->GetBackgroundColor());
+        graphic.SetBlankingFill(vp.GetBackgroundColor());
         graphic.AddShape(5, pts, true);
         }
 
-    ColorDef    lineColor = _GetColor(*graphic.GetViewport(), ColorDef::White(), _GetTransparency(false, options), options);
+    ColorDef    lineColor = _GetColor(vp, ColorDef::White(), _GetTransparency(false, options), options);
 
     graphic.SetSymbology(lineColor, lineColor, isAxisLabel ? 2 : 1);
     graphic.AddTextString(textStr);
@@ -982,15 +982,15 @@ void IAuxCoordSys::_AddAxisText(GraphicBuilderR graphic, Utf8CP labelStr, bool i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddZAxis(GraphicBuilderR builder, ColorDef color, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddZAxis(GraphicBuilderR builder, ColorDef color, ACSDisplayOptions options, DgnViewportCR vp) const
     {
     DPoint3d    linePts[2];
 
     memset(linePts, 0, sizeof (linePts));
     linePts[1].z = 0.65;
 
-    ColorDef    lineColor = _GetColor(*builder.GetViewport(), color, _GetTransparency(false, options), options);
-    ColorDef    fillColor = _GetColor(*builder.GetViewport(), color, _GetTransparency(true, options), options);
+    ColorDef    lineColor = _GetColor(vp, color, _GetTransparency(false, options), options);
+    ColorDef    fillColor = _GetColor(vp, color, _GetTransparency(true, options), options);
 
     builder.SetSymbology(lineColor, lineColor, 6);
     builder.AddPointString(2, linePts);
@@ -1001,7 +1001,7 @@ void IAuxCoordSys::_AddZAxis(GraphicBuilderR builder, ColorDef color, ACSDisplay
     double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
     DVec3d      xVec, yVec;
     DPoint3d    center;
-    RotMatrix   viewRMatrix = builder.GetViewport()->GetRotMatrix();
+    RotMatrix   viewRMatrix = vp.GetRotMatrix();
 
     memset(&center, 0, sizeof (center));
 
@@ -1026,7 +1026,7 @@ void IAuxCoordSys::_AddZAxis(GraphicBuilderR builder, ColorDef color, ACSDisplay
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddXYAxis(GraphicBuilderR builder, ColorDef color, Utf8CP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
+void IAuxCoordSys::_AddXYAxis(GraphicBuilderR builder, ColorDef color, Utf8CP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags, DgnViewportCR vp) const
     {
     DPoint2d    userOrg;
     DPoint3d    shapePts[8];
@@ -1052,14 +1052,14 @@ void IAuxCoordSys::_AddXYAxis(GraphicBuilderR builder, ColorDef color, Utf8CP la
         std::swap(userOrg.x, userOrg.y);
         }
 
-    ColorDef    lineColor = _GetColor(*builder.GetViewport(), color, _GetTransparency(false, options), options);
-    ColorDef    fillColor = _GetColor(*builder.GetViewport(), color, _GetTransparency(true, options), options);
+    ColorDef    lineColor = _GetColor(vp, color, _GetTransparency(false, options), options);
+    ColorDef    fillColor = _GetColor(vp, color, _GetTransparency(true, options), options);
 
     builder.SetSymbology(lineColor, lineColor, 1);
     builder.AddLineString(8, shapePts);
 
     if (nullptr != labelStrP)
-        _AddAxisText(builder, labelStrP, true, userOrg.x, userOrg.y, 0.35, swapAxis ? 0.0 : -msGeomConst_pi/2.0, options);
+        _AddAxisText(builder, labelStrP, true, userOrg.x, userOrg.y, 0.35, swapAxis ? 0.0 : -msGeomConst_pi/2.0, options, vp);
 
     builder.SetBlankingFill(fillColor);
     builder.AddShape(8, shapePts, true);
@@ -1084,13 +1084,13 @@ GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3
     rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetDgnDb(), transform));
 
     ACSFlags    flags = _GetFlags();
 
-    _AddZAxis(*graphic, ColorDef::Blue(), options);
-    _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0).c_str(), false, options, flags);
-    _AddXYAxis(*graphic, ColorDef::Green(), _GetAxisLabel(1).c_str(), true, options, flags);
+    _AddZAxis(*graphic, ColorDef::Blue(), options, *context.GetViewport());
+    _AddXYAxis(*graphic, ColorDef::Red(), _GetAxisLabel(0).c_str(), false, options, flags, *context.GetViewport());
+    _AddXYAxis(*graphic, ColorDef::Green(), _GetAxisLabel(1).c_str(), true, options, flags, *context.GetViewport());
 
     if (drawName)
         {
@@ -1107,7 +1107,7 @@ GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3
         Render::GraphicBuilderPtr labelGraphic = graphic->CreateSubGraphic(subToGraphic);
         GraphicParams graphicParams;
 
-        _AddAxisText(*labelGraphic, _GetName().data(), false, 0.0, -0.5, 0.25, 0.0, options);
+        _AddAxisText(*labelGraphic, _GetName().data(), false, 0.0, -0.5, 0.25, 0.0, options, *context.GetViewport());
         graphic->AddSubGraphic(*labelGraphic->Finish(), subToGraphic, graphicParams);
         }
 

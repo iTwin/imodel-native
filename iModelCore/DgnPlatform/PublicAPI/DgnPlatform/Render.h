@@ -1137,29 +1137,31 @@ struct Graphic : RefCounted<NonCopyableClass>
     friend struct ViewContext;
     struct CreateParams
     {
-        DgnViewportCP m_vp;
-        Transform     m_placement;
-        CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity()) : m_vp(vp), m_placement(placement) {}
+        DgnDbR      m_dgndb;
+        Transform   m_placement;
+        explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
     };
 
 protected:
-    DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
-    Transform     m_localToWorldTransform;
+    DgnDbR      m_dgndb;
+    Transform   m_localToWorldTransform;
 
     virtual ~Graphic() {}
     virtual bool _IsSimplifyGraphic() const {return false;}
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_localToWorldTransform(params.m_placement) { }
+    explicit Graphic(CreateParams const& params) : m_dgndb(params.m_dgndb), m_localToWorldTransform(params.m_placement) { }
 
-    DgnViewportCP GetViewport() const {return m_vp;}
+    DgnDbR GetDgnDb() const { return m_dgndb; }
 
     //! Get current local to world transform (ex. GeometrySource placement transform).
     TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
 
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
+
+    CreateParams GetCreateParams() const { return CreateParams(GetDgnDb(), GetLocalToWorldTransform()); }
 };
 
 //=======================================================================================
@@ -1274,7 +1276,7 @@ protected:
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
     virtual PrimitivePtr _ToPrimitive() { BeAssert(false); return nullptr; }
-    virtual DgnViewportCP _GetViewport() const = 0;
+    virtual DgnDbR _GetDgnDb() const = 0;
     virtual TransformCR _GetLocalToWorldTransform() const = 0;
     virtual bool _IsSimplifyGraphic() const { return false; }
 public:
@@ -1283,9 +1285,10 @@ public:
 
     // ###TODO_ELEMENT_TILE: Temporary...
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
-    DgnViewportCP GetViewport() const {return _GetViewport();}
+    DgnDbR GetDgnDb() const {return _GetDgnDb();}
     TransformCR GetLocalToWorldTransform() const {return _GetLocalToWorldTransform();}
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
+    Graphic::CreateParams GetCreateParams() const { return Graphic::CreateParams(GetDgnDb(), GetLocalToWorldTransform()); }
 
     bool IsOpen() const {return _IsOpen();}
 
@@ -1759,7 +1762,7 @@ struct System
 
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, Graphic::CreateParams const&, ClipVectorCP) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Create a triangle mesh primitive

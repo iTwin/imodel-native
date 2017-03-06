@@ -45,7 +45,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetCreateParams()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -58,7 +58,7 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR 
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetCreateParams()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -71,7 +71,7 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, IBRepEntityCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), graphic.GetLocalToWorldTransform()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -371,7 +371,7 @@ bool IsUnclipped() {return m_unclipped;}
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
-    : m_processor(processor), m_context(context), m_vp(params.m_vp), m_localToWorldTransform(params.m_placement)
+    : m_processor(processor), m_context(context), m_dgndb(params.m_dgndb), m_localToWorldTransform(params.m_placement)
     {
     m_facetOptions = m_processor._GetFacetOptionsP();
 
@@ -389,7 +389,7 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic)), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_dgndb, Transform::FromProduct(m_localToWorldTransform, subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;
@@ -2335,6 +2335,6 @@ Render::GraphicPtr SimplifyGraphic::_Finish()
     {
     BeAssert(false && "Adding a SimplifyGraphic to a display list?");
     m_isOpen = false;
-    return new Base(Render::Graphic::CreateParams(m_vp, m_localToWorldTransform), m_processor, m_context);
+    return new Base(Render::Graphic::CreateParams(m_dgndb, m_localToWorldTransform), m_processor, m_context);
     }
 

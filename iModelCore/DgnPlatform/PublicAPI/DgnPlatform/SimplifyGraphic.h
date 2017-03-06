@@ -29,7 +29,7 @@ protected:
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
     ClipVectorPtr m_currClip;
-    DgnViewportCP m_vp;
+    DgnDbR m_dgndb;
     Transform m_localToWorldTransform;
     bool m_isOpen = true;
 
@@ -62,7 +62,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
 
-    DgnViewportCP _GetViewport() const override {return m_vp;}
+    DgnDbR _GetDgnDb() const override {return m_dgndb;}
     TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
     bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}

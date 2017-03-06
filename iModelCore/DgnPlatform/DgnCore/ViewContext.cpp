@@ -307,7 +307,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     if (graphic->IsSimplifyGraphic() && nullptr == GetIPickGeom())
         return SUCCESS;
 
-    Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(source.GetSourceDgnDb(), (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
     Render::GeometryParams rangeParams;
 
     rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
@@ -1311,10 +1311,9 @@ static bool getClipPlaneIntersection(double& pMin, double& pMax, DPoint3dCR orig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
+static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing, DgnViewportCR vp)
     {
     static double s_maxHorizonGrids = 800.0;
-    DgnViewportCR vp = *graphic.GetViewport();
     DVec3d colNormal, rowNormal;
     double colSpacing = colNormal.Normalize(colVec);
     rowNormal.Normalize(rowVec);
@@ -1398,12 +1397,11 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
+static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions, DgnViewportCR vp)
     {
     double        aa;
     DVec3d        zVec, viewZ;
     DPoint4d      eyePoint;
-    DgnViewportCR vp = *graphic.GetViewport();
 
     vp.GetWorldToViewMap()->M1.GetColumn(eyePoint, 2);
     viewZ.Init(eyePoint.x, eyePoint.y, eyePoint.z);
@@ -1446,7 +1444,7 @@ static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawD
         dotYVec.Scale(rpg);
 
         graphic.SetSymbology(dotColor, planeColor, 1);
-        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef);
+        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef, vp);
         }
 
     if (0 < gridsPerRef)
@@ -1554,8 +1552,8 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     uorPerPixel *= refScale;
 
     bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
-    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
+    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(vp.GetViewController().GetDgnDb()));
 
-    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
+    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions, vp);
     AddWorldDecoration(*graphic->Finish());
     }

@@ -519,7 +519,7 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, CheckStop* stopTester, bool includeEdges, bool includeFaceIso)
+void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR primitive, ViewContext* stopTester, bool includeEdges, bool includeFaceIso)
     {
     GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
 
@@ -586,7 +586,8 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
                 }
 
-            if (!includeFaceIso || nullptr == graphic.GetViewport() || !graphic.IsSimplifyGraphic())
+            DgnViewportCP viewport = nullptr != stopTester ? stopTester->GetViewport() : nullptr;
+            if (!includeFaceIso || nullptr == viewport || !graphic.IsSimplifyGraphic())
                 return; // QVis handles cone silhouette display...
 
             Transform   worldToLocalTrans;
@@ -594,7 +595,7 @@ void WireframeGeomUtil::Draw(Render::GraphicBuilderR graphic, ISolidPrimitiveCR 
             worldToLocalTrans.InverseOf(graphic.GetLocalToWorldTransform());
 
             DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
-            DMatrix4d   viewToWorld = graphic.GetViewport()->GetWorldToViewMap()->M1;
+            DMatrix4d   viewToWorld = viewport->GetWorldToViewMap()->M1;
             DMatrix4d   viewToLocal;
 
             viewToLocal.InitProduct(worldToLocal, viewToWorld);
@@ -1011,7 +1012,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetDgnDb()));
 
     if (nullptr != m_entryId && m_entryId->IsValid())
         graphic->SetGeometryStreamEntryId(m_entryId);
