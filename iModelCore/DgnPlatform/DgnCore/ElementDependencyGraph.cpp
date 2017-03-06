@@ -718,7 +718,7 @@ DbResult DgnElementDependencyGraph::ElementDrivesElement::DoPrepare()
 
     m_selectByRelationshipInDirectChanges = GetTxnMgr().GetTxnStatement(
         "SELECT SourceId,TargetId,Id as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
-        " WHERE (Id IN (SELECT Id FROM " TEMP_TABLE(TXN_TABLE_Depend) "))");
+        " WHERE (Id IN (SELECT ECInstanceId FROM " TEMP_TABLE(TXN_TABLE_Depend) "))");
 
     m__selectByRoot__ = GetTxnMgr().GetTxnStatement(
         "SELECT SourceId,TargetId,Id as relid,ECClassId,Status,Priority FROM " BIS_TABLE(BIS_REL_ElementDrivesElement)
@@ -1003,7 +1003,7 @@ DgnElementDependencyGraph::DgnElementDependencyGraph(TxnManager& mgr) : m_txnMgr
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnElementDependencyGraph::SetElementDrivesElementPriority(EC::ECInstanceId relid, int64_t newPriority)
     {
-    CachedStatementPtr updatePriority = m_txnMgr.GetTxnStatement("UPDATE " BIS_TABLE(BIS_REL_ElementDrivesElement) " SET Priority=? WHERE ECInstanceId=?");
+    CachedStatementPtr updatePriority = m_txnMgr.GetTxnStatement("UPDATE " BIS_TABLE(BIS_REL_ElementDrivesElement) " SET Priority=? WHERE Id=?");
     updatePriority->BindInt64(1, newPriority);
     updatePriority->BindId(2, relid);
     return (updatePriority->Step() == BE_SQLITE_DONE)? BSISUCCESS: BSIERROR;

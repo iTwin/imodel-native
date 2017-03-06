@@ -1849,10 +1849,10 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
     }
 
 Utf8CP TxnRelationshipLinkTables::TABLE_NAME = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);
-Utf8CP TxnRelationshipLinkTables::COLNAME_ECInstanceId = "Id";
+Utf8CP TxnRelationshipLinkTables::COLNAME_ECInstanceId = "ECInstanceId";
 Utf8CP TxnRelationshipLinkTables::COLNAME_ECClassId = "ECClassId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_SourceECInstanceId = "SourceId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_TargetECInstanceId = "TargetId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_SourceECInstanceId = "SourceECInstanceId";
+Utf8CP TxnRelationshipLinkTables::COLNAME_TargetECInstanceId = "TargetECInstanceId";
 Utf8CP TxnRelationshipLinkTables::COLNAME_ChangeType = "ChangeType";
 
 /*---------------------------------------------------------------------------------**//**
