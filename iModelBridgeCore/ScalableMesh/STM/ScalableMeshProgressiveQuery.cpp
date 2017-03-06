@@ -1386,7 +1386,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                                       IScalableMeshDisplayCacheManagerPtr&                       displayCacheManagerPtr)
     {       
     for (size_t nodeInd = currentInd + 1; nodeInd < nodesToSearch.GetNodes().size(); nodeInd++)        
-        {                                                        
+        {   
         searchingNodes.push_back(nodesToSearch.GetNodes()[nodeInd]);
         }   
 
@@ -1423,10 +1423,14 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         {
         //Increase display responsiveness, especially for streaming.
         if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded())
+        {
+            currentInd--; //TFS# 669028 -- otherwise the current node never gets loaded
             break;
+        }
 
         nodesToSearch.GetNodes()[currentInd]->QueryVisibleNode (queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, nullptr);
         
+
         if ((clock() - startTime) > s_firstNodeSearchingDelay)
             {
             break;
