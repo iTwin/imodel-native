@@ -3388,11 +3388,16 @@ DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
     if (!parentId.IsValid())
         return DgnElementId();
 
+#if ORIGINAL_WAY // Note: this recursion causes a problem for Navigator on import plant imodels.
+                 // Joe G and Josh decided that for now assembly lock will only move up to 
+                 // its immediate parent.
     DgnElementId thisParentId;
 
     do
         {
         DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
+
+        GeometrySource* geom = parentEl->ToGeometrySource();
 
         if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
             return DgnElementId(); // Missing or non-geometric parent...
@@ -3404,6 +3409,11 @@ DgnElementId ElementAssemblyUtil::GetAssemblyParentId(DgnElementCR el)
             parentId = thisParentId;
 
         } while (thisParentId.IsValid());
+#else
+    DgnElementCPtr parentEl = el.GetDgnDb().Elements().GetElement(parentId);
+    if (!parentEl.IsValid() || nullptr == parentEl->ToGeometrySource())
+        return DgnElementId(); // Missing or non-geometric parent...
+#endif
 
     return parentId;
     }
