@@ -1182,6 +1182,7 @@ private:
         }
 public:
     IdSet() {static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");}
+    virtual ~IdSet() {}
 
     typedef IdSet<IdType> T_Self;
     typedef bset<IdType> T_SetType;
