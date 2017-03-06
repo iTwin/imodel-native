@@ -1410,10 +1410,16 @@ TEST(Angle, SmallAngleDegrees)
 //---------------------------------------------------------------------------------------
 TEST(Angle, IsNearZero)
     {
+    // static method ..
     Check::True(Angle::IsNearZero(0.1e-12));
     Check::True(Angle::IsNearZero(1.0e-12));
     Check::False(Angle::IsNearZero(0.1e-12 + PI));
     Check::False(Angle::IsNearZero(1.1e-12));
+    // instance method
+    Check::True(Angle::FromRadians(0.1e-12).IsNearZero());
+    Check::True(Angle::FromRadians(1.0e-12).IsNearZero());
+    Check::False(Angle::FromRadians(0.1e-12 + PI).IsNearZero());
+    Check::False(Angle::FromRadians(1.1e-12).IsNearZero());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                    12/16

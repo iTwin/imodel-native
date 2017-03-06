@@ -4,7 +4,7 @@
 
 extern void SaveGraph (VuSetP graph, VuMask mask = 0);
 extern void SaveGraphEdges (VuSetP graph, VuMask mask = 0);
-
+extern void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask);
 
 // BCSSpringModel
 // "Building ConceptStation Spring Model"
@@ -80,8 +80,7 @@ double m_c0, m_c1, m_c2;
 double m_fMin, m_fMax;
 CappedQuadraticFunction (double c0, double c1, double c2, double fMin = 0.0, double fMax = 10.0)
     : m_c0 (c0), m_c1 (c1), m_c2 (c2), m_fMin (fMin), m_fMax (fMax)
-    {
-    }
+                {}
 virtual ValidatedDouble EvaluateRToR (double u)
     {
     // unused - double f = m_c0 + u * (m_c1 + u * m_c2);
@@ -167,6 +166,8 @@ VuMask const m_fringeExteriorMask;
 // Spring model member var:     tolerance for ignoring wall edges.
 double m_shortWallTolerance;
 
+    bool IsStationNode (VuP node) {return node->GetUserData1 () >= 0;}
+    bool IsWallNode (VuP node) {return node->HasMask (m_wallMask);}
 // MAIN PUBLIC ENTRIES TO ADD GEOMETRY ....
 // Define a station point and its preferred distance from neighbors.
 void AddStation (DPoint3dCR xyz, double radius)
@@ -253,6 +254,74 @@ void IndexStations ()
     DropMask (visitMask);
     }
 
+        static bool IsNodeInTriangle (VuP nodeA, VuP &nodeB, VuP &nodeC)
+            {
+            nodeB = nodeA->FSucc ();
+            nodeC = nodeB->FSucc ();
+            return nodeC->FSucc () == nodeA;
+            }
+    VuP DoFlipTowardsBoundary (VuP nodeA)
+        {
+        static double s_areaRelTol = 1.0e-8;
+        if (!IsStationNode (nodeA))
+            return nullptr;
+        auto id = nodeA->GetUserData1 ();
+        VuP nodeB, nodeC;
+        VuP nodeD, nodeE, nodeF;
+        if (!IsNodeInTriangle (nodeA, nodeB, nodeC))
+            return nullptr;
+        nodeD = nodeC->VSucc ();
+        if (!IsNodeInTriangle (nodeD, nodeE, nodeF))
+            return nullptr;
+        if (IsWallNode (nodeB) || IsStationNode (nodeB) || IsStationNode (nodeC) || IsStationNode (nodeF))
+            return nullptr;
+        bool eWall = IsWallNode (nodeE);
+        bool fWall = IsWallNode (nodeF);
+        if (eWall || fWall)
+            {
+            double areaABC = nodeA->CrossXY (nodeB, nodeC);
+            double areaDEF = nodeD->CrossXY (nodeE, nodeF);
+            if (areaABC <= 0.0 || areaDEF <= 0.0)
+                return nullptr;
+            double areaTol = s_areaRelTol * (areaABC + areaDEF);    // and that is positive
+            double cEF = vu_cross (nodeA, nodeE, nodeF);
+            double cFC = vu_cross (nodeA, nodeF, nodeC);
+            double areaAEF = nodeA->CrossXY (nodeE, nodeF);
+            double areaAFC = nodeA->CrossXY (nodeF, nodeC);
+            if (areaAEF <= areaTol || areaAFC <= areaTol)
+                return nullptr;
+            VertexTwist (nodeB, nodeE); // yank nodeB out of its vertex
+            VertexTwist (nodeC, nodeD); // yank nodeD out of its vertex
+            VertexTwist (nodeB, nodeA);
+            nodeB->SetXYZ (nodeA->GetXYZ());
+            VertexTwist (nodeD, nodeF);
+            nodeD->SetXYZ (nodeF->GetXYZ());
+            nodeB->SetUserData1 (id);
+            if (eWall && !fWall)
+                return nodeB;
+            if (fWall && !eWall)
+                return nodeA;
+            return nullptr;
+            }
+        return nullptr;
+        }
+        void FlipTrianglesSoStationsFillCorners ()
+            {
+            VU_SET_LOOP (seedNode, this)
+                {
+                auto id = seedNode->GetUserData1 ();
+                if (id >= 0)
+                    {
+                    VuP nodeA = seedNode;
+                    VuP nodeA1 = nullptr;
+                    while (nullptr != (nodeA1 = DoFlipTowardsBoundary (nodeA)))
+                        {
+                        nodeA = nodeA1;
+                        }
+                    }
+                }
+            END_VU_SET_LOOP (seedNode, this)
+            }
 void MergeAndTriangulate ()
     {
     DRange3d range = Range ();
@@ -279,6 +348,9 @@ void MergeAndTriangulate ()
         }
 
     IndexStations ();
+    Check::ShiftToLowerRight (10.0);
+    SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+    FlipTrianglesSoStationsFillCorners ();
     }
 void ClearMaskAroundVerticesWithOutboundMask (VuMask maskToFind, VuMask maskToClear)
     {
@@ -310,11 +382,13 @@ void SolveSprings (bool doSmoothing = true)
 
     MergeAndTriangulate ();
 
-    Check::Shift (200, 0,0);
-    SaveGraphEdges (Graph (), 0);
-
-    Check::Shift (200,0,0);
-
+    Check::ShiftToLowerRight (10.0);
+    SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+    Check::ShiftToLowerRight (10.0);
+    DRange3d range;
+    vu_graphRange (Graph (), &range);
+    double dX = range.XLength () * 1.10;
+    double dY = range.YLength () * 1.10;
     if (doSmoothing)
         {
         double shiftFraction;
@@ -322,13 +396,23 @@ void SolveSprings (bool doSmoothing = true)
         BCSSpringModel::TriangleWeightFunction::CappedQuadraticFunction edgeWeightFunction (0,0,1, 0, 10);
         static int s_springSelect = 0;
         BCSSpringModel::TriangleWeightFunction springFunction (*this, s_springSelect, edgeWeightFunction);
-        vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 10, 100, 100, &shiftFraction, &numSweep);
-        if (true )  // indent for scope
+
+        vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 20, 100, 100, &shiftFraction, &numSweep);
+
+        for (size_t numSmooth = 0; numSmooth < 4; numSmooth++)
             {
-            _VuSet::TempMask outputMask (Graph (), true);
-            ClearMaskAroundVerticesWithOutboundMask (m_fringeExteriorMask, outputMask.Mask ());
-            SaveGraphEdges (Graph (), outputMask.Mask ());
+            SaveAndRestoreCheckTransform shifter (dX, 0,0);
+            vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 20, 100, 100, &shiftFraction, &numSweep);
+            SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+            vu_flipTrianglesToImproveQuadraticAspectRatio (this);
+                    Check::Shift (0, dY, 0);
+                    SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+            FlipTrianglesSoStationsFillCorners ();
+                    Check::Shift (0, dY, 0);
+                    SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
             }
+
+        SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
         }
     }
 // return polygon coordinates for areas around stations.
@@ -390,7 +474,7 @@ void CollectStationAreas (bvector<bvector<DPoint3d>> &areas, double shrinkFracti
 
 void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
     {
-    Check::Shift (200, 0,0);
+    Check::ShiftToLowerRight (10.0);
     Check::SaveTransformed (wall);
     bvector<bvector<DPoint3d>> zones;
     sm.CollectStationAreas (zones, 0.01);

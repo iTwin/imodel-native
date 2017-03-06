@@ -149,7 +149,16 @@ void SaveGraphEdges (VuSetP graph, VuMask mask = 0)
     graph->DropMask (visitMask);
     }
 
-
+// sweep from outermost (negative area loop) inwards to loop mask.
+// output faces not touched by that sweep.
+void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask)
+    {
+    _VuSet::TempMask exteriorMask (graph);
+    vu_floodFromNegativeAreaFaces (graph, loopMask, exteriorMask.Mask ());
+    auto polyface = vu_toPolyface (graph, exteriorMask.Mask ());
+    if (polyface.IsValid ())
+        Check::SaveTransformed (*polyface);
+    }
 
 TEST(MinimumValuePriorityQueue, Bulk)
     {

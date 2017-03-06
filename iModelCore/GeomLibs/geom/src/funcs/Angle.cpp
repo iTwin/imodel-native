@@ -188,6 +188,9 @@ bool Angle::IsNearZero (double radians)
     return fabs (radians) <= msGeomConst_smallAngle;
     }
 
+bool Angle::IsNearZero () const {return IsNearZero (m_radians);}
+
+
 bool Angle::IsNearZeroAllowPeriodShift (double radians)
     {
     radians = fabs (radians);
