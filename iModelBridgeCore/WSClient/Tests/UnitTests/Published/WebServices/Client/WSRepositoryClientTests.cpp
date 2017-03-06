@@ -23,7 +23,8 @@ using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define HEADER_MasFileETag "Mas-File-ETag"
+#define HEADER_MasFileETag          "Mas-File-ETag"
+#define HEADER_MasConnectionInfo    "Mas-Connection-Info"
 
 Json::Value StubWSObjectCreationJson()
     {
@@ -47,10 +48,28 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredenti
         .ForRequest(2, [] (HttpRequestCR request)
         {
         EXPECT_EQ(Credentials("TestUser", "TestPassword"), request.GetCredentials());
+        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue(HEADER_MasConnectionInfo));
         return StubHttpResponse();
         });
 
     client->SetCredentials(Credentials("TestUser", "TestPassword"));
+    client->VerifyAccess()->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsAndAutheTypeWindowsPassed_SendsSameCredentialsWithAuthType)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2)
+        .ForRequest(1, StubWSInfoHttpResponseWebApi13())
+        .ForRequest(2, [] (HttpRequestCR request)
+        {
+        EXPECT_EQ(Credentials("TestUser", "TestPassword"), request.GetCredentials());
+        EXPECT_STREQ("CredentialType=Windows", request.GetHeaders().GetValue(HEADER_MasConnectionInfo));
+        return StubHttpResponse();
+        });
+
+    client->SetCredentials(Credentials("TestUser", "TestPassword"), IWSRepositoryClient::AuthenticationType::Windows);
     client->VerifyAccess()->Wait();
     }
 

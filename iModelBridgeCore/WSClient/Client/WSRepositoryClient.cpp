@@ -2,11 +2,13 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include "WebApi/WebApiV1.h"
+
+#define HEADER_MasConnectionInfo "Mas-Connection-Info"
 
 using namespace std::placeholders;
 
@@ -82,9 +84,11 @@ Utf8StringCR WSRepositoryClient::GetRepositoryId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepositoryClient::SetCredentials(Credentials credentials)
+void WSRepositoryClient::SetCredentials(Credentials credentials, AuthenticationType type)
     {
-    return m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
+    m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
+    if (AuthenticationType::Windows == type)
+        m_connection->GetConfiguration().GetDefaultHeaders().SetValue(HEADER_MasConnectionInfo, "CredentialType=Windows");
     }
 
 /*--------------------------------------------------------------------------------------+
