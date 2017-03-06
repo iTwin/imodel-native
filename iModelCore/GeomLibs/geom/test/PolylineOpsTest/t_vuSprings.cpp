@@ -143,7 +143,12 @@ double Evaluate (VuSetP graph, VuP nodeA)
 BCSSpringModel ()
     :   m_wallMask (VU_RULE_EDGE),
         m_fringeMask (VU_BOUNDARY_EDGE),
-        m_fringeExteriorMask (VU_EXTERIOR_EDGE)
+        m_fringeExteriorMask (VU_EXTERIOR_EDGE),
+        // edges joining center points to corners (overrides aspect ratio)
+        m_cornerFlipMask (VU_KNOT_EDGE),
+        // These are the edges fixed by this class.
+        // Note that triangle flipping also honors others in VU_ALL_FIXED_EDGES_MASK
+        m_allFixedSpringEdgesMask (VU_RULE_EDGE | VU_BOUNDARY_EDGE | VU_EXTERIOR_EDGE | VU_KNOT_EDGE)
     {
     m_shortWallTolerance = 1.0e-6;
     m_totalWallPoints = 0;
@@ -163,6 +168,10 @@ VuMask const m_wallMask;
 VuMask const m_fringeMask;
 // Spring model member var:     mask for outside of fringe
 VuMask const m_fringeExteriorMask;
+// Spring model member var:     mask for edges flipped to extend a space into a corner not reachable by usual flips.
+VuMask const m_cornerFlipMask;
+// Spring model member var:     composite mask with all the edges this class wants fixed.
+VuMask const m_allFixedSpringEdgesMask;
 // Spring model member var:     tolerance for ignoring wall edges.
 double m_shortWallTolerance;
 
@@ -260,7 +269,12 @@ void IndexStations ()
             nodeC = nodeB->FSucc ();
             return nodeC->FSucc () == nodeA;
             }
-    VuP DoFlipTowardsBoundary (VuP nodeA)
+
+    bool IsFixedEdge (VuP node)
+        {
+        return node->HasMask (VU_ALL_FIXED_EDGES_MASK);
+        }
+    VuP DoFlipTowardsBoundary (VuP nodeA, int &numFlipToIncrement)
         {
         static double s_areaRelTol = 1.0e-8;
         if (!IsStationNode (nodeA))
@@ -269,6 +283,8 @@ void IndexStations ()
         VuP nodeB, nodeC;
         VuP nodeD, nodeE, nodeF;
         if (!IsNodeInTriangle (nodeA, nodeB, nodeC))
+            return nullptr;
+        if (IsFixedEdge (nodeB))
             return nullptr;
         nodeD = nodeC->VSucc ();
         if (!IsNodeInTriangle (nodeD, nodeE, nodeF))
@@ -297,6 +313,9 @@ void IndexStations ()
             VertexTwist (nodeD, nodeF);
             nodeD->SetXYZ (nodeF->GetXYZ());
             nodeB->SetUserData1 (id);
+            nodeB->SetMask (m_cornerFlipMask);
+            nodeD->SetMask (m_cornerFlipMask);
+            numFlipToIncrement++;
             if (eWall && !fWall)
                 return nodeB;
             if (fWall && !eWall)
@@ -305,8 +324,9 @@ void IndexStations ()
             }
         return nullptr;
         }
-        void FlipTrianglesSoStationsFillCorners ()
+        int FlipTrianglesSoStationsFillCorners ()
             {
+            int numFlip = 0;
             VU_SET_LOOP (seedNode, this)
                 {
                 auto id = seedNode->GetUserData1 ();
@@ -314,13 +334,14 @@ void IndexStations ()
                     {
                     VuP nodeA = seedNode;
                     VuP nodeA1 = nullptr;
-                    while (nullptr != (nodeA1 = DoFlipTowardsBoundary (nodeA)))
+                    while (nullptr != (nodeA1 = DoFlipTowardsBoundary (nodeA, numFlip)))
                         {
                         nodeA = nodeA1;
                         }
                     }
                 }
             END_VU_SET_LOOP (seedNode, this)
+            return numFlip;
             }
 void MergeAndTriangulate ()
     {
@@ -351,6 +372,9 @@ void MergeAndTriangulate ()
     Check::ShiftToLowerRight (10.0);
     SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
     FlipTrianglesSoStationsFillCorners ();
+    Check::Shift (0,40,0);
+    SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+
     }
 void ClearMaskAroundVerticesWithOutboundMask (VuMask maskToFind, VuMask maskToClear)
     {
@@ -404,12 +428,17 @@ void SolveSprings (bool doSmoothing = true)
             SaveAndRestoreCheckTransform shifter (dX, 0,0);
             vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 20, 100, 100, &shiftFraction, &numSweep);
             SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
-            vu_flipTrianglesToImproveQuadraticAspectRatio (this);
+            int numFlipA = vu_flipTrianglesToImproveQuadraticAspectRatio (this);
                     Check::Shift (0, dY, 0);
                     SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
-            FlipTrianglesSoStationsFillCorners ();
+#define FixupCornersDuringIterations
+#ifdef FixupCornersDuringIterations
+            int numFlipB = FlipTrianglesSoStationsFillCorners ();
                     Check::Shift (0, dY, 0);
                     SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
+#endif
+            if (numFlipA == 0 && numFlipB == 0)
+                break;
             }
 
         SaveGraphEdgesInsideBarrier (Graph (), m_wallMask); // ASSUMES wall encloses area.
