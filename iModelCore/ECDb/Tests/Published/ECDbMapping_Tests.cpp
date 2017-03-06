@@ -1332,44 +1332,6 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml", false, "ECInstanceId is a system property"));
 
     testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                              <ECEntityClass typeName="Foo">
-                                <ECProperty propertyName="Id" typeName="string" />
-                              </ECEntityClass>
-                            </ECSchema>)xml", true, "By default ECInstanceId is mapped to col Id. Therefore name cannot be used for a property"));
-
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                               <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-                              <ECEntityClass typeName="Foo">
-                                <ECCustomAttributes>
-                                    <ClassMap xmlns="ECDbMap.02.00">
-                                        <ECInstanceIdColumn>MyId</ECInstanceIdColumn>
-                                    </ClassMap>
-                                </ECCustomAttributes>
-                                <ECProperty propertyName="MyId" typeName="string" />
-                              </ECEntityClass>
-                            </ECSchema>)xml", true, "User-specified PK column name cannot be used as property name"));
-
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                               <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-                              <ECEntityClass typeName="Base">
-                                <ECCustomAttributes>
-                                    <ClassMap xmlns="ECDbMap.02.00">
-                                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                                    </ClassMap>
-                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-                                </ECCustomAttributes>
-                              </ECEntityClass>
-                              <ECEntityClass typeName="Sub">
-                                <BaseClass>Base</BaseClass>
-                                <ECProperty propertyName="BaseId" typeName="string" />
-                              </ECEntityClass>
-                            </ECSchema>)xml", true, "Joined table PK name cannot be used as property name"));
-
-
-    testSchemas.push_back(SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
@@ -1387,52 +1349,6 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                                 <ECProperty propertyName="SourceECInstanceId" typeName="string" />
                               </ECRelationshipClass>
                             </ECSchema>)xml", false, "SourceECInstanceId is a system property and therefore a reserved name"));
-
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                              <ECEntityClass typeName="A">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECEntityClass typeName="B">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel">
-                                    <Source cardinality="(0..*)" polymorphic="True">
-                                       <Class class="A" />
-                                    </Source>
-                                    <Target cardinality="(0..*)" polymorphic="True">
-                                       <Class class="B"/>
-                                     </Target>
-                                <ECProperty propertyName="SourceId" typeName="string" />
-                              </ECRelationshipClass>
-                            </ECSchema>)xml", true, "By default SourceECInstanceId is mapped to column SourceId"));
-
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts7" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                               <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-                              <ECEntityClass typeName="A">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECEntityClass typeName="B">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel">
-                                <ECCustomAttributes>
-                                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-                                        <SourceECInstanceIdColumn>MySourceId</SourceECInstanceIdColumn>
-                                    </LinkTableRelationshipMap>
-                                </ECCustomAttributes>
-                                    <Source cardinality="(0..*)" polymorphic="True">
-                                       <Class class="A" />
-                                    </Source>
-                                    <Target cardinality="(0..*)" polymorphic="True">
-                                       <Class class="B"/>
-                                     </Target>
-                                <ECProperty propertyName="MySourceId" typeName="string" />
-                              </ECRelationshipClass>
-                            </ECSchema>)xml", true, "User-specified col name for SourceECInstanceId cannot be used as property name"));
-
-
 
     testSchemas.push_back(SchemaItem(R"xml(
             <ECSchema schemaName="TestSchema" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1453,51 +1369,240 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                 </ECRelationshipClass>
             </ECSchema>)xml", false, "TargetECInstanceId is a system property and therefore a reserved name"));
 
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts9" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    AssertSchemaImport(testSchemas, "idnamecollisions.ecdb");
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECEntityClass typeName="Foo">
+                                <ECProperty propertyName="Id" typeName="string" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("Id");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("Id1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Foo">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <ECInstanceIdColumn>MyId</ECInstanceIdColumn>
+                                    </ClassMap>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="MyId" typeName="string" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("MyId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("MyId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Base">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                                </ECCustomAttributes>
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Sub">
+                                <BaseClass>Base</BaseClass>
+                                <ECProperty propertyName="BaseId" typeName="string" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Sub");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("BaseId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("BaseId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                           <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
                               </ECEntityClass>
                               <ECEntityClass typeName="B">
                                 <ECProperty propertyName="Name" typeName="string" />
                               </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel">
-                                    <Source cardinality="(0..*)" polymorphic="True">
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
                                        <Class class="A" />
                                     </Source>
-                                    <Target cardinality="(0..*)" polymorphic="True">
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                                       <Class class="B"/>
+                                     </Target>
+                                <ECProperty propertyName="SourceId" typeName="string" />
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("SourceId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("SourceId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts7" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="A">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="B">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                                <ECCustomAttributes>
+                                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+                                        <SourceECInstanceIdColumn>MySourceId</SourceECInstanceIdColumn>
+                                    </LinkTableRelationshipMap>
+                                </ECCustomAttributes>
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                                       <Class class="A" />
+                                    </Source>
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                                       <Class class="B"/>
+                                     </Target>
+                                <ECProperty propertyName="MySourceId" typeName="string" />
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("MySourceId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("MySourceId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                           <ECSchema schemaName="TestSchema" alias="ts9" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECEntityClass typeName="A">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="B">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                                       <Class class="A" />
+                                    </Source>
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
                                        <Class class="B"/>
                                      </Target>
                                 <ECProperty propertyName="TargetId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", true, "By default TargetECInstanceId is mapped to column TargetId"));
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
 
-    testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts10" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                               <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("TargetId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("TargetId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
+                              <ECSchema schemaName="TestSchema" alias="ts10" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
                               </ECEntityClass>
                               <ECEntityClass typeName="B">
                                 <ECProperty propertyName="Name" typeName="string" />
                               </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel">
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
                                 <ECCustomAttributes>
                                     <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                                         <TargetECInstanceIdColumn>MyTargetId</TargetECInstanceIdColumn>
                                     </LinkTableRelationshipMap>
                                 </ECCustomAttributes>
-                                    <Source cardinality="(0..*)" polymorphic="True">
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
                                        <Class class="A" />
                                     </Source>
-                                    <Target cardinality="(0..*)" polymorphic="True">
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
                                        <Class class="B"/>
                                      </Target>
                                 <ECProperty propertyName="MyTargetId" typeName="string" />
                               </ECRelationshipClass>
-                            </ECSchema>)xml", true, "User-specified col name for TargetECInstanceId cannot be used as property name"));
+                            </ECSchema>)xml"), "idnamecollisions.ecdb");
+    ASSERT_FALSE(asserted);
 
-    AssertSchemaImport(testSchemas, "idnamecollisions.ecdb");
+    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP idProp = testClass->GetPropertyP("MyTargetId");
+    ASSERT_TRUE(testClass != nullptr);
+    std::vector<ColumnInfo> colInfo;
+    TryGetColumnInfo(colInfo, ecdb, *idProp);
+    ASSERT_EQ(1, (int) colInfo.size());
+    ASSERT_STRCASEEQ("MyTargetId1", colInfo[0].m_columnName.c_str());
+    ASSERT_FALSE(colInfo[0].m_isVirtual);
+    }
     }
 
 //---------------------------------------------------------------------------------------

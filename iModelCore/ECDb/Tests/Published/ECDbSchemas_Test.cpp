@@ -130,28 +130,25 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.TableExists(tblClassWithPrimitiveProperties));
     EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "Id"));
     EXPECT_EQ(13, GetColumnCount(db, tblClassWithPrimitiveProperties));
-    //Verify columns columns in this class is renamed to 
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_intProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_longProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_doubleProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_stringProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_dateTimeProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_binaryProp"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_booleanProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "intProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "longProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "doubleProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "stringProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "dateTimeProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "binaryProp"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "booleanProp"));
     //point2Prop is stored as x,y 2 columns
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point2dProp_X"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point2dProp_Y"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "point2dProp_X"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "point2dProp_Y"));
     //point3Prop is stored as x,y,z 3 columns
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_X"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_Y"));
-    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "myColumn_point3dProp_Z"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "point3dProp_X"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "point3dProp_Y"));
+    EXPECT_TRUE(db.ColumnExists(tblClassWithPrimitiveProperties, "point3dProp_Z"));
 
     //========================[StructWithPrimitiveProperties==================================
     EXPECT_FALSE(db.TableExists("sc_StructWithPrimitiveProperties"));
 
     //========================[sc_ClassWithPrimitiveArrayProperties==============================
-    //Array properties doesnt take any column currently it will take in case of embeded senario but
-    //we need to make sure it doesnt exist right now. They uses special System arrray tables 
     Utf8CP tblClassWithPrimitiveArrayProperties = "sc_ClassWithPrimitiveArrayProperties";
     EXPECT_TRUE(db.TableExists(tblClassWithPrimitiveArrayProperties));
     EXPECT_EQ(10, GetColumnCount(db, tblClassWithPrimitiveArrayProperties));
@@ -171,7 +168,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //========================[StructWithPrimitiveArrayProperties=============================
     EXPECT_FALSE(db.TableExists("sc_StructWithPrimitiveArrayProperties"));
 
-    //verify system array tables. They are created if  a primitive array property is ecounter in schema
+    //verify system array tables. They are created if  a primitive array property is encountered in schema
     //========================[sc_Asset]=========================================================
     //baseClass
     Utf8CP tblAsset = "sc_Asset";

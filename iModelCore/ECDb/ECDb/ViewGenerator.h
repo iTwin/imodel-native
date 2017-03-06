@@ -108,21 +108,26 @@ struct ViewGenerator
                     };
 
 
-            struct Result
-                {
-                private:
-                    SingleColumnDataPropertyMap const* m_propertyMap = nullptr;
-                    NativeSqlBuilder m_sql;
+                struct Result
+                    {
+                    private:
+                        SingleColumnDataPropertyMap const* m_propertyMap = nullptr;
+                        NativeSqlBuilder m_sql;
+                        bool m_isLiteralSqlSnippet = false;
 
-                public:
-                    Result() {}
-                    explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
+                    public:
+                        Result() {}
+                        explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
 
-                    SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
-                    DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
-                    NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
-                    NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
-                };
+                        SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
+                        DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
+                        NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
+                        NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
+                        //indicates whether the added SQL snippet is a literal or a col name.
+                        //This is necessary for calling code to determine whether it has to add a col alias or not
+                        bool IsLiteralSqlSnippet() const { return m_isLiteralSqlSnippet; }
+                        void SetIsLiteralSqlSnippet() { m_isLiteralSqlSnippet = true; }
+                    };
 
             private:
                 Context const& m_context;

@@ -1017,7 +1017,15 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             ToSqlVisitor::Result const& visitorResult = toSqlVisitor.GetResultSet().front();
             propertySqlList.push_back(visitorResult.GetSqlBuilder());
             if (colAlias != nullptr)
-                propertySqlList.back().AppendSpace().AppendEscaped(colAlias);
+                {
+                //only append alias if it differs from the actual snippet.
+                //literal sql snippets are literal ECClassIds which are appended for virtual class id cols 
+                if (visitorResult.IsLiteralSqlSnippet() ||
+                    !visitorResult.GetColumn().GetName().EqualsIAscii(colAlias))
+                    {
+                    propertySqlList.back().AppendSpace().AppendEscaped(colAlias);
+                    }
+                }
                 
             continue;
             }
@@ -1447,7 +1455,10 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
     Utf8StringCR colName = vmap->GetColumn().GetName();
     Result& result = Record(*vmap);
     if (isVirtual)
+        {
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        result.SetIsLiteralSqlSnippet();
+        }
     else
         result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
 
@@ -1488,7 +1499,10 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
 
     Result& result = Record(*vmap);
     if (isVirtual)
+        {
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        result.SetIsLiteralSqlSnippet();
+        }
     else
         result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
 
