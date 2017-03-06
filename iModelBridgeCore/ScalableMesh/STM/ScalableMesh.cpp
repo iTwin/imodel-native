@@ -922,8 +922,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
                             s_is_legacy_master_header = false; // groups are compressed in the master header
                             streamingSourcePath = L"5ffc6e51-edc3-4fb3-8b4f-a4becbc045dd"; // NEEDS_WORK_STREAMING: this is the org ID which should be saved in the stub file?
-                            streamingSourcePath += L"/";
-                            streamingSourcePath += L"Marseille";
+                            //streamingSourcePath += L"/";
+                            //streamingSourcePath += L"Marseille";
                             }
                         else if (datasetName == L"salt_lake_city")
                             {
