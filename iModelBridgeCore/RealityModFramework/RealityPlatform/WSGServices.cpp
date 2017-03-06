@@ -493,13 +493,12 @@ void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(m_className);
     m_httpRequestString.append("?$skip=");
-    Utf8P buf = new Utf8Char();
+    Utf8Char buf[64];
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
     m_httpRequestString.append("&$top=");
     BeStringUtilities::FormatUInt64(buf, m_pageSize);
     m_httpRequestString.append(buf);
-    delete buf;
     }
 
 bvector<Utf8String> WSGServer::GetPlugins() const
