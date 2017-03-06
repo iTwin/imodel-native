@@ -32,6 +32,8 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerFileAccessKeyPtr, DgnDbServerFileAccessKey);
 //=======================================================================================
 struct FileInfo
     {
+    friend struct DgnDbRepositoryConnection;
+
     //__PUBLISH_SECTION_END__
     private:
         int32_t     m_index;
@@ -44,6 +46,8 @@ struct FileInfo
         DateTime    m_uploadedDate;
         bool        m_areFileDetailsAvailable;
         bool        m_initialized;
+        DgnDbServerFileAccessKeyPtr m_fileAccessKey;
+        bool        m_containsFileAccessKey;
 
         FileInfo(BeGuid fileId);
         FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
@@ -52,9 +56,6 @@ struct FileInfo
 
         static FileInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo = FileInfo());
 
-        friend struct DgnDbRepositoryConnection;
-        DgnDbServerFileAccessKeyPtr m_fileAccessKey;
-        bool                        m_containsFileAccessKey;
         bool GetContainsFileAccessKey();
         DgnDbServerFileAccessKeyPtr GetFileAccessKey() const;
         void SetFileAccessKey(DgnDbServerFileAccessKeyPtr fileAccessKey);

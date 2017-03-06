@@ -143,6 +143,46 @@ ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsin
 #            Actual: called twice - over-saturated and active
 # [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
 
+UsageTrackingTests.PostSingleUsage
+    # bim0200dev, x64, DEBUG, random hang
+    # Main thread:
+    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
+    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
+    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
+    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
+    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
+    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<enum BentleyB0200::WebServices::UsageTracking::Status>::GetResult() Line 186    C++
+    #   WSClientTest.exe!UsageTrackingTests_PostSingleUsage_Test::TestBody() Line 46    C++
+    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2434   C++
+    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2485  C++
+    #   WSClientTest.exe!testing::Test::Run() Line 2528 C++
+    #   ...
+
+UsageTrackingTests.PostMultipleUsage
+    # bim0200dev, x64, DEBUG, random hang
+    # Main thread:
+    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
+    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
+    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
+    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
+    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
+    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
+    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
+    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<enum BentleyB0200::WebServices::UsageTracking::Status>::GetResult() Line 186    C++
+    #   WSClientTest.exe!UsageTrackingTests_PostMultipleUsage_Test::TestBody() Line 70  C++
+    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2434   C++
+    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2485  C++
+    #   WSClientTest.exe!testing::Test::Run() Line 2528 C++
+    #   ...
+
 DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
     # bim0200, x86, NDEBUG, PRG, seems random
     # [ RUN      ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
