@@ -93,7 +93,6 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -135,7 +134,6 @@
                 </Restrictions>
             </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.02.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -347,7 +345,6 @@
             </BfoMapping>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>
@@ -1439,9 +1436,6 @@
 
     <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <SourceECInstanceIdColumn>GroupId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
@@ -1579,7 +1573,6 @@
     <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <ShareColumns xmlns="ECDbMap.02.00">
