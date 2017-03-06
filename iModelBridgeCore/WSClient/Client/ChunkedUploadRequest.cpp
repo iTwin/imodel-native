@@ -214,9 +214,8 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
 
     uint64_t rangeTo = cuRequest->m_data->rangeFrom + cuRequest->m_chunkSizeBytes - 1;
     if (rangeTo >= cuRequest->m_data->contentLength)
-        {
         rangeTo = cuRequest->m_data->contentLength - 1;
-        }
+    bool isLastChunk = rangeTo == cuRequest->m_data->contentLength - 1;
 
     HttpRequest request = cuRequest->m_client.CreateRequest(cuRequest->m_url, cuRequest->m_method);
 
@@ -241,10 +240,22 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
     request.SetCancellationToken(cuRequest->m_cancellationToken);
     request.SetUploadProgressCallback(cuRequest->m_data->onProgress);
 
-    request.SetRetryOptions(HttpRequest::RetryOption::ResetTransfer, 0);
-
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
-    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+
+    if (isLastChunk)
+        {
+        // TODO VRA: workaround to issue when large file (1GB+) is being copied/sent to WSG ECPlugin backend (PW/eB)
+        // Disabling retry because server might already be processing file and retry would just return error.
+        // Increasing timeout for last chunk allows for move time for that to finish without timeout
+        // TFS#636152
+        request.SetRetryOptions(HttpRequest::RetryOption::DontRetry);
+        request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::UploadProcessing);
+        }
+    else
+        {
+        request.SetRetryOptions(HttpRequest::RetryOption::ResetTransfer, 0);
+        request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+        }
 
     LOG.debugv("ChunkedUpload::SendChunk %s", cuRequest->m_etag.c_str());
     request.PerformAsync()->Then([=] (HttpResponse& response)

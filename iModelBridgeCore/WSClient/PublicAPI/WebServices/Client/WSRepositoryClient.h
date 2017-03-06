@@ -233,6 +233,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
                 static const uint32_t GetObjects;
                 static const uint32_t FileDownload;
                 static const uint32_t Upload;
+                static const uint32_t UploadProcessing;
                 };
             };
 

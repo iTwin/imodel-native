@@ -23,6 +23,7 @@ const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
 const uint32_t WSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
 const uint32_t WSRepositoryClient::Timeout::Transfer::FileDownload = 30;
 const uint32_t WSRepositoryClient::Timeout::Transfer::Upload = 30;
+const uint32_t WSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
