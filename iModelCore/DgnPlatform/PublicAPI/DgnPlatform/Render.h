@@ -1491,12 +1491,12 @@ struct PointCloudArgs
 {
     QuantizedPoint const* m_points;
     ByteCP m_colors;
-    DPoint3d m_origin;
+    DRange3d m_range;
     int32_t m_numPoints;
 
-    PointCloudArgs() : PointCloudArgs(DPoint3d::FromZero(), 0, nullptr, nullptr) { }
-    PointCloudArgs(DPoint3dCR origin, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
-        : m_points(points), m_colors(colors), m_origin(origin), m_numPoints(numPoints) { }
+    PointCloudArgs() : PointCloudArgs(DRange3d::NullRange(), 0, nullptr, nullptr) { }
+    PointCloudArgs(DRange3dCR range, int32_t numPoints, QuantizedPoint const* points, ByteCP colors)
+        : m_points(points), m_colors(colors), m_range(range), m_numPoints(numPoints) { }
 };
 
 //=======================================================================================

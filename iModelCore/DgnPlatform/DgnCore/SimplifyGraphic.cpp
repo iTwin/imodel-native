@@ -2272,7 +2272,6 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr SimplifyGraphic::_Finish()
     {
-    BeAssert(false && "Adding a SimplifyGraphic to a display list?");
     m_isOpen = false;
     return new Base(Render::Graphic::CreateParams(m_dgndb, m_localToWorldTransform), m_processor, m_context);
     }
