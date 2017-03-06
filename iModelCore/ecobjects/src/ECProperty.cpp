@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -473,6 +473,33 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
     return &(m_class.GetSchema());
     }
 
+ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
+    {
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
+    Utf8String kindOfQuantityName;
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseName(alias, kindOfQuantityName, typeName))
+        {
+        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
+    if (nullptr == resolvedSchema)
+        {
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    auto result = resolvedSchema->GetKindOfQuantityCP(kindOfQuantityName.c_str());
+    if (nullptr == result)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    kindOfQuantity = result;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -508,12 +535,30 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         SetMaximumLength(maxLength);
         }
 
-    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)    
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, READONLY_ATTRIBUTE,            this, IsReadOnly)
+
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
+        {
+        //split
+        KindOfQuantityCP kindOfQuantity;
+        if (resolveKindOfQuantityType(kindOfQuantity, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
+            {
+            LOG.warningv("Could not resolve KindOfQuantity '%s' found on property '%s:%s.%s'.",
+                            value.c_str(),
+                            GetClass().GetSchema().GetName().c_str(),
+                            GetClass().GetName().c_str(),
+                            GetName().c_str());
+
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetKindOfQuantity(kindOfQuantity);
+        }
 
     if(CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes (propertyNode, context, GetClass().GetSchema()))
         {
@@ -521,6 +566,74 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     return SchemaReadStatus::Success;
+    }
+
+bool isKindOfQuantityCompatible(ECPropertyCR ecProp, KindOfQuantityCP compareKOQ)
+    {
+    if (nullptr == compareKOQ)
+        return true;
+
+    ECPropertyCP baseProp = ecProp.GetBaseProperty();
+    if (nullptr == baseProp)
+        return true;
+
+    KindOfQuantityCP baseKOQ;
+    if (baseProp->GetIsPrimitive())
+        baseKOQ = baseProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+    else
+        baseKOQ = baseProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+
+    if (nullptr == baseKOQ)
+        return true;
+
+    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
+
+    Units::UnitCP baseUnit = unitRegistry.LookupUnit(baseKOQ->GetDefaultPresentationUnit().c_str());
+    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
+
+    if (nullptr == baseUnit || nullptr == compareUnit)
+        return true;
+
+    if (!baseUnit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
+        {
+        LOG.errorv("The ECProperty %s:%s has a base property %s:%s with KindOfQuantity %s of Phenomenon %s which differs from the Phenomenon %s of the provided KindOfQuantity %s.",
+                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetPhenomenon()->GetName(),
+                   compareUnit->GetPhenomenon()->GetName(), compareKOQ->GetFullName().c_str());
+        return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP ECProperty::GetKindOfQuantity() const
+    {
+    if (m_kindOfQuantity == nullptr)
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            {
+            PrimitiveECPropertyCP basePrim = baseProperty->GetAsPrimitiveProperty();
+            if (nullptr != basePrim)
+                return basePrim->GetKindOfQuantity();
+            }
+        }
+
+    return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
+    {
+    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
+        return ECObjectsStatus::KindOfQuantityNotCompatible;
+
+    m_kindOfQuantity = kindOfQuantity;
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -621,7 +734,13 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     else if (ECObjectsStatus::ParseError == this->SetTypeName (value.c_str()))
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", GetName().c_str(), GetTypeName().c_str());
 
-    return ReadExtendedTypeAndKindOfQuantityXml(propertyNode, context);
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
+    _AdjustMinMaxAfterTypeChange();
+    return SchemaReadStatus::Success;
     }
 
 void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
@@ -694,47 +813,6 @@ bool phenomenonsEqual(ECPropertyCR ecProp, ECPropertyCR compareProp)
         LOG.errorv("The ECProperty %s:%s has KindOfQuantity %s that is of Phenomenon %s which differs from the Phenomenon %s of KindOfQuantity %s on ECProperty %s:%s",
                    ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), koq->GetFullName().c_str(), unit->GetPhenomenon()->GetName(), compareUnit->GetPhenomenon()->GetName(),
                    compareKOQ->GetFullName().c_str(), compareProp.GetClass().GetFullName(), compareProp.GetName().c_str());
-        return false;
-        }
-
-    return true;
-    }
-
-// Used by PrimitiveECProperty and PrimitiveArrayECProperty for SetKindOfQuantity methods
-bool isKindOfQuantityCompatible(ECPropertyCR ecProp, KindOfQuantityCP compareKOQ)
-    {
-    if (!ecProp.GetIsPrimitive() && !ecProp.GetIsPrimitiveArray())
-        return false;
-
-    if (nullptr == compareKOQ)
-        return true;
-
-    ECPropertyCP baseProp = ecProp.GetBaseProperty();
-    if (nullptr == baseProp)
-        return true;
-
-    KindOfQuantityCP baseKOQ;
-    if (baseProp->GetIsPrimitive())
-        baseKOQ = baseProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-    else
-        baseKOQ = baseProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-
-    if (nullptr == baseKOQ)
-        return true;
-
-    Units::UnitRegistry& unitRegistry = Units::UnitRegistry::Instance();
-
-    Units::UnitCP baseUnit = unitRegistry.LookupUnit(baseKOQ->GetDefaultPresentationUnit().c_str());
-    Units::UnitCP compareUnit = unitRegistry.LookupUnit(compareKOQ->GetDefaultPresentationUnit().c_str());
-
-    if (nullptr == baseUnit || nullptr == compareUnit)
-        return true;
-
-    if (!baseUnit->GetPhenomenon()->Equals(*compareUnit->GetPhenomenon()))
-        {
-        LOG.errorv("The ECProperty %s:%s has a base property %s:%s with KindOfQuantity %s of Phenomenon %s which differs from the Phenomenon %s of the provided KindOfQuantity %s.",
-                   ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), baseProp->GetClass().GetFullName(), baseProp->GetName().c_str(), baseKOQ->GetFullName().c_str(), baseUnit->GetPhenomenon()->GetName(), 
-                   compareUnit->GetPhenomenon()->GetName(), compareKOQ->GetFullName().c_str());
         return false;
         }
 
@@ -918,97 +996,6 @@ ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName
         m_extendedTypeName.assign(extendedTypeName);
 
     return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP PrimitiveECProperty::GetKindOfQuantity() const
-    {
-    if (m_kindOfQuantity == nullptr)
-        {
-        ECPropertyCP baseProperty = GetBaseProperty();
-        if (nullptr != baseProperty)
-            {
-            PrimitiveECPropertyCP basePrim = baseProperty->GetAsPrimitiveProperty();
-            if (nullptr != basePrim)
-                return basePrim->GetKindOfQuantity();
-            }
-        }
-
-    return m_kindOfQuantity;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus PrimitiveECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
-    {
-    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
-        return ECObjectsStatus::KindOfQuantityNotCompatible;
-
-    m_kindOfQuantity = kindOfQuantity;
-    return ECObjectsStatus::Success;
-    }
-
-ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
-    {
-    // typeName may potentially be qualified so we must parse into an alias and short class name
-    Utf8String alias;
-    Utf8String kindOfQuantityName;
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseName(alias, kindOfQuantityName, typeName))
-        {
-        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
-        return ECObjectsStatus::ParseError;
-        }
-
-    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
-    if (nullptr == resolvedSchema)
-        {
-        return ECObjectsStatus::SchemaNotFound;
-        }
-
-    auto result = resolvedSchema->GetKindOfQuantityCP(kindOfQuantityName.c_str());
-    if (nullptr == result)
-        {
-        return ECObjectsStatus::DataTypeNotSupported;
-        }
-
-    kindOfQuantity = result;
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              01/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaReadStatus PrimitiveECProperty::ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
-    {
-    Utf8String value;
-    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
-        {
-        this->SetExtendedTypeName(value.c_str());
-        }
-
-    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
-        {
-        //split
-        KindOfQuantityCP kindOfQuantity;
-        if(ResolveKindOfQuantityType(kindOfQuantity, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
-            {
-            LOG.warningv("Could not resolve KindOfQuantity '%s' found on property '%s:%s.%s'.",
-                         value.c_str(),
-                         GetClass().GetSchema().GetName().c_str(),
-                         GetClass().GetName().c_str(),
-                         GetName().c_str());
-
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-
-        SetKindOfQuantity(kindOfQuantity);
-        }
-
-    _AdjustMinMaxAfterTypeChange();
-    return SchemaReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1524,77 +1511,20 @@ ECObjectsStatus PrimitiveArrayECProperty::SetExtendedTypeName(Utf8CP extendedTyp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer              01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP PrimitiveArrayECProperty::GetKindOfQuantity() const
-    {
-    if (m_kindOfQuantity == nullptr)
-        {
-        ECPropertyCP baseProperty = GetBaseProperty();
-        if (nullptr != baseProperty)
-            {
-            PrimitiveArrayECPropertyCP baseArr = baseProperty->GetAsPrimitiveArrayProperty();
-            if (nullptr != baseArr)
-                return baseArr->GetKindOfQuantity();
-            }
-        }
-
-    return m_kindOfQuantity;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus PrimitiveArrayECProperty::SetKindOfQuantity(KindOfQuantityCP kindOfQuantity)
-    {
-    if (!isKindOfQuantityCompatible(*this, kindOfQuantity))
-        return ECObjectsStatus::KindOfQuantityNotCompatible;
-
-    m_kindOfQuantity = kindOfQuantity;
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              01/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-SchemaReadStatus PrimitiveArrayECProperty::ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
-    {
-    Utf8String value;
-    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
-        {
-        this->SetExtendedTypeName(value.c_str());
-        }
-
-    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
-        {
-        //split
-        KindOfQuantityCP kindOfQuantity;
-        if(ResolveKindOfQuantityType(kindOfQuantity, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
-            {
-            LOG.warningv("Could not resolve KindOfQuantity '%s' found on property '%s:%s.%s'.",
-                         value.c_str(),
-                         GetClass().GetSchema().GetName().c_str(),
-                         GetClass().GetName().c_str(),
-                         GetName().c_str());
-
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-
-        SetKindOfQuantity(kindOfQuantity);
-        }
-
-    _AdjustMinMaxAfterTypeChange();
-    return SchemaReadStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              01/2017
-//+---------------+---------------+---------------+---------------+---------------+------
 SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR context)
     {
     SchemaReadStatus status = T_Super::_ReadXml(propertyNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
 
-    return ReadExtendedTypeAndKindOfQuantityXml(propertyNode, context);
+    Utf8String value;
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
+    _AdjustMinMaxAfterTypeChange();
+    return SchemaReadStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
