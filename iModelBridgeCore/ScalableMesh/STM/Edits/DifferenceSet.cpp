@@ -486,7 +486,11 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     DifferenceSet d;
     d.firstIndex = (int)maxPtIdx;
     if (polyMesh == nullptr) return d;
-    size_t originalNFaces = d.addedFaces.size();
+    //size_t originalNFaces = d.addedFaces.size();
+    size_t originalNUVs = d.addedUvs.size();
+    if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
+        d.addedUvs.insert(d.addedUvs.end(), polyMesh->GetParamCP(), polyMesh->GetParamCP() + polyMesh->GetParamCount());
+    size_t originalSize = d.addedUvIndices.size();
     for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*polyMesh); addedFacets->AdvanceToNextFace();)
         {
         DPoint3d face[3];
@@ -505,19 +509,44 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 }
             else idx[i]++;
             }
-        d.addedFaces.push_back(idx[0]);
-        d.addedFaces.push_back(idx[1]);
-        d.addedFaces.push_back(idx[2]);
+
+        if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+        {
+            d.addedFaces.push_back(idx[0]);
+            d.addedFaces.push_back(idx[2]);
+            d.addedFaces.push_back(idx[1]);
+        }
+        else
+        {
+            d.addedFaces.push_back(idx[0]);
+            d.addedFaces.push_back(idx[1]);
+            d.addedFaces.push_back(idx[2]);
+        }
+        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
+        {
+            if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+            {
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0]+1+(int) originalNUVs);
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+            }
+            else
+            {
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+            }
+        }
         }
     if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
         {
-        size_t originalNUVs = d.addedUvs.size();
+     /*   size_t originalNUVs = d.addedUvs.size();
         d.addedUvs.insert(d.addedUvs.end(), polyMesh->GetParamCP(), polyMesh->GetParamCP() + polyMesh->GetParamCount());
         size_t originalSize = d.addedUvIndices.size();
-        d.addedUvIndices.insert(d.addedUvIndices.end(), polyMesh->GetParamIndexCP(), polyMesh->GetParamIndexCP() + (int)(d.addedFaces.size() - originalNFaces));
+        d.addedUvIndices.insert(d.addedUvIndices.end(), polyMesh->GetParamIndexCP(), polyMesh->GetParamIndexCP() + (int)(d.addedFaces.size() - originalNFaces));*/
         for (size_t i = originalSize; i < d.addedUvIndices.size(); ++i)
             {
-            d.addedUvIndices[i] += (int)originalNUVs;
+           // d.addedUvIndices[i] += (int)originalNUVs;
             assert(d.addedUvs.size() >= d.addedUvIndices[i]);
             }
         }
