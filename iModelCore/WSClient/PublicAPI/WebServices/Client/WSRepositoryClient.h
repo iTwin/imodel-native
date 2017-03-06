@@ -49,6 +49,13 @@ typedef AsyncResult<void, WSError>                      WSVoidResult;
 struct IWSRepositoryClient
     {
     public:
+        enum AuthenticationType
+            {
+            Basic = 0,
+            Windows
+            };
+
+    public:
         // WIP: SkipTokens disabled due to issues.
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
@@ -58,7 +65,7 @@ struct IWSRepositoryClient
         virtual IWSClientPtr GetWSClient() const = 0;
         virtual Utf8StringCR GetRepositoryId() const = 0;
 
-        virtual void SetCredentials(Credentials credentials) = 0;
+        virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
@@ -251,7 +258,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT IWSClientPtr GetWSClient() const override;
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
-        WSCLIENT_EXPORT void SetCredentials(Credentials credentials);
+        WSCLIENT_EXPORT void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic);
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
