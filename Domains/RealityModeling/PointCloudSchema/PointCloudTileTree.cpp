@@ -101,7 +101,7 @@ BentleyStatus DoGetFromSource()
 
             cloudToTile.Multiply(tmpPoint);
 
-            points.push_back(IGraphicBuilder::QuantizedPoint(tileRange, tmpPoint));
+            points.push_back(QuantizedPoint(tileRange, tmpPoint));
             if (colorsPresent)
                 colors.push_back(batchColors[i]);
             }
@@ -130,7 +130,7 @@ BentleyStatus DoGetFromSource()
     featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.z);
 
     if (rgbPresent)
-        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(IGraphicBuilder::QuantizedPoint);
+        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QuantizedPoint);
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
@@ -139,7 +139,7 @@ BentleyStatus DoGetFromSource()
     m_tileBytes.Append((uint8_t const*) featureTableStr.c_str(), featureTableStrLen);
     if (!points.empty())
         {
-        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(IGraphicBuilder::QuantizedPoint));
+        m_tileBytes.Append((uint8_t const*) points.data(), points.size() * sizeof(QuantizedPoint));
         if (rgbPresent)
             m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
         }
@@ -223,7 +223,7 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
         m_points.resize(nPoints);                                      
         
         streamBuffer.SetPos(binaryPos + (positionOffset = featureTable["POSITION"]["byteOffset"].asUInt()));;
-        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(IGraphicBuilder::QuantizedPoint)))
+        if (0 != nPoints && !streamBuffer.ReadBytes(m_points.data(), nPoints * sizeof(QuantizedPoint)))
             {
             BeAssert(false);
             return ERROR;
@@ -253,11 +253,11 @@ BentleyStatus Tile::AddGraphics ()
     if (!m_points.empty())
         {
         auto&                       root   = static_cast<RootCR>(GetRoot());
-        Render::GraphicBuilderPtr   graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
+        Render::PrimitiveParams     params(root.GetDgnDb(), Render::GraphicParams());
+        Render::PointCloudArgs      args(m_range, static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
+        Render::GraphicPtr          graphic = root.GetRenderSystem()->_CreatePointCloud(args, params);
 
-        graphic->AddPointCloud((int) m_points.size(), m_range, &m_points.front(), (ByteCP) m_colors.data());
-        graphic->Close();
-        AddGraphic(*graphic);
+        SetGraphic(*graphic);
         }
 
     return SUCCESS;

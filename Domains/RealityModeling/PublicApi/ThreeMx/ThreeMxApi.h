@@ -54,7 +54,7 @@ protected:
 
 public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const&, SceneR);
+    THREEMX_EXPORT Geometry(Dgn::Render::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
@@ -156,7 +156,7 @@ private:
     SceneInfo m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
+    virtual GeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args) {return new Geometry(args, *this);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
     virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }

@@ -35,10 +35,10 @@ void Node::_DrawGraphics(DrawArgsR args) const
         GraphicParams params;
         params.SetLineColor(ColorDef::Red());
 
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
+        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(Graphic::CreateParams(GetRoot().GetDgnDb()));
         graphic->ActivateGraphicParams(params);
         graphic->AddRangeBox(m_range);
-        args.m_graphics.Add(*graphic);
+        args.m_graphics.Add(*graphic->Finish());
         }
 
     if (!m_geometry.empty()) // if we have geometry, draw it now
@@ -115,7 +115,7 @@ TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr Geometry::GetPolyface() const
     {
-    IGraphicBuilder::TriMeshArgs trimesh;
+    TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t) m_indices.size();
     trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
     trimesh.m_numPoints = (int32_t) m_points.size();
@@ -131,7 +131,7 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
+Geometry::Geometry(TriMeshArgs const& args, SceneR scene)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -153,12 +153,13 @@ Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    auto graphic = scene.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    graphic->AddTriMesh(args);
-    graphic->Close();
+    GraphicParams gfParams;
+    gfParams.SetLineColor(ColorDef::White());
+    gfParams.SetFillColor(ColorDef::White());
+    gfParams.SetWidth(0);
+    gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-    m_graphic = graphic;
+    m_graphic = scene.GetRenderSystem()->_CreateTriMesh(args, PrimitiveParams(Graphic::CreateParams(scene.GetDgnDb()), gfParams));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,6 +179,6 @@ void Geometry::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
+    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(args.m_root.GetDgnDb(), args.m_location));
     graphic->AddPolyface(*GetPolyface());
     }

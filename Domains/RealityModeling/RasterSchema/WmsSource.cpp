@@ -472,15 +472,12 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     textureParams.SetIsTileSection();
     auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
 
-    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(m_tile->GetRoot().GetDgnDb()));
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
     graphic->AddTile(*texture, rasterTile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-    BeAssert(SUCCESS == stat);
-    UNUSED_VARIABLE(stat);
-
-    rasterTile.m_graphic = graphic;
+    rasterTile.m_graphic = graphic->Finish();
+    BeAssert(rasterTile.m_graphic.IsValid());
 
     rasterTile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;

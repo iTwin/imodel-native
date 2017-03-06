@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -93,7 +93,7 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
 
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
-    auto graphic = rasterTile.GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(nullptr));
+    auto graphic = rasterTile.GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(rasterTile.GetRoot().GetDgnDb()));
 
     Render::Texture::CreateParams params;
     params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
@@ -102,11 +102,8 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     graphic->AddTile(*texture, rasterTile.GetCorners());
 
-    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-    BeAssert(SUCCESS == stat);
-    UNUSED_VARIABLE(stat);
-
-    rasterTile.m_graphic = graphic;
+    rasterTile.m_graphic = graphic->Finish();
+    BeAssert(rasterTile.m_graphic.IsValid());
     m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
     return SUCCESS;

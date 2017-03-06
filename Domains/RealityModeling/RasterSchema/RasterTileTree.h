@@ -116,7 +116,7 @@ struct RasterTile : Dgn::TileTree::Tile
 {
 protected:
     TileId m_id;                                            //! tile id 
-    Dgn::Render::IGraphicBuilder::TileCorners m_corners;    //! 4 corners of tile, in world coordinates
+    Dgn::Render::GraphicBuilder::TileCorners m_corners;    //! 4 corners of tile, in world coordinates
     Dgn::Render::GraphicPtr m_graphic;                      //! the texture for this tile.
 
     bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
@@ -133,7 +133,7 @@ public:
     TileId GetTileId() const { return m_id; }
 
     //! 4 corners of tile, in world coordinates
-    Dgn::Render::IGraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
+    Dgn::Render::GraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
 
     bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
 

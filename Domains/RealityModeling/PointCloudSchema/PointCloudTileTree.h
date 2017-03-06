@@ -51,7 +51,7 @@ public:
 
 };//     TileRoot
 
-typedef bvector<IGraphicBuilder::QuantizedPoint> QuantizedPointList; 
+typedef bvector<QuantizedPoint> QuantizedPointList; 
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley      02/2017
