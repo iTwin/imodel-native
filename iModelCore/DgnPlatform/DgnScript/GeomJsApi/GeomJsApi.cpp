@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/GeomJsApi/GeomJsApi.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -14,7 +14,7 @@
 
 extern Utf8CP geomJsApi_GetBootstrappingSource();
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 DVec3d GetData (JsDVector3dP vector) {return vector->Get();}
 DVec2d GetData (JsDVector2dP vector) {return vector->Get();}

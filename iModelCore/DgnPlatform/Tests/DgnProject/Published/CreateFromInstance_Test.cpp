@@ -76,10 +76,10 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     Utf8PrintfString json(
         "{"
         "\"$ECClassId\" : \"198\","
-        "\"$ECClassKey\" : \"BisCore.CameraViewDefinition\","
-        "\"$ECClassLabel\" : \"CameraViewDefinition\","
+        "\"$ECClassKey\" : \"BisCore.SpatialViewDefinition\","
+        "\"$ECClassLabel\" : \"SpatialViewDefinition\","
         "\"$ECInstanceId\" : \"502\","
-        "\"$ECInstanceLabel\" : \"CameraViewDefinition\","
+        "\"$ECInstanceLabel\" : \"SpatialViewDefinition\","
         "\"CodeSpec\" : {\"id\" : \"%d\"},"
         "\"CodeScope\" : \"ViewDefinition\","
         "\"CodeValue\" : \"Default - View 1\","
@@ -112,7 +112,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "}",
         static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_ViewDefinition).GetValue())); // value for CodeSpec.Id
 
-    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition);
+    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);
     ECN::IECInstancePtr ecInstance = viewDefClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(ecInstance.IsValid());
@@ -121,7 +121,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     ASSERT_TRUE(Json::Reader::Parse(json, jsonInput));
     ASSERT_EQ(SUCCESS, ECN::ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonInput));
 
-    auto viewElement = m_db->Elements().Create<CameraViewDefinition>(*ecInstance);
+    auto viewElement = m_db->Elements().Create<SpatialViewDefinition>(*ecInstance);
     ASSERT_TRUE(viewElement.IsValid());
 
     viewElement->SetDisplayStyle3d(*new DisplayStyle3d(*m_db, ""));
@@ -133,16 +133,16 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     ASSERT_TRUE(inserted.IsValid());
     } // make sure we release pointer to inserted
 
-    m_db->Memory().PurgeUntil(0); // to makes ure we re-read the element from the db
+    m_db->Memory().PurgeUntil(0); // to make sure we re-read the element from the db
 
-    auto camera = m_db->Elements().Get<CameraViewDefinition>(viewElement->GetElementId());
+    auto camera = m_db->Elements().Get<SpatialViewDefinition>(viewElement->GetElementId());
     ASSERT_TRUE(camera.IsValid());
     DPoint3d eyepoint = camera->GetEyePoint();
     ASSERT_EQ(293.99476935528162, eyepoint.x);
     ASSERT_EQ(69.335060236322079, eyepoint.y);
     ASSERT_EQ(68.339134990346963, eyepoint.z);
     ASSERT_EQ(100.610733542977, camera->GetFocusDistance());
-    ASSERT_EQ(0.802851455917392, camera->GetLensAngle());
+    ASSERT_EQ(0.802851455917392, camera->GetLensAngle().Radians());
 
     DPoint3d origin = camera->GetOrigin();
     ASSERT_EQ(338.90639657040640, origin.x);

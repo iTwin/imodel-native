@@ -11,9 +11,10 @@
 //-----------------------------------------------------------------------------------------
 // Macros associated with the BisCore ECSchema
 //-----------------------------------------------------------------------------------------
-#define BIS_ECSCHEMA_NAME   "BisCore"
-#define BIS_SCHEMA(name)    BIS_ECSCHEMA_NAME "." name
-#define BIS_TABLE(name)     "bis_" name
+#define BIS_ECSCHEMA_NAME       "BisCore"
+#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.01.00.ecschema.xml"
+#define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
+#define BIS_TABLE(name)         "bis_" name
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with BIS_SCHEMA macro for use in ECSql)
@@ -128,6 +129,7 @@
 #define BIS_REL_PhysicalTypeHasRecipe               "PhysicalTypeHasRecipe"
 #define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
+#define BIS_REL_PartitionOriginatesFromRepository   "PartitionOriginatesFromRepository"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names

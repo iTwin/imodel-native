@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnView.h $
+|     $Source: PublicAPI/DgnPlatform/ViewDefinition.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,6 @@
 
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
 #define BIS_CLASS_OrthographicViewDefinition "OrthographicViewDefinition"
-#define BIS_CLASS_CameraViewDefinition "CameraViewDefinition"
 #define BIS_CLASS_DrawingViewDefinition "DrawingViewDefinition"
 #define BIS_CLASS_SheetViewDefinition "SheetViewDefinition"
 #define BIS_CLASS_ClipVolume "ClipVolume"
@@ -26,7 +25,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace ViewElementHandler
 {
-    struct View; struct View3d; struct View2d; struct CameraView; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
+    struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
     struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle3d;
 }
 
@@ -70,7 +69,7 @@ public:
     DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     //! Get a DisplayStyle by name.
-    static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
+    static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     void CopyAllStyles(DisplayStyle const& rhs) {GetStylesR() = rhs.GetStyles();}
 
@@ -373,7 +372,7 @@ protected:
     virtual ViewControllerPtr _SupplyController() const = 0;
     virtual bool _IsValidBaseModel(DgnModelCR model) const {return true;}
     virtual OrthographicViewDefinitionCP _ToOrthographicView() const {return nullptr;}
-    virtual CameraViewDefinitionCP _ToCameraView() const {return nullptr;}
+    virtual ViewDefinition3dCP _ToView3d() const {return nullptr;}
     virtual SpatialViewDefinitionCP _ToSpatialView() const {return nullptr;}
     virtual DrawingViewDefinitionCP _ToDrawingView() const {return nullptr;}
     virtual SheetViewDefinitionCP _ToSheetView() const {return nullptr;}
@@ -462,9 +461,9 @@ public:
         Utf8CP GetDescription() const {return m_statement->GetValueText(3);} //!< The view's description
         DgnClassId GetClassId() const {return m_statement->GetValueId<DgnClassId>(4);} //!< The view's ECClassId
 
-        DGNPLATFORM_EXPORT bool IsOrthographicView() const;
-        DGNPLATFORM_EXPORT bool IsCameraView() const;
+        DGNPLATFORM_EXPORT bool IsView3d() const;
         DGNPLATFORM_EXPORT bool IsSpatialView() const;
+        DGNPLATFORM_EXPORT bool IsOrthographicView() const;
         DGNPLATFORM_EXPORT bool IsDrawingView() const;
         DGNPLATFORM_EXPORT bool IsSheetView() const;
 
@@ -486,7 +485,7 @@ public:
         DrawingViewDefinitionCPtr GetDrawingViewDefinition() const {return GetViewDefinition(&Entry::IsDrawingView, &ViewDefinition::ToDrawingView);}
         SheetViewDefinitionCPtr GetSheetViewDefinition() const {return GetViewDefinition(&Entry::IsSheetView,   &ViewDefinition::ToSheetView);}
         SpatialViewDefinitionCPtr GetSpatialViewDefinition() const {return GetViewDefinition(&Entry::IsSpatialView, &ViewDefinition::ToSpatialView);}
-        CameraViewDefinitionCPtr GetCameraViewDefinition() const {return GetViewDefinition(&Entry::IsCameraView,  &ViewDefinition::ToCameraView);}
+        ViewDefinition3dCPtr GetViewDefinition3d() const {return GetViewDefinition(&Entry::IsView3d, &ViewDefinition::ToView3d);}
         OrthographicViewDefinitionCPtr GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
     };
 
@@ -508,17 +507,17 @@ public:
     //! @param[in] whereClause The optional where clause starting with WHERE
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, Utf8CP whereClause=nullptr);
 
-    bool IsCameraView() const {return nullptr != _ToCameraView();}
+    bool IsView3d() const {return nullptr != _ToView3d();}
     bool IsOrthographicView() const {return nullptr != _ToOrthographicView();}
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
     bool IsDrawingView() const {return nullptr != _ToDrawingView();}
     bool IsSheetView() const {return nullptr != _ToSheetView();}
-    CameraViewDefinitionCP ToCameraView() const {return _ToCameraView();}
+    ViewDefinition3dCP ToView3d() const {return _ToView3d();}
     OrthographicViewDefinitionCP ToOrthographicView() const {return _ToOrthographicView();}
     SpatialViewDefinitionCP ToSpatialView() const {return _ToSpatialView();}
     DrawingViewDefinitionCP ToDrawingView() const {return _ToDrawingView();}
     SheetViewDefinitionCP ToSheetView() const {return _ToSheetView();}
-    CameraViewDefinitionP ToCameraViewP() {return const_cast<CameraViewDefinitionP>(ToCameraView());}
+    ViewDefinition3dP ToView3dP() {return const_cast<ViewDefinition3dP>(ToView3d());}
     SpatialViewDefinitionP ToSpatialViewP() {return const_cast<SpatialViewDefinitionP>(ToSpatialView());}
     DrawingViewDefinitionP ToDrawingViewP() {return const_cast<DrawingViewDefinitionP>(ToDrawingView());}
     SheetViewDefinitionP ToSheetViewP() {return const_cast<SheetViewDefinitionP>(ToSheetView());}
@@ -592,6 +591,12 @@ public:
 
     //! Get the clipping volume for elements in this view
     DGNPLATFORM_EXPORT ClipVectorPtr GetViewClip() const;
+
+    //! Set the grid settings for this view
+    DGNPLATFORM_EXPORT void SetGridSettings(GridOrientationType, DPoint2dCR, uint32_t);
+
+    //! Get the grid settings for this view
+    DGNPLATFORM_EXPORT void GetGridSettings(GridOrientationType&, DPoint2dR, uint32_t&) const;
 
     /*=================================================================================**//**
     * Margins for "white space" to be left around view volumes for #LookAtVolume.
@@ -684,167 +689,10 @@ public:
     /** @} */
 };
 
-//=======================================================================================
-//! Defines a view of 3d models.
-// @bsiclass                                                      Shaun.Sewall    02/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewDefinition3d, ViewDefinition);
-    friend struct ViewElementHandler::View3d;
-
-protected:
-    DPoint3d m_origin = {0.0,0.0,0.0};    //!< The lower left back corner of the view frustum.
-    DVec3d m_extents = DVec3d::From(0.0,0.0,0.0); //!< The extent of the view frustum.
-    RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
-
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
-
-    DPoint3d _GetOrigin() const override {return m_origin;}
-    DVec3d _GetExtents() const override {return m_extents;}
-    RotMatrix _GetRotation() const override {return m_rotation;}
-    void _SetOrigin(DPoint3dCR origin) override {m_origin = origin;}
-    void _SetExtents(DVec3dCR extents) override {m_extents = extents;}
-    void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
-
-public:
-    virtual void _OnTransform(TransformCR) = 0; //! @private
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));}
-
-    DisplayStyle3dR GetDisplayStyle3d() {return (DisplayStyle3dR) GetDisplayStyle();}
-    void SetDisplayStyle(DisplayStyleR style) = delete;
-    void SetDisplayStyle3d(DisplayStyle3dR style) {T_Super::SetDisplayStyle(style);}
-};
-
-//=======================================================================================
-//! Defines a view of a single 3D template model.
-// @bsiclass                                                      Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
-    friend struct ViewElementHandler::TemplateView3d;
-
-protected:
-    DgnModelId m_templateModelId;
-
-    bool _ViewsModel(DgnModelId modelId) override final {return modelId == GetTemplateModelId();}
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
-    void _OnTransform(TransformCR) override {}
-    explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
-
-    DgnModelId GetTemplateModelId() const {return m_templateModelId;} //!< Get the model displayed in this view
-};
-
-//=======================================================================================
-//! Defines a view of one or more SpatialModels.
-//! The list of viewed models is stored by the ModelSelector.
-// @bsiclass                                                      Paul.Connelly   10/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, ViewDefinition3d);
-
-    //! Parameters used to construct a SpatialViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
-        ModelSelectorPtr m_modelSelector;
-
-    public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector)
-            : T_Super(db, classId, code, categorySelector, displayStyle), m_modelSelector(&modelSelector) {}
-
-        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
-    };
-
-protected:
-    DgnElementId m_modelSelectorId;
-    mutable ModelSelectorPtr m_modelSelector;
-
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
-    void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
-    void _OnUpdateFinished() const override {m_modelSelector=nullptr; T_Super::_OnUpdateFinished();}
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}
-    SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
-    static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
-    virtual bool _IsEyePointAbove(double elevation) const {return GetZVector().z > 0;}
-    DGNPLATFORM_EXPORT virtual DPoint3d _ComputeEyePoint(Frustum const&) const;
-
-public:
-    //! @return true if the eyepoint is above the specified elevation
-    //! @param[in] elevation the elevation to test
-    bool IsEyePointAbove(double elevation) const {return _IsEyePointAbove(elevation);}
-
-    //! If this is a camera view, this method merely returns the eyepoint from the camera. If it is a non-camera view,
-    //! compute an pseudo-eyepoint based on the supplied frustum.
-    DPoint3d ComputeEyePoint(Frustum const& frustum) const {return _ComputeEyePoint(frustum);}
-
-    //! Create a SpatialViewDefintion from CreateParams
-    explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_modelSelector.IsValid()) SetModelSelector(*params.m_modelSelector);}
-
-    //! Get a writable reference to the ModelSelector for this SpatialViewDefinition
-    DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector();
-    DgnElementId GetModelSelectorId() const {return m_modelSelectorId;}
-
-    //! Set the ModelSelector for this SpatialViewDefinition
-    //! @param[in] models The new ModelSelector.
-    void SetModelSelector(ModelSelectorR models) {BeAssert(!IsPersistent()); m_modelSelector = &models; m_modelSelectorId=models.GetElementId();}
-};
-
-//=======================================================================================
-//! Defines a spatial view that displays
-//! world-coordinate geometry on the image plane using a parallel orthographic projection.
-// @bsiclass                                                      Sam.Wilson    08/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, SpatialViewDefinition);
-    friend struct ViewElementHandler::OrthographicView;
-
-protected:
-    //! Construct a new OrthographicViewDefinition prior to loading it
-    explicit OrthographicViewDefinition(CreateParams const& params) : T_Super(params) {}
-
-    OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
-    DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
-    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
-
-public:
-    //! Construct a new OrthographicViewDefinition prior to inserting it
-    //! @param db The DgnDb of this view definition
-    //! @param name A unique name for this view definition
-    //! @param categories The CategorySelector for this view
-    //! @param displayStyle The DisplayStyle for this view
-    //! @param models The ModelSelector for this view
-    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
-
-    //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
-};
-
-
 /** @addtogroup GROUP_DgnView DgnView Module
-<h4>%SpatialViewController Camera</h4>
+<h4>%ViewDefintion3d Camera</h4>
 
-This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
+This is what the parameters to the camera methods, and the values stored by ViewDefinition3d mean.
 @verbatim
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
@@ -900,94 +748,117 @@ This is what the parameters to the camera methods, and the values stored by Came
 */
 
 //=======================================================================================
-//! Defines a spatial view with a camera to display
-//! world-coordinate geometry onto the image plane through a perspective projection.
-// @bsiclass                                                      Paul.Connelly   10/15
+//! Defines a view of 3d models.
+// @bsiclass                                                      Shaun.Sewall    02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
+struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
 {
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewDefinition3d, ViewDefinition);
+    friend struct ViewElementHandler::View3d;
+
+public:
     //=======================================================================================
     //! The current position, lens angle, and focus distance of a camera.
     //=======================================================================================
     struct Camera
     {
     private:
-        double   m_lensAngle = 0.0;
-        double   m_focusDistance = 0.0;
+        Angle m_lensAngle;
+        double m_focusDistance = 0.0;
         DPoint3d m_eyePoint = {0.0,0.0,0.0};
 
     public:
-        static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
+        static bool IsValidLensAngle(Angle val) {return val.Radians()>(Angle::Pi()/8.0) && val<Angle::AnglePi();}
         void InvalidateFocus() {m_focusDistance=0.0;}
         bool IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
         double GetFocusDistance() const {return m_focusDistance;}
         void SetFocusDistance(double dist) {m_focusDistance = dist;}
         bool IsLensValid() const {return IsValidLensAngle(m_lensAngle);}
-        void ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::PiOver2();}
-        double GetLensAngle() const {return m_lensAngle;}
-        void SetLensAngle(double angle) {m_lensAngle = angle;}
+        void ValidateLens() {if (!IsLensValid()) m_lensAngle=Angle::FromRadians(Angle::PiOver2());}
+        Angle GetLensAngle() const {return m_lensAngle;}
+        void SetLensAngle(Angle angle) {m_lensAngle = angle;}
         DPoint3dCR GetEyePoint() const {return m_eyePoint;}
         void SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
         bool IsValid() const {return IsLensValid() && IsFocusValid();}
         bool IsEqual(Camera const& other) const {return m_lensAngle==other.m_lensAngle && m_focusDistance==other.m_focusDistance && m_eyePoint.IsEqual(other.m_eyePoint);}
     };
 
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, SpatialViewDefinition);
-    friend struct ViewElementHandler::CameraView;
-    friend struct ViewController;
+    //! Parameters used to construct a ViewDefinition3d
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(ViewDefinition3d::T_Super::CreateParams);
+
+        bool m_cameraOn = false;    //!< if true, m_camera is valid.
+        DPoint3d m_origin = {0.0,0.0,0.0};    //!< The lower left back corner of the view frustum.
+        DVec3d m_extents = DVec3d::From(0.0,0.0,0.0); //!< The extent of the view frustum.
+        RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
+        Camera m_cameraDef;  //!< The camera used for this view.
+
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, Camera const* camera = nullptr)
+            : T_Super(db, classId, code, categorySelector, displayStyle) {if (camera) {m_cameraDef = *camera; m_cameraOn=true;}}
+
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
+    };
 
 protected:
-    bool m_isCameraOn = false;    //!< if true, m_camera is valid.
-    Camera m_camera;  //!< The camera used for this view.
-
-    explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) {}
+    bool m_cameraOn = false;    //!< if true, m_camera is valid.
+    DPoint3d m_origin = {0.0,0.0,0.0};    //!< The lower left back corner of the view frustum.
+    DVec3d m_extents = DVec3d::From(0.0,0.0,0.0); //!< The extent of the view frustum.
+    RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
+    Camera m_cameraDef;  //!< The camera used for this view.
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
-    CameraViewDefinitionCP _ToCameraView() const override {return this;}
-    DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
-    bool _IsEyePointAbove(double elevation) const override {return !IsCameraOn() ? T_Super::_IsEyePointAbove(elevation) : (GetEyePoint().z > elevation);}
-    DPoint3d _ComputeEyePoint(Frustum const& frust) const override {return !IsCameraOn() ? T_Super::_ComputeEyePoint(frust) : GetEyePoint();}
+    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     DGNPLATFORM_EXPORT void SaveCamera();
+    DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const& inFrustum) override;
     DGNPLATFORM_EXPORT DPoint3d _GetTargetPoint() const override;
+    static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
+
+    DPoint3d _GetOrigin() const override {return m_origin;}
+    DVec3d _GetExtents() const override {return m_extents;}
+    RotMatrix _GetRotation() const override {return m_rotation;}
+    void _SetOrigin(DPoint3dCR origin) override {m_origin = origin;}
+    void _SetExtents(DVec3dCR extents) override {m_extents = extents;}
+    void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
+    ViewDefinition3dCP _ToView3d() const override final {return this;}
+    virtual void _EnableCamera() {m_cameraOn = true;}
 
 public:
-    void VerifyFocusPlane();
+    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} // about 12 inches
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
+    void VerifyFocusPlane();//!< private
+    bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
+    DGNPLATFORM_EXPORT DPoint3d ComputeEyePoint(Frustum const& frust) const;//!< private
 
-    //! Construct a new CameraViewDefinition prior to inserting it
-    //! @param db The DgnDb of this view definition
-    //! @param name A unique name for this view definition
-    //! @param categories The CategorySelector for this view
-    //! @param displayStyle The DisplayStyle for this view
-    //! @param models The ModelSelector for this view
-    CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
+    explicit ViewDefinition3d(CreateParams const& params) : T_Super(params), m_cameraOn(params.m_cameraOn), m_origin(params.m_origin), m_extents(params.m_extents), 
+                                                        m_rotation(params.m_rotation), m_cameraDef(params.m_cameraDef) {}
 
-    //! Look up the ECClass Id used for CameraViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
+    DisplayStyle3dR GetDisplayStyle3d() {return (DisplayStyle3dR) GetDisplayStyle();}
+    void SetDisplayStyle(DisplayStyleR style) = delete;
+    void SetDisplayStyle3d(DisplayStyle3dR style) {T_Super::SetDisplayStyle(style);}
 
     //! Get the camera for this view
-    Camera const& GetCamera() const {return m_camera;}
+    Camera const& GetCamera() const {return m_cameraDef;}
 
     //! Get a writable reference to the camera for this view
-    Camera& GetCameraR() {return m_camera;}
+    Camera& GetCameraR() {return m_cameraDef;}
 
     //! Determine whether the camera is on for this view
-    bool IsCameraOn() const {return m_isCameraOn;}
+    bool IsCameraOn() const {return m_cameraOn;}
 
-    //! Turn the camera on or off for this view
-    //! @param[in] val whether the camera is to be on or off
-    void SetCameraOn(bool val) {m_isCameraOn = val;}
+    //! Turn the camera off for this view. After this call, the camera parameters in this view definition are ignored and views that use it will
+    //! display with an orthographic (infinite focal length) projection of the view volume from the view direction. 
+    //! @note To turn the camera back on, call LookAt
+    void TurnCameraOff() {m_cameraOn = false;}
 
     //! Determine whether the camera is valid for this view
-    bool IsCameraValid() const {return m_camera.IsValid();}
+    bool IsCameraValid() const {return m_cameraDef.IsValid();}
 
     //! Calculate the lens angle formed by the current delta and focus distance
-    DGNPLATFORM_EXPORT double CalcLensAngle() const;
+    DGNPLATFORM_EXPORT Angle CalcLensAngle() const;
 
     //! Position the camera for this view and point it at a new target point.
     //! @param[in] eyePoint The new location of the camera.
@@ -1017,7 +888,7 @@ public:
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
     DGNPLATFORM_EXPORT ViewportStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
-                                             double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
+                                             Angle fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
 
     //! Move the camera relative to its current location by a distance in camera coordinates.
     //! @param[in] distance to move camera. Length is in world units, direction relative to current camera orientation.
@@ -1071,19 +942,18 @@ public:
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
-
     //! Get the current location of the eyePoint for camera in this view.
     DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}
 
     //! Get the lens angle for this view.
-    double GetLensAngle() const {return GetCamera().GetLensAngle();}
+    Angle GetLensAngle() const {return GetCamera().GetLensAngle();}
 
     //! Set the lens angle for this view.
     //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
     //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraR().SetLensAngle(angle);}
+    void SetLensAngle(Angle angle) {GetCameraR().SetLensAngle(angle);}
 
     //! Change the location of the eyePoint for the camera in this view.
     //! @param[in] pt The new eyepoint.
@@ -1098,6 +968,119 @@ public:
 
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
+};
+
+//=======================================================================================
+//! Defines a view of one or more SpatialModels.
+//! The list of viewed models is stored by the ModelSelector.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, ViewDefinition3d);
+
+public:
+    //! Parameters used to construct a SpatialViewDefinition
+    struct CreateParams : T_Super::CreateParams
+    {
+        DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
+        ModelSelectorPtr m_modelSelector;
+
+    public:
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector, Camera const* camera=nullptr)
+            : T_Super(db, classId, code, categorySelector, displayStyle, camera), m_modelSelector(&modelSelector) {}
+
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
+    };
+
+protected:
+    DgnElementId m_modelSelectorId;
+    mutable ModelSelectorPtr m_modelSelector;
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    void _OnInserted(DgnElementP copiedFrom) const override {m_modelSelector=nullptr; T_Super::_OnInserted(copiedFrom);}
+    void _OnUpdateFinished() const override {m_modelSelector=nullptr; T_Super::_OnUpdateFinished();}
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
+    bool _ViewsModel(DgnModelId modelId) override {return GetModelSelector().ContainsModel(modelId);}
+    SpatialViewDefinitionCP _ToSpatialView() const override {return this;}
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+
+public:
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition));} //!< private
+
+    //! Create a SpatialViewDefintion from CreateParams
+    explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_modelSelector.IsValid()) SetModelSelector(*params.m_modelSelector);}
+
+    SpatialViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models, Camera const* camera = nullptr) :
+        T_Super(T_Super::CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, camera)) {SetModelSelector(models);}
+
+    //! Get a writable reference to the ModelSelector for this SpatialViewDefinition
+    DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector();
+    DgnElementId GetModelSelectorId() const {return m_modelSelectorId;}
+
+    //! Set the ModelSelector for this SpatialViewDefinition
+    //! @param[in] models The new ModelSelector.
+    void SetModelSelector(ModelSelectorR models) {BeAssert(!IsPersistent()); m_modelSelector = &models; m_modelSelectorId=models.GetElementId();}
+};
+
+//=======================================================================================
+//! Defines a spatial view that displays geometry on the image plane using a parallel orthographic projection.
+// @bsiclass                                                      Sam.Wilson    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, SpatialViewDefinition);
+    friend struct ViewElementHandler::OrthographicView;
+
+protected:
+    //! Construct a new OrthographicViewDefinition prior to loading it
+    explicit OrthographicViewDefinition(CreateParams const& params) : T_Super(params) {}
+
+    OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    void _EnableCamera() override final {/* nope */}
+
+public:
+    //! Construct a new OrthographicViewDefinition prior to inserting it
+    //! @param db The DgnDb of this view definition
+    //! @param name A unique name for this view definition
+    //! @param categories The CategorySelector for this view
+    //! @param displayStyle The DisplayStyle for this view
+    //! @param models The ModelSelector for this view
+    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
+        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
+
+    //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
+};
+
+//=======================================================================================
+//! Defines a view of a single 3d template model.
+// @bsiclass                                                      Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
+    friend struct ViewElementHandler::TemplateView3d;
+
+protected:
+    DgnModelId m_templateModelId;
+
+    bool _ViewsModel(DgnModelId modelId) override final {return modelId == GetTemplateModelId();}
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
+
+    DgnModelId GetTemplateModelId() const {return m_templateModelId;} //!< Get the model displayed in this view
 };
 
 //=======================================================================================
@@ -1142,9 +1125,8 @@ public:
     void SetOrigin2d(DPoint2dCR o) {m_origin = o;}
     DVec2d GetDelta2d() const {return m_delta;}
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
-
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
-    };
+};
 
 //=======================================================================================
 //! Defines a view of a DrawingModel.
@@ -1236,7 +1218,7 @@ namespace ViewElementHandler
 
     struct SpatialView : View3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialView, View3d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialView, View3d, DGNPLATFORM_EXPORT);
         DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
@@ -1249,12 +1231,6 @@ namespace ViewElementHandler
     struct OrthographicView : SpatialView
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, OrthographicViewDefinition, OrthographicView, SpatialView, DGNPLATFORM_EXPORT);
-    };
-
-    struct CameraView : SpatialView
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraView, SpatialView, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     struct DrawingView : View2d
@@ -1286,9 +1262,9 @@ namespace ViewElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle3d, DisplayStyle3d, ViewDisplayStyle3d, ViewDisplayStyle, DGNPLATFORM_EXPORT);
     };
-};
+} // namespace ViewElementHandler
 
-typedef ViewElementHandler::CameraView CameraViewHandler;
+typedef ViewElementHandler::SpatialView SpatialViewHandler;
 typedef ViewElementHandler::DrawingView DrawingViewHandler;
 
 //=======================================================================================

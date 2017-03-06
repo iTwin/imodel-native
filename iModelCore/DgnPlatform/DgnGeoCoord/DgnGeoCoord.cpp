@@ -26,7 +26,7 @@ static ProjectionParams*   s_oldProjectionParams;
 #define     MSAPPINFO_LEVEL             20
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 using namespace BentleyApi::GeoCoordinates;
 

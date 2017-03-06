@@ -156,6 +156,9 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="IsTemplate" typeName="boolean" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+            </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract" displayLabel="Geometric Model" description="A container for persisting geometric elements.">
@@ -458,6 +461,7 @@
         </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json">
             <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -1991,6 +1995,16 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="PartitionOriginatesFromRepository" strength="referencing" modifier="Sealed">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="originates from" polymorphic="true">
+            <Class class="InformationPartitionElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is origin of" polymorphic="true">
+            <Class class="RepositoryLink"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
@@ -2055,27 +2069,6 @@
         <ECProperty propertyName="Roll" typeName="double" description="Roll component of the view direction in degrees">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="TemplateViewDefinition3d" displayLabel="3D Template View Definition" description="A view of a single 3D template model.">
-        <BaseClass>ViewDefinition3d</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="TemplateModel" relationshipName="TemplateView3dDisplaysModel" direction="Forward">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
-        <BaseClass>ViewDefinition3d</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="CameraViewDefinition" displayLabel="Camera View Definition" description="A spatial view that shows a perspective projection.">
-        <BaseClass>SpatialViewDefinition</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="IsCameraOn" typeName="boolean" displayLabel="Is Camera On" description="Is the camera actually turned on?">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECProperty>
@@ -2090,9 +2083,25 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic View Definition" description="A spatial view that shows an orthographic parallel projection.">
+    <ECEntityClass typeName="SpatialViewDefinition" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
+        <BaseClass>ViewDefinition3d</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="OrthographicViewDefinition" displayLabel="Orthographic Spatial View" description="A spatial view that always show an parallel projection.">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TemplateViewDefinition3d" displayLabel="3D Template View Definition" description="A view of a single 3D template model.">
+        <BaseClass>ViewDefinition3d</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECNavigationProperty propertyName="TemplateModel" relationshipName="TemplateView3dDisplaysModel" direction="Forward">
+            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract" displayLabel="2D View Definition" description="A view of a 2D model that has its own local coordinate system.">

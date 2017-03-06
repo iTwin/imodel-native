@@ -3153,6 +3153,22 @@ public:
 
     Utf8String GetDescription() const {return GetPropertyValueString("Description");}
     void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
+
+    static Utf8CP JsonNamespace() {return "Subject";}   //<! The namespace reserved for Subject Json properties
+    static Utf8CP JsonJobNamespace() {return "Job";}    //<! The sub-namespace reserved for Job Subject Json properties
+    static Utf8CP JsonModelNamespace() {return "Model";}//<! The sub-namespace reserved for Model Subject Json properties
+
+    //! Get Json properties
+    ECN::AdHocJsonValueCR GetSubjectJsonProperties() const {return GetJsonProperties(JsonNamespace());}
+
+    //! Get Json properties from a particular sub-namespace
+    ECN::AdHocJsonValue GetSubjectJsonProperties(Utf8CP sns) const {return GetJsonProperties(JsonNamespace()).GetMember(sns);}
+
+    //! Set Json properties
+    void SetSubjectJsonProperties(JsonValueCR props) {SetJsonProperties(JsonNamespace(), props);}
+
+    //! Set Json properties from a particular sub-namespace
+    void SetSubjectJsonProperties(Utf8CP sns, JsonValueCR props) {m_jsonProperties.GetMemberR(JsonNamespace())[sns] = props;}
 };
 
 //=======================================================================================

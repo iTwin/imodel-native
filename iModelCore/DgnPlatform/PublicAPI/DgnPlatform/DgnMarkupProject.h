@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/LinkElement.h>
-#include "DgnView.h"
+#include "ViewDefinition.h"
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines
 * A markup is a set of annotations that apply to a DgnDb or to views of that project. Markups include redlines, markups, and punch lists.

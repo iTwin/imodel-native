@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
 #include <Bentley/bset.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 #if defined (_MSC_VER)
 #pragma warning (disable:4702)
@@ -201,7 +201,7 @@ TEST_F(DgnViewElemTest, CRUD)
     DgnViewId cameraViewId = InsertCameraView(*physicalModel, cameraViewName);
 
     // Create a new view
-    CameraViewDefinition tempView(*m_db, "TestView", );
+    SpatialViewDefinition tempView(*m_db, "TestView", );
     tempView.SetDescription("Test Description");
     tempView.SetModelSelector(*DgnDbTestUtils::InsertModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
 
@@ -287,7 +287,7 @@ TEST_F(DgnViewElemTest, Iterate)
             {
             Utf8String viewName(model->GetName());
             viewName.append(s_viewSourceNames[i]);
-            ViewDefinitionCPtr view = AddSpatialView<CameraViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ViewDefinitionCPtr view = AddSpatialView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
             ASSERT_TRUE(view->GetViewId().IsValid());
             }
