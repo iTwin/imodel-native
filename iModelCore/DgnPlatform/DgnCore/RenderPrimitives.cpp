@@ -1836,10 +1836,17 @@ void PrimitiveBuilder::_AddDgnOle(DgnOleDraw* dgnOle)
 void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicParamsCR gfParams, ClipVectorCP clip)
     {
     // ###TODO_ELEMENT_TILE: Overriding GraphicParams?
-    GraphicBranch branch;
-    branch.Add(gf);
-    Graphic::CreateParams params(m_dgndb, Transform::FromProduct(m_transform, subToGf));
-    m_primitives.push_back(m_system._CreateBranch(std::move(branch), params, clip));
+    Render::GraphicPtr graphic(&gf);
+    if (nullptr != clip || !subToGf.IsIdentity())
+        {
+        GraphicBranch branch;
+        branch.Add(gf);
+        Graphic::CreateParams params(m_dgndb, Transform::FromProduct(m_transform, subToGf));
+        graphic = m_system._CreateBranch(std::move(branch), params, clip);
+        }
+
+    if (graphic.IsValid())
+        m_primitives.push_back(graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
