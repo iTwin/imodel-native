@@ -2,14 +2,14 @@
 |
 |  $Source: Tests/DgnProject/Published/Ecutils_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include "DgnPlatform/ECUtils.h"
 
 USING_NAMESPACE_BENTLEY_DPTEST
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/

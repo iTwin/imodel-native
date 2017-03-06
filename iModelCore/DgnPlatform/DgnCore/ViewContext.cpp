@@ -199,7 +199,7 @@ void ViewContext::WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) c
         {
         WorldToView(&t4dPt, worldPts+i, 1);
 
-        t4dPt.GetProjectedXYZ (tPt);
+        t4dPt.GetProjectedXYZ(tPt);
 
         (viewPts+i)->x = (long) tPt.x;
         (viewPts+i)->y = (long) tPt.y;
@@ -655,7 +655,7 @@ bool ViewContext::_VisitAllModelElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     {
-    DPoint3d    vec[2];
+    DPoint3d vec[2];
 
     if (nullptr != inPoint)
         {
@@ -663,7 +663,7 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
         }
     else
         {
-        DPoint3d    center = {.5, .5, .5};   // if they didn't give a point, use center of view.
+        DPoint3d center = {.5, .5, .5};   // if they didn't give a point, use center of view.
         NpcToView(vec, &center, 1);
         }
 
@@ -932,33 +932,33 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
     // Don't compare m_lineColor unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_color != other.m_appearanceOverrides.m_color)
         return false;
-    else if (m_appearanceOverrides.m_color && (m_lineColor != other.m_lineColor))
+
+    if (m_appearanceOverrides.m_color && (m_lineColor != other.m_lineColor))
         return false;
 
     // Don't compare m_weight unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_weight != other.m_appearanceOverrides.m_weight)
         return false;
-    else if (m_appearanceOverrides.m_weight && (m_weight != other.m_weight))
+    if (m_appearanceOverrides.m_weight && (m_weight != other.m_weight))
         return false;
 
     // Don't compare m_materialId unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_material != other.m_appearanceOverrides.m_material)
         return false;
-    else if (m_appearanceOverrides.m_material && (m_materialId != other.m_materialId))
+
+    if (m_appearanceOverrides.m_material && (m_materialId != other.m_materialId))
         return false;
 
     // Don't compare m_styleInfo unless sub-category appearance override is set...
     if (m_appearanceOverrides.m_style != other.m_appearanceOverrides.m_style)
-        {
         return false;
-        }
-    else if (m_appearanceOverrides.m_style)
+
+    if (m_appearanceOverrides.m_style)
         {
         if (m_styleInfo.IsValid() != other.m_styleInfo.IsValid())
-            {
             return false;
-            }
-        else if (m_styleInfo.IsValid())
+
+        if (m_styleInfo.IsValid())
             {
             // NOTE: Don't use == operator on LineStyleInfo, don't want to compare LineStyleSymb since if will differ between resolved/un-resolved params...
             if (m_styleInfo->GetStyleId() != other.m_styleInfo->GetStyleId())
@@ -970,25 +970,20 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
         }
 
     if (m_fillDisplay != other.m_fillDisplay)
-        {
         return false;
-        }
-    else if (FillDisplay::Never != m_fillDisplay)
+
+    if (FillDisplay::Never != m_fillDisplay)
         {
         // Don't compare m_fillColor/m_gradient unless sub-category appearance override is set...
         if (m_appearanceOverrides.m_bgFill != other.m_appearanceOverrides.m_bgFill)
-            {
             return false;
-            }
-        else if (m_appearanceOverrides.m_fill != other.m_appearanceOverrides.m_fill)
-            {
+        if (m_appearanceOverrides.m_fill != other.m_appearanceOverrides.m_fill)
             return false;
-            }
-        else if (m_appearanceOverrides.m_fill)
+        if (m_appearanceOverrides.m_fill)
             {
             if (m_gradient.IsValid() != other.m_gradient.IsValid())
                 return false;
-            else if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
+            if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
                 return false;
 
             if (m_fillColor != other.m_fillColor)
@@ -998,7 +993,7 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
 
     if (m_pattern.IsValid() != other.m_pattern.IsValid())
         return false;
-    else if (m_pattern.IsValid() && !(*m_pattern == *other.m_pattern))
+    if (m_pattern.IsValid() && !(*m_pattern == *other.m_pattern))
         return false;
 
     return true;
@@ -1110,7 +1105,7 @@ void GeometryParams::ApplyTransform(TransformCR transform, uint32_t options)
 void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_world.IsValid())
-        m_decorations.m_world = new GraphicList;
+        m_decorations.m_world = new GraphicList();
 
     m_decorations.m_world->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
@@ -1121,7 +1116,7 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_worldOverlay.IsValid())
-        m_decorations.m_worldOverlay = new GraphicList;
+        m_decorations.m_worldOverlay = new GraphicList();
 
     m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
@@ -1132,7 +1127,7 @@ void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraph
 void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
     if (!m_decorations.m_viewOverlay.IsValid())
-        m_decorations.m_viewOverlay = new GraphicList;
+        m_decorations.m_viewOverlay = new GraphicList();
 
     m_decorations.m_viewOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
@@ -1151,14 +1146,14 @@ void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicPar
     if (!m_isFlash)
         {
         if (!m_decorations.m_normal.IsValid())
-            m_decorations.m_normal = new GraphicList;
+            m_decorations.m_normal = new GraphicList();
 
         m_decorations.m_normal->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
         return;
         }
 
     if (!m_decorations.m_flashed.IsValid())
-        m_decorations.m_flashed = new GraphicList;
+        m_decorations.m_flashed = new GraphicList();
 
     m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
@@ -1175,14 +1170,14 @@ void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum
-    {
+{
     MAX_GridDotsInRow       = 500,
     GRID_DOT_Transparency   = 100,
     GRID_LINE_Transparency  = 200,
     GRID_PLANE_Transparency = 225,
     MAX_GridPoints          = 90,
     MAX_GridRefs            = 40,
-    };
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
@@ -1504,10 +1499,11 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
         }
 
     double   refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
-    Point2d  repetitions;
+    DPoint2d refSpacing = DPoint2d::FromScale(spacing, refScale);
     DPoint3d gridOrg;
+    Point2d  repetitions;
 
-    if (NULL == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
+    if (nullptr == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
         {
         DPoint3d intersections[12];
         int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, vp);
@@ -1517,8 +1513,8 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
 
         DPoint2d min;
 
-        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, spacing.x, intersections, nIntersections) ||
-            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, spacing.y, intersections, nIntersections))
+        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, refSpacing.x, intersections, nIntersections) ||
+            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, refSpacing.y, intersections, nIntersections))
             return;
 
         gridOrg.SumOf(gridOrigin, xVec, min.x, yVec, min.y);
@@ -1533,8 +1529,8 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
         return;
 
     DVec3d gridX, gridY;
-    gridX.Scale(xVec, spacing.x);
-    gridY.Scale(yVec, spacing.y);
+    gridX.Scale(xVec, refSpacing.x);
+    gridY.Scale(yVec, refSpacing.y);
 
     DPoint3d testPt;
     testPt.SumOf(gridOrg,gridX, repetitions.x/2.0, gridY, repetitions.y/2.0);
@@ -1552,14 +1548,14 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     double minRefSeperation = 1000. / maxGridRefs;
     double uorPerPixel = vp.GetPixelSizeAtPoint(&testPt); // center of view
 
-    if ((spacing.x/uorPerPixel) < minRefSeperation || (spacing.y/uorPerPixel) < minRefSeperation)
+    if ((refSpacing.x/uorPerPixel) < minRefSeperation || (refSpacing.y/uorPerPixel) < minRefSeperation)
         gridsPerRef = 0;
 
     // Avoid z fighting with coincident geometry...let the wookie win...
     gridOrg.SumOf(gridOrg, viewZ, uorPerPixel);
     uorPerPixel *= refScale;
 
-    bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
+    bool drawDots = ((refSpacing.x/uorPerPixel) > minGridSeperationPixels) &&((refSpacing.y/uorPerPixel) > minGridSeperationPixels);
     Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);

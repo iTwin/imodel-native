@@ -9,7 +9,7 @@
 #include "DgnCoreLog.h"
 #include <BeJpeg/BeJpeg.h>
 #include <DgnPlatform/DgnMarkupProject.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 #define QV_RGBA_FORMAT   0
 #define QV_BGRA_FORMAT   1
@@ -220,7 +220,7 @@ void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
 
     vp.NpcToWorld(&origin, &origin, 1);
     m_auxCoordSys->SetOrigin(origin);
-    m_auxCoordSys->SetRotation(GetRotation());
+    m_auxCoordSys->SetRotation(m_definition->GetRotation());
 
     T_Super::_OnViewOpened(vp);
     }
@@ -547,8 +547,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
         stmt.Step();
         }
-
-    SaveChanges();
 
     if (DgnDbStatus::Success != ImportMarkupSchema())
         return BE_SQLITE_ERROR;

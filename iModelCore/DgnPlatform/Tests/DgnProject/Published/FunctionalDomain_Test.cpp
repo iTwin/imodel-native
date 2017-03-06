@@ -199,12 +199,8 @@ void FunctionalDomainTests::SetupFunctionalTestDomain()
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain());
     DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain());
 
-    m_db->SaveChanges();
-
     DgnDbStatus importSchemaStatus = FunctionalDomain::ImportSchema(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
-
-    m_db->SaveChanges();
 
     importSchemaStatus = FunctionalTestDomain::ImportSchema(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);

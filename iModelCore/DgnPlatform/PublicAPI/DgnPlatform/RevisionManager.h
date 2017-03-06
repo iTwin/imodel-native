@@ -108,19 +108,24 @@ struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStrea
 private:
     DgnDbCR m_dgndb; // Used only for debugging
     BeFileName m_pathname;
+    BeSQLite::SchemaChangeSet m_schemaChanges;
 
     BeSQLite::LzmaDecoder m_lzmaDecoder;
     BeSQLite::BeFileLzmaInStream* m_inLzmaFileStream;
     
     BeSQLite::DbResult StartInput();
+    BeSQLite::DbResult ReadSchemaChanges();
     void FinishInput();
-
+    
     DGNPLATFORM_EXPORT BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
     DGNPLATFORM_EXPORT void _Reset() override;
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter) override;
 
 public:
     RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}
+
+    BeSQLite::DbResult GetSchemaChanges(BeSQLite::SchemaChangeSetR schemaChanges);
+
     ~RevisionChangesFileReader() {}
 };
 
@@ -150,8 +155,10 @@ friend struct ApplyRevisionChangeSet;
 private:
     DgnDbR m_dgndb;
 
+    BeFileName m_tempRevisionPathname;
     DgnRevisionPtr m_currentRevision;
 
+    static BeFileName BuildTempRevisionPathname();
     RevisionStatus SaveParentRevisionId(Utf8StringCR revisionId);
     RevisionStatus SaveReversedRevisionId(Utf8StringCR revisionId);
     RevisionStatus DeleteReversedRevisionId();
@@ -159,9 +166,9 @@ private:
     Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
 
-    RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup, TxnManager::TxnId endTxnId) const;
-    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup);
-    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
+    RevisionStatus GroupChanges(BeSQLite::SchemaChangeSetR schemaChangeSet, BeSQLite::ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const;
+    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeFileNameCR tempRevisionPathname);
+    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::SchemaChangeSetCR schemaChangeSet, BeSQLite::ChangeGroupCR dataChangeGroup);
 
     // If valid, currently creating a revision with all transactions upto *but* excluding this id
     RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId);
@@ -172,7 +179,7 @@ private:
     static BeSQLite::ChangeSet::ConflictResolution ConflictHandler(DgnDbCR dgndb, BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 public:
     //! Constructor
-    RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb) {}
+    RevisionManager(DgnDbR dgndb);
 
     //! Destructor
     ~RevisionManager();
