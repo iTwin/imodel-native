@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/Angle.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -187,6 +187,9 @@ bool Angle::IsNearZero (double radians)
     {
     return fabs (radians) <= msGeomConst_smallAngle;
     }
+
+bool Angle::IsNearZero () const {return IsNearZero (m_radians);}
+
 
 bool Angle::IsNearZeroAllowPeriodShift (double radians)
     {

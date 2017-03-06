@@ -67,7 +67,7 @@ static bool IsFullCircle (double radians);
 static bool IsNearZero (double radians);
 
 //! test if instance is {SmallAngle} or smaller.
-bool IsNearZoro () const;
+bool IsNearZero () const;
 //! Test if {radians} is {SmallAngle} or smaller.
 static bool IsNearZeroAllowPeriodShift (double radians);
 
