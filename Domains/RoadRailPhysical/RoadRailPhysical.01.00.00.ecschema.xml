@@ -308,7 +308,7 @@
     <ECEntityClass typeName="GenericFurnitureAssembly" modifier="Sealed" description="Generic top-level element, assemblying other furniture elements." >
         <BaseClass>FurnitureAssemblyElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding" modifier="Abstract">
+    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding" modifier="None">
         <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 furniture assembly">
             <Class class="FurnitureAssemblyElement"/>
