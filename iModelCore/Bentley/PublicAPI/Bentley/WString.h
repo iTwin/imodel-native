@@ -333,7 +333,7 @@ struct Utf8String : public bastring
     Utf8StringR Assign(WCharCP str){BeStringUtilities::WCharToUtf8(*this, str); return *this;}
 
     //! Computes the size, in bytes, of this string's data, including its NULL-terminator.
-    size_type SizeInBytes() {return (sizeof (value_type) * (size() + 1));}
+    size_type SizeInBytes() const {return (sizeof (value_type) * (size() + 1));}
 
     //! Test if this string contains only characters less than or equal to 127.
     BENTLEYDLL_EXPORT bool IsAscii();
