@@ -2446,18 +2446,18 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
 
     Json::Value     primitive = Json::objectValue;
-    DRange3d        pointRange = DRange3d::From(tesselation.m_points), prevRange = DRange3d::From(tesselation.m_prevPoints), nextRange = DRange3d::From(tesselation.m_nextPoints), deltaRange = DRange3d::From(tesselation.m_deltas);
+    DRange3d        pointRange = DRange3d::From(tesselation.m_points), 
+                    prevRange = DRange3d::From(tesselation.m_prevPoints), 
+                    nextRange = DRange3d::From(tesselation.m_nextPoints);
 
     primitive["material"] = mat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
-    VertexEncoding  encoding = VertexEncoding::UnquantizedDoubles; 
-
-    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &tesselation.m_points.front().x, "Position", idStr.c_str(), 3, tesselation.m_points.size(), "VEC3", encoding, &pointRange.low.x, &pointRange.high.x);
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &tesselation.m_points.front().x, "Position", idStr.c_str(), 3, tesselation.m_points.size(), "VEC3",  VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
-    primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevPoints.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevPoints.size(), "VEC3", encoding, &prevRange.low.x, &prevRange.high.x);
-    primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextPoints.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextPoints.size(), "VEC3", encoding, &nextRange.low.x, &nextRange.high.x);
-    primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_deltas.front().x, "Delta", idStr.c_str(), 3, tesselation.m_deltas.size(), "VEC3", encoding, &deltaRange.low.x, &deltaRange.high.x);
+    primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevPoints.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevPoints.size(), "VEC3",  VertexEncoding::StandardQuantization, &prevRange.low.x, &prevRange.high.x);
+    primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextPoints.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextPoints.size(), "VEC3",  VertexEncoding::StandardQuantization, &nextRange.low.x, &nextRange.high.x);
+    primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_deltas.front().x, "Delta", idStr.c_str(), 3, tesselation.m_deltas.size(), "VEC3", VertexEncoding::UnquantizedDoubles, nullptr, nullptr);
     primitive["indices"] = AddMeshIndices (tileData, "Index", tesselation.m_indices, idStr);
 
     if (doBatchIds)
