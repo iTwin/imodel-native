@@ -67,6 +67,7 @@ struct TxnMonitor
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
+struct RevisionChangesFileReader;
 namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model; struct RelationshipLinkTable; struct UniqueRelationshipLinkTable; struct MultiRelationshipLinkTable;}
 
 //=======================================================================================
@@ -264,6 +265,8 @@ struct TxnManager : BeSQLite::ChangeTracker
         bool operator>=(TxnId const& rhs) const {return m_id.m_64>=rhs.m_id.m_64;}
     };
 
+    enum class AllowCrossSessions { Yes = 1, No = 0 };
+
 private:
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   08/15
@@ -302,29 +305,47 @@ private:
     bvector<ValidationError> m_validationErrors;
     TxnRelationshipLinkTables m_rlt;
     
-    void AddChanges(BeSQLite::Changes const&);
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
-    BeSQLite::DbResult SaveCurrentChange(BeSQLite::ChangeSet& changeset, Utf8CP operation);
-    void ReadChangeSet(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
-    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
-    void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
+
+    void AddChanges(BeSQLite::Changes const&);
+    BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
+    BeSQLite::DbResult SaveSchemaChanges(BeSQLite::SchemaChangeSetCR schemaChangeSet, Utf8CP operation);
+    BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
+
+    Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
+    void ReadSchemaChanges(BeSQLite::SchemaChangeSet&, TxnId rowid);
+    void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
+	
+
     void ApplyTxnChanges(TxnId, TxnAction);
-    void OnChangesApplied(BeSQLite::IChangeSet& changeset);
-    OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
-    DgnDbStatus ReinstateActions(TxnRange& revTxn);
-    bool PrepareForUndo();
-    DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
-    BentleyStatus PropagateChanges();
-    BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
-    TxnTable* FindTxnTable(Utf8CP tableName) const;
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeSet, TxnAction txnAction);
-    bool IsMultiTxnMember(TxnId rowid) const;
-    RevisionStatus MergeRevision(DgnRevisionCR revision);
-    RevisionStatus ApplyRevision(DgnRevisionCR revision, bool reverse);
-    void CancelDynamics();
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction);
+    BeSQLite::DbResult ApplySchemaChangeSet(BeSQLite::SchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
+	void OnChangesApplied(BeSQLite::IChangeSet& changeset);
+	
+    OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
+	
+	BentleyStatus PropagateChanges();
+    BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
+	
+    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
+    DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
+    void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
+    DgnDbStatus ReinstateActions(TxnRange& revTxn);
+
+    RevisionStatus MergeRevision(DgnRevisionCR revision);
+    RevisionStatus MergeSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
+    RevisionStatus MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& revisionReader);
+    RevisionStatus ApplyRevision(DgnRevisionCR revision, bool invert);
+
+    TxnTable* FindTxnTable(Utf8CP tableName) const;
+    bool IsMultiTxnMember(TxnId rowid) const;
+    TxnManager::TxnId GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const;
+    bool IsSchemaChangeTxn(TxnId rowid) const;
+
+    void CancelDynamics();
 
 public:
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
@@ -433,21 +454,21 @@ public:
 
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
-    bool IsUndoPossible() const {return GetSessionStartId() < GetCurrentTxnId();}
-
+    DGNPLATFORM_EXPORT bool IsUndoPossible(AllowCrossSessions allowCrossSessions = AllowCrossSessions::No) const;
+        
     //! Query if there are currently any reinstateable (redoable) changes
     //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() const {return !m_reversedTxn.empty();}
 
-    enum class AllowCrossSessions {Yes=1, No=0};
     //! Reverse (undo) the most recent operation(s).
     //! @param[in] numOperations the number of operations to reverse. If this is greater than 1, the entire set of operations will
     //! be reinstated together when/if ReinstateTxn is called.
-    //! @param[in] crossSessions if No, don't reverse any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions if No, don't reverse any Txns older than the beginning of the current session.
     //! @note If there are any outstanding uncommitted changes, they are reversed.
     //! @note The term "operation" is used rather than Txn, since multiple Txns can be grouped together via BeginMultiTxnOperation. So,
     //! even if numOperations is 1, multiple Txns may be reversed if they were grouped together when they were made.
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numOperations, AllowCrossSessions crossSessions=AllowCrossSessions::No);
+    //! @note If numOperations is too large only the operations are reversible are reversed.
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numOperations, AllowCrossSessions allowCrossSessions=AllowCrossSessions::No);
 
     //! Reverse the most recent operation.
     DgnDbStatus ReverseSingleTxn() {return ReverseTxns(1);}
@@ -458,16 +479,16 @@ public:
 
     //! Reverse all changes back to a previously saved TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowPrevious if No, don't reverse any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions if No, don't reverse any Txns older than the beginning of the current session.
     //! @return DgnDbStatus::Success if the transactions were reversed, error status otherwise.
     //! @see  GetCurrentTxnId CancelTo
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId, AllowCrossSessions allowPrevious=AllowCrossSessions::No);
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId, AllowCrossSessions allowCrossSessions=AllowCrossSessions::No);
 
     //! Reverse and then cancel (make non-reinstatable) all changes back to a previous TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
-    //! @param[in] allowPrevious if No, don't cancel any Txns older than the beginning of the current session.
+    //! @param[in] allowCrossSessions if No, don't cancel any Txns older than the beginning of the current session.
     //! @return DgnDbStatus::Success if the transactions were reversed and cleared, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId, AllowCrossSessions allowPrevious=AllowCrossSessions::No);
+    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId, AllowCrossSessions allowCrossSessions=AllowCrossSessions::No);
 
     //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.

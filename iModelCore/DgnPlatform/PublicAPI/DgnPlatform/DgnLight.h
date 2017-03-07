@@ -83,10 +83,10 @@ public:
     DgnLightId GetLightId() const { return DgnLightId(GetElementId().GetValue()); } //!< Returns the ID of this light definition
     Utf8String GetName() const { return GetCode().GetValue(); } //!< Returns the name of this light definition
     Utf8StringCR GetValue() const { return m_data.m_value; } //!< Returns the light data as a JSON string
-    Utf8StringCR GetDescr() const { return m_data.m_descr; } //!< Returns the description of this light definition
+    Utf8StringCR GetDescription() const { return m_data.m_descr; } //!< Returns the description of this light definition
 
     void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Set the light data as a JSON string
-    void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description of this light definition
+    void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description of this light definition
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightDefinition); } //!< Returns the class ID used for light definitions
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Return the class ID used for light definitions

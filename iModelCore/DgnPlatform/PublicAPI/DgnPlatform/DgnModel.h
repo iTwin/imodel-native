@@ -129,7 +129,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     //! @see DgnModel::AddAppData
     //=======================================================================================
     struct AppData : RefCountedBase
-        {
+    {
         //! A unique Key to identify each subclass of AppData.
         struct Key : NonCopyableClass {};
 
@@ -160,11 +160,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     //=======================================================================================
     struct CreateParams
     {
-        DgnDbR              m_dgndb;
-        DgnClassId          m_classId;
-        DgnElementId        m_modeledElementId;
-        bool                m_inGuiList;
-        bool                m_isTemplate = false;
+        DgnDbR m_dgndb;
+        DgnClassId m_classId;
+        DgnElementId  m_modeledElementId;
+        bool m_inGuiList;
+        bool m_isTemplate = false;
 
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
@@ -577,7 +577,6 @@ public:
     //! @param[in] newModeledElementId The DgnElementId of the element for the new DgnModel to model.
     //! @see Import
     DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId);
-
 
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
     //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 

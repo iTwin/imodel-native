@@ -1,14 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: TilePublisher/lib/CesiumPublisher.h $
+|     $Source: PublicAPI/TilePublisher/CesiumPublisher.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "TilePublisher.h"
+//__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
+#include <TilePublisher/TilePublisher.h>
+
+#define USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM using namespace BentleyApi::Dgn::TilePublish::Cesium;
+;
+BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE
 
 namespace Cesium
 {
@@ -159,5 +163,5 @@ public:
 
 } // namespace Cesium
 
-END_BENTLEY_DGN_TILE3D_NAMESPACE
+END_BENTLEY_TILEPUBLISHER_NAMESPACE
 

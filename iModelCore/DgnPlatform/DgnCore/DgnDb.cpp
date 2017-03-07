@@ -9,6 +9,10 @@
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
 
+#ifndef NDEBUG
+#define CHECK_NON_NAVIGATION_PROPERTY_API
+#endif
+
 static WCharCP s_dgndbExt   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,7 +43,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
@@ -58,7 +62,7 @@ ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettin
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSchemaImportToken const* DgnDb::GetECSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
+ECSchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -112,38 +116,11 @@ void DgnDb::_OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult checkIsConvertibleVersion(Db& db)
-    {
-    Utf8String versionString;
-    DbResult rc = db.QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
-    if (BE_SQLITE_ROW != rc)
-        return BE_SQLITE_ERROR_InvalidProfileVersion;
-
-    SchemaVersion sver(0,0,0,0);
-    sver.FromJson(versionString.c_str());
-    if (sver.GetMajor() < DGNDB_CURRENT_VERSION_Major)
-        return BE_SQLITE_ERROR_ProfileTooOld;
-
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened()
     {
-    DbResult rc = checkIsConvertibleVersion(*this);
-    if (BE_SQLITE_OK != rc)
-        {
-        // Short-circuit this function if the Db is too old or new such that we cannot continue;
-        //  The caller does the version check/upgrade after this _OnDbOpened logic finishes. 
-        //  If we have missing tables and columns, however, then we cannot even execute this _OnDbOpened logic.
-        //  *** NEEDS WORK: Do we need some kind of "pre" version upgrade?
-        //  In any case, we don't intend to upgrade from 05 to 06, so it's a moot point for now.
-        return rc;
-        }
+    DbResult rc;
 
     if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
         return rc;
@@ -201,43 +178,39 @@ RevisionManagerR DgnDb::Revisions() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas)
+DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
     {
-    return ImportSchemas(schemas, false);
+    return DoImportSchemas(schemas, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas, bool doNotFailSchemaValidationForLegacyIssues)
+DgnDbStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    return DoImportSchemas(schemas, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDb::DoImportSchemas(bvector<ECSchemaCP> const& schemas, bool isImportingFromV8)
     {
     if (IsReadonly())
         {
-        BeAssert(false && "Cannot import schema into a ReadOnly Db");
+        BeAssert(false && "Cannot import schemas into a ReadOnly Db");
         return DgnDbStatus::ReadOnly;
         }
 
-    if (Txns().HasChanges())
+    bvector<ECN::ECSchemaCP> schemasToImport;
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, isImportingFromV8);
+    if (result != BE_SQLITE_OK)
         {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return DgnDbStatus::TransactionActive;
+        BeAssert(false && "One or more schemas are incompatible.");
+        return DgnDbStatus::InvalidProfileVersion;
         }
 
-    bvector<ECSchemaCP> importSchemas;
-    for (ECSchemaCP schema : schemas)
-        {
-        bool needsImport;
-        if (!ValidateSchemaForImport(needsImport, *schema))
-            {
-            BeAssert(false && "One or more schemas are incompatible");
-            return DgnDbStatus::InvalidSchemaVersion;
-            }
-
-        if (needsImport)
-            importSchemas.push_back(schema);
-        }
-
-    if (importSchemas.empty())
+    if (schemasToImport.empty())
         return DgnDbStatus::Success;
 
     if (RepositoryStatus::Success != BriefcaseManager().LockSchemas().Result())
@@ -245,8 +218,8 @@ DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas, bool doNotFailSche
         BeAssert(false && "Unable to obtain the schema lock");
         return DgnDbStatus::LockNotHeld;
         }
-
-    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(importSchemas, doNotFailSchemaValidationForLegacyIssues, GetECSchemaImportToken()))
+    
+    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(schemasToImport, isImportingFromV8, GetSchemaImportToken()))
         {
         DbResult result = AbandonChanges();
         BeAssert(result == BE_SQLITE_OK);
@@ -258,51 +231,86 @@ DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> schemas, bool doNotFailSche
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Validates the application's ec schemas against those found in the BIM, 
+* and returns a status corresponding to the worst read/write violation.  
 * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDb::ValidateSchemaForImport(bool& needsImport, ECSchemaCR appSchema) const
+DbResult DgnDb::ValidateSchemas(bvector<ECSchemaCP> const& schemas) const
     {
-    ECSchemaCP bimSchema = Schemas().GetECSchema(appSchema.GetName().c_str(), false);
-    if (!bimSchema)
+    DbResult result = BE_SQLITE_OK;
+    for (ECSchemaCP appSchema : schemas)
         {
-        LOG.infov("Importing schema %s: Schema wasn't found in the BIM, and needs to be imported", appSchema.GetSchemaKey().GetName().c_str());
-        needsImport = true; // Application needs to import the schema to the BIM
-        return true;
+        SchemaKeyCR appSchemaKey = appSchema->GetSchemaKey();
+
+        ECSchemaCP bimSchema = Schemas().GetECSchema(appSchemaKey.GetName().c_str(), false);
+        if (!bimSchema)
+            continue;
+     
+        SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
+
+        if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead())
+            return BE_SQLITE_ERROR_SchemaIncompatible;
+
+        if (IsReadonly())
+            continue;
+
+        if (appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
+            return BE_SQLITE_ERROR_SchemaIncompatible;
+
+        if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite())
+            {
+            result = BE_SQLITE_ERROR_SchemaUpgradeRequired;
+            continue; // It could get worse!
+            }
+
+        if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
+            {
+            result = BE_SQLITE_ERROR_SchemaUpgradeRecommended;
+            continue; // It could get worse!
+            }
         }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
+    {
+    importSchemas.clear();
+
+    for (ECSchemaCP appSchema : schemas)
+        {
+        SchemaKeyCR appSchemaKey = appSchema->GetSchemaKey();
+
+        ECSchemaCP bimSchema = Schemas().GetECSchema(appSchemaKey.GetName().c_str(), false);
+        if (!bimSchema)
+            {
+            importSchemas.push_back(appSchema);
+            continue;
+            }
         
-    SchemaKeyCR appSchemaKey = appSchema.GetSchemaKey();
-    SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
+        SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
 
-    if (appSchemaKey.Matches(bimSchemaKey, SchemaMatchType::Identical)) // Check sum is set and exactly matches, *OR* it's not set but all version numbers exactly match
-        {
-        LOG.infov("Importing schema %s: Versions (and content) in the application and BIM are identical, and need not be re-imported.", appSchemaKey.GetName().c_str());
-        needsImport = false;
-        return true;
+        if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead() || appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
+            {
+            BeAssert(false);
+            return BE_SQLITE_ERROR_SchemaIncompatible;
+            }
+        
+        if (appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() == bimSchemaKey.GetVersionMinor())
+            {
+            if (isImportingFromV8)
+                importSchemas.push_back(appSchema);
+            continue;
+            }
+
+        if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
+            importSchemas.push_back(appSchema);
         }
 
-    if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead())
-        {
-        LOG.errorv("Importing schema %s: Versions in the application and the BIM are read incompatible, and cannot be imported.", appSchemaKey.GetName().c_str());
-        return false;
-        }
-
-    if (appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
-        {
-        LOG.errorv("Importing schema %s: Versions in the application and the BIM are write incompatible (the BIM is newer), and cannot be re-imported.", appSchemaKey.GetName().c_str());
-        return false;
-        }
-
-    if (appSchemaKey.GetVersionWrite() >= bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() >= bimSchemaKey.GetVersionMinor())
-        {
-        LOG.warningv("Importing schema %s: Version in the application is newer than the one in the BIM, or their contents are not the same, and needs to be re-imported.", appSchemaKey.GetName().c_str());
-        needsImport = true;
-        return true;
-        }
-    
-    BeAssert(appSchemaKey.GetVersionMinor() < bimSchemaKey.GetVersionMinor());
-    LOG.warningv("Importing schema %s: Version in the application has an older minor version than the one in the BIM, but cannot (and need not) be re-imported.", appSchemaKey.GetName().c_str());
-    needsImport = false;
-    return true;
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -321,12 +329,43 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
     return m_ecsqlCache.GetPreparedStatement(*this, ecsql, writeToken);
     }
 
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      03/17
+//--------------+---------------+---------------+---------------+---------------+------
+bool isNavigationPropertyOf(ECN::ECRelationshipClassCR relClass, DgnDbR db, BeSQLite::EC::ECInstanceId instid)
+    {
+    auto el = db.Elements().GetElement(DgnElementId(instid.GetValue()));
+    if (!el.IsValid())
+        return false;
+    auto eclass = el->GetElementClass();
+    for (auto ecprop : eclass->GetProperties())
+        {
+        auto navprop = ecprop->GetAsNavigationProperty();
+        if (navprop != nullptr)
+            {
+            if (navprop->GetRelationshipClass() == &relClass)
+                return true;
+            }
+        }
+    return false;
+    }
+#endif
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+    if (isNavigationPropertyOf(relClass, *this, sourceId) || isNavigationPropertyOf(relClass, *this, targetId))
+        {
+        BeAssert(false && "this API is for non-navigation properties only");
+        return BE_SQLITE_ERROR;
+        }
+#endif
+
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, relClass, GetECCrudWriteToken());
     if (!inserter.IsValid())
@@ -338,7 +377,7 @@ DbResult DgnDb::InsertRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECR
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::UpdateRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -355,7 +394,7 @@ DbResult DgnDb::UpdateRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECIn
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteRelationship(EC::ECInstanceKeyCR key)
+DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -375,7 +414,7 @@ DbResult DgnDb::DeleteRelationship(EC::ECInstanceKeyCR key)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
+DbResult DgnDb::DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {

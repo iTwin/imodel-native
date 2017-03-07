@@ -32,7 +32,7 @@ DgnDbStatus viewControllerEdit(DgnViewportR viewport, DgnModelId newModel, DgnCa
     controller.GetViewDefinition().LookAtVolume(controller.GetDgnDb().GeoLocation().GetProjectExtents());
     
     // If this is a camera view, then you can also use specialized Camera functions
-    auto cameraView = controller.GetViewDefinition().ToCameraViewP();
+    auto cameraView = controller.GetViewDefinition().ToView3dP();
     if (nullptr == cameraView)
         return DgnDbStatus::BadRequest;
 

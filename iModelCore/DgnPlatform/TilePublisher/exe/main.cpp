@@ -9,7 +9,7 @@
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
-#include <DgnPlatform/TilePublisher/CesiumPublisher.h>
+#include <TilePublisher/CesiumPublisher.h>
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -17,8 +17,8 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
-using namespace BentleyApi::Dgn::Render::Tile3d;
-using namespace BentleyApi::Dgn::Render::Tile3d::Cesium;
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16

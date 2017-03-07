@@ -35,8 +35,7 @@ Point2d         m_repetitions;  // grid size for fixed number of repetitions (0,
 Point2d         m_originOffset; // grid position relative to acs origin (0,0 for lower left)...
 uint32_t        m_gridPerRef;   // grid dot per reference grid line...
 uint32_t        m_unused;       // Unused pad bytes...
-double          m_uorPerGrid;   // grid x size spacing in uors...
-double          m_ratio;        // grid x/y spacing ratio...
+DPoint2d        m_spacing;      // grid x/y spacing in meters...
 
 ACSGrid() {Init();};
 
@@ -46,10 +45,8 @@ ACSGrid() {Init();};
 void Init()
     {
     m_gridPerRef = 10;
-    m_uorPerGrid = 0.0;
-    m_ratio      = 1.0;
-    m_unused     = 0;
-
+    m_unused = 0;
+    m_spacing.x = m_spacing.y = 0.0;
     m_repetitions.x = m_repetitions.y = 0;
     m_originOffset.x = m_originOffset.y = 0;
     }
@@ -75,16 +72,13 @@ bool IsEqual(ACSGrid const& otherData) const
     if (m_originOffset.x != otherData.m_originOffset.x || m_originOffset.y != otherData.m_originOffset.y)
         return false;
 
-    if (m_uorPerGrid != otherData.m_uorPerGrid)
+    if (m_spacing.x != otherData.m_spacing.x || m_spacing.y != otherData.m_spacing.y)
         return false;
 
     if (m_unused != otherData.m_unused)
         return false;
 
     if (m_gridPerRef != otherData.m_gridPerRef)
-        return false;
-
-    if (m_ratio != otherData.m_ratio)
         return false;
 
     return true;
@@ -104,7 +98,7 @@ ACSFlags        m_flags;        // option flags
 DPoint3d        m_origin;       // origin of acs
 double          m_scale;        // scale of acs
 RotMatrix       m_rotation;     // rotation of acs
-ACSGrid         m_grid;         // New for Vancouver - ACS grid settings...
+ACSGrid         m_grid;         // ACS grid settings...
 
 ACSData() {Init();}
 
@@ -343,18 +337,17 @@ virtual ACSFlags    /*AuxCoordSys::*/_GetFlags() const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) override
+virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) override
     {
     m_acsData.m_grid.Init();
 
-    if (0.0 == uorPerGrid || 0 == gridReps.x || 0 == gridReps.y)
+    if (0.0 == spacing.x || 0.0 == spacing.y || 0 == gridReps.x || 0 == gridReps.y)
         return ERROR;
 
     m_acsData.m_grid.m_repetitions  = gridReps;
     m_acsData.m_grid.m_originOffset = gridOffset;
-    m_acsData.m_grid.m_uorPerGrid   = uorPerGrid;
+    m_acsData.m_grid.m_spacing      = spacing;
     m_acsData.m_grid.m_gridPerRef   = gridPerRef;
-    m_acsData.m_grid.m_ratio        = gridRatio;
 
     return SUCCESS;
     }
@@ -362,15 +355,14 @@ virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Po
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const override
+virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const override
     {
     gridReps   = m_acsData.m_grid.m_repetitions;
     gridOffset = m_acsData.m_grid.m_originOffset;
-    uorPerGrid = m_acsData.m_grid.m_uorPerGrid;
+    spacing    = m_acsData.m_grid.m_spacing;
     gridPerRef = m_acsData.m_grid.m_gridPerRef;
-    gridRatio  = m_acsData.m_grid.m_ratio;
 
-    return (0.0 == uorPerGrid || 0 == gridReps.x || 0 == gridReps.y) ? ERROR : SUCCESS;
+    return (0.0 == spacing.x || 0.0 == spacing.y || 0 == gridReps.x || 0 == gridReps.y) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -655,7 +647,7 @@ DirectionFormatterR directionFormatter
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const override
     {
-    // Called for active ACS when tcb->gridOrientation is GridOrientationType::ACS.
+    // Called for active ACS when grid orientation is GridOrientationType::ACS.
     DPoint3d    origin;
     RotMatrix   rMatrix;
 
@@ -667,7 +659,7 @@ virtual void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const overr
     uint32_t    gridPerRef;
 
     // Adjust origin for grid offset if we are displaying a fixed sized grid plane...
-    if (SUCCESS == GetGridSpacing(spacing, gridPerRef, gridReps, gridOffset, *context.GetViewport()) && (0 != gridOffset.x || 0 != gridOffset.y))
+    if (GetGridSpacing(spacing, gridPerRef, gridReps, gridOffset, *context.GetViewport()) && (0 != gridOffset.x || 0 != gridOffset.y))
         {
         DVec3d  xVec, yVec;
 
@@ -688,13 +680,17 @@ virtual void    /*AuxCoordSys::*/_DrawGrid(DecorateContextR context) const overr
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    /*AuxCoordSys::*/_PointToGrid(DgnViewportR viewport, DPoint3dR point) const override
     {
+    uint32_t    gridPerRef;
+    Point2d     gridReps, gridOffset;
+    DPoint2d    roundingDistance;
     DPoint3d    origin;
     RotMatrix   rMatrix;
 
     GetOrigin(origin);
     GetRotation(rMatrix);
+    GetGridSpacing(roundingDistance, gridPerRef, gridReps, gridOffset, viewport);
 
-    viewport.GetViewController().PointToStandardGrid(viewport, point, origin, rMatrix);
+    viewport.GetViewController().PointToStandardGrid(point, origin, rMatrix, roundingDistance);
     }
 
 public:
@@ -805,47 +801,25 @@ static AuxCoordSys* /*AuxCoordSys::*/CreateNew(ACSData& acsData)
     return new AuxCoordSys(acsData);
     }
 
-
 }; // AuxCoordSys
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          IAuxCoordSys::GetGridScaleFactor(DgnViewportR vp) const
+bool            IAuxCoordSys::GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const
     {
-    double      scaleFactor = 1.0;
-
-#ifdef WIP_V10_MODEL_ACS
-    // Apply ACS scale to grid if ACS Context Lock active...
-    if (TO_BOOL (vp.GetTargetModel()->GetModelFlag(MODELFLAG_ACS_LOCK)))
-        scaleFactor *= GetScale();
-#endif
-
-    return scaleFactor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IAuxCoordSys::GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const
-    {
-    double      uorPerGrid, gridRatio;
-
-    if (SUCCESS != _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef))
+    if (SUCCESS != _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef))
         {
-        vp.GetViewController()._GetGridSpacing(vp, spacing, gridPerRef); // Inherit view controller settings if not specified...
+        vp.GetViewController()._GetGridSpacing(spacing, gridPerRef); // Inherit view controller settings if not specified...
 
-        return ERROR;
+        return false;
         }
 
-    uorPerGrid *= GetGridScaleFactor(vp);
+    // Apply ACS scale to grid if ACS Context Lock active even if grid isn't aligned to ACS...
+    if (DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())
+        spacing.Scale(spacing, GetScale());
 
-    spacing.x = uorPerGrid;
-    spacing.y = spacing.x * gridRatio;
-
-    spacing.Scale(spacing, (0 == gridPerRef) ? 1.0 : (double) gridPerRef);
-
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1193,6 +1167,30 @@ IACSManager::IACSManager()
     m_inhibitCurrentACSDisplay  = false;
     m_extenders = nullptr;
     m_listeners = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsPointAdjustmentRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsPointAdjustmentRequired();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsSnapAdjustmentRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/11
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IACSManager::IsContextRotationRequired(DgnViewportR vp)
+    {
+    return vp.GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());
     }
 
 /*---------------------------------------------------------------------------------**//**

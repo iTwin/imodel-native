@@ -78,7 +78,7 @@ struct DgnScriptContext : BeJsContext
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems

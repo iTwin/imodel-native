@@ -7,11 +7,10 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-baseDir         = $(_MakeFilePath)
+baseDir         = $(SrcRoot)DgnPlatform/
 
-$(BuildContext)Delivery/TilePublisher/TilePublisher.h : $(baseDir)TilePublisher.h
-    $(LinkFirstDepToFirstTarget)
+TilePublisherAPISrc = $(baseDir)PublicAPI/TilePublisher
 
-$(BuildContext)Delivery/TilePublisher/CesiumPublisher.h : $(baseDir)CesiumPublisher.h
-    $(LinkFirstDepToFirstTarget)
+always:
+    ~linkdir "$(BuildContext)PublicAPI/TilePublisher=$(TilePublisherAPISrc)"
 

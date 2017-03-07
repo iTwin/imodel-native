@@ -63,28 +63,47 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save a changeset for the current Txn into the DGN_TABLE_Txns table in the DgnDb. This compresses the changeset.
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult TxnManager::SaveSchemaChanges(BeSQLite::SchemaChangeSetCR schemaChangeSet, Utf8CP operation)
+    { 
+    return SaveChanges(schemaChangeSet, operation, true /*=isSchemaChange*/); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult TxnManager::SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation) 
+    { 
+    return SaveChanges(changeSet, operation, false /*=isSchemaChange*/); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save an array of bytes representing a change for the current Txn into the DGN_TABLE_Txns table 
+* in the DgnDb. This also compresses the changes.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
+DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, bool isSchemaChange)
     {
-    BeAssert(0 != changeset.GetSize()); // See ReadChangeSet for a similar assert
+    BeAssert(0 != changeBytes.GetSize());
 
-    enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,Change=5};
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,Change) VALUES(?,?,?,?,?)");
+    enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,IsSchemaChange=5,Change=6};
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,IsSchemaChange,Change) VALUES(?,?,?,?,?,?)");
 
     stmt->BindInt64(Column::Id, m_curr.GetValue());
     stmt->BindInt(Column::Deleted,  false);
     if (nullptr != operation)
         stmt->BindText(Column::Operation, operation, Statement::MakeCopy::No);
 
+    stmt->BindBoolean(Column::IsSchemaChange, isSchemaChange);
+
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
     stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
 
     m_snappyTo.Init();
-    ChangesBlobHeader header(changeset.GetSize());
+    ChangesBlobHeader header(changeBytes.GetSize());
     m_snappyTo.Write((Byte const*) &header, sizeof(header));
-    m_snappyTo.Write((Byte const*) changeset.GetData(), changeset.GetSize());
+    m_snappyTo.Write((Byte const*) changeBytes.GetData(), changeBytes.GetSize());
 
     uint32_t zipSize = m_snappyTo.GetCompressedSize();
     if (0 < zipSize)
@@ -128,6 +147,21 @@ Utf8String TxnManager::GetTxnDescription(TxnId rowid) const
 
     auto rc = stmt->Step();
     return rc != BE_SQLITE_ROW ? "" : stmt->GetValueText(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Returns true if it's a transaction representing a schema change
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::IsSchemaChangeTxn(TxnId rowid) const
+    {
+    CachedStatementPtr stmt = GetTxnStatement("SELECT IsSchemaChange FROM " DGN_TABLE_Txns " WHERE Id=?");
+    stmt->BindInt64(1, rowid.GetValue());
+
+    auto rc = stmt->Step();
+    BeAssert(rc == BE_SQLITE_ROW);
+
+    return stmt->GetValueBoolean(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,6 +376,39 @@ TxnManager::TxnId TxnManager::QueryNextTxnId(TxnId curr) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnId TxnManager::GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const
+    {
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Id FROM " DGN_TABLE_Txns " WHERE Id<? AND Id>=? AND IsSchemaChange=1 ORDER BY Id DESC LIMIT 1");
+    stmt->BindInt64(1, GetCurrentTxnId().GetValue());
+    stmt->BindInt64(2, (allowCrossSessions == AllowCrossSessions::Yes) ? 0 : GetSessionStartId().GetValue());
+
+    DbResult rc = stmt->Step();
+    
+    TxnId lastUndoableId;
+    if (rc == BE_SQLITE_ROW)
+        lastUndoableId = QueryNextTxnId(TxnId(stmt->GetValueInt64(0)));
+    else
+        {
+        if (allowCrossSessions == AllowCrossSessions::No)
+            return GetSessionStartId();
+
+        lastUndoableId = QueryNextTxnId(TxnId(0));
+        }
+
+    return lastUndoableId.IsValid() ? lastUndoableId : GetCurrentTxnId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TxnManager::IsUndoPossible(AllowCrossSessions allowCrossSessions) const
+    {
+    return GetLastUndoableTxnId(allowCrossSessions) < GetCurrentTxnId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::BeginMultiTxnOperation()
@@ -437,17 +504,20 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 * on the inverted changeset to allow TxnTables to react to the fact that the changes were abandoned.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeSet)
+ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
     {
     DbResult rc = GetDgnDb().ExecuteSql("ROLLBACK");
     if (rc != BE_SQLITE_OK)
         return OnCommitStatus::Abort;
 
-    changeSet.Invert();
-    
-    m_action = TxnAction::Abandon;
-    OnChangesApplied(changeSet);
-    m_action = TxnAction::None;
+    if (changeset.GetSize() > 0)
+        {
+        changeset.Invert();
+
+        m_action = TxnAction::Abandon;
+        OnChangesApplied(changeset);
+		m_action = TxnAction::None;
+        }
 
     return OnCommitStatus::Completed;
     }
@@ -545,11 +615,25 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     BeAssert(!InDynamicTxn() && "How is this being invoked when we have dynamic change trackers on the stack?");
     CancelDynamics();
 
-    if (!HasChanges())
+    SchemaChangeSet schemaChanges;
+    if (HasSchemaChanges())
+        schemaChanges = GetSchemaChanges();
+
+    // Create a ChangeSet from modified data records. We'll use this to drive indirect changes.
+    UndoChangeSet dataChangeSet;
+    if (HasDataChanges())
+        {
+        DbResult result = dataChangeSet.FromChangeTrack(*this); // Note: Changes to data in the change set may not make actual records in the Db.
+        BeAssert(BE_SQLITE_OK == result);
+        }
+
+    if (dataChangeSet.GetSize() == 0 && schemaChanges.IsEmpty())
         {
         // DbFile::StopSavepoint() used to check HasChanges() before invoking us here.
         // It no longer does, because we may have dynamic txns to revert even if TxnManager has no changes of its own
-        // That's taken care of above, so we're finished
+        // That's taken care of in the above call to CancelDynamics(), so we're finished
+        if (HasDataChanges())
+            Restart();
         return OnCommitStatus::Continue;
         }
 
@@ -559,74 +643,90 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         return OnCommitStatus::Abort;
         }
 
-    DeleteReversedTxns(); // these Txns are no longer reachable.
+    Restart();  // Clear the change tracker since we have copied any changes to change sets
 
-    // Create changeset from modified tables. We'll use this changeset to drive indirect changes.
-    UndoChangeSet changeset;
-    auto rc = changeset.FromChangeTrack(*this);
-    UNUSED_VARIABLE(rc);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    if (0 == changeset.GetSize())
-        {
-        // It turns out that the changes in the changeset make no actual change in the Db. 
-        // So there's nothing to validate or to save in Undo.
-        Restart();
-        return OnCommitStatus::Continue;
-        }
-
-    BeAssert(0 != changeset.GetSize());
-    
-    Restart();  // clear the change tracker, since we have captured all the changes in the changeset
+    DeleteReversedTxns(); // these Txns are no longer reachable
 
     if (!isCommit)
-        return CancelChanges(changeset);
+        return CancelChanges(dataChangeSet);
 
-    OnBeginValidate();
-
-    Changes changes(changeset);
-    AddChanges(changes);
-
-    BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
-
-    if (HasChanges()) // did we have any indirect changes?
+    if (dataChangeSet.GetSize() > 0)
         {
-        UndoChangeSet indirectChanges;
-        indirectChanges.FromChangeTrack(*this);
-        Restart();
-        changeset.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single changeset
+        OnBeginValidate();
+
+        Changes changes(dataChangeSet);
+        AddChanges(changes);
+
+        BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
+
+        if (HasDataChanges()) // did we have any indirect data changes captured in the tracker?
+            {
+            UndoChangeSet indirectChanges;
+            indirectChanges.FromChangeTrack(*this);
+            Restart();
+            dataChangeSet.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single dataChangeSet
+            }
+
+        if (SUCCESS != status)
+            {
+            LOG.errorv("Cancelling txn due to fatal validation error.");
+            OnEndValidate();
+            return CancelChanges(dataChangeSet); // roll back entire txn
+            }
+        }
+    
+    if (!schemaChanges.IsEmpty())
+        {
+        DbResult result = SaveSchemaChanges(schemaChanges, operation);
+        if (result != BE_SQLITE_DONE)
+            return OnCommitStatus::Abort;
         }
 
-    if (SUCCESS != status)
+    if (dataChangeSet.GetSize() > 0)
         {
-        LOG.errorv("Cancelling txn due to fatal validation error.");
+        DbResult result = SaveDataChanges(dataChangeSet, operation); // save changeSet into DgnDb itself, along with the description of the operation we're performing
+        if (result != BE_SQLITE_DONE)
+            return OnCommitStatus::Abort;
+
+        // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+        T_HOST.GetTxnAdmin()._OnCommit(*this);
+
         OnEndValidate();
-        return CancelChanges(changeset); // roll back entire txn
-        }   
-
-    DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
-    if (result != BE_SQLITE_DONE)
-        return OnCommitStatus::Abort;
-
-    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-    T_HOST.GetTxnAdmin()._OnCommit(*this);
+        }
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
-    OnEndValidate();
     return OnCommitStatus::Continue;
     }
 
 /*---------------------------------------------------------------------------------**//**
- * Merge changes from a changeStream that originated in an external repository
- * @bsimethod                                Ramanujam.Raman                    10/2015
+ * @bsimethod                                Ramanujam.Raman                    01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
+RevisionStatus TxnManager::MergeSchemaChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
     {
-    BeAssert(!InDynamicTxn());
-    
-    RevisionChangesFileReader changeStream(revision.GetRevisionChangesFile(), m_dgndb);
+    SchemaChangeSet schemaChanges;
+    DbResult result = changeStream.GetSchemaChanges(schemaChanges);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return RevisionStatus::MergeError;
+        }
 
+    if (schemaChanges.IsEmpty())
+        return RevisionStatus::Success;
+
+    result = ApplySchemaChangeSet(schemaChanges);
+    if (BE_SQLITE_OK != result)
+        return RevisionStatus::MergeError;
+
+    return RevisionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                Ramanujam.Raman                    01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream)
+    {
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge);
     if (result != BE_SQLITE_OK)
         {
@@ -636,8 +736,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     RevisionStatus status = RevisionStatus::Success;
     UndoChangeSet indirectChanges;
-
-    if (HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
+    if (HasDataChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
         {
         /*
          * We propagate changes (run dependency rules) ONLY if there are local changes.
@@ -650,6 +749,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
          *
          * Also see comments in RevisionChangesFileReader::_OnConflict()
          */
+
         OnBeginValidate();
 
         Changes changes(changeStream);
@@ -658,7 +758,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
         if (SUCCESS != PropagateChanges())
             status = RevisionStatus::MergePropagationError;
 
-        if (HasChanges())
+        if (HasDataChanges())
             {
             indirectChanges.FromChangeTrack(*this);
             Restart();
@@ -674,7 +774,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
                     mergeComment.append(revision.GetSummary());
                     }
 
-                result = SaveCurrentChange(indirectChanges, mergeComment.c_str());
+            result = SaveDataChanges(indirectChanges, mergeComment.c_str());
                 if (BE_SQLITE_DONE != result)
                     {
                     BeAssert(false);
@@ -704,7 +804,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
                 }
             }
         }
-        
+
     if (status != RevisionStatus::Success)
         {
         // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
@@ -777,6 +877,25 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * Merge changes from a changeStream that originated in an external repository
+ * @bsimethod                                Ramanujam.Raman                    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
+    {
+    BeAssert(!InDynamicTxn());
+    
+    BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
+
+    RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
+
+    RevisionStatus status = MergeSchemaChangesInRevision(revision, changeStream);
+    if (RevisionStatus::Success != status)
+        return status;
+
+    return MergeDataChangesInRevision(revision, changeStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -889,36 +1008,80 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::ApplySchemaChangeSet(SchemaChangeSetCR schemaChanges)
+    {
+    BeAssert(!schemaChanges.IsEmpty() && "SchemaChangeSet is empty");
+    bool wasTracking = EnableTracking(false);
+
+    DbResult result = m_dgndb.ExecuteSql(schemaChanges.ToString().c_str());
+    
+    EnableTracking(wasTracking);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::ReadSchemaChanges(BeSQLite::SchemaChangeSet& schemaChanges, TxnId rowId)
+    {
+    uint32_t sizeRead;
+    Byte* data = ReadChanges(sizeRead, rowId);
+    if (data == nullptr)
+        return;
+
+    schemaChanges.AddDDL((Utf8CP) data);
+    delete[] data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Changesets are stored as compressed blobs in the DGN_TABLE_Txns table. Read one by rowid.
 * If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction action)
+void TxnManager::ReadDataChanges(ChangeSet& dataChangeSet, TxnId rowId, TxnAction action)
+    {
+    uint32_t sizeRead;
+    Byte* data = ReadChanges(sizeRead, rowId);
+    if (data == nullptr)
+        return;
+
+    dataChangeSet.FromData(sizeRead, data, action == TxnAction::Reverse);
+    delete[] data;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Byte* TxnManager::ReadChanges(uint32_t& sizeRead, TxnId rowId)
     {
     if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue()))
         {
         BeAssert(false);
-        return;
+        return nullptr;
         }
 
     ChangesBlobHeader header(m_snappyFrom);
     if ((ChangesBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
         {
         BeAssert(false);
-        return;
+        return nullptr;
         }
 
-    ScopedArray<Byte, 8192> changesBlob(header.m_size);
-    uint32_t actuallyRead;
-    m_snappyFrom.ReadAndFinish(changesBlob.GetData(), header.m_size, actuallyRead);
+    Byte* data = new Byte[header.m_size];
 
-    if (actuallyRead != header.m_size)
+    m_snappyFrom.ReadAndFinish(data, header.m_size, sizeRead);
+
+    if (sizeRead != header.m_size)
         {
+        delete[] data;
         BeAssert(false);
-        return;
+        return nullptr;
         }
 
-    changeset.FromData(header.m_size, changesBlob.GetData(), action==TxnAction::Reverse);
+    sizeRead = header.m_size;
+    return data;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -928,14 +1091,16 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action)
     {
-    BeAssert(!HasChanges() && !InDynamicTxn());
-    BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyTxnChanges() if you don't want undo/redo notifications sent to TxnMonitors...
+    BeAssert(!HasDataChanges() && !InDynamicTxn());
+    BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
+    BeAssert(!IsSchemaChangeTxn(rowId));
 
     UndoChangeSet changeset;
-    ReadChangeSet(changeset, rowId, action);
+    ReadDataChanges(changeset, rowId, action);
 
     auto rc = ApplyChanges(changeset, action);
-    BeAssert(!HasChanges());
+    BeAssert(!HasDataChanges());
+
     if (BE_SQLITE_OK != rc)
         return;
 
@@ -995,7 +1160,7 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
+DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowCrossSessions)
     {
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
@@ -1003,23 +1168,29 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowPrevious)
         return DgnDbStatus::IsCreatingRevision;
         }
 
-    if (!pos.IsValid() || (allowPrevious == AllowCrossSessions::No && !PrepareForUndo()))
+    TxnId lastId = GetCurrentTxnId();
+    if (!pos.IsValid() || pos >= lastId)
+        {
+        T_HOST.GetTxnAdmin()._OnNothingToUndo();
         return DgnDbStatus::NothingToUndo;
+        }
 
-    TxnId last = GetCurrentTxnId();
-    if (pos >= last)
-        return DgnDbStatus::NothingToUndo;
+    TxnId lastUndoableId = GetLastUndoableTxnId(allowCrossSessions);
+    if (lastUndoableId >= lastId || pos < lastUndoableId)
+        return DgnDbStatus::CannotUndo;
 
-    TxnRange range(pos, last);
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+
+    TxnRange range(pos, lastId);
     return ReverseActions(range, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::CancelTo(TxnId pos, AllowCrossSessions allowPrevious)
+DgnDbStatus TxnManager::CancelTo(TxnId pos, AllowCrossSessions allowCrossSessions)
     {
-    DgnDbStatus status = ReverseTo(pos, allowPrevious);
+    DgnDbStatus status = ReverseTo(pos, allowCrossSessions);
     if (DgnDbStatus::Success == status)
         DeleteReversedTxns();
 
@@ -1046,24 +1217,9 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool showMsg)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::PrepareForUndo()
-    {
-    if (IsUndoPossible())
-        {
-        T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
-        return true;
-        }
-
-    T_HOST.GetTxnAdmin()._OnNothingToUndo();
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrevious)
+DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowCrossSessions)
     {
     if (m_dgndb.Revisions().IsCreatingRevision())
         {
@@ -1071,31 +1227,31 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrev
         return DgnDbStatus::IsCreatingRevision;
         }
 
-    if (allowPrevious == AllowCrossSessions::No && !PrepareForUndo())
-        return DgnDbStatus::NothingToUndo;
-
-    TxnId last = GetCurrentTxnId();
-    TxnId first = last;
-
-    while (numActions > 0)
+    TxnId lastId = GetCurrentTxnId();
+    TxnId lastUndoableId = GetLastUndoableTxnId(allowCrossSessions);
+    
+    TxnId firstId = lastId;
+    while (numActions > 0 && firstId > lastUndoableId)
         {
-        TxnId prev = QueryPreviousTxnId(first);
-        if (!prev.IsValid())
+        TxnId prevId = QueryPreviousTxnId(firstId);
+        if (!prevId.IsValid())
             break;
 
-        if (!IsMultiTxnMember(prev))
+        if (!IsMultiTxnMember(prevId))
             --numActions;
 
-        first = prev;
+        firstId = prevId;
         }
 
-    if ((allowPrevious != AllowCrossSessions::Yes) && first<GetSessionStartId())
-        first = GetSessionStartId();
-
-    if (first == last)
+    if (firstId == lastId)
+        {
+        T_HOST.GetTxnAdmin()._OnNothingToUndo();
         return DgnDbStatus::NothingToUndo;
+        }
 
-    TxnRange range(first, last);
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+
+    TxnRange range(firstId, lastId);
     return ReverseActions(range, true);
     }
 
@@ -1111,15 +1267,18 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
         return DgnDbStatus::IsCreatingRevision;
         }
 
-    if (!PrepareForUndo())
-        return DgnDbStatus::NothingToUndo;
+    TxnId lastId = GetCurrentTxnId();
+    TxnId lastUndoableId = GetLastUndoableTxnId(AllowCrossSessions::No);
 
-    if (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll())
+    if (lastUndoableId >= lastId || (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll()))
         {
+        T_HOST.GetTxnAdmin()._OnNothingToUndo();
         return DgnDbStatus::NothingToUndo;
         }
 
-    TxnRange range(GetSessionStartId(), GetCurrentTxnId());
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+
+    TxnRange range(lastUndoableId, GetCurrentTxnId());
     return ReverseActions(range, true);
     }
 
@@ -1130,6 +1289,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
 void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     {
     BeAssert(m_curr == revTxn.GetFirst());
+    BeAssert(!m_reversedTxn.empty());
 
     if (HasChanges() || InDynamicTxn())
         m_dgndb.AbandonChanges();
@@ -1185,7 +1345,7 @@ DgnDbStatus TxnManager::ReinstateTxn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TxnManager::GetUndoString()
     {
-    if (!IsUndoPossible())
+    if (!IsUndoPossible(AllowCrossSessions::No))
         return "";
 
     return GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId()));
@@ -1265,8 +1425,14 @@ BentleyStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId s
         {
         BeAssert(currTxnId.IsValid());
 
+        if (IsSchemaChangeTxn(currTxnId))
+            {
+            BeAssert(false && "Cannot create a change summary if there are schema changes");
+            return ERROR;
+            }
+
         UndoChangeSet sqlChangeSet;
-        ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
+        ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None);
 
         result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
         if (result != BE_SQLITE_OK)
@@ -2034,7 +2200,7 @@ void TxnManager::EndDynamicOperation(DynamicTxnProcessor* processor)
         }
 
     auto tracker = m_dynamicTxns.back();
-    if (tracker->HasChanges())
+    if (tracker->HasDataChanges())
         {
         UndoChangeSet changeset;
         auto rc = changeset.FromChangeTrack(*tracker);
@@ -2052,7 +2218,7 @@ void TxnManager::EndDynamicOperation(DynamicTxnProcessor* processor)
 
             DoPropagateChanges(*tracker);
 
-            if (tracker->HasChanges())
+            if (tracker->HasDataChanges())
                 {
                 UndoChangeSet indirectChanges;
                 indirectChanges.FromChangeTrack(*tracker);

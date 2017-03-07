@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -73,10 +73,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 
     if (info.options.testDomain)
-        {
-        db->SaveChanges();
         EXPECT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
-        }
         
     db->SaveSettings();
     db->SaveChanges();

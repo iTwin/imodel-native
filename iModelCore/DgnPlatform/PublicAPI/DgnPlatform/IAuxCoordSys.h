@@ -128,12 +128,12 @@ DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, R
 DGNPLATFORM_EXPORT void SendEvent(IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
 DGNPLATFORM_EXPORT void DisplayCurrent(DecorateContextR, bool isCursorView);
 
-DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
-DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
+DGNPLATFORM_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
+DGNPLATFORM_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
+DGNPLATFORM_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
 
-DGNVIEW_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
+DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS);
+DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -221,8 +221,8 @@ protected:
     virtual void _DrawGrid(DecorateContextR context) const = 0;
     virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const = 0;
 
-    virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return ERROR;}
-    virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return ERROR;}
+    virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return ERROR;}
+    virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return ERROR;}
 
     // these methods are called only internally, so they don't have corresponding nonvirtual public wrappers.
     DGNPLATFORM_EXPORT virtual bool _IsOriginInView(DPoint3dR drawOrigin, DgnViewportCR, bool adjustOrigin) const;
@@ -240,12 +240,10 @@ public:
     // Only for ACS's of type ACS_TYPE_GeoCoordinate is the rotation matrix position dependent, don't publish this yet.
     RotMatrixR GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const {return _GetRotation(pRot, pPosition);}
 
-    // Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
-    double GetGridScaleFactor(DgnViewportR vp) const;
-    StatusInt GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const;
-
-    StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
-    StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
+    // NOTE: Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
+    bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...
+    StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
+    StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
 
     //! Return a copy of the ACS object.
     IAuxCoordSysPtr Clone() const {return _Clone();}

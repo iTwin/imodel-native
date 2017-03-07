@@ -36,6 +36,7 @@
 #define BIS_CODESPEC_Session                        BIS_CODESPEC(BIS_CLASS_Session)
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
 #define BIS_CODESPEC_SpatialCategory                BIS_CODESPEC(BIS_CLASS_SpatialCategory)
+#define BIS_CODESPEC_SpatialLocationType            BIS_CODESPEC(BIS_CLASS_SpatialLocationType)
 #define BIS_CODESPEC_SubCategory                    BIS_CODESPEC(BIS_CLASS_SubCategory)
 #define BIS_CODESPEC_Subject                        BIS_CODESPEC(BIS_CLASS_Subject)
 #define BIS_CODESPEC_TextAnnotationSeed             BIS_CODESPEC(BIS_CLASS_TextAnnotationSeed)
