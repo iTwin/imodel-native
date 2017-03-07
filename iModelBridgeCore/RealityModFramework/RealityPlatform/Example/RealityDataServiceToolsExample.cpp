@@ -289,8 +289,7 @@ void ListCmd()
 
         size_t EnterpriseSizeKB(0);
         do {
-            if (RequestStatus::SUCCESS != status)
-                exit(-1);
+            enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
             for (SpatialEntityPtr pData : enterpriseVec)
                 {
@@ -329,7 +328,7 @@ void ListCmd()
 
             enterpriseVec.clear();
             }
-        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
+        while (RequestStatus::SUCCESS == status);
         std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 

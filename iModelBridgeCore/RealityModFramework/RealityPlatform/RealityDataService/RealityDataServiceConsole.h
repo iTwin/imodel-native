@@ -18,35 +18,34 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+struct NodeList
+    {
+    NodeList() : parentNode(nullptr), childNode(nullptr)
+    {}
+
+    NodeList *parentNode;
+    NavNode node;
+    NodeList *childNode;
+    };
+
 enum class Command
     {
     Quit,
     Retry,
     Error,
+    Cancel,
     Help,
     ChoiceIndex,
     ChoiceValue,
     SetServer,
     List,
     ListAll,
+    Details,
     ChangeDir,
     ChangeDirIndex,
+    Stat,
     AllGood
     };
-
-/*struct ConsoleFunction;
-
-struct ConsoleManager
-    {
-    void InterpretInput(Utf8String input);
-
-    ConsoleFunction* func;
-    };
-
-struct ConsoleFunction
-    {
-
-    };*/
 
 struct RealityDataConsole
     {
@@ -62,12 +61,16 @@ public:
     Command List();
     Command ChangeDir(Utf8String newNode);
     Command ChangeDir(uint64_t choice);
+    Command EnterpriseStat();
+    Command Download();
+    Command Details();
 
 private:    
     WSGServer            m_server;
     bvector<NavNode>     m_serverNodes;
     bvector<Utf8String>  m_machineRepos;
-    Utf8String           m_currentNode;
+    //Utf8String           m_currentNode;
+    NodeList*            m_currentNode;
     };
 
 
