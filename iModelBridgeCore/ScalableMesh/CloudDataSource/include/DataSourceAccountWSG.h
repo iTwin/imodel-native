@@ -87,6 +87,7 @@ private :
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
        bool                                 needsUpdateToken                    (const WSGToken& token);
        void                                 updateToken                         (const WSGToken& newToken, DataSourceURL url);
+       WSGServer::organizationID            getOrganizationID                   (const DataSourceURL& url);
 
        bool                                 isValid                             (void);
     };
