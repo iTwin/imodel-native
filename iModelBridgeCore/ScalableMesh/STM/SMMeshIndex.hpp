@@ -3733,7 +3733,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
         m_nodeHeader.m_textureID = GetBlockID();
         m_nodeHeader.m_nbTextures = 1;
     
-    UpdateNodeFromBcDTM();
+    //UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
 
     if (existingFaces->size() >= 4)
