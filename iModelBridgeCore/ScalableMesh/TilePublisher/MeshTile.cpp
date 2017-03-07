@@ -845,8 +845,8 @@ TileMeshBuilder::TriangleKey::TriangleKey(TriangleCR triangle)
             m_sortedIndices[2] = triangle.m_indices[0];
             }
         }
-    BeAssert (m_sortedIndices[0] < m_sortedIndices[1]);
-    BeAssert (m_sortedIndices[1] < m_sortedIndices[2]);
+    //BeAssert (m_sortedIndices[0] < m_sortedIndices[1]);
+    //BeAssert (m_sortedIndices[1] < m_sortedIndices[2]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -866,8 +866,8 @@ bool TileMeshBuilder::TriangleKey::operator<(TriangleKey const& rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(TriangleCR triangle)
     {
-    if (triangle.IsDegenerate())
-        return;
+    //if (triangle.IsDegenerate())
+    //    return;
 
     TriangleKey key(triangle);
 
