@@ -316,6 +316,10 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     {
+    auto& cameraDef = GetViewDefinition3dR();
+    if (cameraDef.IsCameraOn())
+        return cameraDef.LookAtUsingLensAngle(cameraDef.GetEyePoint(), cameraDef.GetTargetPoint(), cameraDef.GetYVector(), lensAngle);
+
     if (nullptr == m_vp)
         return ViewportStatus::NotAttached;
 
@@ -331,8 +335,6 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     corners[2].Init(0.0, 0.0, high); // lower left, at closest npc
     corners[3].Init(1.0, 1.0, high); // upper right at closest
     m_vp->NpcToWorld(corners, corners, 4);
-
-    auto& cameraDef = GetViewDefinition3dR();
 
     DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
     DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
