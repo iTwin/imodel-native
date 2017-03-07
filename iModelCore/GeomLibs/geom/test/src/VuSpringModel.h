@@ -1,14 +1,66 @@
-
-// unused - static int s_noisy = 0;
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: geom/test/src/VuSpringModel.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #ifdef CompileFromGeomLibsGTest
 extern void SaveGraph (VuSetP graph, VuMask mask = 0);
 extern void SaveGraphEdges (VuSetP graph, VuMask mask = 0);
 extern void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask);
 #else
+// stub implementations of debug logic called from VuSpringModel
 void SaveGraph (VuSetP graph, VuMask mask = 0) {}
 void SaveGraphEdges (VuSetP graph, VuMask mask = 0) {}
 void SaveGraphEdgesInsideBarrier (VuSetP graph, VuMask loopMask) {}
+struct Check
+{
+static void SaveTransformed(IGeometryPtr const &data) {}
+static void SaveTransformed(CurveVectorCR data) {}
+static void SaveTransformed(ICurvePrimitiveCR data) {}
+static void SaveTransformed(PolyfaceHeaderCR data) {}
+static void SaveTransformed(ISolidPrimitiveCR data) {}
+static void SaveTransformed (bvector<DPoint3d> const &data) {}
+static void SaveTransformed (bvector<bvector<DPoint3d>> const &data) {}
+static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true) {}
+static void SaveTransformed (bvector<DSegment3d> const &data) {}
+static void SaveTransformed(MSBsplineSurfacePtr const &data) {}
+static void Shift (double dx, double dy, double dz = 0.0) {}
+static void Shift (DVec3dCR shift) {}
+static void ShiftToLowerRight (double dx = 0.0) {}
+static Transform GetTransform () {return Transform::FromIdentity ();}
+static void SetTransform (TransformCR transform) {}
+
+static void ClearGeometry (char const *name) {}
+};
+
+
+struct SaveAndRestoreCheckTransform
+{
+Transform m_baseTransform;
+DVec3d m_finalShift;
+SaveAndRestoreCheckTransform ()
+    {
+    m_finalShift.Zero ();
+    m_baseTransform = Check::GetTransform ();
+    }
+SaveAndRestoreCheckTransform (double dxFinal, double dyFinal, double dzFinal)
+    {
+    m_finalShift.Init (dxFinal, dyFinal, dzFinal);
+    m_baseTransform = Check::GetTransform ();
+    }
+void DoShift ()
+    {
+    Check::SetTransform (m_baseTransform);
+    Check::Shift (m_finalShift.x, m_finalShift.y, m_finalShift.z);
+    m_baseTransform = Check::GetTransform ();
+    }
+~SaveAndRestoreCheckTransform ()
+    {
+    DoShift ();
+    }
+};
 #endif
 
 // BCSSpringModel
