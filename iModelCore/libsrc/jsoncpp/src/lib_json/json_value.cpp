@@ -48,21 +48,18 @@ const LargestUInt Value::maxLargestUInt = LargestUInt(-1);
 
 #if defined (__APPLE__)
 #if !defined (__LP64__)
-Value::Value(UInt32 value)
-   : type_(uintValue)
+Value::Value(UInt32 value) : type_(uintValue)
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = (UInt) value;
 }
 #else
-Value::Value(long value)
-   : type_(intValue)
+Value::Value(long value) : type_(intValue)
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = value;
 }
-Value::Value(unsigned long value)
-   : type_(uintValue)
+Value::Value(unsigned long value) : type_(uintValue)
 {
     // see MacTypes.h for conflicting definition of UInt32
    value_.uint_ = value;
@@ -146,164 +143,206 @@ bool Value::operator ==(JsonValueCR other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Int Value::asInt() const
+Value::Int Value::asInt(Int defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0;
+      return defaultVal;
+
    case intValue:
       JSON_ASSERT_MESSAGE(value_.int_ >= minInt  &&  value_.int_ <= maxInt, "unsigned integer out of signed int range");
       return Int(value_.int_);
+
    case uintValue:
       JSON_ASSERT_MESSAGE(value_.uint_ <= UInt(maxInt), "unsigned integer out of signed int range");
       return Int(value_.uint_);
+
    case realValue:
       JSON_ASSERT_MESSAGE(value_.real_ >= minInt  &&  value_.real_ <= maxInt, "Real out of signed integer range");
       return Int(value_.real_);
+
    case booleanValue:
       return value_.bool_ ? 1 : 0;
+
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to int");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        Int val = defaultVal;
+        int stat = sscanf(value_.string_, "%" PRId32, &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0; // unreachable;
+    JSON_FAIL_MESSAGE("Type is not convertible to int");
+    return defaultVal;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::UInt Value::asUInt() const
+Value::UInt Value::asUInt(UInt defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0;
+      return defaultVal;
+
    case intValue:
       JSON_ASSERT_MESSAGE(value_.int_ >= 0, "Negative integer can not be converted to unsigned integer");
       JSON_ASSERT_MESSAGE(value_.int_ <= maxUInt, "signed integer out of UInt range");
       return UInt(value_.int_);
+
    case uintValue:
       JSON_ASSERT_MESSAGE(value_.uint_ <= maxUInt, "unsigned integer out of UInt range");
       return UInt(value_.uint_);
+
    case realValue:
       JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt,  "Real out of unsigned integer range");
       return UInt(value_.real_);
+
    case booleanValue:
       return value_.bool_ ? 1 : 0;
+
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to uint");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        UInt val = defaultVal;
+        int stat = sscanf(value_.string_, "%" PRIu32, &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0; // unreachable;
+    JSON_FAIL_MESSAGE("Type is not convertible to uint");
+    return defaultVal;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::Int64 Value::asInt64() const
+Value::Int64 Value::asInt64(Int64 defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0;
+      return defaultVal;
+
    case intValue:
       return value_.int_;
+
    case uintValue:
       // Bentley change: allow Int64 / UInt64 conversion
       // JSON_ASSERT_MESSAGE(value_.uint_ <= UInt64(maxInt64), "unsigned integer out of Int64 range");
       return value_.uint_;
+
    case realValue:
       JSON_ASSERT_MESSAGE(value_.real_ >= minInt64  &&  value_.real_ <= maxInt64, "Real out of Int64 range");
       return Int(value_.real_);
+
    case booleanValue:
       return value_.bool_ ? 1 : 0;
+
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to Int64");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        Int64 val = defaultVal;
+        int stat = sscanf(value_.string_, "%" PRId64, &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0; // unreachable;
+
+    JSON_FAIL_MESSAGE("Type is not convertible to Int64");
+    return defaultVal;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value::UInt64 Value::asUInt64() const
+Value::UInt64 Value::asUInt64(UInt64 defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0;
+      return defaultVal;
+
    case intValue:
       // Bentley change: allow Int64 / UInt64 conversion
       // JSON_ASSERT_MESSAGE(value_.int_ >= 0, "Negative integer can not be converted to UInt64");
       return value_.int_;
+
    case uintValue:
       return value_.uint_;
+
    case realValue:
       JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt64,  "Real out of UInt64 range");
       return UInt(value_.real_);
+
    case booleanValue:
       return value_.bool_ ? 1 : 0;
+
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to UInt64");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        UInt64 val = defaultVal;
+        int stat = sscanf(value_.string_, "%" PRIu64, &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0; // unreachable;
+
+    JSON_FAIL_MESSAGE("Type is not convertible to UInt64");
+    return defaultVal;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Value::asDouble() const
+double Value::asDouble(double defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0.0;
+      return defaultVal;
+
    case intValue:
       return static_cast<double>(value_.int_);
+
    case uintValue:
 #if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
       return static_cast<double>(value_.uint_);
 #else // if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
       return static_cast<double>(Int(value_.uint_/2)) * 2 + Int(value_.uint_ & 1);
 #endif // if !defined(JSON_USE_INT64_DOUBLE_CONVERSION)
+
    case realValue:
       return value_.real_;
+
    case booleanValue:
       return value_.bool_ ? 1.0 : 0.0;
+
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to double");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        double val = defaultVal;
+        int stat = sscanf(value_.string_, "%lf", &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0; // unreachable;
+    JSON_FAIL_MESSAGE("Type is not convertible to double");
+    return defaultVal;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-float Value::asFloat() const
+float Value::asFloat(float defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return 0.0f;
+      return defaultVal;
    case intValue:
       return static_cast<float>(value_.int_);
    case uintValue:
@@ -317,24 +356,27 @@ float Value::asFloat() const
    case booleanValue:
       return value_.bool_ ? 1.0f : 0.0f;
    case stringValue:
-   case arrayValue:
-   case objectValue:
-      JSON_FAIL_MESSAGE("Type is not convertible to float");
-   default:
-      JSON_ASSERT_UNREACHABLE;
+        {
+        float val = defaultVal;
+        int stat = sscanf(value_.string_, "%f", &val);
+        BeAssert(stat == 1);
+        UNUSED_VARIABLE(stat);;
+        return val;
+        }
    }
-   return 0.0f; // unreachable;
+    JSON_FAIL_MESSAGE("Type is not convertible to float");
+    return defaultVal; // unreachable;
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Value::asBool() const
+bool Value::asBool(bool defaultVal) const
 {
    switch (type_)
    {
    case nullValue:
-      return false;
+      return defaultVal;
    case intValue:
    case uintValue:
       return value_.int_ != 0;
@@ -350,7 +392,7 @@ bool Value::asBool() const
    default:
       JSON_ASSERT_UNREACHABLE;
    }
-   return false; // unreachable;
+   return defaultVal; // unreachable;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,14 +433,14 @@ bool Value::isConvertibleTo(ValueType other) const
              || other == stringValue
              || other == booleanValue;
    case stringValue:
-      return other == stringValue
-             || (other == nullValue  &&  (!value_.string_  ||  value_.string_[0] == 0));
+      return other == stringValue || (other == nullValue && (!value_.string_ || value_.string_[0] == 0));
+
    case arrayValue:
-      return other == arrayValue
-             ||  (other == nullValue  &&  value_.map_->size() == 0);
+      return other == arrayValue || (other == nullValue && value_.map_->size() == 0);
+
    case objectValue:
-      return other == objectValue
-             ||  (other == nullValue  &&  value_.map_->size() == 0);
+      return other == objectValue || (other == nullValue && value_.map_->size() == 0);
+
    default:
       JSON_ASSERT_UNREACHABLE;
    }
@@ -533,23 +575,6 @@ JsonValueR Value::resolveReference(const char *key, bool isStatic)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Value Value::get(ArrayIndex index, JsonValueCR defaultValue) const
-{
-   const Value *value = &((*this)[index]);
-   return value == &null ? defaultValue : *value;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Value::isValidIndex(ArrayIndex index) const
-{
-   return index < size();
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 JsonValueCR Value::operator[](const char *key) const
 {
    JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);
@@ -560,31 +585,6 @@ JsonValueCR Value::operator[](const char *key) const
    if (it == value_.map_->end())
       return null;
    return (*it).second;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Value& Value::append(JsonValueCR value)
-{
-   return (*this)[size()] = value;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Value Value::get(const char *key, JsonValueCR defaultValue) const
-{
-   const Value *value = &((*this)[key]);
-   return value == &null ? defaultValue : *value;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Value Value::get(const Utf8String &key, JsonValueCR defaultValue) const
-{
-   return get(key.c_str(), defaultValue);
 }
 
 /*---------------------------------------------------------------------------------**//**

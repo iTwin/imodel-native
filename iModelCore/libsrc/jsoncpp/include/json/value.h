@@ -338,15 +338,15 @@ namespace Json {
         return Utf8String();
         }
 
-      Int asInt() const;
-      UInt asUInt() const;
-      Int64 asInt64() const;
-      UInt64 asUInt64() const;
-      LargestInt asLargestInt() const {return asInt64();}
-      LargestUInt asLargestUInt() const {return asUInt64();}
-      float asFloat() const;
-      double asDouble() const;
-      bool asBool() const;
+      Int asInt(Int defaultVal=0) const;
+      UInt asUInt(UInt defaultVal=0) const;
+      Int64 asInt64(Int64 defaultVal=0) const;
+      UInt64 asUInt64(UInt64 defaultVal=0) const;
+      LargestInt asLargestInt(LargestInt defaultVal=0) const {return asInt64(defaultVal);}
+      LargestUInt asLargestUInt(LargestUInt defaultVal=0) const {return asUInt64(defaultVal);}
+      float asFloat(float defaultVal=0.0f) const;
+      double asDouble(double defaultVal=0.0) const;
+      bool asBool(bool defaultVal=false) const;
 
       bool isNull() const {return type_ == nullValue;}
       bool isBool() const {return type_ == booleanValue;}
@@ -408,14 +408,15 @@ namespace Json {
 
       /// If the array contains at least index+1 elements, returns the element value, 
       /// otherwise returns defaultValue.
-      Value get(ArrayIndex index, JsonValueCR defaultValue) const;
+      Value get(ArrayIndex index, JsonValueCR defaultValue) const {Value const* value = &((*this)[index]); return value == &null ? defaultValue : *value;}
 
       /// Return true if index < size().
-      bool isValidIndex(ArrayIndex index) const;
+      bool isValidIndex(ArrayIndex index) const {return index < size();}
+
       /// \brief Append value to array at the end.
       ///
       /// Equivalent to jsonvalue[jsonvalue.size()] = value;
-      JsonValueR append(JsonValueCR value);
+      JsonValueR append(JsonValueCR value) {return (*this)[size()] = value;}
 
       /// Access an object value by name, create a null member if it does not exist.
       JsonValueR operator[](Utf8CP key) {return resolveReference(key, false);}
@@ -443,11 +444,11 @@ namespace Json {
       JsonValueR operator[](StaticString const& key) {return resolveReference(key, true);}
 
       /// Return the member named key if it exist, defaultValue otherwise.
-      Value get(Utf8CP key, 
-                 JsonValueCR defaultValue) const;
+      Value get(Utf8CP key, JsonValueCR defaultValue) const {Value const* value = &((*this)[key]); return value == &null ? defaultValue : *value;}
+
       /// Return the member named key if it exist, defaultValue otherwise.
-      Value get(Utf8StringCR key,
-                 JsonValueCR defaultValue) const;
+      Value get(Utf8StringCR key, JsonValueCR defaultValue) const {return get(key.c_str(), defaultValue);}
+
       /// \brief Remove and return the named member.  
       ///
       /// Do nothing if it did not exist.
