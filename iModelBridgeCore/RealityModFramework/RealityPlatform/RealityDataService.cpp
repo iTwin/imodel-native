@@ -562,13 +562,14 @@ Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterPublic(bool isPublic)
+Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    Utf8String filter = "PublicAccess+eq+";
-    if(isPublic)
-        filter.append("true");
-    else
-        filter.append("false");
+    Utf8String filter = "Visibility+eq+";
+
+    Utf8String value = RealityDataBase::GetTagFromVisibility(visibility);
+
+    filter.append(value);
+
     return filter;
     }
 
@@ -722,7 +723,7 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::Id:
         order.append("Id");
         break;
-    case RealityDataField::Enterprise:
+    case RealityDataField::EnterpriseId:
         order.append("Enterprise");
         break;
     case RealityDataField::ContainerName:
@@ -764,8 +765,8 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::AccuracyInMeters:
         order.append("AccuracyInMeters");
         break;
-    case RealityDataField::PublicAccess:
-        order.append("PublicAccess");
+    case RealityDataField::Visibility:
+        order.append("Visibility");
         break;
     case RealityDataField::Listable:
         order.append("Listable");
@@ -1145,7 +1146,7 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
-        case RealityDataField::Enterprise:
+        case RealityDataField::EnterpriseId:
             propertyString.append("\"Enterprise\" : \"");
             propertyString.append(properties[field]);
             propertyString.append("\"");
@@ -1215,8 +1216,8 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
-        case RealityDataField::PublicAccess:
-            propertyString.append("\"PublicAccess\" : \"");
+        case RealityDataField::Visibility:
+            propertyString.append("\"Visibility\" : \"");
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
@@ -1768,12 +1769,12 @@ Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCert
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         { 
         std::cout << "RealityDataPagedRequest failed with response" << std::endl;
@@ -1781,7 +1782,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
         }
     else
         {
-        RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
@@ -1872,19 +1873,19 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
+RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
     
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         return nullptr;
         }
-    RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
 
     return entities[0];
     }
@@ -1960,12 +1961,12 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataListByEnterprisePagedRequest failed with response" << std::endl;
@@ -1973,7 +1974,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnt
         }
     else
         {
-        RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }

@@ -528,7 +528,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Model");
     myRealityData->SetDataset("MyDataset1"); 
     EXPECT_STREQ(myRealityData->GetDataset().c_str(), "MyDataset1");
-    myRealityData->SetThumbnailDocument("thumbnails.jpg"); 
+    myRealityData->SetThumbnailDocument("thumbnail.jpg"); 
     EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "thumbnail.jpg");
     myRealityData->SetTotalSize(123765473); 
     EXPECT_TRUE(myRealityData->GetTotalSize() == 123765473);

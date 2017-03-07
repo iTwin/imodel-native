@@ -11,7 +11,6 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/WSGServices.h>
-#include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
@@ -296,7 +295,7 @@ struct RealityDataFilterCreator
     REALITYDATAPLATFORM_EXPORT static Utf8String FilterByModificationDate(DateTime minDate, DateTime maxDate);
 
     //! Filters in or out public data as specified
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterPublic(bool isPublic);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterVisibility(RealityDataBase::Visibility visibility);
         
     //! Filter by resolution. As resolution may be confusing since minimum resolution is
     //!  expressed a higher number the resolution can be specified in any order and
@@ -335,7 +334,7 @@ struct RealityDataFilterCreator
 enum class RealityDataField
     {
     Id,
-    Enterprise,
+    EnterpriseId,
     ContainerName,
     Name,
     Dataset,
@@ -349,10 +348,10 @@ enum class RealityDataField
     MetadataURL,
     ResolutionInMeters,
     AccuracyInMeters,
-    PublicAccess,
+    Visibility,
     Listable,
-    ModifiedTimestamp,
     CreatedTimestamp,
+    ModifiedTimestamp,
     OwnedBy,
     Group
     };
@@ -790,7 +789,7 @@ public:
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataPagedRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataPagedRequest& request, RequestStatus& status);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
     REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status);
@@ -799,7 +798,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<Utf8String> Request(const AllRealityDataByRootId& request, RequestStatus& status);
 
     //! Returns the RealityData object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const RealityDataByIdRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(const RealityDataByIdRequest& request, RequestStatus& status);
 
     //! Returns a RealityDataDocument or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status);
@@ -815,7 +814,7 @@ public:
     //! Bentley CONNECT user is used.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status);
 
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status);

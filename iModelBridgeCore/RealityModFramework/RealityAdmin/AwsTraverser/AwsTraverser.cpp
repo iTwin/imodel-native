@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
         if(!((AwsFileLogger*)log)->logFile.is_open())
             {
             log = new AwsLogger();
-            log->Log(RP_LITERAL("could not open logfile, proceeding without logging"));
+            log->Log("could not open logfile, proceeding without logging");
             }
         }
     else 
@@ -348,9 +348,9 @@ int main(int argc, char *argv[])
         getline(file, line);
 
         SpatialEntityServerPtr serverptr = SpatialEntityServer::Create();
-        serverptr->SetProtocol(RP_LITERAL("http"));
-        serverptr->SetName(RP_LITERAL("s3-us-west-2.amazonaws.com"));
-        serverptr->SetUrl(RP_LITERAL("https://s3-us-west-2.amazonaws.com/"));
+        serverptr->SetProtocol("http");
+        serverptr->SetName("s3-us-west-2.amazonaws.com");
+        serverptr->SetUrl("https://s3-us-west-2.amazonaws.com/");
         serverptr->SetOnline(1);
 
         DateTime dateTime = DateTime::GetCurrentTimeUtc();

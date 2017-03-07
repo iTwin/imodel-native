@@ -277,7 +277,7 @@ void ListCmd()
         if (s_option & (OptSortGroup))
             enterpriseReq->SortBy(RealityDataField::Group, true);
 
-        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
+        bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
         bvector<RealityDataProjectRelationshipPtr> relationships;
         if (s_option & (OptFilterProject))
@@ -292,16 +292,16 @@ void ListCmd()
             if (RequestStatus::SUCCESS != status)
                 exit(-1);
 
-            for (SpatialEntityPtr pData : enterpriseVec)
+            for (RealityDataPtr pData : enterpriseVec)
                 {
-                EnterpriseSizeKB += pData->GetApproximateFileSize();
+                EnterpriseSizeKB += pData->GetTotalSize();
 
 #if 0   // Validation only
                 RequestStatus status2;
                 RealityDataByIdRequest* idReq = new RealityDataByIdRequest(pData->GetIdentifier());
-                SpatialEntityPtr entity = RealityDataService::Request(*idReq, status2);
+                RealityDataPtr entity = RealityDataService::Request(*idReq, status2);
 
-                assert(entity->GetEnterprise() == pData->GetEnterprise());
+                assert(entity->GetEnterpriseId() == pData->GetEnterpriseId());
                 assert(entity->GetApproximateFileSize() == pData->GetApproximateFileSize());
                 assert(entity->GetOwner() == pData->GetOwner());
                 assert(entity->GetRootDocument() == pData->GetRootDocument());
@@ -316,13 +316,13 @@ void ListCmd()
                         " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
                         " Group          : " << pData->GetGroup() << std::endl << "  " <<
                         " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
-                        " Size(KB)       : " << pData->GetApproximateFileSize() << std::endl << "  " <<
+                        " Size(KB)       : " << pData->GetTotalSize() << std::endl << "  " <<
                         " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                        " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
-                        " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
+                        " Created        : " << pData->GetCreationDateTime().ToString() << std::endl << "  " <<
+                        " Modification   : " << pData->GetModifiedDateTime().ToString() << std::endl << "  " <<
                         " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
                         " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
-                        " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
+                        " Enterprise     : " << pData->GetEnterpriseId() << std::endl << "  " <<
                         " Description    : " << pData->GetDescription() << std::endl;
                     }
                 }
@@ -341,7 +341,7 @@ void ListCmd()
             for (NavNode root : nodes)
                 {
                 RequestStatus status;
-                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
+                RealityDataPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
 
                 ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
                 }

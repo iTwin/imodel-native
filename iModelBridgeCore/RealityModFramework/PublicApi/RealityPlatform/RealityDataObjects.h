@@ -241,6 +241,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8String GetVisibilityTag() const;
     REALITYDATAPLATFORM_EXPORT StatusInt SetVisibilityByTag(Utf8CP visibility);
     REALITYDATAPLATFORM_EXPORT static StatusInt GetVisibilityFromTag(Visibility& returnedVisibility, Utf8CP visibilityTag);
+    REALITYDATAPLATFORM_EXPORT static Utf8String GetTagFromVisibility(Visibility returnedVisibility);
 
     //! Get/Set
     //! Key to the dataset. Enables grouping of multiple results on the client side. 

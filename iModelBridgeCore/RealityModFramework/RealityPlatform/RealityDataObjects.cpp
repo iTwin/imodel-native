@@ -228,16 +228,7 @@ void RealityDataBase::SetVisibility(RealityDataBase::Visibility visibility) { m_
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetVisibilityTag() const
     {
-    if (Visibility::PUBLIC == m_visibility)
-        return "PUBLIC";
-    else if (Visibility::ENTERPRISE == m_visibility)
-        return "ENTERPRISE";
-    else if (Visibility::PERMISSION == m_visibility)
-        return "PERMISSION";
-    else if (Visibility::PRIVATE == m_visibility)
-        return "PRIVATE";
-
-    return "UNDEFINED";   
+    return GetTagFromVisibility(m_visibility);
     }
 
 //-------------------------------------------------------------------------------------
@@ -262,6 +253,25 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
 
     return SUCCESS;
     }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility visibility)
+    {
+    if (Visibility::PUBLIC == visibility)
+        return "PUBLIC";
+    else if (Visibility::ENTERPRISE == visibility)
+        return "ENTERPRISE";
+    else if (Visibility::PERMISSION == visibility)
+        return "PERMISSION";
+    else if (Visibility::PRIVATE == visibility)
+        return "PRIVATE";
+
+    return "UNDEFINED";   
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
