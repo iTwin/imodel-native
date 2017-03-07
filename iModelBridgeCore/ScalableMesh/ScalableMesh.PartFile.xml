@@ -49,9 +49,12 @@
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
-        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />        
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />     
+        <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe
+            </Files>
+			            <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\freeimage.dll
             </Files>
            <!-- <Files ProductDirectoryName="TMSchemas" >
                 Delivery\TerrainModel.01.00.ecschema.xml,Delivery\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
@@ -124,6 +127,7 @@
         <ProductDirectory   Name="MdlsysAsneeded"                           Path="Dlls"                      />
         <ProductDirectory   Name="Assemblies"                           Path="Dlls"                      />
       <ProductDirectory Name="LicenseAssembliesWithConnectionClient"  Deliver="true" Path="Dlls"/>
+	  <ProductDirectory Name="ScalableMeshElementLibs" Deliver="true" Path="Libs" />
       <ProductDirectory Name="LicenseAssemblies"  Deliver="true" Path="Dlls"/>
       <ProductDirectory Name="BentleyGeometryNetAssemblies"  Deliver="true" Path="Dlls"/>
        <ProductDirectory Name="DgnPlatformNETAssemblies"  Deliver="true" Path="Dlls"/>

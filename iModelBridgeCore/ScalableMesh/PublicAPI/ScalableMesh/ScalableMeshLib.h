@@ -62,7 +62,7 @@ public:
         BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
 
         BENTLEY_SM_EXPORT IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
-        void             RemoveRegisteredScalableMesh(const WString& path);
+        BENTLEY_SM_EXPORT void             RemoveRegisteredScalableMesh(const WString& path);
         void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 
