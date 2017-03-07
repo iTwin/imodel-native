@@ -158,6 +158,7 @@ StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
 
     m_is3dView = viewport->Is3dView();
     SetViewFlags(viewport->GetViewFlags());
+    m_monochromeColor = m_viewport->GetViewController().GetViewDefinition().GetDisplayStyle().GetMonochromeColor();
 
     return _InitContextForView();
     }
@@ -382,6 +383,12 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
+        }
+
+    if (m_viewflags.IsMonochrome())
+        {
+        ovrMatSymb.SetLineColor(m_monochromeColor);
+        ovrMatSymb.SetFillColor(m_monochromeColor);
         }
     }
 

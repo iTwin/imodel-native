@@ -58,8 +58,9 @@ private:
     uint32_t m_shadows:1;          //!< Shows or hides shadows.
     uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied.
     uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
-    uint32_t m_monochrome:1;       //!< use monochrome style
+    uint32_t m_monochrome:1;       //!< draw all graphics in a single color 
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
+    uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden linse
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
 public:
@@ -85,6 +86,7 @@ public:
         m_constructions = 0;
         m_monochrome = 0;
         m_noGeometryMap = 0;
+        m_hLineMaterialColors = 0;
         m_edgeMask = 0;
         }
 
@@ -126,8 +128,13 @@ public:
     void SetShowConstructions(bool val) {m_constructions = val;}
     bool IsMonochrome() const {return m_monochrome;}
     void SetMonochrome(bool val) {m_monochrome = val;}
+    bool IgnoreGeometryMap() const {return m_noGeometryMap;}
+    void SetIgnoreGeometryMap(bool val) {m_noGeometryMap = val;}
+    void SetUseHlineMaterialColors(bool val) {m_hLineMaterialColors = val;}
+    bool UseHlineMaterialColors() const {return m_hLineMaterialColors;}
     int GetEdgeMask() const {return m_edgeMask;}
     void SetEdgeMask(int val) {m_edgeMask = val;}
+    
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
@@ -977,6 +984,7 @@ public:
         Code5 = 0xe0e0e0e0, // 5
         Code6 = 0xf888f888, // 6
         Code7 = 0xff18ff18, // 7
+        HiddenLine = 0xcccccccc,    // hidden lines 
         Invisible = 0x00000001, // nearly invisible
         };
 
@@ -1550,6 +1558,26 @@ struct FrustumPlanes
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct HiddenLineParams
+{
+    bool m_overrideEdgeColor = false;
+    bool m_overrideElementColor = false;
+    uint32_t m_pattern = (uint32_t) GraphicParams::LinePixels::HiddenLine;
+    uint32_t m_visibleEdgeWidth = 1;
+    uint32_t m_hiddenEdgeWidth = 1;
+    ColorDef m_edgeColor;
+    ColorDef m_elementColor;
+    double m_transparencyThreshold = 1.0;
+
+    bool operator==(HiddenLineParams const& rhs) const {return ToJson() == rhs.ToJson();}
+    bool operator!=(HiddenLineParams const& rhs) const {return !(*this==rhs);}
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT static HiddenLineParams FromJson(JsonValueCR);
+};
+
+//=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
 //! the current Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
@@ -1558,13 +1586,15 @@ struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
 
-    ViewFlags     m_viewFlags;
-    bool          m_is3d;
-    Frustum       m_frustum;
-    double        m_fraction;
-    ColorDef      m_bgColor;
+    bool m_is3d;
+    ViewFlags m_viewFlags;
+    Frustum m_frustum;
+    double m_fraction;
+    ColorDef m_bgColor;
+    ColorDef m_monoColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
+    HiddenLineParams m_hline;
     ClipVectorPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };

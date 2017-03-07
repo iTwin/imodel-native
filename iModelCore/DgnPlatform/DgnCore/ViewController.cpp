@@ -31,6 +31,9 @@ namespace StyleJson
     static constexpr Utf8CP str_RenderMode()     {return "renderMode";}
     static constexpr Utf8CP str_Shadows()        {return "shadows";}
     static constexpr Utf8CP str_VisibleEdges()   {return "visEdges";}
+    static constexpr Utf8CP str_HlineMatColors() {return "hlMatColors";}
+    static constexpr Utf8CP str_Monochrome()     {return "monochrome";}
+    static constexpr Utf8CP str_EdgeMask()       {return "edgeMask";}
 };
 
 using namespace StyleJson;
@@ -59,6 +62,9 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_shadows = val[str_Shadows()].asBool();
     m_noClipVolume = !val[str_ClipVolume()].asBool();
     m_ignoreLighting = val[str_NoLighting()].asBool();
+    m_monochrome = val[str_Monochrome()].asBool();
+    m_edgeMask = val[str_EdgeMask()].asUInt();
+    m_hLineMaterialColors = val[str_HlineMatColors()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
     uint32_t renderModeValue = val[str_RenderMode()].asUInt();
@@ -95,6 +101,11 @@ Json::Value ViewFlags::ToJson() const
     if (m_shadows) val[Json::StaticString(str_Shadows())] = true;
     if (!m_noClipVolume) val[Json::StaticString(str_ClipVolume())] = true;
     if (m_ignoreLighting) val[Json::StaticString(str_NoLighting())] = true;
+    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
+    if (m_monochrome) val[Json::StaticString(str_Monochrome())] = true;
+    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
+    if (m_edgeMask!=0) val[Json::StaticString(str_EdgeMask())] = m_edgeMask;
+
     val[Json::StaticString(str_RenderMode())] = (uint8_t) m_renderMode;
     return val;
     }

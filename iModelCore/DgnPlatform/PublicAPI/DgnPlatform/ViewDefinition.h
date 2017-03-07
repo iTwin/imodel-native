@@ -19,7 +19,6 @@
 #define BIS_CLASS_OrthographicViewDefinition "OrthographicViewDefinition"
 #define BIS_CLASS_DrawingViewDefinition "DrawingViewDefinition"
 #define BIS_CLASS_SheetViewDefinition "SheetViewDefinition"
-#define BIS_CLASS_ClipVolume "ClipVolume"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -71,7 +70,7 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
-    void CopyAllStyles(DisplayStyle const& rhs) {GetStylesR() = rhs.GetStyles();}
+    void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles();}
 
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
@@ -94,6 +93,9 @@ public:
     //! Set the background color for this DisplayStyle
     //! @param[in] val the new background color for this DisplayStyle
     DGNPLATFORM_EXPORT void SetBackgroundColor(ColorDef val);
+
+    DGNPLATFORM_EXPORT ColorDef GetMonochromeColor() const;
+    DGNPLATFORM_EXPORT void SetMonochromeColor(ColorDef val);
 
     //! Get the Rendering flags for this DisplayStyle
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -166,6 +168,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
+    static constexpr Utf8CP str_HLine() {return "HLine";}
 
 public:
     //! Construct a new DisplayStyle3d.
@@ -186,6 +189,9 @@ public:
 
     //! Turn the GroundPlane on or off.
     void SetGroundPlaneEnabled(bool val) {m_environment.m_groundPlane.m_enabled = val;}
+
+    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
+    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}

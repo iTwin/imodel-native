@@ -37,9 +37,9 @@ public:
         DEFINE_T_SUPER(DgnTexture::T_Super::CreateParams);
 
         Render::ImageSource m_data;
-        uint32_t  m_width=0;
-        uint32_t  m_height=0;
-        Flags     m_flags=Flags::None;
+        uint32_t m_width=0;
+        uint32_t m_height=0;
+        Flags m_flags=Flags::None;
         Utf8String m_descr;
 
         //! Constructor from base class. Chiefly for internal use.

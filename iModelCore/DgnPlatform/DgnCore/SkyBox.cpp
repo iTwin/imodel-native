@@ -174,6 +174,10 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
         }
 
     Material::CreateParams matParams;
+    matParams.SetDiffuseColor(ColorDef::White());
+    matParams.SetShadows(false);
+    matParams.SetAmbient(1.0);
+    matParams.SetDiffuse(0.0);
     matParams.SetShadows(false);
     m_skybox = system._CreateMaterial(matParams);
 
@@ -322,6 +326,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     flags.SetShowMaterials(true);
     flags.SetShowShadows(false);
     flags.SetIgnoreLighting(true);
+    flags.SetMonochrome(false);
 
     GraphicBranch branch;
     branch.Add(*skyGraphic->Finish()); // put the mesh into the branch

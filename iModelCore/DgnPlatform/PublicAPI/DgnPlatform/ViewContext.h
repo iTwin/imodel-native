@@ -103,6 +103,7 @@ protected:
     bool m_stopAfterTimeout = false;
     BeTimePoint m_endTime;     // abort after this time.
     Render::ViewFlags m_viewflags;
+    ColorDef m_monochromeColor;
     DrawPurpose m_purpose;
     DRange3d m_npcSubRange;
     DMap4d m_worldToNpc;
