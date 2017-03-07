@@ -50,7 +50,7 @@ struct BSIRect
     int Top() const {return origin.y;}
     //! Return the corner x coordinate.
     int Right() const {return corner.x;}
-    //! Reuturn the corner y coordinate. (Called "Bottom" because screen rectangles advance downward.)
+    //! Return the corner y coordinate. (Called "Bottom" because screen rectangles advance downward.)
     int Bottom() const {return corner.y;}
 
     //! Return corner.x - origin.x + 1, i.e. pixel width with start end considered inclusive.
