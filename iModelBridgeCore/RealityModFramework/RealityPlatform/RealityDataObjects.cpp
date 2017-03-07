@@ -58,7 +58,7 @@ RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
         if (jsonInstance["properties"].isMember("ContentType") && !jsonInstance["properties"]["ContentType"].isNull())
             m_contentType = jsonInstance["properties"]["ContentType"].asCString(); 
         if (jsonInstance["properties"].isMember("Size") && !jsonInstance["properties"]["Size"].isNull())
-            m_size = jsonInstance["properties"]["Size"].asCString(); 
+            m_size = _atoi64(jsonInstance["properties"]["Size"].asCString()); 
         }
     }
 
@@ -80,7 +80,7 @@ Utf8StringCR RealityDataDocument::GetRealityDataId() const { return m_realityDat
 
 Utf8StringCR RealityDataDocument::GetContentType() const { return m_contentType; }
 
-Utf8StringCR RealityDataDocument::GetSize() const { return m_size; }
+uint64_t RealityDataDocument::GetSize() const { return m_size; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
@@ -105,3 +105,320 @@ Utf8StringCR RealityDataFolder::GetName() const { return m_name; }
 Utf8StringCR RealityDataFolder::GetParentId() const { return m_parentId; }
 
 Utf8StringCR RealityDataFolder::GetRealityDataId() const { return m_realityDataId; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    4/2016
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityDataBase::GetIdentifier() const { return m_identifier; }
+void RealityDataBase::SetIdentifier(Utf8CP identifier) { m_identifier = identifier; }
+
+Utf8StringCR RealityDataBase::GetName() const { return m_name; }
+void RealityDataBase::SetName(Utf8CP name) { m_name = name; }
+
+Utf8StringCR RealityDataBase::GetResolution() const { return m_resolution; }
+void RealityDataBase::SetResolution(Utf8CP res) { m_resolution = res; m_resolutionValueUpToDate = false;}
+
+Utf8StringCR RealityDataBase::GetAccuracy() const { return m_accuracy; }
+void RealityDataBase::SetAccuracy(Utf8CP accuracy) { m_accuracy = accuracy; m_accuracyValueUpToDate = false;}
+
+Utf8StringCR RealityDataBase::GetDataset() const { return m_dataset; }
+void RealityDataBase::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+RealityDataBase::Classification RealityDataBase::GetClassification() const { return m_classification; }
+void RealityDataBase::SetClassification(Classification classification) { m_classification = classification; }
+Utf8String RealityDataBase::GetClassificationTag() const
+    {
+    if (Classification::MODEL == m_classification)
+        return "Model";
+    else if (Classification::TERRAIN == m_classification)
+        return "Terrain";
+    else if (Classification::IMAGERY == m_classification)
+        return "Imagery";
+    else if (Classification::PINNED == m_classification)
+        return "Pinned";
+
+    return "Undefined";   
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+//! Static method that converts a classification tag to a classification
+StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classification& returnedClassification, Utf8CP classificationTag)
+    {
+    Utf8String tag(classificationTag);
+    if (tag == "Model")
+        returnedClassification = Classification::MODEL;
+    if (tag == "Terrain")
+        returnedClassification = Classification::TERRAIN;
+    if (tag == "Imagery")
+        returnedClassification = Classification::IMAGERY;
+    if (tag == "Pinned")
+        returnedClassification = Classification::PINNED;
+    if (tag == "Undefined")
+        returnedClassification = Classification::UNDEFINED;
+    else
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataBase::SetClassificationByTag(Utf8CP classificationTag)
+    {
+    return GetClassificationFromTag(m_classification, classificationTag);
+    }
+
+const bvector<GeoPoint2d>& RealityDataBase::GetFootprint() const { return m_footprint; }
+void RealityDataBase::SetFootprint(bvector<GeoPoint2d> const& footprint) { m_footprint = footprint; m_footprintExtentComputed = false; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+DRange2dCR RealityDataBase::GetFootprintExtent() const 
+{ 
+    if (!m_footprintExtentComputed)
+        {
+        if (m_footprint.size() > 0)
+            {
+            m_footprintExtent.low.x = m_footprint[0].longitude;
+            m_footprintExtent.low.y = m_footprint[0].latitude;
+            m_footprintExtent.high.x = m_footprint[0].longitude;
+            m_footprintExtent.high.y = m_footprint[0].latitude;
+
+            for (int index = 1 ; index < m_footprint.size() ; ++index)
+                {
+                m_footprintExtent.low.x  = min(m_footprint[index].longitude, m_footprintExtent.low.x );
+                m_footprintExtent.low.y  = min(m_footprint[index].latitude, m_footprintExtent.low.y );
+                m_footprintExtent.high.x = max(m_footprint[index].longitude, m_footprintExtent.high.x);
+                m_footprintExtent.high.y = max(m_footprint[index].latitude, m_footprintExtent.high.y);
+                }
+            }
+        else
+            {
+            m_footprintExtent.low.x = 0.0;
+            m_footprintExtent.low.y = 0.0;
+            m_footprintExtent.high.x = 0.0;
+            m_footprintExtent.high.y = 0.0;
+            }
+        m_footprintExtentComputed = true;
+        }
+    return m_footprintExtent; 
+}
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+bool RealityDataBase::HasApproximateFootprint() const {return m_approximateFootprint;}
+void RealityDataBase::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
+
+Utf8StringCR RealityDataBase::GetDescription() const { return m_description; }
+void RealityDataBase::SetDescription(Utf8CP description) { m_description = description; }
+
+RealityDataBase::Visibility RealityDataBase::GetVisibility() const { return m_visibility; }
+void RealityDataBase::SetVisibility(RealityDataBase::Visibility visibility) { m_visibility = visibility; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8String RealityDataBase::GetVisibilityTag() const
+    {
+    if (Visibility::PUBLIC == m_visibility)
+        return "PUBLIC";
+    else if (Visibility::ENTERPRISE == m_visibility)
+        return "ENTERPRISE";
+    else if (Visibility::PERMISSION == m_visibility)
+        return "PERMISSION";
+    else if (Visibility::PRIVATE == m_visibility)
+        return "PRIVATE";
+
+    return "UNDEFINED";   
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+//! Static method that converts a classification tag to a classification
+StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag)
+    {
+    Utf8String tag(visibilityTag);
+    if (tag == "PUBLIC")
+        returnedVisibility = Visibility::PUBLIC;
+    if (tag == "ENTERPRISE")
+        returnedVisibility = Visibility::ENTERPRISE;
+    if (tag == "PERMISSION")
+        returnedVisibility = Visibility::PERMISSION;
+    if (tag == "PRIVATE")
+        returnedVisibility = Visibility::PRIVATE;
+    if (tag == "UNDEFINED")
+        returnedVisibility = Visibility::UNDEFINED;
+    else
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataBase::SetVisibilityByTag(Utf8CP visibilityTag)
+    {
+    return GetVisibilityFromTag(m_visibility, visibilityTag);
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Alain.Robert           02/2017
+//-------------------------------------------------------------------------------------
+double RealityDataBase::GetResolutionValue() const
+    {
+    if (!m_resolutionValueUpToDate)
+        {
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(m_resolution.c_str(), "x", tokens);
+        BeAssert(2 == tokens.size());
+        if (2 == tokens.size()) 
+            {
+            // Convert to double.
+            double resX = strtod(tokens[0].c_str(), NULL);
+            double resY = strtod(tokens[1].c_str(), NULL);
+
+            m_resolutionValue = sqrt(resX * resY);
+            m_resolutionValueUpToDate = true;
+            }
+        else 
+            return 0.0;
+        }
+
+    return m_resolutionValue;
+    }
+
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Alain.Robert           02/2017
+//-------------------------------------------------------------------------------------
+double RealityDataBase::GetAccuracyValue() const
+    {
+    if (!m_accuracyValueUpToDate)
+        {
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(m_accuracy.c_str(), "x", tokens);
+        BeAssert(2 == tokens.size());
+        if (2 == tokens.size()) 
+            {
+            // Convert to double.
+            double accurX = strtod(tokens[0].c_str(), NULL);
+            double accurY = strtod(tokens[1].c_str(), NULL);
+
+            m_accuracyValue = sqrt(accurX * accurY);
+            m_accuracyValueUpToDate = true;
+            }
+        else 
+            return 0.0;
+        }
+
+    return m_accuracyValue;
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+RealityDataBase::RealityDataBase()
+    {
+    m_footprint = bvector<GeoPoint2d>();
+    m_resolutionValueUpToDate = false;
+    m_accuracyValueUpToDate = false;
+    m_approximateFootprint=false;
+    m_visibility = Visibility::UNDEFINED;
+    m_classification = Classification::UNDEFINED;
+    m_footprintExtentComputed = false;
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+RealityDataPtr RealityData::Create()
+    {
+    return new RealityData();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+RealityDataPtr RealityData::Create(Utf8StringCR identifier, const DateTime& creationDate, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name)
+    {
+    RealityDataPtr myRealityData = new RealityData();
+
+    myRealityData->SetIdentifier(identifier.c_str());
+    myRealityData->SetCreationDateTime(creationDate);
+    myRealityData->SetResolution(resolution.c_str());
+    myRealityData->SetFootprint(footprint);
+    myRealityData->SetName(name.c_str());
+
+    return myRealityData;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityData::GetGroup() const { return m_group; }
+void RealityData::SetGroup(Utf8CP group) { m_group = group; }
+
+Utf8StringCR RealityData::GetThumbnailDocument() const { return m_thumbnailDocument; }
+void RealityData::SetThumbnailDocument(Utf8CP thumbnailDocument) { m_thumbnailDocument = thumbnailDocument; }
+
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityData::GetRealityDataType() const { return m_realityDataType; }
+void RealityData::SetRealityDataType(Utf8CP realityDataType) { m_realityDataType = realityDataType; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+DateTimeCR RealityData::GetCreationDateTime() const { return m_creationDate; }
+void RealityData::SetCreationDateTime(DateTimeCR creationDate) { m_creationDate = creationDate; }
+
+Utf8StringCR RealityData::GetEnterpriseId() const { return m_enterpriseId; }
+void RealityData::SetEnterpriseId(Utf8CP enterpriseId) { m_enterpriseId = enterpriseId; }
+
+Utf8StringCR RealityData::GetContainerName() const { return m_containerName; }
+void RealityData::SetContainerName(Utf8CP containerName) { m_containerName = containerName; }
+
+Utf8StringCR RealityData::GetRootDocument() const { return m_rootDocument; }
+void RealityData::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
+
+Utf8StringCR RealityData::GetMetadataURL() const { return m_metadataURL; }
+void RealityData::SetMetadataURL(Utf8CP metadataURL) { m_metadataURL = metadataURL; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+bool RealityData::IsListable() const { return m_listable; }
+void RealityData::SetListable(bool listable) { m_listable = listable; }
+
+DateTime RealityData::GetModifiedDateTime() const { return m_modifiedDate; }
+void RealityData::SetModifiedDateTime(DateTime modifiedDate) { m_modifiedDate = modifiedDate; }
+
+Utf8StringCR RealityData::GetOwner() const { return m_owner; }
+void RealityData::SetOwner(Utf8CP owner) { m_owner = owner; }
+
+uint64_t RealityData::GetTotalSize() const { return m_totalSize; }
+void RealityData::SetTotalSize(uint64_t totalSize) { m_totalSize = totalSize; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+RealityData::RealityData()
+    {
+    m_listable = true;
+    m_totalSize = 0;
+    }

@@ -178,7 +178,7 @@ void RasterData::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataPtr RasterData::Create(Utf8CP inFilename)
+RealityDataExtractPtr RasterData::Create(Utf8CP inFilename)
     {
     return new RasterData(inFilename);
     }

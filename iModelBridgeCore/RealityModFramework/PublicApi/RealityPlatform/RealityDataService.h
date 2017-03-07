@@ -433,6 +433,10 @@ private:
     RealityDataProjectRelationshipByProjectIdPagedRequest() {}
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A request for a list of all documents in a repository
+//=====================================================================================
 struct AllRealityDataByRootId : public RealityDataDocumentContentByIdRequest
     {
 public:
@@ -450,6 +454,13 @@ private:
     Utf8String          m_filter;
     AllRealityDataByRootId() {}
     };
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason 02/2017
+//! The following are the declaration for callback for the upload process.
+//=====================================================================================
+
+
 
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
@@ -483,6 +494,12 @@ private:
     bool m_listable;
     };
 
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason 02/2017
+//! The base class to upload/download classes. This class defines the interface
+//! common to both upload and download to/from Reality Data Service
+//=====================================================================================
 struct RealityDataFileTransfer;
 
 //where the curl upload ended, either in success or failure
@@ -507,6 +524,13 @@ struct TransferReport
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report);
     };
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason 02/2017
+//! The base class to upload/download classes. This class defines the interface
+//! common to both upload and download to/from Reality Data Service. It is the interface
+//! that enables to set callback required to monitor the tranfer progress, it is also where
+//! the path to the certificate file is set.
+//=====================================================================================
 struct RealityDataServiceTransfer : public CurlConstructor
     {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceTransfer(){}
@@ -651,6 +675,23 @@ private:
     };
 
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason                  02/2017
+//! RealityDataServiceDownload
+//! This class represents a download service for downloading files or datasets from the
+//!  Reality Data Service.
+//! During the perform the object will rely on CURL in a multithreaded environment 
+//!  to download sources down from the Reality Data Service.
+//! The process will attempt to optimise the download process. To do so it may decide
+//!  if the files are large the download process
+//!  may split up the file and download in fragments. It may also select to attempt 
+//!  a SAS redirection to upload directly to the cloud blob (prefered option).
+//! In case of communication error the download process will attempt retry to 
+//!  complete the operation.
+//! It will also start as many threads needed to optimise the process.
+//! The present class offers services to upload a file including use of callback
+//!  to indicate progress.
+//=====================================================================================
 struct RealityDataServiceDownload : public RealityDataServiceTransfer
     {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId);

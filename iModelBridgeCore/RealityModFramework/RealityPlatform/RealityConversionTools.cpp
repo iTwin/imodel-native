@@ -108,17 +108,82 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8Stri
     return SUCCESS;
     }
 
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            9/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<RealityDataPtr>* outData)
+    {
+    // Make sure data exists.
+    if (Utf8String::IsNullOrEmpty(data))
+        return ERROR;
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    if (!Json::Reader::Parse(data, root))
+        return ERROR;
+
+    // Instances must be a root node.
+    if (!root.isMember("instances"))
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataPtr data = JsonToRealityData(properties);
+
+        outData->push_back(data);
+        }
+    return SUCCESS;
+    }
+
+StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bmap<Utf8String, RealityDataPtr>* outData)
+    {
+    // Make sure data exists.
+    if (Utf8String::IsNullOrEmpty(data))
+        return ERROR;
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    if (!Json::Reader::Parse(data, root))
+        return ERROR;
+
+    // Instances must be a root node.
+    if (!root.isMember("instances"))
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataPtr data = JsonToRealityData(properties);
+
+        outData->Insert(data->GetName(), data);
+        }
+    return SUCCESS;
+    }
+
+
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value properties)
+RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     {
     // Required information to get.
     DateTime date;
 
     Utf8String footprintStr;
 
-    SpatialEntityPtr data = SpatialEntity::Create();
+    RealityDataPtr data = RealityData::Create();
 
     // Id
     if (properties.isMember("Id") && !properties["Id"].isNull())
@@ -126,7 +191,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     // Enterprise
     if (properties.isMember("Enterprise") && !properties["Enterprise"].isNull())
-        data->SetEnterprise(Utf8CP(properties["Enterprise"].asString().c_str()));
+        data->SetEnterpriseId(Utf8CP(properties["Enterprise"].asString().c_str()));
     
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())
@@ -150,6 +215,129 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     // DataType
     if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
+        data->SetRealityDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
+    else if (properties.isMember("Type") && !properties["Type"].isNull())
+        data->SetRealityDataType(Utf8CP(properties["Type"].asString().c_str()));
+
+    // Classification
+    if (properties.isMember("Classification") && !properties["Classification"].isNull())
+        data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
+
+    // Thumbnail Document
+    if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
+        data->SetThumbnailDocument(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
+
+    // MetadataURL
+    if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
+        data->SetMetadataURL(Utf8CP(properties["MetadataURL"].asString().c_str()));
+ 
+    if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
+        data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
+
+    // Visibility
+    if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
+        data->SetVisibilityByTag(Utf8CP(properties["PublicAccess"].asString().c_str()));
+
+    // Listable
+    if (properties.isMember("Listable") && !properties["Listable"].isNull())
+        data->SetListable(properties["Listable"].asBool());
+
+    // Date
+    if (properties.isMember("Date") && !properties["Date"].isNull())
+        {
+        DateTime::FromString(date, properties["Date"].asCString());
+        data->SetCreationDateTime(date);
+        }
+    else if (properties.isMember("CreatedTimestamp") && !properties["CreatedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
+        data->SetCreationDateTime(date);
+        }
+
+    // Modified Date
+    if (properties.isMember("ModifiedTimestamp") && !properties["ModifiedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["ModifiedTimestamp"].asCString());
+        data->SetModifiedDateTime(date);
+        }
+    
+    //// Approximate file size
+    if(properties.isMember("FileSize") && !properties["FileSize"].isNull())
+        data->SetTotalSize(std::stoi(properties["FileSize"].asString().c_str()));
+    else if (properties.isMember("Size") && !properties["Size"].isNull())
+        data->SetTotalSize(properties["Size"].asInt());
+
+    // Resolution
+    if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
+        data->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
+
+    // Footprint
+    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+    if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
+        {
+        // Convert Utf8String to GeoPoint2d vector. 
+        // The string should look like this:
+        // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
+        footprintStr = properties["Footprint"].asString();
+
+        // Extract points.
+        footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
+        size_t delimiterPos = 0;
+        while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
+            footprintStr.erase(delimiterPos, 1);
+        while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
+            footprintStr.erase(delimiterPos, 1);
+        bvector<Utf8String> tokens;
+        BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
+            
+        for (size_t i = 0; i < tokens.size(); i += 2)
+            {
+            GeoPoint2d pt;
+            pt.longitude = strtod(tokens[i].c_str(), NULL);
+            pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
+
+            footprint.push_back(pt);
+            }
+
+        data->SetFootprint(footprint);
+        }
+
+    if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
+        data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
+
+    return data;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            11/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value properties)
+    {
+    // Required information to get.
+    DateTime date;
+
+    Utf8String footprintStr;
+
+    SpatialEntityPtr data = SpatialEntity::Create();
+
+    // Id
+    if (properties.isMember("Id") && !properties["Id"].isNull())
+        data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+   
+    // Name
+    if (properties.isMember("Name") && !properties["Name"].isNull())
+        data->SetName(Utf8CP(properties["Name"].asString().c_str()));
+
+    // Dataset
+    if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
+        data->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
+
+    // Description
+    if (properties.isMember("Description") && !properties["Description"].isNull())
+        data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
+
+    // DataType
+    if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
         data->SetDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
     else if (properties.isMember("Type") && !properties["Type"].isNull())
         data->SetDataType(Utf8CP(properties["Type"].asString().c_str()));
@@ -158,11 +346,11 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if (properties.isMember("Classification") && !properties["Classification"].isNull())
         data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
-    // Thumbnail Url
+    // Thumbnail URL
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
         data->SetThumbnailURL(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
 
-    // MetadataUrl]
+    // MetadataURL
     if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
         {
         if (data->GetMetadataCP() == NULL)
@@ -185,10 +373,6 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
         data->SetVisibilityByTag(Utf8CP(properties["PublicAccess"].asString().c_str()));
 
-    // Listable
-    if (properties.isMember("Listable") && !properties["Listable"].isNull())
-        data->SetListable(properties["Listable"].asBool());
-
     // Date
     if (properties.isMember("Date") && !properties["Date"].isNull())
         {
@@ -199,13 +383,6 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         {
         DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
         data->SetDate(date);
-        }
-
-    // Modified Date
-    if (properties.isMember("ModifiedTimestamp") && !properties["ModifiedTimestamp"].isNull())
-        {
-        DateTime::FromString(date, properties["ModifiedTimestamp"].asCString());
-        data->SetModifiedTimestamp(date);
         }
     
     //// Approximate file size
@@ -248,9 +425,6 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
         data->SetFootprint(footprint);
         }
-
-    if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
-        data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
 
     return data;
     }

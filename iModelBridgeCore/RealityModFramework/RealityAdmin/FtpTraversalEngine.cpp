@@ -187,7 +187,7 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 
     // Data extraction.
     // &&AR Not all traversed files are raster ... we must try out other types or introduce a generic creater.
-    RealityDataPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
+    RealityDataExtractPtr pData = RasterData::Create(fileList[0].GetNameUtf8().c_str());
 
     // Name.
     Utf8String name = fileList[0].GetNameUtf8();

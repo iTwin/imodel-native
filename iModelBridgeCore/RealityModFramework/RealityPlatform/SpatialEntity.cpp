@@ -129,29 +129,11 @@ SpatialEntityPtr SpatialEntity::Create(Utf8StringCR identifier, const DateTime& 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR SpatialEntity::GetIdentifier() const { return m_identifier; }
-void SpatialEntity::SetIdentifier(Utf8CP identifier) { m_identifier = identifier; }
-
-Utf8StringCR SpatialEntity::GetName() const { return m_name; }
-void SpatialEntity::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR SpatialEntity::GetResolution() const { return m_resolution; }
-void SpatialEntity::SetResolution(Utf8CP res) { m_resolution = res; m_resolutionValueUpToDate = false;}
-
-Utf8StringCR SpatialEntity::GetAccuracy() const { return m_accuracy; }
-void SpatialEntity::SetAccuracy(Utf8CP accuracy) { m_accuracy = accuracy; m_accuracyValueUpToDate = false;}
-
 Utf8StringCR SpatialEntity::GetProvider() const { return m_provider; }
 void SpatialEntity::SetProvider(Utf8CP provider) { m_provider = provider; }
 
 Utf8StringCR SpatialEntity::GetProviderName() const { return m_providerName; }
 void SpatialEntity::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
-
-Utf8StringCR SpatialEntity::GetDataset() const { return m_dataset; }
-void SpatialEntity::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
-
-Utf8StringCR SpatialEntity::GetGroup() const { return m_group; }
-void SpatialEntity::SetGroup(Utf8CP group) { m_group = group; }
 
 Utf8StringCR SpatialEntity::GetThumbnailURL() const { return m_thumbnailURL; }
 void SpatialEntity::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
@@ -159,89 +141,11 @@ void SpatialEntity::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thum
 Utf8StringCR SpatialEntity::GetThumbnailLoginKey() const { return m_thumbnailLoginKey; }
 void SpatialEntity::SetThumbnailLoginKey(Utf8CP thumbnailLoginKey) { m_thumbnailLoginKey = thumbnailLoginKey; }
 
-SpatialEntity::Classification SpatialEntity::GetClassification() const { return m_classification; }
-void SpatialEntity::SetClassification(Classification classification) { m_classification = classification; }
-Utf8String SpatialEntity::GetClassificationTag() const
-    {
-    if (Classification::MODEL == m_classification)
-        return "Model";
-    else if (Classification::TERRAIN == m_classification)
-        return "Terrain";
-    else if (Classification::IMAGERY == m_classification)
-        return "Imagery";
-    else if (Classification::PINNED == m_classification)
-        return "Pinned";
-
-    return "Undefined";   
-    }
-
-//! Static method that converts a classification tag to a classification
-StatusInt SpatialEntity::GetClassificationFromTag(SpatialEntity::Classification& returnedClassification, Utf8CP classificationTag)
-    {
-    Utf8String tag(classificationTag);
-    if (tag == "Model")
-        returnedClassification = Classification::MODEL;
-    if (tag == "Terrain")
-        returnedClassification = Classification::TERRAIN;
-    if (tag == "Imagery")
-        returnedClassification = Classification::IMAGERY;
-    if (tag == "Pinned")
-        returnedClassification = Classification::PINNED;
-    if (tag == "Undefined")
-        returnedClassification = Classification::UNDEFINED;
-    else
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-StatusInt SpatialEntity::SetClassificationByTag(Utf8CP classificationTag)
-    {
-    return GetClassificationFromTag(m_classification, classificationTag);
-    }
-
 Utf8StringCR SpatialEntity::GetDataType() const { return m_dataType; }
 void SpatialEntity::SetDataType(Utf8CP type) { m_dataType = type; }
 
 DateTimeCR SpatialEntity::GetDate() const { return m_date; }
 void SpatialEntity::SetDate(DateTimeCR date) { m_date = date; }
-
-const bvector<GeoPoint2d>& SpatialEntity::GetFootprint() const { return m_footprint; }
-void SpatialEntity::SetFootprint(bvector<GeoPoint2d> const& footprint) { m_footprint = footprint; m_footprintExtentComputed = false; }
-
-DRange2dCR SpatialEntity::GetFootprintExtent() const 
-{ 
-    if (!m_footprintExtentComputed)
-        {
-        if (m_footprint.size() > 0)
-            {
-            m_footprintExtent.low.x = m_footprint[0].longitude;
-            m_footprintExtent.low.y = m_footprint[0].latitude;
-            m_footprintExtent.high.x = m_footprint[0].longitude;
-            m_footprintExtent.high.y = m_footprint[0].latitude;
-
-            for (int index = 1 ; index < m_footprint.size() ; ++index)
-                {
-                m_footprintExtent.low.x  = min(m_footprint[index].longitude, m_footprintExtent.low.x );
-                m_footprintExtent.low.y  = min(m_footprint[index].latitude, m_footprintExtent.low.y );
-                m_footprintExtent.high.x = max(m_footprint[index].longitude, m_footprintExtent.high.x);
-                m_footprintExtent.high.y = max(m_footprint[index].latitude, m_footprintExtent.high.y);
-                }
-            }
-        else
-            {
-            m_footprintExtent.low.x = 0.0;
-            m_footprintExtent.low.y = 0.0;
-            m_footprintExtent.high.x = 0.0;
-            m_footprintExtent.high.y = 0.0;
-            }
-        m_footprintExtentComputed = true;
-        }
-    return m_footprintExtent; 
-}
-
-bool SpatialEntity::HasApproximateFootprint() const {return m_approximateFootprint;}
-void SpatialEntity::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
 
 SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const { return m_pMetadata.get(); }
 SpatialEntityMetadataP SpatialEntity::GetMetadataP()  { return m_pMetadata.get(); }
@@ -252,70 +156,6 @@ SpatialEntityDataSourceR SpatialEntity::GetDataSource(size_t index) { return *m_
 void SpatialEntity::AddDataSource(SpatialEntityDataSourceR dataSource) { m_DataSources.push_back(&dataSource); }
 size_t SpatialEntity::GetDataSourceCount() const {return m_DataSources.size();}
 
-Utf8StringCR SpatialEntity::GetEnterprise() const { return m_enterprise; }
-void SpatialEntity::SetEnterprise(Utf8CP enterprise) { m_enterprise = enterprise; }
-
-Utf8StringCR SpatialEntity::GetContainerName() const { return m_containerName; }
-void SpatialEntity::SetContainerName(Utf8CP containerName) { m_containerName = containerName; }
-
-Utf8StringCR SpatialEntity::GetDescription() const { return m_description; }
-void SpatialEntity::SetDescription(Utf8CP description) { m_description = description; }
-
-Utf8StringCR SpatialEntity::GetRootDocument() const { return m_rootDocument; }
-void SpatialEntity::SetRootDocument(Utf8CP rootDocument) { m_rootDocument = rootDocument; }
-
-
-SpatialEntity::Visibility SpatialEntity::GetVisibility() const { return m_visibility; }
-void SpatialEntity::SetVisibility(SpatialEntity::Visibility visibility) { m_visibility = visibility; }
-
-Utf8String SpatialEntity::GetVisibilityTag() const
-    {
-    if (Visibility::PUBLIC == m_visibility)
-        return "PUBLIC";
-    else if (Visibility::ENTERPRISE == m_visibility)
-        return "ENTERPRISE";
-    else if (Visibility::PERMISSION == m_visibility)
-        return "PERMISSION";
-    else if (Visibility::PRIVATE == m_visibility)
-        return "PRIVATE";
-
-    return "UNDEFINED";   
-    }
-
-//! Static method that converts a classification tag to a classification
-StatusInt SpatialEntity::GetVisibilityFromTag(SpatialEntity::Visibility& returnedVisibility, Utf8CP visibilityTag)
-    {
-    Utf8String tag(visibilityTag);
-    if (tag == "PUBLIC")
-        returnedVisibility = Visibility::PUBLIC;
-    if (tag == "ENTERPRISE")
-        returnedVisibility = Visibility::ENTERPRISE;
-    if (tag == "PERMISSION")
-        returnedVisibility = Visibility::PERMISSION;
-    if (tag == "PRIVATE")
-        returnedVisibility = Visibility::PRIVATE;
-    if (tag == "UNDEFINED")
-        returnedVisibility = Visibility::UNDEFINED;
-    else
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-StatusInt SpatialEntity::SetVisibilityByTag(Utf8CP visibilityTag)
-    {
-    return GetVisibilityFromTag(m_visibility, visibilityTag);
-    }
-
-bool SpatialEntity::IsListable() const { return m_listable; }
-void SpatialEntity::SetListable(bool listable) { m_listable = listable; }
-
-DateTime SpatialEntity::GetModifiedTimestamp() const { return m_modifiedDate; }
-void SpatialEntity::SetModifiedTimestamp(DateTime modifiedDate) { m_modifiedDate = modifiedDate; }
-
-Utf8StringCR SpatialEntity::GetOwner() const { return m_owner; }
-void SpatialEntity::SetOwner(Utf8CP owner) { m_owner = owner; }
-
 float SpatialEntity::GetOcclusion() const { return m_occlusion; }
 void SpatialEntity::SetOcclusion(float cover) { BeAssert(cover <=100.0); m_occlusion = cover; }
 
@@ -323,75 +163,16 @@ uint64_t SpatialEntity::GetApproximateFileSize() const {return m_approximateFile
 void SpatialEntity::SetApproximateFileSize(uint64_t size) {m_approximateFileSize = size;}
 
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                         Alain.Robert           12/2016
-//-------------------------------------------------------------------------------------
-double SpatialEntity::GetResolutionValue() const
-    {
-    if (!m_resolutionValueUpToDate)
-        {
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(m_resolution.c_str(), "x", tokens);
-        BeAssert(2 == tokens.size());
-        if (2 == tokens.size()) 
-            {
-            // Convert to double.
-            double resX = strtod(tokens[0].c_str(), NULL);
-            double resY = strtod(tokens[1].c_str(), NULL);
 
-            m_resolutionValue = sqrt(resX * resY);
-            m_resolutionValueUpToDate = true;
-            }
-        else 
-            return 0.0;
-        }
-
-    return m_resolutionValue;
-    }
-
-
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                         Alain.Robert           12/2016
-//-------------------------------------------------------------------------------------
-double SpatialEntity::GetAccuracyValue() const
-    {
-    if (!m_accuracyValueUpToDate)
-        {
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(m_accuracy.c_str(), "x", tokens);
-        BeAssert(2 == tokens.size());
-        if (2 == tokens.size()) 
-            {
-            // Convert to double.
-            double accurX = strtod(tokens[0].c_str(), NULL);
-            double accurY = strtod(tokens[1].c_str(), NULL);
-
-            m_accuracyValue = sqrt(accurX * accurY);
-            m_accuracyValueUpToDate = true;
-            }
-        else 
-            return 0.0;
-        }
-
-    return m_accuracyValue;
-    }
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 SpatialEntity::SpatialEntity()
     {
     m_date = DateTime();
-    m_footprint = bvector<GeoPoint2d>();
-    m_resolutionValueUpToDate = false;
-    m_accuracyValueUpToDate = false;
+
     m_approximateFileSize = 0;
-    m_approximateFootprint=false;
-    m_visibility = Visibility::UNDEFINED;
-    m_classification = Classification::UNDEFINED;
     m_occlusion = 0.0f;
-    m_footprintExtentComputed = false;
-    m_listable = true;
     }
 
 
