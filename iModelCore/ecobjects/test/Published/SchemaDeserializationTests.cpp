@@ -1867,6 +1867,44 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoleLabelInherited)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndStructArrayPropertes)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'>"
+        "       <ECStructProperty propertyName='StructWithKOQ' typeName='S' kindOfQuantity='MyKindOfQuantity' />"
+        "       <ECStructArrayProperty propertyName='StructArrayWithKOQ' typeName='S' kindOfQuantity='MyKindOfQuantity' />"
+        "   </ECEntityClass>"
+        "   <ECStructClass typeName='S'>"
+        "       <ECProperty propertyName='S_P' typeName='string' />"
+        "   </ECStructClass>"
+        "   <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here' "
+        "       displayLabel='best quantity of all times' persistenceUnit='CENTIMETRE' precision='10' "
+        "       defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;MILLIINCH'/>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_NE(nullptr, aClass) << "Could not find 'A' class";
+    ECPropertyP structProp = aClass->GetPropertyP("StructWithKOQ");
+    ASSERT_NE(nullptr, structProp) << "Can't find 'StructWithKOQ' property";
+    KindOfQuantityCP koq = structProp->GetKindOfQuantity();
+    ASSERT_NE(nullptr, koq) << "'StructWithKOQ' property does not have a KOQ as expected";
+    ECPropertyP structArrayProp = aClass->GetPropertyP("StructArrayWithKOQ");
+    ASSERT_NE(nullptr, structArrayProp) << "Can't find 'StructArrayWithKOQ' property";
+    koq = structArrayProp->GetKindOfQuantity();
+    ASSERT_NE(nullptr, koq) << "'StructArrayWithKOQ' property does not have a KOQ as expected";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"

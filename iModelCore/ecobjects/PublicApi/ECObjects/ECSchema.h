@@ -647,6 +647,7 @@ private:
     uint32_t                m_minimumLength;
     uint32_t                m_maximumLength;
     ECValidatedName         m_validatedName;
+    KindOfQuantityCP        m_kindOfQuantity;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
     ECClassCR               m_class;
@@ -849,6 +850,15 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
+    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
+    bool IsKindOfQuantityDefinedLocally() const { return nullptr != m_kindOfQuantity; }
+
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
+    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
+
+    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
+    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
+
     //! Returns whether this property has an extended type specified
     ECOBJECTS_EXPORT bool               HasExtendedType() const;
 
@@ -876,14 +886,11 @@ struct PrimitiveECProperty : public ECProperty
 friend struct ECClass;
 private:
     Utf8String          m_extendedTypeName;
-    KindOfQuantityCP    m_kindOfQuantity;
     PrimitiveType       m_primitiveType;
     ECEnumerationCP     m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
-    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-
-    PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr) {};
+    PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr) {};
 
 protected:
     SchemaReadStatus _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -926,14 +933,6 @@ public:
     //! Resets the extended type on this property.
     bool RemoveExtendedTypeName() {return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);}
 
-    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
-    bool IsKindOfQuantityDefinedLocally() const {return nullptr != m_kindOfQuantity;}
-
-    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
-    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
-
-    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
-    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
 };
 
 //=======================================================================================
@@ -1041,15 +1040,12 @@ friend struct ECClass;
 
 private: 
     Utf8String          m_extendedTypeName;
-    KindOfQuantityCP    m_kindOfQuantity;
     PrimitiveType       m_primitiveType;
     ECEnumerationCP     m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
 
-    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-
 protected:
-    PrimitiveArrayECProperty(ECClassCR ecClass) : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr)
+    PrimitiveArrayECProperty(ECClassCR ecClass) : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr)
         {
         m_arrayKind = ARRAYKIND_Primitive;
         };
@@ -1094,15 +1090,6 @@ public:
 
     //! Resets the extended type on this property.
     bool RemoveExtendedTypeName() {return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);}
-
-    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
-    bool IsKindOfQuantityDefinedLocally() const {return nullptr != m_kindOfQuantity;}
-
-    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
-    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
-
-    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
-    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
 };
 
 
