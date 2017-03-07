@@ -7539,6 +7539,20 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
 TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
     {
     std::vector<SchemaItem> invalidSchemas;
+    invalidSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                        <ECSchema schemaName="TestSchema" alias="ts0" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                            <ECEntityClass typeName="Foo" modifier="None">
+                                                <ECProperty propertyName="MyProp" typeName="long">
+                                                   <ECCustomAttributes>
+                                                    <PropertyMap xmlns="ECDbMap.02.00">
+                                                       <ColumnName>c_prop</ColumnName>
+                                                    </PropertyMap>
+                                                   </ECCustomAttributes>
+                                                </ECProperty>
+                                            </ECEntityClass>
+                                        </ECSchema>)xml", false, "ColumnName without MapStrategy Existing Table"));
+
     invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                         "<ECSchema schemaName='TestSchema' alias='ts0' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
