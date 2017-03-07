@@ -44,7 +44,7 @@ BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
     #       Which is: 1095364799000
     # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
 
-LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed
+LimitingTaskQueueTests.Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed
     # bim0200dev, x64, DEBUG, random hang
     # Main Thread:
     #   ntdll.dll!NtWaitForAlertByThreadId ()      
