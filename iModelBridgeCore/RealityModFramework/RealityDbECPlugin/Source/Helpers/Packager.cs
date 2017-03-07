@@ -211,7 +211,9 @@ namespace IndexECPlugin.Source.Helpers
 
             string version = String.Format("{0}.{1}", major, minor);
 
-            UploadPackageInDatabase(instance, version, requestor, requestorVersion, m_email, String.Join(" ", selectedRegionStrArray));
+            string userId = IndexECPlugin.GetUserIdFromConnection(connection);
+
+            UploadPackageInDatabase(instance, version, requestor, requestorVersion, m_email, userId, String.Join(" ", selectedRegionStrArray));
 
 #if CONNECTENV
             string regionString = String.Join(" ", m_selectedRegion.Select(d => Convert.ToString(d)));
@@ -1078,14 +1080,14 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor, string requestorVersion, string email, string boundingPolygon)
+        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor, string requestorVersion, string email, string userId, string boundingPolygon)
             {
             using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
                 {
                 sqlConnection.Open();
                 using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
                     {
-                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7)";
+                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon, UserId) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7, @param8)";
                     dbCommand.CommandType = CommandType.Text;
 
                     DbParameter param0 = dbCommand.CreateParameter();
@@ -1112,8 +1114,6 @@ namespace IndexECPlugin.Source.Helpers
                     byte[] fileBytes = new byte[fstream.Length];
                     fstream.Seek(0, SeekOrigin.Begin);
                     fstream.Read(fileBytes, 0, intLength);
-
-
 
                     DbParameter param2 = dbCommand.CreateParameter();
                     param2.DbType = DbType.Binary;
@@ -1154,7 +1154,7 @@ namespace IndexECPlugin.Source.Helpers
                     DbParameter param8 = dbCommand.CreateParameter();
                     param8.DbType = DbType.String;
                     param8.ParameterName = "@param8";
-                    param8.Value = (object) email;
+                    param8.Value = (userId == null) ? (object) DBNull.Value : (object) userId;
                     dbCommand.Parameters.Add(param8);
 
                     dbCommand.ExecuteNonQuery();
@@ -1244,7 +1244,7 @@ namespace IndexECPlugin.Source.Helpers
                     using (DbCommand dbCommand = sqlConnection.CreateCommand())
                     {
                         dbCommand.CommandText =
-                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.Email FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime AND t.BentleyInternal = 0";
+                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.UserId FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime AND t.BentleyInternal = 0";
                         dbCommand.CommandType = CommandType.Text;
                         dbCommand.Connection = sqlConnection;
 
@@ -1281,7 +1281,7 @@ namespace IndexECPlugin.Source.Helpers
                                 }
                                 if (!reader.IsDBNull(3))
                                 {
-                                    instance["Email"].StringValue = reader.GetString(3);
+                                    instance["UserId"].StringValue = reader.GetString(3);
                                 }
 
                                 StatsList.Add(instance);

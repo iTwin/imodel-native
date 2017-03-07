@@ -1631,7 +1631,7 @@
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="BoundingPolygon" typeName="string" />
         <ECProperty propertyName="CreationTime" typeName="dateTime" />
-        <ECProperty propertyName="Email" typeName="string" />
+        <ECProperty propertyName="UserId" typeName="string" />
         <!--ECProperty propertyName="BentleyInternal" typeName="boolean"-->
     </ECClass>
     
