@@ -2404,7 +2404,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
         DVec3d      thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
         DVec3d      perp       = a_delta.y * DVec3d::From (-thisDir.y, thisDir.x, 0.0);
 
-        double      dist      = 360.0;
+        double      dist      = 60.0;
         DVec3d      delta     = DVec3d::From(0.0, 0.0, 0.0);
         double      dotDelta  = prevDir.DotProduct(nextDir);
 
