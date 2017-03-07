@@ -2,7 +2,7 @@
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 #ifndef VANCOUVER_API
-    #include <ThreeMxSchema/ThreeMXReader.h>
+    #include <ThreeMxReader/ThreeMXReader.h>
     #include <DgnPlatform/ImageUtilities.h>
 #else
     #include <Acute3d/ThreeMXReader.h>

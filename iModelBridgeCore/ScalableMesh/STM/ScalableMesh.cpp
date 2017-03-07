@@ -57,6 +57,7 @@ extern bool   GET_HIGHEST_RES;
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
 
+
 #ifndef VANCOUVER_API
 #include "ScalableMeshGroup.h"
 #endif

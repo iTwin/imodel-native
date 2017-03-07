@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshLib.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -20,6 +20,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/ImageppLib.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
 
 struct SMImagePPHost : public ImageppLib::Host
     {
