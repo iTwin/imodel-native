@@ -10,11 +10,61 @@
 
 #include "BeSQLite.h"
 
+BESQLITE_TYPEDEFS(IByteArray);
+BESQLITE_TYPEDEFS(ChangeGroup);
 BESQLITE_TYPEDEFS(IChangeSet);
 BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
+BESQLITE_TYPEDEFS(SchemaChangeSet);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   1/17
+//=======================================================================================
+struct IByteArray
+{
+protected:
+    virtual int _GetSize() const = 0;
+    virtual void const* _GetData() const = 0;
+public:
+    //! Get the number of bytes
+    int GetSize() const { return _GetSize(); }
+
+    //! Get a pointer to the data
+    void const* GetData() const { return _GetData(); }
+};
+
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   1/17
+//=======================================================================================
+struct SchemaChangeSet : IByteArray
+{
+private:
+    Utf8String m_ddl;
+
+    int _GetSize() const override { return IsEmpty() ? 0 : (int) m_ddl.SizeInBytes(); }
+    void const* _GetData() const override { return m_ddl.c_str(); }
+
+public:
+    //! Create a new schema change set
+    SchemaChangeSet(Utf8CP ddl = nullptr) { m_ddl.AssignOrClear(ddl); }
+
+    //! Add new DDL statements to the schema change set (separate multiple commands by ';')
+    BE_SQLITE_EXPORT void AddDDL(Utf8CP ddl);
+
+    //! Returns true if the schema change set is empty
+    bool IsEmpty() const { return m_ddl.empty(); }
+
+    //! Clear the schema change set
+    void Clear() { m_ddl.clear(); }
+
+    //! Return the contents of the schema change set
+    Utf8StringCR ToString() const { return m_ddl; }
+
+    //! Dump the contents
+    BE_SQLITE_EXPORT void Dump(Utf8CP label) const;
+};
 
 //=======================================================================================
 //! When enabled, this class maintains a list of "changed rows" (inserts, updates and deletes) for a BeSQLite::Db. This information is
@@ -30,14 +80,19 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
 struct ChangeTracker : RefCountedBase
 {
+friend struct Db;
+friend struct DbFile;
+
+private:
+    SchemaChangeSet m_schemaChanges;
+    DbResult RecordSchemaChange(Utf8CP ddl);
+
 protected:
     bool            m_isTracking;
     Db*             m_db;
     SqlSessionP     m_session;
     Utf8String      m_name;
-
-    friend struct Db;
-    friend struct DbFile;
+    
     enum class OnCommitStatus {Continue=0, Abort, Completed};
     enum class TrackChangesForTable : bool {No=0, Yes=1};
 
@@ -46,6 +101,8 @@ protected:
     void SetDb(Db* db) {m_db = db;}
     Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
+
+    SchemaChangeSetCR GetSchemaChanges() const { return m_schemaChanges; }
 
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_db=0; m_isTracking=false;}
@@ -81,8 +138,14 @@ public:
     //! @param[in] mode the new mode.
     BE_SQLITE_EXPORT void SetMode(Mode mode);
 
-    //! Determine whether any changes have been tracked by this ChangeTracker.
-    BE_SQLITE_EXPORT bool HasChanges();
+    //! Determine whether any changes (schema or data) have been tracked by this ChangeTracker.
+    BE_SQLITE_EXPORT bool HasChanges() const;
+
+    //! Determine whether any data changes tracked by this ChangeTracker
+    BE_SQLITE_EXPORT bool HasDataChanges() const;
+
+    //! Determine whether any schema changes ahve beeen tracked by this ChangeTracker
+    bool HasSchemaChanges() const { return !m_schemaChanges.IsEmpty(); } 
 
     //! Clear the contents of this ChangeTracker and re-start it.
     void Restart() {EndTracking(); EnableTracking(true);}
@@ -221,7 +284,7 @@ protected:
     virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
     virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) = 0;
-    virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) = 0;
+    virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) = 0;
     virtual DbResult _ApplyChanges(DbR db) = 0;
     virtual Changes _GetChanges() = 0;
 public:
@@ -244,7 +307,7 @@ public:
     //! @param[in] changeGroup ChangeGroup to be merged together. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
-    DbResult FromChangeGroup(ChangeGroup& changeGroup) { return _FromChangeGroup(changeGroup); }
+    DbResult FromChangeGroup(ChangeGroupCR changeGroup) { return _FromChangeGroup(changeGroup); }
 
     //! Apply all of the changes in this IChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
@@ -269,14 +332,18 @@ public:
 //! In this way, ChangeSets can be used to implement application Undo.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
-struct ChangeSet : NonCopyableClass, IChangeSet
+struct ChangeSet : NonCopyableClass, IChangeSet, IByteArray
 {
 private:
     int    m_size;
     void*  m_changeset;
+
+    int _GetSize() const override { return m_size; }
+    void const* _GetData() const override { return m_changeset; }
+
 protected:
     BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) override;
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override;
     BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
     virtual Changes _GetChanges() override { return Changes(*this); }
 public:
@@ -298,12 +365,6 @@ public:
     //! @param[in] second The change set to concatenate
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     BE_SQLITE_EXPORT DbResult ConcatenateWith(ChangeSet const& second);
-
-    //! Get the number of bytes in this ChangeSet.
-    int GetSize() const {return m_size;}
-
-    //! Get a pointer to the data for this ChangeSet.
-    void const* GetData()   const {return m_changeset;}
 
     //! Determine whether this ChangeSet holds valid data or not.
     bool IsValid() {return 0 != m_changeset;}
@@ -350,7 +411,7 @@ private:
 
 protected:
     BE_SQLITE_EXPORT virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override;
-    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroup& changeGroup) override;
+    BE_SQLITE_EXPORT virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override;
     BE_SQLITE_EXPORT virtual DbResult _ApplyChanges(DbR db) override;
     virtual Changes _GetChanges() override { return Changes(*this); }
 
@@ -418,5 +479,3 @@ public:
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
-
-

@@ -2000,11 +2000,29 @@ DbResult Db::DeleteBriefcaseLocalValue(Utf8CP name)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool isTempTableOrIndex(Utf8CP tableName)
+    {
+    return 0 == BeStringUtilities::Strnicmp(tableName, "temp.", 5);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
     {
-    return ExecuteSql(SqlPrintfString("CREATE TABLE %s (%s)", tableName, ddl));
+    SqlPrintfString sql("CREATE TABLE %s (%s)", tableName, ddl);
+    
+    DbResult result = ExecuteSql(sql);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    ChangeTracker* tracker = m_dbFile->m_tracker.get();
+    if (tracker && !isTempTableOrIndex(tableName))
+        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2012,9 +2030,55 @@ DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DropTable(Utf8CP tableName) const
     {
+    ChangeTracker* tracker = m_dbFile->m_tracker.get();
+    if (tracker && tracker->IsTracking() && !isTempTableOrIndex(tableName))
+        {
+        BeAssert(false && "Cannot make arbitrary schema changes when changes are being tracked");
+        return BE_SQLITE_ERROR;
+        }
+
     DbResult rc = TryExecuteSql(SqlPrintfString("DROP TABLE %s", tableName));
     BeAssert(rc == BE_SQLITE_OK);
     return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP columnDetails)
+    {
+    SqlPrintfString sql("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDetails);
+
+    DbResult result = ExecuteSql(sql);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    ChangeTracker* tracker = m_dbFile->m_tracker.get();
+    if (tracker && !isTempTableOrIndex(tableName))
+        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8CP columnName1, Utf8CP columnName2 /*=nullptr*/)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(indexName) && !Utf8String::IsNullOrEmpty(tableName) && !Utf8String::IsNullOrEmpty(columnName1));
+    
+    // e.g.,  "CREATE UNIQUE INDEX ix_ec_Class_SchemaId_Name ON ec_Class(SchemaId, Name);"
+    SqlPrintfString sql("CREATE %s INDEX %s ON %s(%s%s%s)", isUnique ? "UNIQUE" : "", indexName, tableName, columnName1, Utf8String::IsNullOrEmpty(columnName2) ? "" : ",", columnName2 ? columnName2 : "");
+
+    DbResult result = ExecuteSql(sql);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    ChangeTracker* tracker = m_dbFile->m_tracker.get();
+    if (tracker && !isTempTableOrIndex(indexName))
+        result = tracker->RecordSchemaChange(sql.GetUtf8CP());
+
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2073,9 +2137,16 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
+DbResult Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
     {
-    return BE_SQLITE_OK == ExecuteSql(SqlPrintfString("ALTER TABLE %s RENAME TO %s", tableName, newTableName));
+    ChangeTracker* tracker = m_dbFile->m_tracker.get();
+    if (tracker && tracker->IsTracking() && !isTempTableOrIndex(tableName))
+        {
+        BeAssert(false && "Cannot make arbitrary schema changes when changes are being tracked");
+        return BE_SQLITE_ERROR;
+        }
+
+    return ExecuteSql(SqlPrintfString("ALTER TABLE %s RENAME TO %s", tableName, newTableName));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2530,14 +2601,16 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         {
         BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion) <= 0 && "Minimum auto-upgradable profile version must be less or equal expected profile version.");
 
-        LOG.errorv("Cannot open file: The file's %s profile is too old to be auto-upgraded.", profileName);
+        LOG.errorv("Cannot open file: The file's %s profile (%s) is too old to be auto-upgraded. Minimum upgradable profile version: %s", 
+                   profileName, actualProfileVersion.ToString().c_str(), minimumUpgradableProfileVersion.ToMajorMinorString().c_str());
         return BE_SQLITE_ERROR_ProfileTooOld;
         }
 
     //If major and minor of actual profile version is newer than expected, file cannot be opened.
     if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) > 0)
         {
-        LOG.errorv("Cannot open file: The file's %s profile is too new. Please upgrade your product to the latest version.", profileName);
+        LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s. Please upgrade your product to the latest version.", 
+                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_ERROR_ProfileTooNew;
         }
 
@@ -2552,12 +2625,13 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
 
         if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) < 0)
             {
-            LOG.debugv("File's %s profile is too old, but auto-upgradable.", profileName);
+            LOG.debugv("File's %s profile (%s) is too old, but auto-upgradable.", profileName, actualProfileVersion.ToString().c_str());
             return BE_SQLITE_ERROR_ProfileTooOld;
             }
         else
             {
-            LOG.debugv("File's %s profile is older than expected, but is compatible with the version of this software. It also is auto-upgradable.", profileName);
+            LOG.debugv("File's %s profile (%s) is older than expected, but is compatible with the version of this software (%s). It also is auto-upgradable.", 
+                       profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
             return BE_SQLITE_OK;
             }
         }
@@ -2572,11 +2646,13 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         {
         if (openModeIsReadonly)
             {
-            LOG.warningv("File's %s profile is newer than expected, but the file can be opened read-only. Please consider to upgrade your Bentley product to the latest version.", profileName);
+            LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file can be opened read-only. Please consider to upgrade your Bentley product to the latest version.", 
+                         profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
             return BE_SQLITE_OK;
             }
 
-        LOG.errorv("File's %s profile is newer than expected. The file can only be opened read-only. Re-open the file in read-only mode. Please consider to upgrade your Bentley product to the latest version.", profileName);
+        LOG.errorv("File's %s profile (%s) is newer than expected (%s). The file can only be opened read-only. Re-open the file in read-only mode. Please consider to upgrade your Bentley product to the latest version.", 
+                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_ERROR_ProfileTooNewForReadWrite;
         }
 
@@ -2584,13 +2660,16 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
 
     if (actualProfileVersion.GetSub2() > expectedProfileVersion.GetSub2())
         {
-        LOG.warningv("File's %s profile is newer than expected, but the file is backwards compatible with the version of this software. Please consider to upgrade your Bentley product to the latest version.", profileName);
+        LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file is backwards compatible with the version of this software. Please consider to upgrade your Bentley product to the latest version.",
+                     profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
         return BE_SQLITE_OK;
         }
 
     BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion) == 0 && "Logical error in Db::CheckProfileVersion");
 
-    LOG.debugv("File's %s profile is up-to-date.", profileName);
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv("File's %s profile (%s) is up-to-date.", profileName, actualProfileVersion.ToString().c_str());
+
     return BE_SQLITE_OK;
     }
 

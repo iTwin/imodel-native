@@ -440,7 +440,10 @@ enum DbResult
     BE_SQLITE_ERROR_ProfileTooNew     = (BE_SQLITE_IOERR | (12<<24)),  //!< Profile (aka application level SQLite schema) of file is too new. Therefore file cannot be opened.
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
-
+    BE_SQLITE_ERROR_SchemaIncompatible = (BE_SQLITE_IOERR | 15 << 24), //!< Incompatible schemas found in the database
+    BE_SQLITE_ERROR_SchemaUpgradeRequired = (BE_SQLITE_IOERR | 16 << 24), //!< Require upgrade of schemas in the database
+    BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | 17 << 24), //!< Recommend upgrade of schemas in the database
+    
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
     BE_SQLITE_BUSY_RECOVERY           = (BE_SQLITE_BUSY     | (1<<8)),
@@ -1179,6 +1182,7 @@ private:
         }
 public:
     IdSet() {static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");}
+    virtual ~IdSet() {}
 
     typedef IdSet<IdType> T_Self;
     typedef bset<IdType> T_SetType;
@@ -2407,6 +2411,14 @@ public:
     //! Determine whether a table exists in this Db.
     BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName) const;
 
+    //! Add a column to a table
+    //! @param[in] tableName Name of the table. e.g., "test_Employee"
+    //! @param[in] columnName Name of the new column. e.g., "TitleId"
+    //! @param[in] columnDetails Details of the new column, e.g., "INTEGER REFERENCES test_Title(Id)"
+    //! @remarks Internally executes a DDL and records the schema change if necessary. 
+    //! e.g., "ALTER TABLE test_employee ADD COLUMN columnName INTEGER REFERENCES test_Title(Id)"
+    BE_SQLITE_EXPORT DbResult AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP columnDetails);
+
     //! Determine whether a column exists in a table in this Db.
     BE_SQLITE_EXPORT bool ColumnExists(Utf8CP tableName, Utf8CP columnName) const;
 
@@ -2418,7 +2430,15 @@ public:
     //! Rename existing table
     //! @param[in] tableName The name of existing table.
     //! @param[in] newTableName new name for the table.
-    BE_SQLITE_EXPORT bool RenameTable(Utf8CP tableName, Utf8CP newTableName);
+    BE_SQLITE_EXPORT DbResult RenameTable(Utf8CP tableName, Utf8CP newTableName);
+
+    //! Create an index on an existing table
+    //! @param[in] indexName Name of the new index
+    //! @param[in] tableName Name of the existing table
+    //! @param[in] isUnique Pass true to setup a unique index
+    //! @param[in] columnName1 Name of the column to create index on
+    //! @param[in] columnName2 Optional name of a second column to create a multi-column index
+    BE_SQLITE_EXPORT DbResult CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8CP columnName1, Utf8CP columnName2 = nullptr);
 
     //! Free non-essential memory associated with the DB. Typically used when going to the background state on a tablet computer.
     BE_SQLITE_EXPORT void FlushPageCache();
