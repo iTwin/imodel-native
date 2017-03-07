@@ -45,7 +45,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetCreateParams()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(graphic.GetCreateParams()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -58,7 +58,7 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR 
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::Graphic::CreateParams(graphic.GetCreateParams()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(graphic.GetCreateParams()), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -370,8 +370,8 @@ bool IsUnclipped() {return m_unclipped;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
-    : m_processor(processor), m_context(context), m_dgndb(params.m_dgndb), m_localToWorldTransform(params.m_placement)
+SimplifyGraphic::SimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
+    : GraphicBuilder(params), m_processor(processor), m_context(context)
     {
     m_facetOptions = m_processor._GetFacetOptionsP();
 
@@ -389,12 +389,12 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_dgndb, Transform::FromProduct(m_localToWorldTransform, subToGraphic)), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;
     subGraphic->m_currGeomEntryId    = m_currGeomEntryId;
-    subGraphic->m_currClip           = (nullptr != clip ? clip->Clone(&m_localToWorldTransform) : nullptr);
+    subGraphic->m_currClip           = (nullptr != clip ? clip->Clone(&GetLocalToWorldTransform()) : nullptr);
 
     return subGraphic;
     }
@@ -404,7 +404,7 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d SimplifyGraphic::GetLocalToView() const
     {
-    DMatrix4d   localToWorld = DMatrix4d::From(m_localToWorldTransform);
+    DMatrix4d   localToWorld = DMatrix4d::From(GetLocalToWorldTransform());
     DMatrix4d   worldToView = m_context.GetWorldToView().M0;
     DMatrix4d   localToView;
 
@@ -420,7 +420,7 @@ DMatrix4d SimplifyGraphic::GetViewToLocal() const
     {
     Transform   worldToLocalTrans;
 
-    worldToLocalTrans.InverseOf(m_localToWorldTransform);
+    worldToLocalTrans.InverseOf(GetLocalToWorldTransform());
 
     DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
     DMatrix4d   viewToWorld = m_context.GetWorldToView().M1;
@@ -459,7 +459,7 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nP
     {
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_localToWorldTransform);
+    worldToLocal.InverseOf(GetLocalToWorldTransform());
     m_context.ViewToWorld(localPts, viewPts, nPts);
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
@@ -471,7 +471,7 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nP
     {
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf(m_localToWorldTransform);
+    worldToLocal.InverseOf(GetLocalToWorldTransform());
     m_context.ViewToWorld(localPts, viewPts, nPts);
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
@@ -635,7 +635,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             {
             bvector<CurveVectorPtr> insideCurves;
 
-            if (SUCCESS == BRepUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+            if (SUCCESS == BRepUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &GetLocalToWorldTransform()))
                 {
                 for (CurveVectorPtr tmpCurves : insideCurves)
                     m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
@@ -2227,7 +2227,7 @@ IGeometryProcessorR    m_processor;
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, m_processor, *this);
     }
@@ -2273,6 +2273,6 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
 Render::GraphicPtr SimplifyGraphic::_Finish()
     {
     m_isOpen = false;
-    return new Base(Render::Graphic::CreateParams(m_dgndb, m_localToWorldTransform), m_processor, m_context);
+    return new Base(GetDgnDb(), m_processor, m_context);
     }
 

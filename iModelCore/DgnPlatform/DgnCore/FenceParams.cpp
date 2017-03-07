@@ -75,7 +75,7 @@ FenceAcceptContext(FenceParamsR fp, FenceCheckStop* checkStop = nullptr) : m_fp(
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, *this, *this);
     }
@@ -83,11 +83,11 @@ Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, Render::Graphic::CreateParams const& params, ClipVectorCP clips) override
+Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips) override
     {
 #if defined (NEEDS_WORK)
 #endif
-    return new SimplifyGraphic::Base(Render::Graphic::CreateParams(params.m_dgndb), *this, *this);
+    return new SimplifyGraphic::Base(db, *this, *this);
     }
 
 UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
@@ -577,7 +577,7 @@ bool AcceptCurveVector(CurveVectorCR curves)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-    Render::GraphicBuilderPtr graphic = CreateGraphic(Graphic::CreateParams(GetDgnDb()));
+    Render::GraphicBuilderPtr graphic = CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb()));
 
     graphic->AddCurveVector(curves, false);
 

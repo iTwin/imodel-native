@@ -583,7 +583,7 @@ private:
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
 
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
         {
         return new SimplifyGraphic(params, m_processor, *this);
         }
@@ -737,17 +737,16 @@ BentleyStatus Loader::_LoadTile()
             continue;
 
         Render::GraphicPtr thisGraphic;
-        PrimitiveParams primParams(root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams(), Transform::FromIdentity());
         if (haveMesh)
             {
             if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
-                thisGraphic = system._CreateTriMesh(meshArgs, primParams);
+                thisGraphic = system._CreateTriMesh(meshArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
             }
         else
             {
             BeAssert(havePolyline);
             if (polylineArgs.Init(*mesh))
-                thisGraphic = system._CreateIndexedPolylines(polylineArgs, primParams);
+                thisGraphic = system._CreateIndexedPolylines(polylineArgs, root.GetDgnDb(), mesh->GetDisplayParams().GetGraphicParams());
             }
 
         if (thisGraphic.IsValid())
@@ -765,7 +764,7 @@ BentleyStatus Loader::_LoadTile()
             gfParams.SetWidth(0);
             gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-            Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(Graphic::CreateParams(root.GetDgnDb()));
+            Render::GraphicBuilderPtr rangeGraphic = system._CreateGraphic(GraphicBuilder::CreateParams(root.GetDgnDb()));
             rangeGraphic->ActivateGraphicParams(gfParams);
             rangeGraphic->AddRangeBox(tile.GetRange());
             graphics.push_back(rangeGraphic->Finish());
@@ -779,7 +778,7 @@ BentleyStatus Loader::_LoadTile()
                 tile.SetGraphic(**graphics.begin());
                 break;
             default:
-                tile.SetGraphic(*system._CreateGraphicList(std::move(graphics), Graphic::CreateParams(root.GetDgnDb())));
+                tile.SetGraphic(*system._CreateGraphicList(std::move(graphics), root.GetDgnDb()));
                 break;
             }
         }

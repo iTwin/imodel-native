@@ -293,7 +293,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     auto& tile = static_cast<Tile&>(*m_tile);
     Tree& tree = tile.GetTree();
     auto system = tree.GetRenderSystem();
-    auto graphic = system->_CreateGraphic(Graphic::CreateParams(tree.GetDgnDb()));
+    auto graphic = system->_CreateGraphic(GraphicBuilder::CreateParams(tree.GetDgnDb()));
 
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*m_texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
@@ -369,7 +369,7 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
         toNpc.form3d[2][2] = 1.0;
         toNpc.form3d[2][3] = 0;
 
-        m_graphic = args.m_context.CreateBranch(branch, Render::Graphic::CreateParams(vp->GetViewControllerR().GetDgnDb(), toNpc), nullptr);
+        m_graphic = args.m_context.CreateBranch(branch, vp->GetViewControllerR().GetDgnDb(), toNpc, nullptr);
         }
 
     args.m_graphics.Add(*m_graphic);

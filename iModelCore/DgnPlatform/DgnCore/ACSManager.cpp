@@ -1084,7 +1084,7 @@ GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3
     rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetDgnDb(), transform));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), transform));
 
     ACSFlags    flags = _GetFlags();
 

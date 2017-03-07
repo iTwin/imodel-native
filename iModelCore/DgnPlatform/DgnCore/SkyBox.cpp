@@ -325,7 +325,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     branch.SetViewFlags(flags); // and set its Viewflags
 
     // now add the skybox branch to the terrain context.
-    context.OutputGraphic(*context.CreateBranch(branch, Render::Graphic::CreateParams(context.GetDgnDb())), nullptr);
+    context.OutputGraphic(*context.CreateBranch(branch, context.GetDgnDb(), Transform::FromIdentity()), nullptr);
     }
 
 //=======================================================================================

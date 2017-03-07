@@ -209,7 +209,7 @@ DgnModelP               m_targetModel;
 bvector<FloodSeed>      m_floodSeeds;
 FloodSeed               m_dynamicFaceSeed;
 
-Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
+Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {m_output->SetLocalToWorldTransform(params.m_placement); return m_output;}
 
 DgnModelP GetViewTarget () {return m_targetModel;}
 

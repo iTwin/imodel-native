@@ -1135,33 +1135,20 @@ public:
 struct Graphic : RefCounted<NonCopyableClass>
 {
     friend struct ViewContext;
-    struct CreateParams
-    {
-        DgnDbR      m_dgndb;
-        Transform   m_placement;
-        explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
-    };
-
 protected:
     DgnDbR      m_dgndb;
-    Transform   m_localToWorldTransform;
 
     virtual ~Graphic() {}
     virtual bool _IsSimplifyGraphic() const {return false;}
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
 public:
-    explicit Graphic(CreateParams const& params) : m_dgndb(params.m_dgndb), m_localToWorldTransform(params.m_placement) { }
+    explicit Graphic(DgnDbR db) : m_dgndb(db) {}
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
 
-    //! Get current local to world transform (ex. GeometrySource placement transform).
-    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
-
     //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
-
-    CreateParams GetCreateParams() const { return CreateParams(GetDgnDb(), GetLocalToWorldTransform()); }
 };
 
 //=======================================================================================
@@ -1175,9 +1162,19 @@ struct GraphicBuilder : RefCountedBase
         DPoint3d m_pts[4];
     };
 
+    struct CreateParams
+    {
+        DgnDbR      m_dgndb;
+        Transform   m_placement;
+        explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
+    };
 
 protected:
     friend struct GraphicBuilder;
+
+    CreateParams    m_createParams;
+
+    GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
 
     virtual bool _IsOpen() const = 0;
     virtual GraphicPtr _Finish() = 0;
@@ -1208,8 +1205,6 @@ protected:
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
-    virtual DgnDbR _GetDgnDb() const = 0;
-    virtual TransformCR _GetLocalToWorldTransform() const = 0;
     virtual bool _IsSimplifyGraphic() const { return false; }
 public:
     // NOTE: subToGraphic is provided to allow stroking in world coords...
@@ -1217,10 +1212,10 @@ public:
 
     // ###TODO_ELEMENT_TILE: Temporary...
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
-    DgnDbR GetDgnDb() const {return _GetDgnDb();}
-    TransformCR GetLocalToWorldTransform() const {return _GetLocalToWorldTransform();}
+    DgnDbR GetDgnDb() const {return m_createParams.m_dgndb;}
+    TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
     bool IsSimplifyGraphic() const {return _IsSimplifyGraphic();}
-    Graphic::CreateParams GetCreateParams() const { return Graphic::CreateParams(GetDgnDb(), GetLocalToWorldTransform()); }
+    CreateParams const& GetCreateParams() const {return m_createParams;}
 
     bool IsOpen() const {return _IsOpen();}
 
@@ -1405,20 +1400,6 @@ public:
         graphicParams.SetIsBlankingRegion(true);
         ActivateGraphicParams(graphicParams);
         }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct PrimitiveParams : Graphic::CreateParams
-{
-    GraphicParams       m_graphicParams;
-    ClipVectorCPtr      m_clip;
-
-    PrimitiveParams(DgnDbR db, GraphicParamsCR graphicParams, Transform placement=Transform::FromIdentity(), ClipVectorCP clip=nullptr)
-        : Graphic::CreateParams(db, placement), m_graphicParams(graphicParams), m_clip(clip) { }
-    PrimitiveParams(Graphic::CreateParams const& createParams, GraphicParamsCR graphicParams, ClipVectorCP clip=nullptr)
-        : PrimitiveParams(createParams.m_dgndb, graphicParams, createParams.m_placement, clip) { }
 };
 
 //=======================================================================================
@@ -1685,24 +1666,24 @@ struct System
     //! Create a Material from parameters
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
 
-    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
+    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Create a triangle mesh primitive
-    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, PrimitiveParamsCR params) const = 0;
+    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create an indexed polyline primitive
-    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, PrimitiveParamsCR params) const = 0;
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a point cloud primitive
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, PrimitiveParamsCR params) const = 0;
+    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
 
     //! Create a Graphic consisting of a list of Graphics, with an optional transform applied to the list
-    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, Graphic::CreateParams const& params) const = 0;
+    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
-    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, Graphic::CreateParams const& params, ClipVectorCP clips) const = 0;
+    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1802,7 +1783,7 @@ public:
     DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
-    GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
+    GraphicBuilderPtr CreateGraphic(GraphicBuilder::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}

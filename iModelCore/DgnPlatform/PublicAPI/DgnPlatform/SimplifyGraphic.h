@@ -29,8 +29,6 @@ protected:
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
     ClipVectorPtr m_currClip;
-    DgnDbR m_dgndb;
-    Transform m_localToWorldTransform;
     bool m_isOpen = true;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
@@ -59,8 +57,6 @@ protected:
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
 
-    DgnDbR _GetDgnDb() const override {return m_dgndb;}
-    TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
     bool _IsSimplifyGraphic() const override {return true;}
     bool _IsOpen() const override {return m_isOpen;}
     Render::GraphicPtr _Finish() override;
@@ -69,7 +65,7 @@ protected:
     void _SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) override {if (nullptr != entry) m_currGeomEntryId = *entry; else m_currGeomEntryId.Init();}
 
 public:
-    DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
+    DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR, ViewContextR);
 
     virtual ~SimplifyGraphic() {}
 
@@ -139,8 +135,8 @@ public:
 
         bool _IsSimplifyGraphic() const override { return true; }
     public:
-        Base(CreateParams const& params, IGeometryProcessorR processor, ViewContextR context)
-            : Render::Graphic(params), m_processor(processor), m_context(context) { }
+        Base(DgnDbR db, IGeometryProcessorR processor, ViewContextR context)
+            : Render::Graphic(db), m_processor(processor), m_context(context) { }
     };
 }; // SimplifyGraphic
 

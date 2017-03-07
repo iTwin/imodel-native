@@ -24,7 +24,7 @@ struct NullContext : ViewContext
     //=======================================================================================
     struct NullGraphic : Render::Graphic
     {
-        NullGraphic(Render::Graphic::CreateParams const& params) : Render::Graphic(params) { }
+        NullGraphic(DgnDbR db) : Render::Graphic(db) { }
     };
 
     /*=================================================================================**//**
@@ -32,11 +32,9 @@ struct NullContext : ViewContext
     +===============+===============+===============+===============+===============+======*/
     struct NullGraphicBuilder : Render::GraphicBuilder
     {
-        Transform m_localToWorldTransform;
-        DgnDbR m_dgndb;
         bool m_isOpen = true;
 
-        NullGraphicBuilder(Render::Graphic::CreateParams const& params) : m_localToWorldTransform(params.m_placement), m_dgndb(params.m_dgndb) {}
+        NullGraphicBuilder(Render::GraphicBuilder::CreateParams const& params) : GraphicBuilder(params) { }
 
         bool _IsOpen() const override {return m_isOpen;}
         void _ActivateGraphicParams(Render::GraphicParamsCR, Render::GeometryParamsCP) override {}
@@ -63,15 +61,13 @@ struct NullContext : ViewContext
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::Graphic::CreateParams(GetDgnDb(), transform));}
-        DgnDbR _GetDgnDb() const override {return m_dgndb;}
-        TransformCR _GetLocalToWorldTransform() const override {return m_localToWorldTransform;}
-        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(GetCreateParams()); }
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::GraphicBuilder::CreateParams(GetDgnDb(), transform));}
+        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(GetDgnDb()); }
     };
 
 protected:
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphicBuilder(params);}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, Render::Graphic::CreateParams const& params, ClipVectorCP clips) override {return new NullGraphic(params);}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {return new NullGraphicBuilder(params);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP clips) override {return new NullGraphic(db);}
 
 public:
     NullContext() {m_ignoreViewRange = true;}

@@ -2654,7 +2654,7 @@ private:
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
 
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
         {
         return new SimplifyGraphic(params, m_processor, *this);
         }

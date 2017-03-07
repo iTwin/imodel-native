@@ -1235,15 +1235,14 @@ void GeometryListBuilder::SaveToGraphicList(bvector<GraphicPtr>& graphics, Rende
             continue;
 
         Render::GraphicPtr graphic;
-        PrimitiveParams primParams(m_dgndb, mesh->GetDisplayParams().GetGraphicParams(), Transform::FromIdentity());
         if (havePolyline)
             {
             if (polylineArgs.Init(*mesh))
-                graphic = system._CreateIndexedPolylines(polylineArgs, primParams);
+                graphic = system._CreateIndexedPolylines(polylineArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
             }
         else if (meshArgs.Init(*mesh, system, m_dgndb))
             {
-            graphic = system._CreateTriMesh(meshArgs, primParams);
+            graphic = system._CreateTriMesh(meshArgs, m_dgndb, mesh->GetDisplayParams().GetGraphicParams());
             }
 
         if (graphic.IsValid())
@@ -1566,7 +1565,7 @@ void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
     {
-    GraphicPtr gf = m_system._CreateTriMesh(args, GetPrimitiveParams());
+    GraphicPtr gf = m_system._CreateTriMesh(args, GetDgnDb(), GetGraphicParams());
     if (gf.IsValid())
         m_primitives.push_back(gf);
     }
@@ -1841,8 +1840,7 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
         {
         GraphicBranch branch;
         branch.Add(gf);
-        Graphic::CreateParams params(m_dgndb, Transform::FromProduct(m_transform, subToGf));
-        graphic = m_system._CreateBranch(std::move(branch), params, clip);
+        graphic = m_system._CreateBranch(std::move(branch), GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGf), clip);
         }
 
     if (graphic.IsValid())
@@ -1855,7 +1853,7 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
 GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipVectorCP clip) const
     {
     // ###TODO_ELEMENT_TILE: Clip...
-    return m_system._CreateGraphic(Graphic::CreateParams(m_dgndb, Transform::FromProduct(m_transform, subToGf)));
+    return m_system._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGf)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1884,7 +1882,7 @@ GraphicPtr PrimitiveBuilder::_Finish()
                 m_primitives.clear();
                 break;
             default:
-                graphic = m_system._CreateGraphicList(std::move(m_primitives), Graphic::CreateParams(m_dgndb, Transform::FromIdentity()));
+                graphic = m_system._CreateGraphicList(std::move(m_primitives), GetDgnDb());
                 break;
             }
         }
@@ -1899,13 +1897,5 @@ GraphicPtr PrimitiveBuilder::_Finish()
 DisplayParamsCR PrimitiveBuilder::GetDisplayParams(bool ignoreLighting) const
     {
     return m_geomList.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveParams PrimitiveBuilder::GetPrimitiveParams() const
-    {
-    return PrimitiveParams(GetDgnDb(), GetGraphicParams(), GetLocalToWorldTransform(), m_clip.get());
     }
 

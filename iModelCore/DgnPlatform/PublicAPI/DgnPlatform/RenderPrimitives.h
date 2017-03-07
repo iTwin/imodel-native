@@ -733,10 +733,7 @@ struct PolylineArgs : IndexedPolylineArgs
 struct PrimitiveBuilder : GraphicBuilder
 {
 protected:
-    DgnDbR              m_dgndb;
     System&             m_system;
-    Transform           m_transform;
-    ClipVectorCPtr      m_clip;
     GeometryListBuilder m_geomList;
     bvector<GraphicPtr> m_primitives;
     GraphicParams       m_graphicParams;
@@ -773,18 +770,14 @@ protected:
     DGNPLATFORM_EXPORT bool _IsOpen() const override { return m_isOpen; }
     DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() override;
 
-    DgnDbR _GetDgnDb() const override { return m_dgndb; }
-    TransformCR _GetLocalToWorldTransform() const override { return m_transform; }
-
     void AddTriMesh(TriMeshArgsCR args);
 
     GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
     GeometryParamsCP GetGeometryParams() const { return m_geometryParamsValid ? &m_geometryParams : nullptr; }
     DisplayParamsCR GetDisplayParams(bool ignoreLighting=false) const;
-    PrimitiveParams GetPrimitiveParams() const;
 public:
-    PrimitiveBuilder(System& system, Render::Graphic::CreateParams const& params)
-        : m_dgndb(params.m_dgndb), m_system(system), m_transform(params.m_placement), m_geomList(params.m_dgndb) { }
+    PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params)
+        : GraphicBuilder(params), m_system(system), m_geomList(params.m_dgndb) { }
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

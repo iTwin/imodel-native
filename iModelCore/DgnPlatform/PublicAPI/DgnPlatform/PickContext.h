@@ -114,8 +114,8 @@ private:
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
     void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
     void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;
-    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
-    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, Render::Graphic::CreateParams const& params, ClipVectorCP) override {return new SimplifyGraphic::Base(params, *this, *this);}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP) override {return new SimplifyGraphic::Base(db, *this, *this);}
     DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic) const;
     DPoint3d ConvertViewToLocal(DPoint4dCR viewPt, SimplifyGraphic const& graphic) const;
 
