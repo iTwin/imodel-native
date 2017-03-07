@@ -76,8 +76,9 @@
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
       <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
-    <Reference Include="Bentley.SelectServer.SaaS.Client">
-      <HintPath>..\..\nuget\Bentley.SelectServer.SaaS.Client.2017.2.9.11\lib\net45\Bentley.SelectServer.SaaS.Client.dll</HintPath>
+    <Reference Include="Bentley.SelectServer.SaaS.Client, Version=2017.2.17.2, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
+      <HintPath>packages\Bentley.SelectServer.SaaS.Client.2017.2.17.2\lib\net45\Bentley.SelectServer.SaaS.Client.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.ServiceBus, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\WindowsAzure.ServiceBus.3.0.6\lib\net45-full\Microsoft.ServiceBus.dll</HintPath>

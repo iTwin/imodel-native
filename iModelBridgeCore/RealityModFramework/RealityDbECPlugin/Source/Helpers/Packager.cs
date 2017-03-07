@@ -108,10 +108,11 @@ namespace IndexECPlugin.Source.Helpers
             m_selectedBBox.maxY = -180.0;
 
             string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
+            string[] selectedRegionStrArray = selectedRegionStr.Split(new char[] { ',', '[', ']', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             try
                 {
-                m_selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
+                m_selectedRegion = selectedRegionStrArray.Select(str => Convert.ToDouble(str)).ToList();
                 }
             catch ( System.FormatException )
                 {
@@ -146,7 +147,10 @@ namespace IndexECPlugin.Source.Helpers
                 }
 
             m_email = IndexECPlugin.GetEmailFromConnection(connection);
-        
+            if(m_email == null)
+                {
+                throw new OperationFailedException("The email should not be null");
+                }
 
             // Create data source.
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
@@ -207,7 +211,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string version = String.Format("{0}.{1}", major, minor);
 
-            UploadPackageInDatabase(instance, version, requestor, requestorVersion);
+            UploadPackageInDatabase(instance, version, requestor, requestorVersion, m_email, String.Join(" ", selectedRegionStrArray));
 
 #if CONNECTENV
             string regionString = String.Join(" ", m_selectedRegion.Select(d => Convert.ToString(d)));
@@ -1074,14 +1078,14 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor, string requestorVersion)
+        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor, string requestorVersion, string email, string boundingPolygon)
             {
             using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
                 {
                 sqlConnection.Open();
                 using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
                     {
-                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion) VALUES (@param0, @param1, @param2, @param3, @param4, @param5)";
+                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7)";
                     dbCommand.CommandType = CommandType.Text;
 
                     DbParameter param0 = dbCommand.CreateParameter();
@@ -1099,13 +1103,12 @@ namespace IndexECPlugin.Source.Helpers
                     FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
 
                     long longLength = fstream.Length;
-                    int intLength;
                     if ( longLength > int.MaxValue )
                         {
                         //Log.Logger.error("Package requested is too large.");
                         throw new Bentley.Exceptions.UserFriendlyException("Package requested is too large. Please reduce the size of the order");
                         }
-                    intLength = Convert.ToInt32(longLength);
+                    int intLength = Convert.ToInt32(longLength);
                     byte[] fileBytes = new byte[fstream.Length];
                     fstream.Seek(0, SeekOrigin.Begin);
                     fstream.Read(fileBytes, 0, intLength);
@@ -1136,6 +1139,24 @@ namespace IndexECPlugin.Source.Helpers
                     param5.Value = (requestorVersion == null) ? (object) DBNull.Value : (object) requestorVersion;
                     dbCommand.Parameters.Add(param5);
 
+                    DbParameter param6 = dbCommand.CreateParameter();
+                    param6.DbType = DbType.Boolean;
+                    param6.ParameterName = "@param6";
+                    param6.Value = email.EndsWith("bentley.com") || email.EndsWith("mailinator.com");
+                    dbCommand.Parameters.Add(param6);
+
+                    DbParameter param7 = dbCommand.CreateParameter();
+                    param7.DbType = DbType.String;
+                    param7.ParameterName = "@param7";
+                    param7.Value = (boundingPolygon == null) ? (object) DBNull.Value : (object) boundingPolygon;
+                    dbCommand.Parameters.Add(param7);
+
+                    DbParameter param8 = dbCommand.CreateParameter();
+                    param8.DbType = DbType.String;
+                    param8.ParameterName = "@param8";
+                    param8.Value = (object) email;
+                    dbCommand.Parameters.Add(param8);
+
                     dbCommand.ExecuteNonQuery();
                     }
                 sqlConnection.Close();
@@ -1158,6 +1179,119 @@ namespace IndexECPlugin.Source.Helpers
                 SelectedStyle = (structValue.GetPropertyValue("SelectedStyle") == null || structValue.GetPropertyValue("SelectedStyle").IsNull) ? null : structValue.GetPropertyValue("SelectedStyle").StringValue
             };
 
+            }
+
+            public static List<IECInstance> ExtractStats(ECQuery query, string connectionString, IECSchema schema)
+            {
+                List<IECInstance> StatsList = new List<IECInstance>();
+
+                int i = 0;
+                DateTime now = DateTime.Now;
+
+                //By default, the start date and end Date are the entire last month (from the 1st of that month)
+                DateTime startDate = (new DateTime(now.Year, now.Month, 1)).AddMonths(-1);
+                bool useDefaultStartDate = true;
+
+                DateTime endDate = (new DateTime(now.Year, now.Month, 1));
+                bool useDefaultEndDate = true;
+
+                while (i < query.WhereClause.Count)
+                {
+                    WhereCriterion criterion = query.WhereClause[i];
+                    if (i != (query.WhereClause.Count - 1) &&
+                        query.WhereClause.GetLogicalOperatorAfter(i) != LogicalOperator.AND)
+                    {
+                        throw new UserFriendlyException("This query only uses AND logical operators");
+                    }
+                    if (criterion is PropertyExpression)
+                    {
+                        PropertyExpression propExp = criterion as PropertyExpression;
+                        if (propExp.LeftSideProperty.Name == "CreationTime")
+                        {
+                            if (propExp.Operator == RelationalOperator.LT || propExp.Operator == RelationalOperator.LTEQ)
+                            {
+                                if (propExp.RightSide is DateTime)
+                                {
+                                    if (useDefaultEndDate || endDate > (DateTime) propExp.RightSide)
+                                    {
+                                        endDate = (DateTime) propExp.RightSide;
+                                    }
+                                    useDefaultEndDate = false;
+                                }
+                            }
+                            if (propExp.Operator == RelationalOperator.GT || propExp.Operator == RelationalOperator.GTEQ)
+                            {
+                                if (propExp.RightSide is DateTime)
+                                {
+                                    if (useDefaultStartDate || startDate < (DateTime) propExp.RightSide)
+                                    {
+                                        startDate = (DateTime) propExp.RightSide;
+                                    }
+                                    useDefaultStartDate = false;
+                                }
+                            }
+                        }
+                    }
+                    i++;
+                }
+                if (useDefaultEndDate != useDefaultStartDate)
+                {
+                    throw new UserFriendlyException("Please specify both start and end times.");
+                }
+                using (DbConnection sqlConnection = new SqlConnection(connectionString))
+                {
+                    sqlConnection.Open();
+                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                    {
+                        dbCommand.CommandText =
+                            "SELECT t.Name, t.BoundingPolygon, t.CreationTime, t.Email FROM dbo.Packages AS t WHERE t.CreationTime > @startTime AND t.CreationTime < @endTime AND t.BentleyInternal = 0";
+                        dbCommand.CommandType = CommandType.Text;
+                        dbCommand.Connection = sqlConnection;
+
+                        DbParameter param1 = dbCommand.CreateParameter();
+                        param1.DbType = DbType.DateTime;
+                        param1.ParameterName = "@startTime";
+                        param1.Value = startDate;
+                        dbCommand.Parameters.Add(param1);
+
+                        DbParameter param2 = dbCommand.CreateParameter();
+                        param2.DbType = DbType.DateTime;
+                        param2.ParameterName = "@endTime";
+                        param2.Value = endDate;
+                        dbCommand.Parameters.Add(param2);
+
+                        using (IDataReader reader = dbCommand.ExecuteReader())
+                        {
+                            IECClass ecClass = schema.GetClass("PackageStats");
+                            while (reader.Read())
+                            {
+                                IECInstance instance = ecClass.CreateInstance();
+
+                                if (!reader.IsDBNull(0))
+                                {
+                                    instance["Name"].StringValue = reader.GetString(0);
+                                }
+                                if (!reader.IsDBNull(1))
+                                {
+                                    instance["BoundingPolygon"].StringValue = reader.GetString(1);
+                                }
+                                if (!reader.IsDBNull(2))
+                                {
+                                    instance["CreationTime"].NativeValue = reader.GetDateTime(2);
+                                }
+                                if (!reader.IsDBNull(3))
+                                {
+                                    instance["Email"].StringValue = reader.GetString(3);
+                                }
+
+                                StatsList.Add(instance);
+                            }
+                        }
+                    }
+                }
+
+
+                return StatsList;
             }
 
         }

@@ -120,7 +120,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
-					<SpatialIndexName>SpatialIndex</SpatialIndexName>
+                    <SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -146,7 +146,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -218,7 +218,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="DataProvider" typeName="string"> 
             <ECCustomAttributes>
                 <DBColumn>
@@ -286,11 +286,11 @@
                 </DBColumn>
                 <MimicDBColumn>
                     <OverrideColumnName>Occlusion</OverrideColumnName>
-					<CacheColumnName>Occlusion</CacheColumnName>
+                    <CacheColumnName>Occlusion</CacheColumnName>
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
     </ECClass>
     
      <ECClass typeName="Metadata" isDomainClass="true">
@@ -472,7 +472,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="ParameterizedURL" typeName="boolean">
             <ECCustomAttributes>
                 <DBColumn>
@@ -582,7 +582,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="Metadata" typeName="string" >
             <!--ECCustomAttributes>
                 <MimicDBColumn>
@@ -936,7 +936,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="LoginMethod" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -960,7 +960,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="OrganisationPage" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -972,7 +972,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1306,7 +1306,7 @@
                 <DBColumn>
                     <ColumnName>BoundingBox</ColumnName>
                     <IsSpatial>true</IsSpatial>
-					<SpatialIndexName>SpatialIndex</SpatialIndexName>
+                    <SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1365,7 +1365,7 @@
                 <DBColumn>
                     <ColumnName>Footprint</ColumnName>
                     <IsSpatial>true</IsSpatial>
-					<SpatialIndexName>SpatialIndex</SpatialIndexName>
+                    <SpatialIndexName>SpatialIndex</SpatialIndexName>
                 </DBColumn>
                 <SpatialBBox>
                     <MinXColumnName>MinX</MinXColumnName>
@@ -1391,7 +1391,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -1523,7 +1523,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <ECProperty propertyName="Streamed" typeName="boolean" >
             <ECCustomAttributes>
                 <DBColumn>
@@ -1571,7 +1571,7 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
-		
+        
         <!--ECProperty propertyName="ParentDatasetIdStr" typeName="string" /-->
         <ECProperty propertyName="DataProvider" typeName="string">
             <ECCustomAttributes>
@@ -1627,6 +1627,14 @@
         
     </ECClass>
     
+    <ECClass typeName="PackageStats" isDomainClass="true">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="BoundingPolygon" typeName="string" />
+        <ECProperty propertyName="CreationTime" typeName="dateTime" />
+        <ECProperty propertyName="Email" typeName="string" />
+        <!--ECProperty propertyName="BentleyInternal" typeName="boolean"-->
+    </ECClass>
+    
     <ECRelationshipClass
       typeName="SpatialEntityToMetadata"
       description="Link between SpatialEntity and the metadata describing it"
@@ -1655,7 +1663,7 @@
       strengthDirection="forward">
         <ECCustomAttributes>
             <RelationshipKeys>
-			    <ContainerClassName>SpatialEntity</ContainerClassName>
+                <ContainerClassName>SpatialEntity</ContainerClassName>
                 <ContainerKey>Id</ContainerKey>
                 <ContainedClassName>SpatialDataSource</ContainedClassName>
                 <ContainedKey>SpatialEntity_Id</ContainedKey>
@@ -1748,8 +1756,8 @@
         <ECProperty propertyName="OSM" typeName="boolean" />
     </ECClass>
 
-	<ECClass typeName="DownloadReport" isDomainClass="true" />
-	
+    <ECClass typeName="DownloadReport" isDomainClass="true" />
+    
     <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">
         <ECProperty propertyName="Polygon" typeName="string" />
         <ECProperty propertyName="MostRecent" typeName="boolean" />

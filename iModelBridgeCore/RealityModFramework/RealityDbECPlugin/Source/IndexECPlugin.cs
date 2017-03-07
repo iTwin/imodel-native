@@ -258,6 +258,15 @@ namespace IndexECPlugin.Source
 
                         }
 
+                    if(searchClass.Class.Name == "PackageStats")
+                        {
+                        if(!IsBentleyEmployee(connection))
+                            {
+                            throw new UserFriendlyException("This operation is not permitted");
+                            }
+                        return Packager.ExtractStats(query, ConnectionString, schema);
+                        }
+
 
 
                     if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
@@ -806,29 +815,43 @@ namespace IndexECPlugin.Source
             RepositoryConnection connection
         )
             {
-            try
+                try
                 {
-                //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
-                var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
-                if ( !isAuth )
+                    //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    if (!isAuth)
                     {
-                    throw (new Exception());
+                        throw (new Exception());
                     }
-                else
+                    else
                     {
-                    //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                        //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
 
-                    IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
-                    Claim organizationClaim = claims.Where(c => c.Type == "http://schemas.bentley.com/ws/2011/03/identity/claims/organizationid").FirstOrDefault();
-                    Claim emailClaim = claims.Where(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress").FirstOrDefault();
-                    return emailClaim.Value.ToLower();
+                        IEnumerable<Claim> claims =
+                            ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                        Claim organizationClaim =
+                            claims.FirstOrDefault(
+                                    c => c.Type == "http://schemas.bentley.com/ws/2011/03/identity/claims/organizationid");
+                        Claim emailClaim =
+                            claims.FirstOrDefault(
+                                    c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
+                        return emailClaim.Value.ToLower();
                     }
                 }
-            catch
+                catch
                 {
+                }
                 //if on connect environment use this
-                string token = connection.ConnectionInfo.GetField("Token").Value;
-                //string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+                string token;
+                try
+                {
+                token = Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
+                }
+                catch (Exception)
+                {
+                    token = connection.ConnectionInfo.GetField("Token").Value;
+                }
+                
                 var xml = new XmlDocument();
                 xml.LoadXml(token);
                 var nsmgr = new XmlNamespaceManager(xml.NameTable);
@@ -836,9 +859,62 @@ namespace IndexECPlugin.Source
 
                 return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='emailaddress']", nsmgr).InnerText.ToLower();
                 }
+
+
+            /// <summary>
+            /// Determines if caller is a Bentley Employee
+            /// </summary>
+            /// <param name="connection"></param>
+            /// <returns></returns>
+            public static bool IsBentleyEmployee
+            (
+                RepositoryConnection connection
+            )
+            {
+                try
+                {
+                    //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    if (!isAuth)
+                    {
+                        throw (new Exception());
+                    }
+                    else
+                    {
+                        //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+
+                        IEnumerable<Claim> claims =
+                            ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                        Claim employeeClaim =
+                            claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/isbentleyemployee");
+                        return (employeeClaim.Value.ToLower() == "true");
+                    }
+                }
+                catch
+                {
+                }
+//if on connect environment use this
+                string token;
+                try
+                {
+                token = Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
+                }
+                catch (Exception)
+                {
+                    token = connection.ConnectionInfo.GetField("Token").Value;
+                }
+                var xml = new XmlDocument();
+                xml.LoadXml(token);
+                var nsmgr = new XmlNamespaceManager(xml.NameTable);
+                nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+
+                return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='isbentleyemployee']", nsmgr).InnerText.ToLower() == "true";
+
             }
 
         }
 
 
+
     }
+
