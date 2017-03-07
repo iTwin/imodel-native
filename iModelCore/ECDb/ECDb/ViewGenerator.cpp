@@ -38,7 +38,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-                                     "SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc "
+                                     "SELECT c.Id FROM " TABLE_Class " c, ec_ClassMap cm, " TABLE_ClassHasBaseClasses " cc "
                                      "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_ECClassType_Entity " AND cm.MapStrategy<> " SQLVAL_MapStrategy_NotMapped
                                      " GROUP BY c.Id"))
         return ERROR;
@@ -73,9 +73,10 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
 BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
     {
     Statement stmt;
-    stmt.Prepare(ecdb,
-                 "SELECT ('DROP VIEW IF EXISTS _' || ec_Schema.Alias || '_' || ec_Class.Name) "
-                 "FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
+                                     "SELECT ('DROP VIEW IF EXISTS _' || s.Alias || '_' || c.Name) "
+                                     "FROM " TABLE_Class " c INNER JOIN " TABLE_Schema " s ON s.Id = c.SchemaId"))
+        return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -107,7 +108,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, 
-                                     "SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
+                                     "SELECT c.Id FROM " TABLE_Class " c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND "
                                      "c.Type IN (" SQLVAL_ECClassType_Entity "," SQLVAL_ECClassType_Relationship ") AND "
                                      "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped))
         return ERROR;
@@ -205,9 +206,10 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
 BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     {
     Statement stmt;
-    stmt.Prepare(ecdb,
-                 "SELECT ('DROP VIEW IF EXISTS [' || ec_Schema.Alias || '.' || ec_Class.Name || '];') FROM ec_Class "
-                 "INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb,
+                                     "SELECT ('DROP VIEW IF EXISTS [' || s.Alias || '.' || c.Name || '];') FROM ec_Class c "
+                                     "INNER JOIN ec_Schema s ON s.Id=c.SchemaId"))
+        return ERROR;
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -256,14 +258,10 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         updateTables.insert(&partition.GetTable());
         deleteTables.insert(&partition.GetTable());
         if (partition.GetTable().GetType() == DbTable::Type::Joined)
-            {
             joinedTables.push_back(&partition.GetTable());
-            }
 
         if (partition.GetTable().GetType() == DbTable::Type::Primary)
-            {
             primaryTables.push_back(&partition.GetTable());
-            }
         }
     //Remove any primary table
     for (DbTable const* joinedTable : joinedTables)
@@ -301,7 +299,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             ddl.append(" INSTEAD OF DELETE ON ").append(updatableViewName).append(" WHEN ").append(whenClause);
 
             Utf8String body;
-            body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            body.Sprintf(" BEGIN DELETE FROM [%s] WHERE [%s]=OLD.[%s]; END", partition.GetTable().GetName().c_str(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
             ddl.append(body);
             triggerDdlList.push_back(ddl);
             }
@@ -332,7 +330,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
                 continue; //nothing to update.
 
             Utf8String body;
-            body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s] = OLD.[%s]; END", partition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
+            body.Sprintf(" BEGIN UPDATE [%s] SET %s WHERE [%s]=OLD.[%s]; END", partition.GetTable().GetName().c_str(), setClause.ToString(), partitionIdColumn->GetName().c_str(), rootPartitionIdColumn->GetName().c_str());
             ddl.append(body);
 
             triggerDdlList.push_back(ddl);
@@ -350,67 +348,75 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     updatableViewDdl.Sprintf("CREATE VIEW %s AS %s", updatableViewName.c_str(), viewBodySql.ToString());
 
     if (ctx.GetECDb().ExecuteSql(updatableViewDdl.c_str()) != BE_SQLITE_OK)
+        {
+        LOG.errorv("Failed to create updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(), 
+                   ctx.GetECDb().GetLastError().c_str(), updatableViewDdl.c_str());
         return ERROR;
+        }
 
     for (Utf8StringCR triggerDdl : triggerDdlList)
         {
         if (ctx.GetECDb().ExecuteSql(triggerDdl.c_str()) != BE_SQLITE_OK)
+            {
+            LOG.errorv("Failed to create trigger for updatable view for ECClass '%s'. %s (SQL: %s)", classMap.GetClass().GetFullName(),
+                       ctx.GetECDb().GetLastError().c_str(), triggerDdl.c_str());
             return ERROR;
+            }
         }
 
     return SUCCESS;
     }
 
-    //-----------------------------------------------------------------------------------------
-    // @bsimethod                                    Affan.Khan                      05/2016
-    //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap)
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap)
+    {
+    sql.Reset();
+    std::vector<Utf8String> values;
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data);
+    baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
+    for (PropertyMap const* result : typeVisitor.Results())
         {
-        sql.Reset();
-        std::vector<Utf8String> values;
-        SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data);
-        baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
-        for (PropertyMap const* result : typeVisitor.Results())
+        PropertyMap const* derivedPropMap = derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str());
+        if (derivedPropMap == nullptr || !derivedPropMap->IsData())
             {
-            PropertyMap const* derivedPropMap = derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str());
-            if (derivedPropMap == nullptr || !derivedPropMap->IsData())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            std::vector<DbColumn const*> derivedColumnList, baseColumnList;
-            GetColumnsPropertyMapVisitor baseColumnVisitor, derivedColumnVisitor;
-            result->AcceptVisitor(baseColumnVisitor);
-            derivedPropMap->AcceptVisitor(derivedColumnVisitor);
-            if (baseColumnVisitor.GetColumns().size() != derivedColumnVisitor.GetColumns().size())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            for (auto deriveColumnItor = derivedColumnVisitor.GetColumns().begin(), baseColumnItor = baseColumnVisitor.GetColumns().begin(); deriveColumnItor != derivedColumnVisitor.GetColumns().end() && baseColumnItor != baseColumnVisitor.GetColumns().end(); ++deriveColumnItor, ++baseColumnItor)
-                {
-                Utf8String str;
-                str.Sprintf("[%s] = NEW.[%s]", (*deriveColumnItor)->GetName().c_str(), (*baseColumnItor)->GetName().c_str());
-                values.push_back(str);
-                }
-            }
-
-
-        if (values.empty())
+            BeAssert(false);
             return ERROR;
-
-        for (auto itor = values.begin(); itor != values.end(); ++itor)
-            {
-            if (itor != values.begin())
-                sql.AppendComma();
-
-            sql.Append((*itor).c_str());
             }
 
-        return SUCCESS;
+        std::vector<DbColumn const*> derivedColumnList, baseColumnList;
+        GetColumnsPropertyMapVisitor baseColumnVisitor, derivedColumnVisitor;
+        result->AcceptVisitor(baseColumnVisitor);
+        derivedPropMap->AcceptVisitor(derivedColumnVisitor);
+        if (baseColumnVisitor.GetColumns().size() != derivedColumnVisitor.GetColumns().size())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        for (auto deriveColumnItor = derivedColumnVisitor.GetColumns().begin(), baseColumnItor = baseColumnVisitor.GetColumns().begin(); deriveColumnItor != derivedColumnVisitor.GetColumns().end() && baseColumnItor != baseColumnVisitor.GetColumns().end(); ++deriveColumnItor, ++baseColumnItor)
+            {
+            Utf8String str;
+            str.Sprintf("[%s] = NEW.[%s]", (*deriveColumnItor)->GetName().c_str(), (*baseColumnItor)->GetName().c_str());
+            values.push_back(str);
+            }
         }
+
+
+    if (values.empty())
+        return ERROR;
+
+    for (auto itor = values.begin(); itor != values.end(); ++itor)
+        {
+        if (itor != values.begin())
+            sql.AppendComma();
+
+        sql.Append((*itor).c_str());
+        }
+
+    return SUCCESS;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
@@ -553,7 +559,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         DbColumn const* fkKey = requireJoinTo->GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
         viewSql.Append(" INNER JOIN ").AppendEscaped(requireJoinTo->GetName().c_str());
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
-        viewSql.Append(" = ").AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
+        viewSql.Append(BooleanSqlOperator::EqualTo).AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
         }
 
     return SUCCESS;
@@ -756,7 +762,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context& ctx, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto)
     {
     const bool requiresJoin = sourceJoinInfo.RequiresJoin() || targetJoinInfo.RequiresJoin();
-    ToSqlVisitor sqlVisitor(ctx, contextTable, contextTable.GetName().c_str(), true, false);
+    ToSqlVisitor sqlVisitor(ctx, contextTable, contextTable.GetName().c_str(), ToSqlVisitor::ColumnAliasMode::SystemPropertyName);
     viewSql.Append("SELECT ");
     //ECInstanceId
     if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
@@ -792,7 +798,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetSourceECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), true, false);
+            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), ToSqlVisitor::ColumnAliasMode::SystemPropertyName);
             relationMap.GetSourceECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
             BeAssert(!constraintSqlVisitor.GetResultSet().empty());
             viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
@@ -825,7 +831,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         {
         if (DbTable const* table = ConstraintECClassIdJoinInfo::RequiresJoinTo(*relationMap.GetTargetECClassIdPropMap(), true /*ignoreVirtualColumnCheck*/))
             {
-            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), true, false);
+            ToSqlVisitor constraintSqlVisitor(ctx, *table, contextTable.GetName().c_str(), ToSqlVisitor::ColumnAliasMode::SystemPropertyName);
             relationMap.GetTargetECClassIdPropMap()->AcceptVisitor(constraintSqlVisitor);
             BeAssert(!constraintSqlVisitor.GetResultSet().empty());
             viewSql.AppendComma().Append(constraintSqlVisitor.GetResultSet().front().GetSqlBuilder());
@@ -949,29 +955,78 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     NativeSqlBuilder::List propertySqlList;
     for (auto const& kvp : propertyMaps)
         {
-        PropertyMap const* basePropertyMap = kvp.second;
+        PropertyMap const* rootPropertyMap = kvp.second;
         PropertyMap const* propertyMap = kvp.first;
-        if (basePropertyMap != nullptr)
-            BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(basePropertyMap) == nullptr);
-
         BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(propertyMap) == nullptr);
+        BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(rootPropertyMap) == nullptr);
+
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
 
         // We only need table qualifier if there is at least one data property selected that require joining to another table
         // In this case all data properties are table qualified name to ensure no conflict between two tables columns.
-        // System property never require a join but therefor requireJoinToTableForDataProperties = nullptr if no data property was choosen
+        // System property never require a join but therefore requireJoinToTableForDataProperties = nullptr if no data property was chosen
         if (propertyMap->IsSystem())
             {
-            ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, true, ctx.GetViewType() == ViewType::ECClassView);
+            SystemPropertyMap const& systemPropertyMap = propertyMap->GetAs<SystemPropertyMap>();
+
+            ToSqlVisitor::ColumnAliasMode colAliasMode = ToSqlVisitor::ColumnAliasMode::SystemPropertyName;
+            Utf8CP colAlias = nullptr;
+            if (ctx.GetViewType() == ViewType::UpdatableView)
+                {
+                colAliasMode = ToSqlVisitor::ColumnAliasMode::NoAlias;//we append the alias ourselves
+
+                if (rootPropertyMap == nullptr)
+                    {
+                    SystemPropertyMap::PerTablePrimitivePropertyMap const* perTableSystemPropMap = systemPropertyMap.FindDataPropertyMap(contextTable);
+                    if (perTableSystemPropMap == nullptr)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+
+                    colAlias = perTableSystemPropMap->GetColumn().GetName().c_str();
+                    }
+                else
+                    {
+                    if (!rootPropertyMap->IsSystem())
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+
+                    SystemPropertyMap const* rootSystemPropertyMap = &rootPropertyMap->GetAs<SystemPropertyMap>();
+                    SystemPropertyMap::PerTablePrimitivePropertyMap const* perTableSystemPropMap = rootSystemPropertyMap->FindDataPropertyMap(baseClass->GetPrimaryTable());
+                    if (perTableSystemPropMap == nullptr)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+
+                    colAlias = perTableSystemPropMap->GetColumn().GetName().c_str();
+                    }
+                }
+
+            ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, colAliasMode);
             if (SUCCESS != propertyMap->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
                 return ERROR;
                 }
 
-            ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
-            propertySqlList.push_back(r.GetSqlBuilder());
+            ToSqlVisitor::Result const& visitorResult = toSqlVisitor.GetResultSet().front();
+            propertySqlList.push_back(visitorResult.GetSqlBuilder());
+            if (colAlias != nullptr)
+                {
+                //only append alias if it differs from the actual snippet.
+                //literal sql snippets are literal ECClassIds which are appended for virtual class id cols 
+                if (visitorResult.IsLiteralSqlSnippet() ||
+                    !visitorResult.GetColumn().GetName().EqualsIAscii(colAlias))
+                    {
+                    propertySqlList.back().AppendSpace().AppendEscaped(colAlias);
+                    }
+                }
+                
             continue;
             }
 
@@ -980,8 +1035,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
         if (&dataProperty.GetTable() == requireJoinToTableForDataProperties)
             {
-            ToSqlVisitor toSqlVisitor(ctx, *requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
-
+            ToSqlVisitor toSqlVisitor(ctx, *requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
                 BeAssert(false);
@@ -1014,11 +1068,14 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
             propertySql.Append(r.GetSqlBuilder().ToString());
             Utf8StringCP colAlias = nullptr;
-            if (basePropertyMap != nullptr)
+            if (rootPropertyMap != nullptr)
                 {
-                DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
-                if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
-                    colAlias = &basePropertyMapCol.GetName();
+                if (!Enum::Contains(PropertyMap::Type::SingleColumnData, rootPropertyMap->GetType()))
+                    return ERROR;
+
+                DbColumn const& rootPropertyMapCol = rootPropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+                if (!r.GetColumn().GetName().EqualsI(rootPropertyMapCol.GetName()))
+                    colAlias = &rootPropertyMapCol.GetName();
                 }
 
             if (colAlias != nullptr)
@@ -1029,7 +1086,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             }
 
         //no join needed
-        ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
+        ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, ToSqlVisitor::ColumnAliasMode::NoAlias);
         if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
             {
             BeAssert(false);
@@ -1056,9 +1113,9 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         //! Here we want rename or add column alias so it appear to be a basePropertyMap
         //! But we only do that if column name differ
         Utf8StringCP colAlias = nullptr;
-        if (basePropertyMap != nullptr)
+        if (rootPropertyMap != nullptr)
             {
-            DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
+            DbColumn const& basePropertyMapCol = rootPropertyMap->GetAs<SingleColumnDataPropertyMap>().GetColumn();
             if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
                 colAlias = &basePropertyMapCol.GetName();
             }
@@ -1073,6 +1130,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     sqlView.Append(propertySqlList);
     return SUCCESS;
     }
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1259,11 +1317,26 @@ bool ViewGenerator::SelectFromViewContext::IsInSelectClause(Utf8StringCR exp) co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ViewGenerator::ToSqlVisitor::ToSqlVisitor(Context const& context, DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassView)
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps),m_context(context) 
+ViewGenerator::ToSqlVisitor::ToSqlVisitor(Context const& context, DbTable const& tableFilter, Utf8CP classIdentifier, ColumnAliasMode colAliasMode)
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_classIdentifier(classIdentifier), m_columnAliasMode(colAliasMode),m_context(context)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ViewGenerator::ToSqlVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
+    {
+    if (m_columnAliasMode != ColumnAliasMode::NoAlias)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return ToNativeSql(propertyMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1342,15 +1415,27 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
         return ERROR;
         }
 
+    Utf8StringCR colName = vmap->GetColumn().GetName();
     Result& result = Record(*vmap);
-    result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+    result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
 
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+    switch (m_columnAliasMode)
         {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+            case ColumnAliasMode::NoAlias:
+                return SUCCESS;
+
+            case ColumnAliasMode::SystemPropertyName:
+            {
+            if (!colName.EqualsIAscii(propertyMap.GetAccessString()))
+                result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+
+            return SUCCESS;
+            }
+
+            default:
+                BeAssert(false);
+                return ERROR;
         }
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1367,19 +1452,33 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
 
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
 
+    Utf8StringCR colName = vmap->GetColumn().GetName();
     Result& result = Record(*vmap);
     if (isVirtual)
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-    else
-        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        result.SetIsLiteralSqlSnippet();
         }
+    else
+        result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
 
-    return SUCCESS;
+    switch (m_columnAliasMode)
+        {
+            case ColumnAliasMode::NoAlias:
+                return SUCCESS;
+
+            case ColumnAliasMode::SystemPropertyName:
+            {
+            if (!colName.EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
+                result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+
+            return SUCCESS;
+            }
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
     }
 
 
@@ -1396,19 +1495,34 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
         }
 
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
+    Utf8StringCR colName = vmap->GetColumn().GetName();
+
     Result& result = Record(*vmap);
     if (isVirtual)
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-    else
-        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        result.SetIsLiteralSqlSnippet();
         }
+    else
+        result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
 
-    return SUCCESS;
+    switch (m_columnAliasMode)
+        {
+            case ColumnAliasMode::NoAlias:
+                return SUCCESS;
+
+            case ColumnAliasMode::SystemPropertyName:
+            {
+            if (!colName.EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
+                result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+
+            return SUCCESS;
+            }
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1424,15 +1538,27 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECInstanceIdPropertyMap c
         }
 
     Result& result = Record(*vmap);
-    Utf8CP columnExp = vmap->GetColumn().GetName().c_str();
-    result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+    Utf8StringCR colName = vmap->GetColumn().GetName();
+    result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
+
+    switch (m_columnAliasMode)
         {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+            case ColumnAliasMode::NoAlias:
+                return SUCCESS;
+
+            case ColumnAliasMode::SystemPropertyName:
+            {
+            if (!colName.EqualsIAscii(propertyMap.GetAccessString()))
+                result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+
+            return SUCCESS;
+            }
+
+            default:
+                BeAssert(false);
+                return ERROR;
         }
 
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -101,30 +101,43 @@ struct ViewGenerator
 
         struct ToSqlVisitor final : IPropertyMapVisitor
             {
-            struct Result
-                {
-                private:
-                    SingleColumnDataPropertyMap const* m_propertyMap;
-                    NativeSqlBuilder m_sql;
+                enum class ColumnAliasMode
+                    {
+                    NoAlias = 0,
+                    SystemPropertyName
+                    };
 
-                public:
-                    Result() : m_propertyMap(nullptr) {}
-                    explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
 
-                    SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
-                    DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
-                    NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
-                    NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
-                };
+                struct Result
+                    {
+                    private:
+                        SingleColumnDataPropertyMap const* m_propertyMap = nullptr;
+                        NativeSqlBuilder m_sql;
+                        bool m_isLiteralSqlSnippet = false;
+
+                    public:
+                        Result() {}
+                        explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
+
+                        SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
+                        DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
+                        NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
+                        NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
+                        //indicates whether the added SQL snippet is a literal or a col name.
+                        //This is necessary for calling code to determine whether it has to add a col alias or not
+                        bool IsLiteralSqlSnippet() const { return m_isLiteralSqlSnippet; }
+                        void SetIsLiteralSqlSnippet() { m_isLiteralSqlSnippet = true; }
+                    };
 
             private:
+                Context const& m_context;
                 Utf8CP m_classIdentifier;
                 DbTable const& m_tableFilter;
-                bool m_usePropertyNameAsAliasForSystemPropertyMaps;
+                ColumnAliasMode m_columnAliasMode = ColumnAliasMode::NoAlias;
                 mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-                Context const& m_context;
-                BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
+
+                BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
                 BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
                 BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
@@ -136,7 +149,7 @@ struct ViewGenerator
                 Result& Record(SingleColumnDataPropertyMap const&) const;
 
             public:
-                ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassViews);
+                ToSqlVisitor(Context const& ctx, DbTable const& tableFilter, Utf8CP classIdentifier, ColumnAliasMode);
                 ~ToSqlVisitor() {}
                 std::vector<Result> const& GetResultSet() const { return m_resultSet; }
                 void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }

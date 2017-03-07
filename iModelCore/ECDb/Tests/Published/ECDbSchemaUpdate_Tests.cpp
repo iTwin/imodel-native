@@ -374,8 +374,7 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
         "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' >"
         "        <ECCustomAttributes>"
         "            <PropertyMap xmlns='ECDbMap.02.00'>"
-        "                <IsNullable>false</IsNullable>"
-        "                <ColumnName>TestProperty1</ColumnName>"
+        "                <IsNullable>true</IsNullable>"
         "            </PropertyMap>"
         "        </ECCustomAttributes>"
         "       </ECProperty>"
@@ -995,7 +994,6 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         "            <TestCA xmlns='TestSchema.01.00'>"
         "                <IsNullable>false</IsNullable>"
         "                <IsUnique>true</IsUnique>"
-        "                <ColumnName>TestProperty1</ColumnName>"
         "            </TestCA>"
         "        </ECCustomAttributes>"
         "       </ECProperty>"
@@ -1057,10 +1055,6 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         ECValue val;
         ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "IsNullable"));
         ASSERT_FALSE(val.GetBoolean());
-
-        val.Clear();
-        ASSERT_EQ(ECObjectsStatus::Success, propertyMapCA->GetValue(val, "ColumnName"));
-        ASSERT_STREQ("TestProperty1", val.GetUtf8CP());
 
         GetECDb().CloseDb();
         }
@@ -1347,8 +1341,8 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
     assertInsertECSql(GetECDb(), "INSERT INTO ts.C2 (A,B,C,D) VALUES (1,'val1',2,33)");
     GetECDb().SaveChanges();
 
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "ECInstanceIdECClassIdAB");
-    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 4, 1, "C1ECInstanceIdECClassIdsc1sc2");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C1", 4, 1, "IdECClassIdAB");
+    assertSelectSql(GetECDb(), "SELECT * FROM ts_C2", 4, 1, "C1IdECClassIdsc1sc2");
 
     //Verifying the inserted values for classes C1 and C2
     ECSqlStatement stmt;
@@ -1488,7 +1482,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         GetECDb().SaveChanges();
 
         //Verifying values
-        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 6, 2, "C1ECInstanceIdECClassIdsc1sc2sc3sc4");
+        assertSelectSql(GetECDb(), "SELECT * FROM ts_C3", 6, 2, "C1IdECClassIdsc1sc2sc3sc4");
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT G,H FROM ts.C31"));
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(11.1, stmt.GetValueDouble(0));
@@ -5956,7 +5950,6 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "           <ClassMap xmlns='ECDbMap.02.00'>"
         "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Employee</TableName>"
-        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
         "       </ECCustomAttributes>"
         "       <ECProperty propertyName='Name' typeName='string' >"
@@ -5989,7 +5982,6 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "           <ClassMap xmlns='ECDbMap.02.00'>"
         "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Employee</TableName>"
-        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
         "       </ECCustomAttributes>"
         "       <ECProperty propertyName='Name' typeName='string' >"
@@ -6001,7 +5993,6 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "           <ClassMap xmlns='ECDbMap.02.00'>"
         "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Title</TableName>"
-        "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
         "       </ECCustomAttributes>"
         "       <ECProperty propertyName='Name' typeName='string' >"

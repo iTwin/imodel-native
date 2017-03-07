@@ -13,24 +13,35 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 #define ECDB_FILEINFO_SCHEMA_NAME "ECDbFileInfo"
 
+#define TEST_SCHEMA_XML R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECEntityClass typeName="Foo" >
+                <ECProperty propertyName="Name" typeName="string" />
+              </ECEntityClass>
+              <ECEntityClass typeName="FooChild" >
+                <BaseClass>Foo</BaseClass>
+                <ECProperty propertyName="Label" typeName="string" />
+              </ECEntityClass>
+              <ECEntityClass typeName="Goo" >
+                <ECProperty propertyName="Name" typeName="string" />
+              </ECEntityClass>
+            </ECSchema>)xml"
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbFileInfoTests : ECDbTestFixture
-    {
-    protected:
-        static Utf8CP GetTestSchemaXml();
-    };
+struct ECDbFileInfoTests : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbFileInfoTests, EmptyECDbHasFileInfoSchema)
     {
-    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(GetTestSchemaXml()));
+    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML));
     ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.Schemas().CreateECClassViewsInDb();
 
-    auto const& schemaManager = ecdb.Schemas();
+    ECDbSchemaManager const& schemaManager = ecdb.Schemas();
 
     ECSchemaCP fileinfoSchema = schemaManager.GetECSchema(ECDB_FILEINFO_SCHEMA_NAME, false);
     ASSERT_TRUE(fileinfoSchema != nullptr) << "Empty ECDb file is expected to contain the ECDbFileInfo ECSchema.";
@@ -73,7 +84,7 @@ TEST_F(ECDbFileInfoTests, EmptyECDbHasFileInfoSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbFileInfoTests, PolymorphicQueryRightAfterCreation)
     {
-    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(GetTestSchemaXml()));
+    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement selStmt0;
@@ -88,7 +99,7 @@ TEST_F(ECDbFileInfoTests, PolymorphicQueryRightAfterCreation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbFileInfoTests, ECFEmbeddedFileBackedInstanceSupport)
     {
-    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(GetTestSchemaXml()));
+    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     //test file
@@ -314,7 +325,7 @@ TEST_F (ECDbFileInfoTests, VerifyEmbeddedFileSize)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbFileInfoTests, FileInfoOwnershipConstraints)
     {
-    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(GetTestSchemaXml()));
+    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     //Constraint: None of the properties can be null
@@ -455,7 +466,7 @@ void AssertPurge(ECDbCR ecdb, std::vector<std::pair<ECInstanceKey, ECInstanceKey
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbFileInfoTests, Purge)
     {
-    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(GetTestSchemaXml()));
+    ECDbR ecdb = SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceKey fooKey;
@@ -662,25 +673,5 @@ TEST_F(ECDbFileInfoTests, Purge)
     ecdb.AbandonChanges();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  09/14
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP ECDbFileInfoTests::GetTestSchemaXml()
-{
-    return "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECEntityClass typeName=\"Foo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"FooChild\" >"
-        "    <BaseClass>Foo</BaseClass>"
-        "    <ECProperty propertyName=\"Label\" typeName=\"string\" />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName=\"Goo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\"  />"
-        "  </ECEntityClass>"
-        "</ECSchema>";
-}
 
 END_ECDBUNITTESTS_NAMESPACE

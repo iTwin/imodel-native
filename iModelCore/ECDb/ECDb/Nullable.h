@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/Nullable.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -76,7 +76,7 @@ public:
 
     bool operator==(Nullable<T> const& rhs) const { return m_isNull == rhs.m_isNull && (m_isNull || m_value == rhs.m_value); }
     bool operator!=(Nullable<T> const& rhs) const { return !(*this == rhs); }
-    bool operator==(std::nullptr_t)const { return m_isNull; }
+    bool operator==(std::nullptr_t) const { return m_isNull; }
     bool operator!=(std::nullptr_t rhs) const { return !(*this == rhs); }
 
     bool IsNull() const { return m_isNull; }
