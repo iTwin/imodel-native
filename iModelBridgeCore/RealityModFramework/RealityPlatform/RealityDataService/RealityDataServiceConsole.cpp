@@ -22,44 +22,59 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-Command RealityDataConsole::InterpretCommand(Utf8StringR entry, int argc)
+void RealityDataConsole::InterpretCommand()
     {
     std::string str;
     std::getline(std::cin, str);
-    entry = Utf8String(str.c_str());
+    m_lastInput = Utf8String(str.c_str());
 
     bvector<Utf8String> args;
-    BeStringUtilities::ParseArguments(args, entry.c_str());
-    if(args.size() > argc)
-        return Command::Error;
-
-    if(args.size() > 1)
-        entry = args[1];
+    BeStringUtilities::ParseArguments(args, m_lastInput.c_str());
+    if(args.size() > 2)
+        {
+        std::cout << "too many inputs to parse. Please refer to \"Help\"" << std::endl;
+        return;
+        }
 
     if(args[0].ContainsI("quit"))
-        return Command::Quit;
+        m_lastCommand = Command::Quit;
     else if (args[0].ContainsI("retry"))
-        return Command::Retry;
+        m_lastCommand = Command::Retry;
     else if (args[0].ContainsI("error"))
-        return Command::Error;
-    else if (args[0].ContainsI("index"))
-        return Command::ChoiceIndex;
-    else if (args[0].ContainsI("value"))
-        return Command::ChoiceValue;
+        m_lastCommand = Command::Error;
     else if (args[0].ContainsI("list") || args[0].ContainsI("dir"))
-        return Command::List;
-    else if (args[0].ContainsI("cd"))
-        return Command::ChangeDir;
+        m_lastCommand = Command::List;
     else if (args[0].ContainsI("help"))
-        return Command::Help;
+        m_lastCommand = Command::Help;
     else if (args[0].ContainsI("stat"))
-        return Command::Stat;
+        m_lastCommand = Command::Stat;
     else if (args[0].ContainsI("cancel"))
-        return Command::Cancel;
+        m_lastCommand = Command::Cancel;
     else if (args[0].ContainsI("details"))
-        return Command::Details;
-
-    return Command::Error;
+        m_lastCommand = Command::Details;
+    else if (args[0].ContainsI("Download"))
+        m_lastCommand = Command::Download;
+    else if (args[0].ContainsI("Upload"))
+        m_lastCommand = Command::Upload;
+    else
+        {
+        if (args.size() > 1)
+            m_lastInput = args[1];
+        else
+            {
+            std::cout << "must input a value, with this command" << std::endl;
+            m_lastCommand = Command::Error;
+            return;
+            }
+        if (args[0].ContainsI("index"))
+            m_lastCommand = Command::ChoiceIndex;
+        else if (args[0].ContainsI("value"))
+            m_lastCommand = Command::ChoiceValue;
+        else if (args[0].ContainsI("cd"))
+            m_lastCommand = Command::ChangeDir;
+        else
+            m_lastCommand = Command::Error;
+        }
     }
 
 RealityDataConsole::RealityDataConsole() : 
@@ -69,28 +84,26 @@ RealityDataConsole::RealityDataConsole() :
     m_currentNode(nullptr)
     {}
 
-Command RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
+void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
     std::cout << "an option can be selected by its Index or by its Value" << std::endl;
     std::cout << "by using either \"Index #\" or \"Value NameOfValue\"" << std::endl;
     
     uint64_t choice;
-    Utf8String str;
-
-    Command userCommand = InterpretCommand(str, 2);
-    switch(userCommand)
+    InterpretCommand();
+    switch(m_lastCommand)
         {
         case Command::Quit:
             break;
         case Command::ChoiceIndex:
             {
-            if (BeStringUtilities::ParseUInt64(choice, str.c_str()) == BentleyStatus::SUCCESS)
+            if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) == BentleyStatus::SUCCESS)
                 {
                 if(choice > options.size())
                     {
                     std::cout << "Invalid Selection, selected index not between 0 and " << (options.size() - 1) << std::endl;
-                    userCommand = Command::Retry;
+                    m_lastCommand = Command::Retry;
                     }
                 else
                     input = options[choice];
@@ -98,26 +111,24 @@ Command RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR inpu
             else
                 {
                 std::cout << "Could not extract integer from provided input..." << std::endl;
-                userCommand = Command::Retry;
+                m_lastCommand = Command::Retry;
                 }
             break;
             }
         case Command::ChoiceValue:
             {
-            input = str;
+            input = m_lastInput;
             break;
             }
         case Command::Error:
             {
             std::cout << "input error, please enter your choice in one of the following formats" << std::endl;
             std::cout << "Index #" << std::endl << "or" << std::endl << "Value NameOfValue" << std::endl;
-            userCommand = Command::Retry;
+            m_lastCommand = Command::Retry;
             }
         }
-    if (userCommand == Command::Retry)
+    if (m_lastCommand == Command::Retry)
         return Choice(options, input);
-
-    return userCommand;
     }
 
 int main(int argc, char* argv[])
@@ -129,17 +140,14 @@ int main(int argc, char* argv[])
     }
 
 void RealityDataConsole::Run()
-    {
-    Command userCommand;
-    userCommand = ConfigureServer();
-    Utf8String input;
-    while(userCommand != Command::Quit)
+    {ConfigureServer();
+    while(m_lastCommand != Command::Quit)
         {
         if(m_currentNode != nullptr)
             std::cout << m_currentNode->node.GetInstanceId();
         std::cout << "> ";
-        userCommand = InterpretCommand(input, 2);
-        switch(userCommand)
+        InterpretCommand();
+        switch(m_lastCommand)
             {
             case Command::Quit:
                 break;
@@ -155,27 +163,42 @@ void RealityDataConsole::Run()
                 }
             case Command::SetServer:
                 {
-                userCommand = ConfigureServer();
+                ConfigureServer();
                 break;
                 }
             case Command::List:
                 {
-                userCommand = List();
+                List();
+                break;
+                }
+            case Command::ListAll:
+                {
+                ListAll();
                 break;
                 }
             case Command::ChangeDir:
                 {
-                userCommand = ChangeDir(input);
+                ChangeDir();
                 break;
                 }   
             case Command::Stat:
                 {
-                userCommand = EnterpriseStat();
+                EnterpriseStat();
                 break;
                 }
             case Command::Details:
                 {
-                userCommand = Details();
+                Details();
+                break;
+                }
+            case Command::Download:
+                {
+                Download();
+                break;
+                }
+            case Command::Upload:
+                {
+                Upload();
                 break;
                 }
             }
@@ -195,12 +218,11 @@ void RealityDataConsole::Usage()
     std::cout << "cd \t Change current location. Must be called in one of the following ways" << std::endl;
     std::cout << "cd [number] \t navigates to node at the given index, as specified in the most recent List command" << std::endl;
     std::cout << "cd .. \t go up one level" << std:: endl;
-    std::cout << "ListAll \t List every file for the current Reality Data (paged)" << std::endl;
+    std::cout << "ListAll \t List every file beneath the current location (paged)" << std::endl;
     std::cout << "Details \t show the details for the location" << std::endl;
     std::cout << "Stat \t show enterprise statistics" << std::endl;
     std::cout << "Download\t Download files from the current location on the server" << std::endl;
     std::cout << "Upload \t Upload files to the server" << std::endl;
-
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -221,7 +243,7 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
         }
     }
 
-Command RealityDataConsole::ConfigureServer()
+void RealityDataConsole::ConfigureServer()
     {
     std::cout << "Welcome to the RealityDataService Navigator. Please enter your server name" << std::endl;
     std::cout << "Example format : dev-realitydataservices-eus.cloudapp.net" << std::endl;
@@ -258,20 +280,20 @@ Command RealityDataConsole::ConfigureServer()
     Utf8String schema;
     
     bvector<Utf8String> repoNames = m_server.GetRepositories();
-    Command userCommand = Command::Error;
+    m_lastCommand = Command::Error;
     if(repoNames.size() == 0)
         {
         std::cout << "There was an error contacting the server. No repositories found" << std::endl;
-        while(userCommand != Command::Retry && userCommand != Command::Quit)
+        while(m_lastCommand != Command::Retry && m_lastCommand != Command::Quit)
             {
             std::cout << "\"Retry\" to try with a different server; \"Quit\" to exit" << std::endl;
-            userCommand = InterpretCommand(repo, 1);
-            if(userCommand == Command::Retry)
+            InterpretCommand();
+            if(m_lastCommand == Command::Retry)
                 return ConfigureServer();
-            else if(userCommand == Command::Quit)
+            else if(m_lastCommand == Command::Quit)
                 {
                 std::cout << "Quitting..." << std::endl;
-                return userCommand;
+                return;
                 }
             }
         }
@@ -284,11 +306,11 @@ Command RealityDataConsole::ConfigureServer()
     else
         {
         std::cout << "please select a repository from the following options" << std::endl;
-        userCommand = Choice(repoNames, repo);
-        switch(userCommand)
+        Choice(repoNames, repo);
+        switch(m_lastCommand)
             {
         case Command::Quit:
-            return userCommand;
+            return;
         case Command::Retry:
             return ConfigureServer();
             }
@@ -303,16 +325,16 @@ Command RealityDataConsole::ConfigureServer()
         if (schemaNames.size() == 0)
             {
             std::cout << "No schemas were found for the given server and repo" << std::endl;
-            while (userCommand != Command::Retry && userCommand != Command::Quit)
+            while (m_lastCommand != Command::Retry && m_lastCommand != Command::Quit)
                 {
                 std::cout << "\"Retry\" to try with a different server or repo; \"Quit\" to exit" << std::endl;
-                userCommand = InterpretCommand(repo, 1);
-                if (userCommand == Command::Retry)
+                InterpretCommand();
+                if (m_lastCommand == Command::Retry)
                     return ConfigureServer();
-                else if (userCommand == Command::Quit)
+                else if (m_lastCommand == Command::Quit)
                     {
                     std::cout << "Quitting..." << std::endl;
-                    return userCommand;
+                    return;
                     }
                 }
             }
@@ -325,11 +347,11 @@ Command RealityDataConsole::ConfigureServer()
         else
             {
             std::cout << "please select a repository from the following options" << std::endl;
-            userCommand = Choice(schemaNames, schema);
-            switch(userCommand)
+            Choice(schemaNames, schema);
+            switch(m_lastCommand)
                 {
                 case Command::Quit:
-                    return userCommand;
+                    return;
                 case Command::Retry:
                     return ConfigureServer();
                 }
@@ -343,11 +365,9 @@ Command RealityDataConsole::ConfigureServer()
         }
 
     std::cout << "Server successfully configured, ready for use. Type \"help\" for list of commands" << std::endl;
-
-    return Command::AllGood;
     }
 
-Command RealityDataConsole::List()
+void RealityDataConsole::List()
     {   
     Utf8String nodeString;
     bvector<Utf8String> nodeStrings;
@@ -366,38 +386,50 @@ Command RealityDataConsole::List()
         }
 
     PrintResults(nodeStrings);
-
-    return Command::AllGood;
     }
 
-Command RealityDataConsole::ChangeDir(Utf8String newNode)
+void RealityDataConsole::ListAll()
     {
-    if(newNode == "..")
+    AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
+    RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
+    Utf8String azureServer;
+    Utf8String azureToken;
+    int64_t tokenTimer;
+    if (handshake->ParseResponse(azureServer, azureToken, tokenTimer) != BentleyStatus::SUCCESS)
         {
-        if(m_currentNode == nullptr)
-            {
-            std::cout << "Already at root" << std::endl;
-            return Command::Error;
-            }
-        if(m_currentNode->parentNode != nullptr)
-            {
-            m_currentNode = m_currentNode->parentNode;
-            delete m_currentNode->childNode;
-            }
-        else
-            delete m_currentNode;
+        std::cout << "Failure retrieving Azure token" << std::endl;
+        return;
         }
-    uint64_t index;
-    if (BeStringUtilities::ParseUInt64(index, newNode.c_str()) == BentleyStatus::SUCCESS)
-        ChangeDir(index);
-    else
-        std::cout << "Could not extract integer from provided input..." << std::endl;
 
-    return Command::AllGood;
+    AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_currentNode->node.GetInstanceId());
+    RequestStatus status;
+    bvector<Utf8String> filesInRepo = RealityDataService::Request(rdsRequest, status);
+    
+    std::cout << filesInRepo.size() << " files in selection." << std::endl;
+    std::cout << "these will be displayed, 20 at a time. Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page" << std::endl;
+
+    std::string str;
+    while (m_lastCommand != Command::Cancel)
+        {
+        for (Utf8String file : filesInRepo)
+            {
+            std::cout << file.c_str() << std::endl;
+            }
+        std::getline(std::cin, str);
+        if(Utf8String(str.c_str()).ContainsI("Cancel"))
+            m_lastCommand = Command::Cancel;
+        }
     }
 
-Command RealityDataConsole::ChangeDir(uint64_t choice)
+void RealityDataConsole::ChangeDir()
     {
+    uint64_t choice;
+    if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) != BentleyStatus::SUCCESS)
+        {
+        std::cout << "Could not extract integer from provided input..." << std::endl;
+        return;
+        }
+
     if(choice < (uint64_t)m_serverNodes.size())
         {
         NodeList* newNode = new NodeList();
@@ -405,15 +437,12 @@ Command RealityDataConsole::ChangeDir(uint64_t choice)
         newNode->parentNode = m_currentNode;
         m_currentNode->childNode = newNode;
         m_currentNode = newNode;
-        //m_currentNode = m_serverNodes[choice].GetNavString();
         }
     else
         std::cout << "Invalid Selection, selected index not between 0 and " << (m_serverNodes.size() - 1) << std::endl;
-       
-    return Command::AllGood;
     }
 
-Command RealityDataConsole::EnterpriseStat()
+void RealityDataConsole::EnterpriseStat()
     {
     RequestStatus status;
     RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
@@ -424,33 +453,38 @@ Command RealityDataConsole::EnterpriseStat()
     std::cout << "Enterprise statistics: " << std::endl;
     std::cout << "   NbRealityData: " << NbRealityData << std::endl;
     std::cout << "   TotalSize(KB): " << TotalSizeKB << std::endl;
-
-    return Command::AllGood;
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
-{
+    {
     char progressString[1024];
     sprintf(progressString, "percentage of files downloaded : %f", repoProgress * 100.0);
     std::cout << progressString << std::endl;
-}
+    }
 
-Command RealityDataConsole::Download()
+static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
+    {
+    char progressString[1024];
+    //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
+    sprintf(progressString, "upload percent : %f", repoProgress * 100.0);
+    std::cout << progressString << std::endl;
+    }
+
+void RealityDataConsole::Download()
     {
     std::cout << "using current source = " << m_currentNode->node.GetLabel() << std::endl;
     std::cout << "if you wish to change this, use command \"Cancel\" to back out and use cd to change the directory" << std::endl << std::endl;
     std::cout << "please enter the destination folder on the local machine (must be existing folder)" << std::endl;
     
-    Utf8String str;
-    Command userCommand = InterpretCommand(str, 1);
-    if(userCommand == Command::Cancel)
-        return userCommand;
+    InterpretCommand();
+    if(m_lastCommand == Command::Cancel)
+        return;
 
-    BeFileName fileName = BeFileName(str);
+    BeFileName fileName = BeFileName(m_lastInput);
     if(!fileName.DoesPathExist())
         {
         std::cout << "could not validate specified path. Please verify that the folder exists and try again" << std::endl;
-        return Command::Error;
+        return;
         }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId());
@@ -462,16 +496,56 @@ Command RealityDataConsole::Download()
     tReport->ToXml(report);
     std::cout << "if any files failed to download, they will be listed here: " << std::endl;
     std::cout << report << std::endl;
-
-    return Command::AllGood;
     }
 
-Command RealityDataConsole::Details()
+void RealityDataConsole::Upload()
+    {
+    std::cout << "please enter the source folder on the local machine (must be existing folder)" << std::endl;
+    
+    BeFileName fileName = BeFileName(m_lastInput);
+    if (!fileName.DoesPathExist())
+        {
+        std::cout << "could not validate specified path. Please verify that the folder exists and try again" << std::endl;
+        return;
+        }
+
+    std::cout << "please input GUID for upload" << std::endl;
+    std::string input;
+    std::getline(std::cin, input);
+    Utf8String guid = Utf8String(input.c_str());
+
+    bmap<RealityDataField, Utf8String> properties;
+    std::cout << "please input value for Name" << std::endl;
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Name, Utf8String(input.c_str()));
+
+    std::cout << "please input value for Classification" << std::endl;
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()));
+
+    std::cout << "please input value for Type" << std::endl;
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()));
+
+    Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
+
+    RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true);
+    upload.SetProgressCallBack(uploadProgressFunc);
+    upload.SetProgressStep(0.1);
+    upload.OnlyReportErrors(true);
+    TransferReport* tReport = upload.Perform();
+    Utf8String report;
+    tReport->ToXml(report);
+    std::cout << "if any files failed to upload, they will be listed here: " << std::endl;
+    std::cout << report << std::endl;
+    }
+
+void RealityDataConsole::Details()
     {
     if (m_currentNode == nullptr)
         {
         std::cout << "please navigate to an item (with cd) before using this function" << std::endl;
-        return Command::Error;
+        return;
         }
     Utf8String className = m_currentNode->node.GetClassName();
     RequestStatus status;
@@ -483,7 +557,7 @@ Command RealityDataConsole::Details()
         if(document == nullptr)
             {
             std::cout << "there was an error retrieving information for this item" << std::endl;
-            return Command::Error;
+            return;
             }
 
         std::cout << "Document : " << document->GetName() << std::endl;
@@ -503,7 +577,7 @@ Command RealityDataConsole::Details()
         if (folder == nullptr)
             {
             std::cout << "there was an error retrieving information for this item" << std::endl;
-            return Command::Error;
+            return;
             }
 
         std::cout << "Folder : " << folder->GetName() << std::endl;
@@ -518,7 +592,7 @@ Command RealityDataConsole::Details()
         if (entity == nullptr)
             {
             std::cout << "there was an error retrieving information for this item" << std::endl;
-            return Command::Error;
+            return;
             }
 
         std::cout << "RealityData name : " << entity->GetName() << std::endl;
@@ -535,180 +609,4 @@ Command RealityDataConsole::Details()
         std::cout << "Modified timestamp : " << entity->GetModifiedTimestamp().ToString() << std::endl;
         std::cout << "Created timestamp : " << entity->GetDate().ToString() << std::endl;
         }
-
-    return Command::AllGood;
     }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Donald.Morissette                  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String RootName, int MaxEntryDisplay = 25)
-    {
-    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(Server, Repo, Root);
-    std::cout << RootName << std::endl;
-    bool folderEmpty = true;
-    int count = 0;
-    for (NavNode subNode : subNodes)
-        {
-        if (subNode.GetClassName().Contains("Document"))
-            {
-            if (s_cmd & CmdListAllDetail)
-                {
-                Utf8String repoName(subNode.GetRootId() + "~2F" + subNode.GetInstanceId());
-                repoName.ReplaceAll("/", "~2F");
-                RequestStatus status;
-                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName), status);
-                std::cout << "  " << subNode.GetInstanceId() <<
-                    std::setw(12) << " Size(KB): " << document->GetSize() <<
-                    std::setw(16) << " ContentType: " << document->GetContentType() << std::endl;
-                }
-            else
-                std::cout << "  " << subNode.GetInstanceId() << std::endl;
-
-            folderEmpty = false;
-            }
-        else
-            {
-            std::cout << "  " << subNode.GetInstanceId() << std::endl;
-            folderEmpty = false;
-            }
-
-        ++count;
-        if (count > MaxEntryDisplay)
-            {
-            std::cout << "     More than  " << MaxEntryDisplay << "entries..." << std::endl;
-            break;
-            }
-        }
-    if (folderEmpty)
-        std::cout << "     Empty" << std::endl;
-
-    std::cout << std::endl;
-
-    for (NavNode subNode : subNodes)
-        {
-        if (subNode.GetClassName().Contains("Folder"))
-            {
-            ListSubItem(Server, Repo, subNode, subNode.GetInstanceId());
-            }
-        }
-    }
-
-bool FilterByProject(Utf8StringCR RealityId, bvector<RealityDataProjectRelationshipPtr>& ProjectRelation)
-    {
-    // Option not set
-    if (!(s_option & OptFilterProject))
-        return true;
-
-    for (RealityDataProjectRelationshipPtr pData : ProjectRelation)
-        {
-        if (pData->GetRealityDataId() == RealityId)
-            return true;
-        }
-    return false;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Donald.Morissette                  02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*void ListCmd()
-    {
-    if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
-        {
-        RequestStatus status;
-
-        RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
-        enterpriseReq->SetPageSize(25);
-
-        // Filters ?
-        if (s_option & (OptFilterOwner))
-            {
-            bvector<Utf8String> filter1 = bvector<Utf8String>();
-
-            filter1.push_back(RealityDataFilterCreator::FilterByOwner(s_filterOwner));
-            Utf8String filters = RealityDataFilterCreator::GroupFiltersOR(filter1);
-
-            enterpriseReq->SetFilter(filters);
-            }
-
-        if (s_option & (OptSortModDate))
-            enterpriseReq->SortBy(RealityDataField::ModifiedTimestamp, true);
-
-        if (s_option & (OptSortGroup))
-            enterpriseReq->SortBy(RealityDataField::Group, true);
-
-        bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
-
-        bvector<RealityDataProjectRelationshipPtr> relationships;
-        if (s_option & (OptFilterProject))
-            {
-            RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(s_filterProject);
-            relationships = RealityDataService::Request(*relationReq, status);
-            }
-
-
-        size_t EnterpriseSizeKB(0);
-        do 
-            {
-            if (RequestStatus::SUCCESS != status)
-                exit(-1);
-
-            for (SpatialEntityPtr pData : enterpriseVec)
-                {
-                EnterpriseSizeKB += pData->GetApproximateFileSize();
-
-                if (FilterByProject(pData->GetIdentifier(), relationships))
-                    std::cout << pData->GetIdentifier() << " -- " << pData->GetName() << std::endl;
-
-                if (s_cmd & (CmdListDetail | CmdListAllDetail) && FilterByProject(pData->GetIdentifier(), relationships))
-                    {
-                    std::cout << "  " <<
-                        " Dataset        : " << pData->GetDataset() << std::endl << "  " <<
-                        " Group          : " << pData->GetGroup() << std::endl << "  " <<
-                        " Classification : " << pData->GetClassificationTag() << std::endl << "  " <<
-                        " Size(KB)       : " << pData->GetApproximateFileSize() << std::endl << "  " <<
-                        " Owner          : " << pData->GetOwner() << std::endl << "  " <<
-                        " Created        : " << pData->GetDate().ToString() << std::endl << "  " <<
-                        " Modification   : " << pData->GetModifiedTimestamp().ToString() << std::endl << "  " <<
-                        " GetRootDocument: " << pData->GetRootDocument() << std::endl << "  " <<
-                        " Visibility     : " << pData->GetVisibilityTag() << std::endl << "  " <<
-                        " Enterprise     : " << pData->GetEnterprise() << std::endl << "  " <<
-                        " Description    : " << pData->GetDescription() << std::endl;
-                    }
-                }
-
-            enterpriseVec.clear();
-            } while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
-        std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
-        std::cout << std::endl;
-
-        if (s_cmd & (CmdListAll | CmdListAllDetail))
-            {
-            WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false);
-            bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server");
-
-            for (NavNode root : nodes)
-                {
-                RequestStatus status;
-                SpatialEntityPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
-
-                ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
-                }
-            }
-        }
-
-    if (s_cmd == CmdListItem)
-        {
-        s_itemPath.ReplaceAll("/", "~2F");
-        RequestStatus status;
-        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
-
-        std::cout << document->GetFolderId() << document->GetName() <<
-            std::setw(12) << " Size(KB): " << document->GetSize() <<
-            std::setw(16) << " ContentType: " << document->GetContentType() << std::endl;
-
-        }
-
-    }*/

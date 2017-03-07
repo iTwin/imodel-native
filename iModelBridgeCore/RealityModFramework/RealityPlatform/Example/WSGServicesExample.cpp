@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     bool objectFound = false;
     int objectIndex = 0;
     Utf8String navString;
-    while(!objectFound)
+    while(!objectFound && subNodes.size() > 0)
         {
         for( int i = 0; i < subNodes.size(); i ++ )
             {
@@ -113,10 +113,16 @@ int main(int argc, char *argv[])
                 navString.ReplaceAll("/", "~2F");
                 break;
                 }
+            else
+                subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[i]);
             }
+        }
         
-        if(!objectFound)
-            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[nodeIndex]);
+    if(!objectFound)
+        {
+        std::cout << "no documents found in repo" << std::endl;
+        getch();
+        return 1;
         }
 
     std::cout<<"Object location :" << std::endl;

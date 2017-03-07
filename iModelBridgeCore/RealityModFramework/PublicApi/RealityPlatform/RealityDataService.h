@@ -166,8 +166,8 @@ struct AzureHandshake : public RealityDataUrl
     {
 public:
     AzureHandshake(Utf8String sourcePath, bool isWrite) : m_isWrite(isWrite) { m_validRequestString = false; m_id = sourcePath; }
-    Utf8StringR GetJsonResponse() { return m_jsonResponse; }
-    BentleyStatus ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
+    REALITYDATAPLATFORM_EXPORT Utf8StringR GetJsonResponse() { return m_jsonResponse; }
+    REALITYDATAPLATFORM_EXPORT BentleyStatus ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 private:
@@ -614,10 +614,6 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false);
 
-    /*REALITYDATAPLATFORM_EXPORT ~RealityDataServiceUpload()
-        {
-        }*/
-
     //! Set the source path which, all files and folders located in this path will be uploaded
     //!  to the designated reality data
     //! @param sourcePath indicates the source path that will be considered the base folder of the reality data.
@@ -634,9 +630,6 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
     REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8String realityDataId) { m_id = realityDataId; }
 
     REALITYDATAPLATFORM_EXPORT bool IsValidUpload() { return m_filesToTransfer.size() > 0; }
-
-    //! Start the upload progress for all links.
-    //REALITYDATAPLATFORM_EXPORT TransferReport* Perform() override;
 
 protected:
     BentleyStatus CreateUpload(Utf8String properties);
@@ -656,9 +649,7 @@ struct RealityDataServiceDownload : public RealityDataServiceTransfer
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId);
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList);
-
-    //REALITYDATAPLATFORM_EXPORT TransferReport* Perform() override;
-
+    
 private:
 
     void DownloadFullRepo(BeFileName targetLocation, Utf8String id);

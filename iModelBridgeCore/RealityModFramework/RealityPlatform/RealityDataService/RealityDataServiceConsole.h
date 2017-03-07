@@ -44,6 +44,8 @@ enum class Command
     ChangeDir,
     ChangeDirIndex,
     Stat,
+    Download,
+    Upload,
     AllGood
     };
 
@@ -53,19 +55,25 @@ public:
     RealityDataConsole();
 
     void Run();
-    Command ConfigureServer();
+    void ConfigureServer();
     void PrintResults(bvector<Utf8String> results);
     void Usage();
-    Command Choice(bvector<Utf8String> options, Utf8StringR input);
-    Command InterpretCommand(Utf8StringR entry, int argc = 1);
-    Command List();
-    Command ChangeDir(Utf8String newNode);
-    Command ChangeDir(uint64_t choice);
-    Command EnterpriseStat();
-    Command Download();
-    Command Details();
+    void Choice(bvector<Utf8String> options, Utf8StringR input);
+    void InterpretCommand();
+    void List();
+    void ListAll();
+    void ChangeDir();
+    void EnterpriseStat();
+    void Download();
+    void Upload();
+    void Details();
 
 private:    
+    typedef void (RealityDataConsole::*FUNCTION)();
+    bmap<Command, FUNCTION> m_functionMap;
+
+    Utf8String           m_lastInput;
+    Command              m_lastCommand;
     WSGServer            m_server;
     bvector<NavNode>     m_serverNodes;
     bvector<Utf8String>  m_machineRepos;
