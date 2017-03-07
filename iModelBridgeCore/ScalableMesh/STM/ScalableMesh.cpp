@@ -337,6 +337,11 @@ bool IScalableMesh::RemoveClip(uint64_t clipID)
     return _RemoveClip(clipID);
     }
 
+bool IScalableMesh::GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    return _GetClip(clipID, clipData);
+}
+
 void IScalableMesh::SetIsInsertingClips(bool toggleInsertClips)
     {
     return _SetIsInsertingClips(toggleInsertClips);
@@ -2058,6 +2063,13 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
     return true;
     }
+
+template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+    return !clipData.empty();
+}
 
 template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
     {
