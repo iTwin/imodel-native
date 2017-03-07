@@ -284,6 +284,41 @@ struct VuSpringModel : private _VuSet
             {
             return node->HasMask (VU_ALL_FIXED_EDGES_MASK);
             }
+//
+//
+//
+// * --------*
+//  \ A    C/D\
+//   \     /   \
+//    \   /     \
+//     \B/E     F\
+//      *---------*
+// IF these are all true:
+// AB is an edge leaving a station center.
+// B and C (hence D,E) are NOT stations.
+// F is not a station
+// F is visible from A
+// at least one of EF and FD is a boundary edge.
+//
+// THEN
+//   Yank <BD> edge at both ends
+//   Insert B at A
+//   Insert D at F
+// * --------*
+//  \A\B     C\
+//   \   \     \
+//    \     \   \
+//     \  E   D\F\
+//      *---------*
+// RETURN one of (nullptr, A, B):
+//    if EF and FD are both boundaries, return nullptr.
+//  otherwise choose betwen A and B and return the one whose opposite edge is NOT a boudary.
+//    if only EF is a boundary return B for use in another pass looking out from B to nonboundary FD
+//    if only FD is a boundary return A for use in another pass looking out from A to nonboundary ED (D has moved to F!!!)
+//
+// Notes
+//1) The coordinates of A,E,F,C never change
+//2) The coordinates of B and D can change (B moves from E to A, D moves from C to F)
         VuP DoFlipTowardsBoundary (VuP nodeA, int &numFlipToIncrement)
             {
             static double s_areaRelTol = 1.0e-8;
@@ -532,4 +567,3 @@ struct VuSpringModel : private _VuSet
             }
 };
 
-typedef VuSpringModel<uint64_t> BCSSpringModel;

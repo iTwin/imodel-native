@@ -1,6 +1,6 @@
 #include "testHarness.h"
 
-
+typedef VuSpringModel<uint64_t> BCSSpringModel;
 
 
 void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
