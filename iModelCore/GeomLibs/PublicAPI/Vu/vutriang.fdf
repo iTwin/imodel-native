@@ -21,6 +21,18 @@ struct VuCoordinateMappingFunction
 GEOMAPI_VIRTUAL bool TryMapCoordinates (VuSetP graph, VuP node, DPoint2dCR uv, DPoint3dR xyz) = 0;
 };
 
+
+//! Static methods for flipping triangles .
+struct VuFlipFunctions
+{
+static GEOMDLLIMPEXP int FlipTrianglesToImproveMappedCoordinateAspectRatio
+(
+VuSetP  graphP,
+VuCoordinateMappingFunction *mapper,
+int maxFlipPerEdge = 40
+);
+};
+
 /*---------------------------------------------------------------------------------**//**
 @description Flip triangle edges in the graph to improve aspect ratio.
 @remarks This is a substantial full-graph modification function.
@@ -30,10 +42,13 @@ GEOMAPI_VIRTUAL bool TryMapCoordinates (VuSetP graph, VuP node, DPoint2dCR uv, D
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveQuadraticAspectRatio
 (
 VuSetP  graphP
 );
+
+
+
 
 /*---------------------------------------------------------------------------------**//**
 @description Flip triangle edges in the graph to improve aspect ratio, using only marked edges as starters.
@@ -44,7 +59,7 @@ VuSetP  graphP
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveQuadraticAspectRatio
 (
 VuSetP  graphP,
 VuMarkedEdgeSetP edgeSet
@@ -61,7 +76,7 @@ VuMarkedEdgeSetP edgeSet
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveMappedCoordinateAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveMappedCoordinateAspectRatio
 (
 VuSetP  graphP,
 VuCoordinateMappingFunction *mapper,
@@ -80,7 +95,7 @@ int maxFlipPerEdge = 40
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveScaledQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveScaledQuadraticAspectRatio
 (
 VuSetP  graphP,
 double xScale,
@@ -101,7 +116,7 @@ double yScale
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveScaledPeriodicQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveScaledPeriodicQuadraticAspectRatio
 (
 VuSetP  graphP,
 double xScale,
@@ -120,7 +135,7 @@ double yPeriod
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveUAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveUAspectRatio
 (
 VuSetP  graphP
 );
@@ -135,7 +150,7 @@ VuSetP  graphP
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    BentleySystems  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveVAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveVAspectRatio
 (
 VuSetP  graphP
 );
