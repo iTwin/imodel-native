@@ -463,10 +463,9 @@ Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
     { 
     //$filter=
     Utf8String filter = "Class+eq+";
-    Utf8P buf = new Utf8Char();
+    Utf8Char buf[64];
     BeStringUtilities::FormatUInt64(buf, classification);
     filter.append(buf);
-    delete buf;
     return filter;
     }
 
@@ -703,13 +702,12 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append("&");
         }
     m_httpRequestString.append("$skip=");
-    Utf8P buf = new Utf8Char();
+    Utf8Char buf[64];
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
     m_httpRequestString.append("&$top=");
     BeStringUtilities::FormatUInt64(buf, m_pageSize);
     m_httpRequestString.append(buf);
-    delete buf;
     }
 
 //=====================================================================================
@@ -831,13 +829,12 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
-    Utf8P buf = new Utf8Char();
+    Utf8Char buf[64];
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
     m_httpRequestString.append("&$top=");
     BeStringUtilities::FormatUInt64(buf, m_pageSize);
     m_httpRequestString.append(buf);
-    delete buf;
     }
 
 //=====================================================================================
@@ -856,13 +853,12 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
-    Utf8P buf = new Utf8Char();
+    Utf8Char buf[64];
     BeStringUtilities::FormatUInt64(buf, m_startIndex);
     m_httpRequestString.append(buf);
     m_httpRequestString.append("&$top=");
     BeStringUtilities::FormatUInt64(buf, m_pageSize);
     m_httpRequestString.append(buf);
-    delete buf;
     }
 
 //=====================================================================================
