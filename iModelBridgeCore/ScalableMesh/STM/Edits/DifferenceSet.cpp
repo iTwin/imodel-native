@@ -48,6 +48,7 @@ size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     offset += sizeof(uint64_t);
     if (addedUvIndices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
     offset += addedUvIndices.size()*sizeof(int32_t);
+    if (clientID == (uint64_t)-1) toggledForID = upToDate;
     memcpy((uint8_t*)serialized + offset, &toggledForID, sizeof(bool));
     offset += sizeof(bool);
     return ct;
@@ -96,6 +97,7 @@ void DifferenceSet::LoadFromBinaryStream(void* serialized, size_t ct)
     offset += sizeof(uint64_t) + size*sizeof(int32_t);
     memcpy(&toggledForID, (uint8_t*)serialized + offset, sizeof(bool));
     offset += sizeof(bool);
+    if (clientID == (uint64_t)-1) upToDate = toggledForID;
     }
 
 

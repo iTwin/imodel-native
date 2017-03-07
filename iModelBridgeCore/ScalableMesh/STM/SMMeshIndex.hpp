@@ -4050,6 +4050,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         m_nbClips++;
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
+
     //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 
     }
@@ -4326,6 +4327,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 {
                 if (other.clientID == ((uint64_t)-1)) const_cast<DifferenceSet&>(other).upToDate = false;
                 }
+
+            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
             
             }
 
@@ -4374,7 +4378,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
             const_cast<DifferenceSet&>(*it).upToDate = false;
             }
         }
-    if(found) diffSetPtr->erase(indices);
+    if (found)
+    {
+        diffSetPtr->erase(indices);
+        //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    }
     return found;
     }
 
@@ -4413,6 +4423,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         found = ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent); //m_nodeExtent
         if (found) AddClip(clipId, isVisible, setToggledWhenIdIsOn);
         }
+    else
+    {
+        //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+    }
     return found;
     }
 //=======================================================================================
