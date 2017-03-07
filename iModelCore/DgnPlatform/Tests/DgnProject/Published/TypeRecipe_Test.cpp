@@ -277,7 +277,7 @@ DrawingGraphicPtr TypeTests::CreateDrawingGraphic(DrawingModelR model, Graphical
     if (subCategoryOverride.IsValid())
         builder->Append(subCategoryOverride);
 
-    element->SetGraphicalType(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType));
+    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType));
 
     if (userLabel && *userLabel)
         element->SetUserLabel(userLabel);
@@ -354,7 +354,7 @@ PhysicalElementPtr TypeTests::CreatePhysicalObject(PhysicalModelR model, Physica
     if (!builder.IsValid())
         return nullptr;
 
-    element->SetPhysicalType(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType));
+    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType));
 
     if (userLabel && *userLabel)
         element->SetUserLabel(userLabel);

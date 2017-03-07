@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session;
+    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session; struct SpatialLocationType;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -408,11 +408,11 @@ public:
 
     DGNPLATFORM_EXPORT Utf8CP GetAccessString() const;
 
-    DGNPLATFORM_EXPORT DgnDbStatus SetAutoHandledPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
-    DGNPLATFORM_EXPORT DgnDbStatus GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetAutoHandledPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex);
+    DGNPLATFORM_EXPORT DgnDbStatus GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx);
-    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const;
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex);
+    DGNPLATFORM_EXPORT DgnDbStatus GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const;
 };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -1427,8 +1427,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _AddPropertyArrayItems(uint32_t propertyIndex, uint32_t size);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemovePropertyArrayItem(uint32_t propertyIndex, uint32_t index);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ClearPropertyArray(uint32_t propertyIndex);
-    virtual DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) {return accessor.SetPropertyValue(value, arrayIdx);}
-    virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const {return accessor.GetPropertyValue(value, arrayIdx);}
+    virtual DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex) {return accessor.SetPropertyValue(value, arrayIndex);}
+    virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIndex) const {return accessor.GetPropertyValue(value, arrayIndex);}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR, SetPropertyFilter const& filter);
     DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, ComparePropertyFilter const&) const;
     //! Test if the value of the specified property on this element is equivalent to the value of the same property on the other element
@@ -1719,37 +1719,37 @@ public:
     //! Return the value of a DateTime ECProperty by name
     //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a DPoint3d ECProperty by name
     //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a DPoint2d ECProperty by name
     //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a boolean ECProperty by name
     //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a double ECProperty by name
     //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a integer ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the value of a UInt64 ECProperty by name
     //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
     //! @see GetPropertyValue
-    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Return the NavigationPropertyInfo for an ECNavigationProperty of the specified name
     DGNPLATFORM_EXPORT NavigationPropertyInfo GetNavigationPropertyInfo(Utf8CP propertyName) const;
@@ -1761,25 +1761,28 @@ public:
         }
 
     //! Return the value of a string ECProperty by name
-    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
+    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
+
+    //! Return the value of a GUID ECProperty by name
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetPropertyValueGuid(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const;
 
     //! Get the 3 property values that back a YPR
     DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set a DPoint3d ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set a DPoint2d ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set a boolean ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set a double ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set an integer ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set an int64_t ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
     //! @param[in] propertyName The name of the navigation property
@@ -1796,7 +1799,7 @@ public:
     DgnDbStatus SetPropertyValue(Utf8CP propertyName, DgnModelId modelId, DgnClassId relClassId = DgnClassId())
         {return SetPropertyValue(propertyName, (BeSQLite::EC::ECInstanceId)(modelId.GetValueUnchecked()), relClassId);}
     //! Set a string ECProperty by name
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex());
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
@@ -2232,6 +2235,8 @@ public:
     };
 protected:
     Placement3d m_placement;
+    DgnElementId m_typeDefinitionId;
+    ECN::ECClassId m_typeDefinitionRelClassId;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2251,7 +2256,21 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    };
+
+public:
+    //! Set the TypeDefinitionElement associated with this GeometricElement3d
+    //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement3d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement3dHasTypeDefinition
+    DGNPLATFORM_EXPORT DgnDbStatus SetTypeDefinition(DgnElementId typeDefinitionId, ECN::ECClassId relClassId);
+
+    //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement3d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+
+    //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement3d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
+};
 
 //=======================================================================================
 //! Base class for elements with 2d geometry
@@ -2294,6 +2313,8 @@ public:
 
 protected:
     Placement2d m_placement;
+    DgnElementId m_typeDefinitionId;
+    ECN::ECClassId m_typeDefinitionRelClassId;
 
     explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2313,6 +2334,20 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+
+public:
+    //! Set the TypeDefinitionElement associated with this GeometricElement2d
+    //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement2d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement2dHasTypeDefinition
+    DGNPLATFORM_EXPORT DgnDbStatus SetTypeDefinition(DgnElementId typeDefinitionId, ECN::ECClassId relClassId);
+
+    //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement2d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+
+    //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement2d
+    //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
 };
 
 //=======================================================================================
@@ -2353,30 +2388,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
     friend struct dgn_ElementHandler::Physical;
 
-    DgnElementId m_physicalTypeId;
-    ECN::ECClassId m_physicalTypeRelClassId;
-
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-
 public:
-    //! Set the PhysicalType for this PhysicalElement
-    //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
-    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
-    DGNPLATFORM_EXPORT DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId);
-
-    //! Get the DgnElementId of the PhysicalType for this PhysicalElement
-    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    DgnElementId GetPhysicalTypeId() const {return m_physicalTypeId;}
-
-    //! Get the ID of the class of the PhysicalType for this PhysicalElement
-    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
-    ECN::ECClassId GetPhysicalTypeRelClassId() const {return m_physicalTypeRelClassId;}
-
     //! Get the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
     DGNPLATFORM_EXPORT PhysicalTypeCPtr GetPhysicalType() const;
@@ -2404,8 +2419,14 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialElement)
     friend struct dgn_ElementHandler::SpatialLocation;
+
 protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Get the SpatialLocationType for this SpatialLocationElement
+    //! @return Will be invalid if there is no SpatialLocationType associated with this SpatialLocationElement
+    DGNPLATFORM_EXPORT SpatialLocationTypeCPtr GetSpatialLocationType() const;
 };
 
 //=======================================================================================
@@ -2433,15 +2454,6 @@ protected:
     explicit GraphicalElement2d(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Set the GraphicalType for this GraphicalElement2d
-    //! @param[in] graphicalTypeId The DgnElementId of the GraphicalType to be associated with this GraphicalElement2d
-    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of GraphicalElement2dIsOfType
-    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("GraphicalType", graphicalTypeId, relClassId);}
-
-    //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
-    //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
-    DgnElementId GetGraphicalTypeId() const {return GetPropertyValueId<DgnElementId>("GraphicalType");}
-
     //! Get the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
     DGNPLATFORM_EXPORT GraphicalType2dCPtr GetGraphicalType() const;
@@ -2851,6 +2863,25 @@ public:
 };
 
 //=======================================================================================
+//! The SpatialLocationType system is a database normalization strategy because properties that are the same
+//! across all instances are stored with the SpatialLocationType versus being repeated per SpatialLocationElement instance.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationType : TypeDefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationType, TypeDefinitionElement)
+    friend struct dgn_ElementHandler::SpatialLocationType;
+
+protected:
+    explicit SpatialLocationType(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a DgnCode for a SpatialLocationType element within the scope of the specified model
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8CP);
+};
+
+//=======================================================================================
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/17
 //=======================================================================================
@@ -2931,9 +2962,9 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateUniqueCode(SubjectCR parentSubject, Utf8CP baseName);
 
     //! Get the description of this InformationPartitionElement
-    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
+    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
     //! Set the description of this InformationPartitionElement
-    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 };
 
 //=======================================================================================
@@ -3120,8 +3151,8 @@ public:
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
 
-    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
-    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
+    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 
     static Utf8CP JsonNamespace() {return "Subject";}   //<! The namespace reserved for Subject Json properties
     static Utf8CP JsonJobNamespace() {return "Job";}    //<! The sub-namespace reserved for Job Subject Json properties

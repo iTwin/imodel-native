@@ -355,7 +355,7 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP str_Descr() {return "Descr";}
+    static constexpr Utf8CP str_Description() {return "Description";}
     static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
     static bool IsValidCode(DgnCodeCR code);
 
@@ -403,8 +403,8 @@ public:
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
-    Utf8String GetDescr() const {return GetPropertyValueString(str_Descr());} //!< Get description
-    DgnDbStatus SetDescr(Utf8StringCR value) {return SetPropertyValue(str_Descr(), value.c_str());} //!< Set description
+    Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
+    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
     bool IsPrivate() const {return m_isPrivate;} //!< Return true if this ViewDefinition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this ViewDefinition is private or not
 
@@ -464,7 +464,7 @@ public:
         DgnViewId GetId() const {return m_statement->GetValueId<DgnViewId>(0);} //!< The view Id
         Utf8CP GetName() const {return m_statement->GetValueText(1);} //!< The name of the view
         bool IsPrivate() const {return m_statement->GetValueBoolean(2);} //!< Whether the view is private or not
-        Utf8CP GetDescr() const {return m_statement->GetValueText(3);} //!< The view's description
+        Utf8CP GetDescription() const {return m_statement->GetValueText(3);} //!< The view's description
         DgnClassId GetClassId() const {return m_statement->GetValueId<DgnClassId>(4);} //!< The view's ECClassId
 
         DGNPLATFORM_EXPORT bool IsView3d() const;
@@ -597,6 +597,12 @@ public:
 
     //! Get the clipping volume for elements in this view
     DGNPLATFORM_EXPORT ClipVectorPtr GetViewClip() const;
+
+    //! Set the grid settings for this view
+    DGNPLATFORM_EXPORT void SetGridSettings(GridOrientationType, DPoint2dCR, uint32_t);
+
+    //! Get the grid settings for this view
+    DGNPLATFORM_EXPORT void GetGridSettings(GridOrientationType&, DPoint2dR, uint32_t&) const;
 
     /*=================================================================================**//**
     * Margins for "white space" to be left around view volumes for #LookAtVolume.

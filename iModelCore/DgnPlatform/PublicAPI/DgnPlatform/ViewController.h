@@ -143,6 +143,9 @@ protected:
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     ScenePtr m_currentScene;
     ScenePtr m_readyScene;
+    GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
+    DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
+    uint32_t m_gridsPerRef = 10;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -177,7 +180,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
     //! Grid display and point adjustment.
-    virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
+    virtual GridOrientationType _GetGridOrientationType() const {return m_gridOrientation;}
     DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DPoint2dR, uint32_t& gridsPerRef) const;
 
     //! Display grid for this view.
@@ -578,7 +581,6 @@ protected:
     ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
-    GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
 
     //! Construct a new SpatialViewController from a View in the project.
