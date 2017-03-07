@@ -55,4 +55,4 @@ void PrintUsageSums
 #include <Mtg/MTGShortestPaths.h>
 
 #define CompileFromGeomLibsGTest
-#include "BCSSpringModel.h"
+#include "VuSpringModel.h"

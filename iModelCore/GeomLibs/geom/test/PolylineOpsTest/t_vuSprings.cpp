@@ -8,7 +8,7 @@ void SaveZones (bvector<DPoint3d> &wall, BCSSpringModel &sm)
     Check::ShiftToLowerRight (10.0);
     Check::SaveTransformed (wall);
     bvector<BCSSpringModel::StationPolygon> zones;
-    sm.CollectStationAreas (zones, 0.01);
+    sm.CollectStationAreas (zones, true, 0.01, 0.10);
     for (auto &zone : zones)
         Check::SaveTransformed (zone.m_xyz);
     }
