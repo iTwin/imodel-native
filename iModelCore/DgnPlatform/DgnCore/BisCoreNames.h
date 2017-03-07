@@ -19,6 +19,7 @@
 #define BIS_ELEMENT_PROP_LastMod "LastMod"
 
 #define GEOM_GeometryStream "GeometryStream"
+#define GEOM_TypeDefinition "TypeDefinition"
 #define GEOM_Category "Category"
 #define GEOM_Origin "Origin"
 #define GEOM_Box_Low "BBoxLow"
@@ -28,5 +29,3 @@
 #define GEOM3_Yaw "Yaw"
 #define GEOM3_Pitch "Pitch"
 #define GEOM3_Roll "Roll"
-
-#define PHYSICAL_PhysicalType   "PhysicalType"

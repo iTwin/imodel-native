@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -58,7 +58,7 @@ bool AnnotationTextStylePropertyBag::_IsRealProperty(T_Key key) const
     }
 
 #define PROP_Data "Data"
-#define PROP_Description "Descr"
+#define PROP_Description "Description"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
@@ -360,7 +360,7 @@ size_t AnnotationTextStyle::QueryCount(DgnDbR db)
 AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId,[CodeValue],Description FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
 
     return iter;
     }
