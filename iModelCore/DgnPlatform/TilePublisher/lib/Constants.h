@@ -301,44 +301,46 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
     void main(void)
         {
         mat4 mvProj     = u_proj * u_mv;
-        vec4 viewPos    = mvProj * vec4(a_pos,  1.0);
-        vec4 viewPrev   = mvProj * vec4(a_prev, 1.0);
-        vec4 viewNext   = mvProj * vec4(a_next, 1.0);
-        vec2 projPos    = vec2(viewPos.x/viewPos.w, viewPos.y/viewPos.w);
-        vec2 projPrev   = vec2(viewPrev.x/viewPrev.w, viewPrev.y/viewPrev.w);
-        vec2 projNext   = vec2(viewNext.x/viewNext.w, viewNext.y/viewNext.w);
-        vec2 prevDir    = normalize(projPos - projPrev);
-        vec2 nextDir    = normalize(projNext - projPos);
-        vec2 thisDir    = (a_delta.z < 4.0) ? nextDir : prevDir;
-        vec2 perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
-        float dist      = 2.0 * u_width;
-        vec2 delta      = vec2(0.0, 0.0);
-
-        if (dot(prevDir, nextDir) < .99999)
+        gl_Position    = mvProj * vec4(a_pos,  1.0);
+        if (0.0 != a_delta.y)
             {
-            vec2    bisector   = normalize(prevDir - nextDir);
-            float   dotP       = dot(bisector, perp);
-            float   jointParam = mod(a_delta.z, 4.0) - 1.0;
+            vec4 projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
+            vec4 projPrev   = czm_modelToWindowCoordinates (vec4(a_prev, 1.0));
+            vec4 projNext   = czm_modelToWindowCoordinates (vec4(a_next, 1.0));
+            vec2 prevDir    = normalize(projPos.xy - projPrev.xy);
+            vec2 nextDir    = normalize(projNext.xy - projPos.xy);
+            vec2 thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
+            vec2 perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
+            float dist      = 2.0 * u_width;
+            vec2 delta      = vec2(0.0, 0.0);
 
-            if (jointParam < 0.0)
+            if (dot(prevDir, nextDir) < .999)
                 {
-                if (dotP < 0.0)
-                    delta = bisector * dist / dotP;
+                vec2    bisector   = normalize(prevDir - nextDir);
+                float   dotP       = dot(bisector, perp);
+                float   jointParam = mod(a_delta.z, 4.0);
+
+                if (jointParam < 0.0001)
+                    {
+                    if (dotP < 0.0)
+                        delta = bisector * (dist / dotP);
+                    else
+                        delta = perp * dist;
+                    }
                 else
-                    delta = perp * dist;
+                    {
+                    jointParam -= 1.0;
+                    delta = normalize((1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp) * dist;
+                    }
                 }
             else
                 {
-                delta = normalize((1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp) * dist;
+                delta = perp * dist;
                 }
-            }
-        else
-            {
-            delta = perp * dist;
-            }
 
-
-        gl_Position = vec4((projPos.x + delta.x / czm_viewport.z) * viewPos.w, (projPos.y + delta.y / czm_viewport.w) * viewPos.w, viewPos.z, viewPos.w);
+            gl_Position.x += delta.x * gl_Position.w / czm_viewport.z;
+            gl_Position.y += delta.y * gl_Position.w / czm_viewport.w;
+            }
         v_color = computeColor();
         }
 )RAW_STRING";
