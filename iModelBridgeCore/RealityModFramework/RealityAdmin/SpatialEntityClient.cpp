@@ -198,8 +198,8 @@ SpatialEntityHandlerStatus SpatialEntityClient::GetData() const
         pExtractedData->SetDataset(GetDataset().c_str());
 
         // Set classification (overide if specified)
-        if (GetClassification().size() > 0)
-            pExtractedData->SetClassification(GetClassification().c_str());
+        if (GetClassification() != SpatialEntity::Classification::UNDEFINED)
+            pExtractedData->SetClassification(GetClassification());
 
         // Process created data.
         if (m_pObserver != NULL && pExtractedData != NULL)
@@ -257,7 +257,7 @@ Utf8StringCR SpatialEntityClient::GetFilePattern() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    10/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR SpatialEntityClient::GetClassification() const
+SpatialEntity::Classification SpatialEntityClient::GetClassification() const
 {
     return m_classification;
 }
@@ -299,7 +299,7 @@ SpatialEntityClient::SpatialEntityClient(Utf8CP serverUrl, Utf8CP serverName, Ut
     m_datasetName = Utf8String(datasetName);
     m_filePattern = Utf8String(filePattern);
     m_extractThumbnails = extractThumbnails;
-    m_classification = Utf8String(classification);
+    SpatialEntity::GetClassificationFromTag(m_classification, classification);
 }
 
 //-------------------------------------------------------------------------------------

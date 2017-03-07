@@ -13,6 +13,9 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
@@ -23,12 +26,19 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
             m_projectId = jsonInstance["properties"]["ProjectId"].asCString();
         }
     }
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataProjectRelationship::GetRealityDataId() const { return m_realityDataId; }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataProjectRelationship::GetProjectId() const { return m_projectId; }
 
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
@@ -52,6 +62,10 @@ RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
         }
     }
 
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataDocument::GetContainerName() const { return m_containerName; }
 
 Utf8StringCR RealityDataDocument::GetName() const { return m_name; }
@@ -68,6 +82,9 @@ Utf8StringCR RealityDataDocument::GetContentType() const { return m_contentType;
 
 Utf8StringCR RealityDataDocument::GetSize() const { return m_size; }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
     {
     if (jsonInstance.isMember("properties"))
@@ -80,7 +97,9 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
             m_parentId = jsonInstance["properties"]["ParentFolderId"].asCString();
         }
     }
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataFolder::GetName() const { return m_name; }
 
 Utf8StringCR RealityDataFolder::GetParentId() const { return m_parentId; }

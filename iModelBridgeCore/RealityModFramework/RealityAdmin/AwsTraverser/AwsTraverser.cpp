@@ -509,7 +509,14 @@ int main(int argc, char *argv[])
                 data->SetOcclusion(occlusion);
                 data->SetApproximateFootprint(true);
                 data->SetDate(acquisitionDate);
-                data->SetFootprintExtents(DRange2d::From(min_lon, min_lat, max_lon, max_lat));
+
+                bvector<GeoPoint2d> myFootprint;
+                myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+                myFootprint.push_back(GeoPoint2d::From(min_lon, max_lat));
+                myFootprint.push_back(GeoPoint2d::From(max_lon, max_lat));
+                myFootprint.push_back(GeoPoint2d::From(max_lon, min_lat));
+                myFootprint.push_back(GeoPoint2d::From(min_lon, min_lat));
+                data->SetFootprint(myFootprint);
 
                 data->SetResolution("15.00x15.00");
 
@@ -517,7 +524,7 @@ int main(int argc, char *argv[])
                 data->SetProviderName("United States Geological Survey");
                 data->SetDataset("Landsat 8");
                 data->SetDataType("tif");
-                data->SetClassification("Imagery");
+                data->SetClassification(SpatialEntity::Classification::IMAGERY);
 
                 // Build the data source
                 SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();

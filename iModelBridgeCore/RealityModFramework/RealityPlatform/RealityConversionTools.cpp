@@ -120,11 +120,11 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     SpatialEntityPtr data = SpatialEntity::Create();
 
-    //Id
+    // Id
     if (properties.isMember("Id") && !properties["Id"].isNull())
         data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
 
-    //Enterprise
+    // Enterprise
     if (properties.isMember("Enterprise") && !properties["Enterprise"].isNull())
         data->SetEnterprise(Utf8CP(properties["Enterprise"].asString().c_str()));
     
@@ -132,19 +132,19 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     if (properties.isMember("Name") && !properties["Name"].isNull())
         data->SetName(Utf8CP(properties["Name"].asString().c_str()));
 
-    //Dataset
+    // Dataset
     if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
         data->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
 
-    //Group
+    // Group
     if (properties.isMember("Group") && !properties["Group"].isNull())
         data->SetGroup(Utf8CP(properties["Group"].asString().c_str()));
 
-    //Description
+    // Description
     if (properties.isMember("Description") && !properties["Description"].isNull())
         data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
 
-    //RootDocument
+    // RootDocument
     if (properties.isMember("RootDocument") && !properties["Description"].isNull())
         data->SetRootDocument(Utf8CP(properties["RootDocument"].asString().c_str()));
 
@@ -156,7 +156,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     // Classification
     if (properties.isMember("Classification") && !properties["Classification"].isNull())
-        data->SetClassification(Utf8CP(properties["Classification"].asString().c_str()));
+        data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
     // Thumbnail Url
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
@@ -183,7 +183,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
-        data->SetVisibility(Utf8CP(properties["PublicAccess"].asString().c_str()));
+        data->SetVisibilityByTag(Utf8CP(properties["PublicAccess"].asString().c_str()));
 
     // Listable
     if (properties.isMember("Listable") && !properties["Listable"].isNull())

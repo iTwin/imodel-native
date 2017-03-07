@@ -189,22 +189,24 @@ struct NavNode
     {
 public:
     REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
+    REALITYDATAPLATFORM_EXPORT NavNode();
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
     REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
     REALITYDATAPLATFORM_EXPORT Utf8String GetSchemaName();
     REALITYDATAPLATFORM_EXPORT Utf8String GetClassName();
     REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId();
+    REALITYDATAPLATFORM_EXPORT Utf8String GetLabel();
     REALITYDATAPLATFORM_EXPORT Utf8String GetRootNode();
     REALITYDATAPLATFORM_EXPORT Utf8String GetRootId();
 
 private:
-    NavNode();
     Utf8String m_navString;
     Utf8String m_typeSystem;
     Utf8String m_schemaName;
     Utf8String m_className;
     Utf8String m_instanceId;
+    Utf8String m_label;
 
     Utf8String m_rootNode;
     Utf8String m_rootId;
@@ -308,7 +310,7 @@ public:
   
     REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint16_t startIndex) {m_startIndex = startIndex;} 
 
-    REALITYDATAPLATFORM_EXPORT void AdvancePage() {m_validRequestString = false; m_startIndex += m_pageSize;}
+    REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() {m_validRequestString = false; m_startIndex += m_pageSize;}
     REALITYDATAPLATFORM_EXPORT void RewindPage() {m_validRequestString = false; m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);}
     REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint16_t)(page * m_pageSize);}
 

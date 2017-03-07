@@ -686,7 +686,7 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityCR d
 
     //&&AR TODO ... should make sure entry does not exist.
 
-    DRange2dCR Fpt = data.GetFootprintExtents();
+    DRange2dCR Fpt = data.GetFootprintExtent();
     double xMin = std::min(Fpt.low.x, Fpt.high.x);
     double xMax = std::max(Fpt.low.x, Fpt.high.x);
     double yMin = std::min(Fpt.low.y, Fpt.high.y);
@@ -790,7 +790,7 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityCR d
         entityBaseQuery += ", '" + data.GetResolution() + "'";
 
     // Classification is mandatory
-    entityBaseQuery += ", '" + data.GetClassification() + "'";
+    entityBaseQuery += ", '" + data.GetClassificationTag() + "'";
 
     if (data.GetThumbnailURL().size() != 0)
         entityBaseQuery += ", '" + data.GetThumbnailURL() + "'";
@@ -921,7 +921,7 @@ ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityCR data, b
 //-------------------------------------------------------------------------------------
 ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityCR data, SQLINTEGER spatialEntityId)
     {
-    DRange2dCR Fpt = data.GetFootprintExtents();
+    DRange2dCR Fpt = data.GetFootprintExtent();
     double xMin = std::min(Fpt.low.x, Fpt.high.x);
     double xMax = std::max(Fpt.low.x, Fpt.high.x);
     double yMin = std::min(Fpt.low.y, Fpt.high.y);
@@ -945,8 +945,8 @@ ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityCR d
     if (data.GetDataset().size() != 0)
         sprintf(entityBaseQuery, "%s, [Dataset] = '%s'", entityBaseQuery, data.GetDataset().c_str());
 
-    if (data.GetClassification().size() != 0)
-        sprintf(entityBaseQuery, "%s, [Classification] = '%s'", entityBaseQuery, data.GetClassification().c_str());
+    if (data.GetClassification() != SpatialEntity::Classification::UNDEFINED)
+        sprintf(entityBaseQuery, "%s, [Classification] = '%s'", entityBaseQuery, data.GetClassificationTag().c_str());
 
     if (xMin < xMax && yMin < yMax)
         sprintf(entityBaseQuery, "%s, [Footprint] = geometry::STPolyFromText(?, 4326), [MinX] = %f, [MinY] = %f, [MaxX] = %f, [MaxY] = %f", entityBaseQuery, xMin, yMin, xMax, yMax);

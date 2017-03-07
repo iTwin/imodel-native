@@ -270,7 +270,6 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 
     }
     pExtractedData->SetFootprint(shape);
-    pExtractedData->SetFootprintExtents(extents);
 
     // Server.
     SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
@@ -283,7 +282,7 @@ SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP
 
     // Classification
     // &&AR Since we currently only process rasters the file is bound to be imagery
-    pExtractedData->SetClassification("Imagery");
+    pExtractedData->SetClassification(SpatialEntity::Classification::IMAGERY);
 
     // Date.
     time_t lastModifiedTime;
