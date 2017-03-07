@@ -1509,29 +1509,35 @@ void ScalableMeshModel::InitializeTerrainRegions()
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel) SetDefaultClipsActive();
 
+    bvector<uint64_t> ids;
+    m_smPtr->GetCoverageIds(ids);
+
     for (auto& sm : allScalableMeshes)
         {
         BeFileName coveragePath = m_basePath;
-        coveragePath.AppendString(L"_terrain");
+        //coveragePath.AppendString(L"_terrain");
         ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
         if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
             {
             smP->GetScalableMesh()->SetInvertClip(true);
-            m_terrainParts.push_back(smP);
-            smP->m_subModel = true;
+            for(auto& id: ids)
+                if (smP->GetPath().ContainsI(std::to_wstring(id).c_str()))
+                {
+                    bvector<DPoint3d> regionData;
+                    m_smPtr->GetClip(id, regionData);
+                    AddTerrainRegion(id, smP, regionData);
+                }
             }
         }
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP != nullptr) && ((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP == nullptr || (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel)) && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
         {
         appData->m_smTerrainPhysicalModelP = this;
         appData->m_modelSearched = true;
         }
 
-    bvector<uint64_t> ids;
-    m_smPtr->GetCoverageIds(ids);
 
     for (auto& smP : m_terrainParts)
         {
