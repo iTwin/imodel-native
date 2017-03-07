@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ struct ClassMapper final
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
-        static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ECDbCR, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
+        static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ECDbCR, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString, MapStrategyExtendedInfo const& mapStrategy);
 
     public:
         static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);

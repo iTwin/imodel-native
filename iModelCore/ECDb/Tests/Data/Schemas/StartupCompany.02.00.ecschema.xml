@@ -186,70 +186,15 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECProperty propertyName="intProp" typeName="int">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_intProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="longProp" typeName="long">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_longProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="doubleProp" typeName="double">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_doubleProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="stringProp" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_stringProp</ColumnName>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="dateTimeProp" typeName="dateTime">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_dateTimeProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="binaryProp" typeName="binary">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_binaryProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="booleanProp" typeName="boolean">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_booleanProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="point2dProp" typeName="point2d">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_point2dProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="point3dProp" typeName="point3d">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <ColumnName>myColumn_point3dProp</ColumnName>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="intProp" typeName="int"/>
+        <ECProperty propertyName="longProp" typeName="long"/>
+        <ECProperty propertyName="doubleProp" typeName="double"/>
+        <ECProperty propertyName="stringProp" typeName="string"/>
+        <ECProperty propertyName="dateTimeProp" typeName="dateTime"/>
+        <ECProperty propertyName="binaryProp" typeName="binary"/>
+        <ECProperty propertyName="booleanProp" typeName="boolean"/>
+        <ECProperty propertyName="point2dProp" typeName="point2d"/>
+        <ECProperty propertyName="point3dProp" typeName="point3d"/>
     </ECEntityClass>
     <ECEntityClass typeName="Company">
         <ECProperty propertyName="Name" typeName="string"/>

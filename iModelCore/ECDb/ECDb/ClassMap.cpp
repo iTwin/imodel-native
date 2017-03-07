@@ -733,7 +733,7 @@ BentleyStatus ClassMap::MapSystemColumns()
             }
 
         //WIP: If we push it at back it will break some code that presume that first table is the correct one.
-        // The order should not be importable
+        // The order should not be important
 #ifndef NOT_A_GOOD_SOLUTION
         ecInstanceIdColumns.insert(ecInstanceIdColumns.begin(), ecInstanceIdColumn);
         ecClassIdColumns.insert(ecClassIdColumns.begin(), ecClassIdColumn);
@@ -749,14 +749,14 @@ BentleyStatus ClassMap::MapSystemColumns()
         return ERROR;
         }
 
-    auto ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, ecInstanceIdColumns);
+    RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, ecInstanceIdColumns);
     if (ecInstanceIdPropertyMap == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    auto ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), ecClassIdColumns);
     if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false);

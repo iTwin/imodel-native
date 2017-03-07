@@ -194,6 +194,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
         effectiveNotNullConstraint = false;
         }
 
+    //col rename needed for TPH and shared tables without column sharing if sibling classes have same property names
     const ECClassId classId = GetPersistenceClassId(ecProp, accessString);
     if (!classId.IsValid())
         return nullptr;

@@ -9,7 +9,6 @@
 #include "ECSqlUpdatePreparer.h"
 #include "ECSqlPropertyNameExpPreparer.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -128,7 +127,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
-                    " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
+                    "WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s]=[%s].[%s] %s)",
                     joinedTableId->GetName().c_str(),
                     primaryTable.GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
@@ -150,7 +149,9 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             topLevelWhereClause = whereClause;
         }
 
-    nativeSqlBuilder.Append(topLevelWhereClause);
+    if (!topLevelWhereClause.IsEmpty())
+        nativeSqlBuilder.AppendSpace().Append(topLevelWhereClause);
+
     OptionsExp const* optionsExp = exp.GetOptionsClauseExp();
     if (optionsExp == nullptr || !optionsExp->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION))
         {
