@@ -112,6 +112,7 @@ struct VuSpringModel : private _VuSet
 		{
 		TElementId m_elementId;
 		bvector<DPoint3d> m_xyz;
+        StationPolygon (TElementId elementId) : m_elementId (elementId) {}
 		};
     // a movable node stores its station.
     // the station has radius.
@@ -332,6 +333,30 @@ struct VuSpringModel : private _VuSet
             return nodeC->FSucc () == nodeA;
             }
 
+// Return nodes of two triangles sharing an edge.
+// * --------*
+//  \ A    C/D\
+//   \     /   \
+//    \   /     \
+//     \B/E     F\
+//      *---------*
+        static bool IsEdgeBetweenTriangles (VuP nodeA,
+            VuP &nodeB,
+            VuP &nodeC,
+            VuP &nodeD,
+            VuP &nodeE,
+            VuP &nodeF
+            )
+            {
+            nodeD = nodeE = nodeF = nullptr;
+            if (IsNodeInTriangle (nodeA, nodeB, nodeC))
+                {
+                nodeD = nodeB->VSucc ();
+                return IsNodeInTriangle (nodeD, nodeE, nodeF);
+                }
+            return false;
+            }
+
         bool IsFixedEdge (VuP node)
             {
             return node->HasMask (VU_ALL_FIXED_EDGES_MASK);
@@ -397,8 +422,8 @@ struct VuSpringModel : private _VuSet
                 if (areaABC <= 0.0 || areaDEF <= 0.0)
                     return nullptr;
                 double areaTol = s_areaRelTol * (areaABC + areaDEF);    // and that is positive
-                double cEF = vu_cross (nodeA, nodeE, nodeF);
-                double cFC = vu_cross (nodeA, nodeF, nodeC);
+                //double cEF = vu_cross (nodeA, nodeE, nodeF);
+                //double cFC = vu_cross (nodeA, nodeF, nodeC);
                 double areaAEF = nodeA->CrossXY (nodeE, nodeF);
                 double areaAFC = nodeA->CrossXY (nodeF, nodeC);
                 if (areaAEF <= areaTol || areaAFC <= areaTol)
@@ -514,9 +539,9 @@ struct VuSpringModel : private _VuSet
                 {
                 double shiftFraction;
                 int numSweep;
-                VuSpringModel::TriangleWeightFunction::CappedQuadraticFunction edgeWeightFunction (0, 0, 1, 0, 10);
+                TriangleWeightFunction::CappedQuadraticFunction edgeWeightFunction (0, 0, 1, 0, 10);
                 static int s_springSelect = 0;
-                VuSpringModel::TriangleWeightFunction springFunction (*this, s_springSelect, edgeWeightFunction);
+                TriangleWeightFunction springFunction (*this, s_springSelect, edgeWeightFunction);
                 vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 10, 100, 100, &shiftFraction, &numSweep);
                 static size_t s_maxIteration = 5;
                 VuMask skipMask = m_wallMask;//VU_EXTERIOR_EDGE; // m_wallMask;
@@ -550,10 +575,26 @@ struct VuSpringModel : private _VuSet
             if (preferDirectCentroidPaths)
                 {
                 _VuSet::TempMask visitMask (Graph (), false);
-                VU_SET_LOOP (edgeSeedNode, this)
+                VU_SET_LOOP (nodeA, this)
                     {
+                    VuP nodeB, nodeC, nodeD, nodeE, nodeF;
+                    if (IsEdgeBetweenTriangles (nodeA, nodeB, nodeC, nodeD, nodeE, nodeF)
+                        && nodeA->CountMaskAroundFace (m_wallMask) == 0
+                        && nodeD->CountMaskAroundFace (m_wallMask) == 0
+                        && nodeA->CountMaskAroundVertex (m_wallMask) == 0
+                        && nodeD->CountMaskAroundVertex (m_wallMask) == 0
+                        )
+                        {
+                        bool leftTest  = IsStationNode (nodeA) && IsStationNode (nodeB) && IsStationNode (nodeC);
+                        bool rightTest = IsStationNode (nodeD) && IsStationNode (nodeD) && IsStationNode (nodeF);
+                        if (leftTest || rightTest)
+                            {
+                            nodeA->SetMask (skipableEdge.Mask ());
+                            nodeD->SetMask (skipableEdge.Mask ());
+                            }                            
+                        }
                     }
-                END_VU_SET_LOOP (edgeSeedNode, this)
+                END_VU_SET_LOOP (nodeA, this)
                 }
 
             _VuSet::TempMask visitMask (Graph (), false);
@@ -586,7 +627,7 @@ struct VuSpringModel : private _VuSet
                             }
                         areas.push_back ({ elementId, spaceNewPoints[0] });*/
                         
-                        areas.push_back ({ elementId, bvector<DPoint3d> () });
+                        areas.push_back (StationPolygon (elementId));
                         VU_VERTEX_LOOP (node0, vertexSeedNode)
                             {
                             VuP node1 = node0->FSucc ();
@@ -598,7 +639,8 @@ struct VuSpringModel : private _VuSet
                                 {
                                 //xyz.Interpolate (xyz0, weight0 / xyz0.Distance (xyz), xyz); // do not go outside of circle.
                                 }
-                            areas.back ().m_xyz.push_back (xyz);
+                            if (!node0->HasMask (skipableEdge.Mask ()))
+                                areas.back ().m_xyz.push_back (xyz);
 
                             // If it is a triangle of stations, also output weighted centroid
                             VuP node2 = node1->FSucc ();
