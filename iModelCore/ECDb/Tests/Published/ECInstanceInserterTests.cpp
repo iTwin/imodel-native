@@ -246,7 +246,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
     }
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String actualJson(stmt.GetValueText(0));
@@ -525,7 +525,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
     ECInstanceId id(UINT64_C(1000));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,FirstName) VALUES (?, 1,'INSERT without specifying LastMod column')"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (Id,I,FirstName) VALUES (?, 1,'INSERT without specifying LastMod column')"));
     stmt.BindId(1, id);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
@@ -535,7 +535,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
     ECInstanceId id(UINT64_C(1002));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,FirstName) VALUES (?, 1,'INSERT with literal NULL')"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (Id,I,FirstName) VALUES (?, 1,'INSERT with literal NULL')"));
     stmt.BindId(1, id);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
@@ -545,7 +545,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
     ECInstanceId id(UINT64_C(1003));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,FirstName,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (Id,I,FirstName,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
     stmt.BindId(1, id);
     stmt.BindDouble(2, 24565.5);
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -600,7 +600,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
-        "        <ECProperty propertyName='Id' typeName='int' />"
+        "        <ECProperty propertyName='Code' typeName='int' />"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='ClassAB' >"
         "        <BaseClass>ClassA</BaseClass>"
@@ -618,7 +618,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAC VALUES(3000, 3)");
     ExecuteECSqlCommand(stmt, ecdb, "INSERT INTO rc.ClassAC VALUES(3500, 3)");
 
-    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Id"), ECSqlStatus::Success);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY Code"));
     int count = 0;
     Utf8String expectedAvgValues = "21250.022250.023250.0";
     Utf8String actualAvgValues;
@@ -634,7 +634,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 
     count = 0;
     actualAvgValues = "";
-    ASSERT_EQ(stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"), ECSqlStatus::Success);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"));
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         actualAvgValues.append(stmt.GetValueText(1));

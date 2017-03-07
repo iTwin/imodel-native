@@ -150,21 +150,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
         return ECSqlStatus::Error;
         }
 
-    for (size_t i = 0; i < tokenCount; i++)
-        {
-        NativeSqlBuilder nativeSqlBuilder;
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenLeft();
+        for (size_t i = 0; i < tokenCount; i++)
+            {
+            NativeSqlBuilder nativeSqlBuilder;
+            if (exp.HasParentheses())
+                nativeSqlBuilder.AppendParenLeft();
 
-        nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(exp.GetOperator()).AppendSpace().Append(rhsSqlTokens[i]);
+            nativeSqlBuilder.Append(lhsSqlTokens[i]).AppendSpace().Append(exp.GetOperator()).AppendSpace().Append(rhsSqlTokens[i]);
 
-        if (exp.HasParentheses())
-            nativeSqlBuilder.AppendParenRight();
+            if (exp.HasParentheses())
+                nativeSqlBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(nativeSqlBuilder));
-        }
+            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+            }
 
-    return ECSqlStatus::Success;
+        return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -233,14 +233,27 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     if (wrapInParens)
         sqlBuilder.AppendParenLeft();
 
+    const bool wrapOpInSpaces = op != BooleanSqlOperator::EqualTo &&
+        op != BooleanSqlOperator::GreaterThan &&
+        op != BooleanSqlOperator::GreaterThanOrEqualTo &&
+        op != BooleanSqlOperator::LessThan &&
+        op != BooleanSqlOperator::LessThanOrEqualTo;
+
     bool isFirstSnippet = true;
     for (size_t i = 0; i < nativeSqlSnippetCount; i++)
         {
         if (!isFirstSnippet)
             sqlBuilder.AppendSpace().Append(logicalCompoundOp).AppendSpace();
 
-        sqlBuilder.Append(lhsNativeSqlSnippets[i]).AppendSpace().Append(op).AppendSpace().Append(rhsNativeSqlSnippets[i]);
+        sqlBuilder.Append(lhsNativeSqlSnippets[i]);
+        if (wrapOpInSpaces)
+            sqlBuilder.AppendSpace();
 
+        sqlBuilder.Append(op);
+        if (wrapOpInSpaces)
+            sqlBuilder.AppendSpace();
+
+        sqlBuilder.Append(rhsNativeSqlSnippets[i]);
         isFirstSnippet = false;
         }
 
@@ -1580,7 +1593,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, WhereExp const& exp)
     {
-    nativeSqlSnippet.Append(" WHERE ");
+    nativeSqlSnippet.Append("WHERE ");
     return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp.GetSearchConditionExp());
     }
 

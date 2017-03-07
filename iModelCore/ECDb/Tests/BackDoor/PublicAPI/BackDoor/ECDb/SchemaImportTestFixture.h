@@ -120,7 +120,16 @@ protected:
         MapStrategyInfo(Strategy strat, TablePerHierarchyInfo const& tphInfo) : m_strategy(strat), m_tphInfo(tphInfo) {}
         };
 
+    struct ColumnInfo final
+        {
+        Utf8String m_propAccessString;
+        Utf8String m_tableName;
+        Utf8String m_columnName;
+        bool m_isVirtual;
+        };
+
     bool TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const;
+    bool TryGetColumnInfo(std::vector<ColumnInfo>&, ECDbCR ecdb, ECN::ECPropertyCR) const;
 
 public:
     ECDbMappingTestFixture () : SchemaImportTestFixture() {}

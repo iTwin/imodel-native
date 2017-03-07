@@ -652,7 +652,7 @@ TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
     stmt.Finalize();
 
     Statement validateStmt;
-    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Long_Array,String_Array,Blob_Array,P3d_Array FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Long_Array,String_Array,Blob_Array,P3d_Array FROM ts_MyClass WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
@@ -782,7 +782,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
     stmt.Finalize();
 
     Statement validateStmt;
-    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
     Utf8String actualJson(validateStmt.GetValueText(0));
@@ -1440,17 +1440,17 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' OR Company='ABC'"));
     Utf8String nativeSql = statement.GetNativeSql();
-    ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country] = 'USA' OR [Customer].[Company] = 'ABC')") != nativeSql.npos);
+    ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country]='USA' OR [Customer].[Company]='ABC')") != nativeSql.npos);
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' AND Company='ABC'"));
     nativeSql = statement.GetNativeSql();
-    ASSERT_TRUE(nativeSql.find("WHERE [Customer].[Country] = 'USA' AND [Customer].[Company] = 'ABC'") != nativeSql.npos);
+    ASSERT_TRUE(nativeSql.find("WHERE [Customer].[Country]='USA' AND [Customer].[Company]='ABC'") != nativeSql.npos);
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' OR Country='DUBAI' AND ContactTitle='AM'"));
     nativeSql = statement.GetNativeSql();
-    ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country] = 'USA' OR [Customer].[Country] = 'DUBAI' AND [Customer].[ContactTitle] = 'AM')") != nativeSql.npos);
+    ASSERT_TRUE(nativeSql.find("WHERE ([Customer].[Country]='USA' OR [Customer].[Country]='DUBAI' AND [Customer].[ContactTitle]='AM')") != nativeSql.npos);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1796,7 +1796,7 @@ TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
     stmt.Finalize();
 
     Statement rawStmt;
-    ASSERT_EQ(BE_SQLITE_OK, rawStmt.Prepare(ecdb, "SELECT StructArrayProp FROM ts_Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(BE_SQLITE_OK, rawStmt.Prepare(ecdb, "SELECT StructArrayProp FROM ts_Foo WHERE Id=?"));
     ASSERT_EQ(BE_SQLITE_OK, rawStmt.BindId(1, key.GetECInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, rawStmt.Step()) << rawStmt.GetSql();
     rapidjson::Document actualStructArrayJson;
@@ -3885,7 +3885,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
 
     // insert invalid geom blob
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial (ECInstanceId, Geometry) VALUES (1,?)"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_PASpatial(Id, Geometry) VALUES (1,?)"));
     double dummyValue = 3.141516;
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindBlob(1, &dummyValue, (int) sizeof(dummyValue), Statement::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -3913,10 +3913,8 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     const auto perClassRowCount = 0;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
 
-    auto ecsql = "INSERT INTO ecsql.SA (SAStructProp) VALUES(?)";
     ECSqlStatement statement;
-    auto stat = statement.Prepare(ecdb, ecsql);
-    ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsql.SA (SAStructProp) VALUES(?)"));
 
     IECSqlBinder& saStructBinder = statement.GetBinder(1); //SAStructProp
     ASSERT_EQ(ECSqlStatus::Success, saStructBinder["PStructProp"]["i"].BindInt(99));
@@ -3934,7 +3932,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
         ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["p3d"].BindPoint3d(DPoint3d::From(i, i + 1, i + 2)));
         }
 
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << "Step for '" << ecsql << "' failed";
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step()) << statement.GetECSql();
     statement.Finalize();
 
     ECSqlStatement stmt;
@@ -4516,7 +4514,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:_ecdbparam1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:_ecdbparam1,:_ecdbparam2,:_ecdbparam3,:_ecdbecinstanceid_1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[Id],ECClassId) VALUES (1.1,:_ecdbparam1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseId],ECClassId) VALUES (:_ecdbparam1,:_ecdbparam2,:_ecdbparam3,:_ecdbecinstanceid_1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();

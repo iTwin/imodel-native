@@ -21,7 +21,6 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" description="File name">

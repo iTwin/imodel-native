@@ -194,6 +194,7 @@ DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, 
         effectiveNotNullConstraint = false;
         }
 
+    //col rename needed for TPH and shared tables without column sharing if sibling classes have same property names
     const ECClassId classId = GetPersistenceClassId(ecProp, accessString);
     if (!classId.IsValid())
         return nullptr;
@@ -466,26 +467,12 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
     {
     for (ClassMapCP deepestClassMapped : m_deepestClassMapped)
         {
-        for (ECClassCP baseClass : deepestClassMapped->GetClass().GetBaseClasses())
+        std::vector<ECEntityClassCP> unresolvedMixins(m_mixins.begin(), m_mixins.end());
+        for (ECEntityClassCP mixIn : unresolvedMixins)
             {
-            if (baseClass->IsEntityClass())
+            if (deepestClassMapped->GetClass().Is(mixIn))
                 {
-                ECEntityClassCP entityClassMap = baseClass->GetEntityClassCP();
-                if (entityClassMap->IsMixin())
-                    {
-                    auto itor = m_mixins.find(entityClassMap);
-                    if (itor == m_mixins.end())
-                        {
-                        //current class interface. We had not added them before 
-                        //so add them now.
-                        m_mixins.insert(entityClassMap);
-                        }
-                    else 
-                        {
-                        //Remove the mixin as we already have implementation
-                        m_mixins.erase(itor);
-                        }
-                    }
+                m_mixins.erase(mixIn);
                 }
             }
         }
@@ -493,11 +480,19 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
     //this mixin has not be resolved. We need to find it implementation if avaliable.
     if (!m_mixins.empty())
         {
-        std::vector<ECEntityClassCP> unresolvedMixins(m_mixins.begin(), m_mixins.end());
-        for (ECEntityClassCP unresolvedMixin : unresolvedMixins)
+        //std::vector<ECEntityClassCP> unresolvedMixins(m_mixins.begin(), m_mixins.end());
+        for (ECEntityClassCP unresolvedMixin : m_mixins)
             {
-            if (ResolveMixins(*unresolvedMixin) != SUCCESS)
-                return ERROR;
+            ClassMap const* impl = ResolveMixin(*unresolvedMixin);
+            if (impl != nullptr)
+                {
+                m_mixinImpls[unresolvedMixin] = impl;
+                }
+            else
+                {
+                //Find base mixin and find there impl
+                ResolveBaseMixin(*unresolvedMixin);
+                }
             }
         }
 
@@ -507,43 +502,43 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       02 / 2017
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapColumnFactory::UsedColumnFinder::ResolveMixins(ECN::ECClassCR currentClass)
+void ClassMapColumnFactory::UsedColumnFinder::ResolveBaseMixin(ECN::ECClassCR currentClass)
     {
-    if (m_primaryHierarchy.find(&currentClass) != m_primaryHierarchy.end())
-        return SUCCESS;
+    for (ECClassCP baseClass : currentClass.GetBaseClasses())
+        {
+        ECEntityClassCP baseEntityClass = baseClass->GetEntityClassCP();
+        ClassMap const* impl = ResolveMixin(*baseEntityClass);
+        if (impl != nullptr)
+            {
+            if (m_mixinImpls.find(baseEntityClass) == m_mixinImpls.end())
+                m_mixinImpls[baseEntityClass] = impl;
+            }
+        else
+            {
+            ResolveBaseMixin(*baseEntityClass);
+            }
+        }
+    }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       02 / 2017
+//------------------------------------------------------------------------------------------
+ClassMap const* ClassMapColumnFactory::UsedColumnFinder::ResolveMixin(ECN::ECClassCR currentClass)
+    {
     ClassMap const* currentClassMap = GetClassMap(currentClass);
     if (currentClassMap && !currentClassMap->GetTables().empty() &&
         currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
         {
-        for (ECClassCP baseClass : currentClass.GetBaseClasses())
-            {
-            if (baseClass->IsEntityClass())
-                {
-                ECEntityClassCP entityClassMap = baseClass->GetEntityClassCP();
-                if (entityClassMap->IsMixin())
-                    {
-                    auto itor = m_mixins.find(entityClassMap);
-                    if (itor != m_mixins.end())
-                        {
-                        m_mixins.erase(itor);
-                        m_mixinImpls[entityClassMap] = currentClassMap;
-                        }
-                    }
-                }
-            }
+        return currentClassMap;
         }
 
     for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass))
         {
-        if (m_mixins.empty()) 
-            return SUCCESS;
-
-        if (ResolveMixins(*derivedClass) != SUCCESS)
-            return ERROR;
+        if (currentClassMap = ResolveMixin(*derivedClass))
+            return currentClassMap;
         }
 
-    return SUCCESS;
+    return nullptr;
     }
 
 //------------------------------------------------------------------------------------------

@@ -39,7 +39,22 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     RefCountedPtr<PropertyMap> propertyMap;
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
         {
-        BeAssert(false && "PropertyMap already exist");
+        if (property.GetName().EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
+            property.GetName().EqualsIAscii(ECDBSYS_PROP_ECClassId) ||
+            property.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
+            property.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
+            property.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
+            property.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+            {
+            m_classMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(
+                "Failed to map ECClass '%s'. It defines the ECProperty '%s' which collides with the ECSQL system property of the same name.",
+                m_classMap.GetClass().GetFullName(), property.GetName().c_str());
+            }
+        else
+            {
+            BeAssert(false && "PropertyMap for a non-system property already exist. This should have been caught before");
+            }
+
         return nullptr;
         }
 
@@ -147,7 +162,7 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ECDbCR ecdb, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString)
+BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ECDbCR ecdb, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString, MapStrategyExtendedInfo const& mapStrategy)
     {
     Utf8String columnName;
     bool isNullable = true;
@@ -159,6 +174,13 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
         {
         if (SUCCESS != customPropMap.TryGetColumnName(columnName))
             return ERROR;
+
+        if (!columnName.empty() && mapStrategy.GetStrategy() != MapStrategy::ExistingTable)
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
+                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            return ERROR;
+            }
 
         if (SUCCESS != customPropMap.TryGetIsNullable(isNullable))
             return ERROR;
@@ -172,7 +194,7 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
 
         if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
+            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
                                                           ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
                                                           collationStr.c_str());
             return ERROR;
@@ -202,7 +224,7 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     DbColumn::CreateParams createParams;
     if (m_loadContext == nullptr)
         {
-        if (SUCCESS != DetermineColumnInfoForPrimitiveProperty(createParams, m_classMap.GetDbMap().GetECDb(), property, accessString))
+        if (SUCCESS != DetermineColumnInfoForPrimitiveProperty(createParams, m_classMap.GetDbMap().GetECDb(), property, accessString, m_classMap.GetMapStrategy()))
             return nullptr;
         }
 

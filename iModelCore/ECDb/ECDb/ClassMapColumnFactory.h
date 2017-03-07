@@ -41,7 +41,8 @@ struct ClassMapColumnFactory final : NonCopyableClass
                 bool IsMappedIntoContextClassMapTables(ClassMap const&) const;
                 bool IsMappedIntoContextClassMapTables(PropertyMap const&) const;
                 BentleyStatus ResolveMixins();
-                BentleyStatus ResolveMixins(ECN::ECClassCR);
+                ClassMap const* ResolveMixin(ECN::ECClassCR);
+                void ResolveBaseMixin(ECN::ECClassCR currentClass);
                 BentleyStatus TraverseClassHierarchy(ECN::ECClassCR, ClassMap const*);
                 BentleyStatus FindRelationshipEndTableMaps();
                 BentleyStatus Execute(ColumnMap&);

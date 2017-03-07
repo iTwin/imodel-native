@@ -244,6 +244,41 @@ bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, E
     }
 
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, ECN::ECPropertyCR prop) const
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT
+        R"sql(
+        SELECT distinct pp.AccessString, t.Name, c.Name, c.IsVirtual FROM ec_PropertyMap pm 
+        INNER JOIN ec_Column c ON c.Id = pm.ColumnId
+        INNER JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
+        INNER JOIN ec_Table t ON t.Id = c.TableId
+        INNER JOIN ec_Property p ON p.Id = pp.RootPropertyId
+        WHERE p.Id=? ORDER BY t.Name, c.Name
+        )sql");
+
+    if (stmt == nullptr)
+        {
+        EXPECT_TRUE(stmt != nullptr) << ecdb.GetLastError().c_str();
+        return false;
+        }
+
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindId(1, prop.GetId()));
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        ColumnInfo colInfo;
+        colInfo.m_propAccessString.assign(stmt->GetValueText(0));
+        colInfo.m_tableName.assign(stmt->GetValueText(1));
+        colInfo.m_columnName.assign(stmt->GetValueText(2));
+        colInfo.m_isVirtual = stmt->GetValueInt(3) != 0;
+        colInfos.push_back(colInfo);
+        }
+
+    return !colInfos.empty();
+    }
 
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -135,9 +135,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
                     }
                 }
 
-            //if (!scope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
-            //    classIdentifier.assign(classMap.GetJoinedTable().GetName());
-
             break;
             }
 
@@ -217,7 +214,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
                 GetColumnsPropertyMapVisitor  ecInstanceIdVisitor(PropertyMap::Type::All, true);
                 referencedEndConstraintMappings.GetECInstanceIdPropMap()->AcceptVisitor(ecInstanceIdVisitor);
                 NativeSqlBuilder str;
-                str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s] = [%s] LIMIT 1)",
+                str.AppendFormatted("(SELECT [%s] FROM [%s] WHERE [%s]=[%s] LIMIT 1)",
                                     classIdColumn->GetName().c_str(),
                                     classIdColumn->GetTable().GetName().c_str(),
                                     classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
@@ -241,7 +238,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
         selectSql.Append(classIdentifier, propMap.GetAccessString().c_str());
 
     nativeSqlSnippets.push_back(selectSql);
-
     return ECSqlStatus::Success;
     }
 
