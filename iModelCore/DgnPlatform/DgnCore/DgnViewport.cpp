@@ -1080,7 +1080,7 @@ ColorDef DgnViewport::GetBackgroundColor() const
     if (!m_viewController.IsValid())
         return ColorDef::Black();
 
-    ColorDef bgColor = m_viewController->GetBackgroundColor();
+    ColorDef bgColor = m_viewController->GetViewDefinition().GetDisplayStyle().GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
     if (ColorDef::Black() == bgColor && GetRenderTarget()->_WantInvertBlackBackground())
