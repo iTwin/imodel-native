@@ -522,7 +522,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
             d.addedFaces.push_back(idx[1]);
             d.addedFaces.push_back(idx[2]);
         }
-        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
+        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr && addedFacets->GetClientParamIndexCP() != nullptr)
         {
             if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
             {
