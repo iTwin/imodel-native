@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterInternal.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __RASTERINTERNAL_H__
@@ -99,7 +99,7 @@
 #endif
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_IMAGEPP
 USING_NAMESPACE_BENTLEY_RASTER
 

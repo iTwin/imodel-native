@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -10,7 +10,7 @@
 #include "RasterTileTree.h"
 #include "WmsSource.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RASTER
 
 HANDLER_DEFINE_MEMBERS(WmsModelHandler)

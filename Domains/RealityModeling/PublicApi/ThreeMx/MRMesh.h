@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ThreeMx/MRMesh.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -18,7 +18,7 @@ THREEMXSCHEMA_TYPEDEFS(MRMeshGeometry)
 THREEMXSCHEMA_TYPEDEFS(MRMeshTexture)
 THREEMXSCHEMA_TYPEDEFS(MRMeshCacheManager)
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_BENTLEY_THREEMX_SCHEMA_NAMESPACE
 
