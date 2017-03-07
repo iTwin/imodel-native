@@ -1522,9 +1522,9 @@ void PrimitiveBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geometry
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mathieu.Marchand                1/2017
+* @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
+GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params) const
     {
     TriMeshArgs rasterTile;
 
@@ -1557,7 +1557,17 @@ void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
     rasterTile.m_textureUV = textUV;
     rasterTile.m_texture = const_cast<Render::Texture*>(&tile);
 
-    AddTriMesh(rasterTile);
+    return _CreateTriMesh(rasterTile, db, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                1/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
+    {
+    GraphicPtr gf = m_system._CreateTile(tile, corners, GetDgnDb(), GetGraphicParams());
+    if (gf.IsValid())
+        m_primitives.push_back(gf);
     }
 
 /*---------------------------------------------------------------------------------**//**

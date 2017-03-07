@@ -984,7 +984,7 @@ public:
 
     void Init() {*this = GraphicParams();}
     GraphicParams() {}
-    DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
+    DGNPLATFORM_EXPORT GraphicParams(GraphicParamsCR rhs);
 
     //! @name Query Methods
     //@{
@@ -1074,6 +1074,24 @@ public:
     void SetMaterial(MaterialP material) {m_material = material;}
 
     //@}
+
+    static GraphicParams FromSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, LinePixels linePixels=LinePixels::Solid)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetLineColor(lineColor);
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetWidth(lineWidth);
+        graphicParams.SetLinePixels(linePixels);
+        return graphicParams;
+        }
+
+    static GraphicParams FromBlankingFill(ColorDef fillColor)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetIsBlankingRegion(true);
+        return graphicParams;
+        }
 };
 
 //=======================================================================================
@@ -1383,22 +1401,14 @@ public:
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
     void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
         {
-        GraphicParams graphicParams;
-        graphicParams.SetLineColor(lineColor);
-        graphicParams.SetFillColor(fillColor);
-        graphicParams.SetWidth(lineWidth);
-        graphicParams.SetLinePixels(linePixels);
-        ActivateGraphicParams(graphicParams);
+        ActivateGraphicParams(GraphicParams::FromSymbology(lineColor, fillColor, lineWidth, linePixels));
         }
 
     //! Set blanking fill symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
     //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
     void SetBlankingFill(ColorDef fillColor)
         {
-        GraphicParams graphicParams;
-        graphicParams.SetFillColor(fillColor);
-        graphicParams.SetIsBlankingRegion(true);
-        ActivateGraphicParams(graphicParams);
+        ActivateGraphicParams(GraphicParams::FromBlankingFill(fillColor));
         }
 };
 
@@ -1678,6 +1688,9 @@ struct System
 
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb, GraphicParamsCR params) const = 0;
+
+    //! Create a tile primitive
+    DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
 
     //! Create a Graphic consisting of a list of Graphics, with an optional transform applied to the list
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const = 0;
