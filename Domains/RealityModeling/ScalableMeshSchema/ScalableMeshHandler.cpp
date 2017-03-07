@@ -1241,7 +1241,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
 #endif
 
-    if (m_smPtr->IsTerrain())
+    //if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
          if (appData->m_smTerrainPhysicalModelP == nullptr)
