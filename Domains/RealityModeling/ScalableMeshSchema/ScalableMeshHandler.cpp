@@ -15,6 +15,7 @@
 #include <ScalableMesh\GeoCoords\GCS.h>
 
 #include <Bentley\BeDirectoryIterator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -1286,6 +1287,7 @@ void ScalableMeshModel::CloseFile()
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         }
+    //ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
     m_progressiveQueryEngine = nullptr;
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
@@ -1470,7 +1472,7 @@ void ScalableMeshModel::InitializeTerrainRegions()
     for (auto& sm : allScalableMeshes)
         {
         BeFileName coveragePath = m_basePath;
-        coveragePath.AppendString(L"_terrain");
+        //coveragePath.AppendString(L"_terrain");
         ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
         if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
             {
@@ -1482,7 +1484,7 @@ void ScalableMeshModel::InitializeTerrainRegions()
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP == nullptr || (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel)) && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
         {
         appData->m_smTerrainPhysicalModelP = this;
         appData->m_modelSearched = true;

@@ -10,9 +10,13 @@
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
+
+
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
+
 #include <ScalableMeshSchema/IMeshSpatialModel.h>
+
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
@@ -20,7 +24,11 @@
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
+
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 
@@ -97,6 +105,8 @@ struct ScalableMeshModel : IMeshSpatialModel
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
+
+
     private:
 
         IScalableMeshPtr                        m_smPtr;
@@ -138,7 +148,6 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         void InitializeTerrainRegions();
 
-                       
     protected:
 
         struct Properties
@@ -156,6 +165,8 @@ struct ScalableMeshModel : IMeshSpatialModel
      
         virtual bool _IsMultiResolution() const { return true; };
         virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
+
+    
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
@@ -185,11 +196,12 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
                 
-        SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
+        SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
 
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
+
 
         //! A DgnDb can have only one terrain. 
         SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);
@@ -245,7 +257,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
-        
+
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler::Spatial
@@ -255,6 +267,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     public : 
                      
         //NEEDS_WORK_SM : Currently for testing only
-        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename);
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(BentleyApi::Dgn::DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename);
     };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+

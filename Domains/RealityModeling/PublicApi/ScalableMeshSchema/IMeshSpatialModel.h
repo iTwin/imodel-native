@@ -10,13 +10,21 @@
 
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
+
+
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTileIterator)
 SCALABLEMESH_SCHEMA_REF_COUNTED_PTR(ITerrainTexture)
+
+
+
 SCALABLEMESH_SCHEMA_TYPEDEFS(IMeshSpatialModel)
+
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+
+
 
 struct ITerrainTileChangedHandler
     {
@@ -59,12 +67,15 @@ struct ITerrainTexture : public RefCountedBase
         SCALABLEMESH_SCHEMA_EXPORT ITextureTileId const& GetId() const;
     };
 
+
 struct IMeshSpatialModel : Dgn::SpatialModel
     {
     protected:
         IMeshSpatialModel(CreateParams const& params) : Dgn::SpatialModel(params){};
         virtual bool _IsMultiResolution() const = 0;
         virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const = 0;
+
+
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const = 0;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const = 0;
         //virtual BentleyStatus _GetMeshPartUnderClipMask(bvector<DPoint3d>& vertices,
@@ -79,9 +90,13 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
 
+
+
     public:
         SCALABLEMESH_SCHEMA_EXPORT bool IsMultiResolution() const{ return _IsMultiResolution();}
         SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3d GetRange() const;
+
+
         
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const;
 
@@ -104,6 +119,9 @@ struct IMeshSpatialModel : Dgn::SpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener);
         SCALABLEMESH_SCHEMA_EXPORT bool UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener);
+
+
     };
     
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+
