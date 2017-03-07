@@ -10,6 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/RealityDataObjects.h>
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
@@ -492,62 +493,15 @@ protected:
 //! entity except the actual data which is stored in the data sources the spatial
 //! entity makes references to.
 //=====================================================================================
-struct SpatialEntity : public RefCountedBase
+struct SpatialEntity : public RealityDataBase
 {
 public:
-
-    enum class Classification
-        {
-        MODEL,
-        IMAGERY,
-        TERRAIN,
-        PINNED,
-        UNDEFINED
-        };
-
-    enum class Visibility
-        {
-        PUBLIC,
-        ENTERPRISE,
-        PERMISSION,
-        PRIVATE,
-        UNDEFINED
-        };
-
 
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create();
 
     // Creator for spatio temporal selector ... fills out some of the most basic fields
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "");
-
-    //! Get/Set
-    //! Identifier of spatial entity
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
-    REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
-
-    //! Get/Set
-    //! Name of spatial entity
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
-    REALITYDATAPLATFORM_EXPORT void SetName(Utf8CP name);
-
-    //! Get/Set
-    //! A string formed by 2 floating point values separated by a ‘x’ character. 
-    //! The first double indicates the resolution in meter in the first axis and the second in the second axis.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetResolution() const; // in meters.
-    REALITYDATAPLATFORM_EXPORT void SetResolution(Utf8CP resolution); // in meters.
-
-    //! Returns the mean squared of x and y resolution in the field
-    REALITYDATAPLATFORM_EXPORT double GetResolutionValue() const; // in meters.
-
-    //! A string indicating the accuracy in number or numberxnumber format. 
-    //! If the accuracy is different in X and Y then two numbers may be provided
-    //! separated by a 'x' character. Ex: 15.56x13.45
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAccuracy() const;
-    REALITYDATAPLATFORM_EXPORT void SetAccuracy(Utf8CP accuracy);
-
-    //! Returns the mean squared of x and y accuracy in the field
-    REALITYDATAPLATFORM_EXPORT double GetAccuracyValue() const; // in meters.
 
     //! Get/Set
     //! A string containing a key to the data provider. Keys are informally attributed and must 
@@ -572,35 +526,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataType() const;
     REALITYDATAPLATFORM_EXPORT void SetDataType(Utf8CP type);
 
-    //! The main classificatin of the spatial entity. See Classification for details.
-    REALITYDATAPLATFORM_EXPORT Classification GetClassification() const;
-    REALITYDATAPLATFORM_EXPORT void SetClassification(Classification classification);
-
-    //! Returns the classification tag: one of "Model", "Imagery", "Terrain", "Pinned" or "Undefined"
-    REALITYDATAPLATFORM_EXPORT Utf8String GetClassificationTag() const;
-
-    //! Enables setting the classification by a string. The only valid values are "Model", "Imagery", "Terrain", "Pinned" and "Undefined"
-    //! Returns SUCCESS if value set and ERROR if given tag is invalid
-    REALITYDATAPLATFORM_EXPORT StatusInt SetClassificationByTag(Utf8CP classificationTag);
-
-    //! Static helper method: converts a classification tag to a classification
-    //! Returns SUCCESS if value valid and ERROR if given tag is invalid. In case of error the classification value remains unchanged
-    REALITYDATAPLATFORM_EXPORT static StatusInt GetClassificationFromTag(Classification& returnedClassification, Utf8CP classificationTag);
-
-
-    //! For later ... currently unused
-    // REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSubClassification() const;
-    // REALITYDATAPLATFORM_EXPORT void SetSubClassification(Utf8CP subClassification);
-
-
-
-    //! Get/Set
-    //! Key to the dataset. Enables grouping of multiple results on the client side. 
-    //! Can also be used to discriminate exactly like the DataProvider key. 
-    //! Currently used keys are ‘CDEM’, ‘NAIP’, ‘SRTM1’, ‘SRTM3’, 'Landsat 8', 'GeoGratis'
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataset() const;
-    REALITYDATAPLATFORM_EXPORT void SetDataset(Utf8CP dataset);
-
     //! Get/Set
     //! URL to the thumbnail
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetThumbnailURL() const;
@@ -622,77 +547,11 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetDate(DateTimeCR date);
 
     //! Get/Set
-    //! The footprint of the spatial entity. A list of points in longitude/latitude pairs that define the boundary of the data.
-    //! The path defined by the given polygon must not autocross, contains segments that overlap.
-    //! The final clossing point is mandatory.
-    REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint);
-
-    //! Get/Set
-    //! Indicates if the footprint is approximate or not. A typical approximate footprint 
-    //! is the result of a raster containing a border as a result of a rotated image. 
-    //! The footprint contains the extent of the raster including this border of non-information.
-    REALITYDATAPLATFORM_EXPORT bool HasApproximateFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetApproximateFootprint(bool approximateFootprint);
-
-    //! Returns the footprint extent. This range includes the footprint specified by calling SetFootprint.
-    //! If the footprint has not been set an empty range with all zero bounds is returned.
-    REALITYDATAPLATFORM_EXPORT DRange2dCR GetFootprintExtent() const;
-
-    //! Get/Set
     //! The list of data sources that contain the data of the spatial entity
     REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCR GetDataSource(size_t index) const;
     REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceR GetDataSource(size_t index);
     REALITYDATAPLATFORM_EXPORT void AddDataSource(SpatialEntityDataSourceR dataSource);
     REALITYDATAPLATFORM_EXPORT size_t GetDataSourceCount() const;
-
-    //! Get/Set
-    //! The id of the enterprise the data belongs to
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetEnterprise() const;
-    REALITYDATAPLATFORM_EXPORT void SetEnterprise(Utf8CP enterprise);
-
-    //! [RDS Specific] The name of the RDS container containing the data
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
-    REALITYDATAPLATFORM_EXPORT void SetContainerName(Utf8CP containerName);
-
-    //! Textual description of the data
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
-    REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
-
-    //! Given the data can be accessed by a root document , the location of this document
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRootDocument() const;
-    REALITYDATAPLATFORM_EXPORT void SetRootDocument(Utf8CP rootDocument);
-
-
-
-    //! Code indicating the visibility of the data. The recognised keywords are:
-    //! PUBLIC - Usualy indicates data is public thus useable by anyone
-    //! ENTERPRISE - Usually indicates data can be used by any member of the owning enterprise regardless of access rights
-    //! PERMISSION - Usually indicates that data can be used by someone having the appropriate access rigths. This is the default value.
-    //! PRIVATE - Usually indicates only the owner of the data can use it.
-    REALITYDATAPLATFORM_EXPORT Visibility GetVisibility() const;
-    REALITYDATAPLATFORM_EXPORT void SetVisibility(Visibility visibility);
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GetVisibilityTag() const;
-    REALITYDATAPLATFORM_EXPORT StatusInt SetVisibilityByTag(Utf8CP visibility);
-    REALITYDATAPLATFORM_EXPORT static StatusInt GetVisibilityFromTag(Visibility& returnedVisibility, Utf8CP visibilityTag);
-
-
-    //! Indicates if the data can be listed. For data containing hundred of thousand of
-    //! components it is advisable to set not-listable. The default is listable.
-    REALITYDATAPLATFORM_EXPORT bool IsListable() const;
-    REALITYDATAPLATFORM_EXPORT void SetListable(bool listable);
-
-    //! The last modified time
-    REALITYDATAPLATFORM_EXPORT DateTime GetModifiedTimestamp() const;
-    REALITYDATAPLATFORM_EXPORT void SetModifiedTimestamp(DateTime modifiedDate);
-
-    //! A string indicating the owner. The ownership here is different than
-    //! Copyright owner. Here we expect the mail address of a CONNECT user OR
-    //! A list of semicolon separated such CONNECT User or another
-    //! format understandable by the containing service.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOwner() const;
-    REALITYDATAPLATFORM_EXPORT void SetOwner(Utf8CP owner);
 
     //! Get/Set
     //! A reference to a metadata object. This object can be used by many spatial entities.
@@ -708,51 +567,22 @@ public:
     REALITYDATAPLATFORM_EXPORT float GetOcclusion() const;
     REALITYDATAPLATFORM_EXPORT void SetOcclusion( float cover );
 
-    //! The Group code. This field can be used to group many data together if another key other than the dataset is required.
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGroup() const;
-    REALITYDATAPLATFORM_EXPORT void SetGroup(Utf8CP group);
 
 protected:
     SpatialEntity();
 
-    Utf8String m_identifier;
-    Utf8String m_name;
-    Utf8String m_resolution;
-    mutable bool m_resolutionValueUpToDate;
-    mutable double m_resolutionValue;
-    Utf8String m_accuracy;
-    mutable bool m_accuracyValueUpToDate;
-    mutable double m_accuracyValue;
+    float m_occlusion;
     Utf8String m_provider;
     Utf8String m_providerName;
     Utf8String m_dataType;
-    Classification m_classification;
     DateTime m_date;
-    Utf8String m_dataset;
     Utf8String m_thumbnailURL;
     Utf8String m_thumbnailLoginKey;
-    bvector<GeoPoint2d> m_footprint;
-    mutable DRange2d m_footprintExtent;
-    mutable bool m_footprintExtentComputed;
-    bool m_approximateFootprint;
-    uint64_t m_approximateFileSize;
     SpatialEntityMetadataPtr m_pMetadata;
     bvector<SpatialEntityDataSourcePtr> m_DataSources;
 
-    Utf8String m_enterprise;
-    Utf8String m_containerName;
     Utf8String m_description;
-    Utf8String m_rootDocument;
-    Utf8String m_metadataUrl;
-
-    Visibility m_visibility;
-    bool m_listable;
-    DateTime m_modifiedDate;
-    Utf8String m_owner;
-    Utf8String m_group;
-
-    float m_occlusion;
-    mutable SQLINTEGER m_serverId = -1;
+    uint64_t m_approximateFileSize;
     }; 
    
 

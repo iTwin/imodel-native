@@ -136,7 +136,7 @@ void PointCloudData::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityDataPtr PointCloudData::Create(Utf8CP inFilename, PointCloudView pcView)
+RealityDataExtractPtr PointCloudData::Create(Utf8CP inFilename, PointCloudView pcView)
     {
     return new PointCloudData(inFilename, pcView);
     }

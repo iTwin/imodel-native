@@ -24,9 +24,16 @@
 
 #define MAX_NB_CONNECTIONS          10
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+
+
+
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
-
+//=====================================================================================
+//! @bsiclass                                   Alain.Robert              12/2016
+//! RealityDataFileTransfer
+//! Control class used internally by the upload and download process.
+//=====================================================================================
 struct RealityDataFileTransfer : public RealityDataUrl
     {
     public:
@@ -90,6 +97,12 @@ struct RealityDataFileTransfer : public RealityDataUrl
         time_t                  m_startTime;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              02/2017
+//! RealityDataFileUpload
+//! A specialisation of the RealityDataFileTransfer class that complements with
+//! upload process specific functionality.
+//=====================================================================================
 struct RealityDataFileUpload : public RealityDataFileTransfer
     {
 public:
@@ -179,6 +192,12 @@ private:
     Utf8String              m_blockList;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              02/2017
+//! RealityDataFileDownload
+//! A specialisation of the RealityDataFileTransfer class that complements with
+//! download process specific functionality.
+//=====================================================================================
 struct RealityDataFileDownload : public RealityDataFileTransfer
 {
 public:
@@ -213,6 +232,10 @@ END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//! Callback methods used by the upload/download process.
+//=====================================================================================
 static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, RealityDataFileUpload* request)
     {
     return request->OnReadData(buffer, size * count);
@@ -255,6 +278,9 @@ static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, voi
     return byteWritten;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8StringCR RealityDataUrl::GetServerName() const { return RealityDataService::GetServerName(); }
 
 Utf8StringCR RealityDataUrl::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
@@ -264,6 +290,9 @@ Utf8StringCR RealityDataUrl::GetSchema() const { return RealityDataService::GetS
 Utf8StringCR RealityDataUrl::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() const
 {
     m_serverName = RealityDataService::GetServerName();
@@ -278,6 +307,9 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
     m_httpRequestString.append(m_id);
 }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -292,6 +324,9 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_id);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -307,6 +342,9 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
     m_httpRequestString.append("'");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -321,6 +359,9 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_id);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -335,12 +376,18 @@ void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_id);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instanceId)
     {
     m_id = instanceId;
     m_validRequestString = false;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
     if(m_handshakeRequest == nullptr)
@@ -363,13 +410,18 @@ void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() cons
     m_AzureRedirectionURL = azureContainerUrl;
     m_AzureRedirected = true;
     }*/
-
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bool RealityDataDocumentContentByIdRequest::IsAzureBlobRedirected() { return m_AzureRedirected; }
 
 void RealityDataDocumentContentByIdRequest::SetAzureRedirectionPossible(bool possible) { m_allowAzureRedirection = possible; }
 
 bool RealityDataDocumentContentByIdRequest::IsAzureRedirectionPossible() { return m_allowAzureRedirection; }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     if(m_allowAzureRedirection)
@@ -404,6 +456,9 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
         }
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
     { 
     //$filter=
@@ -414,6 +469,9 @@ Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize)
     {
     //$filter=
@@ -427,6 +485,9 @@ Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
     //S3MX/RealityData?polygon={"points":[[10.6787109375,46.6343507029],[30.3662109375,46.6343507029],[30.3662109375,60.5761747263]
@@ -458,6 +519,9 @@ Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uin
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     {
     Utf8String filter = "OwnedBy+eq+'";
@@ -466,6 +530,9 @@ Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
     Utf8String filter = "CreatedTimestamp+ge+'";
@@ -477,6 +544,9 @@ Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, Date
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
     Utf8String filter = "ModifiedTimestamp+ge+'";
@@ -488,16 +558,23 @@ Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, 
     return filter;
     }
 
-Utf8String RealityDataFilterCreator::FilterPublic(bool isPublic)
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    Utf8String filter = "PublicAccess+eq+";
-    if(isPublic)
-        filter.append("true");
-    else
-        filter.append("false");
+    Utf8String filter = "Visibility+eq+";
+
+    Utf8String value = RealityDataBase::GetTagFromVisibility(visibility);
+
+    filter.append(value);
+
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double resMax, bool filterOutUnspecified)
     {
     Utf8String filter = "ResolutionInMeters+ge+'";
@@ -512,6 +589,9 @@ Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double re
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified)
     {
     Utf8String filter = "AccuracyInMeters+ge+'";
@@ -526,6 +606,9 @@ Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
     {
     Utf8String filter = "Type+eq+'";
@@ -534,6 +617,9 @@ Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     {
     Utf8String filter = "Dataset+eq+'";
@@ -544,6 +630,9 @@ Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     }
 
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::GroupFiltersAND(bvector<Utf8String> filters)
     {
     Utf8String filter = "";//"(";
@@ -558,6 +647,9 @@ Utf8String RealityDataFilterCreator::GroupFiltersAND(bvector<Utf8String> filters
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
     {
     Utf8String filter = "";//"(";
@@ -573,11 +665,17 @@ Utf8String RealityDataFilterCreator::GroupFiltersOR(bvector<Utf8String> filters)
     }
 
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8StringCR RealityDataPagedRequest::GetServerName() const { return RealityDataService::GetServerName(); }
 Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataService::GetWSGProtocol(); }
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     bool hasFilter = m_filter.length() > 0;
@@ -612,6 +710,9 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(buf);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     {
     Utf8String order = "$orderby=";
@@ -620,7 +721,7 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::Id:
         order.append("Id");
         break;
-    case RealityDataField::Enterprise:
+    case RealityDataField::EnterpriseId:
         order.append("Enterprise");
         break;
     case RealityDataField::ContainerName:
@@ -662,8 +763,8 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     case RealityDataField::AccuracyInMeters:
         order.append("AccuracyInMeters");
         break;
-    case RealityDataField::PublicAccess:
-        order.append("PublicAccess");
+    case RealityDataField::Visibility:
+        order.append("Visibility");
         break;
     case RealityDataField::Listable:
         order.append("Listable");
@@ -687,8 +788,14 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
     m_order = order;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter; }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -730,6 +837,9 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     m_httpRequestString.append(buf);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -751,6 +861,9 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     m_httpRequestString.append(buf);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("")
     {
     m_validRequestString = false; 
@@ -769,6 +882,9 @@ AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("
     m_filter.ReplaceAll(id.c_str(),"");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
     {
     //GetAzureRedirectionRequestUrl();
@@ -785,6 +901,9 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties)
     { 
     m_id = realityDataId; 
@@ -798,6 +917,9 @@ RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf
     m_requestPayload.append("}}}");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -813,6 +935,9 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataServiceTransfer::~RealityDataServiceTransfer()
     {
     for (int i = 0; i < m_filesToTransfer.size(); i++)
@@ -821,6 +946,9 @@ RealityDataServiceTransfer::~RealityDataServiceTransfer()
     delete m_handshakeRequest;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
@@ -837,6 +965,9 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
         m_requestHeader.push_back("x-ms-blob-type: BlockBlob");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bool RealityDataFileUpload::FinishedSending()
     { 
     if(!m_singleChunk)
@@ -845,6 +976,9 @@ bool RealityDataFileUpload::FinishedSending()
         return (m_transferProgress >= m_fileSize);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFileUpload::UpdateTransferedSize()//uint32_t amount, void* ptr)
     {
     if(m_transferProgress < m_fileSize - 1)
@@ -881,6 +1015,9 @@ void RealityDataFileUpload::UpdateTransferedSize()//uint32_t amount, void* ptr)
         }
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
     {
     uint32_t bytesRead = 0;
@@ -898,6 +1035,9 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
     return bytesRead;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFileUpload::Retry()
     {
     CloseFile();
@@ -905,6 +1045,9 @@ void RealityDataFileUpload::Retry()
     ReadyFile();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFileDownload::Retry()
     {
     iAppend = 0;
@@ -912,6 +1055,9 @@ void RealityDataFileDownload::Retry()
     ReadyFile();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     {
     m_httpRequestString = m_azureServer;
@@ -923,6 +1069,9 @@ void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     m_requestHeader.clear();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     {
     //https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/RealityData/cc5421e5-a80e-469f-a459-8c76da351fe5/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
@@ -944,6 +1093,9 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("&api.singleurlperinstance=true");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void TransferReport::ToXml(Utf8StringR report)
     {
     BeXmlWriterPtr writer = BeXmlWriter::Create();
@@ -971,6 +1123,9 @@ void TransferReport::ToXml(Utf8StringR report)
     writer->ToString(report);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Utf8String> properties)
     {
     Utf8String propertyString;
@@ -987,7 +1142,7 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
-        case RealityDataField::Enterprise:
+        case RealityDataField::EnterpriseId:
             propertyString.append("\"Enterprise\" : \"");
             propertyString.append(properties[field]);
             propertyString.append("\"");
@@ -1057,8 +1212,8 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
-        case RealityDataField::PublicAccess:
-            propertyString.append("\"PublicAccess\" : \"");
+        case RealityDataField::Visibility:
+            propertyString.append("\"Visibility\" : \"");
             propertyString.append(properties[field]);
             propertyString.append("\"");
             break;
@@ -1099,6 +1254,9 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
     return propertyString;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     {
     RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
@@ -1130,6 +1288,9 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     return BentleyStatus::SUCCESS;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 BentleyStatus AzureHandshake::ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer)
     {
     Json::Value instances(Json::objectValue);
@@ -1173,6 +1334,9 @@ BentleyStatus AzureHandshake::ParseResponse(Utf8StringR azureServer, Utf8StringR
         return BentleyStatus::ERROR;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 TransferReport* RealityDataServiceTransfer::Perform()
     {
     m_currentTransferedAmount = 0;
@@ -1302,6 +1466,9 @@ TransferReport* RealityDataServiceTransfer::Perform()
     return &m_report;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bool RealityDataServiceTransfer::SetupNextEntry()
     {
     if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
@@ -1320,6 +1487,9 @@ bool RealityDataServiceTransfer::SetupNextEntry()
     return true;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, int verifyPeer)
     {
     // If cancel requested, don't queue new files
@@ -1395,7 +1565,9 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, int v
         }
     }
 
-
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK))
@@ -1419,6 +1591,9 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
     delete pEntry;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataServiceTransfer::GetAzureToken()
     {
     int64_t currentTime; 
@@ -1432,6 +1607,9 @@ Utf8String RealityDataServiceTransfer::GetAzureToken()
     return m_azureToken;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
     {
     m_currentTransferedAmount += transferedAmount;
@@ -1445,6 +1623,9 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
     return sendProgressCallback;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
     m_overwrite(overwrite)
     { 
@@ -1501,6 +1682,9 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_pCurlHandle = curl_multi_init();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId)
     {
     m_id = serverId;
@@ -1533,6 +1717,9 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     m_fullTransferSize = m_filesToTransfer.size();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList)
     {
     m_id = serverId;
@@ -1552,6 +1739,9 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
     m_fullTransferSize = m_filesToTransfer.size();
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 Utf8String RealityDataService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
 Utf8String RealityDataService::s_realityDataWSGProtocol = "2.4";
 Utf8String RealityDataService::s_realityDataRepoName = "IndexECPlugin-Server";
@@ -1572,12 +1762,15 @@ Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaNam
 const int RealityDataService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         { 
         std::cout << "RealityDataPagedRequest failed with response" << std::endl;
@@ -1585,7 +1778,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
         }
     else
         {
-        RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
@@ -1593,6 +1786,9 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataPagedRequ
     return entities;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
     {
     Utf8String jsonString;
@@ -1608,6 +1804,9 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
     RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
     }
     
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& request, RequestStatus& status)
     {
     bvector<Utf8String> documents = bvector<Utf8String>();
@@ -1667,23 +1866,29 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
     return documents;
     }
 
-SpatialEntityPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
     
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         return nullptr;
         }
-    RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
 
     return entities[0];
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
@@ -1702,6 +1907,9 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
     return RealityDataDocument::Create(instances["instances"][0]);
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RequestStatus& status)
     {
     int stat = RequestType::Body;
@@ -1725,6 +1933,9 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
         }
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
@@ -1743,12 +1954,15 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
     return RealityDataFolder::Create(instances["instances"][0]);
     }
 
-bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
     status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
 
-    bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
         {
         std::cout << "RealityDataListByEnterprisePagedRequest failed with response" << std::endl;
@@ -1756,7 +1970,7 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnt
         }
     else
         {
-        RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
@@ -1764,6 +1978,9 @@ bvector<SpatialEntityPtr> RealityDataService::Request(const RealityDataListByEnt
     return entities;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status)
 {
     Utf8String jsonString;
@@ -1787,6 +2004,9 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
     return relations;
 }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status)
     {   
     Utf8String jsonString;
@@ -1812,6 +2032,9 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
     return relations;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RequestStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;
@@ -1827,6 +2050,9 @@ RequestStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* re
     return RequestStatus::SUCCESS;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 RequestStatus RealityDataService::RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;

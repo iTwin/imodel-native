@@ -62,18 +62,11 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
 
 
     EXPECT_TRUE(mySpatialEntity->GetDataSourceCount() == 0);
-    EXPECT_STREQ(mySpatialEntity->GetEnterprise().c_str(), "");
-    EXPECT_STREQ(mySpatialEntity->GetContainerName().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetDescription().c_str(), "");
-    EXPECT_STREQ(mySpatialEntity->GetRootDocument().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetAccuracy().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetVisibilityTag().c_str(), "UNDEFINED"); // Default is preset
-    EXPECT_TRUE(mySpatialEntity->IsListable());
-    EXPECT_STREQ(mySpatialEntity->GetOwner().c_str(), "");
 
     EXPECT_TRUE(mySpatialEntity->GetMetadataCP() == NULL);
-    EXPECT_TRUE(!mySpatialEntity->GetModifiedTimestamp().IsValid()); // Time not set should be invalid
-    EXPECT_STREQ(mySpatialEntity->GetGroup().c_str(), "");
     EXPECT_TRUE(mySpatialEntity->GetOcclusion() == 0.0); // Default value indicates invalid
 
     // Check set methods
@@ -129,30 +122,15 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
 
     EXPECT_TRUE(mySpatialEntity->GetDataSourceCount() == 0);
 
-    mySpatialEntity->SetEnterprise("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf"); 
-    EXPECT_STREQ(mySpatialEntity->GetEnterprise().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
-    mySpatialEntity->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29"); 
-    EXPECT_STREQ(mySpatialEntity->GetContainerName().c_str(), "167b96ea-52eb-46c0-9865-8b7e5913bb29");
     mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
     EXPECT_STREQ(mySpatialEntity->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
-    mySpatialEntity->SetRootDocument("./RootDocument"); 
-    EXPECT_STREQ(mySpatialEntity->GetRootDocument().c_str(), "./RootDocument");
     mySpatialEntity->SetAccuracy("2.34"); 
     EXPECT_STREQ(mySpatialEntity->GetAccuracy().c_str(), "2.34");
     mySpatialEntity->SetVisibilityByTag("PUBLIC"); 
     EXPECT_STREQ(mySpatialEntity->GetVisibilityTag().c_str(), "PUBLIC"); // Default is preset
-    mySpatialEntity->SetListable(false); 
-    EXPECT_TRUE(!mySpatialEntity->IsListable());
-    mySpatialEntity->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
-    EXPECT_STREQ(mySpatialEntity->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
 
     EXPECT_TRUE(mySpatialEntity->GetMetadataCP() == NULL);
 
-    // mySpatialEntity->SetModifiedTimestamp(DateTime::GetCurrentTime()); 
-    // EXPECT_TRUE(!mySpatialEntity->GetModifiedTimestamp().IsValid()); // Time not set should be invalid
-
-    mySpatialEntity->SetGroup("MyGroup1"); 
-    EXPECT_STREQ(mySpatialEntity->GetGroup().c_str(), "MyGroup1");
     mySpatialEntity->SetOcclusion(23.45); 
     EXPECT_NEAR(mySpatialEntity->GetOcclusion(), 23.45, 0.00001);
     }
@@ -412,17 +390,10 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     EXPECT_TRUE(myRange.low.y == 45.8);
     EXPECT_TRUE(myRange.high.y == 46.8);
 
-    mySpatialEntity->SetEnterprise("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf"); 
-    mySpatialEntity->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29"); 
     mySpatialEntity->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
-    mySpatialEntity->SetRootDocument("./RootDocument"); 
     mySpatialEntity->SetAccuracy("2.34"); 
     mySpatialEntity->SetVisibilityByTag("PUBLIC"); 
-    mySpatialEntity->SetListable(false); 
-    mySpatialEntity->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
 
-    mySpatialEntity->SetModifiedTimestamp(DateTime(2017,02,17)); 
-    mySpatialEntity->SetGroup("MyGroup1"); 
     mySpatialEntity->SetOcclusion(23.45); 
 
 
@@ -492,14 +463,132 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityCompleteTest)
     }
 
 
-#if (0)
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            02/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
+    {
+
+    // Creation of a spatial entity
+    RealityDataPtr myRealityData = RealityData::Create();
+
+    ASSERT_TRUE(myRealityData.IsValid());
+    ASSERT_TRUE(!myRealityData.IsNull());
+
+    // Check default values
+    EXPECT_STREQ(myRealityData->GetIdentifier().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetName().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetResolution().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "");
+    EXPECT_TRUE(myRealityData->GetClassification() == RealityData::Classification::UNDEFINED);
+    ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Undefined"); // Default is preset
+    EXPECT_STREQ(myRealityData->GetDataset().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "");
+    EXPECT_TRUE(myRealityData->GetTotalSize() == 0);
+    EXPECT_TRUE(!myRealityData->GetCreationDateTime().IsValid()); // Time not set should be invalid
+    EXPECT_TRUE(myRealityData->GetFootprint().size() == 0);
+    EXPECT_TRUE(!myRealityData->HasApproximateFootprint());
+    DRange2d myRange = myRealityData->GetFootprintExtent();
+    EXPECT_TRUE(myRange.low.x == 0.0);
+    EXPECT_TRUE(myRange.high.x == 0.0);
+    EXPECT_TRUE(myRange.low.y == 0.0);
+    EXPECT_TRUE(myRange.high.y == 0.0);
+
+
+    EXPECT_STREQ(myRealityData->GetEnterpriseId().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetDescription().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetAccuracy().c_str(), "");
+    EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "UNDEFINED"); // Default is preset
+    EXPECT_TRUE(myRealityData->IsListable());
+    EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
+
+    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+    EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
+    EXPECT_STREQ(myRealityData->GetGroup().c_str(), "");
+
+    // Check set methods
+    myRealityData->SetIdentifier("f28fdab2-c369-4913-b18a-fbe541af635c");
+    EXPECT_STREQ(myRealityData->GetIdentifier().c_str(), "f28fdab2-c369-4913-b18a-fbe541af635c");
+
+    myRealityData->SetName("NameOfItem");
+    EXPECT_STREQ(myRealityData->GetName().c_str(), "NameOfItem");
+
+    myRealityData->SetResolution("13.4x15.4"); 
+    EXPECT_STREQ(myRealityData->GetResolution().c_str(), "13.4x15.4");
+    EXPECT_NEAR(myRealityData->GetResolutionValue(), 14.36, 0.01);
+
+
+    myRealityData->SetRealityDataType("3mx"); 
+    EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "3mx");
+    myRealityData->SetClassification(RealityData::Classification::MODEL); 
+    ASSERT_TRUE(myRealityData->GetClassification() == RealityData::Classification::MODEL);
+    ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Model");
+    myRealityData->SetDataset("MyDataset1"); 
+    EXPECT_STREQ(myRealityData->GetDataset().c_str(), "MyDataset1");
+    myRealityData->SetThumbnailDocument("thumbnail.jpg"); 
+    EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "thumbnail.jpg");
+    myRealityData->SetTotalSize(123765473); 
+    EXPECT_TRUE(myRealityData->GetTotalSize() == 123765473);
+    myRealityData->SetCreationDateTime(DateTime(2017,02,27)); 
+    EXPECT_TRUE(myRealityData->GetCreationDateTime().IsValid());
+    EXPECT_TRUE(myRealityData->GetCreationDateTime() == DateTime(2017,02,27));
+
+    bvector<GeoPoint2d> myFootprint;
+    myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
+    myFootprint.push_back(GeoPoint2d::From(12.5, 46.8));
+    myFootprint.push_back(GeoPoint2d::From(13.5, 46.8));
+    myFootprint.push_back(GeoPoint2d::From(13.5, 45.8));
+    myFootprint.push_back(GeoPoint2d::From(12.5, 45.8));
+
+    myRealityData->SetFootprint(myFootprint); 
+    EXPECT_TRUE(myRealityData->GetFootprint().size() == 5);
+    myRealityData->SetApproximateFootprint(true); 
+    EXPECT_TRUE(myRealityData->HasApproximateFootprint());
+
+    myRange = myRealityData->GetFootprintExtent();
+    EXPECT_TRUE(myRange.low.x == 12.5);
+    EXPECT_TRUE(myRange.high.x == 13.5);
+    EXPECT_TRUE(myRange.low.y == 45.8);
+    EXPECT_TRUE(myRange.high.y == 46.8);
+
+
+
+    myRealityData->SetEnterpriseId("2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf"); 
+    EXPECT_STREQ(myRealityData->GetEnterpriseId().c_str(), "2f1f7680-1be0-4e3f-9df4-cd7e72efcbcf");
+    myRealityData->SetContainerName("167b96ea-52eb-46c0-9865-8b7e5913bb29"); 
+    EXPECT_STREQ(myRealityData->GetContainerName().c_str(), "167b96ea-52eb-46c0-9865-8b7e5913bb29");
+    myRealityData->SetDescription("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt"); 
+    EXPECT_STREQ(myRealityData->GetDescription().c_str(), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque et est ac ligula pellentesque eleifend. Fusce congue quam tincidunt");
+    myRealityData->SetRootDocument("./RootDocument"); 
+    EXPECT_STREQ(myRealityData->GetRootDocument().c_str(), "./RootDocument");
+    myRealityData->SetAccuracy("2.34"); 
+    EXPECT_STREQ(myRealityData->GetAccuracy().c_str(), "2.34");
+    myRealityData->SetVisibilityByTag("PUBLIC"); 
+    EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "PUBLIC"); // Default is preset
+    myRealityData->SetListable(false); 
+    EXPECT_TRUE(!myRealityData->IsListable());
+    myRealityData->SetOwner("Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b"); 
+    EXPECT_STREQ(myRealityData->GetOwner().c_str(), "Francis.Boily@Bentley.com;Alain.Robert@Bentley.com;PROJECT:af8c72c7-535b-4068-aebb-12d5fa9c688b");
+
+    EXPECT_STREQ(myRealityData->GetMetadataURL().c_str(), "");
+
+    // myRealityData->SetModifiedTimestamp(DateTime::GetCurrentTime()); 
+    // EXPECT_TRUE(!myRealityData->GetModifiedTimestamp().IsValid()); // Time not set should be invalid
+
+    myRealityData->SetGroup("MyGroup1"); 
+    EXPECT_STREQ(myRealityData->GetGroup().c_str(), "MyGroup1");
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            02/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataProjectRelationshipBasicTest)
     {
     Utf8CP jsonString = "{"
-                          "instances\": [" 
+                          "\"instances\": [" 
                             "{"
                             "\"instanceId\": \"14812\","
                             "\"schemaName\" : \"RealityModeling\","
@@ -554,20 +643,20 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     {
 
     Utf8CP jsonString = "{"
-                          "instances\": [" 
+                          "\"instances\": [" 
                             "{"
                             "\"instanceId\": \"14812\","
                             "\"schemaName\" : \"RealityModeling\","
                             "\"className\" : \"RealityDataDocument\","
                             "\"properties\" : {"
                                   "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"RatherLargeRaster.tif\""
-                                  "\"Id\" : \"3333333\""
-                                  "\"FolderId\" : \"\""
-                                  "\"AccessUrl\" : \"?????\""
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\""
-                                  "\"ContentType\" : \"tif\""
-                                  "\"Size\" : \"\""
+                                  "\"Name\" : \"Production_Helsinki_3MX_ok.3mx\","
+                                  "\"Id\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/Production_Helsinki_3MX_ok.3mx\","
+                                  "\"FolderId\" : \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/\","
+                                  "\"AccessUrl\" : \"https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file\","
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"ContentType\" : \"3mx\","
+                                  "\"Size\" : \"1399\""
                                " },"
                             " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
                            "},"
@@ -577,12 +666,12 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
                             "\"className\" : \"RealityDataDocument\","
                             "\"properties\" : {"
                                   "\"ContainerName\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
-                                  "\"Name\" : \"Marseille.3mx\""
-                                  "\"Id\" : \"TBD\""
-                                  "\"FolderId\" : \"\""
-                                  "\"AccessUrl\" : \"?????\""
-                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\""
-                                  "\"ContentType\" : \"3mx\""
+                                  "\"Name\" : \"Marseille.3mx\","
+                                  "\"Id\" : \"TBD\","
+                                  "\"FolderId\" : \"\","
+                                  "\"AccessUrl\" : \"?????\","
+                                  "\"RealityDataId\" : \"f4425509-55c4-4e03-932a-d67b87ace30f\","
+                                  "\"ContentType\" : \"3mx\","
                                   "\"Size\" : \"\""
                                " },"
                             " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
@@ -603,13 +692,53 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     RealityDataDocumentPtr myDocument = RealityDataDocument::Create(instance);
 
     EXPECT_STREQ(myDocument->GetContainerName().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
-    EXPECT_STREQ(myDocument->GetName().c_str(), "RatherLargeRaster.tif");
-    EXPECT_STREQ(myDocument->GetFolderId().c_str(), "");
-    EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "");
-    EXPECT_STREQ(myDocument->GetRealityDataId().c_str(), "");
-    EXPECT_STREQ(myDocument->GetContentType().c_str(), "");
-    EXPECT_STREQ(myDocument->GetSize().c_str(), "");
+    EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
+    EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/");
+    EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file");
+    EXPECT_STREQ(myDocument->GetRealityDataId().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
+    EXPECT_STREQ(myDocument->GetContentType().c_str(), "3mx");
+    EXPECT_TRUE(myDocument->GetSize() == 1399);
 
     }
 
-#endif
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            02/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataObjectTestFixture, RealityDataFolderBasicTest)
+    {
+
+    Utf8CP jsonString = "{"
+                          "\"instances\": ["
+                            "{"
+                              "\"instanceId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene\","
+                              "\"schemaName\": \"S3MX\","
+                              "\"className\": \"Folder\","
+                              "\"properties\": {"
+                                "\"Name\": \"Scene\","
+                                "\"RealityDataId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10\","
+                                "\"ParentFolderId\": \"43a4a51a-bfd3-4271-a9d9-21db56cdcf10/\""
+                              "},"
+                              "\"eTag\": \"agKs8UGYbn244uJSSjBZp+nt8wo=\""
+                            "}"
+                          "]"
+                        "}";
+
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, root));
+
+    // Instances must be a root node.
+    ASSERT_TRUE(root.isMember("instances"));
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    ASSERT_TRUE(instance.isMember("properties"));
+
+    RealityDataFolderPtr myFolder = RealityDataFolder::Create(instance);
+
+    EXPECT_STREQ(myFolder->GetName().c_str(), "Scene");
+    EXPECT_STREQ(myFolder->GetParentId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/");
+    EXPECT_STREQ(myFolder->GetRealityDataId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10");
+
+    }
