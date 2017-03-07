@@ -236,9 +236,9 @@ void DgnDomains::OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
+* @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+ECSchemaReadContextPtr DgnDomain::ReadSchema(DgnDbStatus& status, DgnDbCR db, BeFileNameCR schemaFile) const
     {
     BeFileName schemaBaseNameW;
     schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
@@ -248,22 +248,70 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
         {
         LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
         BeAssert(false && "Schema name and DgnDomain name must match");
-        return DgnDbStatus::WrongDomain;
+        status = DgnDbStatus::WrongDomain;
+        return nullptr;
         }
+
+    BeFileName standardSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    standardSchemaPath.AppendToPath(L"ECSchemas/Standard");
 
     ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
     contextPtr->AddSchemaLocater(db.GetSchemaLocater());
-    contextPtr->AddSchemaPath(schemaFile.GetDirectoryName().GetName());
+    contextPtr->AddSchemaPath(schemaFile.GetDirectoryName());
+    contextPtr->AddSchemaPath(standardSchemaPath);
 
     ECSchemaPtr schemaPtr;
     SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
     if (SchemaReadStatus::Success != readSchemaStatus)
-        return DgnDbStatus::ReadError;
+        {
+        status = DgnDbStatus::ReadError;
+        return nullptr;
+        }
+        
+    status = DgnDbStatus::Success;
+    return contextPtr;
+    }
 
-    if (DgnDbStatus::Success != db.ImportSchemas(contextPtr->GetCache().GetSchemas()))
-        return DgnDbStatus::BadSchema;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomain::ValidateSchema(DgnDbR db, BeFileNameCR schemaFile) const
+    {
+    DgnDbStatus status;
+    ECSchemaReadContextPtr contextPtr = ReadSchema(status, db, schemaFile);
+    if (DgnDbStatus::Success != status)
+        return BE_SQLITE_ERROR_FileNotFound;
+
+    return db.ValidateSchemas(contextPtr->GetCache().GetSchemas());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDomain::UpgradeSchema(DgnDbR db, BeFileNameCR schemaFile) const
+    {
+    DgnDbStatus status;
+    ECSchemaReadContextPtr contextPtr = ReadSchema(status, db, schemaFile);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    status = db.ImportSchemas(contextPtr->GetCache().GetSchemas());
+    if (DgnDbStatus::Success != status)
+        return status;
 
     db.Domains().SyncWithSchemas();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+    {
+    DgnDbStatus status = UpgradeSchema(db, schemaFile);
+    if (DgnDbStatus::Success != status)
+        return status;
+
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
     return DgnDbStatus::Success;
     }
@@ -273,7 +321,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::InsertDomain(DgnDomainCR domain)
     {
-    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
+    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Description,Version) VALUES(?,?,?)"));
     stmt.BindText(1, domain.GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, domain.GetDomainDescription(), Statement::MakeCopy::No);
     stmt.BindInt(3, domain.GetVersion());

@@ -1735,7 +1735,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementGroupsMembers), "GroupId", "MemberId", nullptr, {"MemberPriority"});
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceId", "TargetId", "ECClassId", {"Status", "Priority"});
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION

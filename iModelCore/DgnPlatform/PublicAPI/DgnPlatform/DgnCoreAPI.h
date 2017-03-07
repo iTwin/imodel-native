@@ -41,7 +41,7 @@
 #include "DgnFont.h"
 #include "RenderMaterial.h"
 #include "DgnViewport.h"
-#include "DgnView.h"
+#include "ViewDefinition.h"
 #include "ECSqlClassParams.h"
 #include "LinkElement.h"
 #include "DgnProvenance.h"

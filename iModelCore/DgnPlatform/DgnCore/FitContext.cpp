@@ -15,7 +15,6 @@ StatusInt FitContext::_InitContextForView()
     if (SUCCESS != T_Super::_InitContextForView())
         return ERROR;
 
-    BeAssert(m_viewport); // must call Attach!
     m_trans.InitFrom(nullptr != m_params.m_rMatrix ? *m_params.m_rMatrix : m_viewport->GetRotMatrix());
     return SUCCESS;
     }
@@ -274,6 +273,9 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     params.m_fitDepthOnly = true;
     params.m_limitByVolume = true;
 
+    lowNpc = 0.0;
+    highNpc = 1.0;
+
     FitContext context(params);
     if (subRectNpc)
         context.SetSubRectNpc(*subRectNpc);
@@ -285,11 +287,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
 
     DRange3d range = context.m_fitRange;
     if (range.IsNull())
-        {
-        lowNpc = 0.0;
-        highNpc = 1.0;
         return ERROR;
-        }
 
     Frustum corner(range);
 

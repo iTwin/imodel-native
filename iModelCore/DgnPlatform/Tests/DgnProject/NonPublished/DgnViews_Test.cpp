@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
 #include <Bentley/bset.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 #if defined (_MSC_VER)
 #pragma warning (disable:4702)
@@ -64,7 +64,7 @@ struct DgnViewElemTest : public DgnDbTestFixture
     template<typename T> ViewDefinitionCPtr AddSpatialView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
         T view(*m_db, name, *new CategorySelector(*m_db, ""), *new DisplayStyle3d(*m_db, ""), *new ModelSelector(*m_db, ""));
-        view.SetDescr(descr);
+        view.SetDescription(descr);
         view.SetSource(source);
         view.GetModelSelector().AddModel(baseModelId);
         auto cpView = view.Insert();
@@ -201,12 +201,12 @@ TEST_F(DgnViewElemTest, CRUD)
     DgnViewId cameraViewId = InsertCameraView(*physicalModel, cameraViewName);
 
     // Create a new view
-    CameraViewDefinition tempView(*m_db, "TestView", );
-    tempView.SetDescr("Test Description");
+    SpatialViewDefinition tempView(*m_db, "TestView", );
+    tempView.SetDescription("Test Description");
     tempView.SetModelSelector(*DgnDbTestUtils::InsertModelSelector(*m_db, "TestView", DgnModel::DictionaryId()));
 
     DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1)); // FIXME: Need to point at a DrawingModel!
-    tempView2.SetDescr("TestDrawingView Description");
+    tempView2.SetDescription("TestDrawingView Description");
 
     // Insert 
     auto cpView = tempView.Insert();
@@ -237,7 +237,7 @@ TEST_F(DgnViewElemTest, CRUD)
             EXPECT_TRUE(tempView.GetElementClassId() == toFind->GetElementClassId());
             EXPECT_TRUE(tempView.GetSource() == toFind->GetSource());
             EXPECT_STREQ(tempView.GetName().c_str(), toFind->GetName().c_str());
-            EXPECT_STREQ(tempView.GetDescr().c_str(), toFind->GetDescr().c_str());
+            EXPECT_STREQ(tempView.GetDescription().c_str(), toFind->GetDescription().c_str());
             }
         else if (entry.GetId() == viewId2)
             {
@@ -248,7 +248,7 @@ TEST_F(DgnViewElemTest, CRUD)
             EXPECT_TRUE(tempView2.GetElementClassId() == toFind->GetElementClassId());
             EXPECT_TRUE(tempView2.GetSource() == toFind->GetSource());
             EXPECT_STREQ(tempView2.GetName().c_str(), toFind->GetName().c_str());
-            EXPECT_STREQ(tempView2.GetDescr().c_str(), toFind->GetDescr().c_str());
+            EXPECT_STREQ(tempView2.GetDescription().c_str(), toFind->GetDescription().c_str());
             }
         }
 
@@ -287,7 +287,7 @@ TEST_F(DgnViewElemTest, Iterate)
             {
             Utf8String viewName(model->GetName());
             viewName.append(s_viewSourceNames[i]);
-            ViewDefinitionCPtr view = AddSpatialView<CameraViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ViewDefinitionCPtr view = AddSpatialView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
             ASSERT_TRUE(view->GetViewId().IsValid());
             }

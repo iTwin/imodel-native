@@ -1570,10 +1570,10 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
 #if defined(TODO_ELEMENT_TILE)
     // ###TODO: This probably just goes away...
     double pixelSize = builder.GetPixelSize();
+    double maxWidth = (0.0 != pixelSize ? lsSymb.GetStyleWidth() : 0.0);
 
-    if (0.0 != pixelSize)
+    if (0.0 != maxWidth)
         {
-        double maxWidth = lsSymb.GetStyleWidth();
         double pixelThreshold = 5.0;
 
         if ((maxWidth / pixelSize) < pixelThreshold)
@@ -1587,7 +1587,7 @@ static bool useLineStyleStroker(Render::GraphicBuilderR builder, LineStyleSymbCR
         }
 #endif
 
-    return true; // Width discernable...
+    return true; // Width discernable (or no width)...
     }
 
 /*---------------------------------------------------------------------------------**//**

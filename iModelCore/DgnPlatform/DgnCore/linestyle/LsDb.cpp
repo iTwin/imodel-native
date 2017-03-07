@@ -9,7 +9,7 @@
 
 Utf8CP LsJsonHelpers::CompId                = "compId";
 
-#define PROPNAME_Descr "Descr"
+#define PROPNAME_Description "Description"
 #define PROPNAME_Data "Data"
 
 static Utf8CP DGNPROPERTYBLOB_CompId                = "compId";
@@ -512,7 +512,7 @@ size_t LineStyleElement::QueryCount(DgnDbR db)
 LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr, Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId,[CodeValue],Description,Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
 
     return iter;
     }

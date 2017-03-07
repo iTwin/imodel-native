@@ -16,7 +16,7 @@ namespace dgn_ElementHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define PROPNAME_Descr "Descr"
+#define PROPNAME_Description "Description"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -88,7 +88,7 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeScope,Parent.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeScope,Parent.Id,Description FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE CodeScope=?");
 

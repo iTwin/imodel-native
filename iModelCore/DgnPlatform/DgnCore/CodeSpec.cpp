@@ -395,6 +395,7 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalRecipe, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalType2d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalRecipe2d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialLocationType, CodeScopeSpec::CreateModelScope())) ||
         // CodeSpecs with ParentElement scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SubCategory, CodeScopeSpec::CreateParentElementScope())) ||

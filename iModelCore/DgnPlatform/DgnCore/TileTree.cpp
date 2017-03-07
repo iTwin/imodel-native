@@ -876,9 +876,9 @@ void Tile::Pick(PickArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
+        box.Multiply(args.GetLocation());
 
-        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box) ||
             ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
             {
             return;

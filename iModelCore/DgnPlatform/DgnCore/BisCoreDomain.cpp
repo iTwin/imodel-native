@@ -77,6 +77,7 @@ HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(PhysicalRecipe)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(GraphicalRecipe2d)
+HANDLER_DEFINE_MEMBERS(SpatialLocationType)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
@@ -160,6 +161,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::PhysicalRecipe::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalRecipe2d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
@@ -202,8 +204,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::ViewDisplayStyle::GetHandler());
     RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
-    RegisterHandler(ViewElementHandler::CameraView::GetHandler());
-
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
@@ -213,3 +213,47 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+static BeFileName getSchemaPathname()
+    {
+    BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    genericDomainSchemaFile.AppendToPath(BISCORE_ECSCHEMA_PATH);
+    BeAssert(genericDomainSchemaFile.DoesPathExist());
+
+    return genericDomainSchemaFile;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+DbResult BisCoreDomain::ValidateSchema(DgnDbR db)
+    {
+    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
+    return dgnDomain.ValidateSchema(db, getSchemaPathname());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+DgnDbStatus BisCoreDomain::UpgradeSchema(DgnDbR db)
+    {
+    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
+    DgnDbStatus status = dgnDomain.UpgradeSchema(db, getSchemaPathname());
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus BisCoreDomain::ImportSchema(DgnDbR db)
+    {
+    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
+    DgnDbStatus status = dgnDomain.ImportSchema(db, getSchemaPathname());
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+

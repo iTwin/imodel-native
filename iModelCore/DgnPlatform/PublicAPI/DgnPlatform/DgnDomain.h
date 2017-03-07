@@ -321,6 +321,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual struct TxnTable* _Create(TxnManager&) const = 0;
     };
 
+private:
+    ECN::ECSchemaReadContextPtr ReadSchema(DgnDbStatus& status, DgnDbCR db, BeFileNameCR schemaFile) const;
+    
 protected:
     int32_t         m_version;
     Utf8String      m_domainName;
@@ -375,7 +378,20 @@ public:
     //! Register a table handler with this DgnDomain.
     void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}
 
-    //! Import an ECSchema for this DgnDomain.
+    //! Validate ECSchema for this DgnDomain, and it's references, against any existing schemas in the DgnDb
+    //! @param[in] db DgnDb containing the schemas
+    //! @param[in] schemaFileName The domain ECSchema file to validate
+    //! @return BE_SQLITE_OK if all schemas are valid. Depending on the validation issue
+    //! returns one of the error states - BE_SQLITE_ERROR_FileNotFound, BE_SQLITE_ERROR_SchemaIncompatible, 
+    //! BE_SQLITE_ERROR_SchemaUpgradeRequired or BE_SQLITE_ERROR_SchemaUpgradeRecommended
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ValidateSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
+
+    //! Upgrade an ECSchema and it's references for this DgnDomain. 
+    //! @param[in] db DgnDb containing the schema to upgrade
+    //! @param[in] schemaFileName The domain ECSchema file to upgrade
+    DGNPLATFORM_EXPORT DgnDbStatus UpgradeSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
+
+    //! Import an ECSchema and it's references for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
     //! @see ECDbSchemaManager::CreateECClassViewsInDb
@@ -455,6 +471,15 @@ struct BisCoreDomain : DgnDomain
 
 public:
     BisCoreDomain();
+
+    //! Validate the ECSchema for the BisCoreDomain against the specified DgnDb
+    static BeSQLite::DbResult ValidateSchema(DgnDbR);
+
+    //! Import the ECSchema for the BisCoreDomain into the specified DgnDb
+    static DgnDbStatus ImportSchema(DgnDbR);
+
+    //! Upgrade the ECSchema for the BisCoreDomain in the specified DgnDb
+    static DgnDbStatus UpgradeSchema(DgnDbR);
 };
 
 END_BENTLEY_DGN_NAMESPACE

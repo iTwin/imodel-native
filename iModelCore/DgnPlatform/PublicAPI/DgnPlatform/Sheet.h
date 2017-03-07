@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/PickContext.h>
 #include <DgnPlatform/TileTree.h>
 

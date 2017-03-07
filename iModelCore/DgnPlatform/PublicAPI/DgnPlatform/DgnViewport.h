@@ -144,12 +144,12 @@ protected:
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
     uint32_t m_minimumFrameRate = Render::Target::DefaultMinimumFrameRate();
-    DPoint3d m_viewOrg;                  // view origin, potentially expanded
-    DVec3d m_viewDelta;                // view delta, potentially expanded
-    DPoint3d m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
-    DVec3d m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
-    RotMatrix m_rotMatrix;                // rotation matrix (from ViewController)
-    CameraViewDefinition::Camera m_camera;
+    DPoint3d m_viewOrg;                 // view origin, potentially expanded
+    DVec3d m_viewDelta;                 // view delta, potentially expanded
+    DPoint3d m_viewOrgUnexpanded;       // view origin (from ViewController, unexpanded)
+    DVec3d m_viewDeltaUnexpanded;       // view delta (from ViewController, unexpanded)
+    RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
+    ViewDefinition3d::Camera m_camera;
     Render::TargetPtr m_renderTarget;
     ColorDef m_hiliteColor = ColorDef::Magenta();
     DMap4d m_rootToView;
@@ -171,7 +171,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
-    virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
@@ -203,7 +202,7 @@ public:
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
+    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, ViewDefinition3d::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
@@ -241,7 +240,7 @@ public:
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
-    CameraViewDefinition::Camera const& GetCamera() const {return m_camera;}
+    ViewDefinition3d::Camera const& GetCamera() const {return m_camera;}
 
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view

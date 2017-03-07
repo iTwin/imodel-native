@@ -34,7 +34,7 @@ enum class TestHitStatus
 //=======================================================================================
 struct StopLocateTest
 {
-    virtual ~StopLocateTest(){}
+    virtual ~StopLocateTest() {}
     virtual bool _CheckStopLocate() = 0;
 };
 
@@ -129,14 +129,11 @@ private:
     void InitSearch(DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
     bool PointWithinTolerance(DPoint4dCR testPt);
     DRay3d GetBoresite(SimplifyGraphic const&) const;
-
     void AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority, SimplifyGraphic const&);
     void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority, SimplifyGraphic const&);
-
     UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
     UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
     UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-
     bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic&) override;
     bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic&) override;
     bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic&) override;
@@ -144,7 +141,6 @@ private:
     bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) override;
     bool _ProcessBody(IBRepEntityCR, SimplifyGraphic&) override;
     bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
-
     bool _DoPatternStroke(PatternParamsCR, SimplifyGraphic&) const override {return true;} // locate/snap to pattern and line style geometry...
     bool _DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& options, SimplifyGraphic& graphic) const override {return TestLStylePhase::Component == m_testingLStyle;}
 

@@ -7,12 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define PROP_Data   "Data"
-#define PROP_Descr  "Descr"
-#define PROP_Format "Format"
-#define PROP_Width  "Width"
-#define PROP_Height "Height"
-#define PROP_Flags  "Flags"
+#define PROP_Data           "Data"
+#define PROP_Description    "Description"
+#define PROP_Format         "Format"
+#define PROP_Width          "Width"
+#define PROP_Height         "Height"
+#define PROP_Flags          "Flags"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
@@ -29,7 +29,7 @@ void DgnTexture::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     T_Super::_BindWriteParams(stmt, forInsert);
 
     BeAssert(0 < m_data.GetByteStream().GetSize());
-    stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(PROP_Description), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindBlob(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No);
     stmt.BindInt(stmt.GetParameterIndex(PROP_Format), static_cast<int>(m_data.GetFormat()));
     stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_width));
@@ -46,7 +46,7 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_descr.AssignOrClear(stmt.GetValueText(params.GetSelectIndex(PROP_Descr)));
+    m_descr.AssignOrClear(stmt.GetValueText(params.GetSelectIndex(PROP_Description)));
 
     auto dataIdx = params.GetSelectIndex(PROP_Data);
     int dataSize = 0;
@@ -147,7 +147,7 @@ void dgn_ElementHandler::Texture::_RegisterPropertyAccessors(ECSqlClassInfo& par
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
     
-    params.RegisterPropertyAccessors(layout, PROP_Descr,
+    params.RegisterPropertyAccessors(layout, PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (DgnTexture&) elIn;

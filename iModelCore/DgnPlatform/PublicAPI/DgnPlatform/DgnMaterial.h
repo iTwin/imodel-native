@@ -132,7 +132,7 @@ public:
         Utf8CP GetName() const {return m_statement->GetValueText(1);} //!< The material name
         Utf8CP GetPalette() const {return m_statement->GetValueText(2);} //!< The palette name
         DgnMaterialId GetParentId() const {return m_statement->GetValueId<DgnMaterialId>(3);} //!< The parent material ID
-        Utf8CP GetDescr() const {return m_statement->GetValueText(4);} //!< The material description
+        Utf8CP GetDescription() const {return m_statement->GetValueText(4);} //!< The material description
     };
 
     //! An iterator over the materials within a DgnDb

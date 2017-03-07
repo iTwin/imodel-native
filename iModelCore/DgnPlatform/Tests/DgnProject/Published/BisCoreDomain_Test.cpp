@@ -122,14 +122,14 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
     // bis_ElementUniqueAspect
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_ElementUniqueAspect));
-        ASSERT_TRUE(ddl.Contains("[ECInstanceId] INTEGER PRIMARY KEY"));
+        ASSERT_TRUE(ddl.Contains("[Id] INTEGER PRIMARY KEY"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         }
 
     // bis_ElementMultiAspect
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_ElementMultiAspect));
-        ASSERT_TRUE(ddl.Contains("[ECInstanceId] INTEGER PRIMARY KEY"));
+        ASSERT_TRUE(ddl.Contains("[Id] INTEGER PRIMARY KEY"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
         }
 
@@ -280,6 +280,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_PhysicalRecipe)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GraphicalType2d)->IsModelScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GraphicalRecipe2d)->IsModelScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialLocationType)->IsModelScope());
 
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_InformationPartitionElement)->IsParentElementScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SubCategory)->IsParentElementScope());

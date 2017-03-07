@@ -945,3 +945,4 @@ GeometricModelP SpatialViewController::_GetTargetModel() const
     DgnModelId model = *GetViewedModels().begin();
     return GetDgnDb().Models().Get<GeometricModel>(model).get();
     }
+

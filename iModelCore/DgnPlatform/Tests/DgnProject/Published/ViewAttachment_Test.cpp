@@ -14,7 +14,7 @@
 #define EXPECT_INVALID(EXPR) EXPECT_FALSE((EXPR).IsValid())
 
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
@@ -189,21 +189,22 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     {
     // Set up the view to display the new element...
     ViewDefinition::MarginPercent viewMargin(.1,.1,.1,.1);
-    viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
-    viewController.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
+    auto& viewDef = viewController.GetViewDefinition();
+    viewDef.SetStandardViewRotation(StandardView::Top);
+    viewDef.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
+    viewDef.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
 
     auto flags = viewController.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::Wireframe);
-    viewController.GetViewDefinition().GetDisplayStyle().SetViewFlags(flags);
+    viewDef.GetDisplayStyle().SetViewFlags(flags);
 
     viewController.ChangeCategoryDisplay(el.GetCategoryId(), true);
 
 //    viewController.ChangeModelDisplay(modelId, true);
 
-    ASSERT_TRUE(viewController.GetViewDefinition().Update().IsValid());
-    ASSERT_TRUE(viewController.GetViewDefinition().GetCategorySelector().Update().IsValid());
-    ASSERT_TRUE(viewController.GetViewDefinition().GetDisplayStyle().Update().IsValid());
+    ASSERT_TRUE(viewDef.Update().IsValid());
+    ASSERT_TRUE(viewDef.GetCategorySelector().Update().IsValid());
+    ASSERT_TRUE(viewDef.GetDisplayStyle().Update().IsValid());
     }
 
 struct IgnoreAssertionFailures

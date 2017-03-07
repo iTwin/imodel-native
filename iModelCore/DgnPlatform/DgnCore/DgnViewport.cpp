@@ -231,7 +231,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, CameraViewDefinition::Camera const* camera,
+StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFraction, ViewDefinition3d::Camera const* camera,
                                             DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot) const
     {
     DVec3d xVector, yVector, zVector;
@@ -347,7 +347,7 @@ DMap4d DgnViewport::CalcNpcToView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefinitionR cameraDef)
+static void validateCamera(ViewDefinition3d::Camera& camera, ViewDefinition3dR cameraDef)
     {
     camera.ValidateLens();
     if (camera.IsFocusValid())
@@ -355,7 +355,7 @@ static void validateCamera(CameraViewDefinition::Camera& camera, CameraViewDefin
 
     DPoint3dCR vDelta = cameraDef.GetExtents();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
-    double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
+    double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle().Radians()/2.0));
 
     if (focusDistance < vDelta.z / 2.0)
         focusDistance = vDelta.z / 2.0;
@@ -449,20 +449,20 @@ ViewportStatus DgnViewport::SetupFromViewController()
 
     _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
 
-    DPoint3d origin = viewController->GetOrigin();
-    DVec3d   delta  = viewController->GetDelta();
+    auto& viewDef = m_viewController->GetViewDefinition();
+    DPoint3d origin = viewDef.GetOrigin();
+    DVec3d   delta  = viewDef.GetExtents();
 
-    m_rotMatrix     = viewController->GetRotation();
+    m_rotMatrix     = viewDef.GetRotation();
     m_is3dView      = false;
     m_isCameraOn    = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
 
-    SpatialViewControllerP physicalView = GetSpatialViewControllerP();
-    if (nullptr != physicalView)
+    auto cameraView = viewDef.ToView3dP();
+    if (nullptr != cameraView)
         {
-        auto cameraView = m_viewController->GetViewDefinition().ToCameraViewP();
         if (!Allow3dManipulations())
             {
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
@@ -581,8 +581,6 @@ ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
     if (ViewportStatus::Success != status)
         return  status;
 
-    // may have been corrected by SetupFromViewController for sheet/2d views
-    viewController->SetRotation(m_rotMatrix);
     return validSize;
     }
 
@@ -597,7 +595,8 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
 
     SetupFromViewController();
 
-    DPoint3d worldPts[3] = {pts[0], pts[1], viewController->GetOrigin()};
+    auto& viewDef = m_viewController->GetViewDefinition();
+    DPoint3d worldPts[3] = {pts[0], pts[1], viewDef.GetOrigin()};
     DPoint3d viewPts[3];
     GetRotMatrix().Multiply(viewPts, worldPts, 3);
 
@@ -605,7 +604,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     DVec3d delta;
     delta.DifferenceOf(range.high, range.low);
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d npcPts[2];
@@ -622,8 +621,8 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         npcPts[0].z = npcPts[1].z = high;
         NpcToWorld(worldPts, npcPts, 2);
 
-        double lensAngle = cameraView->GetLensAngle();
-        double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle / 2.0));
+        Angle lensAngle = cameraView->GetLensAngle();
+        double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle.Radians() / 2.0));
 
         DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
         DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
@@ -635,19 +634,19 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     else
         {
         // get the view extents
-        delta.z = viewController->GetDelta().z;
+        delta.z = viewDef.GetExtents().z;
 
         // make sure its not too big or too small
-        auto stat = viewController->GetViewDefinition().ValidateViewDelta(delta, true);
+        auto stat = viewDef.ValidateViewDelta(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
 
-        viewController->SetDelta(delta);
+        viewDef.SetExtents(delta);
 
         range.low.z = viewPts[2].z;     // don't change z origin
         DPoint3d origin;
         GetRotMatrix().MultiplyTranspose(&origin, &range.low, 1);
-        viewController->SetOrigin(origin);
+        viewDef.SetOrigin(origin);
         }
 
     SynchWithViewController(true);
@@ -730,7 +729,8 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto& viewDef = m_viewController->GetViewDefinition();
+    auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         // get current box in view coordinates
@@ -752,15 +752,11 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     DVec3d dist;
     dist.DifferenceOf(pts[1], *pts);
 
-    if (!m_is3dView)
-        dist.z = 0.0;
-
-    DPoint3d oldOrg = viewController->GetOrigin();
+    DPoint3d oldOrg = viewDef.GetOrigin();
     DPoint3d newOrg;
     newOrg.SumOf(oldOrg, dist);
-    viewController->SetOrigin(newOrg);
+    viewDef.SetOrigin(newOrg);
 
-    _AdjustFencePts(viewController->GetRotation(), oldOrg, newOrg);
     return SetupFromViewController();
     }
 
@@ -789,7 +785,8 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    auto cameraView = viewController->GetViewDefinition().ToCameraViewP();
+    auto& viewDef = m_viewController->GetViewDefinition();
+    auto cameraView = viewDef.ToView3dP();
     if (cameraView && cameraView->IsCameraOn())
         {
         DPoint3d centerNpc;          // center of view in npc coords
@@ -824,35 +821,34 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 
     // for non-camera views, do the zooming by adjusting the origin and delta directly so there can be no
     // chance of the rotation changing due to numerical precision errors calculating it from the frustum corners.
-    DVec3d delta = viewController->GetDelta();
+    DVec3d delta = viewDef.GetExtents();
     delta.x *= factor;
     delta.y *= factor;
 
     // first check to see whether the zoom operation results in an invalid view. If so, make sure we don't change anything
-    ViewportStatus validSize = viewController->GetViewDefinition().ValidateViewDelta(delta, false);
+    ViewportStatus validSize = viewDef.ValidateViewDelta(delta, false);
     if (ViewportStatus::Success != validSize)
         return  validSize;
 
-    DPoint3d center = (nullptr != newCenterRoot) ? *newCenterRoot : viewController->GetViewDefinition().GetCenter();
+    DPoint3d center = (nullptr != newCenterRoot) ? *newCenterRoot : viewDef.GetCenter();
 
     if (!Allow3dManipulations())
         center.z = 0.0;
 
-    DPoint3d oldOrg = viewController->GetOrigin();
+    DPoint3d oldOrg = viewDef.GetOrigin();
     DPoint3d newOrg = oldOrg;
-    RotMatrix rotation = viewController->GetRotation();
+    RotMatrix rotation = viewDef.GetRotation();
 
     rotation.Multiply(newOrg);
     rotation.Multiply(center);
 
-    viewController->SetDelta(delta);
+    viewDef.SetExtents(delta);
 
     newOrg.x = center.x - delta.x/2.0;
     newOrg.y = center.y - delta.y/2.0;
     rotation.MultiplyTranspose(newOrg);
-    viewController->SetOrigin(newOrg);
+    viewDef.SetOrigin(newOrg);
 
-    _AdjustFencePts(rotation, oldOrg, newOrg);
     return SetupFromViewController();
     }
 
