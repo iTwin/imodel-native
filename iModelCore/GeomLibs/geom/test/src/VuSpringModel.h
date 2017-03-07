@@ -542,10 +542,21 @@ struct VuSpringModel : private _VuSet
                 }
             }
         // return polygon coordinates for areas around stations.
-        void CollectStationAreas (bvector<StationPolygon> &areas, double shrinkFraction = 0.0)
+        void CollectStationAreas (bvector<StationPolygon> &areas, bool preferDirectCentroidPaths = true, double shrinkFraction = 0.0, double directPathFraction = 0.10)
             {
-            _VuSet::TempMask visitMask (Graph (), false);
+            _VuSet::TempMask skipableEdge (Graph (), false);    // mask to mark edges whose mid-edge points can be skipped.
             areas.clear ();
+
+            if (preferDirectCentroidPaths)
+                {
+                _VuSet::TempMask visitMask (Graph (), false);
+                VU_SET_LOOP (edgeSeedNode, this)
+                    {
+                    }
+                END_VU_SET_LOOP (edgeSeedNode, this)
+                }
+
+            _VuSet::TempMask visitMask (Graph (), false);
             VU_SET_LOOP (vertexSeedNode, Graph ())
                 {
                 if (!vertexSeedNode->HasMask (visitMask.Mask ()))

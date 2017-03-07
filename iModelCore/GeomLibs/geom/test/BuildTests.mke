@@ -32,7 +32,7 @@ dirToSearch = $(baseDir)src/
 BEGTEST_ADDITIONAL_HFILES = \
     $(_MakefilePath)src/FlightPlanner.h \
     $(BuildContext)PublicApi/Mtg/MTGShortestPaths.h \
-    $(_MakefilePath)src/BCSSpringModel.h
+    $(_MakefilePath)src/VuSpringModel.h
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
