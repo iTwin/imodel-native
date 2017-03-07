@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define CAT_PROP_Descr      "Descr"
-#define CAT_PROP_Rank       "Rank"
-#define SUBCAT_PROP_Descr   "Descr"
-#define SUBCAT_PROP_Props   "Properties"
+#define CAT_PROP_Description    "Description"
+#define CAT_PROP_Rank           "Rank"
+#define SUBCAT_PROP_Description "Description"
+#define SUBCAT_PROP_Props       "Properties"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -21,7 +21,7 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     if (DgnDbStatus::Success == status)
         {
         m_rank = static_cast<Rank>(stmt.GetValueInt(params.GetSelectIndex(CAT_PROP_Rank)));
-        m_descr = stmt.GetValueText(params.GetSelectIndex(CAT_PROP_Descr));
+        m_descr = stmt.GetValueText(params.GetSelectIndex(CAT_PROP_Description));
         }
 
     return status;
@@ -33,7 +33,7 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(CAT_PROP_Description), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
     stmt.BindInt(stmt.GetParameterIndex(CAT_PROP_Rank), static_cast<int32_t>(m_rank));
     }
 
@@ -248,7 +248,7 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Descr));
+        m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Description));
         m_data.m_appearance.FromJson(stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Props)));
         }
 
@@ -264,7 +264,7 @@ void DgnSubCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     // default sub-categories don't have a description
     if (!IsDefaultSubCategory())
-        stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Description), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
 
     stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
@@ -775,7 +775,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
         }
 
     ECN::ECValue descr;
-    properties.GetValue(props, "Descr");
+    properties.GetValue(props, "Description");
 
     return DgnSubCategory::CreateParams(db, categoryId, codeValue.GetUtf8CP(), Appearance(props.GetUtf8CP()), !descr.IsNull() ? descr.GetUtf8CP() : "");
     }
@@ -810,7 +810,7 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, CAT_PROP_Descr,
+    params.RegisterPropertyAccessors(layout, CAT_PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
             DgnCategory& el = (DgnCategory&) elIn;
@@ -850,7 +850,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
 
-    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Descr,
+    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Description,
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (DgnSubCategory&) elIn;

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define PROPNAME_Descr "Descr"
+#define PROPNAME_Description "Description"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -472,7 +472,7 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    Utf8String sql("SELECT ECInstanceId,CodeValue,IsPrivate," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
+    Utf8String sql("SELECT ECInstanceId,CodeValue,IsPrivate," PROPNAME_Description ",ECClassId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
 
     if (whereClause)
         {

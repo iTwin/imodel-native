@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnLight_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -33,7 +33,7 @@ struct DgnLightsTest : public DgnDbTestFixture
         {
         EXPECT_EQ(lhs.GetLightId(), rhs.GetLightId());
         EXPECT_STR_EQ(lhs.GetName(), rhs.GetName());
-        EXPECT_STR_EQ(lhs.GetDescr(), rhs.GetDescr());
+        EXPECT_STR_EQ(lhs.GetDescription(), rhs.GetDescription());
         EXPECT_STR_EQ(lhs.GetValue(), rhs.GetValue());
         }
 };
@@ -55,7 +55,7 @@ TEST_F(DgnLightsTest, CRUD)
 
     Compare(lt, *persistent);
 
-    lt.SetDescr("new description");
+    lt.SetDescription("new description");
     lt.SetValue("value:4321");
 
     // Update 
@@ -72,6 +72,4 @@ TEST_F(DgnLightsTest, CRUD)
 
     idToFind = LightDefinition::QueryLightId(db, lightCode);
     EXPECT_TRUE(lightId == idToFind);
-
     }
-

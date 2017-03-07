@@ -77,6 +77,7 @@ HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(PhysicalRecipe)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(GraphicalRecipe2d)
+HANDLER_DEFINE_MEMBERS(SpatialLocationType)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
@@ -160,6 +161,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::PhysicalRecipe::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalRecipe2d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
