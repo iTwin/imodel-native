@@ -35,7 +35,7 @@ void Node::_DrawGraphics(DrawArgsR args) const
         GraphicParams params;
         params.SetLineColor(ColorDef::Red());
 
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(Graphic::CreateParams(GetRoot().GetDgnDb()));
+        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(GetRoot().GetDgnDb()));
         graphic->ActivateGraphicParams(params);
         graphic->AddRangeBox(m_range);
         args.m_graphics.Add(*graphic->Finish());
@@ -159,7 +159,7 @@ Geometry::Geometry(TriMeshArgs const& args, SceneR scene)
     gfParams.SetWidth(0);
     gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
 
-    m_graphic = scene.GetRenderSystem()->_CreateTriMesh(args, PrimitiveParams(Graphic::CreateParams(scene.GetDgnDb()), gfParams));
+    m_graphic = scene.GetRenderSystem()->_CreateTriMesh(args, scene.GetDgnDb(), gfParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,6 +179,6 @@ void Geometry::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(args.m_root.GetDgnDb(), args.m_location));
+    auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
     graphic->AddPolyface(*GetPolyface());
     }

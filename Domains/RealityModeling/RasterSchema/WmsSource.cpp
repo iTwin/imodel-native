@@ -472,7 +472,7 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     textureParams.SetIsTileSection();
     auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
 
-    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::Graphic::CreateParams(m_tile->GetRoot().GetDgnDb()));
+    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::GraphicBuilder::CreateParams(m_tile->GetRoot().GetDgnDb()));
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
     graphic->AddTile(*texture, rasterTile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 

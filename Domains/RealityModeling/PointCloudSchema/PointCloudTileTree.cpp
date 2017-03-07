@@ -253,9 +253,8 @@ BentleyStatus Tile::AddGraphics ()
     if (!m_points.empty())
         {
         auto&                       root   = static_cast<RootCR>(GetRoot());
-        Render::PrimitiveParams     params(root.GetDgnDb(), Render::GraphicParams());
         Render::PointCloudArgs      args(m_range, static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
-        Render::GraphicPtr          graphic = root.GetRenderSystem()->_CreatePointCloud(args, params);
+        Render::GraphicPtr          graphic = root.GetRenderSystem()->_CreatePointCloud(args, root.GetDgnDb(), Render::GraphicParams());
 
         SetGraphic(*graphic);
         }
