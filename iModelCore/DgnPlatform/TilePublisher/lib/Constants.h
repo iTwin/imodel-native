@@ -304,17 +304,19 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
         gl_Position    = mvProj * vec4(a_pos,  1.0);
         if (0.0 != a_delta.y)
             {
-            vec4 projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
-            vec4 projPrev   = czm_modelToWindowCoordinates (vec4(a_prev, 1.0));
-            vec4 projNext   = czm_modelToWindowCoordinates (vec4(a_next, 1.0));
-            vec2 prevDir    = normalize(projPos.xy - projPrev.xy);
-            vec2 nextDir    = normalize(projNext.xy - projPos.xy);
-            vec2 thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
-            vec2 perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
-            float dist      = 2.0 * u_width;
-            vec2 delta      = vec2(0.0, 0.0);
+            vec4    projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
+            vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_prev, 1.0));
+            vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_next, 1.0));
+            vec2    prevDelta  = projPos.xy - projPrev.xy;
+            vec2    nextDelta  = projNext.xy - projPos.xy;
+            vec2    prevDir    = normalize(prevDelta);
+            vec2    nextDir    = normalize(nextDelta);
+            vec2    thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
+            vec2    perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
+            float   dist      = 2.0 * u_width;
+            vec2    delta      = vec2(0.0, 0.0);
 
-            if (dot(prevDir, nextDir) < .999)
+            if (dot(prevDir, nextDir) < .99999)
                 {
                 vec2    bisector   = normalize(prevDir - nextDir);
                 float   dotP       = dot(bisector, perp);
@@ -323,9 +325,16 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
                 if (jointParam < 0.0001)
                     {
                     if (dotP < 0.0)
-                        delta = bisector * (dist / dotP);
+                        {
+                        float   miter  = dist / dotP;
+                        float   prevLimit  = -length(prevDelta) / dot(prevDir, bisector), nextLimit = length(nextDelta) / dot(nextDir, bisector);
+            
+                        delta = bisector * max(miter, max(prevLimit, nextLimit));
+                        }
                     else
+                        {
                         delta = perp * dist;
+                        }
                     }
                 else
                     {

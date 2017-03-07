@@ -2335,23 +2335,17 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
-            static double       s_adjacentDistance = 1.0;
             DPoint3d            p0 = polylinePoints[i], p1 = polylinePoints[i+1];
             double              thisLength = p0.Distance(p1), 
                                 length0 = cumulativeLength, 
                                 length1 = (cumulativeLength += thisLength);
-            DVec3d              direction = DVec3d::FromStartEndNormalize (p0, p1);
             bool                isStart  = (i == 0),
                                 isEnd    = (i == last - 1);
             uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
-            DVec3d              prevDir0 = isStart ? DVec3d::FromScale(direction, -1.0) : DVec3d::FromStartEndNormalize(p0, polylinePoints[i-1]),
-                                nextDir0 = direction,
-                                prevDir1 = DVec3d::FromScale(direction, -1.0),
-                                nextDir1 = isEnd ? direction : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
-            DPoint3d            prevPoint0 = DPoint3d::FromSumOf (p0, prevDir0, s_adjacentDistance),
-                                nextPoint0 = DPoint3d::FromSumOf (p0, nextDir0, s_adjacentDistance),
-                                prevPoint1 = DPoint3d::FromSumOf (p1, prevDir1, s_adjacentDistance),
-                                nextPoint1 = DPoint3d::FromSumOf (p1, nextDir1, s_adjacentDistance);
+            DPoint3d            prevPoint0 = isStart ? DPoint3d::FromSumOf(polylinePoints[i], 2.0, polylinePoints[i+1], -1.0) : polylinePoints[i-1],
+                                nextPoint0 = polylinePoints[i+1],
+                                prevPoint1 = polylinePoints[i],
+                                nextPoint1 = isEnd  ? DPoint3d::FromSumOf(polylinePoints[i+1], 2.0, polylinePoints[i], -1.0) : polylinePoints[i+2];
             size_t              baseIndex = tesselation.m_points.size();
                         
             if (doColors)
@@ -2385,7 +2379,6 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                       basePoint ? attributes0 : attributes1);
                 }
             
-
             if (!isStart)
                 tesselation.AddJointTriangles(baseIndex, length0, p0, prevPoint0, nextPoint0, colors0, attributes0, 1.0);
 
@@ -2393,24 +2386,29 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevPoint1, nextPoint1, colors1, attributes1, 5.0);
             }
         }
-// #define SHADER_TESTING
+
+//#define SHADER_TESTING
 #ifdef SHADER_TESTING
     bvector<DPoint3d>   tesselatedPoints;
     for (size_t i=0; i<tesselation.m_points.size(); i++)
         {
-        DPoint3d    viewPos  = tesselation.m_points[i];
-        DPoint3d    viewPrev = tesselation.m_prevPoints[i];
-        DPoint3d    viewNext = tesselation.m_nextPoints[i];
-        DPoint3d    a_delta  = tesselation.m_deltas[i];
-        DVec3d      prevDir  = DVec3d::FromStartEndNormalize(viewPrev, viewPos);
-        DVec3d      nextDir  = DVec3d::FromStartEndNormalize(viewPos, viewNext);
-        DVec3d      thisDir  = (a_delta.z < 3.5) ? nextDir : prevDir;
+        DPoint3d    viewPos   = tesselation.m_points[i];
+        DPoint3d    viewPrev  = tesselation.m_prevPoints[i]; 
+        DPoint3d    viewNext  = tesselation.m_nextPoints[i];
+        DPoint3d    a_delta   = tesselation.m_deltas[i];
+        DVec3d      prevDelta = DVec3d::FromStartEnd(viewPrev, viewPos), prevDir = prevDelta;
+        DVec3d      nextDelta = DVec3d::FromStartEnd(viewPos, viewNext), nextDir = nextDelta;
+
+        double      prevLength = prevDir.Normalize();
+        double      nextLength = nextDir.Normalize();
+        DVec3d      thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
         DVec3d      perp       = a_delta.y * DVec3d::From (-thisDir.y, thisDir.x, 0.0);
 
-        double      dist      = 5.0;
+        double      dist      = 360.0;
         DVec3d      delta     = DVec3d::From(0.0, 0.0, 0.0);
+        double      dotDelta  = prevDir.DotProduct(nextDir);
 
-        if (prevDir.DotProduct(nextDir) < .999)
+        if (dotDelta < .99999)
             {
             DVec3d  bisector;
             bisector.NormalizedDifference(prevDir, nextDir);
@@ -2421,7 +2419,11 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 {
                 if (dotP < 0.0)
                     {
-                    delta = bisector * (dist / dotP);
+                    float   miter  = dist / dotP;
+                    float   prevLimit  = -prevLength / prevDir.DotProduct(bisector), nextLimit = nextLength / nextDir.DotProduct(bisector);
+                    float   miterLimit = std::max(prevLimit, nextLimit);
+            
+                    delta = bisector * std::max(miter, miterLimit);
                     }
                 else
                     delta = perp * dist;
