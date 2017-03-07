@@ -441,9 +441,9 @@ enum DbResult
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
     BE_SQLITE_ERROR_SchemaIncompatible = (BE_SQLITE_IOERR | 15 << 24), //!< Incompatible schemas found in the database
-	BE_SQLITE_ERROR_SchemaUpgradeRequired = (BE_SQLITE_IOERR | 16 << 24), //!< Require upgrade of schemas in the database
-	BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | 17 << 24), //!< Recommend upgrade of schemas in the database
-	
+    BE_SQLITE_ERROR_SchemaUpgradeRequired = (BE_SQLITE_IOERR | 16 << 24), //!< Require upgrade of schemas in the database
+    BE_SQLITE_ERROR_SchemaUpgradeRecommended = (BE_SQLITE_IOERR | 17 << 24), //!< Recommend upgrade of schemas in the database
+    
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
     BE_SQLITE_BUSY_RECOVERY           = (BE_SQLITE_BUSY     | (1<<8)),
@@ -1182,6 +1182,7 @@ private:
         }
 public:
     IdSet() {static_assert(std::is_base_of<BeInt64Id, IdType>::value && sizeof(BeInt64Id) == sizeof(IdType), "IdSet may only contain BeInt64Ids or subclasses of it of the same size.");}
+    virtual ~IdSet() {}
 
     typedef IdSet<IdType> T_Self;
     typedef bset<IdType> T_SetType;
