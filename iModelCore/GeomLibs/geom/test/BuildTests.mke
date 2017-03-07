@@ -2,7 +2,7 @@
 #
 #  $Source: geom/test/BuildTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -29,7 +29,10 @@ CCompOpts + -wd4189
 
 dirToSearch = $(baseDir)src/
 %include cincapnd.mki
-BEGTEST_ADDITIONAL_HFILES = $(_MakefilePath)src/FlightPlanner.h $(BuildContext)PublicApi/Mtg/MTGShortestPaths.h
+BEGTEST_ADDITIONAL_HFILES = \
+    $(_MakefilePath)src/FlightPlanner.h \
+    $(BuildContext)PublicApi/Mtg/MTGShortestPaths.h \
+    $(_MakefilePath)src/BCSSpringModel.h
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 

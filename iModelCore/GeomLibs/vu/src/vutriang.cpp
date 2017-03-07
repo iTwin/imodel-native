@@ -209,7 +209,7 @@ double &ratio
     }
 
 template <typename UserDataType>
-void TryFlip
+bool TryFlip
 (
 VuSetP graphP,
 bool (*testFuncP)(VuSetP,VuP,UserDataType *),
@@ -219,7 +219,7 @@ VuP AP                              // Edge to consider for flip.
 )
     {
     VuP BP,CP,DP,EP,FP;
-
+    bool flipped = false;
     if( (*testFuncP)(graphP,AP,userDataP) )
         {
         /* Extract the edge. */
@@ -242,7 +242,9 @@ VuP AP                              // Edge to consider for flip.
         vu_copyCoordinates(DP,FP);
         vu_copyConditionalVertexData (graphP, CP, AP);
         vu_copyConditionalVertexData (graphP, FP, DP);
+        flipped = true;
         }
+    return flipped;
     }
 
 
@@ -257,14 +259,16 @@ size_t maxFlip
 )
     {
     size_t numFlip = 0;
+    int numCompletedFlip = 0;
     VuP seedNode;
     for(;
         numFlip++ < maxFlip && NULL != (seedNode = vu_markedEdgeSetChooseAny(edgeSet))
         ;)
         {
-        TryFlip (graphP, testFuncP, userDataP, edgeSet, seedNode);
+        if (TryFlip (graphP, testFuncP, userDataP, edgeSet, seedNode))
+            numCompletedFlip++;
         }
-    return (int) numFlip;
+    return numCompletedFlip;
     }
 
 
@@ -297,11 +301,11 @@ int maxFlipsPerEdge = 60
     */
     static double s_baseFlipFactor = 20;
     static double s_flipDivisor = 60;
-    double numFlip;
+    double numFlip = 0.0;
+    int numFlip1 = 0;
     double maxFlip;
     double factor1;
     double factor2;
-    numFlip = 0;
     if (graphP)
         {
         VuMarkedEdgeSetP edgeSetP = vu_markedEdgeSetNew(
@@ -328,11 +332,12 @@ int maxFlipsPerEdge = 60
            numFlip++ < maxFlip && NULL != (AP = vu_markedEdgeSetChooseAny(edgeSetP))
            ;)
             {
-            TryFlip (graphP, testFuncP, userDataP, edgeSetP, AP);
+            if (TryFlip (graphP, testFuncP, userDataP, edgeSetP, AP))
+                numFlip1++;
             }
         vu_markedEdgeSetFree(edgeSetP);
         }
-    return (int) numFlip;
+    return numFlip1;
     }
 /*----------------------------------------------------------------------+
 * @param graphP IN containing graph
