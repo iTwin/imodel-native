@@ -47,7 +47,7 @@ struct PropertyPath
 
                 Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
                 ECN::ECPropertyCP GetProperty() const { return m_property; }
-                bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY; }
+                bool HasArrayIndex() const { return GetArrayIndex() >= 0; }
                 int GetArrayIndex() const { return m_arrayIndex; }
 
                 bool IsResolved() const { return m_property != nullptr; }
@@ -75,11 +75,10 @@ struct PropertyPath
         bool IsEmpty() const { return m_path.empty(); }
         ClassMap const* GetClassMap() const { return m_classMap; }
 
-        void Push(Utf8StringCR propertyName);
-        void Push(Utf8StringCR propertyName, size_t arrayIndex);
+        void Push(Utf8StringCR propertyName, int arrayIndex = Location::NOT_ARRAY) { m_path.push_back(Location(propertyName, arrayIndex)); }
+
         void Pop();
         void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
-
         BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
         bool IsResolved() const;
 
@@ -181,9 +180,7 @@ struct Exp : NonCopyableClass
                             return *this;
                             }
                         //moveable
-                        const_iterator(const_iterator&& rhs)
-                            : m_iterator(std::move(rhs.m_iterator))
-                            {}
+                        const_iterator(const_iterator&& rhs) : m_iterator(std::move(rhs.m_iterator)) {}
 
                         const_iterator& operator= (const_iterator&& rhs)
                             {
@@ -193,25 +190,15 @@ struct Exp : NonCopyableClass
                             return *this;
                             }
 
-                        TExp operator* () const
-                            {
-                            return m_iterator->get();
-                            }
+                        TExp operator* () const { return m_iterator->get(); }
 
                         const_iterator& operator++ ()
                             {
                             m_iterator++;
                             return *this;
                             }
-                        bool operator== (const_iterator const& rhs) const
-                            {
-                            return m_iterator == rhs.m_iterator;
-                            }
-
-                        bool operator!= (const_iterator const& rhs) const
-                            {
-                            return !(*this == rhs);
-                            }
+                        bool operator== (const_iterator const& rhs) const { return m_iterator == rhs.m_iterator; }
+                        bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
                     };
 
 
@@ -221,10 +208,10 @@ struct Exp : NonCopyableClass
                 Collection() {}
                 ~Collection() {}
 
-                size_t size() const;
-                bool empty() const;
-                Exp const* operator[] (size_t i) const;
-                Exp* operator[] (size_t i);
+                size_t size() const { return m_collection.size(); }
+                bool empty() const { return m_collection.empty(); }
+                Exp const* operator[] (size_t i) const { return m_collection[i].get(); }
+                Exp* operator[] (size_t i) { return m_collection[i].get(); }
 
                 template <typename TExp>
                 TExp const* Get(size_t i) const
@@ -236,12 +223,10 @@ struct Exp : NonCopyableClass
 
                 bool Replace(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith);
 
-                const_iterator<Exp*> begin();
-                const_iterator<Exp const*> begin() const;
-                const_iterator<Exp const*> end() const;
-                const_iterator<Exp*> end();
-
-
+                const_iterator<Exp const*> begin() const { return const_iterator<Exp const*>(m_collection.begin()); }
+                const_iterator<Exp*> begin() { return const_iterator<Exp*>(m_collection.begin()); }
+                const_iterator<Exp const*> end() const { return const_iterator<Exp const*>(m_collection.end()); }
+                const_iterator<Exp*> end() { return const_iterator<Exp*>(m_collection.end()); }
             };
 
         enum class FinalizeParseStatus { Completed, NotCompleted, Error };

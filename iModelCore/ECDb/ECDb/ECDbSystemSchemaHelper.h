@@ -18,10 +18,14 @@
 #define ECDBSYS_CLASS_NavigationECSqlSystemProperties "NavigationECSqlSystemProperties"
 
 #define ECDBSYS_PROP_ECInstanceId "ECInstanceId"
+#define ECDBSYS_PROPALIAS_Id "Id"
+
 #define ECDBSYS_PROP_ECClassId "ECClassId"
 #define ECDBSYS_PROP_SourceECInstanceId "SourceECInstanceId"
+#define ECDBSYS_PROPALIAS_SourceId "SourceId"
 #define ECDBSYS_PROP_SourceECClassId "SourceECClassId"
 #define ECDBSYS_PROP_TargetECInstanceId "TargetECInstanceId"
+#define ECDBSYS_PROPALIAS_TargetId "TargetId"
 #define ECDBSYS_PROP_TargetECClassId "TargetECClassId"
 #define ECDBSYS_PROP_NavPropId "Id"
 #define ECDBSYS_PROP_NavPropRelECClassId "RelECClassId"
@@ -81,7 +85,7 @@ public:
         };
 private:
     static const ECSqlSystemPropertyInfo s_noSystemProperty;
-    static const ECSqlSystemPropertyInfo s_ecinstanceid;
+    static const ECSqlSystemPropertyInfo s_ecinstanceId;
     static const ECSqlSystemPropertyInfo s_ecclassid;
     static const ECSqlSystemPropertyInfo s_sourceECInstanceId;
     static const ECSqlSystemPropertyInfo s_sourceECClassId;
@@ -124,7 +128,7 @@ public:
     //Indicates whether the system property is of an id type
     bool IsId() const { BeAssert(IsSystemProperty()); return m_type != Type::Point; }
 
-    static ECSqlSystemPropertyInfo const& ECInstanceId() { return s_ecinstanceid; }
+    static ECSqlSystemPropertyInfo const& ECInstanceId() { return s_ecinstanceId; }
     static ECSqlSystemPropertyInfo const& ECClassId() { return s_ecclassid; }
     static ECSqlSystemPropertyInfo const& SourceECInstanceId() { return s_sourceECInstanceId; }
     static ECSqlSystemPropertyInfo const& SourceECClassId() { return s_sourceECClassId; }
@@ -157,6 +161,8 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         //! @return System property or nullptr in case of errors
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
+
+        bool IsSystemPropertyAlias(Utf8CP& sysPropName, Utf8StringCR propName) const;
 
         void ClearCache() const { m_byPropIdCache.clear(); }
     };

@@ -21,29 +21,21 @@ PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(Type::Prope
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(Type::PropertyName), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
-    {
-    m_propertyPath.Push(propertyName);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
+PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
     : ValueExp(Type::PropertyName), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     Utf8String propName = derivedPropExp.GetName();
     //WIP: Affan, why do we have to remove the square brackets?
     propName.ReplaceAll("[", "");
     propName.ReplaceAll("]", "");
-    m_propertyPath.Push(propName.c_str());
+    m_propertyPath.Push(propName);
     SetPropertyRef(derivedPropExp);
     }
     
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
+PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
     : ValueExp(Type::PropertyName), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty())
     {
     m_propertyPath.Push(propertyName);
@@ -60,8 +52,8 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         if (ResolveColumnRef(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
-        else
-            return FinalizeParseStatus::NotCompleted;
+
+        return FinalizeParseStatus::NotCompleted;
         }
 
     //After children have been finalized
@@ -73,7 +65,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
 
     if (IsPropertyRef())
         {
-        auto& derivedProperty = GetPropertyRefP()->LinkedTo();
+        DerivedPropertyExp const& derivedProperty = GetPropertyRefP()->LinkedTo();
         if (derivedProperty.GetNestedAlias().empty())
             const_cast<DerivedPropertyExp&>(derivedProperty).SetNestedAlias(ctx.GenerateAlias().c_str());
 
@@ -259,11 +251,6 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
     {
     m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp));
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP PropertyNameExp::GetPropertyName() const { return m_propertyPath[0].GetPropertyName(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013

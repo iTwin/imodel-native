@@ -45,7 +45,7 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassNameExp::_CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+BentleyStatus ClassNameExp::_CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
     if (m_info == nullptr)
         {
@@ -56,7 +56,7 @@ BentleyStatus ClassNameExp::_CreatePropertyNameExpList(std::function<void(std::u
     ClassMap const& classMap = m_info->GetMap();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        std::unique_ptr<PropertyNameExp> exp(new PropertyNameExp(propertyMap->GetAccessString(), *this, classMap));
+        std::unique_ptr<PropertyNameExp> exp = std::make_unique<PropertyNameExp>(ctx, propertyMap->GetAccessString(), *this, classMap);
         addDelegate(exp);
         }
 

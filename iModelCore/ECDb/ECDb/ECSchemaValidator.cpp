@@ -18,11 +18,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
     {
+    ECSchemaValidationRules rules;
+    rules.m_classRules.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
+    rules.m_classRules.push_back(std::make_unique<ValidRelationshipRule>());
+
+    rules.m_propertyRules.push_back(std::make_unique<NoPropertiesOfSameTypeAsClassRule>());
+    rules.m_propertyRules.push_back(std::make_unique<ValidPropertyNameRule>());
+    rules.m_propertyRules.push_back(std::make_unique<ValidNavigationPropertyRule>());
+
     ECSchemaValidationResult result;
     bool valid = true;
     for (ECSchemaCP schema : schemas)
         {
-        bool succeeded = ValidateSchema(result, *schema, doNotFailOnLegacyIssues);
+        if (schema->GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
+            continue; //skip because it would violate by design to ValidPropertyNameRule as it defines the ECSQL system props
+
+        bool succeeded = ValidateSchema(result, rules, *schema);
         if (!succeeded)
             valid = false;
         }
@@ -35,23 +46,19 @@ bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, bool doNotFailOnLegacyIssues)
+bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECSchemaValidationRules const& rules, ECN::ECSchemaCR schema)
     {
-    std::vector<std::unique_ptr<IECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
-    validationTasks.push_back(std::make_unique<ValidRelationshipRule>());
-
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (std::unique_ptr<IECSchemaValidationRule>& task : validationTasks)
+        for (std::unique_ptr<IECSchemaValidationRule> const& rule : rules.m_classRules)
             {
-            bool succeeded = task->ValidateSchema(result, schema, *ecClass);
+            bool succeeded = rule->ValidateSchema(result, schema, *ecClass);
             if (!succeeded)
                 valid = false;
             }
 
-        bool succeeded = ValidateClass(result, *ecClass);
+        bool succeeded = ValidateClass(result, rules, *ecClass);
         if (!succeeded)
             valid = false;
         }
@@ -63,18 +70,14 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
+bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECSchemaValidationRules const& rules, ECN::ECClassCR ecClass)
     {
-    std::vector<std::unique_ptr<IECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::make_unique<NoPropertiesOfSameTypeAsClassRule>());
-    validationTasks.push_back(std::make_unique<ValidNavigationPropertyRule>());
-
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties(true))
         {
-        for (std::unique_ptr<IECSchemaValidationRule>& task : validationTasks)
+        for (std::unique_ptr<IECSchemaValidationRule> const& rule : rules.m_propertyRules)
             {
-            bool succeeded = task->ValidateClass(result, ecClass, *prop);
+            bool succeeded = rule->ValidateClass(result, ecClass, *prop);
             if (!succeeded)
                 valid = false;
             }
@@ -220,72 +223,7 @@ void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
         }
     }
 
-//**********************************************************************
-// NoPropertiesOfSameTypeAsClassRule
-//**********************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
-    {
-    IError* errorP = result[GetType()];
-    if (errorP == nullptr)
-        errorP = &result.AddError(std::make_unique<Error>());
-
-    Error& error = *static_cast<Error*>(errorP);
-
-    ECClassCP structType = nullptr;
-    if (ecProperty.GetIsStruct())
-        structType = &ecProperty.GetAsStructProperty()->GetType();
-    else if (ecProperty.GetIsArray())
-        {
-        auto structArrayProp = ecProperty.GetAsStructArrayProperty();
-        if (nullptr != structArrayProp)
-            structType = &structArrayProp->GetStructElementType();
-        }
-
-    if (structType == nullptr)
-        return true; //prop is of primitive type or prim array type -> no validation needed
-
-    bool isValid = !structType->Is(&ecClass);
-    if (!isValid)
-        error.AddInvalidProperty(ecProperty);
-
-    return isValid;
-    }
-
-//**********************************************************************
-// NoPropertiesOfSameTypeAsClassRule::Error
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-void NoPropertiesOfSameTypeAsClassRule::Error::_Log(IssueReporter const& issues) const
-    {
-    if (m_invalidProperties.empty() || !issues.IsEnabled())
-        return;
-
-    for (auto const& kvPair : m_invalidProperties)
-        {
-        ECClassCR ecClass = *kvPair.first;
-
-        Utf8String violatingPropsStr;
-
-        bool isFirstProp = true;
-        for (ECPropertyCP violatingProp : kvPair.second)
-            {
-            if (!isFirstProp)
-                violatingPropsStr.append(", ");
-
-            violatingPropsStr.append(violatingProp->GetName());
-            isFirstProp = false;
-            }
-
-        issues.Report("ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.",
-                      ecClass.GetFullName(), violatingPropsStr.c_str());
-        }
-    }
 
 //**********************************************************************
 // ValidRelationshipRule
@@ -392,6 +330,92 @@ void ValidRelationshipRule::Error::_Log(IssueReporter const& issues) const
         }
     }
 
+
+//**********************************************************************
+// ValidPropertyNameRule
+//**********************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+bool ValidPropertyNameRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+    {
+    Utf8StringCR propName = ecProperty.GetName();
+
+    bool isCollision = false;
+    if (propName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
+        propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id) ||
+        propName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+        {
+        isCollision = true;
+        }
+
+    if (!isCollision && ecClass.GetClassType() == ECClassType::Relationship)
+        {
+        if (propName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
+            propName.EqualsIAscii(ECDBSYS_PROPALIAS_SourceId) ||
+            propName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
+            propName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
+            propName.EqualsIAscii(ECDBSYS_PROPALIAS_TargetId) ||
+            propName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+            {
+            isCollision = true;
+            }
+        }
+
+    if (isCollision)
+        {
+        IError* errorP = result[GetType()];
+        if (errorP == nullptr)
+            errorP = &result.AddError(std::make_unique<Error>());
+
+        Error& error = *static_cast<Error*>(errorP);
+        error.AddInconsistency(ecProperty, Error::Kind::SystemPropertyNamingCollision);
+        return false;
+        }
+
+    return true;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    10/2016
+//---------------------------------------------------------------------------------------
+void ValidPropertyNameRule::Error::_Log(IssueReporter const& issues) const
+    {
+    if (m_inconsistencies.empty() || !issues.IsEnabled())
+        return;
+
+    for (auto const& kvPair : m_inconsistencies)
+        {
+        ECClassCR ecClass = *kvPair.first;
+
+        Utf8String str;
+        bool isFirstItem = true;
+        for (Inconsistency const& inconsistency : kvPair.second)
+            {
+            if (!isFirstItem)
+                str.append("| ");
+
+            switch (inconsistency.m_kind)
+                {
+                    case Kind::SystemPropertyNamingCollision:
+                        str.Sprintf("%s: ECSQL system property name conflict.", inconsistency.m_prop->GetName().c_str());
+                        break;
+
+                    default:
+                        BeAssert(false);
+                        break;
+                }
+
+            isFirstItem = false;
+            }
+
+        issues.Report("ECClass '%s' contains ECProperties with invalid names: %s", ecClass.GetFullName(), str.c_str());
+        }
+    }
+
+
 //**********************************************************************
 // ValidNavigationPropertyRule
 //**********************************************************************
@@ -437,7 +461,7 @@ void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
         for (Inconsistency const& inconsistency : kvPair.second)
             {
             if (!isFirstItem)
-                str.append(" - ");
+                str.append("| ");
 
             const Kind kind = inconsistency.m_kind;
             if (Enum::Contains(kind, Kind::MultiplicityGreaterThanOne))
@@ -457,4 +481,70 @@ void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
         }
     }
 
+//**********************************************************************
+// NoPropertiesOfSameTypeAsClassRule
+//**********************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    06/2014
+//---------------------------------------------------------------------------------------
+bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+    {
+    IError* errorP = result[GetType()];
+    if (errorP == nullptr)
+        errorP = &result.AddError(std::make_unique<Error>());
+
+    Error& error = *static_cast<Error*>(errorP);
+
+    ECClassCP structType = nullptr;
+    if (ecProperty.GetIsStruct())
+        structType = &ecProperty.GetAsStructProperty()->GetType();
+    else if (ecProperty.GetIsArray())
+        {
+        auto structArrayProp = ecProperty.GetAsStructArrayProperty();
+        if (nullptr != structArrayProp)
+            structType = &structArrayProp->GetStructElementType();
+        }
+
+    if (structType == nullptr)
+        return true; //prop is of primitive type or prim array type -> no validation needed
+
+    bool isValid = !structType->Is(&ecClass);
+    if (!isValid)
+        error.AddInvalidProperty(ecProperty);
+
+    return isValid;
+    }
+
+//**********************************************************************
+// NoPropertiesOfSameTypeAsClassRule::Error
+//**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    06/2014
+//---------------------------------------------------------------------------------------
+void NoPropertiesOfSameTypeAsClassRule::Error::_Log(IssueReporter const& issues) const
+    {
+    if (m_invalidProperties.empty() || !issues.IsEnabled())
+        return;
+
+    for (auto const& kvPair : m_invalidProperties)
+        {
+        ECClassCR ecClass = *kvPair.first;
+
+        Utf8String violatingPropsStr;
+
+        bool isFirstProp = true;
+        for (ECPropertyCP violatingProp : kvPair.second)
+            {
+            if (!isFirstProp)
+                violatingPropsStr.append(", ");
+
+            violatingPropsStr.append(violatingProp->GetName());
+            isFirstProp = false;
+            }
+
+        issues.Report("ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.",
+                      ecClass.GetFullName(), violatingPropsStr.c_str());
+        }
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

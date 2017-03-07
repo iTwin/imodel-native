@@ -217,8 +217,8 @@ struct OrderByExp final : Exp
 struct SelectClauseExp final : Exp
     {
     private:
-        BentleyStatus ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const&);
-        BentleyStatus ReplaceAsteriskExpressions(RangeClassInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpression(ECSqlParseContext const&, DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const&);
+        BentleyStatus ReplaceAsteriskExpressions(ECSqlParseContext const&, RangeClassInfo::List const&);
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
@@ -408,7 +408,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
         bool _ContainProperty(Utf8CP propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName) != nullptr; }
-        BentleyStatus _CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+        BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
         Utf8String _ToECSql() const override;
         Utf8String _ToString() const override;
 

@@ -12,6 +12,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECSchemaValidationResult;
+struct ECSchemaValidationRules;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
@@ -19,11 +20,12 @@ struct ECSchemaValidationResult;
 struct ECSchemaValidator
     {
     private:
+
         ECSchemaValidator();
         ~ECSchemaValidator();
 
-        static bool ValidateSchema(ECSchemaValidationResult&, ECN::ECSchemaCR, bool doNotFailOnLegacyIssues);
-        static bool ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR);
+        static bool ValidateSchema(ECSchemaValidationResult&, ECSchemaValidationRules const&, ECN::ECSchemaCR);
+        static bool ValidateClass(ECSchemaValidationResult&, ECSchemaValidationRules const&, ECN::ECClassCR);
 
         static void Log(IssueReporter const&, ECSchemaValidationResult const&);
 
@@ -46,6 +48,7 @@ struct IECSchemaValidationRule
             ValidBaseClasses,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipClass,
+            ValidPropertyName,
             ValidNavigationProperty
             };
 
@@ -83,6 +86,15 @@ struct IECSchemaValidationRule
 
         bool ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const { return _ValidateSchema(result, schema, ecClass); }
         bool ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const { return _ValidateClass(result, ecClass, ecProperty); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      03/2017
+//+===============+===============+===============+===============+===============+======
+struct ECSchemaValidationRules final
+    {
+    std::vector<std::unique_ptr<IECSchemaValidationRule>> m_classRules;
+    std::vector<std::unique_ptr<IECSchemaValidationRule>> m_propertyRules;
     };
 
 //=======================================================================================
@@ -145,39 +157,6 @@ struct ValidBaseClassesRule final : IECSchemaValidationRule
         ~ValidBaseClassesRule() {}
     };
 
-
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      06/2014
-//+===============+===============+===============+===============+===============+======
-struct NoPropertiesOfSameTypeAsClassRule final : IECSchemaValidationRule
-    {
-    private:
-        //=======================================================================================
-        // @bsiclass                                                Krischan.Eberle      06/2014
-        //+===============+===============+===============+===============+===============+======
-        struct Error final : IError
-            {
-            private:
-                std::map<ECN::ECClassCP, std::vector<ECN::ECPropertyCP>> m_invalidProperties;
-
-                void _Log(IssueReporter const&) const override;
-
-            public:
-                Error() : IError(Type::NoPropertiesOfSameTypeAsClass) {}
-                ~Error() {}
-
-                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties[&prop.GetClass()].push_back(&prop); }
-            };
-
-        bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
-
-    public:
-        NoPropertiesOfSameTypeAsClassRule() : IECSchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass) {}
-        ~NoPropertiesOfSameTypeAsClassRule() {}
-    };
-
-
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
@@ -212,9 +191,9 @@ struct ValidRelationshipRule final : IECSchemaValidationRule
                         }
                     };
 
-            std::map<ECN::ECSchemaCP, std::vector<Inconsistency>> m_inconsistencies;
+                std::map<ECN::ECSchemaCP, std::vector<Inconsistency>> m_inconsistencies;
 
-            void _Log(IssueReporter const&) const override;
+                void _Log(IssueReporter const&) const override;
 
 
             public:
@@ -231,6 +210,84 @@ struct ValidRelationshipRule final : IECSchemaValidationRule
     public:
         ValidRelationshipRule() : IECSchemaValidationRule(Type::ValidRelationshipClass) {}
         ~ValidRelationshipRule() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      06/2014
+//+===============+===============+===============+===============+===============+======
+struct NoPropertiesOfSameTypeAsClassRule final : IECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      06/2014
+        //+===============+===============+===============+===============+===============+======
+        struct Error final : IError
+            {
+            private:
+                std::map<ECN::ECClassCP, std::vector<ECN::ECPropertyCP>> m_invalidProperties;
+
+                void _Log(IssueReporter const&) const override;
+
+            public:
+                Error() : IError(Type::NoPropertiesOfSameTypeAsClass) {}
+                ~Error() {}
+
+                void AddInvalidProperty(ECN::ECPropertyCR prop) { m_invalidProperties[&prop.GetClass()].push_back(&prop); }
+            };
+
+        bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
+
+    public:
+        NoPropertiesOfSameTypeAsClassRule() : IECSchemaValidationRule(Type::NoPropertiesOfSameTypeAsClass) {}
+        ~NoPropertiesOfSameTypeAsClassRule() {}
+    };
+
+
+
+
+
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      03/2017
+//+===============+===============+===============+===============+===============+======
+struct ValidPropertyNameRule final : IECSchemaValidationRule
+    {
+    private:
+        //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct Error final : IError
+            {
+            enum class Kind
+                {
+                SystemPropertyNamingCollision
+                };
+
+            private:
+                struct Inconsistency
+                    {
+                    ECN::ECPropertyCP m_prop = nullptr;
+                    Kind m_kind;
+
+                    Inconsistency(ECN::ECPropertyCR prop, Kind kind) : m_prop(&prop), m_kind(kind) {}
+                    };
+
+                std::map<ECN::ECClassCP, std::vector<Inconsistency>> m_inconsistencies;
+
+                void _Log(IssueReporter const&) const override;
+
+            public:
+                Error() : IError(Type::ValidPropertyName) {}
+                ~Error() {}
+
+                void AddInconsistency(ECN::ECPropertyCR prop, Kind kind) { m_inconsistencies[&prop.GetClass()].push_back(Inconsistency(prop, kind)); }
+            };
+
+        bool _ValidateClass(ECSchemaValidationResult&, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const override;
+
+    public:
+        ValidPropertyNameRule() : IECSchemaValidationRule(Type::ValidPropertyName) {}
+        ~ValidPropertyNameRule() {}
     };
 
 //=======================================================================================
@@ -278,5 +335,4 @@ struct ValidNavigationPropertyRule final : IECSchemaValidationRule
         ValidNavigationPropertyRule() : IECSchemaValidationRule(Type::ValidNavigationProperty) {}
         ~ValidNavigationPropertyRule() {}
     };
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

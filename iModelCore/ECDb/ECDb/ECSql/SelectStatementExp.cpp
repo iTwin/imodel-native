@@ -576,7 +576,7 @@ void OrderBySpecExp::AppendSortDirection(Utf8String& str, bool addLeadingBlank) 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassInfo::List const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext const& ctx, RangeClassInfo::List const& rangeClassRefs)
     {
     std::vector<DerivedPropertyExp const*> propertyNameExpList;
     for (Exp const* childExp : GetChildren())
@@ -591,7 +591,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassInfo::List c
         PropertyNameExp const& innerExp = propertyNameExp->GetExpression()->GetAs<PropertyNameExp>();
         if (Exp::IsAsteriskToken(innerExp.GetPropertyName()))
             {
-            if (SUCCESS != ReplaceAsteriskExpression(*propertyNameExp, rangeClassRefs))
+            if (SUCCESS != ReplaceAsteriskExpression(ctx, *propertyNameExp, rangeClassRefs))
                 return ERROR;
 
             continue;
@@ -611,7 +611,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassInfo::List c
                     {
                     RangeClassInfo::List classRefList;
                     classRefList.push_back(classRef);
-                    if (SUCCESS != ReplaceAsteriskExpression(*propertyNameExp, classRefList))
+                    if (SUCCESS != ReplaceAsteriskExpression(ctx, *propertyNameExp, classRefList))
                         return ERROR;
 
                     break;
@@ -626,7 +626,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(RangeClassInfo::List c
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const& rangeClassRefs)
+BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const& ctx, DerivedPropertyExp const& asteriskExp, RangeClassInfo::List const& rangeClassRefs)
     {
     std::vector<std::unique_ptr<Exp>> derivedPropExpList;
     auto addDelegate = [&derivedPropExpList] (std::unique_ptr<PropertyNameExp>& propNameExp)
@@ -635,7 +635,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(DerivedPropertyExp cons
         };
 
     for (RangeClassInfo const& classRef : rangeClassRefs)
-        classRef.GetExp().CreatePropertyNameExpList(addDelegate);
+        classRef.GetExp().CreatePropertyNameExpList(ctx, addDelegate);
 
     if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
         {
@@ -653,12 +653,11 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto finalizeParseArgs = ctx.GetFinalizeParseArg();
+        void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
         BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
         RangeClassInfo::List const* rangeClassRefList = static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
         BeAssert(rangeClassRefList != nullptr);
-        const auto stat = ReplaceAsteriskExpressions(*rangeClassRefList);
-        if (stat != SUCCESS)
+        if (SUCCESS != ReplaceAsteriskExpressions(ctx, *rangeClassRefList))
             {
             ctx.Issues().Report("Asterisk replacement in select clause failed unexpectedly.");
             return FinalizeParseStatus::Error;
@@ -823,12 +822,12 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8String
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(*this, selectClauseItemExp));
+        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(ctx, *this, selectClauseItemExp));
         addDelegate(propNameExp);
         }
 

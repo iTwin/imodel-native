@@ -191,11 +191,13 @@ BentleyStatus ECSqlParser::ParseSelection(unique_ptr<SelectClauseExp>& exp, OSQL
 
     if (SQL_ISRULE(parseNode, selection))
         {
-        auto n = parseNode->getChild(0);
+        OSQLParseNode const* n = parseNode->getChild(0);
         if (Exp::IsAsteriskToken(n->getTokenValue().c_str()))
             {
-            exp = unique_ptr<SelectClauseExp>(new SelectClauseExp());
-            exp->AddProperty(std::unique_ptr<DerivedPropertyExp>(new DerivedPropertyExp(unique_ptr<PropertyNameExp>(new PropertyNameExp(Exp::ASTERISK_TOKEN)), nullptr)));
+            PropertyPath pp;
+            pp.Push(Exp::ASTERISK_TOKEN);
+            exp = std::make_unique<SelectClauseExp>();
+            exp->AddProperty(std::make_unique<DerivedPropertyExp>(std::make_unique<PropertyNameExp>(std::move(pp)), nullptr));
             return SUCCESS;
             }
         }
@@ -395,9 +397,9 @@ BentleyStatus ECSqlParser::ParseColumn(unique_ptr<PropertyNameExp>& exp, OSQLPar
         return ERROR;
         }
 
+    BeAssert(!parseNode->getTokenValue().empty());
     PropertyPath propPath;
-    propPath.Push(parseNode->getTokenValue().c_str());
-
+    propPath.Push(parseNode->getTokenValue());
     exp = unique_ptr<PropertyNameExp>(new PropertyNameExp(move(propPath)));
     return SUCCESS;
     }
@@ -552,27 +554,23 @@ BentleyStatus ECSqlParser::ParsePropertyPath(std::unique_ptr<PropertyNameExp>& e
     PropertyPath propertyPath;
     for (size_t i = 0; i < parseNode->count(); i++)
         {
-        auto property_path_entry = parseNode->getChild(i);
-        auto first = property_path_entry->getFirst();
+        OSQLParseNode const* property_path_entry = parseNode->getChild(i);
+        OSQLParseNode const* first = property_path_entry->getFirst();
         Utf8StringCR tokenValue = first->getTokenValue();
         if (first->getNodeType() == SQL_NODE_NAME)
             {
-            auto opt_column_array_idx = property_path_entry->getChild(1);
+            OSQLParseNode const* opt_column_array_idx = property_path_entry->getChild(1);
             int arrayIndex = -1;
             if (opt_column_array_idx->getFirst() != nullptr)
                 {
                 arrayIndex = atoi(opt_column_array_idx->getFirst()->getTokenValue().c_str());
                 }
 
-            if (arrayIndex < 0)
-                propertyPath.Push(tokenValue.c_str());
-            else
-                propertyPath.Push(tokenValue.c_str(), (size_t) arrayIndex);
-
+            propertyPath.Push(tokenValue, arrayIndex);
             }
         else if (first->getNodeType() == SQL_NODE_PUNCTUATION)
             {
-            propertyPath.Push(tokenValue.c_str());
+            propertyPath.Push(tokenValue);
             }
         else
             {

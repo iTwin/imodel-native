@@ -1332,7 +1332,14 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml", false, "ECInstanceId is a system property"));
 
     testSchemas.push_back(SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECEntityClass typeName="Foo">
+                                <ECProperty propertyName="Id" typeName="string" />
+                              </ECEntityClass>
+                            </ECSchema>)xml", false, "Id is an alias for the ECInstanceId system property"));
+
+    testSchemas.push_back(SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                               <ECEntityClass typeName="A">
                                 <ECProperty propertyName="Name" typeName="string" />
                               </ECEntityClass>
@@ -1351,7 +1358,26 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml", false, "SourceECInstanceId is a system property and therefore a reserved name"));
 
     testSchemas.push_back(SchemaItem(R"xml(
-            <ECSchema schemaName="TestSchema" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECEntityClass typeName="A">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="B">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="Rel">
+                                    <Source cardinality="(0..*)" polymorphic="True">
+                                       <Class class="A" />
+                                    </Source>
+                                    <Target cardinality="(0..*)" polymorphic="True">
+                                       <Class class="B"/>
+                                     </Target>
+                                <ECProperty propertyName="SourceId" typeName="string" />
+                              </ECRelationshipClass>
+                            </ECSchema>)xml", false, "SourceId is an alias for the SourceECInstanceId system property and therefore a reserved name"));
+
+    testSchemas.push_back(SchemaItem(R"xml(
+            <ECSchema schemaName="TestSchema" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="A">
                 <ECProperty propertyName="Name" typeName="string" />
                 </ECEntityClass>
@@ -1369,35 +1395,32 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                 </ECRelationshipClass>
             </ECSchema>)xml", false, "TargetECInstanceId is a system property and therefore a reserved name"));
 
+    testSchemas.push_back(SchemaItem(R"xml(
+            <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="A">
+                <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel">
+                    <Source cardinality="(0..*)" polymorphic="True">
+                        <Class class="A" />
+                    </Source>
+                    <Target cardinality="(0..*)" polymorphic="True">
+                        <Class class="B"/>
+                        </Target>
+                <ECProperty propertyName="TargetId" typeName="string" />
+                </ECRelationshipClass>
+            </ECSchema>)xml", false, "TargetId is the alias for the TargetECInstanceId system property and therefore a reserved name"));
+
     AssertSchemaImport(testSchemas, "idnamecollisions.ecdb");
 
     {
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                              <ECEntityClass typeName="Foo">
-                                <ECProperty propertyName="Id" typeName="string" />
-                              </ECEntityClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("Id");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("Id1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
-    }
-
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                            <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Foo">
                                 <ECCustomAttributes>
@@ -1459,40 +1482,6 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
     ECDb ecdb;
     bool asserted = false;
     AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                           <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                              <ECEntityClass typeName="A">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECEntityClass typeName="B">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
-                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
-                                       <Class class="A" />
-                                    </Source>
-                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
-                                       <Class class="B"/>
-                                     </Target>
-                                <ECProperty propertyName="SourceId" typeName="string" />
-                              </ECRelationshipClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("SourceId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("SourceId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
-    }
-
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts7" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="A">
@@ -1529,40 +1518,6 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
     ASSERT_FALSE(colInfo[0].m_isVirtual);
     }
 
-
-    {
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, SchemaItem(R"xml(
-                           <ECSchema schemaName="TestSchema" alias="ts9" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                              <ECEntityClass typeName="A">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECEntityClass typeName="B">
-                                <ECProperty propertyName="Name" typeName="string" />
-                              </ECEntityClass>
-                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
-                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
-                                       <Class class="A" />
-                                    </Source>
-                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
-                                       <Class class="B"/>
-                                     </Target>
-                                <ECProperty propertyName="TargetId" typeName="string" />
-                              </ECRelationshipClass>
-                            </ECSchema>)xml"), "idnamecollisions.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
-    ASSERT_TRUE(testClass != nullptr);
-    ECPropertyCP idProp = testClass->GetPropertyP("TargetId");
-    ASSERT_TRUE(testClass != nullptr);
-    std::vector<ColumnInfo> colInfo;
-    TryGetColumnInfo(colInfo, ecdb, *idProp);
-    ASSERT_EQ(1, (int) colInfo.size());
-    ASSERT_STRCASEEQ("TargetId1", colInfo[0].m_columnName.c_str());
-    ASSERT_FALSE(colInfo[0].m_isVirtual);
-    }
 
     {
     ECDb ecdb;
@@ -2783,56 +2738,55 @@ TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns)
         "    <ECEntityClass typeName='D0' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D0_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D1' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D1_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D2' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D2_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D3' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D3_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D4' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D4_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D5' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D5_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D6' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D6_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D7' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D7_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D8' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D8_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='D9' modifier='None'>"
         "        <BaseClass>Element</BaseClass>"
         "        <ECProperty propertyName='D9_I' typeName='int'/>"
-        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "        <ECProperty propertyName='MyId' typeName='long'/>"
         "    </ECEntityClass>"
         "</ECSchema>"));
-
-    ecdb.SaveChanges();
+    ASSERT_TRUE(ecdb.IsDbOpen());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
@@ -4243,12 +4197,12 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     }
 
     /*----------------------------------------------------------------------------------------------------------------------------------
-    Existing table already contains column with appropriate name required by the relationship to map i.e ForeignECInstanceId_t_FooHasGoo
+    Existing table already contains column with appropriate name required by the relationship to map i.e FK_t_FooHasGoo
     ----------------------------------------------------------------------------------------------------------------------------------*/
     {
     SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb");
 
-    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignECInstanceId_t_FooHasGoo INTEGER");
+    GetECDb().CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, FK_t_FooHasGoo INTEGER");
     ASSERT_TRUE(GetECDb().TableExists("TestTable"));
     GetECDb().SaveChanges();
 
@@ -4460,7 +4414,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
             ASSERT_FALSE(asserted);
 
             Statement sqlstmt;
-            ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignECInstanceId_ts_FooHasGoo'"));
+            ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FK_ts_FooHasGoo'"));
             ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
             ASSERT_EQ(0, sqlstmt.GetValueInt(0));
             }
@@ -4503,7 +4457,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
             ASSERT_FALSE(asserted);
 
             Statement sqlstmt;
-            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignECInstanceId_ts_ParentHasChild'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='FK_ts_ParentHasChild'"));
             ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
             ASSERT_EQ(0, sqlstmt.GetValueInt(0));
             }
@@ -7481,10 +7435,10 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
             "    <ECEntityClass typeName='A' modifier='None'>"
-            "        <ECProperty propertyName='Id' typeName='long' />"
+            "        <ECProperty propertyName='MyId' typeName='long' />"
             "    </ECEntityClass>"
             "    <ECEntityClass typeName='B' modifier='None'>"
-            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
+            "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
             "           <ECCustomAttributes>"
             "            <PropertyMap xmlns='ECDbMap.02.00'>"
             "            </PropertyMap>"
@@ -7507,10 +7461,10 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
             "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "    <ECEntityClass typeName='A' modifier='None'>"
-            "        <ECProperty propertyName='Id' typeName='long' />"
+            "        <ECProperty propertyName='MyId' typeName='long' />"
             "    </ECEntityClass>"
             "    <ECEntityClass typeName='B' modifier='None'>"
-            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
+            "        <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward'>"
             "           <ECCustomAttributes>"
             "            <PropertyMap xmlns='ECDbMap.02.00'>"
             "               <IsNullable>false</IsNullable>"
@@ -8070,8 +8024,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             ASSERT_FALSE(asserted);
 
             AssertIndex(ecdb, "ix_ts1_B_fk_ts1_Rel_target", false, "ts1_B", {"AId"});
-            AssertIndex(ecdb, "uix_ts1_B_fk_ts1_Rel11_target", true, "ts1_B", {"ForeignECInstanceId_ts1_Rel11"});
-            AssertIndex(ecdb, "uix_ts1_A_fk_ts1_Rel11Backwards_source", true, "ts1_A", {"ForeignECInstanceId_ts1_Rel11Backwards"});
+            AssertIndex(ecdb, "uix_ts1_B_fk_ts1_Rel11_target", true, "ts1_B", {"FK_ts1_Rel11"});
+            AssertIndex(ecdb, "uix_ts1_A_fk_ts1_Rel11Backwards_source", true, "ts1_A", {"FK_ts1_Rel11Backwards"});
 
             AssertIndex(ecdb, "ix_ts1_RelNN_source", false, "ts1_RelNN", {"SourceId"});
             AssertIndex(ecdb, "ix_ts1_RelNN_target", false, "ts1_RelNN", {"TargetId"});
@@ -8118,7 +8072,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 bool asserted = false;
                 AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships2.ecdb");
                 ASSERT_FALSE(asserted);
-                AssertIndex(ecdb, "ix_ts2_B_fk_ts2_Rel_target", false, "ts2_B", {"ForeignECInstanceId_ts2_Rel"}, "([ForeignECInstanceId_ts2_Rel] IS NOT NULL)");
+                AssertIndex(ecdb, "ix_ts2_B_fk_ts2_Rel_target", false, "ts2_B", {"FK_ts2_Rel"}, "([FK_ts2_Rel] IS NOT NULL)");
                 }
 
                 {
@@ -8258,7 +8212,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-                AssertIndex(ecdb, "ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", {"ForeignECInstanceId_ts50_RelBase"}, "([ForeignECInstanceId_ts50_RelBase] IS NOT NULL)");
+                AssertIndex(ecdb, "ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", {"FK_ts50_RelBase"}, "([FK_ts50_RelBase] IS NOT NULL)");
                 AssertIndex(ecdb, "ix_ts50_B_RelECClassId_ts50_RelBase", false, "ts50_B", {"RelECClassId_ts50_RelBase"}, "([RelECClassId_ts50_RelBase] IS NOT NULL)");
                 AssertIndexExists(ecdb, "uix_ts50_B_fk_ts50_RelSub1_target", false);
                 }
@@ -8447,19 +8401,19 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "             </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='Id' typeName='long' />"
+                    "        <ECProperty propertyName='Code' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='B1' modifier='None'>"
                     "        <BaseClass>B</BaseClass>"
-                    "        <ECProperty propertyName='B1Id' typeName='long' />"
+                    "        <ECProperty propertyName='B1Code' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='B11' modifier='None'>"
                     "        <BaseClass>B1</BaseClass>"
-                    "        <ECProperty propertyName='B11Id' typeName='long' />"
+                    "        <ECProperty propertyName='B11Code' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='B2' modifier='None'>"
                     "        <BaseClass>B</BaseClass>"
-                    "        <ECProperty propertyName='B2Id' typeName='long' />"
+                    "        <ECProperty propertyName='B2Code' typeName='long' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='RelNonPoly' modifier='Sealed' strength='referencing'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
@@ -8491,13 +8445,13 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
                 Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts8_RelNonPoly] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
+                indexWhereClause.Sprintf("([FK_ts8_RelNonPoly] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
 
-                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelNonPoly_target", true, "ts8_B", {"ForeignECInstanceId_ts8_RelNonPoly"}, indexWhereClause.c_str());
+                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelNonPoly_target", true, "ts8_B", {"FK_ts8_RelNonPoly"}, indexWhereClause.c_str());
 
                 //RelPoly must include index on B11 as the constraint is polymorphic
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts8_RelPoly] IS NOT NULL) AND (ECClassId=%s OR ECClassId=%s)", b1ClassId.ToString().c_str(), b11ClassId.ToString().c_str());
-                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelPoly_target", true, "ts8_B", {"ForeignECInstanceId_ts8_RelPoly"}, indexWhereClause.c_str());
+                indexWhereClause.Sprintf("([FK_ts8_RelPoly] IS NOT NULL) AND (ECClassId=%s OR ECClassId=%s)", b1ClassId.ToString().c_str(), b11ClassId.ToString().c_str());
+                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelPoly_target", true, "ts8_B", {"FK_ts8_RelPoly"}, indexWhereClause.c_str());
                 }
 
                 {
@@ -8621,10 +8575,10 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel0N] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel1N] INTEGER NOT NULL,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN0] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN1] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_Rel0N] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_Rel1N] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_RelN0] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_RelN1] INTEGER NOT NULL,"));
     }
 
     {
@@ -8758,10 +8712,10 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel0N] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel1N] INTEGER NOT NULL,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN0] INTEGER,"));
-    ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_RelN1] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_Rel0N] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_Rel1N] INTEGER NOT NULL,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_RelN0] INTEGER,"));
+    ASSERT_TRUE(ddl.ContainsI("[FK_ts_RelN1] INTEGER NOT NULL,"));
     }
 
 
@@ -8970,8 +8924,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
     AssertSchemaImport(ecdb, asserted, testItem, "fkcolumnposition.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertForeignKey(true, ecdb, "ts_Base", "ForeignECInstanceId_ts_Rel");
-    assertColumnPosition(ecdb, "ts_Base", "ForeignECInstanceId_ts_Rel", -1, testItem.m_name.c_str());
+    AssertForeignKey(true, ecdb, "ts_Base", "FK_ts_Rel");
+    assertColumnPosition(ecdb, "ts_Base", "FK_ts_Rel", -1, testItem.m_name.c_str());
     }
 
 
@@ -9418,23 +9372,23 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
         AssertSchemaImport(ecdb, asserted, testSchema, "onetoonerelationshipmappings.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel11");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel11");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel10");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel10");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel01");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel01");
-        AssertForeignKey(true, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel00");
-        AssertForeignKey(false, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel00");
+        AssertForeignKey(true, ecdb, "ts_b", "FK_ts_Rel11");
+        AssertForeignKey(false, ecdb, "ts_a", "FK_ts_Rel11");
+        AssertForeignKey(true, ecdb, "ts_b", "FK_ts_Rel10");
+        AssertForeignKey(false, ecdb, "ts_a", "FK_ts_Rel10");
+        AssertForeignKey(true, ecdb, "ts_b", "FK_ts_Rel01");
+        AssertForeignKey(false, ecdb, "ts_a", "FK_ts_Rel01");
+        AssertForeignKey(true, ecdb, "ts_b", "FK_ts_Rel00");
+        AssertForeignKey(false, ecdb, "ts_a", "FK_ts_Rel00");
 
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel11back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel11back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel10back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel10back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel01back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel01back");
-        AssertForeignKey(false, ecdb, "ts_b", "ForeignECInstanceId_ts_Rel00back");
-        AssertForeignKey(true, ecdb, "ts_a", "ForeignECInstanceId_ts_Rel00back");
+        AssertForeignKey(false, ecdb, "ts_b", "FK_ts_Rel11back");
+        AssertForeignKey(true, ecdb, "ts_a", "FK_ts_Rel11back");
+        AssertForeignKey(false, ecdb, "ts_b", "FK_ts_Rel10back");
+        AssertForeignKey(true, ecdb, "ts_a", "FK_ts_Rel10back");
+        AssertForeignKey(false, ecdb, "ts_b", "FK_ts_Rel01back");
+        AssertForeignKey(true, ecdb, "ts_a", "FK_ts_Rel01back");
+        AssertForeignKey(false, ecdb, "ts_b", "FK_ts_Rel00back");
+        AssertForeignKey(true, ecdb, "ts_a", "FK_ts_Rel00back");
         }
     }
 
@@ -9654,7 +9608,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
     ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
     ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is no relationship map CA";
 
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "FK_", 3) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
     ASSERT_TRUE(it != columns.end()) << "ts_child table should contain a default-name extra foreign key column as there is no relationship map CA";
 
@@ -9698,7 +9652,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
     ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
     ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "FK_", 3) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
     ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
@@ -9738,11 +9692,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
     ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
     ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "FK_", 3) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
     ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-    AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ts_ParentHasChildren");
+    AssertForeignKey(true, ecdb, childTableName, "FK_ts_ParentHasChildren");
     }
 
     {
@@ -9788,11 +9742,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
     ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
     ASSERT_EQ(6, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "FK_", 3) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
     ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
 
-    AssertForeignKey(true, ecdb, childTableName, "ForeignECInstanceId_ts_ParentHasChildren");
+    AssertForeignKey(true, ecdb, childTableName, "FK_ts_ParentHasChildren");
     }
     }
 

@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+-
 //static member variable initialization
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_noSystemProperty;
-const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_ecinstanceid = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId);
+const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_ecinstanceId = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId);
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_ecclassid = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECClassId);
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_sourceECInstanceId = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId);
 const ECSqlSystemPropertyInfo ECSqlSystemPropertyInfo::s_sourceECClassId = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::SourceECClassId);
@@ -153,6 +153,33 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
         }
 
     return systemClass->GetPropertyP(propName);
+    }
+
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                03/2017
+//+---------------+---------------+---------------+---------------+---------------+-
+bool ECDbSystemSchemaHelper::IsSystemPropertyAlias(Utf8CP& sysPropName, Utf8StringCR propName) const
+    {
+    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_Id))
+        {
+        sysPropName = ECDBSYS_PROP_ECInstanceId;
+        return true;
+        }
+
+    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_SourceId))
+        {
+        sysPropName = ECDBSYS_PROP_SourceECInstanceId;
+        return true;
+        }
+
+    if (propName.EqualsIAscii(ECDBSYS_PROPALIAS_TargetId))
+        {
+        sysPropName = ECDBSYS_PROP_TargetECInstanceId;
+        return true;
+        }
+
+    return false;
     }
 
 //----------------------------------------------------------------------------------

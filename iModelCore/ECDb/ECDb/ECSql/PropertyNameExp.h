@@ -55,11 +55,10 @@ struct PropertyNameExp final : ValueExp
 
     public:
         explicit PropertyNameExp(PropertyPath&& propPath);
-        explicit PropertyNameExp(Utf8StringCR propertyName);
-        PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
-        PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
+        PropertyNameExp(ECSqlParseContext const&, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
+        PropertyNameExp(ECSqlParseContext const&, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
 
-        Utf8CP GetPropertyName() const;
+        Utf8CP GetPropertyName() const { return m_propertyPath[0].GetPropertyName(); }
 
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
         PropertyMap const& GetPropertyMap() const;

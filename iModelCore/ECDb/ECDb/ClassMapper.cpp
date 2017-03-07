@@ -39,22 +39,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
     RefCountedPtr<PropertyMap> propertyMap;
     if (m_classMap.GetPropertyMaps().Find(property.GetName().c_str()))
         {
-        if (property.GetName().EqualsIAscii(ECDBSYS_PROP_ECInstanceId) ||
-            property.GetName().EqualsIAscii(ECDBSYS_PROP_ECClassId) ||
-            property.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId) ||
-            property.GetName().EqualsIAscii(ECDBSYS_PROP_SourceECClassId) ||
-            property.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId) ||
-            property.GetName().EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
-            {
-            m_classMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter().Report(
-                "Failed to map ECClass '%s'. It defines the ECProperty '%s' which collides with the ECSQL system property of the same name.",
-                m_classMap.GetClass().GetFullName(), property.GetName().c_str());
-            }
-        else
-            {
-            BeAssert(false && "PropertyMap for a non-system property already exist. This should have been caught before");
-            }
-
+        BeAssert(false && "PropertyMap already exist. This should have been caught before");
         return nullptr;
         }
 

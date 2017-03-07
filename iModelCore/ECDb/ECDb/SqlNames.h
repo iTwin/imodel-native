@@ -27,9 +27,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define COL_SourceECClassId "SourceECClassId"
 #define COL_TargetECClassId "TargetECClassId"
 
-#define COL_DEFAULTNAME_ECInstanceId "Id"
-#define COL_DEFAULTNAME_SourceECInstanceId "SourceId"
-#define COL_DEFAULTNAME_TargetECInstanceId "TargetId"
+#define COL_DEFAULTNAME_Id "Id"
+#define COL_DEFAULTNAME_SourceId "SourceId"
+#define COL_DEFAULTNAME_TargetId "TargetId"
 
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf

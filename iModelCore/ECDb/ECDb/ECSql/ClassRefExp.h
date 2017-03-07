@@ -40,7 +40,7 @@ private:
 
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
-    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
+    virtual BentleyStatus _CreatePropertyNameExpList (ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
     //RangeClassRefExp (Type type) : RangeClassRefExp(type, true) {}
@@ -53,7 +53,7 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
-    BentleyStatus CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(addDelegate); }
+    BentleyStatus CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(ctx, addDelegate); }
     bool ContainProperty(Utf8CP propertyName) const { return _ContainProperty(propertyName); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
@@ -89,7 +89,7 @@ private:
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     bool _ContainProperty(Utf8CP propertyName) const override;
-    BentleyStatus _CreatePropertyNameExpList(std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
     Utf8String _ToECSql() const override;
     Utf8String _ToString () const override;
 

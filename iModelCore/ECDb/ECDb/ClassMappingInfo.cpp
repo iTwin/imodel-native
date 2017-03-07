@@ -79,7 +79,7 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
         m_mapsToVirtualTable = false;
 
     if (m_ecInstanceIdColumnName.empty())
-        m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_ECInstanceId);
+        m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_Id);
 
     return ClassMappingStatus::Success;
     }

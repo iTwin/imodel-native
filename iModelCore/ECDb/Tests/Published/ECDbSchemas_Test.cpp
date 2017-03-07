@@ -201,8 +201,8 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Breadth"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "Length"));
     //relation keys
-    EXPECT_TRUE(db.ColumnExists(tblAsset, "ForeignECInstanceId_stco_EmployeePhone"));
-    EXPECT_TRUE(db.ColumnExists(tblAsset, "ForeignECInstanceId_stco_EmployeeFurniture"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "FK_stco_EmployeePhone"));
+    EXPECT_TRUE(db.ColumnExists(tblAsset, "FK_stco_EmployeeFurniture"));
 
     EXPECT_TRUE(db.ColumnExists(tblAsset, "HasWarranty"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "IsCompanyProperty"));
@@ -238,7 +238,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "FullName"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeType"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeRecordKey"));
-    EXPECT_TRUE(db.ColumnExists(tblEmployee, "ForeignECInstanceId_stco_EmployeeCompany"));
+    EXPECT_TRUE(db.ColumnExists(tblEmployee, "FK_stco_EmployeeCompany"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "Certifications"));
 
     //========================[sc_Company]=======================================================
@@ -286,7 +286,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //struct/arrays mapped to table
     EXPECT_TRUE(db.ColumnExists(tblProject, "TeamMemberList"));  //int array
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblProject, "ForeignECInstanceId_stco_CompanyProject"));
+    EXPECT_TRUE(db.ColumnExists(tblProject, "FK_stco_CompanyProject"));
 
     //========================[sc_Building]======================================================
     Utf8CP tblBuilding = "sc_Building";
@@ -324,7 +324,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "FloorCode"));
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "RecordKey"));
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "ForeignECInstanceId_stco_BuildingFloorRelationship"));
+    EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "FK_stco_BuildingFloorRelationship"));
 
     //========================[sc_Cubicle]=================================================
     Utf8CP tblCubicle = "sc_Cubicle";
@@ -347,7 +347,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //array    
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OccupiedBy"));
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblCubicle, "ForeignECInstanceId_stco_FloorCubicle"));
+    EXPECT_TRUE(db.ColumnExists(tblCubicle, "FK_stco_FloorCubicle"));
 
     //========================AnglesStruct======================================================
     EXPECT_FALSE(db.TableExists("sc_AnglesStruct")) << "structs are not mapped to any tables";
@@ -403,8 +403,8 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //Local properties
     EXPECT_TRUE(db.ColumnExists(tblBar, "stringBar"));
     //Relations
-    EXPECT_TRUE(db.ColumnExists(tblBar, "ForeignECInstanceId_stco_Foo_has_Bars"));
-    EXPECT_TRUE(db.ColumnExists(tblBar, "ForeignECInstanceId_stco_Foo_has_Bars_hint"));
+    EXPECT_TRUE(db.ColumnExists(tblBar, "FK_stco_Foo_has_Bars"));
+    EXPECT_TRUE(db.ColumnExists(tblBar, "FK_stco_Foo_has_Bars_hint"));
 
     //========================[sc_Foo]===========================================================
     Utf8CP tblFoo = "sc_Foo";
@@ -476,7 +476,7 @@ TEST_F(ECDbSchemaTests, IntegrityCheck)
     ECDbCR ecdb = SetupECDb("IntegrityCheck.ecdb", BeFileName(L"IntegrityCheck.01.00.ecschema.xml"));
     Utf8String actualDdl = RetrieveDdl(ecdb, "ic_TargetBase");
     ASSERT_FALSE(actualDdl.empty());
-    ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [ForeignECInstanceId_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([ForeignECInstanceId_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([Id]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
+    ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [FK_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([FK_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([Id]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ TEST_F(ECDbSchemaTests, ImportSchemaWithRelationshipAgainstExistingTable)
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Id")) << "Existing column is expected to still be in the table after ImportECSchemas.";
     EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "ForeignECInstanceId_t_FooHasGoo")) << "ForeignECInstanceId_t_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FK_t_FooHasGoo")) << "FK_t_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
     EXPECT_TRUE(ecdb.TableExists("t_RelFooGoo")) << "Existence of Link table not as expected.";
     }
 
