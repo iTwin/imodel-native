@@ -5,14 +5,13 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#include "CesiumPublisher.h"
+#include <TilePublisher/CesiumPublisher.h>
 #include "CesiumConstants.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
-using namespace BentleyApi::Dgn::Render::Tile3d;
-using namespace BentleyApi::Dgn::Render::Tile3d::Cesium;
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16

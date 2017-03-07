@@ -576,10 +576,9 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherPrewire" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
-        <SubPart PartName="DgnPlatformLib" />
+    <Part Name="TilePublisherPublicAPI" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
         <Bindings>
-            <Files SubPartDirectory="TilePublisher/include/TilePublisher">Delivery/TilePublisher/TilePublisher.h</Files>
+            <PublicAPI Domain="TilePublisher" />
         </Bindings>
     </Part>
 
@@ -591,7 +590,7 @@
 
     <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
-        <SubPart PartName="TilePublisherPrewire" />
+        <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
