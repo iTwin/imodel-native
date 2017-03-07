@@ -2253,7 +2253,7 @@ friend struct SchemaXmlWriter;
 
 private:
     bool m_verify;
-    bool m_verified;
+    mutable bool m_verified;
     StrengthType m_strength;
     ECRelatedInstanceDirection m_strengthDirection;
     ECRelationshipConstraintP m_target;
@@ -2270,7 +2270,7 @@ private:
 
     bool ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
-    bool Verify(bool resolveIssues = false) const;
+    bool Verify(bool resolveIssues) const;
 
 protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2312,7 +2312,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus GetOrderedRelationshipPropertyName(Utf8String& propertyName, ECRelationshipEnd end) const;
 
     //! Returns true if successfully verifies the relationship, otherwise false.
-    ECOBJECTS_EXPORT bool Verify();
+    ECOBJECTS_EXPORT bool Verify() const;
     //! Returns true if the relationship is verified.
     ECOBJECTS_EXPORT bool GetIsVerified();
 

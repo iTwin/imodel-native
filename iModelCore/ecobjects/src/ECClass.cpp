@@ -3787,7 +3787,7 @@ bool ECRelationshipClass::GetIsVerified()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECRelationshipClass::Verify()
+bool ECRelationshipClass::Verify() const
     {
     m_verified = Verify(false);
     return m_verified;
