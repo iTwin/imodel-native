@@ -291,13 +291,6 @@ public:
     //! Gets the DgnViewId of the ViewDefinition of this view.
     DgnViewId GetViewId() const {return m_definition->GetViewId();}
 
-    //! Gets the background color in the DisplayStyle of this view.
-    ColorDef GetBackgroundColor() const {return m_definition->GetDisplayStyle().GetBackgroundColor();}
-
-    //! Change the background color in the DisplayStyle of this view.
-    //! @param[in] color The new background color
-    void SetBackgroundColor(ColorDef color) {m_definition->GetDisplayStyle().SetBackgroundColor(color);}
-
     //! Change whether a DgnCatetory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.

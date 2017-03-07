@@ -35,6 +35,7 @@ namespace ViewProperties
     static constexpr Utf8CP str_CategorySelector() {return "CategorySelector";}
     static constexpr Utf8CP str_DisplayStyle() {return "DisplayStyle";}
     static constexpr Utf8CP str_BackgroundColor(){return "backgroundColor";}
+    static constexpr Utf8CP str_MonochromeColor(){return "monochromeColor";}
     static constexpr Utf8CP str_ViewFlags() {return "viewflags";}
     static constexpr Utf8CP str_SubCategory() {return "SubCategory";}
     static constexpr Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
@@ -58,6 +59,14 @@ namespace ViewProperties
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
     static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
+    static constexpr Utf8CP str_OvrEdgeColor() {return "ovrEdgeColor";}
+    static constexpr Utf8CP str_OvrElementColor() {return "ovrElemColor";}
+    static constexpr Utf8CP str_Pattern() {return "pattern";}
+    static constexpr Utf8CP str_VisEdgeWidth() {return "visEdgeWidth";}
+    static constexpr Utf8CP str_HiddenEdgeWidth() {return "hiddenEdgeWidth";}
+    static constexpr Utf8CP str_EdgeColor() {return "edgeColor";}
+    static constexpr Utf8CP str_ElementColor() {return "elemColor";}
+    static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
 };
 
 using namespace ViewProperties;
@@ -309,8 +318,7 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DrawingViewDefinition::GetAspectRatioSkew() const
     {
-    auto& val = GetDetail(str_AspectSkew());
-    return val.isNull() ? 1.0 : val.asDouble();
+    return GetDetail(str_AspectSkew()).asDouble(1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -978,6 +986,45 @@ DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::HiddenLineParams::ToJson() const
+    {
+    HiddenLineParams defaults;
+    Json::Value val;
+    if (!m_overrideEdgeColor) val[Json::StaticString(str_OvrEdgeColor())] = true;
+    if (!m_overrideElementColor) val[Json::StaticString(str_OvrElementColor())] = true;
+    if (m_pattern!=defaults.m_pattern) val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
+    if (m_visibleEdgeWidth!=defaults.m_visibleEdgeWidth) val[Json::StaticString(str_VisEdgeWidth())] = m_visibleEdgeWidth;
+    if (m_hiddenEdgeWidth!=defaults.m_hiddenEdgeWidth) val[Json::StaticString(str_HiddenEdgeWidth())] = m_hiddenEdgeWidth;
+    if (m_edgeColor != defaults.m_edgeColor) val[Json::StaticString(str_EdgeColor())] = m_edgeColor.GetValue();
+    if (m_elementColor != defaults.m_elementColor) val[Json::StaticString(str_ElementColor())] = m_elementColor.GetValue();
+    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
+    {
+    HiddenLineParams params;
+
+    if (!val.isNull())
+        {
+        params.m_overrideEdgeColor = val[str_OvrEdgeColor()].asBool(false);
+        params.m_overrideElementColor = val[str_OvrElementColor()].asBool(false);
+        params.m_pattern = val[str_Pattern()].asUInt(params.m_pattern);
+        params.m_visibleEdgeWidth =  val[str_VisEdgeWidth()].asUInt(params.m_visibleEdgeWidth);
+        params.m_hiddenEdgeWidth =  val[str_HiddenEdgeWidth()].asUInt(params.m_hiddenEdgeWidth);
+        params.m_edgeColor = ColorDef(val[str_EdgeColor()].asUInt(params.m_edgeColor.GetValue()));
+        params.m_elementColor = ColorDef(val[str_ElementColor()].asUInt(params.m_elementColor.GetValue()));
+        params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
+        }
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
@@ -1100,9 +1147,6 @@ void DisplayStyle::_OnSaveJsonProperties()
             }
         SetStyle(str_SubCategoryOverrides(), ovrJson);
         }
-
-    if (ColorDef::Black() == GetBackgroundColor())
-        RemoveStyle(str_BackgroundColor());    // black is the default
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1110,8 +1154,7 @@ void DisplayStyle::_OnSaveJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DisplayStyle::GetBackgroundColor() const
     {
-    JsonValueCR val = GetStyle(str_BackgroundColor());
-    return val.isNull() ? ColorDef::Black() : ColorDef(val.asUInt());
+    return ColorDef(GetStyle(str_BackgroundColor()).asUInt(ColorDef::Black().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1119,7 +1162,29 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    if (ColorDef::Black() == val)
+        RemoveStyle(str_BackgroundColor());    // black is the default
+    else
+        SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DisplayStyle::GetMonochromeColor() const
+    {
+    return ColorDef(GetStyle(str_MonochromeColor()).asUInt(ColorDef::White().GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::SetMonochromeColor(ColorDef val)
+    {
+    if (ColorDef::White() == val)
+        RemoveStyle(str_MonochromeColor());    // white is the default
+    else
+        SetStyle(str_MonochromeColor(), Json::Value(val.GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**

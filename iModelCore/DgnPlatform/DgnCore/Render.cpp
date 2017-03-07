@@ -307,16 +307,24 @@ uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Plan::Plan(DgnViewportCR vp)
     {
-    m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
     m_frustum   = vp.GetFrustum();
-    m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    auto spatial = vp.GetSpatialViewControllerCP();
-    if (nullptr != spatial)
-        m_activeVolume = spatial->GetActiveVolume();
+
+    auto& controller = vp.GetViewController();
+    m_activeVolume = controller.GetActiveVolume();
+
+    auto& def = controller.GetViewDefinition();
+    auto& style = def.GetDisplayStyle();
+    m_bgColor   = style.GetBackgroundColor();
+    m_monoColor = style.GetMonochromeColor();
+    m_viewFlags = style.GetViewFlags();
+
+    auto def3d = def.ToView3dP();
+    if (def3d)
+        m_hline = def3d->GetDisplayStyle3d().GetHiddenLineParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
