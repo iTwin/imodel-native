@@ -153,12 +153,7 @@ Geometry::Geometry(TriMeshArgs const& args, SceneR scene)
     if (nullptr == scene.GetRenderSystem() || !args.m_texture.IsValid())
         return;
 
-    GraphicParams gfParams;
-    gfParams.SetLineColor(ColorDef::White());
-    gfParams.SetFillColor(ColorDef::White());
-    gfParams.SetWidth(0);
-    gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
-
+    GraphicParams gfParams = GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0, GraphicParams::LinePixels::Solid);
     m_graphic = scene.GetRenderSystem()->_CreateTriMesh(args, scene.GetDgnDb(), gfParams);
     }
 

@@ -472,11 +472,9 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     textureParams.SetIsTileSection();
     auto texture = m_tile->GetRoot().GetRenderSystem()->_CreateTexture(image, textureParams);
 
-    auto graphic = m_tile->GetRoot().GetRenderSystem()->_CreateGraphic(Render::GraphicBuilder::CreateParams(m_tile->GetRoot().GetDgnDb()));
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
-    graphic->AddTile(*texture, rasterTile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
-
-    rasterTile.m_graphic = graphic->Finish();
+    auto const& root = m_tile->GetRoot();
+    auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
+    rasterTile.m_graphic = root.GetRenderSystem()->_CreateTile(*texture, rasterTile.m_corners, root.GetDgnDb(), gfParams);
     BeAssert(rasterTile.m_graphic.IsValid());
 
     rasterTile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
