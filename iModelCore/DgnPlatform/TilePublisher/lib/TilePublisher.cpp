@@ -1737,9 +1737,7 @@ PolylineMaterial TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& 
     PolylineMaterial mat = AddPolylineMaterial(tileData, mesh, suffix, doBatchIds);
     BeAssert(mat.IsTesselated());
 
-    constexpr double s_minLineWidth = 1.0;
-
-    double halfWidthPixels = 40.0; // std::max(s_minLineWidth, static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
+    double halfWidthPixels = (1.0  + static_cast<double>(mesh.GetDisplayParams().GetRasterWidth())) / 2.0;
 
     Json::Value& matValues = tileData.m_json["materials"][mat.GetName()]["values"];
     matValues["width"] = halfWidthPixels;
@@ -2375,15 +2373,15 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                       basePoint ? prevPoint0 : prevPoint1,
                                       basePoint ? nextPoint0 : nextPoint1,
                                       DVec3d::From(basePoint ? length0 : length1, deltaYs[j], basePoint ? 0.0 : 4.0),
-                                      basePoint ? colors0 : colors1,
-                                      basePoint ? attributes0 : attributes1);
+                                      basePoint ? attributes0 : attributes1,
+                                      basePoint ? colors0 : colors1);
                 }
             
             if (!isStart)
-                tesselation.AddJointTriangles(baseIndex, length0, p0, prevPoint0, nextPoint0, colors0, attributes0, 1.0);
+                tesselation.AddJointTriangles(baseIndex, length0, p0, prevPoint0, nextPoint0, attributes0, colors0, 1.0);
 
             if (!isEnd)
-                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevPoint1, nextPoint1, colors1, attributes1, 5.0);
+                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevPoint1, nextPoint1, attributes1, colors1, 5.0);
             }
         }
 

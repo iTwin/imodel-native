@@ -368,7 +368,7 @@ static std::string s_simplePolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
-
+                                                                                                                                                                                      
     void main(void)
         {
         vec4 modelPos = vec4(a_pos, 1.0);
