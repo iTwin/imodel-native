@@ -10,10 +10,9 @@
 #ifndef _ZIPVFS_H
 #define _ZIPVFS_H
 
-#ifndef _SQLITE3_H_
-#include <sqlite3.h>
+#ifndef SQLITE_AMALGAMATION
+# include "sqlite3.h"
 #endif
-
 
 #ifdef __cplusplus
 BEGIN_BENTLEY_SQLITE_NAMESPACE 
@@ -23,141 +22,73 @@ extern "C" {
 typedef struct ZipvfsMethods ZipvfsMethods;
 
 /*
-** CAPI: Create a New Zipvfs VFS - zipvfs_create_vfs()
+** CAPI: Legacy Procedures to Create a New Zipvfs VFS
 **
-** These functions create a new zipvfs VFS and register it with SQLite. 
-** The zipvfs_create_vfs_v3() interface is recommended for all new
-** applications.  The zipvfs_create_vfs() and zipvfs_create_vfs_v2()
-** interfaces are retained for backwards compatibility but their use
-** is discouraged.
-**
-** The name of the new VFS is as specified by parameter zName.
-** The new VFS accesses the file system using the existing VFS named
-** by parameter zParent.
-**
-** The third argument to this function, pCtx, is a context pointer for the
-** callback functions specified by the fourth, fifth and sixth arguments.
-** Each time one of the callback functions is invoked, a copy of pCtx is
-** passed to it as the first argument.
-**
-** The fourth, fifth and sixth arguments to this function - xCompressBound,
-** xCompress and xUncompress, respectively - must be passed pointers to 
-** functions that implement the compression/decompression operations used
-** to compress and decompress database pages. Specifically:
-**
-**   xCompressBound:
-**     This function should return the maximum possible size in bytes of the 
-**     output produced by compressing a buffer of N bytes using the xCompress() 
-**     method, where N is the value of the second argument passed to this 
-**     callback.
-**
-**   xCompress:
-**     This function is used to compress a page. The input data is stored
-**     in the buffer described by the 4th and 5th arguments (aSrc and nSrc)
-**     passed to this function. Output is written to the buffer pointed to by 
-**     the second argument passed to this function (aDest). When this function
-**     is called, the third argument (pnDest) points to a value of type int
-**     containing the size of the output buffer. Before returning, this
-**     callback should set *pnDest to the number of bytes written to the output
-**     buffer - the size of the compressed data.
-**     
-**   xUncompress:
-**     This function is used to uncompress a page previously compressed using
-**     xCompress. The compressed page image is passed to the function via
-**     the 4th and 5th arguments (aSrc and nSrc). The uncompressed output
-**     should be written by this callback to the buffer pointed to by the
-**     second argument (aDest). When this function is called, the third 
-**     argument (pnDest) points to a value of type int containing the size
-**     of the output buffer. Before returning, this callback should set 
-**     *pnDest to the number of bytes written to the output buffer - the 
-**     size of the uncompressed data.
-**
-** If VFS zParent does not exist, then this function returns SQLITE_ERROR and
-** no new zipvfs VFS is created or registered. If an out-of-memory error is
-** encountered while allocating space for the new VFS, SQLITE_NOMEM is 
-** returned (and no new zipvfs VFS created or registered). Otherwise, SQLITE_OK
-** is returned and the new VFS is both created and registered.
-**
-** The new VFS is not registered as the default. To make it the default, first
-** create the VFS using this function. Then use code similar to the following
-** to re-register the VFS, this time as the default:
-**
-**    sqlite3_vfs_register(sqlite3_vfs_find(zName), 1);
-**
-** The zipvfs_create_vfs_v2() interface works like zipvfs_create_vfs() while
-** providing two additional callback functions:
-**
-**   xCompressOpen:
-**     This routine is called once when a ZIPVFS database file is opened.
-**     The first parameter is a copy of the context pointer, pCtx, that was
-**     given as the 3rd parameter to zipvfs_create_vfs_v2(). The
-**     second argument is the name of the database file being opened.
-**     If URI filenames are being used, the second argument can be used
-**     with the sqlite3_uri_parameter() interface to extract additional
-**     URI parameters. This feature might be used, for example, to pass
-**     the password for encrypting or decrypting the database file to a set
-**     of compression routines that also implement encryption. A new pCtx 
-**     pointer is returned via the 3rd argument. The new pCtx pointer becomes 
-**     the first parameter to the xCompressBound, xCompress, xUncompress 
-**     and xCompressClose methods in place of the pCtx pointer supplied 
-**     directly to zipvfs_create_vfs_v2().
-**
-**   xCompressClose:
-**     This routine is called when a ZIPVFS database connection is closed.
-**     It provides an opportunity to deallocate resources allocated by
-**     xCompressOpen.  
-**
-** If the xCompressOpen and xCompressClose parameters are NULL then the
-** zipvfs_create_vfs_v2() interface works exactly like
-** zipvfs_create_vfs().
-**
-** The zipvfs_create_vfs_v3() method is a slightly different alternative to
-** the previous two create_vfs methods. In this case, instead of supplying
-** callbacks directly, the user supplies a factory method - xAutoDetect. The
-** first time each file opened with the created VFS is read, the xAutoDetect
-** callback is invoked. The fourth argument passed to the xAutoDetect callback
-** is a pointer to a structure of type ZipvfsMethods. Initially, all fields
-** of this structure are set to zero. If the xAutoDetect method leaves them
-** this way, SQLite attempts to open the database file as an ordinary, 
-** uncompressed database. Or, the xAutoDetect implementation may populate 
-** the fields of the ZipvfsMethods structure with pointers to the methods
-** that will be used to compress and uncompress the database.
-** 
-** If no error occurs, the xAutoDetect implementation should return SQLITE_OK.
-** Otherwise, it may return any SQLite error code and the error will be
-** propagated back to the user.
-**
-** The first argument passed to the xAutoDetect invocation is a copy of the 3rd
-** argument passed to zipvfs_create_vfs3(). The second argument is passed a
-** pointer to a buffer containing the database file name. This is a copy
-** of the pointer passed to the created VFS's xOpen method, and so the
-** sqlite3_uri_parameter() function may be used with it to extract any URI
-** parameters specified by the SQLite user. If a new database is being 
-** created, the third argument to xAutoDetect is passed a NULL. Otherwise, it
-** is passed a pointer to a buffer containing a copy of the 13 byte database 
-** header string identifying the compression algorithm used by the database.
-** The implementation of xAutoDetect should interpret this string and provide
-** compatible compression routines via the ZipvfsMethods output structure
-** (see below).
+** New Zipvfs VFSes should be created using zipvfs_create_vfs_v3().
+** The interfaces described here are legacy and are retained for
+** backwards compatibility only.
 */
 int zipvfs_create_vfs(
   char const *zName,
   char const *zParent,
   void *pCtx,
-  int (*xCompressBound)(void *, int nSrc),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc)
+  int (*xCompressBound)(void*, int nSrc),
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest, const char *aSrc,int nSrc)
 );
 int zipvfs_create_vfs_v2(
   char const *zName,
   char const *zParent,
   void *pCtx,
   int (*xCompressBound)(void *, int nSrc),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest,const char *aSrc,int nSrc),
   int (*xCompressOpen)(void*, const char*, void**),
   int (*xCompressClose)(void*)
 );
+
+/*
+** CAPI: Create a new Zipvfs VFS
+**
+** This interface creates a new Zipvfs VFS.
+**
+** The name of the new VFS is as specified by parameter zName.
+** The new VFS accesses the file system using an existing VFS named
+** by parameter zParent.
+**
+** The third argument to this function, pCtx, is a context pointer passed
+** through into callback functions
+**
+** The fourth argument is this interface is the xAutoDetect callback
+** function.  The xAutoDetect callback is invoked whenever a new file is
+** opened by the Zipvfs VFS.  The fourth argument to the xAutoDetect callback
+** is a pointer to a ZipvfsMethods objects.  Initially, most fields
+** of the ZipvfsMethods object are zero. If the xAutoDetect callback may
+** leave the ZipvfsMethods object unchanged, in which case the database
+** file is opened as if it were a normal uncompressed database. (This is
+** called "pass-through" mode.)  Or, the xAutoDetect implementation may
+** populate the ZipvfsMethods structure with pointers to the methods
+** that will be used to compress and uncompress pages of the database
+** file.
+** 
+** If no error occurs, the xAutoDetect implementation should return SQLITE_OK.
+** Otherwise, it may return any SQLite error code and the error will be
+** propagated back to the user.
+**
+** The first argument passed to the xAutoDetect invocation is a copy of the
+** context pointer, pCtx, passed to zipvfs_create_vfs3_v3().
+** The second argument is passed a pointer to a buffer containing the
+** database file name.  The second argument to xAutoDetect is a copy
+** of the pointer passed to the created VFS's xOpen method, and so the
+** sqlite3_uri_parameter() function may be used with it to extract any URI
+** parameters specified by the SQLite user. If a new database is being 
+** created, the third argument to xAutoDetect is NULL. Otherwise, the
+** third argument to xAutoDetect is a buffer containing a copy of the 13
+** byte database header string identifying the compression algorithm used
+** by the database. The implementation of xAutoDetect should interpret
+** this string and provide compatible compression routines by filling in
+** appropriate fields of the ZipvfsMethods object.
+*/
 int zipvfs_create_vfs_v3(
   char const *zName,
   char const *zParent,
@@ -166,22 +97,44 @@ int zipvfs_create_vfs_v3(
 );
 
 /*
-** CAPI: Container for Callback Pointers - struct ZipvfsMethods
+** CAPI: Container for Zipvfs Callback Pointers
 **
-** A pointer to an instance of this structure is passed to the xAutoDetect
-** factory method invoked by Zipvfs VFS's created using 
-** zipvfs_create_vfs_v3(). Initially, the fields of the structure are zero.
-** If they are not modified by the xAutoDetect implementation SQLite treats
-** the database file as an ordinary, uncompressed database. Or, the xAutoDetect
-** may populate the fields of this structure to specify the compression
-** methods to be used with the database.
-** populates the various fields
-** The implementation of xAutoDetect is responsible for populating all 
-** fields of the structure before returning.
+** An instance of the ZipvfsMethods object describes the compression
+** procedures used to read and writes a Zipvfs database file.
 **
-** The pCtx, xCompressBound, xCompress, xUncompress and xCompressClose 
-** fields are all identical to the correspondingly named arguments to the
-** zipvfs_create_vfs_v2() function.
+** A pointer to an instance of this object is passed to the xAutoDetect
+** callback whenever a new database file is first opened.  The method
+** callback pointers are initially all zero.  The job of the xAutoDetect
+** callback is to fill in the ZipvfsMethods method pointer with routines
+** appropriate for doing compression and decompression of individual pages
+** on the database file being opened.
+**
+** The xAutoDetect callback must populate all of the following method pointers:
+**
+**   xCompressBound(X,N):
+**     The xCompressBound(X,N) function returns the maximum possible size 
+**     (in bytes) of the output produced by compressing a buffer containing
+**     N bytes of data.  The value returned by xCompressBound(X,N) must be
+**     the worst-case compression.  One expects that the actually length of
+**     the compressed buffer will usually be shorter.  The xCompressBound(X,N)
+**     method is used by Zipvfs to allocate a buffer sufficient to hold the
+**     results of compression.
+**
+**   xCompress(X,D,M,S,N):
+**     The xCompress(X,D,M,S,N) method compresses a single page of content.
+**     The input content is N bytes at S.  Output must be written into a
+**     buffer D.  (The size of D will be at least xCompressBound(X,N) bytes.)
+**     M must be filled with the number of bytes in D after compression.
+**     
+**   xUncompress(X,D,M,S,N):
+**     The xUncompress(X,D,M,S,N) method uncompressions N bytes of content
+**     from the S buffer and writes the result into buffer D.  M is filled
+**     with the number of bytes in D after decompression.
+**
+**   xCompressClose(X):
+**     The xCompressClose(X) method is called when the ZIPVFS database
+**     connection is closed.  The xCompressClose(X) method is responsible
+**     for freeing any resources (ex: memory) held by the ZIPVFS instance.
 **
 ** The zHdr field should be set to point to a nul-terminated string. If the
 ** string is longer than 13 bytes, not including the nul-terminator, it is
@@ -192,14 +145,20 @@ int zipvfs_create_vfs_v3(
 ** first 13 bytes of the string that zHdr points to should identify the
 ** compression functions that the other fields are set to, so that future
 ** invocations of xAutoDetect can supply Zipvfs with compatible functions.
+**
+** The zAuxHdr field, if not NULL, is a zero-terminated string that is
+** appended after the zero-terminator on zHdr, assuming there is space.
+** The total number of bytes consumed by zHdr, the zero terminator on zHdr,
+** and zAuxHdr may not exceed 13 bytes.  Any excess is silently truncated.
 */
 struct ZipvfsMethods {
   const char *zHdr;
   void *pCtx;
   int (*xCompressBound)(void *, int nSrc);
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc);
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc);
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc);
+  int (*xUncompress)(void*, char *aDest, int *pnDest,const char *aSrc,int nSrc);
   int (*xCompressClose)(void*);
+  const char *zAuxHdr;  /* Extra header information */
 };
 
 /*
@@ -319,8 +278,46 @@ const char *zipvfs_errmsg(int rc);
 **   is encountered while attempting to read the database file, an error
 **   code is returned and the final values of the structure fields are 
 **   undefined.
+**
+** ZIPVFS_CTRL_FILE_POINTER:
+**   Return the underlying sqlite3_file pointer.  This works in either
+**   a normal ZIPVFS or in pass-through mode.
+**
+** ZIPVFS_CTRL_CACHE_USED:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of bytes of memory used by the underlying 
+**   zipvfs pager (the same value as is returned by DBSTATUS_CACHE_USED
+**   for a top level pager). 
+**
+** ZIPVFS_CTRL_CACHE_HIT:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of cache hits that have occurred since the
+**   counter was reset (the same value as is returned by DBSTATUS_CACHE_HITS
+**   for a top level pager). If the value of the output integer is initially
+**   non-zero, the counter is reset before returning.
+**
+** ZIPVFS_CTRL_CACHE_MISS:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except for DBSTATUS_CACHE_MISS.
+**
+** ZIPVFS_CTRL_CACHE_WRITE:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except for DBSTATUS_CACHE_WRITE.
+**
+** ZIPVFS_CTRL_DIRECT_READ:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of read operations performed by zipvfs directly
+**   on the underlying database file (bypassing the zipvfs pager). If the 
+**   value of the output integer is initially non-zero, the counter is 
+**   reset before returning.
+**
+** ZIPVFS_CTRL_DIRECT_BYTES:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except the output value is the total
+**   number of bytes read directly, not the number of xRead calls.
 */
 #define ZIPVFS_CTRL_COMPACT          230437
+#define ZIPVFS_CTRL_FILE_POINTER     230439
 #define ZIPVFS_CTRL_OFFSET_AND_SIZE  230440
 #define ZIPVFS_CTRL_MAXFREE          230441
 #define ZIPVFS_CTRL_MAXFRAG          230442
@@ -328,6 +325,13 @@ const char *zipvfs_errmsg(int rc);
 #define ZIPVFS_CTRL_INTEGRITY_CHECK  230444
 #define ZIPVFS_CTRL_LOCKING_MODE     230445
 #define ZIPVFS_CTRL_STAT             230446
+
+#define ZIPVFS_CTRL_CACHE_USED       231454      /* Like DBSTATUS_CACHE_USED */
+#define ZIPVFS_CTRL_CACHE_HIT        231455      /* Like DBSTATUS_CACHE_HIT */
+#define ZIPVFS_CTRL_CACHE_MISS       231456      /* Like DBSTATUS_CACHE_MISS */
+#define ZIPVFS_CTRL_CACHE_WRITE      231457      /* Like DBSTATUS_CACHE_WRITE */
+#define ZIPVFS_CTRL_DIRECT_READ      231458
+#define ZIPVFS_CTRL_DIRECT_BYTES     231459
 
 /*
 ** CAPI: File Space Usage Report - struct ZipvfsStat
@@ -419,7 +423,6 @@ struct ZipvfsStat {
 #define ZIPVFS_CTRL_WRITE_HOOK        230449
 #define ZIPVFS_CTRL_APPEND_FREESLOT   230450
 #define ZIPVFS_CTRL_REMOVE_FREESLOT   230451
-#define ZIPVFS_CTRL_CREATE_VERSION_0  230453
 
 /*
 ** These are only available if compiled with SQLITE_DEBUG
@@ -482,4 +485,3 @@ struct ZipvfsWriteCb {
 END_BENTLEY_SQLITE_NAMESPACE 
 #endif
 #endif
-

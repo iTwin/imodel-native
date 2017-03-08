@@ -2,10 +2,13 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
+
+#define SQLITE_ENABLE_SESSION 1
+#define SQLITE_ENABLE_PREUPDATE_HOOK 1
 
 #include <BeSQLite/BeSQLite.h>
 #include "SQLite/sqlite3.h"
@@ -4997,14 +5000,14 @@ DbResult RTreeMatch::StepRTree(Statement& stmt)
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
 static int zfsZlibBound(void *pCtx, int nByte){return compressBound(nByte);}
-static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsZlibCompress(void *pCtx, char *aDest, int *pnDest, char const*aSrc, int nSrc)
     {
     uLongf n = *pnDest;
     int rc = compress((Bytef*)aDest, &n, (Bytef*)aSrc, nSrc);
     *pnDest = n;
     return (rc==Z_OK ? SQLITE_OK : SQLITE_ERROR);
     }
-static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsZlibUncompress(void *pCtx, char *aDest, int *pnDest, char const*aSrc, int nSrc)
     {
     uLongf n = *pnDest;
     int rc = uncompress((Bytef*)aDest, &n, (Bytef*)aSrc, nSrc);
@@ -5028,13 +5031,13 @@ static Utf8CP loadZlibVfs()
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
 static int zfsSnappyBound(void *pCtx, int nByte){return (int) snappy::MaxCompressedLength(nByte);}
-static int zfsSnappyCompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsSnappyCompress(void *pCtx, char *aDest, int *pnDest, char const*aSrc, int nSrc)
     {
     snappy::RawCompress (aSrc, nSrc, aDest, (unsigned int*) pnDest);
     return SQLITE_OK;
     }
 
-static int zfsSnappyUncompress(void *pCtx, char *aDest, int *pnDest, char *aSrc, int nSrc)
+static int zfsSnappyUncompress(void *pCtx, char *aDest, int *pnDest, char const*aSrc, int nSrc)
     {
     size_t outSize;
     snappy::GetUncompressedLength(aSrc, nSrc, &outSize);
