@@ -13720,10 +13720,12 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
             <ECProperty propertyName="Child_Prop" typeName="long" />
         </ECEntityClass>
         <ECEntityClass typeName="ChildB" >
+            <BaseClass>ChildA</BaseClass>
             <BaseClass>MxA</BaseClass>
             <ECProperty propertyName="Child_Prop" typeName="long" />
         </ECEntityClass>
         <ECEntityClass typeName="ChildC" >
+            <BaseClass>ChildB</BaseClass>
             <BaseClass>MxB</BaseClass>
             <ECProperty propertyName="Child_Prop" typeName="long" />
         </ECEntityClass>
