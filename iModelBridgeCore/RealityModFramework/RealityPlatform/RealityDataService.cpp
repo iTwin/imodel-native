@@ -297,7 +297,7 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
 {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -314,7 +314,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload(); 
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -331,7 +331,7 @@ void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestString
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -349,7 +349,7 @@ void RealityDataFolderByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -366,7 +366,7 @@ void RealityDataDocumentByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -388,7 +388,7 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
+RequestStatus RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
     if(m_handshakeRequest == nullptr)
         {
@@ -399,10 +399,15 @@ void RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() cons
         m_handshakeRequest = new AzureHandshake(root, false);
         }
 
-    RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
-    if (m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
+    RequestStatus status = RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
+
+    if (status != RequestStatus::ERROR && m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
+        {
         m_allowAzureRedirection = true;
-           
+        return status;
+        }
+    else
+        return RequestStatus::ERROR;
     }
 
 /*void RealityDataDocumentContentByIdRequest::SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl)
@@ -684,7 +689,7 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
 
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -801,7 +806,7 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -845,7 +850,7 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -888,7 +893,6 @@ AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("
 //=====================================================================================
 void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
     {
-    //GetAzureRedirectionRequestUrl();
     m_httpRequestString = m_azureServer;
     m_httpRequestString.append("?");
     m_httpRequestString.append(m_azureToken);
@@ -925,7 +929,7 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -1078,7 +1082,7 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     //https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/RealityData/cc5421e5-a80e-469f-a459-8c76da351fe5/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true 
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/");
+    m_httpRequestString.append("/v");
     m_httpRequestString.append(RealityDataService::GetWSGProtocol());
     m_httpRequestString.append("/Repositories/");
     m_httpRequestString.append(RealityDataService::GetRepoName());
@@ -1811,7 +1815,8 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
 bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& request, RequestStatus& status)
     {
     bvector<Utf8String> documents = bvector<Utf8String>();
-    request.GetAzureRedirectionRequestUrl();
+    if(request.GetAzureRedirectionRequestUrl() == RequestStatus::ERROR)
+        return documents;
     int64_t timer = request.GetTokenTimer();
 
     bool nextMarker;
