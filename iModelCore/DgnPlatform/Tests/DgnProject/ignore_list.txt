@@ -31,13 +31,5 @@ DgnECNavigatorTest.GetElementInfo
 #TFS 665028
 GetSetCustomHandledProprty.Annotation
 
-
-#TFS 666963
-GetSetCustomHandledProprty.GeometryPart
-
-#TFS 667456
-GetSetCustomHandledProprty.Viewdefinition2d
-GetSetCustomHandledProprty.Viewdefinition3d
-
 #Fails after ECDb change of default column names for ECInstanceId/SourceECInstanceId/TargetECInstanceId
 ImportTest.ImportGroups
