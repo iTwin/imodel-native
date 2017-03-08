@@ -256,8 +256,7 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::System& system)
     {
-    Load(&system);
-    return m_root;
+    return Load(&system);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,14 +376,11 @@ void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::Load(SystemP renderSys) const
+TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     {
-    if (m_root.IsValid() && (nullptr==renderSys || m_root->GetRenderSystem()==renderSys))
-        return;
-
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_properties.m_groundBias));
 
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    m_root = new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
+    return new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
     }

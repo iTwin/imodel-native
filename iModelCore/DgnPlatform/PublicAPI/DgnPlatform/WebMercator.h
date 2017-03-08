@@ -111,8 +111,7 @@ public:
 
 protected:
     Properties m_properties;
-    mutable MapRootPtr m_root;
-    void Load(Dgn::Render::SystemP) const;
+    TileTree::RootPtr Load(Dgn::Render::SystemP) const;
     virtual Utf8String _GetRootUrl() const {return "";}
     virtual Utf8String _GetUrlSuffix() const {return "";}
 

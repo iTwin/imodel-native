@@ -789,6 +789,7 @@ public:
 protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     DisplayInfo  m_displayInfo;
+    RefCountedPtr<TileTree::Root> m_root;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
@@ -830,7 +831,7 @@ public:
     //! Get the Properties for this model.
     DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;}
 
-    RefCountedPtr<TileTree::Root> CreateTileTree(Render::System& system) { return _CreateTileTree(system); }
+    DGNPLATFORM_EXPORT RefCountedPtr<TileTree::Root> GetTileTree(Render::System& system);
 };
 
 //=======================================================================================

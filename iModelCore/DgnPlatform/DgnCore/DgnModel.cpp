@@ -1486,6 +1486,19 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr GeometricModel::GetTileTree(Render::System& system)
+    {
+    DgnDb::VerifyClientThread();
+
+    if (m_root.IsNull())
+        m_root = _CreateTileTree(system);
+
+    return m_root;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr GeometricModel::_CreateTileTree(Render::System& system)

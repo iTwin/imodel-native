@@ -165,7 +165,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
             TileTree::RootPtr modelRoot;
             if (model.IsValid())
                 {
-                modelRoot = model->CreateTileTree(context.GetTargetR().GetSystem());
+                modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
                 ++numCreated;
                 }
 
@@ -201,7 +201,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
                 TileTree::RootPtr modelRoot;
                 if (model.IsValid())
                     {
-                    modelRoot = model->CreateTileTree(context.GetTargetR().GetSystem());
+                    modelRoot = model->GetTileTree(context.GetTargetR().GetSystem());
                     Utf8CP message = model->GetCopyrightMessage();
                     if (!Utf8String::IsNullOrEmpty(message))
                         m_copyrightMsgs.insert(message);
