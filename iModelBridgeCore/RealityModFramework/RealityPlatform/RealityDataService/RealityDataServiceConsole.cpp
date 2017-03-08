@@ -587,7 +587,7 @@ void RealityDataConsole::Details()
     else if (className == "RealityData")
         {
         RealityDataByIdRequest idReq = RealityDataByIdRequest(m_currentNode->node.GetInstanceId());
-        SpatialEntityPtr entity = RealityDataService::Request(idReq, status);
+        RealityDataPtr entity = RealityDataService::Request(idReq, status);
 
         if (entity == nullptr)
             {
@@ -603,10 +603,10 @@ void RealityDataConsole::Details()
         std::cout << "Root document : " << entity->GetRootDocument() << std::endl;
         std::cout << "Size (kb) : " << entity->GetIdentifier() << std::endl;
         std::cout << "Classification : " << entity->GetClassificationTag() << std::endl;
-        std::cout << "Type : " << entity->GetDataType() << std::endl;
+        std::cout << "Type : " << entity->GetRealityDataType() << std::endl;
         //std::cout << "Footprint : " << entity->GetClassification() << std::endl;
         std::cout << "Accuracy (m) : " << entity->GetAccuracyValue() << std::endl;
-        std::cout << "Modified timestamp : " << entity->GetModifiedTimestamp().ToString() << std::endl;
-        std::cout << "Created timestamp : " << entity->GetDate().ToString() << std::endl;
+        std::cout << "Modified timestamp : " << entity->GetModifiedDateTime().ToString() << std::endl;
+        std::cout << "Created timestamp : " << entity->GetCreationDateTime().ToString() << std::endl;
         }
     }

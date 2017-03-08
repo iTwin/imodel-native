@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
                 }
             }
         if (!objectFound)
-            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[i]);
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0]);
         }
         
     if(!objectFound)
