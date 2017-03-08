@@ -47,48 +47,6 @@ void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forI
     m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnGeometryPart::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(PARAM_BBoxLow, name))
-        {
-        m_bbox.low = value.GetPoint3d();
-        return DgnDbStatus::Success;
-        }
-    else if (0 == strcmp(PARAM_BBoxHigh, name))
-        {
-        m_bbox.high = value.GetPoint3d();
-        return DgnDbStatus::Success;
-        }
-
-    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnGeometryPart::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(PARAM_BBoxLow, name))
-        {
-        value.SetPoint3d(m_bbox.low);
-        return DgnDbStatus::Success;
-        }
-    else if (0 == strcmp(PARAM_BBoxHigh, name))
-        {
-        value.SetPoint3d(m_bbox.high);
-        return DgnDbStatus::Success;
-        }
-
-    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -252,7 +210,16 @@ void dgn_ElementHandler::GeometryPart::_RegisterPropertyAccessors(ECSqlClassInfo
     T_Super::_RegisterPropertyAccessors(params, layout);
 
 #define GETBBOXPROP(EXPR) [](ECValueR value, DgnElementCR elIn)      {auto& el = (DgnGeometryPart&)elIn; ElementAlignedBox3dCR bbox = el.GetBoundingBox(); EXPR; return DgnDbStatus::Success;}
-#define SETBBOXPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value) {auto& el = (DgnGeometryPart&)elIn; ElementAlignedBox3d   bbox = el.GetBoundingBox(); EXPR; el.SetBoundingBox(bbox); return DgnDbStatus::Success;}
+#define SETBBOXPROP(EXPR) [](DgnElement& elIn, ECN::ECValueCR value) \
+    {                                                                \
+    if (value.IsNull() || !value.IsPoint3d())                        \
+        return DgnDbStatus::BadArg;                                  \
+    auto& el = (DgnGeometryPart&)elIn;                               \
+    ElementAlignedBox3d bbox = el.GetBoundingBox();                  \
+    EXPR;                                                            \
+    el.SetBoundingBox(bbox);                                         \
+    return DgnDbStatus::Success;                                     \
+    }
 
     params.RegisterPropertyAccessors(layout, PARAM_BBoxLow, 
         GETBBOXPROP(value.SetPoint3d(bbox.low)),
