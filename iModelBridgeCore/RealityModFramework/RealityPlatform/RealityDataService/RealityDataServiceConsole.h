@@ -18,17 +18,67 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+struct NodeList
+    {
+    NodeList() : parentNode(nullptr), childNode(nullptr)
+    {}
+
+    NodeList *parentNode;
+    NavNode node;
+    NodeList *childNode;
+    };
+
+enum class Command
+    {
+    Quit,
+    Retry,
+    Error,
+    Cancel,
+    Help,
+    ChoiceIndex,
+    ChoiceValue,
+    SetServer,
+    List,
+    ListAll,
+    Details,
+    ChangeDir,
+    ChangeDirIndex,
+    Stat,
+    Download,
+    Upload,
+    AllGood
+    };
+
 struct RealityDataConsole
     {
 public:
     RealityDataConsole();
 
+    void Run();
     void ConfigureServer();
-    Utf8String Choice(bvector<Utf8String> options);
-    void InterpretCommand(Utf8String entry);
+    void PrintResults(bvector<Utf8String> results);
+    void Usage();
+    void Choice(bvector<Utf8String> options, Utf8StringR input);
+    void InterpretCommand();
+    void List();
+    void ListAll();
+    void ChangeDir();
+    void EnterpriseStat();
+    void Download();
+    void Upload();
+    void Details();
 
 private:    
-    WSGServer*           m_server;
+    typedef void (RealityDataConsole::*FUNCTION)();
+    bmap<Command, FUNCTION> m_functionMap;
+
+    Utf8String           m_lastInput;
+    Command              m_lastCommand;
+    WSGServer            m_server;
+    bvector<NavNode>     m_serverNodes;
+    bvector<Utf8String>  m_machineRepos;
+    //Utf8String           m_currentNode;
+    NodeList*            m_currentNode;
     };
 
 

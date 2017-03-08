@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     bool objectFound = false;
     int objectIndex = 0;
     Utf8String navString;
-    while(!objectFound)
+    while(!objectFound && subNodes.size() > 0)
         {
         for( int i = 0; i < subNodes.size(); i ++ )
             {
@@ -114,9 +114,15 @@ int main(int argc, char *argv[])
                 break;
                 }
             }
+        if (!objectFound)
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0]);
+        }
         
-        if(!objectFound)
-            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[nodeIndex]);
+    if(!objectFound)
+        {
+        std::cout << "no document found, with basic exploration" << std::endl;
+        getch();
+        return 1;
         }
 
     std::cout<<"Object location :" << std::endl;

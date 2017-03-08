@@ -82,7 +82,7 @@ int main(array<String^>^ args)
     //-------------------------------------------------------------------------------------
     //                                      HANDLER
     //-------------------------------------------------------------------------------------
-    RealityDataPtr dataHandler = nullptr;
+    RealityDataExtractPtr dataHandler = nullptr;
     String^ ext = Path::GetExtension(args[0])->ToUpper();
 
     // Pointcloud

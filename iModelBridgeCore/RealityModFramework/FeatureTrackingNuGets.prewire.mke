@@ -17,7 +17,7 @@ appName     = FeatureTracking.prewire
 
 MicrosoftWindowsAzureConfigurationSrc       = $(SrcRoot)nuget/Microsoft.WindowsAzure.ConfigurationManager.3.2.3/lib/net40/
 WindowsAzureServiceBusSrc                   = $(SrcRoot)nuget/WindowsAzure.ServiceBus.3.1.1/lib/net45-full/
-BentleySelectServerSaasClientSrc            = $(SrcRoot)nuget/Bentley.SelectServer.SaaS.Client.2017.2.17.2/lib/net45/
+BentleySelectServerSaasClientSrc            = $(SrcRoot)nuget/Bentley.SelectServer.SaaS.Client.2017.3.7.2/lib/net45/
 
 $(BuildContext)Delivery/Microsoft.WindowsAzure.Configuration.dll : ${MicrosoftWindowsAzureConfigurationSrc}/Microsoft.WindowsAzure.Configuration.dll
     $(LinkFirstDepToFirstTarget)

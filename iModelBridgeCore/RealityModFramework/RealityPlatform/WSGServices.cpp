@@ -263,6 +263,9 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
     }
 
+NavNode::NavNode() : m_navString("ROOT")
+    {}
+
 NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
     {
     m_rootNode = rootNode;
@@ -279,6 +282,8 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
             m_className = jsonObject["properties"]["Key_ClassName"].asCString();
         if (jsonObject["properties"].isMember("Key_InstanceId") && !jsonObject["properties"]["Key_InstanceId"].isNull())
             m_instanceId = jsonObject["properties"]["Key_InstanceId"].asCString();
+        if (jsonObject["properties"].isMember("Label") && !jsonObject["properties"]["Label"].isNull())
+            m_label = jsonObject["properties"]["Label"].asCString();
         }
     if(rootNode.length() == 0) //navRoot
         {
@@ -287,13 +292,14 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         }
     }
 
-Utf8String NavNode::GetNavString() { return m_navString; }
+Utf8String NavNode::GetNavString()  { return m_navString; }
 Utf8String NavNode::GetTypeSystem() { return m_typeSystem; }
 Utf8String NavNode::GetSchemaName() { return m_schemaName; }
-Utf8String NavNode::GetClassName() { return m_className; }
+Utf8String NavNode::GetClassName()  { return m_className; }
 Utf8String NavNode::GetInstanceId() { return m_instanceId; }
-Utf8String NavNode::GetRootNode() { return m_rootNode; }
-Utf8String NavNode::GetRootId() { return m_rootId; }
+Utf8String NavNode::GetLabel()      { return m_label; }
+Utf8String NavNode::GetRootNode()   { return m_rootNode; }
+Utf8String NavNode::GetRootId()     { return m_rootId; }
 
 NodeNavigator* NodeNavigator::s_nnInstance = nullptr;
 NodeNavigator& NodeNavigator::GetInstance()
@@ -493,12 +499,9 @@ void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(m_className);
     m_httpRequestString.append("?$skip=");
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
     m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
     }
 
 bvector<Utf8String> WSGServer::GetPlugins() const
@@ -554,8 +557,9 @@ Utf8String WSGServer::GetVersion() const
 
     bvector<Utf8String> lines;
     BeStringUtilities::Split(versionString.c_str(), "\n", lines);
-
     m_version = lines[0];
+    m_version.Trim();
+
     return m_version;
     }
 

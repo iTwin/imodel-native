@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RealityData::GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
+StatusInt RealityDataExtract::GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const
     {
     return _GetFootprint(pFootprint, pFootprintExtents);
     }
@@ -22,7 +22,7 @@ StatusInt RealityData::GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP p
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 8/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const
+StatusInt RealityDataExtract::GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint32_t height) const
     {
     return _GetThumbnail(buffer, width, height);
     }
@@ -30,7 +30,7 @@ StatusInt RealityData::GetThumbnail(bvector<Byte>& buffer, uint32_t width, uint3
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 8/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
+StatusInt RealityDataExtract::GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint32_t height) const
     {
     return _GetThumbnail(pThumbnailBmp, width, height);
     }
@@ -38,7 +38,7 @@ StatusInt RealityData::GetThumbnail(HBITMAP* pThumbnailBmp, uint32_t width, uint
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::SaveFootprint(bvector<GeoPoint2d>& data, BeFileNameCR outFilename) const
+StatusInt RealityDataExtract::SaveFootprint(bvector<GeoPoint2d>& data, BeFileNameCR outFilename) const
     {
     return _SaveFootprint(data, outFilename);
     }
@@ -46,7 +46,7 @@ StatusInt RealityData::SaveFootprint(bvector<GeoPoint2d>& data, BeFileNameCR out
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const
+StatusInt RealityDataExtract::SaveThumbnail(const bvector<Byte>& data, BeFileNameCR outFilename) const
     {
     return _SaveThumbnail(data, outFilename);
     }
@@ -54,7 +54,7 @@ StatusInt RealityData::SaveThumbnail(const bvector<Byte>& data, BeFileNameCR out
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 9/2015
 //-------------------------------------------------------------------------------------
-StatusInt RealityData::SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const
+StatusInt RealityDataExtract::SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const
     {
     return _SaveThumbnail(pThumbnailBmp, outFilename);
     }
