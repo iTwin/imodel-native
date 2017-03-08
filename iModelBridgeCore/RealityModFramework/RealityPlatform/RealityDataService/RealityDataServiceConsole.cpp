@@ -40,8 +40,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Quit;
     else if (args[0].ContainsI("retry"))
         m_lastCommand = Command::Retry;
-    else if (args[0].ContainsI("error"))
-        m_lastCommand = Command::Error;
+    else if (args[0].ContainsI("ListAll"))
+        m_lastCommand = Command::ListAll;
     else if (args[0].ContainsI("list") || args[0].ContainsI("dir"))
         m_lastCommand = Command::List;
     else if (args[0].ContainsI("help"))
@@ -58,22 +58,25 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Upload;
     else
         {
-        if (args.size() > 1)
-            m_lastInput = args[1];
-        else
-            {
-            std::cout << "must input a value, with this command" << std::endl;
-            m_lastCommand = Command::Error;
-            return;
-            }
+        m_lastCommand = Command::Error;
+
         if (args[0].ContainsI("index"))
             m_lastCommand = Command::ChoiceIndex;
         else if (args[0].ContainsI("value"))
             m_lastCommand = Command::ChoiceValue;
         else if (args[0].ContainsI("cd"))
             m_lastCommand = Command::ChangeDir;
-        else
-            m_lastCommand = Command::Error;
+        
+        if(m_lastCommand != Command::Error)
+            {
+            if (args.size() > 1)
+                m_lastInput = args[1];
+            else
+                {
+                std::cout << "must input a value, with this command" << std::endl;
+                m_lastCommand = Command::Error;
+                }
+            }
         }
     }
 
@@ -82,7 +85,24 @@ RealityDataConsole::RealityDataConsole() :
     m_serverNodes(bvector<NavNode>()),
     m_machineRepos(bvector<Utf8String>()),
     m_currentNode(nullptr)
-    {}
+    {
+    m_functionMap.Insert(Command::Help, &RealityDataConsole::Usage);
+    m_functionMap.Insert(Command::SetServer, &RealityDataConsole::ConfigureServer);
+    m_functionMap.Insert(Command::List, &RealityDataConsole::List);
+    m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
+    m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
+    m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
+    m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
+    m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
+    m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
+
+    //commands that should never occur, within Run()
+    m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Retry, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Error, &RealityDataConsole::InputError);
+    m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
+    }
 
 void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
@@ -140,68 +160,15 @@ int main(int argc, char* argv[])
     }
 
 void RealityDataConsole::Run()
-    {ConfigureServer();
+    {
+    ConfigureServer();
     while(m_lastCommand != Command::Quit)
         {
         if(m_currentNode != nullptr)
             std::cout << m_currentNode->node.GetInstanceId();
         std::cout << "> ";
         InterpretCommand();
-        switch(m_lastCommand)
-            {
-            case Command::Quit:
-                break;
-            case Command::Error:
-                {
-                std::cout << "unrecognized Command. Type \"help\" for usage" << std::endl;
-                break;
-                }
-            case Command::Help:
-                {
-                Usage();
-                break;
-                }
-            case Command::SetServer:
-                {
-                ConfigureServer();
-                break;
-                }
-            case Command::List:
-                {
-                List();
-                break;
-                }
-            case Command::ListAll:
-                {
-                ListAll();
-                break;
-                }
-            case Command::ChangeDir:
-                {
-                ChangeDir();
-                break;
-                }   
-            case Command::Stat:
-                {
-                EnterpriseStat();
-                break;
-                }
-            case Command::Details:
-                {
-                Details();
-                break;
-                }
-            case Command::Download:
-                {
-                Download();
-                break;
-                }
-            case Command::Upload:
-                {
-                Upload();
-                break;
-                }
-            }
+        (this->*(m_functionMap[m_lastCommand]))();
         }
     }
 
@@ -390,6 +357,12 @@ void RealityDataConsole::List()
 
 void RealityDataConsole::ListAll()
     {
+    if(m_currentNode == nullptr)
+        {   
+        std::cout << "Please navigate to a RealityData or Folder before using this command" << std::endl;
+        return;
+        }
+
     AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
     RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
     Utf8String azureServer;
@@ -423,6 +396,23 @@ void RealityDataConsole::ListAll()
 
 void RealityDataConsole::ChangeDir()
     {
+    if (m_lastInput == "..")
+        {
+        if (m_currentNode == nullptr)
+            std::cout << "Already at root" << std::endl;
+        if (m_currentNode->parentNode != nullptr)
+            {
+            m_currentNode = m_currentNode->parentNode;
+            delete m_currentNode->childNode;
+            }
+        else
+            {
+            delete m_currentNode;
+            m_currentNode = nullptr;
+            }
+        return;
+        }
+
     uint64_t choice;
     if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) != BentleyStatus::SUCCESS)
         {
@@ -435,7 +425,8 @@ void RealityDataConsole::ChangeDir()
         NodeList* newNode = new NodeList();
         newNode->node = m_serverNodes[choice];
         newNode->parentNode = m_currentNode;
-        m_currentNode->childNode = newNode;
+        if(m_currentNode != nullptr)
+            m_currentNode->childNode = newNode;
         m_currentNode = newNode;
         }
     else
@@ -472,7 +463,13 @@ static void uploadProgressFunc(Utf8String filename, double fileProgress, double 
 
 void RealityDataConsole::Download()
     {
-    std::cout << "using current source = " << m_currentNode->node.GetLabel() << std::endl;
+    if (m_currentNode == nullptr)
+        {
+        std::cout << "Please navigate to a RealityData or Folder before using this command" << std::endl;
+        return;
+        }
+
+    std::cout << "Downloading from " << m_currentNode->node.GetLabel() << std::endl;
     std::cout << "if you wish to change this, use command \"Cancel\" to back out and use cd to change the directory" << std::endl << std::endl;
     std::cout << "please enter the destination folder on the local machine (must be existing folder)" << std::endl;
     
@@ -609,4 +606,9 @@ void RealityDataConsole::Details()
         std::cout << "Modified timestamp : " << entity->GetModifiedDateTime().ToString() << std::endl;
         std::cout << "Created timestamp : " << entity->GetCreationDateTime().ToString() << std::endl;
         }
+    }
+
+void RealityDataConsole::InputError()
+    {
+    std::cout << "unrecognized Command. Type \"help\" for usage" << std::endl;
     }

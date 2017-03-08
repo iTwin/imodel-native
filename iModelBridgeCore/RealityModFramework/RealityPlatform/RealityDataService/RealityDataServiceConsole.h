@@ -42,11 +42,9 @@ enum class Command
     ListAll,
     Details,
     ChangeDir,
-    ChangeDirIndex,
     Stat,
     Download,
-    Upload,
-    AllGood
+    Upload
     };
 
 struct RealityDataConsole
@@ -67,6 +65,8 @@ public:
     void Download();
     void Upload();
     void Details();
+    void DummyFunction(){}
+    void InputError();
 
 private:    
     typedef void (RealityDataConsole::*FUNCTION)();

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     Utf8String folderId = "43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FJ~3A~2F";
     Utf8String documentId = "43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FJ~3A~2F_Data_Tests~2F_RDS_Performance~2FTest_2~2FMosaic~2F916_16.itiff";
     Utf8String enterpriseId = "5e41126f-6875-400f-9f75-4492c99ee544";
-    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
     std::cout << RealityDataService::GetServerName() << std::endl;
     std::cout << RealityDataService::GetWSGProtocol() << std::endl;

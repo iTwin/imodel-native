@@ -48,6 +48,13 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
 
+enum class RequestStatus
+{
+    SUCCESS = 0,
+    ERROR = 1,
+    NOMOREPAGES = 2
+};
+
 //=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
 //! RealityDataEnterpriseStat
@@ -219,7 +226,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void ChangeInstanceId(Utf8String instanceId);
 
     //! This call creates the URL request to obtain the azure redirection URL.
-    REALITYDATAPLATFORM_EXPORT void GetAzureRedirectionRequestUrl() const;
+    REALITYDATAPLATFORM_EXPORT RequestStatus GetAzureRedirectionRequestUrl() const;
 
     //! Once the azure blob container URL has been obtained it must be set
     //!  using this method after which the object will create azure redirection.
@@ -695,13 +702,6 @@ private:
     void DownloadFullRepo(BeFileName targetLocation, Utf8String id);
 
     void DownloadFromNavNode(BeFileName targetLocation, Utf8String id);
-    };
-
-enum class RequestStatus
-    {
-    SUCCESS = 0,
-    ERROR = 1,
-    NOMOREPAGES = 2
     };
 
 //=====================================================================================
