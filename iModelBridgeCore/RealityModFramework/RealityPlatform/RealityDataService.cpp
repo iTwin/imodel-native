@@ -558,11 +558,12 @@ Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, 
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    Utf8String filter = "Visibility+eq+";
+    Utf8String filter = "Visibility+eq+'";
 
     Utf8String value = RealityDataBase::GetTagFromVisibility(visibility);
 
     filter.append(value);
+    filter.append("'");
 
     return filter;
     }
