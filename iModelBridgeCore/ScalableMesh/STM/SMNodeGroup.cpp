@@ -22,7 +22,7 @@ uint32_t s_max_group_common_ancestor = 2;
 unordered_map<uint64_t, SMNodeGroup::Ptr> SMNodeGroup::s_downloadedGroups;
 mutex SMNodeGroup::s_mutex;
 
-StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
+StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID, bool mustGenerateIDs)
     {
     unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
     //auto nodeHeader = this->GetNodeHeader(priorityNodeID);
@@ -56,71 +56,142 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 }
 
             if (readSize > 0)
+            {
+                if (mustGenerateIDs)
                 {
-                uint32_t currentNodeID = m_RootTileTreeNode["SMHeader"].isMember("id") ? m_RootTileTreeNode["SMHeader"]["id"].asUInt() : uint32_t(-1);
-                uint32_t parentID = m_RootTileTreeNode["SMHeader"].isMember("parentID") ? m_RootTileTreeNode["SMHeader"]["parentID"].asUInt() : uint32_t(-1);
-                uint32_t rootLevel = m_RootTileTreeNode["SMHeader"].isMember("level") ? m_RootTileTreeNode["SMHeader"]["level"].asUInt() : 0;
-                Json::Reader    reader;
-                char* jsonBlob = reinterpret_cast<char *>(dest.get());
-                reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
+                    uint32_t currentNodeID = m_RootTileTreeNode["SMHeader"].isMember("id") ? m_RootTileTreeNode["SMHeader"]["id"].asUInt() : uint32_t(-1);
+                    uint32_t parentID = m_RootTileTreeNode["SMHeader"].isMember("parentID") ? m_RootTileTreeNode["SMHeader"]["parentID"].asUInt() : uint32_t(-1);
+                    uint32_t rootLevel = m_RootTileTreeNode["SMHeader"].isMember("level") ? m_RootTileTreeNode["SMHeader"]["level"].asUInt() : 0;
+                    Json::Reader    reader;
+                    char* jsonBlob = reinterpret_cast<char *>(dest.get());
+                    reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
 
-                if (!(m_RootTileTreeNode.isMember("root") /*&& m_RootTileTreeNode["root"].isMember("SMHeader")*/))
+                    if (!(m_RootTileTreeNode.isMember("root") /*&& m_RootTileTreeNode["root"].isMember("SMHeader")*/))
                     {
-                    assert(!"error reading Cesium 3D tiles header");
-                    return 0;
+                        assert(!"error reading Cesium 3D tiles header");
+                        return 0;
                     }
 
-                // Generate tile tree map
-                std::function<void(Json::Value&, uint32_t, bool, uint32_t)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &currentNodeID](Json::Value& jsonNode, uint32_t parentID, bool isRootNode, uint32_t level)
+                    // Generate tile tree map
+                    std::function<void(Json::Value&, uint32_t, bool, uint32_t)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &currentNodeID](Json::Value& jsonNode, uint32_t parentID, bool isRootNode, uint32_t level)
                     {
-                    jsonNode["SMHeader"]["parentID"] = parentID;
-                    static std::atomic<uint32_t> s_currentNodeID = 0;
-                    uint32_t nodeID = isRootNode && parentID != uint32_t(-1) && currentNodeID != uint32_t(-1) ? currentNodeID : s_currentNodeID++;
-                    if (jsonNode["SMHeader"].isMember("id"))
+                        jsonNode["SMHeader"]["parentID"] = parentID;
+                        static std::atomic<uint32_t> s_currentNodeID = 0;
+                        uint32_t nodeID = isRootNode && parentID != uint32_t(-1) && currentNodeID != uint32_t(-1) ? currentNodeID : s_currentNodeID++;
+                        if (jsonNode["SMHeader"].isMember("id"))
                         {
-                        jsonNode["SMHeader"]["oldID"] = jsonNode["SMHeader"]["id"];
+                            jsonNode["SMHeader"]["oldID"] = jsonNode["SMHeader"]["id"];
                         }
 
-                    jsonNode["SMHeader"]["id"] = nodeID;
-                    assert((jsonNode["SMHeader"].isMember("resolution") && jsonNode["SMHeader"]["resolution"].asUInt() == level) || !jsonNode["SMHeader"].isMember("resolution"));
-                    jsonNode["SMHeader"]["level"] = level;
-                    if (!jsonNode.isMember("children"))
+                        jsonNode["SMHeader"]["id"] = nodeID;
+                        assert((jsonNode["SMHeader"].isMember("resolution") && jsonNode["SMHeader"]["resolution"].asUInt() == level) || !jsonNode["SMHeader"].isMember("resolution"));
+                        jsonNode["SMHeader"]["level"] = level;
+                        if (!jsonNode.isMember("children"))
                         {
-                        if (jsonNode.isMember("content") && jsonNode["content"].isMember("url"))
+                            if (jsonNode.isMember("content") && jsonNode["content"].isMember("url"))
                             {
-                            BeFileName contentURL(jsonNode["content"]["url"].asString());
-                            if (L"json" == BEFILENAME(GetExtension, contentURL))
+                                BeFileName contentURL(jsonNode["content"]["url"].asString());
+                                if (L"json" == BEFILENAME(GetExtension, contentURL))
                                 {
-                                // the tile references a new tileset (group)
-                                static std::atomic<uint32_t> s_currentGroupID = 0;
-                                //assert(this->m_tileTreeChildrenGroups.count(++s_currentGroupID) == 0);
+                                    // the tile references a new tileset (group)
+                                    static std::atomic<uint32_t> s_currentGroupID = 0;
+                                    //assert(this->m_tileTreeChildrenGroups.count(++s_currentGroupID) == 0);
 
-                                SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, s_currentGroupID);
-                                newGroup->SetURL(DataSourceURL(contentURL.c_str()));
-                                newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-                                //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-                                newGroup->m_RootTileTreeNode = jsonNode;
-                                newGroup->SaveNode(nodeID, &newGroup->m_RootTileTreeNode);
+                                    SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, s_currentGroupID);
+                                    newGroup->SetURL(DataSourceURL(contentURL.c_str()));
+                                    newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                                    //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                                    newGroup->m_RootTileTreeNode = jsonNode;
+                                    newGroup->SaveNode(nodeID, &newGroup->m_RootTileTreeNode);
 
-                                // we are done processing this part of the tileset
-                                return;
+                                    // we are done processing this part of the tileset
+                                    return;
                                 }
                             }
-                        jsonNode["isLeafNode"] = true;
-                        this->SaveNode(nodeID, &jsonNode);
+                            jsonNode["isLeafNode"] = true;
+                            this->SaveNode(nodeID, &jsonNode);
 
-                        // we are done processing this part of the tileset
-                        return;
+                            // we are done processing this part of the tileset
+                            return;
                         }
 
-                    this->SaveNode(nodeID, &jsonNode);
-                    for (auto& child : jsonNode["children"])
+                        this->SaveNode(nodeID, &jsonNode);
+                        for (auto& child : jsonNode["children"])
                         {
-                        tileTreeMapGenerator(child, nodeID, false, level + 1);
+                            tileTreeMapGenerator(child, nodeID, false, level + 1);
                         }
                     };
-                tileTreeMapGenerator(m_RootTileTreeNode["root"], parentID, true, rootLevel);
+                    tileTreeMapGenerator(m_RootTileTreeNode["root"], parentID, true, rootLevel);
                 }
+                else {
+                    Json::Reader    reader;
+                    char* jsonBlob = reinterpret_cast<char *>(dest.get());
+                    reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
+
+                    if (!(m_RootTileTreeNode.isMember("root") && m_RootTileTreeNode["root"].isMember("SMHeader")))
+                    {
+                        assert(!"error reading Cesium 3D tiles header");
+                        return 0;
+                    }
+                    bool checkResult = false;
+                    auto nodeIDChecker = [priorityNodeID, &checkResult](uint64_t id = 0) -> bool
+                        {
+                        if (!checkResult) checkResult = priorityNodeID == id;
+                        return checkResult;
+                        };
+                    // Generate tile tree map
+                    std::function<void(Json::Value&)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &nodeIDChecker](Json::Value& jsonNode)
+                    {
+                        if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
+                        {
+                            uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
+                            nodeIDChecker(nodeID);
+                            //this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
+                            //{
+                            //    // Indicate that the header for the node with id nodeID is ready to be consumed
+                            //    // This is to unblock other threads that might be waiting for this group to complete loading.
+                            //    auto nodeHeader = this->GetNodeHeader(nodeID);
+                            //    assert(nodeHeader != nullptr);
+                            //    nodeHeader->offset = 0;
+                            //}
+                            this->SaveNode(nodeID, &jsonNode);
+                            if (jsonNode.isMember("children"))
+                            {
+                                for (auto& child : jsonNode["children"])
+                                {
+                                    tileTreeMapGenerator(child);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
+                            BeFileName contentURL(jsonNode["content"]["url"].asString());
+                            WString groupIDStr = BEFILENAME(GetFileNameWithoutExtension, contentURL);
+                            WString prefix = groupIDStr.substr(0, 2);
+                            WString extension = BEFILENAME(GetExtension, contentURL);
+                            groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
+                            uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
+                            SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, groupID);
+                            newGroup->SetURL(DataSourceURL(contentURL.c_str()));
+                            newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                            //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                            newGroup->m_RootTileTreeNode = jsonNode;
+                            assert(jsonNode.isMember("SMRootID"));
+                            nodeIDChecker(jsonNode["SMRootID"].asUInt());
+                            newGroup->SaveNode(jsonNode["SMRootID"].asUInt(), &newGroup->m_RootTileTreeNode);
+
+                            //assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
+                            //SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
+                            //newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                            //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                            //this->m_tileTreeChildrenGroups[groupID] = newGroup;
+                        }
+                    };
+                    tileTreeMapGenerator(m_RootTileTreeNode["root"]);
+                    assert(nodeIDChecker());
+                }
+            }
             else
                 {
                 m_isLoading = false;

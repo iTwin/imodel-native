@@ -509,8 +509,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
         indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
 
-        //auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
-        auto rootNodeBlockID = 0;
+        auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
         //auto group = this->GetGroup(HPMBlockID(rootNodeBlockID));
         m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
         m_CesiumGroup->SetURL(L"n_0.json");
@@ -1301,146 +1300,252 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
 template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& cesiumNodeHeader)
     {
     const auto& nodeHeader = cesiumNodeHeader["SMHeader"];
-    header->m_id = nodeHeader["id"].asUInt();
-    header->m_level = nodeHeader["level"].asUInt();
-    //assert(header->m_level == nodeHeader["resolution"].asUInt());
-
-    //header->m_isTextured = nodeHeader["areTextured"].asBool();
-    header->m_isTextured = true; // Assume textured, update later if it is not...
-
-    //header->m_totalCount = nodeHeader["totalCount"].asUInt();
-    header->m_totalCountDefined = false;
-    //header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
-    //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
-    header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
-    //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
-
-    //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
-    
-    //header->m_uvID = nodeHeader["uvID"].asUInt();
-    header->m_uvID = header->m_id; // Same as node ID?
-
-    uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
-    header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
-
-    //auto& nodeExtent = nodeHeader["nodeExtent"];
-    //assert(nodeExtent.isObject());
-    //ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
-    //ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
-    //ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
-    //ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
-    //ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
-    //ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
-    //
-    //header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
-    //if (header->m_contentExtentDefined)
-    //    {
-    //    auto& contentExtent = nodeHeader["contentExtent"];
-    //    assert(contentExtent.isObject());
-    //    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
-    //    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
-    //    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
-    //    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
-    //    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
-    //    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
-    //    }
-
-    if (cesiumNodeHeader.isMember("transform"))
+    if (s_import_from_bim_exported_cesium_3d_tiles)
         {
-        //auto& transform = cesiumNodeHeader["transform"];
-        //m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
-        //                                       transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
-        //                                       transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
-        m_transform = Transform::From(533459, 5212605, 0);
-        }
+        header->m_id = nodeHeader["id"].asUInt();
+        header->m_level = nodeHeader["level"].asUInt();
+        //assert(header->m_level == nodeHeader["resolution"].asUInt());
 
-    auto& boundingBox = cesiumNodeHeader["boundingVolume"]["box"];
-    DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
-    DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-    ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
-    ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
-    ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
-    ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
-    ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
-    ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
+        //header->m_isTextured = nodeHeader["areTextured"].asBool();
+        header->m_isTextured = true; // Assume textured, update later if it is not...
 
-    Transform inverse;
-    inverse.InverseOf(m_transform);
-    m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
-    header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
-    if (header->m_contentExtentDefined)
-        {
-        auto& boundingVolume = cesiumNodeHeader["content"]["boundingVolume"];
-        assert(boundingVolume.isMember("box")); // Only box is supported
-        auto& boundingBox = boundingVolume["box"];
+        //header->m_totalCount = nodeHeader["totalCount"].asUInt();
+        header->m_totalCountDefined = false;
+        //header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+        //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
+        header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
+        //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
+
+        //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
+
+        //header->m_uvID = nodeHeader["uvID"].asUInt();
+        header->m_uvID = header->m_id; // Same as node ID?
+
+        uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+        header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
+
+        //auto& nodeExtent = nodeHeader["nodeExtent"];
+        //assert(nodeExtent.isObject());
+        //ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
+        //ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
+        //ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
+        //ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
+        //ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
+        //ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
+        //
+        //header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
+        //if (header->m_contentExtentDefined)
+        //    {
+        //    auto& contentExtent = nodeHeader["contentExtent"];
+        //    assert(contentExtent.isObject());
+        //    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
+        //    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
+        //    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
+        //    }
+
+        if (cesiumNodeHeader.isMember("transform"))
+            {
+            //auto& transform = cesiumNodeHeader["transform"];
+            //m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+            //                                       transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
+            //                                       transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+            m_transform = Transform::From(533459, 5212605, 0);
+            }
+
+        auto& boundingBox = cesiumNodeHeader["boundingVolume"]["box"];
         DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
         DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-        ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
-        ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
-        ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
-        ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
-        ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
-        ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
-        m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
-        }
-    else if (cesiumNodeHeader.isMember("children"))
-        {
-        header->m_contentExtent = header->m_nodeExtent;
-        }
-    header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
+        ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
+        ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
+        ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
+        ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
+        ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
+        ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
 
-    //auto& indices = nodeHeader["indiceID"];
-    //assert(indices.isArray() && indices.size() <= 1);
-    //
-    //uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
-    uint32_t idx = header->m_id.m_integerID;
-
-    if (header->m_isTextured)
-        {
-        header->m_textureID = HPMBlockID();
-        header->m_ptsIndiceID.resize(2);
-        header->m_ptsIndiceID[1] = (int)idx;
-        header->m_ptsIndiceID[0] = HPMBlockID();
-        header->m_nbTextures = 1;
-        header->m_uvsIndicesID.resize(1);
-        header->m_uvsIndicesID[0] = idx;
-        }
-
-    // NEEDS_WORK_SM_STREAMING : Are clip sets ID required?
-    //auto& clipSets = nodeHeader["clipSetsID"];
-    //assert(clipSets.isArray());
-    //if (clipSets.size() > 0)
-    //    {
-    //    header->m_clipSetsID.resize(clipSets.size());
-    //    for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
-    //    }
-
-    //auto& children = nodeHeader["children"];
-    auto& children = cesiumNodeHeader["children"];
-    assert(children.isArray());
-
-    //assert(header->m_numberOfSubNodesOnSplit == children.size());
-    header->m_numberOfSubNodesOnSplit = children.size();
-    //assert(header->m_numberOfSubNodesOnSplit == nodeHeader["nbChildren"].asUInt());
-    
-    header->m_IsBranched = children.size() > 1;
-    //assert(header->m_IsBranched == nodeHeader["isBranched"].asBool());
-    
-    header->m_IsLeaf = children.size() == 0;
-    //assert(nodeHeader["isLeaf"].asBool() == header->m_IsLeaf);
-    
-    if (children.size() > 0)
-        {
-        //assert(header->m_numberOfSubNodesOnSplit == children.size());
-        assert((!header->m_IsBranched && children.size() == 1) || header->m_IsBranched);
-        assert(!header->m_IsLeaf);
-        header->m_apSubNodeID.resize(children.size());
-        int childInd = 0;
-        for (auto& child : children)
+        Transform inverse;
+        inverse.InverseOf(m_transform);
+        m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
+        header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
+        if (header->m_contentExtentDefined)
             {
-            header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
+            auto& boundingVolume = cesiumNodeHeader["content"]["boundingVolume"];
+            assert(boundingVolume.isMember("box")); // Only box is supported
+            auto& boundingBox = boundingVolume["box"];
+            DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
+            DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
+            ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
+            ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
+            ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
+            ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
+            ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
+            ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
+            m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
             }
-        header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+        else if (cesiumNodeHeader.isMember("children"))
+            {
+            header->m_contentExtent = header->m_nodeExtent;
+            }
+        header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
+
+        //auto& indices = nodeHeader["indiceID"];
+        //assert(indices.isArray() && indices.size() <= 1);
+        //
+        //uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+        uint32_t idx = header->m_id.m_integerID;
+
+        if (header->m_isTextured)
+            {
+            header->m_textureID = HPMBlockID();
+            header->m_ptsIndiceID.resize(2);
+            header->m_ptsIndiceID[1] = (int)idx;
+            header->m_ptsIndiceID[0] = HPMBlockID();
+            header->m_nbTextures = 1;
+            header->m_uvsIndicesID.resize(1);
+            header->m_uvsIndicesID[0] = idx;
+            }
+
+        // NEEDS_WORK_SM_STREAMING : Are clip sets ID required?
+        //auto& clipSets = nodeHeader["clipSetsID"];
+        //assert(clipSets.isArray());
+        //if (clipSets.size() > 0)
+        //    {
+        //    header->m_clipSetsID.resize(clipSets.size());
+        //    for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
+        //    }
+
+        //auto& children = nodeHeader["children"];
+        auto& children = cesiumNodeHeader["children"];
+        assert(children.isArray());
+
+        //assert(header->m_numberOfSubNodesOnSplit == children.size());
+        header->m_numberOfSubNodesOnSplit = children.size();
+        //assert(header->m_numberOfSubNodesOnSplit == nodeHeader["nbChildren"].asUInt());
+
+        header->m_IsBranched = children.size() > 1;
+        //assert(header->m_IsBranched == nodeHeader["isBranched"].asBool());
+
+        header->m_IsLeaf = children.size() == 0;
+        //assert(nodeHeader["isLeaf"].asBool() == header->m_IsLeaf);
+
+        if (children.size() > 0)
+            {
+            //assert(header->m_numberOfSubNodesOnSplit == children.size());
+            assert((!header->m_IsBranched && children.size() == 1) || header->m_IsBranched);
+            assert(!header->m_IsLeaf);
+            header->m_apSubNodeID.resize(children.size());
+            int childInd = 0;
+            for (auto& child : children)
+                {
+                header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
+                }
+            header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+            }
+        }
+    else {
+        header->m_level = nodeHeader["resolution"].asUInt();
+        header->m_filtered = nodeHeader["filtered"].asBool();
+        header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
+        header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
+        header->m_isTextured = nodeHeader["areTextured"].asBool();
+        header->m_IsBranched = nodeHeader["isBranched"].asBool();
+        header->m_SplitTreshold = nodeHeader["splitThreshold"].asUInt();
+        header->m_totalCount = nodeHeader["totalCount"].asUInt();
+        header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+        header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
+        header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
+        header->m_graphID = nodeHeader["graphID"].asUInt();
+        header->m_uvID = nodeHeader["uvID"].asUInt();
+
+        uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+        header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
+
+        auto& nodeExtent = nodeHeader["nodeExtent"];
+        assert(nodeExtent.isObject());
+        ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
+        ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
+        ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
+        ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
+        ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
+        ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
+
+        header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
+        if (header->m_contentExtentDefined)
+            {
+            auto& contentExtent = nodeHeader["contentExtent"];
+            assert(contentExtent.isObject());
+            ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
+            ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
+            ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
+            ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
+            ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
+            ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
+            }
+
+        auto& indices = nodeHeader["indiceID"];
+        assert(indices.isArray() && indices.size() <= 1);
+
+        uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+
+        if (header->m_isTextured)
+            {
+            header->m_textureID = HPMBlockID();
+            header->m_ptsIndiceID.resize(2);
+            header->m_ptsIndiceID[1] = (int)idx;
+            header->m_ptsIndiceID[0] = HPMBlockID();
+            header->m_nbTextures = 1;
+            header->m_uvsIndicesID.resize(1);
+            header->m_uvsIndicesID[0] = idx;
+            }
+
+        header->m_numberOfMeshComponents = (size_t)nodeHeader["numberOfMeshComponents"].asUInt();
+        if (header->m_numberOfMeshComponents > 0)
+            {
+            auto& meshComponents = nodeHeader["meshComponents"];
+            assert(meshComponents.isArray());
+            header->m_meshComponents = new int[header->m_numberOfMeshComponents];
+            for (size_t i = 0; i < (size_t)header->m_numberOfMeshComponents; i++)
+                {
+                header->m_meshComponents[i] = meshComponents[(Json::ArrayIndex)i].asInt();
+                }
+            }
+
+        auto& clipSets = nodeHeader["clipSetsID"];
+        assert(clipSets.isArray());
+        if (clipSets.size() > 0)
+            {
+            header->m_clipSetsID.resize(clipSets.size());
+            for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
+            }
+
+        auto& children = nodeHeader["children"];
+        assert(children.isArray());
+        if (!header->m_IsLeaf && children.size() > 0)
+            {
+            header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
+            for (auto& child : children)
+                {
+                auto childInd = child["index"].asUInt();
+                auto nodeId = child["id"].asUInt();
+                header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+                }
+            header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+            }
+
+        auto& neighbors = nodeHeader["neighbors"];
+        assert(neighbors.isArray());
+        if (neighbors.size() > 0)
+            {
+            for (auto& neighbor : neighbors)
+                {
+                assert(neighbor.isObject());
+                auto nodePos = neighbor["nodePos"].asUInt();
+                auto nodeId = neighbor["nodeId"].asUInt();
+                header->m_apNeighborNodeID[nodePos].push_back(nodeId);
+                }
+            }
         }
     }
 
@@ -1686,7 +1791,8 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             m_dataSourceURL = L"textures";
             break;
         case SMStoreDataType::Cesium3DTiles:
-            m_dataSourceURL = L"graz\\Production_Graz_3MX_1e";
+            // NEEDS_WORK_SM_STREAMING : Remove hard coded path for dgndb 3DTile imports
+            m_dataSourceURL = s_import_from_bim_exported_cesium_3d_tiles ? L"graz\\Production_Graz_3MX_1e" : L"data";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -2326,7 +2432,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
-        auto transform = Transform::From(533459, 5212605, 0);
+        auto transform = s_import_from_bim_exported_cesium_3d_tiles ? Transform::From(533459, 5212605, 0) : Transform::FromIdentity();
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];

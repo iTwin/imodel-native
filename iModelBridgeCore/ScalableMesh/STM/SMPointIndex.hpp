@@ -6922,7 +6922,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
                 disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 this->m_apSubNodes[indexNode] = nullptr;
-                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, pi_pGroup, nextGroup);
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
 
                 }
             }
