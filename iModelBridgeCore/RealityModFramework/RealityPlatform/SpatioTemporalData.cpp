@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "StdAfx.h"
+
 #include <RealityPlatform/SpatialEntity.h>
 
 #include <RealityPlatform/SpatioTemporalData.h>

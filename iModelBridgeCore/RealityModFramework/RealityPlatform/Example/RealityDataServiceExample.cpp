@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*-----------------------------------------------------------------//
-* Bentley RealityDataServiceExmaple
+* Bentley RealityDataServiceExample
 * This application uses hard coded values and is not guaranteed to 
 * function properly.
 * The purpose of its existence is only to show how to structure

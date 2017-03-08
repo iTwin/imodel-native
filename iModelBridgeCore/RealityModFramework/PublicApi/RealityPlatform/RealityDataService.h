@@ -76,7 +76,7 @@ private:
 
 //=====================================================================================
 //! Overview:
-//! The present classes serves as an interfaces to the RealityDataService.
+//! The present classes serves as an interface to the RealityDataService.
 //! Although the RealityData Service is based on a simple WSG-based
 //!  REST api, it relies on a variety of interrelated classes and the
 //!  capacity to perform spatial or classification related queries renders the

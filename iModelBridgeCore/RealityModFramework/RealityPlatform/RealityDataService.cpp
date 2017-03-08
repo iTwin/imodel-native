@@ -468,9 +468,7 @@ Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
     { 
     //$filter=
     Utf8String filter = "Class+eq+";
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, classification);
-    filter.append(buf);
+    filter += Utf8PrintfString("%lu", classification);
     return filter;
     }
 
@@ -481,12 +479,9 @@ Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize
     {
     //$filter=
     Utf8String filter = "Size+ge+";
-    char buf[32];
-    sprintf(buf, "%f", minSize);
-    filter.append(buf);
+    filter += Utf8PrintfString("%f", minSize);
     filter.append("and+Size+le+");
-    sprintf(buf, "%f", maxSize);
-    filter.append(buf);
+    filter += Utf8PrintfString("%f", maxSize);
     return filter;
     }
 
@@ -517,8 +512,8 @@ Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uin
     sprintf(buf, "%f", area[0].latitude);
     filter.append(buf);
     filter.append("]], \"coordinate_system\":\"");
-    BeStringUtilities::FormatUInt64(buf, coordSys);
-    filter.append(buf);
+
+    filter += Utf8PrintfString("%lu", coordSys);
     filter.append("\"}");
 
     return filter;
@@ -541,9 +536,9 @@ Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
 Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
     Utf8String filter = "CreatedTimestamp+ge+'";
-    filter.append(minDate.ToString());
+    filter.append(Utf8String(minDate.ToString()));
     filter.append("'+and+CreatedTimestamp+le+'");
-    filter.append(maxDate.ToString());
+    filter.append(Utf8String(maxDate.ToString()));
     filter.append("'");
 
     return filter;
@@ -555,9 +550,9 @@ Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, Date
 Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
     Utf8String filter = "ModifiedTimestamp+ge+'";
-    filter.append(minDate.ToString());
+    filter.append(Utf8String(minDate.ToString()));
     filter.append("'+and+ModifiedTimestamp+le+'");
-    filter.append(maxDate.ToString());
+    filter.append(Utf8String(maxDate.ToString()));
     filter.append("'");
 
     return filter;
@@ -708,13 +703,10 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
         m_httpRequestString.append("&");
         }
     m_httpRequestString.append("$skip=");
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
     m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);
-    }
+    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
+}
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -835,13 +827,10 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
     m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);
-    }
+    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
+}
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -859,12 +848,10 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("'&$skip=");
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
     m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
+
     }
 
 //=====================================================================================
@@ -1117,9 +1104,9 @@ void TransferReport::ToXml(Utf8StringR report)
                 {
                 TransferResult* tr = results[i];
                 writer->WriteAttribute("FileName", tr->name.c_str());
-                writer->WriteAttribute("timeSpent", (long)tr->timeSpent);
-                writer->WriteAttribute("CURLcode", tr->errorCode);
-                writer->WriteAttribute("progress", tr->progress);
+                writer->WriteAttribute("timeSpent", Utf8PrintfString("%d", (long)tr->timeSpent).c_str());
+                writer->WriteAttribute("CURLcode",  Utf8PrintfString("%u", tr->errorCode).c_str());
+                writer->WriteAttribute("progress", Utf8PrintfString("%u", tr->progress).c_str());
                 }
             writer->WriteElementEnd();
             }
@@ -1821,7 +1808,7 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
 
     bool nextMarker;
     int stat = RequestType::BodyNoToken;
-    WStringP value;
+    WString value;
     Utf8String utf8Value;
     Utf8String xmlResponse;
     Utf8String filter = request.GetFilter();
@@ -1835,12 +1822,12 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str());
         BeAssert(reader.IsValid());
 
-        value = new WString();
+        value.clear();
 
         while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "Name", false, nullptr)))
             {
-            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
-            utf8Value = Utf8String(value->c_str());
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+            utf8Value = Utf8String(value.c_str());
             if(filter.length() > 0 && utf8Value.Contains(filter))
                 documents.push_back(utf8Value);
             }
@@ -1850,10 +1837,10 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
         reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str()); 
         if((IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "NextMarker", false, nullptr))))
             {
-            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
-            if(value->length() > 0)
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+            if(value.length() > 0)
                 {
-                request.SetMarker(Utf8String(value->c_str()));
+                request.SetMarker(Utf8String(value.c_str()));
                 nextMarker = true;
                 }
             }
@@ -1868,7 +1855,6 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
 
         }while(nextMarker);
 
-    delete value;
     return documents;
     }
 
