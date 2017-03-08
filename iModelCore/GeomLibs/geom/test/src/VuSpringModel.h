@@ -539,9 +539,9 @@ struct VuSpringModel : private _VuSet
                 {
                 double shiftFraction;
                 int numSweep;
-                TriangleWeightFunction::CappedQuadraticFunction edgeWeightFunction (0, 0, 1, 0, 10);
+                VuSpringModel<TElementId>::TriangleWeightFunction::CappedQuadraticFunction edgeWeightFunction (0, 0, 1, 0, 10);
                 static int s_springSelect = 0;
-                TriangleWeightFunction springFunction (*this, s_springSelect, edgeWeightFunction);
+                VuSpringModel<TElementId>::TriangleWeightFunction springFunction (*this, s_springSelect, edgeWeightFunction);
                 vu_smoothInteriorVertices (Graph (), &springFunction, nullptr, 1.0e-4, 10, 100, 100, &shiftFraction, &numSweep);
                 static size_t s_maxIteration = 5;
                 VuMask skipMask = m_wallMask;//VU_EXTERIOR_EDGE; // m_wallMask;
