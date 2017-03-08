@@ -5,13 +5,13 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "TilePublisher.h"
+#include <TilePublisher/TilePublisher.h>
 #include "Constants.h"
 #include <crunch/CrnLib.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
-using namespace BentleyApi::Dgn::Render::Tile3d;
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,

@@ -62,6 +62,8 @@ protected:
     JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
 
 public:
+    virtual DisplayStyle3d* _ToDisplayStyle3dP() {return nullptr;}
+
     //! Construct a new DisplayStyle.
     //! @param[in] db The DgnDb to hold the DisplayStyle
     //! @param[in] name The name of the DisplayStyle. Must be unique across all DisplayStyles
@@ -70,7 +72,7 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
-    void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles();}
+    void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles(); _OnLoadedJsonProperties();}
 
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
@@ -144,6 +146,7 @@ public:
         struct SkyBox
         {
             bool m_enabled = false;
+            bool m_twoColor = false;
             Utf8String m_jpegFile;  //!< the name of a jpeg file with a spherical skybox
             ColorDef m_zenithColor; //!< if no jpeg file, the color of the zenith part of the sky gradient (shown when looking straight up.)
             ColorDef m_nadirColor;  //!< if no jpeg file, the color of the nadir part of the ground gradient (shown when looking straight down.)
@@ -169,6 +172,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
     static constexpr Utf8CP str_HLine() {return "HLine";}
+    DisplayStyle3dP _ToDisplayStyle3dP() override final {return this;}
 
 public:
     //! Construct a new DisplayStyle3d.
@@ -831,6 +835,7 @@ protected:
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     ViewDefinition3dCP _ToView3d() const override final {return this;}
     virtual void _EnableCamera() {m_cameraOn = true;}
+    virtual bool _SupportsCamera() const {return true;}
 
 public:
     static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} // about 12 inches
@@ -1048,6 +1053,7 @@ protected:
     OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     void _EnableCamera() override final {/* nope */}
+    bool _SupportsCamera() const override final {return false;}
 
 public:
     //! Construct a new OrthographicViewDefinition prior to inserting it

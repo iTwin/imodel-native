@@ -1,11 +1,13 @@
 /*--------------------------------------------------------------------------------------+                  
 |
-|     $Source: TilePublisher/lib/TilePublisher.h $
+|     $Source: PublicAPI/TilePublisher/TilePublisher.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
+
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
@@ -20,11 +22,13 @@
 #endif
 
 USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_RENDER
 
-#define BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Tile3d {
-#define END_BENTLEY_DGN_TILE3D_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
+#define BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace TilePublish {
+#define END_BENTLEY_TILEPUBLISHER_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_TILEPUBLISHER using namespace BentleyApi::Dgn::TilePublish;
 
-BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
+BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE
 
 typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
@@ -388,5 +392,5 @@ public:
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
 };
 
-END_BENTLEY_DGN_TILE3D_NAMESPACE
+END_BENTLEY_TILEPUBLISHER_NAMESPACE
 
