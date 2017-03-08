@@ -13654,7 +13654,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
                     <AppliesToEntityClass>Base</AppliesToEntityClass>
                 </IsMixin>
             </ECCustomAttributes>
-            <BaseClass>MxBase</BaseClass>
+            <BaseClass>MxA</BaseClass>
             <ECProperty propertyName='MxB_Prop' typeName='long' />
         </ECEntityClass>
         <ECEntityClass typeName="Base">
@@ -13669,12 +13669,21 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
             </ECCustomAttributes>
             <ECProperty propertyName="Base_Prop" typeName="long" />
         </ECEntityClass>
-        <ECEntityClass typeName="Child" >
+        <ECEntityClass typeName="ChildA" >
             <BaseClass>Base</BaseClass>
+            <ECProperty propertyName="Child_Prop" typeName="long" />
+        </ECEntityClass>
+        <ECEntityClass typeName="ChildB" >
+            <BaseClass>ChildA</BaseClass>
             <BaseClass>MxA</BaseClass>
+            <ECProperty propertyName="Child_Prop" typeName="long" />
+        </ECEntityClass>
+        <ECEntityClass typeName="ChildC" >
+            <BaseClass>ChildB</BaseClass>
             <BaseClass>MxB</BaseClass>
             <ECProperty propertyName="Child_Prop" typeName="long" />
         </ECEntityClass>
+
     </ECSchema>)xml"));
   
     ASSERT_TRUE(GetECDb().IsDbOpen());
