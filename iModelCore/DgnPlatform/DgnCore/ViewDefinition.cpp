@@ -2293,6 +2293,16 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     {
     if (!IDisplayMetricsRecorder::IsRecorderActive())
         return;
+
+    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    Json::Value measurement(Json::objectValue);
+    measurement["seconds"] = seconds;
+    if (aborted)
+        measurement["aborted"] = 1;
+    if (!complete)
+        measurement["incomplete"] = 1;
+        
+    recorder->_RecordMeasurement("CreateSceneComplete", measurement);
     }
 
 
