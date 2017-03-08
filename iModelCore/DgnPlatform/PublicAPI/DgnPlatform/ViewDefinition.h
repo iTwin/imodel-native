@@ -72,7 +72,7 @@ public:
     //! Get a DisplayStyle by name.
     static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name) {auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
-    void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles();}
+    void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles(); _OnLoadedJsonProperties();}
 
     //! Get the Json::Value associated with a Style within this DisplayStyle. If the Style is not present, the returned Json::Value will be "null".
     //! @param[in] name The name of the Style
@@ -835,6 +835,7 @@ protected:
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     ViewDefinition3dCP _ToView3d() const override final {return this;}
     virtual void _EnableCamera() {m_cameraOn = true;}
+    virtual bool _SupportsCamera() const {return true;}
 
 public:
     static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} // about 12 inches
@@ -1052,6 +1053,7 @@ protected:
     OrthographicViewDefinitionCP _ToOrthographicView() const override {return this;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     void _EnableCamera() override final {/* nope */}
+    bool _SupportsCamera() const override final {return false;}
 
 public:
     //! Construct a new OrthographicViewDefinition prior to inserting it
