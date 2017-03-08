@@ -17,8 +17,16 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+/*-----------------------------------------------------------------//
+* Bentley RealityDataServiceExmaple
+* This application uses hard coded values and is not guaranteed to 
+* function properly.
+* The purpose of its existence is only to show how to structure
+* and execute RealityDataService operations
+//----------------------------------------------------------------*/
 int main(int argc, char *argv[])
     {
+    // 
     Utf8String id = "05610e4c-79d4-43ef-a9e5-e02e6328d843";
     Utf8String projectId = "1";
     Utf8String folderId = "ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2F";
@@ -32,10 +40,12 @@ int main(int argc, char *argv[])
     std::cout << RealityDataService::GetRepoName() << std::endl;
     std::cout << RealityDataService::GetSchemaName() << std::endl << std::endl;
 
+    //--------------------------DOWNLOAD--------------------------//
     /*BeFileName fName = BeFileName("D:\\RealityModFrameworkFolder");
     RealityDataServiceDownload download = RealityDataServiceDownload(fName, "604f9be9-e74f-4614-a23e-b02e2dc129f5/duplicates/Newf");
     download.Perform();*/
 
+    //---------------------------UPLOAD---------------------------//
     // System specific File Path used. If you wish to test uploading, change the path passed to RealityDataServiceUpload and rebuild
     /*bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField,Utf8String>();
     properties.Insert(RealityDataField::Name, "exampleUpload");
@@ -64,9 +74,11 @@ int main(int argc, char *argv[])
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
     SpatialEntityPtr entity = RealityDataService::Request(*idReq, status);
 
-    std::cout << "Entity provenance for Id " << id << ":" << std::endl;
-    std::cout << entity->GetName() << std::endl << std::endl;
-
+    if(entity != nullptr)
+        {
+        std::cout << "Entity provenance for Id " << id << ":" << std::endl;
+        std::cout << entity->GetName() << std::endl << std::endl;
+        }
 
     RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(projectId);
     bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, status);
@@ -78,15 +90,20 @@ int main(int argc, char *argv[])
     RealityDataFolderByIdRequest* folderReq = new RealityDataFolderByIdRequest(folderId);
     RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, status);
 
-    std::cout << "folder found for Id " << folderId << " :" << std::endl;
-    std::cout << folder->GetName() << std::endl;
-
+    if (folder != nullptr)
+        {
+        std::cout << "folder found for Id " << folderId << " :" << std::endl;
+        std::cout << folder->GetName() << std::endl;
+        }
 
     RealityDataDocumentByIdRequest* documentReq = new RealityDataDocumentByIdRequest(documentId);
     RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, status);
 
-    std::cout << "document with Id " << documentId << " :" << std::endl;
-    std::cout << document->GetName() << std::endl;
+    if (document != nullptr)
+        {
+        std::cout << "document with Id " << documentId << " :" << std::endl;
+        std::cout << document->GetName() << std::endl;
+        }
 
     RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(documentId);
     
@@ -139,10 +156,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Number of relationships found for project " << projectId << " :" << std::endl;
     std::cout << relationVec.size() << std::endl;
-
-
-
-
+    
     getch();
 
     return 0;

@@ -113,14 +113,14 @@ int main(int argc, char *argv[])
                 navString.ReplaceAll("/", "~2F");
                 break;
                 }
-            else
-                subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[i]);
             }
+        if (!objectFound)
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[i]);
         }
         
     if(!objectFound)
         {
-        std::cout << "no documents found in repo" << std::endl;
+        std::cout << "no document found, with basic exploration" << std::endl;
         getch();
         return 1;
         }
