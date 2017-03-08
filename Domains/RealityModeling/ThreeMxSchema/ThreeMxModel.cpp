@@ -202,9 +202,9 @@ void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr ThreeMxModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
+TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::System& system)
     {
-    Load(&context.GetTargetR().GetSystem());
+    Load(&system);
     if (m_scene.IsValid())
         m_scene->SetClip(m_clip.get());
 

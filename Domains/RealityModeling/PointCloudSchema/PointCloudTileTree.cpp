@@ -323,7 +323,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
+Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_model(model), m_name(model.GetName())
     {
     CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
@@ -332,7 +332,7 @@ Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view)
+RootPtr Root::Create(PointCloudModelR model, Render::SystemR system)
     {
     DgnDb::VerifyClientThread();
 
@@ -345,7 +345,7 @@ RootPtr Root::Create(PointCloudModelR model, Render::SystemR system, ViewControl
 
     transformToTile.InverseOf(transformFromTile);
 
-    RootPtr     root = new Root(model, transformFromTile, system, view);
+    RootPtr     root = new Root(model, transformFromTile, system);
     DRange3d    tileRange;
 
     transformToTile.Multiply(tileRange, dgnRange);

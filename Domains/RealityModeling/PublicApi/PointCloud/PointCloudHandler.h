@@ -111,7 +111,7 @@ protected:
     virtual void _WriteJsonProperties(Json::Value&) const override;
     virtual void _ReadJsonProperties(Json::Value const&) override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-    POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
+    POINTCLOUD_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::System&) override;
 
 
 public:

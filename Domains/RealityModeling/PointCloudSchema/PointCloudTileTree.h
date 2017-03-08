@@ -38,11 +38,11 @@ private:
     Utf8String          m_name;
 
     virtual Utf8CP _GetName() const override { return m_name.c_str(); }
-    Root(PointCloudModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
+    Root(PointCloudModelR model, TransformCR transform, Render::SystemR system);
     void LoadRootTile(DRange3dCR tileRange);
 
 public:
-    static RootPtr Create(PointCloudModelR model, Render::SystemR system, ViewControllerCR view);
+    static RootPtr Create(PointCloudModelR model, Render::SystemR system);
     virtual ~Root() { ClearAllTiles(); }
                                                                                                                                  
     PointCloudModelCR           GetPointCloudModel() const { return m_model; }

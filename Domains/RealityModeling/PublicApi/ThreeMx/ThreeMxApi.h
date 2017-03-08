@@ -210,7 +210,7 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
+    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::System&) override;
     THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;

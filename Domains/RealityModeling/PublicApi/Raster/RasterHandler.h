@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/RasterHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,7 +85,7 @@ protected:
     
     //! Destruct a RasterModel object.
     ~RasterModel();
-    virtual Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
+    virtual Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::System&) override;
     virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const { return BSIERROR; }
 
     virtual void _OnFitView(Dgn::FitContextR) override;

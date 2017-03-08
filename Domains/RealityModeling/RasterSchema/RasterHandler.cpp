@@ -343,9 +343,9 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr RasterModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
+TileTree::RootPtr RasterModel::_CreateTileTree(Dgn::Render::System& system)
     {
-    _Load(&context.GetTargetR().GetSystem());
+    _Load(&system);
     BeAssert(m_root.IsValid() && m_root->GetRootTile().IsValid());
     return m_root;
     }
