@@ -1802,7 +1802,7 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
 
     bool nextMarker;
     int stat = RequestType::BodyNoToken;
-    WStringP value;
+    WString value;
     Utf8String utf8Value;
     Utf8String xmlResponse;
     Utf8String filter = request.GetFilter();
@@ -1816,12 +1816,12 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
         BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str());
         BeAssert(reader.IsValid());
 
-        value = new WString();
+        value.clear();
 
         while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "Name", false, nullptr)))
             {
-            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
-            utf8Value = Utf8String(value->c_str());
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+            utf8Value = Utf8String(value.c_str());
             if(filter.length() > 0 && utf8Value.Contains(filter))
                 documents.push_back(utf8Value);
             }
@@ -1831,10 +1831,10 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
         reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str()); 
         if((IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "NextMarker", false, nullptr))))
             {
-            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, value);
-            if(value->length() > 0)
+            reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+            if(value.length() > 0)
                 {
-                request.SetMarker(Utf8String(value->c_str()));
+                request.SetMarker(Utf8String(value.c_str()));
                 nextMarker = true;
                 }
             }
@@ -1849,7 +1849,6 @@ bvector<Utf8String> RealityDataService::Request(const AllRealityDataByRootId& re
 
         }while(nextMarker);
 
-    delete value;
     return documents;
     }
 

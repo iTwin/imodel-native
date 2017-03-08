@@ -135,9 +135,9 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<Reality
 
         const Json::Value properties = instance["properties"];
 
-        RealityDataPtr data = JsonToRealityData(properties);
+        RealityDataPtr realityData = JsonToRealityData(properties);
 
-        outData->push_back(data);
+        outData->push_back(realityData);
         }
     return SUCCESS;
     }
@@ -165,9 +165,9 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bmap<Utf8String
 
         const Json::Value properties = instance["properties"];
 
-        RealityDataPtr data = JsonToRealityData(properties);
+        RealityDataPtr realityData = JsonToRealityData(properties);
 
-        outData->Insert(data->GetName(), data);
+        outData->Insert(realityData->GetName(), realityData);
         }
     return SUCCESS;
     }
