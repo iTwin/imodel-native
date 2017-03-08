@@ -82,7 +82,6 @@ public:
 private:
     mutable LoadStatus                          m_loadSceneStatus;
     mutable BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
-    mutable Dgn::TileTree::RootPtr              m_tileTree;
 
     struct ViewportCacheEntry
         {

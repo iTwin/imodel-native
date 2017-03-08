@@ -199,7 +199,7 @@ RasterFileModel::~RasterFileModel()
 //----------------------------------------------------------------------------------------
 BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     {
-    if (m_root.IsValid() && (nullptr == renderSys || m_root->GetRenderSystem() == renderSys))
+    if (m_rasterRoot.IsValid() && (nullptr == renderSys || m_rasterRoot->GetRenderSystem() == renderSys))
         return SUCCESS;
     
     if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
@@ -221,8 +221,8 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
         return ERROR;
         }
 
-    m_root = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
-    if (!m_root.IsValid())
+    m_rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+    if (!m_rasterRoot.IsValid())
         {  
         m_loadFileFailed = true;
         return ERROR;

@@ -77,7 +77,7 @@ private:
 protected:
     friend struct RasterModelHandler;
 
-    mutable RasterRootPtr m_root;
+    mutable RasterRootPtr m_rasterRoot;
 
     double m_depthBias = 0.0;       //! A display offset in world units applied to the raster in the view Z direction. Only relevant when raster is parallel to the ground(XY plane).
 

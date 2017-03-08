@@ -289,15 +289,15 @@ RasterModel::~RasterModel()
 AxisAlignedBox3d RasterModel::_QueryModelRange() const
     {
     _Load(nullptr);
-    if (!m_root.IsValid())
+    if (!m_rasterRoot.IsValid())
         return AxisAlignedBox3d();
 
-    ElementAlignedBox3d range = m_root->ComputeRange();
+    ElementAlignedBox3d range = m_rasterRoot->ComputeRange();
     if (!range.IsValid())
         return AxisAlignedBox3d();
 
     Frustum box(range);
-    box.Multiply(m_root->GetLocation());
+    box.Multiply(m_rasterRoot->GetLocation());
 
     AxisAlignedBox3d aaRange;
     aaRange.Extend(box.m_pts, 8);
@@ -311,11 +311,11 @@ AxisAlignedBox3d RasterModel::_QueryModelRange() const
 void RasterModel::_OnFitView(Dgn::FitContextR context) 
     {
     _Load(nullptr);
-    if (!m_root.IsValid())
+    if (!m_rasterRoot.IsValid())
         return;
 
-    ElementAlignedBox3d rangeWorld = m_root->ComputeRange();
-    context.ExtendFitRange(rangeWorld, m_root->GetLocation());
+    ElementAlignedBox3d rangeWorld = m_rasterRoot->ComputeRange();
+    context.ExtendFitRange(rangeWorld, m_rasterRoot->GetLocation());
     }
 
 #if 0 // This is how we pick a raster. We do not require this feature for now so disable it.
@@ -327,9 +327,9 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
     if (context.GetDrawPurpose() == DrawPurpose::Pick)
         {
         _Load(nullptr);
-        if (m_root.IsValid())
+        if (m_rasterRoot.IsValid())
             {
-            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(m_root.GetCorners(), *this));
+            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(m_rasterRoot.GetCorners(), *this));
             RefCountedPtr<RasterBorderGeometrySource::ElemTopology> pTopology = RasterBorderGeometrySource::ElemTopology::Create(*pSource);
 
             context.SetElemTopology(pTopology.get());
@@ -346,8 +346,8 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
 TileTree::RootPtr RasterModel::_CreateTileTree(Dgn::Render::System& system)
     {
     _Load(&system);
-    BeAssert(m_root.IsValid() && m_root->GetRootTile().IsValid());
-    return m_root;
+    BeAssert(m_rasterRoot.IsValid() && m_rasterRoot->GetRootTile().IsValid());
+    return m_rasterRoot.get();
     }
 
 //----------------------------------------------------------------------------------------
@@ -355,7 +355,7 @@ TileTree::RootPtr RasterModel::_CreateTileTree(Dgn::Render::System& system)
 //----------------------------------------------------------------------------------------
 void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR context) const
     {
-    BeAssert(m_root.IsValid());
+    BeAssert(m_rasterRoot.IsValid());
 
     if (0.0 == GetDepthBias() || context.GetViewport() == nullptr || !IsParallelToGround())
         {
@@ -379,7 +379,7 @@ void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR co
 
     auto const& cam = context.GetViewport()->GetCamera();
     
-    ElementAlignedBox3d box = m_root->GetRootTile()->GetRange();
+    ElementAlignedBox3d box = m_rasterRoot->GetRootTile()->GetRange();
 
     DPoint3d lowerLeft = box.low;
     DPoint3d lowerRight = DPoint3d::From(box.high.x, box.low.y, box.low.z);

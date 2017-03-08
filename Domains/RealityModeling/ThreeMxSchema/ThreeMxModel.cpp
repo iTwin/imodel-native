@@ -208,7 +208,7 @@ TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::System& system)
     if (m_scene.IsValid())
         m_scene->SetClip(m_clip.get());
 
-    return m_scene;
+    return m_scene.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
