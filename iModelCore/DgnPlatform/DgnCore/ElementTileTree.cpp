@@ -608,8 +608,6 @@ public:
         m_is3dView = root.Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
         SetViewFlags(GetDefaultViewFlags());
         }
-
-    bool AcceptElement(DgnElementId elem, DgnCategoryId cat) const { return m_loadContext.AcceptElement(elem, cat); }
 };
 
 //=======================================================================================
@@ -634,7 +632,7 @@ struct GeometryCollector : RangeIndex::Traverser
         if (m_context.CheckStop())
             return Stop::Yes;
 
-        if (entry.m_range.IntersectsWith(m_range) && m_context.AcceptElement(entry.m_id, entry.m_category))
+        if (entry.m_range.IntersectsWith(m_range))
             {
             auto entryRange = entry.m_range.ToRange3d();
             if (!m_processor.BelowMinRange(entryRange))
@@ -681,9 +679,9 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
-    : T_Super("", tile, loads, ""), m_filter(tile.GetElementRoot().GetFilter())
+    : T_Super("", tile, loads, "")
     {
-    // NB: We must copy the filter, here on the main thread, because it may change while we're processing it...
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -794,9 +792,9 @@ BentleyStatus Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_filter(view), m_is3d(model.Is3dModel()),
+    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()),
     m_debugRanges(ELEMENT_TILE_DEBUG_RANGE), m_cacheGeometry(true)
     {
     //
@@ -805,7 +803,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(GeometricModelR model, Render::SystemR system, ViewControllerCR view)
+RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     {
     DgnDb::VerifyClientThread();
 
@@ -846,7 +844,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system, ViewControll
     T_HOST.GetFontAdmin().EnsureInitialized();
     model.GetDgnDb().Fonts().Update();
 
-    RootPtr root = new Root(model, transform, system, view);
+    RootPtr root = new Root(model, transform, system);
     Transform rangeTransform;
 
     rangeTransform.InverseOf(transform);
@@ -996,27 +994,6 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, DRa
         geometry.insert(geometry.end(), iter->second.begin(), iter->second.end());
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Filter::Filter(ViewControllerCR view)
-    : m_categories(view.GetViewedCategories()), m_alwaysDrawn(view.GetAlwaysDrawn()), m_neverDrawn(view.GetNeverDrawn()), m_alwaysDrawnExclusive(view.IsAlwaysDrawnExclusive())
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Filter::AcceptElement(DgnElementId elem, DgnCategoryId cat) const
-    {
-    bool always = m_alwaysDrawn.end() != m_alwaysDrawn.find(elem);
-    if (always || m_alwaysDrawnExclusive)
-        return always;
-
-    return m_neverDrawn.end() == m_neverDrawn.find(elem) && m_categories.end() != m_categories.find(cat);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -794,10 +794,7 @@ protected:
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
-    //! Produce a TileTree::RootPtr representing the graphics for this GeometricModel. The returned tree will be cached and re-rendered on each render frame.
-    //! Its graphics will be updated as new tiles are loaded in the background. When the tree becomes invalid due to changes to the viewing parameters, a new
-    //! tree will be requested.
-    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(RenderContextR context, ViewControllerCR view);
+    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::System&);
 
     virtual void _PickTerrainGraphics(PickContextR) const {}
 
@@ -833,7 +830,7 @@ public:
     //! Get the Properties for this model.
     DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;}
 
-    RefCountedPtr<TileTree::Root> CreateTileTree(RenderContextR context, ViewControllerCR view) { return _CreateTileTree(context, view); }
+    RefCountedPtr<TileTree::Root> CreateTileTree(Render::System& system) { return _CreateTileTree(system); }
 };
 
 //=======================================================================================

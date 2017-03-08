@@ -1488,9 +1488,9 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr GeometricModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
+TileTree::RootPtr GeometricModel::_CreateTileTree(Render::System& system)
     {
-    return ElementTileTree::Root::Create(*this, context.GetTargetR().GetSystem(), view);
+    return ElementTileTree::Root::Create(*this, system);
     }
 
 /*---------------------------------------------------------------------------------**//**
