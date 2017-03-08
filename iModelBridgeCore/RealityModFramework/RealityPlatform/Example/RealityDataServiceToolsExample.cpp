@@ -83,6 +83,12 @@ void ParsingParamters (int argc, char* argv[])
     bool    found = true;
     int     currentParamPos = 1;
 
+    if (argc < 2)
+        {
+        Usage();
+        exit(1);
+        }
+
     while (found && currentParamPos < argc)
         {
         if (_stricmp(("-?"), argv[currentParamPos]) == 0 ||
