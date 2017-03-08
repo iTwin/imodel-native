@@ -18,6 +18,21 @@ Utf8CP ModelData::ElementName = PACKAGE_ELEMENT_ModelData;
 Utf8CP PinnedData::ElementName = PACKAGE_ELEMENT_PinnedData;
 Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                Alain.Robert      12/2016
+* Indicates if two long/lat location are alsmost equal (within given tolerance in meter)
++--------------------------------------------------------------------------------------*/
+bool AlmostEqual (GeoPoint2d const & dataA, GeoPoint2d const & dataB, double tolerance=0.001) 
+    {
+    // We can consider a lat/long coordinate to be almost equal if they diverge by less than tolerance
+    // A distance on Earth is based on the ratio 1852 meters per minute latitude
+    // and 1852 meters times cos of latitude per minute longitude
+    double deltaNorth = fabs(dataA.latitude-dataB.latitude) * 60 * 1852;
+    double deltaEast = fabs(dataA.longitude-dataB.longitude) * 60 * 1852 * cos(Angle::DegreesToRadians(dataA.latitude));
+
+    return (tolerance > sqrt(deltaNorth * deltaNorth + deltaEast * deltaEast));
+    }
+
 //=======================================================================================
 //                              BoundingPolygon
 //=======================================================================================
@@ -66,7 +81,7 @@ BoundingPolygon::BoundingPolygon(GeoPoint2dCP pPoints, size_t count)
     {
     if(count > 2)
         {
-        if(pPoints[0].AlmostEqual(pPoints[count-1]))
+        if(AlmostEqual(pPoints[0], pPoints[count-1]))
             {
             m_points.assign(pPoints, pPoints + (count-1));
             }
@@ -130,7 +145,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr)
 
     if(points.size() > 2)
         {
-        if(points[0].AlmostEqual(points[points.size()-1]))
+        if(AlmostEqual(points[0], points[points.size()-1]))
             {
             points[points.size()-1] = points[0];  // Explicitly assign the last for bitwise equality.
             }
@@ -171,7 +186,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(Utf8StringCR polygonStr)
 
     if (points.size() > 2)
         {
-        if (points[0].AlmostEqual(points[points.size() - 1]))
+        if (AlmostEqual(points[0], points[points.size() - 1]))
             {
             points[points.size() - 1] = points[0];  // Explicitly assign the last for bitwise equality.
             }

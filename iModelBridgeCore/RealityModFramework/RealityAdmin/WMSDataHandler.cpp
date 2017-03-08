@@ -83,7 +83,7 @@ void WmsData::Terminate()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
-RealityDataPtr WmsData::Create(Utf8CP url)
+RealityDataExtractPtr WmsData::Create(Utf8CP url)
     {
     return new WmsData(url);
     }

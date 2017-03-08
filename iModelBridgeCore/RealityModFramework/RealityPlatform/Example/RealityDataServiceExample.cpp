@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     RequestStatus status;
 
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
-    SpatialEntityPtr entity = RealityDataService::Request(*idReq, status);
+    RealityDataPtr entity = RealityDataService::Request(*idReq, status);
 
     if(entity != nullptr)
         {
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
     filter1.push_back(RealityDataFilterCreator::FilterByCreationDate(DateTime(2016,12,01), DateTime(2017,01,05)));
     filter2.push_back(RealityDataFilterCreator::GroupFiltersAND(filter1));
     filter2.push_back(RealityDataFilterCreator::FilterByType("3mx"));
-    filter2.push_back(RealityDataFilterCreator::FilterPublic(true));
+    filter2.push_back(RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::PUBLIC));
     
     // important note: parentheses are not currently supported, which means that all filters (AND/OR) are evaluated together
     // results may differ from their intended goal
@@ -138,14 +138,14 @@ int main(int argc, char *argv[])
     filteredRequest->SetFilter(filters);
     filteredRequest->SortBy(RealityDataField::ModifiedTimestamp, true);
 
-    bvector<SpatialEntityPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
+    bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
 
     std::cout << "Number of spatial entities found for filter : " << std::endl;
     std::cout << filteredSpatialEntities.size() << std::endl;
 
 
     RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    bvector<SpatialEntityPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
+    bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
     std::cout << "Number of spatial entities found for enterprise" << enterpriseId << " :" << std::endl;
     std::cout << enterpriseVec.size() << std::endl;

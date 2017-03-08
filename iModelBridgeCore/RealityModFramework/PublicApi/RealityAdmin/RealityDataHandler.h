@@ -26,7 +26,7 @@ enum class PointCloudView
 //! Base class for information extraction on various data types.
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct RealityData : public RefCountedBase
+struct RealityDataExtract : public RefCountedBase
     {
     public:
         // Footprint.
@@ -40,7 +40,7 @@ struct RealityData : public RefCountedBase
         REALITYDATAPLATFORM_EXPORT StatusInt SaveThumbnail(const HBITMAP* pThumbnailBmp, BeFileNameCR outFilename) const;
 
     protected:
-        virtual ~RealityData() {};
+        virtual ~RealityDataExtract() {};
 
         // Footprint.
         virtual StatusInt _GetFootprint(bvector<GeoPoint2d>* pFootprint, DRange2dP pFootprintExtents) const = 0;
@@ -57,10 +57,10 @@ struct RealityData : public RefCountedBase
 //! Extract information on raster data.
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct RasterData : public RealityData
+struct RasterData : public RealityDataExtract
     {
     public:
-        REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP inFilename);
+        REALITYDATAPLATFORM_EXPORT static RealityDataExtractPtr Create(Utf8CP inFilename);
 
         //! Get resolution in meters. Format is "widthxheight".
         REALITYDATAPLATFORM_EXPORT const Utf8String ComputeResolutionInMeters();
@@ -95,10 +95,10 @@ struct RasterData : public RealityData
 //! Extract information on pointcloud data.
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct PointCloudData : public RealityData
+struct PointCloudData : public RealityDataExtract
     {
     public:
-        REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP inFilename, PointCloudView view);
+        REALITYDATAPLATFORM_EXPORT static RealityDataExtractPtr Create(Utf8CP inFilename, PointCloudView view);
 
     protected:
         PointCloudData(Utf8CP filename, PointCloudView view);
@@ -134,10 +134,10 @@ struct PointCloudData : public RealityData
 //! Extract information on wms data.
 //! @bsiclass                                   Jean-Francois.Cote               4/2015
 //=====================================================================================
-struct WmsData : public RealityData
+struct WmsData : public RealityDataExtract
     {
     public:
-        REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8CP url);
+        REALITYDATAPLATFORM_EXPORT static RealityDataExtractPtr Create(Utf8CP url);
 
     protected:
         WmsData(Utf8CP url);

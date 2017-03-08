@@ -181,17 +181,17 @@ private:
 //! This class represents a request for specific SpatialEntity with details class object.
 //! This request enables accessing details about a specific spatial entity with details.
 //=====================================================================================
-struct SpatialEntityByDetailsByIdRequest : public GeoCoordinationServiceRequest
+struct SpatialEntityWithDetailsByIdRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityByDetailsByIdRequestPtr Create(Utf8StringCR identifier);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityWithDetailsByIdRequestPtr Create(Utf8StringCR identifier);
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityByDetailsByIdRequest() {}
+    SpatialEntityWithDetailsByIdRequest() {}
     }
     
 //=====================================================================================
