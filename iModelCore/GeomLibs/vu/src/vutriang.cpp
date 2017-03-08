@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vutriang.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -209,7 +209,7 @@ double &ratio
     }
 
 template <typename UserDataType>
-void TryFlip
+bool TryFlip
 (
 VuSetP graphP,
 bool (*testFuncP)(VuSetP,VuP,UserDataType *),
@@ -219,7 +219,7 @@ VuP AP                              // Edge to consider for flip.
 )
     {
     VuP BP,CP,DP,EP,FP;
-
+    bool flipped = false;
     if( (*testFuncP)(graphP,AP,userDataP) )
         {
         /* Extract the edge. */
@@ -242,12 +242,14 @@ VuP AP                              // Edge to consider for flip.
         vu_copyCoordinates(DP,FP);
         vu_copyConditionalVertexData (graphP, CP, AP);
         vu_copyConditionalVertexData (graphP, FP, DP);
+        flipped = true;
         }
+    return flipped;
     }
 
 
 template <typename UserDataType>
-static void vu_flipEdgesFromEdgeSet
+static int vu_flipEdgesFromEdgeSet
 (
 VuSetP graphP,
 bool (*testFuncP)(VuSetP,VuP,UserDataType *),
@@ -257,13 +259,16 @@ size_t maxFlip
 )
     {
     size_t numFlip = 0;
+    int numCompletedFlip = 0;
     VuP seedNode;
     for(;
         numFlip++ < maxFlip && NULL != (seedNode = vu_markedEdgeSetChooseAny(edgeSet))
         ;)
         {
-        TryFlip (graphP, testFuncP, userDataP, edgeSet, seedNode);
+        if (TryFlip (graphP, testFuncP, userDataP, edgeSet, seedNode))
+            numCompletedFlip++;
         }
+    return numCompletedFlip;
     }
 
 
@@ -275,7 +280,7 @@ size_t maxFlip
 |                                                                       |
 +----------------------------------------------------------------------*/
 template <typename UserDataType>
-static void vu_flipEdges
+static int vu_flipEdges
 (
 VuSetP graphP,
 bool (*testFuncP)(VuSetP,VuP,UserDataType *),
@@ -296,7 +301,8 @@ int maxFlipsPerEdge = 60
     */
     static double s_baseFlipFactor = 20;
     static double s_flipDivisor = 60;
-    double numFlip;
+    double numFlip = 0.0;
+    int numFlip1 = 0;
     double maxFlip;
     double factor1;
     double factor2;
@@ -315,7 +321,6 @@ int maxFlipsPerEdge = 60
         END_VU_SET_LOOP(nodeP,graphP)
 
         /* Remove and flip edges until the set is exhausted */
-        numFlip = 0;
         factor1 = maxFlip / s_flipDivisor;
         factor2 = s_baseFlipFactor;
         if (factor1 > factor2)
@@ -327,10 +332,12 @@ int maxFlipsPerEdge = 60
            numFlip++ < maxFlip && NULL != (AP = vu_markedEdgeSetChooseAny(edgeSetP))
            ;)
             {
-            TryFlip (graphP, testFuncP, userDataP, edgeSetP, AP);
+            if (TryFlip (graphP, testFuncP, userDataP, edgeSetP, AP))
+                numFlip1++;
             }
         vu_markedEdgeSetFree(edgeSetP);
         }
+    return numFlip1;
     }
 /*----------------------------------------------------------------------+
 * @param graphP IN containing graph
@@ -700,14 +707,24 @@ void    *userDataP
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveMappedCoordinateAspectRatio
+int VuFlipFunctions::FlipTrianglesToImproveMappedCoordinateAspectRatio
 (
 VuSetP  graphP,
 VuCoordinateMappingFunction *mapper,
 int maxFlipsPerEdge
 )
     {
-    vu_flipEdges (graphP, vu_mappedCoordinateFlipTest, mapper, maxFlipsPerEdge);
+    return vu_flipEdges (graphP, vu_mappedCoordinateFlipTest, mapper, maxFlipsPerEdge);
+    }
+
+int vu_flipTrianglesToImproveMappedCoordinateAspectRatio
+(
+VuSetP  graphP,
+VuCoordinateMappingFunction *mapper,
+int maxFlipPerEdge
+)
+    {
+    return VuFlipFunctions::FlipTrianglesToImproveMappedCoordinateAspectRatio (graphP, mapper, maxFlipPerEdge);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -719,7 +736,7 @@ int maxFlipsPerEdge
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveQuadraticAspectRatio
 (
 VuSetP  graphP
 )
@@ -731,7 +748,7 @@ VuSetP  graphP
     vu_getPeriods (graphP, &periods);
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
-    vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
+    return vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -743,7 +760,7 @@ VuSetP  graphP
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveQuadraticAspectRatio
 (
 VuSetP  graphP,
 VuMarkedEdgeSetP edgeSet
@@ -757,7 +774,7 @@ VuMarkedEdgeSetP edgeSet
     vu_getPeriods (graphP, &periods);
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
-    vu_flipEdgesFromEdgeSet (graphP, vu_scaledPeriodicQuadraticFlipTest, &data, edgeSet, s_maxFlip);
+    return vu_flipEdgesFromEdgeSet (graphP, vu_scaledPeriodicQuadraticFlipTest, &data, edgeSet, s_maxFlip);
     }
 
 
@@ -774,7 +791,7 @@ VuMarkedEdgeSetP edgeSet
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveScaledQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveScaledQuadraticAspectRatio
 (
 VuSetP  graphP,
 double xScale,
@@ -788,7 +805,7 @@ double yScale
     vu_getPeriods (graphP, &periods);
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
-    vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
+    return vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -805,7 +822,7 @@ double yScale
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveScaledPeriodicQuadraticAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveScaledPeriodicQuadraticAspectRatio
 (
 VuSetP  graphP,
 double xScale,
@@ -819,7 +836,7 @@ double yPeriod
     data.yScale = yScale;
     data.xPeriod = xPeriod;
     data.yPeriod = yPeriod;
-    vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
+    return vu_flipEdges (graphP, vu_scaledPeriodicQuadraticFlipTest, &data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -832,7 +849,7 @@ double yPeriod
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveUAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveUAspectRatio
 (
 VuSetP  graphP
 )
@@ -844,7 +861,7 @@ VuSetP  graphP
     vu_getPeriods (graphP, &periods);
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
-    vu_flipEdges (graphP, vu_periodicUFlipTest, &data);
+    return vu_flipEdges (graphP, vu_periodicUFlipTest, &data);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -857,7 +874,7 @@ VuSetP  graphP
 @usealinkgroup TriangleFlipFunctions
 @bsimethod                                                    Earlin.Lutz     10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void vu_flipTrianglesToImproveVAspectRatio
+Public GEOMDLLIMPEXP int vu_flipTrianglesToImproveVAspectRatio
 (
 VuSetP  graphP
 )
@@ -869,7 +886,7 @@ VuSetP  graphP
     vu_getPeriods (graphP, &periods);
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
-    vu_flipEdges (graphP, vu_periodicVFlipTest, &data);
+    return vu_flipEdges (graphP, vu_periodicVFlipTest, &data);
     }
 
 /*---------------------------------------------------------------------------------**//**

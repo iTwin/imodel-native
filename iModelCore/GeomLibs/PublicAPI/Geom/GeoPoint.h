@@ -44,30 +44,7 @@ struct GeoPoint2d
     //! @param latitudeValue        The latitude.
     static GeoPoint2d From(double longitudeValue, double latitudeValue) {GeoPoint2d pt; pt.longitude = longitudeValue; pt.latitude = latitudeValue; return pt;}
 
-    /*--------------------------------------------------------------------------------**//**
-    * @bsimethod                                                Alain.Robert      12/2016
-    * Indicates if two long/lat location are alsmost equal (within 1 millimeter ground)
-    +--------------------------------------------------------------------------------------*/
-    bool AlmostEqual (GeoPoint2d const & dataB) const
-        {
-        return AlmostEqual(dataB, 0.001); 
-        }
 
-
-    /*--------------------------------------------------------------------------------**//**
-    * @bsimethod                                                Alain.Robert      12/2016
-    * Indicates if two long/lat location are alsmost equal (within given tolerance in meter)
-    +--------------------------------------------------------------------------------------*/
-    bool AlmostEqual (GeoPoint2d const & dataB, double tolerance) const
-        {
-        // We can consider a lat/long coordinate to be almost equal if they diverge by less than tolerance
-        // A distance on Earth is based on the ratio 1852 meters per minute latitude
-        // and 1852 meters times cos of latitude per minute longitude
-        double deltaNorth = fabs(latitude-dataB.latitude) * 60 * 1852;
-        double deltaEast = fabs(longitude-dataB.longitude) * 60 * 1852 * cos(latitude);
-
-        return (tolerance > sqrt(deltaNorth * deltaNorth + deltaEast * deltaEast));
-        }
 #endif
     };
 

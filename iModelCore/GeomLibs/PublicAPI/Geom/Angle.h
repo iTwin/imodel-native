@@ -68,7 +68,7 @@ public:
     GEOMDLLIMPEXP static bool IsNearZero(double radians);
 
     //! test if instance is {SmallAngle} or smaller.
-    GEOMDLLIMPEXP bool IsNearZoro() const;
+	GEOMDLLIMPEXP bool IsNearZero () const;
 
     //! Test if {radians} is {SmallAngle} or smaller, allowing 2pi shift.
     GEOMDLLIMPEXP static bool IsNearZeroAllowPeriodShift(double radians);

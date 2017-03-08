@@ -53,3 +53,6 @@ void PrintUsageSums
 // not widely needed, but how to make all the objects in the world depend on it in make files?
 #include "FlightPlanner.h"
 #include <Mtg/MTGShortestPaths.h>
+
+#define CompileFromGeomLibsGTest
+#include "VuSpringModel.h"
