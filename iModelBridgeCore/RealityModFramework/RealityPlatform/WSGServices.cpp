@@ -499,12 +499,9 @@ void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(m_className);
     m_httpRequestString.append("?$skip=");
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf, m_startIndex);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
     m_httpRequestString.append("&$top=");
-    BeStringUtilities::FormatUInt64(buf, m_pageSize);
-    m_httpRequestString.append(buf);
+    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
     }
 
 bvector<Utf8String> WSGServer::GetPlugins() const
@@ -560,8 +557,9 @@ Utf8String WSGServer::GetVersion() const
 
     bvector<Utf8String> lines;
     BeStringUtilities::Split(versionString.c_str(), "\n", lines);
-
     m_version = lines[0];
+    m_version.Trim();
+
     return m_version;
     }
 

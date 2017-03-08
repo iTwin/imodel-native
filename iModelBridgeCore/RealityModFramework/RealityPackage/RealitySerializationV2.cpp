@@ -152,13 +152,13 @@ RealityPackageStatus RealityDataSerializerV2::_ReadImageryGroup(RealityDataPacka
         if (NULL != pCornerNode)
             {
             corners = new GeoPoint2d[4];
-            RealityPackageStatus status = RealityPackageStatus::Success;
-            if (RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerLeft].longitude, corners[ImageryData::Corners::LowerLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerRight].longitude, corners[ImageryData::Corners::LowerRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperLeft].longitude, corners[ImageryData::Corners::UpperLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
-                RealityPackageStatus::Success != (status = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperRight].longitude, corners[ImageryData::Corners::UpperRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
+            RealityPackageStatus status2 = RealityPackageStatus::Success;
+            if (RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerLeft].longitude, corners[ImageryData::Corners::LowerLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::LowerRight].longitude, corners[ImageryData::Corners::LowerRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperLeft].longitude, corners[ImageryData::Corners::UpperLeft].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft)) ||
+                RealityPackageStatus::Success != (status2 = RealityDataSerializer::ReadLongLat(corners[ImageryData::Corners::UpperRight].longitude, corners[ImageryData::Corners::UpperRight].latitude, *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
                 {
-                return status;
+                return status2;
                 }
             }
 
@@ -795,9 +795,9 @@ RealityPackageStatus RealityDataSerializerV2::_WriteSource(BeXmlNodeR node, Real
         BeXmlNodeP pSisterFilesNode = pSourceNode->AddEmptyElement(PACKAGE_ELEMENT_SisterFiles);
 
         bvector<UriPtr> sisterFiles = source.GetSisterFiles();
-        for (UriPtr const& uri : sisterFiles)
+        for (UriPtr const& uri2 : sisterFiles)
             {
-            pSisterFilesNode->AddElementStringValue(PACKAGE_ELEMENT_File, uri->ToString().c_str());
+            pSisterFilesNode->AddElementStringValue(PACKAGE_ELEMENT_File, uri2->ToString().c_str());
             }
         }
 

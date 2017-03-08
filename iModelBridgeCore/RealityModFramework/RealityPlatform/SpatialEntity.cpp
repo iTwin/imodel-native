@@ -455,11 +455,11 @@ SpatialEntityServer::SpatialEntityServer(Utf8CP url, Utf8CP name)
         if (m_name.empty())
             {
             // No server name was provided, try to extract it from url.
-            Utf8String name(url);
-            size_t beginPos = name.find_first_of("://") + 3;
-            size_t pos = name.find_last_of(".");
-            size_t endPos = name.find("/", pos);
-            m_name = name.substr(beginPos, endPos - beginPos);
+            Utf8String nameUrl(url);
+            size_t beginPos = nameUrl.find_first_of("://") + 3;
+            size_t pos = nameUrl.find_last_of(".");
+            size_t endPos = nameUrl.find("/", pos);
+            m_name = nameUrl.substr(beginPos, endPos - beginPos);
             }
         }
     }

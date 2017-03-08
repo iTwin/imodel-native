@@ -71,9 +71,9 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bvector<Spati
 
         const Json::Value properties = instance["properties"];
 
-        SpatialEntityPtr data = JsonToSpatialEntity(properties);
+        SpatialEntityPtr entity = JsonToSpatialEntity(properties);
 
-        outData->push_back(data);
+        outData->push_back(entity);
         }
     return SUCCESS;
     }
@@ -101,9 +101,9 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8Stri
 
         const Json::Value properties = instance["properties"];
 
-        SpatialEntityPtr data = JsonToSpatialEntity(properties);
+        SpatialEntityPtr entity = JsonToSpatialEntity(properties);
 
-        outData->Insert(data->GetName(), data);
+        outData->Insert(entity->GetName(), entity);
         }
     return SUCCESS;
     }

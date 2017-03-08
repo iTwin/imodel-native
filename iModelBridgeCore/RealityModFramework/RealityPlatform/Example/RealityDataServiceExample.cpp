@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*-----------------------------------------------------------------//
-* Bentley RealityDataServiceExmaple
+* Bentley RealityDataServiceExample
 * This application uses hard coded values and is not guaranteed to 
 * function properly.
 * The purpose of its existence is only to show how to structure
@@ -26,7 +26,6 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //----------------------------------------------------------------*/
 int main(int argc, char *argv[])
     {
-    // 
     Utf8String id = "05610e4c-79d4-43ef-a9e5-e02e6328d843";
     Utf8String projectId = "1";
     Utf8String folderId = "ab9c6aa6-91ad-424b-935c-28a3c396a041~2FGraz~2F";

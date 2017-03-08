@@ -339,8 +339,8 @@ void ListCmd()
 
             for (NavNode root : nodes)
                 {
-                RequestStatus status;
-                RealityDataPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status);
+                RequestStatus status2;
+                RealityDataPtr pData = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status2);
 
                 ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData->GetName());
                 }
