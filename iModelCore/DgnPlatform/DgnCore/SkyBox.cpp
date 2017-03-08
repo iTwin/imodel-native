@@ -319,7 +319,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
     // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
-    ViewFlags flags = context.GetViewFlags();
+    ViewFlagsOverrides flags;
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.SetShowTextures(true);
     flags.SetShowVisibleEdges(false);
@@ -330,7 +330,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
 
     GraphicBranch branch;
     branch.Add(*skyGraphic->Finish()); // put the mesh into the branch
-    branch.SetViewFlags(flags); // and set its Viewflags
+    branch.SetViewFlagsOverrides(flags); // and set its Viewflags
 
     // now add the skybox branch to the terrain context.
     context.OutputGraphic(*context.CreateBranch(branch, context.GetDgnDb(), Transform::FromIdentity()), nullptr);

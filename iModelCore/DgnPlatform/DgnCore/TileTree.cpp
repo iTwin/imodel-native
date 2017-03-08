@@ -953,13 +953,13 @@ TileLoadState::~TileLoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
+void DrawArgs::DrawBranch(ViewFlagsOverridesCR flags, Render::GraphicBranch& branch)
     {
     if (branch.m_entries.empty())
         return;
 
     //DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
-    branch.SetViewFlags(flags);
+    branch.SetViewFlagsOverrides(flags);
     auto drawBranch = m_context.CreateBranch(branch, m_context.GetDgnDb(), GetLocation(), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
     m_context.OutputGraphic(*drawBranch, nullptr);
@@ -968,13 +968,17 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::_AdjustViewFlags(ViewFlags& flags) const
+ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
     {
+    ViewFlagsOverrides flags;
+
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.SetShowTextures(true);
     flags.SetShowVisibleEdges(false);
     flags.SetShowShadows(false);
     flags.SetIgnoreLighting(true);
+
+    return flags;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -984,10 +988,7 @@ void Root::_AdjustViewFlags(ViewFlags& flags) const
 void DrawArgs::DrawGraphics()
     {
     // Allow the tile tree to specify how view flags should be overridden
-    ViewFlags flags = m_context.GetViewFlags();
-    m_root._AdjustViewFlags(flags);
-
-    DrawBranch(flags, m_graphics);
+    DrawBranch(m_root._GetViewFlagsOverrides(), m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**

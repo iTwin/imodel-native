@@ -137,7 +137,7 @@ private:
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
 
     Utf8CP _GetName() const override { return m_name.c_str(); }
-    void _AdjustViewFlags(Render::ViewFlags&) const override { }
+    Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override { return Render::ViewFlagsOverrides(); }
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:

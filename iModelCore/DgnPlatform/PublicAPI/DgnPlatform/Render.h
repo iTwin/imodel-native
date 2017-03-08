@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                                     .
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
@@ -141,6 +141,77 @@ public:
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
+};
+
+//=======================================================================================
+//! Overrides a subset of ViewFlags.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ViewFlagsOverrides
+{
+private:
+    enum PresenceFlag
+    {
+        kRenderMode,
+        kText,
+        kDimensions,
+        kPatterns,
+        kWeights,
+        kStyles,
+        kTransparency,
+        kFill,
+        kTextures,
+        kMaterials,
+        kVisibleEdges,
+        kHiddenEdges,
+        kIgnoreLighting,
+        kShadows,
+        kClipVolume,
+        kConstructions,
+        kMonochrome,
+        kGeometryMap,
+        kHlineMaterialColors,
+        kEdgeMask,
+    };
+
+    uint32_t    m_present = 0;
+    ViewFlags   m_values;
+
+    void SetPresent(PresenceFlag flag) { m_present |= (1 << static_cast<uint32_t>(flag)); }
+    bool IsPresent(PresenceFlag flag) const { return 0 != (m_present & (1 << static_cast<uint32_t>(flag))); }
+public:
+    //! Construct a ViewFlagsOverrides which overrides nothing
+    ViewFlagsOverrides() { }
+
+    //! Construct a ViewFlagsOverrides which overrides all flags to match the specified ViewFlags
+    DGNPLATFORM_EXPORT explicit ViewFlagsOverrides(ViewFlags viewFlags);
+
+    void SetShowText(bool val) { m_values.SetShowText(val); SetPresent(kText); }
+    void SetShowDimensions(bool val) { m_values.SetShowDimensions(val); SetPresent(kDimensions); }
+    void SetShowPatterns(bool val) { m_values.SetShowPatterns(val); SetPresent(kPatterns); }
+    void SetShowWeights(bool val) { m_values.SetShowWeights(val); SetPresent(kWeights); }
+    void SetShowStyles(bool val) { m_values.SetShowStyles(val); SetPresent(kStyles); }
+    void SetShowTransparency(bool val) { m_values.SetShowTransparency(val); SetPresent(kTransparency); }
+    void SetShowFill(bool val) { m_values.SetShowFill(val); SetPresent(kFill); }
+    void SetShowTextures(bool val) { m_values.SetShowTextures(val); SetPresent(kTextures); }
+    void SetShowMaterials(bool val) { m_values.SetShowMaterials(val); SetPresent(kMaterials); }
+    void SetIgnoreLighting(bool val) { m_values.SetIgnoreLighting(val); SetPresent(kIgnoreLighting); }
+    void SetShowVisibleEdges(bool val) { m_values.SetShowVisibleEdges(val); SetPresent(kVisibleEdges); }
+    void SetShowHiddenEdges(bool val) { m_values.SetShowHiddenEdges(val); SetPresent(kHiddenEdges); }
+    void SetShowShadows(bool val) { m_values.SetShowShadows(val); SetPresent(kShadows); }
+    void SetShowClipVolume(bool val) { m_values.SetShowClipVolume(val); SetPresent(kClipVolume); }
+    void SetShowConstructions(bool val) { m_values.SetShowConstructions(val); SetPresent(kConstructions); }
+    void SetMonochrome(bool val) { m_values.SetMonochrome(val); SetPresent(kMonochrome); }
+    void SetIgnoreGeometryMap(bool val) { m_values.SetIgnoreGeometryMap(val); SetPresent(kGeometryMap); }
+    void SetUseHlineMaterialColors(bool val) { m_values.SetUseHlineMaterialColors(val); SetPresent(kHlineMaterialColors); }
+    void SetEdgeMask(int val) { m_values.SetEdgeMask(val); SetPresent(kEdgeMask); }
+    void SetRenderMode(RenderMode val) { m_values.SetRenderMode(val); SetPresent(kRenderMode); }
+
+    bool AnyOverridden() const { return 0 != m_present; }
+    void Clear() { m_present = 0; }
+
+    //! Apply these overrides to the supplied ViewFlags
+    DGNPLATFORM_EXPORT void Apply(ViewFlags& base) const;
 };
 
 //=======================================================================================
@@ -1659,13 +1730,13 @@ struct TransClip : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct GraphicBranch
 {
-    bool m_hasFlags = false;
-    ViewFlags m_viewFlags;
+    ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
-    void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
+    void SetViewFlagsOverrides(ViewFlagsOverridesCR ovr) { m_viewFlagsOverrides = ovr; }
+    ViewFlags GetViewFlags(ViewFlagsCR base) const { ViewFlags flags = base; m_viewFlagsOverrides.Apply(flags); return flags; }
     void Clear() {m_entries.clear();}
 };
 

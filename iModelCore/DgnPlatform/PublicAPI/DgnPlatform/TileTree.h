@@ -269,8 +269,8 @@ public:
     //! Get the name of this tile tree, chiefly for debugging
     virtual Utf8CP _GetName() const = 0;
 
-    //! Given ViewFlags for a ViewContext, adjust them prior to rendering
-    DGNPLATFORM_EXPORT virtual void _AdjustViewFlags(Render::ViewFlags& viewFlags) const;
+    //! Specify any view flags which should be overridden when rendering this tile tree.
+    DGNPLATFORM_EXPORT virtual Render::ViewFlagsOverrides _GetViewFlagsOverrides() const;
 
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to call GeoLocation().GetDgnGCS()
@@ -495,7 +495,7 @@ struct DrawArgs : TileArgs
     DrawArgs(RenderContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : TileArgs(location, root, clip), m_context(context), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
 
-    void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch);
+    void DrawBranch(Render::ViewFlagsOverridesCR ovrFlags, Render::GraphicBranch& branch);
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
     void Clear() {m_graphics.Clear(); m_missing.clear(); }
     DGNPLATFORM_EXPORT void DrawGraphics(); // place all entries into a GraphicBranch and send it to the ViewContext.

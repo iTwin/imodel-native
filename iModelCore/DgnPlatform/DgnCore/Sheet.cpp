@@ -359,7 +359,7 @@ void Attachment::Tile2dModel::_DrawGraphics(TileTree::DrawArgsR args) const
             }
 
         GraphicBranch branch;
-        branch.SetViewFlags(vp->GetViewFlags());
+        branch.SetViewFlagsOverrides(ViewFlagsOverrides(vp->GetViewFlags()));
 
         for (auto& graphic : scene->m_list)
             branch.Add(*graphic.m_ptr);

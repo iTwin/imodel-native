@@ -111,6 +111,44 @@ Json::Value ViewFlags::ToJson() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewFlagsOverrides::ViewFlagsOverrides(ViewFlags base) : m_present(0xffffffff), m_values(base)
+    {
+    // NB: A handful of flags (grid, acs) cannot be overridden on a per-branch basis...ignore.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewFlagsOverrides::Apply(ViewFlags& base) const
+    {
+    if (!AnyOverridden())
+        return;
+
+    if (IsPresent(kText)) base.SetShowText(m_values.ShowText());
+    if (IsPresent(kDimensions)) base.SetShowDimensions(m_values.ShowDimensions());
+    if (IsPresent(kPatterns)) base.SetShowPatterns(m_values.ShowPatterns());
+    if (IsPresent(kWeights)) base.SetShowWeights(m_values.ShowWeights());
+    if (IsPresent(kStyles)) base.SetShowStyles(m_values.ShowStyles());
+    if (IsPresent(kTransparency)) base.SetShowTransparency(m_values.ShowTransparency());
+    if (IsPresent(kFill)) base.SetShowFill(m_values.ShowFill());
+    if (IsPresent(kTextures)) base.SetShowTextures(m_values.ShowTextures());
+    if (IsPresent(kMaterials)) base.SetShowMaterials(m_values.ShowMaterials());
+    if (IsPresent(kIgnoreLighting)) base.SetIgnoreLighting(m_values.IgnoreLighting());
+    if (IsPresent(kVisibleEdges)) base.SetShowVisibleEdges(m_values.ShowVisibleEdges());
+    if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
+    if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
+    if (IsPresent(kClipVolume)) base.SetShowClipVolume(m_values.ShowClipVolume());
+    if (IsPresent(kConstructions)) base.SetShowConstructions(m_values.ShowConstructions());
+    if (IsPresent(kText)) base.SetMonochrome(m_values.IsMonochrome());
+    if (IsPresent(kGeometryMap)) base.SetIgnoreGeometryMap(m_values.IgnoreGeometryMap());
+    if (IsPresent(kHlineMaterialColors)) base.SetUseHlineMaterialColors(m_values.UseHlineMaterialColors());
+    if (IsPresent(kEdgeMask)) base.SetEdgeMask(m_values.GetEdgeMask());
+    if (IsPresent(kRenderMode)) base.SetRenderMode(m_values.GetRenderMode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
