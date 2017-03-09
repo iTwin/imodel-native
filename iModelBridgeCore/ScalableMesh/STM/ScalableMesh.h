@@ -292,6 +292,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
@@ -302,6 +303,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override;
 
 
@@ -445,12 +451,30 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+            {
+            return false;
+            }
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override
+            {
+            return;
+            }
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override
+            {
+            return;
+            }
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override
+            {
+            return;
+            }
 
         virtual bool                               _ShouldInvertClips() override { return false; }
 

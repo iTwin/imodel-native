@@ -199,6 +199,12 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
 
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override {}
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override {}
 

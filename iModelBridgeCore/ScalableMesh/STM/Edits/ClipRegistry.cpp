@@ -45,6 +45,22 @@ void ClipRegistry::ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize
     dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
     }
 
+void ClipRegistry::AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, size_t ptsSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    if (m_lastClipSet && m_lastClipID == clipID)
+        {
+        m_lastClipValue.resize(ptsSize);
+        memcpy(&m_lastClipValue[0], pts, ptsSize*sizeof(DPoint3d));
+        }
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    bvector<DPoint3d> clipData;
+    clipData.insert(clipData.end(), pts, pts + ptsSize);
+    clipDefinitionExOpsPtr->StoreClipWithParameters(clipData, clipID, geom, type, isActive);
+    }
 
 void ClipRegistry::DeleteClip(uint64_t id)
     {       
@@ -84,6 +100,23 @@ void ClipRegistry::GetClip(uint64_t id, bvector<DPoint3d>& clip)
     if (nOfPts == 0) return;
     else clip.resize(nOfPts);
     dataStore->LoadBlock(&clip[0], nOfPts, id);
+    m_lastClipSet = true;
+    m_lastClipID = id;
+    m_lastClipValue = clip;
+    }
+
+void ClipRegistry::GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
+    {
+    if (m_lastClipSet && m_lastClipID == id)
+        {
+        clip = m_lastClipValue;
+        return;
+        }
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->LoadClipWithParameters(clip, id, geom, type, isActive);
     m_lastClipSet = true;
     m_lastClipID = id;
     m_lastClipValue = clip;
@@ -182,7 +215,37 @@ void ClipRegistry::GetAllClipsIds(bvector<uint64_t>& allClipIds)
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);            
     clipDefinitionExOpsPtr->GetAllIDs(allClipIds);
-    }    
+    } 
+
+void ClipRegistry::GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->GetIsClipActive(id, isActive);
+    }
+
+void ClipRegistry::GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->GetClipType(id, type);
+    }
+
+void ClipRegistry::SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->SetClipOnOrOff(id, isActive);
+    }
 
 void ClipRegistry::SetAutoCommit(bool autoCommit)
     {
@@ -236,7 +299,7 @@ void ClipRegistry::GetAllCoverageIds(bvector<uint64_t>& allIds)
 
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
-    clipDefinitionExOpsPtr->GetAllIDs(allIds);
+    clipDefinitionExOpsPtr->GetAllCoverageIDs(allIds);
     }
 
 

@@ -317,6 +317,12 @@ bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID
     return _AddClip(pts, ptsSize, clipID);
     }
 
+bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    return _AddClip(pts, ptsSize, clipID, geom, type, isActive);
+    }
+
+
 bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
     {
     return _ModifyClip(pts, ptsSize, clipID);
@@ -366,6 +372,21 @@ bool IScalableMesh::ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_
 void IScalableMesh::GetAllClipIds(bvector<uint64_t>& ids)
     {
     return _GetAllClipsIds(ids);
+    }
+
+void                              IScalableMesh::SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    return _SetClipOnOrOff(id, isActive);
+    }
+
+void                               IScalableMesh::GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    return _GetIsClipActive(id, isActive);
+    }
+
+void                        IScalableMesh::GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    return _GetClipType(id, type);
     }
 
 void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
@@ -1822,7 +1843,7 @@ template <class POINT> IScalableMeshNodeRayQueryPtr ScalableMesh<POINT>::_GetNod
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInterface() const
     {
-    return ScalableMeshEdit::Create(&*m_scmIndexPtr);
+    return ScalableMeshEdit::Create((SMMeshIndex<DPoint3d,DRange3d>*)(&*m_scmIndexPtr));
     }
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
@@ -1999,6 +2020,31 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
             m_terrainP->AddClip(targetPts, ptsSize, clipID);
             }*/
         }
+    return true;
+    }
+
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+
+    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
+
+    if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
+    m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
     return true;
     }
 
@@ -2191,6 +2237,24 @@ template <class POINT> void ScalableMesh<POINT>::_GetAllClipsIds(bvector<uint64_
     {
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->GetAllClipsIds(allClipIds);
+    }
+
+template <class POINT>  void                         ScalableMesh<POINT>::_SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->SetClipOnOrOff(id, isActive);
+    }
+
+template <class POINT>  void                       ScalableMesh<POINT>::_GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetIsClipActive(id, isActive);
+    }
+
+template <class POINT>  void                    ScalableMesh<POINT>::_GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetClipType(id, type);
     }
 
 template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)

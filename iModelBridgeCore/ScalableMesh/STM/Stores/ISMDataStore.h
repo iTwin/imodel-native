@@ -78,6 +78,18 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void SetAutoCommit(bool autoCommit) = 0;
 
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) = 0;
+
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) = 0;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) = 0;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) = 0;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) = 0;
         
     };
 

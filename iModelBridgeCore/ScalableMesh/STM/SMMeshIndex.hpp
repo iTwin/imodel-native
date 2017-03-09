@@ -3899,7 +3899,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
     bvector<bpair<double, int>> metadata;
-    DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
+    //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
     size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
@@ -3909,9 +3909,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             {
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            GetClipRegistry()->GetClipWithParameters(diffSet.clientID, polys.back(), geom, type, isActive);
+
+            if (type == SMNonDestructiveClipType::Boundary) polyInclusion = true;
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
-            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
+            /*if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
                 {
                 extentOfBiggestPoly = polyExtent;
                 indexOfBiggestPoly = polys.size() - 1;
@@ -3935,7 +3940,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                     if (!intersection.IsNull())
                         polyInclusion = true;
                     }
-                }
+                }*/
 
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
@@ -3943,10 +3948,41 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 clipIds.resize(clipIds.size() - 1);
                 continue;
                 }
+
+            int nOfLoops = 0;
+            if (geom == SMClipGeometryType::ComplexPolygon)
+                {
+                //count loops
+                bvector<bvector<DPoint3d>> polyLoops;
+                bvector<DPoint3d> currentLoop;
+                for (auto& pt : polys.back())
+                    {
+                    currentLoop.push_back(pt);
+                    if (pt.IsDisconnect())
+                        {
+                        nOfLoops++;
+                        polyLoops.push_back(currentLoop);
+                        currentLoop.clear();
+                        }
+                    }
+
+
+                polys.resize(polys.size() - 1);
+                clipIds.resize(clipIds.size() - 1);
+                for (auto& loop : polyLoops)
+                    {
+                    clipIds.push_back(diffSet.clientID);
+                    polys.push_back(loop);
+                    }
+
+                }
+            else nOfLoops = 1;
+
             double importance;
             int nDimensions;
             GetClipRegistry()->GetClipMetadata(diffSet.clientID, importance, nDimensions);
-            metadata.push_back(make_bpair(importance, nDimensions));
+            for (size_t i = 0; i < nOfLoops; ++i)
+                metadata.push_back(make_bpair(importance, nDimensions));
             }
         else if (!diffSet.toggledForID)
             {

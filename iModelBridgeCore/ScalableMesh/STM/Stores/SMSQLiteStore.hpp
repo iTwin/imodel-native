@@ -779,7 +779,10 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             break;
 #endif
         case SMStoreDataType::ClipDefinition :
-            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize, geom, type, isActive);           
             break;  
         case SMStoreDataType::Coverage:
             m_smSQLiteFile->GetCoveragePolygon(blockID.m_integerID, nodeData, uncompressedSize);

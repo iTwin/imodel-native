@@ -225,7 +225,15 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) = 0;
 
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) = 0;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) = 0;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
+
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) = 0;
 
@@ -362,6 +370,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
+        BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive=true);
+
         BENTLEY_SM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
@@ -385,6 +395,11 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
+
+        BENTLEY_SM_EXPORT void                   SetClipOnOrOff (uint64_t id, bool isActive);
+        BENTLEY_SM_EXPORT void                   GetIsClipActive(uint64_t id, bool& isActive);
+
+        BENTLEY_SM_EXPORT void                   GetClipType(uint64_t id, SMNonDestructiveClipType& type);
 
         BENTLEY_SM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
 
