@@ -572,7 +572,7 @@ struct RealityDataServiceTransfer : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
 
 protected:
-    void SetupCurlforFile(RealityDataUrl* upload, int verifyPeer);
+    void SetupCurlforFile(RealityDataUrl* upload, bool verifyPeer);
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
     Utf8String GetAzureToken();
@@ -697,7 +697,7 @@ private:
     void DownloadFromNavNode(BeFileName targetLocation, Utf8String id);
     };
 
-enum class RequestStatus
+enum RequestStatus
     {
     SUCCESS = 0,
     ERROR = 1,
@@ -743,9 +743,9 @@ public:
         s_realityDataSchemaName = schemaName;
 
         if(certificatePath.size() == 0)
-            s_verifyPeer = 0;
+            s_verifyPeer = false;
         else
-            s_verifyPeer = 1;
+            s_verifyPeer = true;
         s_realityDataCertificatePath = certificatePath;
         }
 
@@ -762,7 +762,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetSchemaName();
 
     //! Returns the name of the schema defining the classes exposed by the RealityData Service.
-    REALITYDATAPLATFORM_EXPORT static const int GetVerifyPeer();
+    REALITYDATAPLATFORM_EXPORT static const bool GetVerifyPeer();
 
     //! Returns the name of the schema defining the classes exposed by the RealityData Service.
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
@@ -828,7 +828,7 @@ private:
     static Utf8String s_realityDataWSGProtocol;
     static Utf8String s_realityDataRepoName;
     static Utf8String s_realityDataSchemaName;
-    static int s_verifyPeer;
+    static bool s_verifyPeer;
     static Utf8String s_realityDataCertificatePath;
 
     static const Utf8String s_ImageryKey;

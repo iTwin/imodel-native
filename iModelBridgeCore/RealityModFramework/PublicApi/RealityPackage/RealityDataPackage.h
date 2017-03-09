@@ -186,7 +186,7 @@ private:
 //! Abstract class for classified reality data.
 //! @bsiclass
 //=======================================================================================
-struct RealityData : public RefCountedBase
+struct PackageRealityData : public RefCountedBase
     {
     public:      
         REALITYPACKAGE_EXPORT Utf8StringCR GetDataId() const;
@@ -209,9 +209,9 @@ struct RealityData : public RefCountedBase
         REALITYPACKAGE_EXPORT void AddSource(RealityDataSourceR dataSource);
 
     protected:
-        explicit RealityData(){}; // for persistence.
-        RealityData(RealityDataSourceR dataSource);
-        virtual ~RealityData();
+        explicit PackageRealityData(){}; // for persistence.
+        PackageRealityData(RealityDataSourceR dataSource);
+        virtual ~PackageRealityData();
       
     private:
         bvector<RealityDataSourcePtr> m_Sources;
@@ -225,9 +225,9 @@ struct RealityData : public RefCountedBase
 //! data type by adding the optional footprint of the imagery.
 //! @bsiclass                                     Mathieu.Marchand               3/2015
 //=====================================================================================
-struct ImageryData: public RealityData
+struct ImageryData: public PackageRealityData
     {
-    DEFINE_T_SUPER(RealityData)
+    DEFINE_T_SUPER(PackageRealityData)
     
     public:
         friend RealityDataSerializer;
@@ -272,9 +272,9 @@ struct ImageryData: public RealityData
 //! Model data type specify the data type for model data.
 //! @bsiclass                                     Mathieu.Marchand               3/2015
 //=====================================================================================
-struct ModelData: public RealityData
+struct ModelData: public PackageRealityData
     {
-    DEFINE_T_SUPER(RealityData)
+    DEFINE_T_SUPER(PackageRealityData)
 
     public:
         friend RealityDataSerializer;
@@ -298,9 +298,9 @@ struct ModelData: public RealityData
 //! type by adding a mandatory pin position applicable to the non-geospatially located data.
 //! @bsiclass                                     Mathieu.Marchand               3/2015
 //=====================================================================================
-struct PinnedData : public RealityData
+struct PinnedData : public PackageRealityData
     {
-    DEFINE_T_SUPER(RealityData)
+    DEFINE_T_SUPER(PackageRealityData)
 
     public:
         friend RealityDataSerializer;
@@ -344,9 +344,9 @@ struct PinnedData : public RealityData
 //! Terrain data type specify the data type for terrain data.
 //! @bsiclass                                     Mathieu.Marchand               3/2015
 //=====================================================================================
-struct TerrainData: public RealityData
+struct TerrainData: public PackageRealityData
     {
-    DEFINE_T_SUPER(RealityData)
+    DEFINE_T_SUPER(PackageRealityData)
 
     public:
         friend RealityDataSerializer;
