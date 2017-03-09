@@ -57,12 +57,14 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+    virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
 
     JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
     JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
 
 public:
-    virtual DisplayStyle3d* _ToDisplayStyle3dP() {return nullptr;}
+    DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
+    DisplayStyle3dP ToDisplayStyle3dP() {return const_cast<DisplayStyle3dP>(_ToDisplayStyle3d());}
 
     //! Construct a new DisplayStyle.
     //! @param[in] db The DgnDb to hold the DisplayStyle
@@ -172,7 +174,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
     static constexpr Utf8CP str_HLine() {return "HLine";}
-    DisplayStyle3dP _ToDisplayStyle3dP() override final {return this;}
+    DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
     //! Construct a new DisplayStyle3d.
@@ -342,11 +344,10 @@ public:
     {
         DEFINE_T_SUPER(ViewDefinition::T_Super::CreateParams);
         CategorySelectorPtr m_categorySelector;
-        DisplayStylePtr m_displayStyle;
 
     public:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyleR displayStyle)
-            : T_Super(db, DgnModel::DictionaryId(), classId, code, nullptr, DgnElementId()), m_categorySelector(&categorySelector), m_displayStyle(&displayStyle) {}
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector)
+            : T_Super(db, DgnModel::DictionaryId(), classId, code, nullptr, DgnElementId()), m_categorySelector(&categorySelector) {}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
@@ -363,8 +364,7 @@ protected:
     static constexpr Utf8CP str_ViewDetails() {return "ViewDetails";}
     static bool IsValidCode(DgnCodeCR code);
 
-    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector); 
-                                                                           if (params.m_displayStyle.IsValid()) SetDisplayStyle(*params.m_displayStyle);}
+    explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);} 
 
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
@@ -383,6 +383,7 @@ protected:
     virtual bool _IsValidBaseModel(DgnModelCR model) const {return true;}
     virtual OrthographicViewDefinitionCP _ToOrthographicView() const {return nullptr;}
     virtual ViewDefinition3dCP _ToView3d() const {return nullptr;}
+    virtual ViewDefinition2dCP _ToView2d() const {return nullptr;}
     virtual SpatialViewDefinitionCP _ToSpatialView() const {return nullptr;}
     virtual DrawingViewDefinitionCP _ToDrawingView() const {return nullptr;}
     virtual SheetViewDefinitionCP _ToSheetView() const {return nullptr;}
@@ -397,6 +398,7 @@ protected:
     virtual void _AdjustAspectRatio(double, bool expandView) = 0;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
+    void SetupDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
     Utf8String ToDetailJson();
     JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
     JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
@@ -463,6 +465,7 @@ public:
         friend struct DgnView;
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) {}
+
     public:
         DgnDbP GetDgnDb() const {auto stmt = GetStatement(); return (nullptr != stmt) ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr;}
         DgnViewId GetId() const {return m_statement->GetValueId<DgnViewId>(0);} //!< The view Id
@@ -522,12 +525,14 @@ public:
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
     bool IsDrawingView() const {return nullptr != _ToDrawingView();}
     bool IsSheetView() const {return nullptr != _ToSheetView();}
+    ViewDefinition2dCP ToView2d() const {return _ToView2d();}
     ViewDefinition3dCP ToView3d() const {return _ToView3d();}
     OrthographicViewDefinitionCP ToOrthographicView() const {return _ToOrthographicView();}
     SpatialViewDefinitionCP ToSpatialView() const {return _ToSpatialView();}
     DrawingViewDefinitionCP ToDrawingView() const {return _ToDrawingView();}
     SheetViewDefinitionCP ToSheetView() const {return _ToSheetView();}
     ViewDefinition3dP ToView3dP() {return const_cast<ViewDefinition3dP>(ToView3d());}
+    ViewDefinition2dP ToView2dP() {return const_cast<ViewDefinition2dP>(ToView2d());}
     SpatialViewDefinitionP ToSpatialViewP() {return const_cast<SpatialViewDefinitionP>(ToSpatialView());}
     DrawingViewDefinitionP ToDrawingViewP() {return const_cast<DrawingViewDefinitionP>(ToDrawingView());}
     SheetViewDefinitionP ToSheetViewP() {return const_cast<SheetViewDefinitionP>(ToSheetView());}
@@ -544,9 +549,6 @@ public:
 
     //! Set the CategorySelector for this view.
     void SetCategorySelector(CategorySelectorR categories) {BeAssert(!IsPersistent()); m_categorySelector = &categories; m_categorySelectorId=categories.GetElementId();}
-
-    //! Set the DisplayStyle for this view.
-    void SetDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
 
     //! Query if the specified model is displayed in this view
     bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
@@ -803,9 +805,10 @@ public:
         DVec3d m_extents = DVec3d::From(0.0,0.0,0.0); //!< The extent of the view frustum.
         RotMatrix m_rotation = RotMatrix::FromIdentity(); //!< Rotation of the view frustum.
         Camera m_cameraDef;  //!< The camera used for this view.
+        DisplayStyle3dPtr m_displayStyle;
 
         CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, CategorySelectorR categorySelector, DisplayStyle3dR displayStyle, Camera const* camera = nullptr)
-            : T_Super(db, classId, code, categorySelector, displayStyle) {if (camera) {m_cameraDef = *camera; m_cameraOn=true;}}
+            : T_Super(db, classId, code, categorySelector), m_displayStyle(&displayStyle) {if (camera) {m_cameraDef = *camera; m_cameraOn=true;}}
 
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
     };
@@ -838,18 +841,17 @@ protected:
     virtual bool _SupportsCamera() const {return true;}
 
 public:
-    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} // about 12 inches
+    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
     DGNPLATFORM_EXPORT DPoint3d ComputeEyePoint(Frustum const& frust) const;//!< private
 
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params), m_cameraOn(params.m_cameraOn), m_origin(params.m_origin), m_extents(params.m_extents), 
-                                                        m_rotation(params.m_rotation), m_cameraDef(params.m_cameraDef) {}
+                                                        m_rotation(params.m_rotation), m_cameraDef(params.m_cameraDef) {if (params.m_displayStyle.IsValid()) SetDisplayStyle3d(*params.m_displayStyle);}
 
     DisplayStyle3dR GetDisplayStyle3d() {return (DisplayStyle3dR) GetDisplayStyle();}
-    void SetDisplayStyle(DisplayStyleR style) = delete;
-    void SetDisplayStyle3d(DisplayStyle3dR style) {T_Super::SetDisplayStyle(style);}
+    void SetDisplayStyle3d(DisplayStyle3dR style) {T_Super::SetupDisplayStyle(style);}
 
     //! Get the camera for this view
     Camera const& GetCamera() const {return m_cameraDef;}
@@ -867,6 +869,8 @@ public:
 
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
+
+    bool SupportsCamera() const {return _SupportsCamera();}
 
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT Angle CalcLensAngle() const;
@@ -1117,6 +1121,7 @@ protected:
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
     DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
+    ViewDefinition2dCP _ToView2d() const override final {return this;}
     DPoint3d _GetOrigin() const override {return DPoint3d::From(m_origin.x, m_origin.y);}
     void _SetExtents(DVec3dCR delta) override {m_delta.x = delta.x; m_delta.y = delta.y;}
     void _SetOrigin(DPoint3dCR origin) override {m_origin.x = origin.x; m_origin.y = origin.y;}
@@ -1128,7 +1133,10 @@ protected:
 
 public:
     ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyleR displayStyle) :
-            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector, displayStyle)), m_baseModelId(baseModelId) {}
+            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle(displayStyle);}
+
+    //! Set the DisplayStyle for this view.
+    void SetDisplayStyle(DisplayStyleR style) {T_Super::SetupDisplayStyle(style);}
 
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}
