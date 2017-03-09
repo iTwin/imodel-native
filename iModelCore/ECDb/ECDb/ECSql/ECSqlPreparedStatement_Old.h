@@ -131,46 +131,6 @@ struct ECSqlNonSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
     };
 
 //=======================================================================================
-// @bsiclass                                                Krischan.Eberle      03/2017
-//+===============+===============+===============+===============+===============+======
-struct CompoundECSqlNonSelectPreparedStatement final : NonCopyableClass
-    {
-    private:
-        ECDb const& m_ecdb;
-        ECSqlType m_type;
-        Utf8String m_ecsql;
-        std::vector<std::unique_ptr<ECSqlNonSelectPreparedStatement_Old>> m_statements;
-
-    public:
-        CompoundECSqlNonSelectPreparedStatement(ECDb const& ecdb, ECSqlType type) : m_ecdb(ecdb), m_type(type) {}
-
-        ECSqlType GetType() const { return m_type; }
-        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
-        IECSqlBinder& GetBinder(int parameterIndex);
-        int GetParameterIndex(Utf8CP parameterName) const;
-
-        ECSqlStatus ClearBindings()
-            {
-            ECSqlStatus totalStat = ECSqlStatus::Success;
-            for (std::unique_ptr<ECSqlNonSelectPreparedStatement_Old>& stmt : m_statements)
-                {
-                ECSqlStatus stat = stmt->ClearBindings();
-                if (!stat.IsSuccess())
-                    totalStat = stat;
-                }
-
-            return totalStat;
-            }
-
-        ECSqlStatus Reset();
-
-        Utf8StringCR GetECSql() const { return m_ecsql; }
-        Utf8CP GetNativeSql() const;
-
-        ECDb const& GetECDb() const { return m_ecdb; }
-    };
-
-//=======================================================================================
 //! Represents a prepared SELECT ECSqlStatement with all additional information needed for
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
