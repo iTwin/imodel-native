@@ -24,6 +24,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Logging.h                         \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/BCSClientHelper.h                 \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEventParser.h   \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
@@ -77,6 +78,8 @@ $(o)DgnDbServerEventManager$(oext)         : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerPreDownloadManager$(oext)   : $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerConfiguration$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerConfiguration.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BCSClientHelper$(oext)                 : $(DgnDbServerClientMkiSourceDir)BCSClientHelper.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventParser$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerEventParser.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

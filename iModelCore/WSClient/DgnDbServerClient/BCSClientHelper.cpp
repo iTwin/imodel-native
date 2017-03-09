@@ -43,6 +43,12 @@ DgnDbClientPtr BCSClientHelper::SignIn(Tasks::AsyncError* errorOut, BCSSignInInf
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BCSClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)
     {
+    if (m_signinMgr == nullptr)
+        {
+        BeAssert(false && "Must sign in first");
+        return "";
+        }
+
     AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
     auto authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::ConnectWsgGlobal.Get());

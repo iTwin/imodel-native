@@ -69,6 +69,15 @@ public:
     //! @return Returns HttpHandler
     DGNDBSERVERCLIENT_EXPORT IHttpHandlerPtr GetHttpHandler();
 
+    //! Get the server URL
+    Utf8StringCR GetServerUrl() const {return m_serverUrl;}
+
+    //! Get the project ID
+    Utf8StringCR GetProjectId() const {return m_projectId;}
+
+    //! Get the client's credentials
+    CredentialsCR GetCredentials() const {return m_credentials;}
+
 //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback                       DefaultFileNameCallback;
