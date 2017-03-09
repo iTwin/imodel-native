@@ -2,7 +2,7 @@
 |
 |     $Source: src/managed/interop/managedinterop.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,12 @@
 
 namespace ManagedApi = ::Bentley::Logging;
 
+// Ignore static analysis warnings in system headers.
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable:6054)
+#endif
+
 #include <windows.h>
 #include <stdio.h>
 #include <mbctype.h>
@@ -18,6 +24,11 @@ namespace ManagedApi = ::Bentley::Logging;
 #include <locale.h>
 #include <cwchar>
 #include <vcclr.h>
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+
 #include "exception"
 #include "assert.h"
 #include "bentleyloginterop.h"
