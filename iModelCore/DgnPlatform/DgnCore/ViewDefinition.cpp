@@ -1961,7 +1961,20 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
                 return DgnDbStatus::BadArg;
 
             ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            viewDef.SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+            auto view3d = viewDef.ToView3dP();
+            if (view3d)
+                {
+                auto style3d = style->ToDisplayStyle3d();
+                if (nullptr == style3d)
+                    return DgnDbStatus::BadArg;
+                view3d->SetDisplayStyle3d(*style3d->MakeCopy<Dgn::DisplayStyle3d>());
+                }
+            else
+                {
+                auto view2d = viewDef.ToView2dP();
+                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                }
+
             return DgnDbStatus::Success;
             });
 
