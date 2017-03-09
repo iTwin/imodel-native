@@ -1038,7 +1038,7 @@ DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) co
 Json::Value Render::HiddenLineParams::Style::ToJson() const
     {
     Json::Value val;
-    if (!m_ovrColor) val[Json::StaticString(str_OvrColorFlag())] = true;
+    val[Json::StaticString(str_OvrColorFlag())] = m_ovrColor;
     val[Json::StaticString(str_Color())] = m_color.GetValue();
     val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
     val[Json::StaticString(str_Width())] = (Json::UInt32) m_width;
