@@ -101,12 +101,7 @@ void ECValue::StringInfo::ConvertToUtf8(uint8_t& flags)
         {
         Utf8String buf;
         if (NULL != m_utf16)
-            {
-            // ###TODO: eww...can we avoid this?
-            WString wBuf;
-            BeStringUtilities::Utf16ToWChar(wBuf, m_utf16);
-            BeStringUtilities::WCharToUtf8(buf, wBuf.c_str());
-            }
+            BeStringUtilities::Utf16ToUtf8(buf, m_utf16);
 #if !defined (_WIN32)
         else if (NULL != m_wchar)
             BeStringUtilities::WCharToUtf8(buf, m_wchar);
