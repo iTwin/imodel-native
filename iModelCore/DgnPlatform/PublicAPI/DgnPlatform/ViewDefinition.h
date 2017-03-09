@@ -871,7 +871,7 @@ public:
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
 
     //! Return true if ViewDefinition supports Camera.
-    bool SupportsCamera() const { return _SupportsCamera(); }
+    bool SupportsCamera() const {return _SupportsCamera();}
 
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT Angle CalcLensAngle() const;
