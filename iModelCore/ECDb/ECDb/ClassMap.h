@@ -169,6 +169,7 @@ struct ClassMap : RefCountedBase
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         //!Only call this if the map strategy is TablePerHierarchy
         TablePerHierarchyHelper const* GetTphHelper() const { BeAssert(m_tphHelper != nullptr); return m_tphHelper.get(); }
+
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }

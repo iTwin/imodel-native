@@ -236,7 +236,7 @@ struct ParameterExp final : ValueExp
         void SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo);
         ComputedExp const* GetTargetExp() const { return m_targetExp; }
         bool IsNamedParameter() const { return !m_parameterName.empty(); }
-        Utf8CP GetParameterName() const { return m_parameterName.c_str(); }
+        Utf8StringCR GetParameterName() const { return m_parameterName; }
         int GetParameterIndex() const { return m_parameterIndex; }
     };
 

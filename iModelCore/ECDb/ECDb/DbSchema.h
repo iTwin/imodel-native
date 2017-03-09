@@ -403,7 +403,7 @@ public:
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
-    ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+    ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);

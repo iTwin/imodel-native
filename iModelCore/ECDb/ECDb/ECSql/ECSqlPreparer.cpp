@@ -922,7 +922,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     {
     BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
     
-    Utf8CP parameterName = exp.GetParameterName();
+    Utf8StringCR parameterName = exp.GetParameterName();
     ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     int nativeSqlParameterCount = -1;
     ECSqlBinder* binder = nullptr;

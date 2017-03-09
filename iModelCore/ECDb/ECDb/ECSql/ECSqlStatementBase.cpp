@@ -298,6 +298,31 @@ ECSqlPreparedStatement_Old& ECSqlStatementBase::CreatePreparedStatement(ECDbCR e
                 break;
         }
 
+    /* New code
+    switch (exp.GetType())
+        {
+            case Exp::Type::Select:
+                m_preparedStatement = std::make_unique<ECSqlSelectPreparedStatement>(ecdb);
+                break;
+
+            case Exp::Type::Insert:
+                m_preparedStatement = std::make_unique<ECSqlInsertPreparedStatement>(ecdb);
+                break;
+
+            case Exp::Type::Update:
+                m_preparedStatement = std::make_unique<ECSqlUpdatePreparedStatement>(ecdb);
+                break;
+
+            case Exp::Type::Delete:
+                m_preparedStatement = std::make_unique<ECSqlDeletePreparedStatement>(ecdb);
+                break;
+
+            default:
+                BeAssert(false && "ECSqlParseTree is expected to only be of type Select, Insert, Update, Delete");
+                break;
+        }
+    */
+
     return *m_preparedStatement;
     }
 

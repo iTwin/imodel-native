@@ -2818,18 +2818,17 @@ int ECSqlParseContext::TrackECSqlParameter(ParameterExp& parameterExp)
     m_parameterExpList.push_back(&parameterExp);
 
     const bool isNamedParameter = parameterExp.IsNamedParameter();
-    Utf8CP paramName = isNamedParameter ? parameterExp.GetParameterName() : nullptr;
 
     if (isNamedParameter)
         {
-        auto it = m_ecsqlParameterNameToIndexMapping.find(paramName);
+        auto it = m_ecsqlParameterNameToIndexMapping.find(parameterExp.GetParameterName().c_str());
         if (it != m_ecsqlParameterNameToIndexMapping.end())
             return it->second;
         }
 
     m_currentECSqlParameterIndex++;
     if (isNamedParameter)
-        m_ecsqlParameterNameToIndexMapping[paramName] = m_currentECSqlParameterIndex;
+        m_ecsqlParameterNameToIndexMapping[parameterExp.GetParameterName().c_str()] = m_currentECSqlParameterIndex;
 
     return m_currentECSqlParameterIndex;
     }

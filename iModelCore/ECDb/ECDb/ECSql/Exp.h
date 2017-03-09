@@ -278,13 +278,9 @@ struct Exp : NonCopyableClass
         template <typename TExp>
         TExp const* GetAsCP() const 
             { 
-            if (dynamic_cast<TExp const*> (this) == nullptr)
-                {
-                BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
-                return nullptr;
-                }
-
-            return static_cast<TExp const*> (this); }
+            BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
+            return static_cast<TExp const*> (this); 
+            }
 
         template <typename TExp>
         TExp const& GetAs() const { return *GetAsCP<TExp>(); }
@@ -312,7 +308,6 @@ struct Exp : NonCopyableClass
         static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
         Exp const* FindParent(Exp::Type type) const;
         std::vector<Exp const*>  Find(Type ofType, bool recusive) const;
-        std::set<DbTable const*> GetReferencedTables() const;
     };
 
 typedef Exp const* ExpCP;
