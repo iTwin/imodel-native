@@ -61,7 +61,7 @@ struct BCSClientHelper
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
     //! @param signinInfo       User credentials, etc.
     //! @return a connected client if signin succeeds
-    DgnDbServer::DgnDbClientPtr SignIn(Tasks::AsyncError* errorOut, BCSSignInInfo const& signinInfo);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServer::DgnDbClientPtr SignIn(Tasks::AsyncError* errorOut, BCSSignInInfo const& signinInfo);
 
     //! Look up a BCS project ID from a BCS project name
     //! @param wserrorOut     Optional. If not null, then details about a query failure are returned here if the failure is due to a communications error or some 
@@ -69,7 +69,7 @@ struct BCSClientHelper
     //! @param bcsProjectName  The project name to look up
     //! @param wsgBentleyConnectRepository The WSG Bentley Connect repository to query.
     //! @return the project ID if the lookup succeeded or the empty string if not
-    Utf8String QueryProjectId(WebServices::WSError* wserrorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectGlobal());
+    DGNDBSERVERCLIENT_EXPORT Utf8String QueryProjectId(WebServices::WSError* wserrorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectGlobal());
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
