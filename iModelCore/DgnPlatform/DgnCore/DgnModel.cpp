@@ -1651,12 +1651,11 @@ static void appendToColsLists(Utf8StringR colsList, Utf8StringR placeholderList,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, Utf8CP sourcecol, Utf8CP targetcol, Utf8CP classcol = nullptr, bvector<Utf8CP> const& othercols = bvector<Utf8CP>())
+static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, bvector<Utf8CP> const& othercols = bvector<Utf8CP>())
     {
     Utf8String colsList, placeholderList;
-    appendToColsLists(colsList, placeholderList, sourcecol);        // [0] sourcecol
-    appendToColsLists(colsList, placeholderList, targetcol);        // [1] targetcolo
-    appendToColsLists(colsList, placeholderList, classcol);         // [2] classcol  (optional)
+    appendToColsLists(colsList, placeholderList, "SourceECInstanceId");                                 // [0] SourceECInstanceId           -- keep consistent with istmt.BindId below
+    appendToColsLists(colsList, placeholderList, "TargetECInstanceId");                                 // [1] TargetECInstanceId                       "               "
     for (auto othercolname : othercols)
         appendToColsLists(colsList, placeholderList, othercolname);
 
@@ -1669,19 +1668,22 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
             selectList.append(", ");
         selectList.append("rel.").append(col);
         }
-    Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
-        "SELECT %s FROM %s rel, " BIS_TABLE(BIS_CLASS_Element) " source, " BIS_TABLE(BIS_CLASS_Element) " target WHERE rel.%s=source.Id AND rel.%s=target.Id AND source.ModelId=? AND target.ModelId=?",
-        selectList.c_str(), relname, sourcecol, targetcol).c_str());
+    ECSqlStatement sstmt;
+    sstmt.Prepare(sourceModel.GetDgnDb(), Utf8PrintfString(
+        "SELECT %s FROM %s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
+        " WHERE rel.SourceECInstanceId=source.ECInstanceId AND rel.TargetECInstanceId=target.ECInstanceId AND source.Model.Id=? AND target.Model.Id=?",
+        selectList.c_str(), relname).c_str());
 
     sstmt.BindId(1, sourceModel.GetModelId());
     sstmt.BindId(2, sourceModel.GetModelId());
 
-    Statement istmt(destDb, Utf8PrintfString(
+    ECSqlStatement istmt;
+    istmt.Prepare(destDb, Utf8PrintfString(
         "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()).c_str());
 
     StopWatch timer(true);
     DbResult stepResult = sstmt.Step();
-    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetSql(), sourceModel.GetModelId().GetValue());
+    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetECSql(), sourceModel.GetModelId().GetValue());
     while (BE_SQLITE_ROW == stepResult)
         {
         istmt.Reset();
@@ -1691,22 +1693,16 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         DgnElementId remappedDstId;
 
         int icol = 0;
-        istmt.BindId(icol+1, (remappedSrcId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [0] sourcecol
+        istmt.BindId(icol+1, (remappedSrcId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [0] SourceECInstanceId
         ++icol;
-        istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] targetcol
+        istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] TargetECInstanceId
         ++icol;
 
         if (remappedSrcId.IsValid() && remappedDstId.IsValid())
             {
-            if (nullptr != classcol)
-                {
-                istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol))); // [2] classcol (optional)
-                ++icol;
-                }
-
             for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
                 {
-                istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
+                istmt.BindText(icol+1, sstmt.GetValueText(icol), IECSqlBinder::MakeCopy::No);
                 ++icol;
                 }
 
@@ -1718,7 +1714,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
 
         timer.Start();
         stepResult = sstmt.Step();
-        logPerformance(timer, "Statement.Step for %s", sstmt.GetSql());
+        logPerformance(timer, "Statement.Step for %s", sstmt.GetECSql());
         }
 
     return DgnDbStatus::Success;
@@ -1735,10 +1731,10 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     StopWatch timer(true);
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementGroupsMembers), "GroupId", "MemberId", nullptr, {"MemberPriority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_SCHEMA(BIS_REL_ElementGroupsMembers), {"MemberPriority"});
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceId", "TargetId", "ECClassId", {"Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_SCHEMA(BIS_REL_ElementDrivesElement), {"Status", "Priority"});
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
