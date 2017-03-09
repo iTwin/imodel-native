@@ -26,6 +26,34 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 //#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 
+TEST(FormattingTest, Preliminary)
+    {
+    FormattingDividers fdiv = FormattingDividers(nullptr);
+    //LOG.infov("================  Formatting Log ===========================");
+    //const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
+    //FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
+    //LOG.infov("Initial string: %s", uni);
+    //size_t skipped = curs.SkipBlanks();
+    //LOG.infov("Skipped blanks: %d", skipped);
+
+
+    //NumericFormatSpec numFmt = NumericFormatSpec("Default");
+    //CharCP p = fdiv.GetMarkers();
+    //for (int i = 0; i < 16; ++i)
+    //    {
+    //    LOG.infov(numFmt.ByteToBinaryText(p[i]).c_str());
+    //    }
+    //LOG.infov("( %s", FormatConstant::BoolText(fdiv.IsDivider('(')));
+    //LOG.infov(") %s", FormatConstant::BoolText(fdiv.IsDivider(')')));
+    //LOG.infov("{ %s", FormatConstant::BoolText(fdiv.IsDivider('{')));
+    //LOG.infov("} %s", FormatConstant::BoolText(fdiv.IsDivider('}')));
+    //LOG.infov("A %s", FormatConstant::BoolText(fdiv.IsDivider('A')));
+    EXPECT_TRUE(fdiv.IsDivider('('));
+    EXPECT_TRUE(fdiv.IsDivider(')'));
+    EXPECT_TRUE(fdiv.IsDivider('{'));
+    EXPECT_FALSE(fdiv.IsDivider('A'));
+    }
+
 TEST(FormattingTest, PhysValues)
     {
     // preparing pointers to various Unit definitions used in the following tests
@@ -141,14 +169,14 @@ TEST(FormattingTest, PhysValues)
 
     CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
 
-    if (cvs.NoProblem())
+    /*if (cvs.NoProblem())
         {
         LOG.infov("MajorToMid %d", cvs.GetMajorToMiddleRatio());
         LOG.infov("MidToMinor %d", cvs.GetMiddleToMinorRatio());
         LOG.infov("MinorToSub %d", cvs.GetMinorToSubRatio());
         }
     else
-        LOG.infov("Error: %s", cvs.GetProblemDescription());
+        LOG.infov("Error: %s", cvs.GetProblemDescription());*/
 
     }
 
@@ -372,6 +400,7 @@ TEST(FormattingTest, Simple)
 TEST(FormattingTest, DictionaryValidation)
     {
     FormatDictionary dict = FormatDictionary();
+    LOG.infov("%s  %s", FormatConstant::FPN_Precision4().c_str(), dict.CodeToName(ParameterCode::DecPrec4).c_str());
 
     EXPECT_STREQ(FormatConstant::FPN_NoSign().c_str(), dict.CodeToName(ParameterCode::NoSign).c_str());
     EXPECT_STREQ(FormatConstant::FPN_OnlyNegative().c_str(), dict.CodeToName(ParameterCode::OnlyNegative).c_str());
@@ -433,9 +462,33 @@ TEST(FormattingTest, DictionaryValidation)
     EXPECT_STREQ(FormatConstant::FPN_RightAlign().c_str(), dict.CodeToName(ParameterCode::RightAlign).c_str());
     EXPECT_STREQ(FormatConstant::FPN_MapName().c_str(), dict.CodeToName(ParameterCode::MapName).c_str());
 
-    NumericFormatSpecP fmtP = StdFormatSet::FindFormat("fract16");
-    Utf8String serT = dict.SerializeFormatDefinition(*fmtP);
+    bvector<Utf8CP> vec = StdFormatSet::StdFormatNames(true);
+
+    Utf8CP name = *vec.begin();
+    Utf8String nameL = StdFormatSet::StdFormatNameList(true);
+    NumericFormatSpecP fmtP;
+    Utf8String serT;
+    LOG.infov("Aliases:  %s", nameL.c_str());
+    nameL = StdFormatSet::StdFormatNameList(false);
+    LOG.infov("Names:  %s", nameL.c_str());
+
+    for (auto itr = vec.begin(); itr != vec.end(); ++itr)
+        {
+        name = *itr;
+        fmtP = StdFormatSet::FindFormat(name);
+        serT = dict.SerializeFormatDefinition(*fmtP);
+        LOG.infov("%s", serT.c_str());
+        }
+
+   
+   /* NumericFormatSpecP fmtP = StdFormatSet::FindFormat("fract16");
+
     LOG.infov("%s", serT.c_str());
+    fmtP = StdFormatSet::FindFormat("fract32");
+    serT = dict.SerializeFormatDefinition(*fmtP);
+    LOG.infov("%s", serT.c_str());*/
+
+    LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
 

@@ -10,6 +10,93 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+//===================================================
+//
+// FormatConstant Methods
+//
+//===================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+const bool FormatConstant::IsLittleEndian()
+    {
+    union { short int s; char b[4]; } un;
+    un.s = 1;
+    return (un.b[0] == (char)1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+const size_t FormatConstant::GetSequenceLength(unsigned char c)
+    {
+    if (0 == (c & UTF_TrailingByteMark())) // ASCII - single byte
+        return 1;
+    if ((c & UTF_2ByteMask()) == UTF_2ByteMark())
+        return 2;
+    if ((c & UTF_3ByteMask()) == UTF_3ByteMark())
+        return 3;
+    if ((c & UTF_4ByteMask()) == UTF_4ByteMark())
+        return 4;
+    return 0;
+    }
+
+// the trailing byte should be properly marked for being processed. It always contains only
+//  6 bits that should be shifted accordingly to the location of the byte in the sequence
+//  there are only 3 possible numbers of bytes in sequences: 2, 3 and 4. Accordingly the 
+//  the range of indexes is striclty governed by the sequence lenght. The minimum index
+//  value is always 1 and the maximum is N-1 where N is the sequence length
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+bool FormatConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits)
+    {
+    if (nullptr != outBits)
+        {
+        // calculate the shift 
+        *outBits = 0;
+        int shift = ((int)seqLength - (int)index - 1);
+        if (0 > shift || 2 < shift)
+            return false;
+        if (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()))
+            {
+            size_t temp = c & ~UTF_TrailingByteMask();
+            temp <<= shift * UTF_UpperBitShift();
+            *outBits = temp;
+            }
+        return true;
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
+    {
+    if (nullptr != outBits)
+        {
+        *outBits = 0;
+        if (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()))
+            *outBits = c & ~UTF_TrailingByteMask();
+        return true;
+        }
+    return false;
+    }
+
+const unsigned char FormatConstant::TriadBitMask(size_t threeBit)
+    {
+    static unsigned char mask[8] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 };
+    threeBit &= 0x7;
+    return mask[threeBit];
+    }
+
+//===================================================
+//
+// Utils Methods
+//
+//===================================================
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -95,6 +182,18 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
         case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
         default:
         case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
+        }
+    }
+
+Utf8String  Utils::FractionBarName(FractionBarType bar)
+    {
+    switch (bar)
+        {
+        case FractionBarType::Diagonal: return FormatConstant::FPN_FractBarDiagonal();
+        case FractionBarType::Oblique: return FormatConstant::FPN_FractBarOblique();
+        case FractionBarType::Horizontal: return FormatConstant::FPN_FractBarHoriz();
+        case FractionBarType::None:
+        default:  return "";
         }
     }
 
@@ -758,6 +857,16 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
         }
     }
 
+//----------------------------------------------------------------------------------------
+//  The text string has format <unitName>(<formatName>)
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormatUnitSet::FormatUnitSet(Utf8CP description)
+    {
+    
+    }
+
+
 Utf8String FormatUnitSet::FormatQuantity(QuantityCR qty)
     {
     Utf8String txt;
@@ -765,6 +874,25 @@ Utf8String FormatUnitSet::FormatQuantity(QuantityCR qty)
     return txt;
     }
 
+
+
+FormattingDividers::FormattingDividers(Utf8CP div)
+    {
+    if (nullptr == div)
+        div = " !\"#$%&\'()*+,-./:;<=>? [\\]^{|}";
+    memset(m_markers, 0, sizeof(m_markers));
+    Utf8CP p = div;
+    while (*p != 0)
+        {
+        m_markers[(*p & 0x78) >> 3] |= FormatConstant::TriadBitMask(*p);
+        ++p;
+        }
+    }
+
+bool FormattingDividers::IsDivider(char c)
+    {
+    return (0 != ((m_markers[(c & 0x78) >> 3]) & (FormatConstant::TriadBitMask(c))));
+    }
 
 END_BENTLEY_FORMATTING_NAMESPACE
 
