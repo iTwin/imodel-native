@@ -208,6 +208,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
 
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) = 0;
+
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
@@ -257,7 +259,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
 
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) = 0;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const = 0;
 
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
@@ -376,6 +378,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
 
+        BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, bvector<DPoint3d>& clipData);
+
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
 
@@ -417,7 +421,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 
-        BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids);
+        BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids) const;
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 

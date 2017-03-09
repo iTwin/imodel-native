@@ -170,6 +170,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
@@ -196,7 +197,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
         virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) override;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
 
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;

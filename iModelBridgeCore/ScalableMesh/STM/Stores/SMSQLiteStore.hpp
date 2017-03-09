@@ -695,8 +695,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             //this leads to undefined behavior when using the object. So we call the constructor on the allocated memory from the pool right here using placement new.
             DifferenceSet * diffSet = new(DataTypeArray + ct)DifferenceSet();
             size_t sizeOfCurrentSerializedSet = (size_t)*((int32_t*)&nodeData[offset]);
-            diffSet->LoadFromBinaryStream(&nodeData[0] + offset + sizeof(int32_t), sizeOfCurrentSerializedSet);
             diffSet->upToDate = true;
+            diffSet->LoadFromBinaryStream(&nodeData[0] + offset + sizeof(int32_t), sizeOfCurrentSerializedSet);
             offset += sizeof(int32_t);
             offset += sizeOfCurrentSerializedSet;
             offset = ceil(((float)offset / sizeof(int32_t)))*sizeof(int32_t);

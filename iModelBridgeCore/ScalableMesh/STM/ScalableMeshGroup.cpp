@@ -319,6 +319,15 @@ bool                               ScalableMeshGroup::_RemoveClip(uint64_t clipI
     return true;
     }
 
+bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    for (auto& member : m_members)
+        if(member->GetClip(clipID, clipData))
+            return true;
+
+    return false;
+}
+
 void                               ScalableMeshGroup::_SetIsInsertingClips(bool toggleInsertMode)
     {
     for (auto& member : m_members)
@@ -465,7 +474,7 @@ void                           ScalableMeshGroup::_GetAllCoverages(bvector<bvect
         }
     }
 
-void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids)
+void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids) const
     {
     for (auto& member : m_members)
         {
