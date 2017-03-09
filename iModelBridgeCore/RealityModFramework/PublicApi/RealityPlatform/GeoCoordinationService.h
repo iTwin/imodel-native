@@ -10,7 +10,10 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include <RealityPlatform/WSGServices.h>
 
+#include <Bentley/BeFile.h>
+#include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <sql.h>
@@ -51,66 +54,23 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! GeoCoordinationServiceRequest
 //! This class represents a request to the GeoCoordination Service.
 //=====================================================================================
-struct GeoCoordinationServiceRequest : public RefCountedBase
+struct GeoCoordinationServiceRequest : public WSGURL
     {
 public:
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
 
-    enum class HttpRequestType
-        {
-        GET_Request,
-        PUT_Request,
-        POST_Request
-        }
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
 
-    //! Returns the full http request string
-    Utf8StringCR GetHttpRequestString() const 
-        {
-        if (!m_validRequestString)
-            _PrepareHttpRequestString();
-
-        BeAssert(m_validRequestString);
-        BeAssert(m_httpRequestString.size() != 0);
-
-        return m_httpRequestString;
-        };
-
-    Utf8StringCR GetRequestPayload() const
-        {
-        if (!m_validRequestString)
-            _PrepareHttpRequestString();
-
-        BeAssert(m_validRequestString);
-
-        return m_requestPayload;
-        }
-
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 protected:
     // Default constructor
     GeoCoordinationService() : m_validRequestString(false) {}
 
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR _PrepareHttpRequestStringAndPayload() const = 0;
 
-    static Utf8String s_geoCoordinationServer = "https://connect-contextservices.bentley.com/";
-    static Utf8String s_geoCoordinationWSGProtocol = "2.4";
-    static Utf8String s_geoCoordinationName = "IndexECPlugin-Server";
-    static Utf8String s_geoCoordinationSchemaName = "RealityModeling";
-
-    static const Utf8String s_ImageryKey = "Imagery";
-    static const Utf8String s_TerrainKey = "Terrain";
-    static const Utf8String s_ModelKey = "Model";
-    static const Utf8String s_PinnedKey = "Pinned";
-
-    static const Utf8String s_USGSInformationSourceKey = "usgsapi";
-    static const Utf8String s_PublicIndexInformationSourceKey = "index";
-    static const Utf8String s_AllInformationSourceKey = "all";
-
-    mutable bool m_validRequestString;
-    mutable Utf8String m_httpRequestString;
-    mutable Utf8String m_requestPayload;
-
-    HttpRequestType m_requestType;
     }
 
 //=====================================================================================
@@ -123,20 +83,24 @@ protected:
 //! Default page size is 25 with, of course a start index of 0
 //! To advance to next/previous page simply call AdvancePage() or RewingPage()
 //=====================================================================================
-struct GeoCoordinationServicePagedRequest : public GeoCoordinationServiveRequest
+struct GeoCoordinationServicePagedRequest : public WSGPagedRequest
     {
 public:
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT StatusInt SetPageSize(uint8_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
-    REALITYDATAPLATFORM_EXPORT uint8_t GetPageSize() {return m_pageSize;}
-  
-    REALITYDATAPLATFORM_EXPORT StatusInt SetStartIndex(uint16_t startIndex) {m_startIndex = startIndex;} 
+    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
-    REALITYDATAPLATFORM_EXPORT StatusInt AdvancePage() {m_validRequestString = false; m_startIndex += m_pageSize;}
-    REALITYDATAPLATFORM_EXPORT StatusInt RewindPage() {m_validRequestString = false; m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);}
- 
+    REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
 
-
+    //! Sets the sort order for the list. This sorting is performed server-side.
+    //! Note that it is not possible to specify two sorts (sort by field a then by filed b is not supported).
+    //! The server will decide how sorted groups are ordered.
+    //! Note that some fields in the server are considered case-sensitive and others
+    //!  case insensitive. The server will apply sort rules accordingly.
+    REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
 
 protected:
     // Default constructor
@@ -445,6 +409,19 @@ public:
     //! Returns the full WSG JSON returned by the package preparation request
     REALITYDATAPLATFORM_EXPORT static Utf8String RequestToJSON(PackagePreparationRequestCR request);
 
+    static Utf8String s_geoCoordinationServer = "https://connect-contextservices.bentley.com/";
+    static Utf8String s_geoCoordinationWSGProtocol = "2.4";
+    static Utf8String s_geoCoordinationName = "IndexECPlugin-Server";
+    static Utf8String s_geoCoordinationSchemaName = "RealityModeling";
+
+    static const Utf8String s_ImageryKey = "Imagery";
+    static const Utf8String s_TerrainKey = "Terrain";
+    static const Utf8String s_ModelKey = "Model";
+    static const Utf8String s_PinnedKey = "Pinned";
+
+    static const Utf8String s_USGSInformationSourceKey = "usgsapi";
+    static const Utf8String s_PublicIndexInformationSourceKey = "index";
+    static const Utf8String s_AllInformationSourceKey = "all";
     }
 
 
