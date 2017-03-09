@@ -117,7 +117,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECInstanceId() : ECSqlSystemPropertyInfo::TargetECInstanceId());
     int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
     int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
-    ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
+    ECSqlInsertPreparedStatement_Old* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement_Old>();
 
     if (foreignEndECInstanceIdIndex >= 0)
         {
@@ -159,7 +159,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             foreignEndECInstanceIdBinder->SetOnBindECInstanceIdEventHandler([preparedStatement, classId] (ECInstanceId bindValue)
                 {
                 BeAssert(preparedStatement != nullptr);
-                preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, bindValue));
+                preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classId, bindValue));
                 });
             }
         else
@@ -174,7 +174,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
                 }
 
             BeAssert(id.IsValid());
-            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, id));
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classId, id));
             }
         }
 
@@ -275,7 +275,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             }
 
         //add binder for the ecinstanceid parameter
-        ECSqlInsertPreparedStatement* preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
+        ECSqlInsertPreparedStatement_Old* preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement_Old> ();
         int sqliteIndex = ctx.NextParameterIndex();
         size_t ecinstanceidBinderIndex = 0;
         ECSqlBinder* ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ctx, ECSqlTypeInfo(PRIMITIVETYPE_Long));
@@ -285,7 +285,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             return;
             }
 
-        preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
+        preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         //add SQLite parameter for the ecinstanceid (internal parameters's ECSqlParameterIndex is made negative to distinguish them from real ECSQL parameter)
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter("_ecdbecinstanceid", (-1) * (int) ecinstanceidBinderIndex, 1, sqliteIndex);
         }
@@ -408,7 +408,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     if (ctx.IsEmbeddedStatement())
         return ECInstanceIdMode::NotUserProvided; 
 
-    ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
+    ECSqlInsertPreparedStatement_Old* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement_Old>();
     BeAssert(preparedStatement != nullptr);
 
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
@@ -442,7 +442,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
             {
             LiteralValueExp const& constValueExp = valueExp->GetAs<LiteralValueExp>();
             ECInstanceId instanceId((uint64_t) constValueExp.GetValueAsInt64());
-            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, instanceId));
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classId, instanceId));
             }
         }
     else if (expType == Exp::Type::Parameter)
@@ -467,7 +467,7 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
                 preparedStatement->GetECInstanceKeyInfo().SetBoundECInstanceId(ECInstanceId(bindValue.GetValue()));
                 });
 
-            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, *ecinstanceidBinder));
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classId, *ecinstanceidBinder));
             }
         }
     else

@@ -22,7 +22,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
-    ECSqlSelectPreparedStatement* selectPreparedState = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlSelectPreparedStatement>();
+    ECSqlSelectPreparedStatement_Old* selectPreparedState = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlSelectPreparedStatement_Old>();
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;

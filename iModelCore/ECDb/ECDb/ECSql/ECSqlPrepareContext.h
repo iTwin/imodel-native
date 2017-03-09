@@ -12,7 +12,7 @@
 #include <bitset>      
 #include "Exp.h"
 #include "OptionsExp.h"
-#include "ECSqlPreparedStatement.h"
+//#include "ECSqlPreparedStatement_Old.h"
 #include "NativeSqlBuilder.h"
  
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/ECSqlPreparedStatement.h $
+|     $Source: ECDb/ECSql/ECSqlPreparedStatement_Old.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,6 +18,9 @@
 #include "DynamicSelectClauseECClass.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+
+
 struct ParentOfJoinedTableECSqlStatement;
 
 //=======================================================================================
@@ -25,7 +28,7 @@ struct ParentOfJoinedTableECSqlStatement;
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPreparedStatement : NonCopyableClass
+struct ECSqlPreparedStatement_Old : NonCopyableClass
     {
     private:
         ECSqlType m_type;
@@ -43,7 +46,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
         virtual ECSqlStatus _Reset() = 0;
 
     protected:
-        ECSqlPreparedStatement(ECSqlType, ECDb const&);
+        ECSqlPreparedStatement_Old(ECSqlType, ECDb const&);
 
         DbResult DoStep();
         ECSqlStatus DoReset();
@@ -54,7 +57,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
         BentleyStatus AssertIsValid() const;
 
     public:
-        virtual ~ECSqlPreparedStatement() {}
+        virtual ~ECSqlPreparedStatement_Old() {}
 
         ECSqlType GetType() const { return m_type; }
         ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
@@ -76,12 +79,14 @@ struct ECSqlPreparedStatement : NonCopyableClass
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     };
 
+
+
 //=======================================================================================
 //! Represents a prepared SELECT ECSqlStatement with all additional information needed for
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
+struct ECSqlSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
     {
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
@@ -96,8 +101,8 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
         ECSqlStatus OnAfterStep() const;
 
     public:
-        explicit ECSqlSelectPreparedStatement(ECDbCR ecdb) : ECSqlPreparedStatement(ECSqlType::Select, ecdb) {}
-        ~ECSqlSelectPreparedStatement() {}
+        explicit ECSqlSelectPreparedStatement_Old(ECDbCR ecdb) : ECSqlPreparedStatement_Old(ECSqlType::Select, ecdb) {}
+        ~ECSqlSelectPreparedStatement_Old() {}
 
         DbResult Step();
 
@@ -115,14 +120,54 @@ struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement
 //! additional information needed for post-prepare operations
 // @bsiclass                                                Affan.Khan           02/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
+struct ECSqlNonSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
     {
     protected:
-        ECSqlNonSelectPreparedStatement(ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement(statementType, ecdb) {}
+        ECSqlNonSelectPreparedStatement_Old(ECSqlType statementType, ECDbCR ecdb) :ECSqlPreparedStatement_Old(statementType, ecdb) {}
         ECSqlStatus _Reset() override { return DoReset(); }
 
     public:
-        virtual ~ECSqlNonSelectPreparedStatement() {}
+        virtual ~ECSqlNonSelectPreparedStatement_Old() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      03/2017
+//+===============+===============+===============+===============+===============+======
+struct CompoundECSqlNonSelectPreparedStatement final : NonCopyableClass
+    {
+    private:
+        ECDb const& m_ecdb;
+        ECSqlType m_type;
+        Utf8String m_ecsql;
+        std::vector<std::unique_ptr<ECSqlNonSelectPreparedStatement_Old>> m_statements;
+
+    public:
+        CompoundECSqlNonSelectPreparedStatement(ECDb const& ecdb, ECSqlType type) : m_ecdb(ecdb), m_type(type) {}
+
+        ECSqlType GetType() const { return m_type; }
+        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
+        IECSqlBinder& GetBinder(int parameterIndex);
+        int GetParameterIndex(Utf8CP parameterName) const;
+
+        ECSqlStatus ClearBindings()
+            {
+            ECSqlStatus totalStat = ECSqlStatus::Success;
+            for (std::unique_ptr<ECSqlNonSelectPreparedStatement_Old>& stmt : m_statements)
+                {
+                ECSqlStatus stat = stmt->ClearBindings();
+                if (!stat.IsSuccess())
+                    totalStat = stat;
+                }
+
+            return totalStat;
+            }
+
+        ECSqlStatus Reset();
+
+        Utf8StringCR GetECSql() const { return m_ecsql; }
+        Utf8CP GetNativeSql() const;
+
+        ECDb const& GetECDb() const { return m_ecdb; }
     };
 
 //=======================================================================================
@@ -130,7 +175,7 @@ struct ECSqlNonSelectPreparedStatement : public ECSqlPreparedStatement
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
+struct ECSqlInsertPreparedStatement_Old : public ECSqlNonSelectPreparedStatement_Old
     {
     public:
         struct ECInstanceKeyInfo
@@ -173,8 +218,8 @@ struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
         ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId);
 
     public:
-        explicit ECSqlInsertPreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb) {}
-        ~ECSqlInsertPreparedStatement() {}
+        explicit ECSqlInsertPreparedStatement_Old(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement_Old(ECSqlType::Insert, ecdb) {}
+        ~ECSqlInsertPreparedStatement_Old() {}
 
         DbResult Step(ECInstanceKey& instanceKey);
 
@@ -189,11 +234,11 @@ struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
+struct ECSqlUpdatePreparedStatement_Old : public ECSqlNonSelectPreparedStatement_Old
     {
     public:
-        explicit ECSqlUpdatePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Update, ecdb) {}
-        ~ECSqlUpdatePreparedStatement() {}
+        explicit ECSqlUpdatePreparedStatement_Old(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement_Old(ECSqlType::Update, ecdb) {}
+        ~ECSqlUpdatePreparedStatement_Old() {}
         DbResult Step();
     };
 
@@ -203,11 +248,11 @@ struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlDeletePreparedStatement : public ECSqlNonSelectPreparedStatement
+struct ECSqlDeletePreparedStatement_Old : public ECSqlNonSelectPreparedStatement_Old
     {
     public:
-        explicit ECSqlDeletePreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Delete, ecdb) {}
-        ~ECSqlDeletePreparedStatement() {}
+        explicit ECSqlDeletePreparedStatement_Old(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement_Old(ECSqlType::Delete, ecdb) {}
+        ~ECSqlDeletePreparedStatement_Old() {}
         DbResult Step();
     };
 
