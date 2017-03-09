@@ -294,14 +294,23 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_prev;
     attribute vec3 a_next;
     attribute vec3 a_delta;
+    attribute vec3 a_scale; 
     uniform mat4 u_mv;
     uniform mat4 u_proj;
     uniform float u_width;
+    varying vec2    v_texc;
 
     void main(void)
         {
         mat4 mvProj     = u_proj * u_mv;
         gl_Position    = mvProj * vec4(a_pos,  1.0);
+        float           imagesPerPixel = 1.0 / 32.0;
+        float           scaleMetersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           imagesPerMeter = imagesPerPixel/scaleMetersPerPixel;
+
+        v_texc.x = a_delta.x * imagesPerMeter;
+        v_texc.y = .5;
+
         if (0.0 != a_delta.y)
             {
             vec4    projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
@@ -313,7 +322,7 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
             vec2    nextDir    = normalize(nextDelta);
             vec2    thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
             vec2    perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
-            float   dist      = 2.0 * u_width;
+            float   dist       = u_width;
             vec2    delta      = vec2(0.0, 0.0);
 
             if (dot(prevDir, nextDir) < .99999)
@@ -346,21 +355,26 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
                 {
                 delta = perp * dist;
                 }
+            v_texc.x += dot(thisDir, delta) * imagesPerPixel;
+            v_texc.y += dot(perp, delta) * imagesPerPixel;
 
-            gl_Position.x += delta.x * gl_Position.w / czm_viewport.z;
-            gl_Position.y += delta.y * gl_Position.w / czm_viewport.w;
+            gl_Position.x += delta.x * 2.0 * gl_Position.w / czm_viewport.z;
+            gl_Position.y += delta.y * 2.0 * gl_Position.w / czm_viewport.w;
             }
-        v_color = computeColor();
+        //v_color = computeColor();
         }
 )RAW_STRING";
 
 static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
-varying vec4 v_color;
-varying vec2 v_windowPos;
+varying vec2        v_texc;  
+uniform sampler2D   u_tex; 
 
 void main(void)
     {
-    gl_FragColor = v_color;
+    vec4 textureColor = texture2D(u_tex, v_texc);
+    if (0.0 == textureColor.a) discard;
+
+    gl_FragColor = textureColor;
     }
 )RAW_STRING";
 
