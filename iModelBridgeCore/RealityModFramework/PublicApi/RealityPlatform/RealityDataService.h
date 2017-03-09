@@ -171,7 +171,7 @@ private:
 struct AzureHandshake : public RealityDataUrl
     {
 public:
-    AzureHandshake(Utf8String sourcePath, bool isWrite);
+    REALITYDATAPLATFORM_EXPORT AzureHandshake(Utf8String sourcePath, bool isWrite);
     REALITYDATAPLATFORM_EXPORT Utf8StringR GetJsonResponse() { return m_jsonResponse; }
     REALITYDATAPLATFORM_EXPORT BentleyStatus ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
 protected:
