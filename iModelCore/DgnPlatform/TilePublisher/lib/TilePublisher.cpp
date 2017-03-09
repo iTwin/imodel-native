@@ -2673,6 +2673,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 DRange3d            childRange;
 
                 childTileset["asset"]["version"] = "0.0";
+                childTileset["asset"]["gltfUpAxis"] = "Z";
 
                 auto&       childRoot = childTileset[JSON_Root];
                 WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
@@ -2749,6 +2750,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     Json::Value val;
 
     val["asset"]["version"] = "0.0";
+    val["asset"]["gltfUpAxis"] = "Z";
 
     auto&       root = val[JSON_Root];
 
