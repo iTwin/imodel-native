@@ -983,6 +983,9 @@ public:
 
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
+
+    //! Return true if ViewDefinition Supports Camera.
+    bool SupportsCamera() const { return _SupportsCamera(); }
 };
 
 //=======================================================================================
