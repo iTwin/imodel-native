@@ -1414,6 +1414,53 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                 </ECRelationshipClass>
             </ECSchema>)xml", false, "TargetId is the alias for the TargetECInstanceId system property and therefore a reserved name"));
 
+    testSchemas.push_back(SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                              <ECEntityClass typeName="Foo">
+                                <ECProperty propertyName="ECClassId" typeName="string" />
+                              </ECEntityClass>
+                            </ECSchema>)xml", false, "ECClassId is a system property"));
+
+    testSchemas.push_back(SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="A">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="B">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                                       <Class class="A" />
+                                    </Source>
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                                       <Class class="B"/>
+                                     </Target>
+                                <ECProperty propertyName="SourceECClassId" typeName="string" />
+                              </ECRelationshipClass>
+                            </ECSchema>)xml", false, "SourceECClassId is a system property and therefore a reserved name"));
+
+    testSchemas.push_back(SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="A">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="B">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                                    <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                                       <Class class="A" />
+                                    </Source>
+                                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                                       <Class class="B"/>
+                                     </Target>
+                                <ECProperty propertyName="TargetECClassId" typeName="string" />
+                              </ECRelationshipClass>
+                            </ECSchema>)xml", false, "TargetECClassId is a system property and therefore a reserved name"));
+
     AssertSchemaImport(testSchemas, "idnamecollisions.ecdb");
 
     {
