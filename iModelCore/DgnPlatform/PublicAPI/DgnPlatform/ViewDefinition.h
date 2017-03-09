@@ -870,7 +870,8 @@ public:
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
 
-    bool SupportsCamera() const {return _SupportsCamera();}
+    //! Return true if ViewDefinition supports Camera.
+    bool SupportsCamera() const { return _SupportsCamera(); }
 
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT Angle CalcLensAngle() const;
@@ -983,9 +984,6 @@ public:
 
     //! Get the distance from the eyePoint to the focus plane for this view.
     double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
-
-    //! Return true if ViewDefinition Supports Camera.
-    bool SupportsCamera() const { return _SupportsCamera(); }
 };
 
 //=======================================================================================
