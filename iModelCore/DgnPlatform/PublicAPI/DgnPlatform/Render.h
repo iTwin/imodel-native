@@ -1492,6 +1492,17 @@ public:
 };
 
 //=======================================================================================
+//! Defines non-uniform color for a graphic primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct ColorIndex
+{
+    uint32_t const* m_colors = nullptr; // RGBT color values (see ColorDef)
+    int32_t         m_numColors = 0;    // Number of colors in m_colors
+    bool            m_hasAlpha = false; // true if any value in m_colors has transparency
+};
+
+//=======================================================================================
 //! Information needed to draw a triangle mesh
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
@@ -1505,6 +1516,10 @@ struct TriMeshArgs
     FPoint2d const* m_textureUV= nullptr;
     TexturePtr m_texture;
     int32_t m_flags = 0; // don't generate normals
+#if defined(TODO_MULTICOLORED_MESHES)
+    ColorIndex m_colors;
+#endif
+
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
 

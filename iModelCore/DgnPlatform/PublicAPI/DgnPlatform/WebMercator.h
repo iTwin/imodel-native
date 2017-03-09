@@ -128,7 +128,7 @@ public:
     //! Create a new WebMercatorModel object
     WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
 
-    TileTree::RootPtr _CreateTileTree(Render::System&) override;
+    TileTree::RootPtr _CreateTileTree(Render::SystemP) override;
     void _WriteJsonProperties(Json::Value&) const override;
     void _ReadJsonProperties(Json::Value const&) override;
     double GetGroundBias() const {return m_properties.m_groundBias;}

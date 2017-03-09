@@ -939,7 +939,7 @@ BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
         if (nullptr == model)
             return ERROR;
 
-        m_root = model->GetTileTree(context.GetTargetR().GetSystem());
+        m_root = model->GetTileTree(&context.GetTargetR().GetSystem());
         //BeAssert(m_root.IsValid());
         if (m_root.IsNull())
             return ERROR;
@@ -991,7 +991,7 @@ BentleyStatus TemplateViewController3d::_CreateScene(RenderContextR context)
     if (m_root.IsNull())
         {
         auto model = GetViewedModel();
-        if (nullptr == model || (m_root = model->GetTileTree(context.GetTargetR().GetSystem())).IsNull())
+        if (nullptr == model || (m_root = model->GetTileTree(&context.GetTargetR().GetSystem())).IsNull())
             return ERROR;
         }
 

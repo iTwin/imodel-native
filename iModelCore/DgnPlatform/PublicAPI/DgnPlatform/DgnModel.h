@@ -795,7 +795,7 @@ protected:
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
-    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::System&);
+    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
 
     virtual void _PickTerrainGraphics(PickContextR) const {}
 
@@ -831,7 +831,7 @@ public:
     //! Get the Properties for this model.
     DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;}
 
-    DGNPLATFORM_EXPORT RefCountedPtr<TileTree::Root> GetTileTree(Render::System& system);
+    DGNPLATFORM_EXPORT RefCountedPtr<TileTree::Root> GetTileTree(Render::SystemP system);
 };
 
 //=======================================================================================

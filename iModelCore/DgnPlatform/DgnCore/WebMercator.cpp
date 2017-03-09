@@ -254,9 +254,9 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::System& system)
+TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)
     {
-    return Load(&system);
+    return Load(system);
     }
 
 /*---------------------------------------------------------------------------------**//**
