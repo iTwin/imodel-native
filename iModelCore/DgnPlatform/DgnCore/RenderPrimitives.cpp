@@ -216,7 +216,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetRasterWidth(), rhs.GetRasterWidth());
     TEST_LESS_THAN(GetMaterialId().GetValueUnchecked(), rhs.GetMaterialId().GetValueUnchecked());
 
-#if defined(TODO_MULTICOLORED_MESHES)
     if (ComparePurpose::Merge == purpose)
         {
         // We can merge meshes of differing colors, but can't mix opaque with translucent
@@ -224,12 +223,6 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         }
 
     TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor());
-#else
-    TEST_LESS_THAN(GetFillColor(), rhs.GetFillColor());
-    if (ComparePurpose::Merge == purpose)
-        return false;
-#endif
-
     TEST_LESS_THAN(GetCategoryId().GetValueUnchecked(), rhs.GetCategoryId().GetValueUnchecked());
     TEST_LESS_THAN(GetSubCategoryId().GetValueUnchecked(), rhs.GetSubCategoryId().GetValueUnchecked());
     TEST_LESS_THAN(static_cast<uint32_t>(GetClass()), static_cast<uint32_t>(rhs.GetClass()));
@@ -249,17 +242,10 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetRasterWidth());
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
 
-#if defined(TODO_MULTICOLORED_MESHES)
     if (ComparePurpose::Merge == purpose)
         return HasTransparency() == rhs.HasTransparency();
 
     TEST_EQUAL(GetFillColor());
-#else
-    TEST_EQUAL(GetFillColor());
-    if (ComparePurpose::Merge == purpose)
-        return true;
-#endif
-
     TEST_EQUAL(GetCategoryId().GetValueUnchecked());
     TEST_EQUAL(GetSubCategoryId().GetValueUnchecked());
     TEST_EQUAL(GetTextureImage());
@@ -1277,6 +1263,24 @@ uint16_t ColorTable::GetIndex(uint32_t color)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors) const
+    {
+    index.Reset();
+    if (IsUniform())
+        return;
+
+    colors.resize(size());
+    for (auto const& kvp : *this)
+        colors[kvp.second] = kvp.first;
+
+    index.m_hasAlpha = m_hasAlpha;
+    index.m_colors = colors.data();
+    index.m_numColors = colors.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
@@ -1415,6 +1419,38 @@ void  TextStringGeometry::InitGlyphCurves() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
+    {
+    Clear();
+    if (mesh.Triangles().empty())
+        return false;
+
+    for (auto const& triangle : mesh.Triangles())
+        {
+        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
+        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
+        m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
+        }
+
+    Set(m_numIndices, m_vertIndex, m_indices);
+    Set(m_numPoints, m_points, mesh.Points());
+    Set(m_textureUV, mesh.Params());
+    if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
+        Set(m_normals, mesh.Normals());
+
+    auto const& displayParams = mesh.GetDisplayParams();
+    displayParams.ResolveTextureImage(db);
+    if (nullptr != displayParams.GetTextureImage())
+        m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
+
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void MeshArgs::Clear()
     {
     m_indices.clear();
@@ -1426,6 +1462,9 @@ void MeshArgs::Clear()
     m_textureUV = nullptr;
     m_texture = nullptr;
     m_flags = 0;
+
+    m_colors.Reset();
+    m_colorTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1463,6 +1502,9 @@ void PolylineArgs::Reset()
     m_points = nullptr;
     m_lines = nullptr;
     m_polylines.clear();
+
+    m_colors.Reset();
+    m_colorTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1487,6 +1529,8 @@ bool PolylineArgs::Init(MeshCR mesh)
         {
         m_numLines = static_cast<uint32_t>(m_polylines.size());
         m_lines = &m_polylines[0];
+
+        mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable);
         }
 
     return IsValid();

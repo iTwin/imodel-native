@@ -1497,9 +1497,11 @@ public:
 //=======================================================================================
 struct ColorIndex
 {
-    uint32_t const* m_colors = nullptr; // RGBT color values (see ColorDef)
-    int32_t         m_numColors = 0;    // Number of colors in m_colors
+    uint32_t const* m_colors = nullptr; // RGBT color values (see ColorDef), or nullptr if uniform color
+    int32_t         m_numColors = 0;    // Number of colors in m_colors, if m_colors is non-null
     bool            m_hasAlpha = false; // true if any value in m_colors has transparency
+
+    void Reset() { *this = ColorIndex(); }
 };
 
 //=======================================================================================
@@ -1516,9 +1518,7 @@ struct TriMeshArgs
     FPoint2d const* m_textureUV= nullptr;
     TexturePtr m_texture;
     int32_t m_flags = 0; // don't generate normals
-#if defined(TODO_MULTICOLORED_MESHES)
     ColorIndex m_colors;
-#endif
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -1545,6 +1545,7 @@ struct IndexedPolylineArgs
     Polyline const* m_lines = nullptr;
     uint32_t        m_numPoints = 0;
     uint32_t        m_numLines = 0;
+    ColorIndex      m_colors;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)

@@ -227,6 +227,8 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+
+    void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors) const;
 };
 
 //=======================================================================================
@@ -649,9 +651,8 @@ struct ToleranceRatio
 struct MeshArgs : TriMeshArgs
 {
     bvector<int32_t>    m_indices;
+    bvector<uint32_t>   m_colorTable;
 
-    void Clear();
-    void Transform(TransformCR);
     template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = 0 != src.size() ? src.data() : nullptr; }
 
     template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
@@ -660,33 +661,9 @@ struct MeshArgs : TriMeshArgs
         Set(ptr, src);
         }
 
-    bool Init(MeshCR mesh, Render::System const& system, DgnDbR db)
-        {
-        Clear();
-        if (mesh.Triangles().empty())
-            return false;
-
-        for (auto const& triangle : mesh.Triangles())
-            {
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
-            }
-
-        Set(m_numIndices, m_vertIndex, m_indices);
-        Set(m_numPoints, m_points, mesh.Points());
-        Set(m_textureUV, mesh.Params());
-        if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
-            Set(m_normals, mesh.Normals());
-
-        auto const& displayParams = mesh.GetDisplayParams();
-        displayParams.ResolveTextureImage(db);
-        if (nullptr != displayParams.GetTextureImage())
-            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
-
-        return true;
-        }
-
+    void Clear();
+    void Transform(TransformCR);
+    bool Init(MeshCR mesh, Render::System const& system, DgnDbR db);
 };
 
 //=======================================================================================
@@ -719,6 +696,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 struct PolylineArgs : IndexedPolylineArgs
 {
     bvector<IndexedPolyline>    m_polylines;
+    bvector<uint32_t>           m_colorTable;
 
     bool IsValid() const { return !m_polylines.empty(); }
 
