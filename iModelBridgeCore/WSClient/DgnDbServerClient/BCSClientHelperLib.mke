@@ -1,0 +1,27 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: DgnDbServerClient/BCSClientHelperLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+appName = BCSClientHelper
+
+DgnDbServerClientApiDir = $(SrcRoot)WSClient/PublicApi/DgnDbServer/Client/
+
+o = $(OutputRootDir)Build/DgnDbServer/Client/$(appName)/
+always:
+    ~mkdir $(o)
+
+$(o)BCSClientHelper.obj: $(baseDir)BCSClientHelper.cpp $(DgnDbServerClientApiDir)BCSClientHelper.h 
+
+objs = $(o)BCSClientHelper.obj
+
+LIB_NAME    = $(appName)
+LIB_DEST    = $(o)
+LIB_OBJS    = $(objs)
+LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+%include creatlib.mki

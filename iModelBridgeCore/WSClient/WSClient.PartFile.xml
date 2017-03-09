@@ -226,6 +226,17 @@
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // BCSClientHelperLib                                                     // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+  
+    <Part Name="BCSClientHelperLib" BentleyBuildMakeFile="DgnDbServerClient/BCSClientHelperLib.mke" ApiNumber="B02">
+      <SubPart PartName="DgnDbServerClient"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)BCSClientHelper$(stlibext)</Libs>
+      </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
