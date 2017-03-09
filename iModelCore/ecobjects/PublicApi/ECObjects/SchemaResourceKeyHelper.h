@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-#include "ECSchema.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

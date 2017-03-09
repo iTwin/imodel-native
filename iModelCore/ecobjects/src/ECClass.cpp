@@ -651,6 +651,8 @@ bool copyCustomAttributes,
 bool andAddProperty
 )
     {
+    if (nullptr == sourceProperty)
+        return ECObjectsStatus::NullPointerValue;
     if (sourceProperty->GetIsPrimitive())
         {
         PrimitiveECPropertyP destPrimitive;

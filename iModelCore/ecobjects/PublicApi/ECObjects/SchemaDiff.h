@@ -2,14 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaDiff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+//__PUBLISH_SECTION_START__
 
 #include "ECSchema.h"
-#include <set>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

@@ -50,15 +50,10 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus AddValidator(IECSchemaValidatorPtr& validator);
     };
 
-/*__PUBLISH_SECTION_END__*/
-
 struct BaseECValidator : IECSchemaValidator
     {
     ECObjectsStatus Validate(ECSchemaR schema) const override;
     };
 
-/*__PUBLISH_SECTION_START__*/
-
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_END__*/

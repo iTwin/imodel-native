@@ -33,7 +33,6 @@ typedef RefCountedPtr<IECCustomAttributeConverter> IECCustomAttributeConverterPt
 
 struct ECSchemaConverter
     {
-/*__PUBLISH_SECTION_END__*/
 private:
     ECSchemaConverter() {}
     ECSchemaConverter(const ECSchemaConverter & rhs) = delete;
@@ -70,7 +69,6 @@ private:
 
     static bvector<ECClassP> GetDerivedAndBaseClasses(ECClassCR ecClass);
 
-/*__PUBLISH_SECTION_START__*/
 public:
     //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
@@ -105,8 +103,6 @@ public:
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
-
-/*__PUBLISH_SECTION_END__*/
 
 //+===============+===============+===============+===============+===============+======
 // Data of standard values and the property that it is attached to
@@ -248,8 +244,4 @@ struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
         Utf8String GetContainerName(IECCustomAttributeContainerR container) const;
     };
 
-/*__PUBLISH_SECTION_START__*/
-
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/*__PUBLISH_SECTION_END__*/

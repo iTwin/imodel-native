@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECDBuffer.h>
@@ -125,4 +124,3 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/** @endcond */

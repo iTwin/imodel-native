@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/ECUnits/ECUnitsClassLocater.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 // Note: This is a barebones implementation targeting Graphite requirements.
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.

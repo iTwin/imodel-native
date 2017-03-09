@@ -6,10 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
+//__PUBLISH_SECTION_START__
 #include <ECObjects/ECInstance.h>
-#include <ECObjects/SchemaResourceKeyHelper.h>
-//#include "apr_sha1.h"
 
 EC_TYPEDEFS(SchemaLocalizedStrings);
 

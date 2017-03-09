@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,6 @@ struct PresentationMetadataHelper
 private:
     ECSchemaPtr             m_customAttributesSchema;
 
-/*__PUBLISH_SECTION_END__*/
     struct CustomAttributeData;
 
     IECInstancePtr          CreateInstance (Utf8CP className) const;
@@ -63,8 +62,7 @@ private:
 
 public:
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema);
-/*__PUBLISH_SECTION_START__*/
-public:
+
     //! Creates an PresentationMetadataHelper object which can be used to apply metadata to ECSchema, ECClass, and ECProperty objects.
     //! @param schemaContext    An ECSchemaReadContext from which the standard EditorCustomAttributes schema can be obtained.
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaReadContextR schemaContext);

@@ -9,14 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECObjects/ECObjects.h>
-/** @cond BENTLEY_SDK_Internal */
 #include <ECObjects/ECDBuffer.h>
-/** @endcond */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
-/** @cond BENTLEY_SDK_Internal */
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
@@ -183,7 +180,6 @@ public:
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded () const;
 };
 
-/** @endcond */
 
 struct StandaloneECEnabler;
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
@@ -251,7 +247,6 @@ public:
     ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
-/** @cond BENTLEY_SDK_Internal */
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an
 //! ECRelationship.
@@ -270,7 +265,6 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (int64_t sourceOrderId);
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (int64_t targetOrderId);
     };
-/** @endcond */
 
 //=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
@@ -322,7 +316,4 @@ public:
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (ECN::StandaloneECEnabler)
-//#pragma make_public (ECN::StandaloneECInstance)
-//#pragma make_public (ECN::MemoryECInstanceBase)
 

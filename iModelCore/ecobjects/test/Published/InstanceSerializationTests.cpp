@@ -490,53 +490,6 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
     };
 
-#if defined (NEEDSWORK_XML)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstanceFromStream)
-    {
-    // must call CoInitialize - schema deserialization requires it.
-    EXPECT_EQ (S_OK, CoInitialize(NULL)); 
-
-    
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SchemaReadStatus::Success, schemaStatus);
-
-    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
-
-    IECInstancePtr  testInstance;
-    InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
-    EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
-    
-    testInstance->ToString("").c_str();
-    VerifyTestInstance (testInstance.get(), false);
-
-    LPSTREAM stream = NULL;
-    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-    ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-
-    InstanceWriteStatus status2 = testInstance->WriteToXmlStream(stream, true, false, false);
-    EXPECT_EQ(InstanceWriteStatus::Success, status2);
-    
-    LARGE_INTEGER liPos = {0};
-    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
-
-    IECInstancePtr deserializedInstance;
-    InstanceReadStatus status3 = IECInstance::ReadFromXmlStream(deserializedInstance, stream, *instanceContext);
-    EXPECT_EQ (InstanceReadStatus::Success, status3); 
-#ifdef DEBUG_PRINT
-    printf("Verifying schema deserialized from stream.\n");
-#endif
-    VerifyTestInstance (deserializedInstance.get(), false);
-
-    CoUninitialize();
-    };
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

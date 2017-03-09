@@ -27,22 +27,16 @@ struct StandardCustomAttributesSchemaHolder : RefCountedBase
     private:
         ECSchemaPtr            m_schema;
         bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
-
         static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
 
         StandardCustomAttributesSchemaHolder();
-
         ECSchemaPtr _GetSchema();
-
         IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
 
     public:
 
-        /*__PUBLISH_SECTION_START__*/
         static StandardCustomAttributesSchemaHolderPtr GetHolder();
-
         static ECSchemaPtr GetSchema();
-
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute);
     };
 
@@ -177,20 +171,14 @@ struct CoreCustomAttributesSchemaHolder : RefCountedBase
         bmap<Utf8String, StandaloneECEnablerPtr> m_enablers;
 
         static CoreCustomAttributesSchemaHolderPtr s_schemaHolder;
-
         CoreCustomAttributesSchemaHolder();
-
         ECSchemaPtr _GetSchema();
-
         IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
 
     public:
 
-        /*__PUBLISH_SECTION_START__*/
         static CoreCustomAttributesSchemaHolderPtr GetHolder();
-
         static ECSchemaPtr GetSchema();
-
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute);
     };
 
@@ -363,7 +351,6 @@ struct ConversionCustomAttributesSchemaHolder : RefCountedBase
         IECInstancePtr _CreateCustomAttributeInstance(Utf8CP attribute);
 
     public:
-        /*__PUBLISH_SECTION_START__*/
         static ConversionCustomAttributesSchemaHolderPtr GetHolder();
         static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
         static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attribute) {return GetHolder()->_CreateCustomAttributeInstance(attribute);}

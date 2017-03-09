@@ -8,11 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "ECSchema.h"
-#include "ECInstance.h"
 #include <Bentley/ByteStream.h>
 #include <Geom/GeomApi.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/BeRapidJson.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -27,8 +24,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct ECJsonUtilities
     {
 private:
-    ECJsonUtilities();
-    ~ECJsonUtilities();
+    ECJsonUtilities() = delete;
+    ~ECJsonUtilities() = delete;
 
     static BentleyStatus PointCoordinateFromJson(double&, Json::Value const&, Utf8CP coordinateKey);
 

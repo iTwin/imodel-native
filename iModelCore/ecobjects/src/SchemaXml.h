@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

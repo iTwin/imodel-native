@@ -8,7 +8,6 @@
 #pragma once
 
 #include <ECObjects/ECObjects.h>
-#include <string>
 
 #define     ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define     EC_NAMESPACE_PREFIX                 "ec"

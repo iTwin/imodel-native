@@ -8,7 +8,6 @@
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -197,5 +196,3 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

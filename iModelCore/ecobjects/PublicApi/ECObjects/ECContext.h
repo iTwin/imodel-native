@@ -10,10 +10,7 @@
 
 #include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
-
-//__PUBLISH_SECTION_END__
-#include <ECObjects/StandaloneECInstance.h>
-//__PUBLISH_SECTION_START__
+#include <Bentley/bset.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! @addtogroup ECObjectsGroup
@@ -25,7 +22,6 @@ typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
 struct ECSchemaReadContext : RefCountedBase
 {
-/*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SearchPathSchemaFileLocater;
     struct WStringComparer : public std::binary_function<WString, WString, bool>
@@ -86,12 +82,12 @@ public:
     void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
 
 
-    bool GetPreserveElementOrder() { return m_preserveElementOrder; }
+    bool GetPreserveElementOrder() const { return m_preserveElementOrder; }
     void SetPreserveElementOrder(bool flag) { m_preserveElementOrder = flag; }
 
-    bool ResolveConflicts() { return m_resolveConflicts; }
+    bool ResolveConflicts() const { return m_resolveConflicts; }
 
-    bool GetPreserveXmlComments() { return m_preserveElementOrder; }
+    bool GetPreserveXmlComments() const { return m_preserveElementOrder; }
     void SetPreserveXmlComments(bool flag) 
         { 
         m_preserveXmlComments = flag; 
@@ -100,8 +96,6 @@ public:
             m_preserveElementOrder = true;
         }
 
-//__PUBLISH_SECTION_START__
-public:
     //! Host should call to establish search paths for standard ECSchemas.
     //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,
     //!            e.g. standard ECSchemas.

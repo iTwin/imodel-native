@@ -1,11 +1,10 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/StronglyConnectedGraph.h $
+|     $Source: src/StronglyConnectedGraph.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-/*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 #pragma push_macro("max")
 #pragma push_macro("min")

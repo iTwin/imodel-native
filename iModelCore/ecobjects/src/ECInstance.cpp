@@ -4165,47 +4165,6 @@ InstanceWriteStatus IECInstance::WriteToBeXmlDom(BeXmlWriterR xmlWriter, bool wr
     return writer.WriteInstance(*this, writeInstanceId);
     }
 
-#if defined (NEEDSWORK_LIBXML) // WIP_NONPORT
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                05/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlStream(IStreamP stream, bool isCompleteXmlDocument, bool writeInstanceId, bool utf16)
-    {
-    InstanceXmlWriter writer(stream);
-
-    InstanceWriteStatus   status;
-    if (InstanceWriteStatus::Success != (status = writer.Init(utf16)))
-        return status;
-
-    return writer.WriteInstance(*this, isStandAlone, writeInstanceId);
-    }
-#endif //defined (NEEDSWORK_XML)
-
-#ifdef DGN_IMPORTER_REORG_WIP
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
-    {
-    return _SaveOnlyLoadedPropertiesToXml();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
-    {
-    return _GetAsDgnECInstance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
-    {
-    return const_cast<DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2013

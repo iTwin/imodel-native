@@ -53,7 +53,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)DesignByContract.h \
                                 $(ecobjectsPublicAPISrc)ECDBuffer.h \
                                 $(ecobjectsPublicAPISrc)SupplementalSchema.h \
-                                $(ecobjectsPublicAPISrc)ECEvent.h \
                                 $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                                 $(baseDir)ecxml.h \
                                 $(ecobjectsPublicAPISrc)CalculatedProperty.h \
@@ -117,9 +116,9 @@ $(o)ECType$(oext)                                          : $(baseDir)ECType.cp
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECEnumeration$(oext)                                         : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)ECEnumeration$(oext)                                   : $(baseDir)ECEnumeration.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)KindOfQuantity$(oext)                                         : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)KindOfQuantity$(oext)                                  : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
@@ -150,8 +149,6 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
-
-$(o)ecinstanceiterable$(oext)                              : $(baseDir)ecinstanceiterable.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -237,7 +234,7 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 
 $(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
-$(o)ECUnitsClassLocater$(oext)                                           : $(baseDir)Units/ECUnitsClassLocater.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+$(o)ECUnitsClassLocater$(oext)                             : $(baseDir)Units/ECUnitsClassLocater.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

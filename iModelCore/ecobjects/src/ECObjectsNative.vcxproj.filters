@@ -13,17 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="ECPresentation">
-      <UniqueIdentifier>{85197e54-3a19-444f-a67a-e3eda9d05e3b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECPresentation\Header Files">
-      <UniqueIdentifier>{490bb640-0ef2-4600-bc70-9f4b78dfe937}</UniqueIdentifier>
-      <Extensions>*.h</Extensions>
-    </Filter>
-    <Filter Include="ECPresentation\Source Files">
-      <UniqueIdentifier>{3b4f4dab-c793-44bb-aecb-cad8174719c7}</UniqueIdentifier>
-      <Extensions>*.cpp</Extensions>
-    </Filter>
     <Filter Include="ECUnits">
       <UniqueIdentifier>{941fe668-0f6f-4986-8668-8f323be6976b}</UniqueIdentifier>
     </Filter>
@@ -33,8 +22,14 @@
     <Filter Include="ECUnits\Source Files">
       <UniqueIdentifier>{3118501a-d447-465a-9b9f-7d593da60f89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ECPresentation\PresentationRules">
+    <Filter Include="ECPresentationRules">
+      <UniqueIdentifier>{30bff3be-d22a-4f6f-af98-a0f62e67ca32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECPresentationRules\Source Files">
       <UniqueIdentifier>{54e0538e-e89c-4dab-bf78-1fb3d45d780f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECPresentationRules\Header Files">
+      <UniqueIdentifier>{d7e03034-ae2b-4e7a-b043-809a7a64f832}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -80,36 +75,6 @@
     <ClCompile Include="SupplementalSchema.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="presentation\auicommand.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\auievent.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\auiitem.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\auijournal.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\auipresentationmgr.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\auiprovider.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\eccontentdefinition.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\ECResourceProvider.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="presentation\ecviewdefinition.cpp">
-      <Filter>ECPresentation\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ecinstanceiterable.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ExpressionContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,85 +115,85 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\AllInstanceNodesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\AllRelatedInstanceNodesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\CheckBoxRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ChildNodeRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ChildNodeSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\CommonTools.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ContentInstancesOfSpecificClassesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ContentRelatedInstancesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ContentRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ContentSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\CustomNodeSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\DisplayRelatedItemsSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\GroupingRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\ImageIdOverride.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\InstanceNodesOfSpecificClassesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\LabelOverride.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\LocalizationResourceKeyDefinition.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\PresentationRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\PresentationRuleSet.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\RelatedInstanceNodesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\RelatedPropertiesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\RenameNodeRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\SearchResultInstanceNodesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\SelectedNodeInstancesSpecification.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\SortingRule.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp">
-      <Filter>ECPresentation\PresentationRules</Filter>
+      <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SchemaXml.cpp">
       <Filter>Source Files</Filter>
@@ -289,41 +254,11 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auievent.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auiitem.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auijournal.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationapi.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auipresentationmgr.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\auiprovider.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h">
-      <Filter>ECPresentation\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h">
       <Filter>Header Files</Filter>
@@ -358,9 +293,6 @@
     <ClInclude Include="ecobjectsnativelog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -391,20 +323,125 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\ECImageProvider.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentation\ECLocalizationProvider.h">
-      <Filter>ECPresentation\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StronglyConnectedGraph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonValue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\AllInstanceNodesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\AllRelatedInstanceNodesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\CalculatedPropertySpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\CheckBoxRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ChildNodeRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ChildNodeSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\CommonTools.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ContentInstancesOfSpecificClassesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ContentRelatedInstancesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ContentRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ContentSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\CustomNodeSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\DisplayRelatedItemsSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\GroupingRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\HiddenPropertiesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\ImageIdOverride.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\InstanceNodesOfSpecificClassesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\LabelOverride.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\LocalizationResourceKeyDefinition.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRules.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRuleSet.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRulesTypes.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedInstanceNodesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedInstanceSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedPropertiesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\RenameNodeRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\SearchResultInstanceNodesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\SelectedNodeInstancesSpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\SortingRule.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\SpecificationVisitor.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\StyleOverride.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\UserSettingsGroup.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

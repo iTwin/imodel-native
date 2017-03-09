@@ -8,7 +8,6 @@
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRule.h>
 
@@ -362,5 +361,3 @@ struct PropertyRangeGroupSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

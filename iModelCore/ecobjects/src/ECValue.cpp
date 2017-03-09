@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -930,7 +930,7 @@ ECValue::ECValue(DateTimeCR dateTime)
 * ECN::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue(WCharCP string, bool holdADuplicate) //needswork: add an overload that takes utf8
+ECValue::ECValue(WCharCP string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetWCharCP(string, holdADuplicate);

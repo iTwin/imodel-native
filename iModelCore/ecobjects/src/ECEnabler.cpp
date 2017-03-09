@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -122,107 +122,7 @@ ECPropertyCP        ECEnabler::LookupECProperty (uint32_t propertyIndex) const {
 ECPropertyCP        ECEnabler::LookupECProperty (Utf8CP accessString) const { return _LookupECProperty (accessString); }
 bool                ECEnabler::IsPropertyReadOnly (uint32_t propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 
-#if defined (EXPERIMENTAL_TEXT_FILTER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECEnabler::ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& noCandidateInAnyStruct, ECValueCR propValue, PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const
-    {
-    IECInstancePtr svalue = propValue.GetStruct ();
-
-    if (failedClasses.find (&svalue->GetClass()) != failedClasses.end())
-        return false;
-
-    PropertyProcessingResult result = svalue->GetEnabler().ProcessPrimitiveProperties (failedClasses, *svalue, primitiveType, proc, opts);
-
-    if (PROPERTY_PROCESSING_RESULT_NoCandidates == result)
-        failedClasses.insert (&svalue->GetClass());
-    else
-        noCandidateInAnyStruct = false;
-
-    return (PROPERTY_PROCESSING_RESULT_Hit == result);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const
-    {
-    if (failedClasses.find (&instance.GetClass()) != failedClasses.end())
-        return PROPERTY_PROCESSING_RESULT_NoCandidates;
-
-    bool noCandidateInAnyStruct = true;
-    bool anyCandidates = false;
-    bool allTypes = (opts & PROPERTY_PROCESSING_OPTIONS_AllTypes) != 0;
-
-    for (ECPropertyCP prop: instance.GetClass().GetProperties())
-        {
-        ECValue v;
-        instance.GetValue (v, prop->GetName().c_str());
-    
-        if (v.IsNull())
-            continue;
-
-        if (v.IsPrimitive())
-            {
-            if (allTypes || v.GetPrimitiveType() == primitiveType)
-                {
-                anyCandidates = true;
-                if (proc._ProcessPrimitiveProperty (instance, prop->GetName().c_str(), v))
-/*<==*/             return PROPERTY_PROCESSING_RESULT_Hit;
-                }
-            }
-        else if (v.GetIsStruct() ())
-            {
-            if (ProcessStructProperty (failedClasses, noCandidateInAnyStruct, v, primitiveType, proc, opts))
-/*<==*/         return PROPERTY_PROCESSING_RESULT_Hit;
-            }
-        else
-            {
-            BeAssert (v.IsArray());
-            ArrayInfo ai = v.GetArrayInfo ();
-            bool isStructArray = ai.IsStructArray();
-
-            if (!isStructArray && !allTypes && ai.GetElementPrimitiveType() != primitiveType)
-                continue;
-
-            for (uint32_t idx = 0, count = ai.GetCount(); idx < count; ++idx)
-                {
-                ECValue vitem;
-                instance.GetValue (vitem, prop->GetName().c_str(), idx);
-                
-                bool foundOne;
-
-                if (isStructArray)
-                    foundOne = ProcessStructProperty (failedClasses, noCandidateInAnyStruct, vitem, primitiveType, proc, opts);
-                else
-                    {
-                    anyCandidates = true;
-                    foundOne = proc._ProcessPrimitiveProperty (instance, prop->GetName().c_str(), vitem);
-                    }
-
-                if (foundOne)
-/*<==*/             return PROPERTY_PROCESSING_RESULT_Hit;
-                }
-            }
-        }
-
-    if (!anyCandidates && noCandidateInAnyStruct)
-        {
-        failedClasses.insert (&instance.GetClass());
-        return PROPERTY_PROCESSING_RESULT_NoCandidates;
-        }
-
-    return PROPERTY_PROCESSING_RESULT_Miss;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<ECClassCP>& a, IECInstanceCR b, PrimitiveType c, IPropertyProcessor const& d, PropertyProcessingOptions e) const {return _ProcessPrimitiveProperties(a,b,c,d,e);}
-#endif // defined (EXPERIMENTAL_TEXT_FILTER)
-
- /////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 #if defined (_MSC_VER)
     #pragma region IECRelationshipEnabler
 #endif // defined (_MSC_VER)
@@ -246,71 +146,6 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
 #if defined (_MSC_VER)
     #pragma endregion //IECRelationshipEnabler
 #endif // defined (_MSC_VER)
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//ECObjectsStatus PropertyIndexedEnabler::_GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const
-//    {
-//    for (UInt32 index = 0; index < m_propertyCount; ++index)
-//        {
-//        if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, m_propertyNameList[index]))
-//            {
-//            propertyIndex = index + 1;
-//            return ECObjectsStatus::Success;
-//            }
-//        }
-//    return ECObjectsStatus::InvalidPropertyAccessString;
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-// ECObjectsStatus PropertyIndexedEnabler::_GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const
-//    {
-//    if (propertyIndex > m_propertyCount || propertyIndex <= 0)
-//        return ECObjectsStatus::IndexOutOfRange;
-//
-//    propertyAccessString = m_propertyNameList[propertyIndex -1];
-//    return ECObjectsStatus::Success;
-//    }
-// 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-// UInt32         PropertyIndexedEnabler::_GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const 
-//    {
-//    if (inputIndex> 0 && inputIndex <= m_propertyCount)
-//        return ++inputIndex;
-//            
-//    return 0;
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//ECObjectsStatus PropertyIndexedEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const
-//    {
-//    for (UInt32 index = 0; index < m_propertyCount; ++index)
-//        indices.push_back(index + 1);
-//    return ECObjectsStatus::Success;
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//UInt32          PropertyIndexedEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const
-//    {
-//    return 1;
-//    }
-//
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Abeesh.Basheer                  04/2012
-//+---------------+---------------+---------------+---------------+---------------+------*/
-//bool            PropertyIndexedEnabler::_HasChildProperties (UInt32 parentIndex) const
-//    {
-//    return false;
-//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14

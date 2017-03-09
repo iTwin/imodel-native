@@ -1102,47 +1102,9 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenReferencingNonExistingUnitAtt
 
     }
 
-#if defined (NEEDSWORK_LIBXML)
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
-#ifdef DEBUG_PRINT
-    printf("Verifying original schema from file.\n");
-#endif
-    VerifyWidgetsSchema(schema);
-
-    EXPECT_EQ(SchemaReadStatus::Success, status);
-    LPSTREAM stream = NULL;
-    //HRESULT res = ::CreateStreamOnHGlobal(NULL,TRUE,&stream);
-    ::CreateStreamOnHGlobal(NULL, TRUE, &stream);
-
-    SchemaWriteStatus status2 = schema->WriteToXmlStream(stream);
-    EXPECT_EQ(SchemaWriteStatus::Success, status2);
-
-    LARGE_INTEGER liPos = {0};
-    stream->Seek(liPos, STREAM_SEEK_SET, NULL);
-
-    ECSchemaP deserializedSchema;
-    schemaOwner = ECSchemaCache::Create(); // We need a new cache... we don't want to read the ECSchema into the cache that already has a copy of this ECSchema
-    schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
-    status = ECSchema::ReadFromXmlStream(deserializedSchema, stream, *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
-#ifdef DEBUG_PRINT
-    printf("Verifying schema deserialized from stream.\n");
-#endif
-    VerifyWidgetsSchema(deserializedSchema);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                                    Paul.Connelly   11/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     {
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
@@ -1171,8 +1133,8 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                                    Paul.Connelly   11/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     {
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
