@@ -245,7 +245,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                              ViewContextR                                context, 
                              const Transform&                            smToDgnUorTransform,
-                             ScalableMeshDisplayCacheManager*            mgr)
+                             ScalableMeshDisplayCacheManager*            mgr, 
+                             bset<uint64_t>&                             activeClips)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -506,8 +507,8 @@ void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNod
                 matSymbP->SetFillColor(green);
                 context.OnPreDrawTransient(); 
                 context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                bvector<PolyfaceHeaderPtr> skirtMeshParts;
-                meshNodes[nodeInd]->GetSkirtMeshes(skirtMeshParts);
+                bvector<PolyfaceHeaderPtr> skirtMeshParts;                
+                meshNodes[nodeInd]->GetSkirtMeshes(skirtMeshParts, activeClips);
                 for (auto& part : skirtMeshParts)
                     context.GetIDrawGeom().DrawPolyface(*part);
                 }
@@ -540,20 +541,23 @@ protected:
     bool                                    m_hasFetchedFinalNode;
     bool                                    m_hasFetchedFinalTerrainNode;
     IScalableMeshDisplayCacheManager*       m_displayNodesCache;
+    bset<uint64_t>                          m_activeClips;
 
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                     ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                                     Transform&                              smToDgnUorTransform,
-                                    IScalableMeshDisplayCacheManagerPtr&    cacheManager)
-    : m_smToDgnUorTransform(smToDgnUorTransform)
+                                    IScalableMeshDisplayCacheManagerPtr&    cacheManager, 
+                                    bset<uint64_t>                          activeClips)
+    : m_smToDgnUorTransform(smToDgnUorTransform), 
+      m_activeClips(activeClips)
         { 
         DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
 
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
         m_hasFetchedFinalNode = false;     
-        m_displayNodesCache = cacheManager.get();
+        m_displayNodesCache = cacheManager.get();        
         }
 
 public:
@@ -620,7 +624,7 @@ virtual Completion _Process(ViewContextR viewContext) override
     else    
     if (s_drawInProcess)
         {
-        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache);
+        ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_smToDgnUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache, m_activeClips);
         }
             
     return completionStatus;
@@ -633,12 +637,14 @@ static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEn
                       ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
                       Transform&                              smToDgnUorTransform,
                       ViewContextR                            context,
-                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
+                      IScalableMeshDisplayCacheManagerPtr&    cacheManager, 
+                      bset<uint64_t>                          activeClips)
     {
     RefCountedPtr<ScalableMeshProgressiveDisplay> progressiveDisplay(new ScalableMeshProgressiveDisplay(progressiveQueryEngine,
                                                                                                         currentDrawingInfoPtr,
                                                                                                         smToDgnUorTransform,
-                                                                                                        cacheManager));
+                                                                                                        cacheManager, 
+                                                                                                        activeClips));
     
     context.GetViewport()->ScheduleProgressiveDisplay (*progressiveDisplay);
     }
@@ -820,7 +826,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_activeClips);
             
             return;                        
             }   
@@ -981,13 +987,13 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }                         
 
 
-    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_smToModelUorTransform, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get(), m_activeClips);
 
 
     if (needProgressive)
         {
-        IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());
-        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache);
+        IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());        
+        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_smToModelUorTransform, context, m_displayNodesCache, m_activeClips);
         }
 
     }                 
@@ -1001,6 +1007,42 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
     for (auto& model : dgnDb.Models().GetLoadedModels())
         {
         if (model.second->GetClassId() == classId) models.push_back(dynamic_cast<IMeshSpatialModelP>(model.second.get()));
+        }
+    }
+
+
+void ScalableMeshModel::GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain)
+    {    
+    has3D = false; 
+    hasTerrain = false;
+    hasExtractedTerrain = false;
+
+    bvector<IMeshSpatialModelP> smModels;
+
+    GetAllScalableMeshes(dgnDb, smModels);
+
+    for (auto& smModel : smModels)
+        {
+        ScalableMeshModel* scalableMeshModel = (ScalableMeshModel*)smModel;
+
+        if (!scalableMeshModel->IsTerrain())
+            {
+            IScalableMesh* sm = scalableMeshModel->GetScalableMesh();
+
+            if (sm != nullptr)
+                {
+                bvector<uint64_t> ids;
+                sm->GetCoverageIds(ids);
+
+                if (ids.size() > 0) hasExtractedTerrain = true;
+                }
+
+            has3D = true;
+            }
+        else
+            {
+            hasTerrain = true;
+            }
         }
     }
 
@@ -1199,7 +1241,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
 #endif
 
-    if (m_smPtr->IsTerrain())
+    //if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
          if (appData->m_smTerrainPhysicalModelP == nullptr)
@@ -1332,9 +1374,9 @@ BeFileName ScalableMeshModel::GetPath()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-IScalableMesh* ScalableMeshModel::GetScalableMesh()
+IScalableMesh* ScalableMeshModel::GetScalableMesh(bool wantGroup)
     {
-    if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty())
+    if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty() && wantGroup)
         return m_smPtr->GetGroup().get();
     return m_smPtr.get();
     }
@@ -1467,29 +1509,35 @@ void ScalableMeshModel::InitializeTerrainRegions()
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel) SetDefaultClipsActive();
 
+    bvector<uint64_t> ids;
+    m_smPtr->GetCoverageIds(ids);
+
     for (auto& sm : allScalableMeshes)
         {
         BeFileName coveragePath = m_basePath;
-        coveragePath.AppendString(L"_terrain");
+        //coveragePath.AppendString(L"_terrain");
         ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
         if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
             {
             smP->GetScalableMesh()->SetInvertClip(true);
-            m_terrainParts.push_back(smP);
-            smP->m_subModel = true;
+            for(auto& id: ids)
+                if (smP->GetPath().ContainsI(std::to_wstring(id).c_str()))
+                {
+                    bvector<DPoint3d> regionData;
+                    m_smPtr->GetClip(id, regionData);
+                    AddTerrainRegion(id, smP, regionData);
+                }
             }
         }
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP == nullptr || (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel)) && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
         {
         appData->m_smTerrainPhysicalModelP = this;
         appData->m_modelSearched = true;
         }
 
-    bvector<uint64_t> ids;
-    m_smPtr->GetCoverageIds(ids);
 
     for (auto& smP : m_terrainParts)
         {
