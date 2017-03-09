@@ -376,7 +376,7 @@ void RealityDataConsole::ListAll()
 
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_currentNode->node.GetInstanceId());
     RequestStatus status;
-    bvector<Utf8String> filesInRepo = RealityDataService::Request(rdsRequest, status);
+    bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
     
     std::cout << filesInRepo.size() << " files in selection." << std::endl;
     std::cout << "these will be displayed, 20 at a time. Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page" << std::endl;
@@ -384,9 +384,9 @@ void RealityDataConsole::ListAll()
     std::string str;
     while (m_lastCommand != Command::Cancel)
         {
-        for (Utf8String file : filesInRepo)
+        for (bpair<WString, uint64_t> file : filesInRepo)
             {
-            std::cout << file.c_str() << std::endl;
+            std::cout << file.first.c_str() << ", size: " << file.second << std::endl;
             }
         std::getline(std::cin, str);
         if(Utf8String(str.c_str()).ContainsI("Cancel"))
