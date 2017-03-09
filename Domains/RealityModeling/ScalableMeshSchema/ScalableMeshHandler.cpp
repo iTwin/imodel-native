@@ -1624,7 +1624,7 @@ void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
             DgnElementId id = DgnElementId(reg.id);
             ReloadClipMask(id, true);
 
-            terrainRegion->GetScalableMesh()->AddClip(reg.regionData.data(), reg.regionData.size(), reg.id);
+            terrainRegion->GetScalableMesh()->AddClip(reg.regionData.data(), reg.regionData.size(), reg.id, SMClipGeometryType::Polygon, SMNonDestructiveClipType::Boundary, true);
             sm->SetInvertClip(true);
             terrainRegion->ActivateClip(reg.id, ClipMode::Clip);
 
