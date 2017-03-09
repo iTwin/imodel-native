@@ -36,7 +36,7 @@ void PrintUsage()
     }
 
 int main(int argc, char *argv[])
-{
+    {
     if(argc < 6)
         {
         PrintUsage();
@@ -44,17 +44,18 @@ int main(int argc, char *argv[])
         return -1;
         }
 
-    // List root
-    RealityDataService::SetServerComponents(argv[1], "2.4", argv[2], argv[3]);
+    WSGServer wsgServer = WSGServer(argv[1], false);
+    Utf8String version = wsgServer.GetVersion();
+    RealityDataService::SetServerComponents(argv[1], version, argv[2], argv[3]);
 
     Utf8String sourceOnServer = Utf8String(argv[4]);
 
     BeFileName fileName = BeFileName(argv[5]);
     if (!fileName.DoesPathExist())
-    {
+        {
         std::cout << "could not validate specified path. Please verify that the folder exists and try again" << std::endl;
         return -1;
-    }
+        }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, sourceOnServer);
     download.SetProgressCallBack(progressFunc);
@@ -67,4 +68,4 @@ int main(int argc, char *argv[])
     std::cout << report << std::endl;
     
     return 0;
-}
+    }
