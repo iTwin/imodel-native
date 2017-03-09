@@ -48,6 +48,13 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
 
+enum class RequestStatus
+{
+    SUCCESS = 0,
+    ERROR = 1,
+    NOMOREPAGES = 2
+};
+
 //=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
 //! RealityDataEnterpriseStat
@@ -164,7 +171,7 @@ private:
 struct AzureHandshake : public RealityDataUrl
     {
 public:
-    AzureHandshake(Utf8String sourcePath, bool isWrite) : m_isWrite(isWrite) { m_validRequestString = false; m_id = sourcePath; }
+    AzureHandshake(Utf8String sourcePath, bool isWrite);
     REALITYDATAPLATFORM_EXPORT Utf8StringR GetJsonResponse() { return m_jsonResponse; }
     REALITYDATAPLATFORM_EXPORT BentleyStatus ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer);
 protected:
@@ -219,7 +226,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void ChangeInstanceId(Utf8String instanceId);
 
     //! This call creates the URL request to obtain the azure redirection URL.
-    REALITYDATAPLATFORM_EXPORT void GetAzureRedirectionRequestUrl() const;
+    REALITYDATAPLATFORM_EXPORT RequestStatus GetAzureRedirectionRequestUrl() const;
 
     //! Once the azure blob container URL has been obtained it must be set
     //!  using this method after which the object will create azure redirection.
@@ -786,7 +793,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status);
 
     //! Returns the list of all documents in a repo
-    REALITYDATAPLATFORM_EXPORT static bvector<Utf8String> Request(const AllRealityDataByRootId& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<bpair<WString, uint64_t>> Request(const AllRealityDataByRootId& request, RequestStatus& status);
 
     //! Returns the RealityData object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(const RealityDataByIdRequest& request, RequestStatus& status);

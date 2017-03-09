@@ -147,6 +147,16 @@
             <Assemblies>Delivery/RealityDataServiceUploader.exe</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="RealityDataServiceDownloader" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceDownloader.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceDownloader.exe</Assemblies>
+        </Bindings>
+    </Part>
 
     <Part Name="RealityDataServiceToolsExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceToolsExample.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
@@ -204,6 +214,7 @@
         <SubPart PartName="RealityDataServiceExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
         <SubPart PartName="RealityDataServiceUploader"/>
+        <SubPart PartName="RealityDataServiceDownloader"/>
         <SubPart PartName="RealityDataServiceConsole"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>

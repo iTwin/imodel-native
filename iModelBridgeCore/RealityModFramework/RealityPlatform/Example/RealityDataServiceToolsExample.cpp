@@ -289,7 +289,8 @@ void ListCmd()
 
         size_t EnterpriseSizeKB(0);
         do {
-            enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
+            if(RequestStatus::ERROR == status)
+                exit(-1);
 
             for (RealityDataPtr pData : enterpriseVec)
                 {
@@ -328,7 +329,7 @@ void ListCmd()
 
             enterpriseVec.clear();
             }
-        while (RequestStatus::SUCCESS == status);
+        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
         std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 
@@ -402,7 +403,7 @@ int main(int argc, char* argv[])
     ParsingParamters(argc, argv);
 
     // List root
-    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
     // List head by default only
     std::cout << "RealityData commander..." << std::endl;
