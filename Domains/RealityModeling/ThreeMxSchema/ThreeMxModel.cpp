@@ -130,16 +130,10 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::Load(SystemP renderSys) const
+SceneP ThreeMxModel::Load(SystemP renderSys) const
     {
-    if (m_scene.IsValid() && (nullptr==renderSys || m_scene->GetRenderSystem()==renderSys))
-        return;
-
-    // if we ask for the model with a different Render::System, we just throw the old one away.
-    m_scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), renderSys);
-    m_scene->SetPickable(true);
-    if (SUCCESS != m_scene->LoadScene())
-        m_scene = nullptr;
+    auto root = const_cast<ThreeMxModel&>(*this).GetTileTree(renderSys);
+    return static_cast<SceneP>(root.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,19 +163,19 @@ DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sce
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     {
-    Load(nullptr);
-    if (!m_scene.IsValid())
+    auto scene = Load(nullptr);
+    if (nullptr == scene)
         {
         BeAssert(false);
         return AxisAlignedBox3d();
         }
 
-    ElementAlignedBox3d range = m_scene->ComputeRange();
+    ElementAlignedBox3d range = scene->ComputeRange();
     if (!range.IsValid())
         return AxisAlignedBox3d();
 
     Frustum box(range);
-    box.Multiply(m_scene->GetLocation());
+    box.Multiply(scene->GetLocation());
 
     AxisAlignedBox3d aaRange;
     aaRange.Extend(box.m_pts, 8);
@@ -195,20 +189,22 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
 void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
     {
     m_clip = clip;
-    if (m_scene.IsValid())
-        m_scene->SetClip(clip);
+    if (m_root.IsValid())
+        static_cast<SceneP>(m_root.get())->SetClip(clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::System& system)
+TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::SystemP system)
     {
-    Load(&system);
-    if (m_scene.IsValid())
-        m_scene->SetClip(m_clip.get());
+    ScenePtr scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), system);
+    scene->SetPickable(true);
+    if (SUCCESS != scene->LoadScene())
+        return nullptr;
 
-    return m_scene.get();
+    scene->SetClip(m_clip.get());
+    return scene.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -216,11 +212,12 @@ TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::System& system)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
     {
-    if (!m_scene.IsValid())
+    if (!m_root.IsValid())
         return;
     
+    auto scene = static_cast<SceneP>(m_root.get());
     PickContext::ActiveDescription descr(context, GetName());
-    m_scene->Pick(context, m_scene->GetLocation(), m_clip.get());
+    scene->Pick(context, scene->GetLocation(), m_clip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,12 +225,12 @@ void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::_OnFitView(FitContextR context)
     {
-    Load(nullptr);
-    if (!m_scene.IsValid())
+    auto scene = Load(nullptr);
+    if (nullptr == scene)
         return;
 
-    ElementAlignedBox3d rangeWorld = m_scene->ComputeRange();
-    context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
+    ElementAlignedBox3d rangeWorld = scene->ComputeRange();
+    context.ExtendFitRange(rangeWorld, scene->GetLocation());
     }
 
 static constexpr Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
@@ -276,10 +273,10 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ThreeMxModel::GeolocateFromSceneFile()
     {
-    Load(nullptr);
-    auto stat = m_scene->LocateFromSRS();
+    auto scene = Load(nullptr);
+    auto stat = scene->LocateFromSRS();
     if (SUCCESS == stat)
-        m_location = m_scene->GetLocation();
+        m_location = scene->GetLocation();
     return stat;
     }
 

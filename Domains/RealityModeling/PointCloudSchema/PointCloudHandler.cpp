@@ -317,8 +317,11 @@ void PointCloudModel::_ReadJsonProperties(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(Render::System& system)
+Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(Render::SystemP system)
     {
-    return PointCloudTileTree::Root::Create(*this, system);
+    if (nullptr != system)
+        return PointCloudTileTree::Root::Create(*this, *system);
+    else
+        return nullptr;
     }
 

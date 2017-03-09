@@ -197,19 +197,16 @@ RasterFileModel::~RasterFileModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
+Dgn::TileTree::RootPtr RasterFileModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
     {
-    if (m_rasterRoot.IsValid() && (nullptr == renderSys || m_rasterRoot->GetRenderSystem() == renderSys))
-        return SUCCESS;
-    
     if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
-        return ERROR;
+        return nullptr;
 
     RefCountedCPtr<RepositoryLink> pLink = ILinkElementBase<RepositoryLink>::Get(GetDgnDb(), GetModeledElementId());
     if (!pLink.IsValid())
         {
         m_loadFileFailed = false;
-        return ERROR;
+        return nullptr;
         }
 
     // Resolve raster name
@@ -218,17 +215,17 @@ BentleyStatus RasterFileModel::_Load(Dgn::Render::SystemP renderSys) const
     if (status != SUCCESS)
         {
         m_loadFileFailed = true;
-        return ERROR;
+        return nullptr;
         }
 
-    m_rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
-    if (!m_rasterRoot.IsValid())
+    RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+    if (!rasterRoot.IsValid())
         {  
         m_loadFileFailed = true;
-        return ERROR;
+        return nullptr;
         }
          
-    return SUCCESS;
+    return rasterRoot.get();
     }
 
 //----------------------------------------------------------------------------------------

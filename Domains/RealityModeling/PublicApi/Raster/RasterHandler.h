@@ -77,16 +77,13 @@ private:
 protected:
     friend struct RasterModelHandler;
 
-    mutable RasterRootPtr m_rasterRoot;
-
     double m_depthBias = 0.0;       //! A display offset in world units applied to the raster in the view Z direction. Only relevant when raster is parallel to the ground(XY plane).
 
     RasterClip m_clips;
     
     //! Destruct a RasterModel object.
     ~RasterModel();
-    virtual Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::System&) override;
-    virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const { return BSIERROR; }
+    RasterRootP Load(Dgn::Render::SystemP renderSys) const;
 
     virtual void _OnFitView(Dgn::FitContextR) override;
 

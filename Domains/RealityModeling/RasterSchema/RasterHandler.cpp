@@ -288,16 +288,16 @@ RasterModel::~RasterModel()
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d RasterModel::_QueryModelRange() const
     {
-    _Load(nullptr);
-    if (!m_rasterRoot.IsValid())
+    auto rasterRoot = Load(nullptr);
+    if (nullptr == rasterRoot)
         return AxisAlignedBox3d();
 
-    ElementAlignedBox3d range = m_rasterRoot->ComputeRange();
+    ElementAlignedBox3d range = rasterRoot->ComputeRange();
     if (!range.IsValid())
         return AxisAlignedBox3d();
 
     Frustum box(range);
-    box.Multiply(m_rasterRoot->GetLocation());
+    box.Multiply(rasterRoot->GetLocation());
 
     AxisAlignedBox3d aaRange;
     aaRange.Extend(box.m_pts, 8);
@@ -310,12 +310,12 @@ AxisAlignedBox3d RasterModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 void RasterModel::_OnFitView(Dgn::FitContextR context) 
     {
-    _Load(nullptr);
-    if (!m_rasterRoot.IsValid())
+    auto rasterRoot = Load(nullptr);
+    if (nullptr == rasterRoot)
         return;
 
-    ElementAlignedBox3d rangeWorld = m_rasterRoot->ComputeRange();
-    context.ExtendFitRange(rangeWorld, m_rasterRoot->GetLocation());
+    ElementAlignedBox3d rangeWorld = rasterRoot->ComputeRange();
+    context.ExtendFitRange(rangeWorld, rasterRoot->GetLocation());
     }
 
 #if 0 // This is how we pick a raster. We do not require this feature for now so disable it.
@@ -326,10 +326,10 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
     {
     if (context.GetDrawPurpose() == DrawPurpose::Pick)
         {
-        _Load(nullptr);
-        if (m_rasterRoot.IsValid())
+        auto rasterRoot = Load(nullptr);
+        if (nullptr == rasterRoot)
             {
-            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(m_rasterRoot.GetCorners(), *this));
+            RefCountedPtr<RasterBorderGeometrySource> pSource(new RasterBorderGeometrySource(rasterRoot.GetCorners(), *this));
             RefCountedPtr<RasterBorderGeometrySource::ElemTopology> pTopology = RasterBorderGeometrySource::ElemTopology::Create(*pSource);
 
             context.SetElemTopology(pTopology.get());
@@ -343,11 +343,10 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr RasterModel::_CreateTileTree(Dgn::Render::System& system)
+RasterRootP RasterModel::Load(Dgn::Render::SystemP system) const
     {
-    _Load(&system);
-    BeAssert(m_rasterRoot.IsValid() && m_rasterRoot->GetRootTile().IsValid());
-    return m_rasterRoot.get();
+    auto root = const_cast<RasterModel&>(*this).GetTileTree(system);
+    return static_cast<RasterRootP>(root.get());
     }
 
 //----------------------------------------------------------------------------------------
@@ -355,7 +354,8 @@ TileTree::RootPtr RasterModel::_CreateTileTree(Dgn::Render::System& system)
 //----------------------------------------------------------------------------------------
 void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR context) const
     {
-    BeAssert(m_rasterRoot.IsValid());
+    auto rasterRoot = static_cast<RasterRootP>(m_root.get());
+    BeAssert(nullptr != rasterRoot);
 
     if (0.0 == GetDepthBias() || context.GetViewport() == nullptr || !IsParallelToGround())
         {
@@ -379,7 +379,7 @@ void RasterModel::ComputeDepthTransformation(TransformR transfo, ViewContextR co
 
     auto const& cam = context.GetViewport()->GetCamera();
     
-    ElementAlignedBox3d box = m_rasterRoot->GetRootTile()->GetRange();
+    ElementAlignedBox3d box = rasterRoot->GetRootTile()->GetRange();
 
     DPoint3d lowerLeft = box.low;
     DPoint3d lowerRight = DPoint3d::From(box.high.x, box.low.y, box.low.z);

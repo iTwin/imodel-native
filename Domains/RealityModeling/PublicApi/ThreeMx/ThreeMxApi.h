@@ -200,17 +200,16 @@ private:
     Utf8String m_sceneFile;
     Transform m_location;
     mutable Dgn::ClipVectorCPtr m_clip;
-    mutable ScenePtr m_scene;
 
     DRange3d GetSceneRange();
-    void Load(Dgn::Render::SystemP) const;
+    SceneP Load(Dgn::Render::SystemP) const;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::System&) override;
+    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
     THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;

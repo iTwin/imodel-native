@@ -217,10 +217,8 @@ WmsModel::~WmsModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
+Dgn::TileTree::RootPtr WmsModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
     {
-    if (m_rasterRoot.IsValid() && (nullptr == renderSys || m_rasterRoot->GetRenderSystem() == renderSys))
-        return SUCCESS;
 #if 0 // for testing. North east coast.
     //http://ows.geobase.ca/wms/geobase_en?service=wms&version=1.1.1&request=GetCapabilities
 
@@ -229,12 +227,12 @@ BentleyStatus WmsModel::_Load(Dgn::Render::SystemP renderSys) const
                    "1.1.1",
                    "elevation:cded50k,reference:hydro,reference:roads,boundaries:geopolitical,reference:boundaries,nrwn:track,reference:placenames:capitals10m",
                    "EPSG:4269");
-   m_rasterRoot = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
+   RasterRootPtr rasterRoot = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
 #else
-    m_rasterRoot = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
+    RasterRootPtr rasterRoot = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
 #endif    
 
-    return m_rasterRoot.IsValid() ? BSISUCCESS : BSIERROR;
+    return rasterRoot.get();
     }
 
 //----------------------------------------------------------------------------------------
@@ -268,8 +266,8 @@ WmsMap const& WmsModel::GetMap() const
 //----------------------------------------------------------------------------------------
 Http::HttpStatus WmsModel::GetLastHttpError() const
     {
-    if (m_rasterRoot.IsValid())
-        return static_cast<WmsSource*>(m_rasterRoot.get())->GetLastHttpError();
+    if (m_root.IsValid())
+        return static_cast<WmsSource*>(m_root.get())->GetLastHttpError();
 
     return Http::HttpStatus::None;
     }
@@ -279,12 +277,12 @@ Http::HttpStatus WmsModel::GetLastHttpError() const
 //----------------------------------------------------------------------------------------
 Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Http::Credentials const& proxyCredentials)
     {
-    _Load(nullptr);
-    if (!m_rasterRoot.IsValid())
+    auto rasterRoot = Load(nullptr);
+    if (nullptr == rasterRoot)
         return Http::HttpStatus::None;
 
     Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
-    Http::Request request(m_rasterRoot->_ConstructTileName(*m_rasterRoot->GetRootTile()));
+    Http::Request request(rasterRoot->_ConstructTileName(*rasterRoot->GetRootTile()));
     request.SetResponseBody(responseBody);
 
     if (credentials.IsValid())
@@ -307,7 +305,7 @@ Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Ht
 
         // Stop all pending tiles if any. We will recreate a new root with the new credentials.
         //TBD: Should we clear the cache? It matters only if the new users have access to a different set of tiles.
-        m_rasterRoot = nullptr;
+        m_root = nullptr;
         m_root = nullptr;
         }
 
