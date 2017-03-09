@@ -363,12 +363,14 @@ void RealityDataConsole::ListAll()
         return;
         }
 
-    AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
+    AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
     RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
     Utf8String azureServer;
     Utf8String azureToken;
     int64_t tokenTimer;
-    if (handshake->ParseResponse(azureServer, azureToken, tokenTimer) != BentleyStatus::SUCCESS)
+    BentleyStatus handshakeStatus = handshake->ParseResponse(azureServer, azureToken, tokenTimer);
+    delete handshake;
+    if (handshakeStatus != BentleyStatus::SUCCESS)
         {
         std::cout << "Failure retrieving Azure token" << std::endl;
         return;
