@@ -215,7 +215,7 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewDefinitionCR val, BeDuration animationTime);
+    DGNVIEW_EXPORT void ApplyViewState(ViewDefinitionCR val, bool saveInUndo=true, BeDuration animationTime=BeDuration::Milliseconds(250));
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
