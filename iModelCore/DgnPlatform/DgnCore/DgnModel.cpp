@@ -1633,88 +1633,63 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendToColsLists(Utf8StringR colsList, Utf8StringR placeholderList, Utf8CP colname)
+DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
-    if (nullptr == colname)
-        return;
-
-    if (!colsList.empty())
+    auto dstClass = destDb.Schemas().GetECClass(relschema, relname);
+    if (nullptr == dstClass)
+        return DgnDbStatus::Success;
+    auto dstRelClass = dstClass->GetRelationshipClassCP();
+    if (nullptr == dstRelClass)
         {
-        colsList.append(",");
-        placeholderList.append(",");
+        BeAssert(false);
+        return DgnDbStatus::Success;
         }
 
-    colsList.append("[").append(colname).append("]");
-    placeholderList.append("?");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, bvector<Utf8CP> const& othercols = bvector<Utf8CP>())
-    {
-    Utf8String colsList, placeholderList;
-    appendToColsLists(colsList, placeholderList, "SourceECInstanceId");                                 // [0] SourceECInstanceId           -- keep consistent with istmt.BindId below
-    appendToColsLists(colsList, placeholderList, "TargetECInstanceId");                                 // [1] TargetECInstanceId                       "               "
-    for (auto othercolname : othercols)
-        appendToColsLists(colsList, placeholderList, othercolname);
-
-    Utf8String selectList;
-    bvector<Utf8String> cols;
-    BeStringUtilities::Split(colsList.c_str(), ",", cols);
-    for (Utf8String col : cols)
-        {
-        if (!selectList.empty())
-            selectList.append(", ");
-        selectList.append("rel.").append(col);
-        }
-    ECSqlStatement sstmt;
-    sstmt.Prepare(sourceModel.GetDgnDb(), Utf8PrintfString(
-        "SELECT %s FROM %s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
+    auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
+        "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
         " WHERE rel.SourceECInstanceId=source.ECInstanceId AND rel.TargetECInstanceId=target.ECInstanceId AND source.Model.Id=? AND target.Model.Id=?",
-        selectList.c_str(), relname).c_str());
+        relschema, relname).c_str());
 
-    sstmt.BindId(1, sourceModel.GetModelId());
-    sstmt.BindId(2, sourceModel.GetModelId());
+    sstmt->BindId(1, sourceModel.GetModelId());
+    sstmt->BindId(2, sourceModel.GetModelId());
 
-    ECSqlStatement istmt;
-    istmt.Prepare(destDb, Utf8PrintfString(
-        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()).c_str());
+    int sourceInstanceIdCol=0;
+    int targetInstanceIdCol=0;
+    for (int i=0; i<sstmt->GetColumnCount(); ++i)
+        {
+        ECN::ECPropertyCP ecprop = sstmt->GetColumnInfo(i).GetProperty();
+        if (ecprop->GetName().Equals("SourceECInstanceId"))
+            sourceInstanceIdCol = i;
+        else if (ecprop->GetName().Equals("TargetECInstanceId"))
+            targetInstanceIdCol = i;
+        }
 
     StopWatch timer(true);
-    DbResult stepResult = sstmt.Step();
-    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetECSql(), sourceModel.GetModelId().GetValue());
+    ECInstanceECSqlSelectAdapter sourceReader(*sstmt);
+    DbResult stepResult = sstmt->Step();
+    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt->GetECSql(), sourceModel.GetModelId().GetValue());
     while (BE_SQLITE_ROW == stepResult)
         {
-        istmt.Reset();
-        istmt.ClearBindings();
-
-        DgnElementId remappedSrcId;
-        DgnElementId remappedDstId;
-
-        int icol = 0;
-        istmt.BindId(icol+1, (remappedSrcId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [0] SourceECInstanceId
-        ++icol;
-        istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] TargetECInstanceId
-        ++icol;
-
-        if (remappedSrcId.IsValid() && remappedDstId.IsValid())
+        DgnElementId remappedSrcId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(sourceInstanceIdCol));
+        DgnElementId remappedDstId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(targetInstanceIdCol));
+        if (remappedSrcId.IsValid() && remappedDstId.IsValid()) // import rel ONLY if both source or target element were previously imported by the caller.
             {
-            for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
+            ECN::IECRelationshipInstancePtr relinst(dynamic_cast<ECN::IECRelationshipInstanceP>(sourceReader.GetInstance().get()));
+
+            auto actualDstRelClass = relinst->GetClass().GetRelationshipClassCP();
+            if (nullptr == actualDstRelClass)
                 {
-                istmt.BindText(icol+1, sstmt.GetValueText(icol), IECSqlBinder::MakeCopy::No);
-                ++icol;
+                BeAssert(false);
+                return DgnDbStatus::Success;
                 }
 
-            if (BE_SQLITE_DONE != istmt.Step())
-                {
-                // *** TBD: Report error somehow
-                }
+            EC::ECInstanceKey ekey;
+            destDb.InsertNonNavigationRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
             }
 
         timer.Start();
-        stepResult = sstmt.Step();
-        logPerformance(timer, "Statement.Step for %s", sstmt.GetECSql());
+        stepResult = sstmt->Step();
+        logPerformance(timer, "Statement.Step for %s", sstmt->GetECSql());
         }
 
     return DgnDbStatus::Success;
@@ -1723,7 +1698,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
@@ -1731,10 +1706,10 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     StopWatch timer(true);
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_SCHEMA(BIS_REL_ElementGroupsMembers), {"MemberPriority"});
+    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_SCHEMA(BIS_REL_ElementDrivesElement), {"Status", "Priority"});
+    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
@@ -1768,7 +1743,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     logPerformance(timer, "Import element aspects time");
 
     timer.Start();
-    if (DgnDbStatus::Success != (status = _ImportECRelationshipsFrom(sourceModel, importer)))
+    if (DgnDbStatus::Success != (status = _ImportNonNavigationECRelationshipsFrom(sourceModel, importer)))
         return status;
     logPerformance(timer, "Import ECRelationships time");
 
