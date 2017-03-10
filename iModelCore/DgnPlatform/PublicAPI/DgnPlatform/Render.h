@@ -1498,7 +1498,8 @@ public:
 struct ColorIndex
 {
     uint32_t const* m_colors = nullptr; // RGBT color values (see ColorDef), or nullptr if uniform color
-    int32_t         m_numColors = 0;    // Number of colors in m_colors, if m_colors is non-null
+    uint16_t const* m_indices = nullptr; // per-vertex indices into m_colors
+    uint16_t        m_numColors = 0;    // Number of colors in m_colors, if m_colors is non-null. Otherwise, at least 2 (non-uniform color)
     bool            m_hasAlpha = false; // true if any value in m_colors has transparency
 
     void Reset() { *this = ColorIndex(); }

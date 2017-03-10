@@ -1265,11 +1265,13 @@ uint16_t ColorTable::GetIndex(uint32_t color)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors) const
+void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const
     {
     index.Reset();
-    if (IsUniform())
+    if (IsUniform() || empty())
         return;
+
+    BeAssert(!indices.empty());
 
     colors.resize(size());
     for (auto const& kvp : *this)
@@ -1277,7 +1279,8 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors) cons
 
     index.m_hasAlpha = m_hasAlpha;
     index.m_colors = colors.data();
-    index.m_numColors = colors.size();
+    index.m_numColors = GetNumIndices();
+    index.m_indices = indices.data();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1443,7 +1446,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
     if (nullptr != displayParams.GetTextureImage())
         m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
 
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable);
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
 
     return true;
     }
@@ -1530,7 +1533,7 @@ bool PolylineArgs::Init(MeshCR mesh)
         m_numLines = static_cast<uint32_t>(m_polylines.size());
         m_lines = &m_polylines[0];
 
-        mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable);
+        mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
         }
 
     return IsValid();

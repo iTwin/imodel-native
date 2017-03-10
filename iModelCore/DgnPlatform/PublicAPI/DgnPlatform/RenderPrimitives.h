@@ -228,7 +228,7 @@ public:
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
 
-    void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors) const;
+    void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const;
 };
 
 //=======================================================================================
