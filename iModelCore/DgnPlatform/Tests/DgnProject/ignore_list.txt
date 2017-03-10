@@ -30,6 +30,3 @@ DgnECNavigatorTest.GetElementInfo
 
 #TFS 665028
 GetSetCustomHandledProprty.Annotation
-
-#Fails after ECDb change of default column names for ECInstanceId/SourceECInstanceId/TargetECInstanceId
-ImportTest.ImportGroups

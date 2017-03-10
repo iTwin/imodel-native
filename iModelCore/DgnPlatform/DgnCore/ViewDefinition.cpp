@@ -59,13 +59,11 @@ namespace ViewProperties
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
     static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
-    static constexpr Utf8CP str_OvrEdgeColor() {return "ovrEdgeColor";}
-    static constexpr Utf8CP str_OvrElementColor() {return "ovrElemColor";}
+    static constexpr Utf8CP str_Hidden() {return "hidden";}
+    static constexpr Utf8CP str_Visible() {return "visible";}
+    static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
+    static constexpr Utf8CP str_Color() {return "color";}
     static constexpr Utf8CP str_Pattern() {return "pattern";}
-    static constexpr Utf8CP str_VisEdgeWidth() {return "visEdgeWidth";}
-    static constexpr Utf8CP str_HiddenEdgeWidth() {return "hiddenEdgeWidth";}
-    static constexpr Utf8CP str_EdgeColor() {return "edgeColor";}
-    static constexpr Utf8CP str_ElementColor() {return "elemColor";}
     static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
     static constexpr Utf8CP str_GridOrient() {return "GridOrient";}
     static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
@@ -1037,17 +1035,37 @@ DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::HiddenLineParams::Style::ToJson() const
+    {
+    Json::Value val;
+    val[Json::StaticString(str_OvrColorFlag())] = m_ovrColor;
+    val[Json::StaticString(str_Color())] = m_color.GetValue();
+    val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
+    val[Json::StaticString(str_Width())] = (Json::UInt32) m_width;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::HiddenLineParams::Style::FromJson(JsonValueCR val)
+    {
+    m_ovrColor = val[str_OvrColorFlag()].asBool(m_ovrColor);
+    m_color = ColorDef(val[str_Color()].asUInt(m_color.GetValue()));
+    m_pattern = (GraphicParams::LinePixels) val[str_Pattern()].asUInt((uint32_t) m_pattern);
+    m_width = val[str_Width()].asUInt(m_width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value Render::HiddenLineParams::ToJson() const
     {
     HiddenLineParams defaults;
     Json::Value val;
-    if (!m_overrideEdgeColor) val[Json::StaticString(str_OvrEdgeColor())] = true;
-    if (!m_overrideElementColor) val[Json::StaticString(str_OvrElementColor())] = true;
-    if (m_pattern!=defaults.m_pattern) val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
-    if (m_visibleEdgeWidth!=defaults.m_visibleEdgeWidth) val[Json::StaticString(str_VisEdgeWidth())] = m_visibleEdgeWidth;
-    if (m_hiddenEdgeWidth!=defaults.m_hiddenEdgeWidth) val[Json::StaticString(str_HiddenEdgeWidth())] = m_hiddenEdgeWidth;
-    if (m_edgeColor != defaults.m_edgeColor) val[Json::StaticString(str_EdgeColor())] = m_edgeColor.GetValue();
-    if (m_elementColor != defaults.m_elementColor) val[Json::StaticString(str_ElementColor())] = m_elementColor.GetValue();
+
+    if (m_visible != defaults.m_visible) val[Json::StaticString(str_Visible())] = m_visible.ToJson();
+    if (m_hidden != defaults.m_hidden) val[Json::StaticString(str_Hidden())] = m_hidden.ToJson();
     if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
     return val;
     }
@@ -1061,13 +1079,8 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
 
     if (!val.isNull())
         {
-        params.m_overrideEdgeColor = val[str_OvrEdgeColor()].asBool(false);
-        params.m_overrideElementColor = val[str_OvrElementColor()].asBool(false);
-        params.m_pattern = val[str_Pattern()].asUInt(params.m_pattern);
-        params.m_visibleEdgeWidth =  val[str_VisEdgeWidth()].asUInt(params.m_visibleEdgeWidth);
-        params.m_hiddenEdgeWidth =  val[str_HiddenEdgeWidth()].asUInt(params.m_hiddenEdgeWidth);
-        params.m_edgeColor = ColorDef(val[str_EdgeColor()].asUInt(params.m_edgeColor.GetValue()));
-        params.m_elementColor = ColorDef(val[str_ElementColor()].asUInt(params.m_elementColor.GetValue()));
+        params.m_visible.FromJson(val[str_Visible()]);
+        params.m_hidden.FromJson(val[str_Hidden()]);
         params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
         }
     return params;
@@ -1961,7 +1974,20 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
                 return DgnDbStatus::BadArg;
 
             ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            viewDef.SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+            auto view3d = viewDef.ToView3dP();
+            if (view3d)
+                {
+                auto style3d = style->ToDisplayStyle3d();
+                if (nullptr == style3d)
+                    return DgnDbStatus::BadArg;
+                view3d->SetDisplayStyle3d(*style3d->MakeCopy<Dgn::DisplayStyle3d>());
+                }
+            else
+                {
+                auto view2d = viewDef.ToView2dP();
+                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                }
+
             return DgnDbStatus::Success;
             });
 
