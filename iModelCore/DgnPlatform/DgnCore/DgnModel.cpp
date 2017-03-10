@@ -1358,6 +1358,12 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         return DgnDbStatus::Success;
         }
 
+    if (0 == strcmp(MODEL_PROP_IsTemplate, name))
+        {
+        if (!value.IsBoolean())
+            return DgnDbStatus::BadArg;
+        m_isTemplate = value.GetBoolean();
+        }
     return DgnDbStatus::NotFound;
     }
 
