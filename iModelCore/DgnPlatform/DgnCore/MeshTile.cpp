@@ -387,7 +387,7 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting) :
-    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (ignoreLighting), m_rasterWidth(nullptr != graphicParams ? graphicParams->GetWidth() : 0)
+                   m_fillColor(0x00ffffff), m_ignoreLighting (ignoreLighting), m_rasterWidth(0), m_linePixels(0)
     {
     if (nullptr != geometryParams)
         {
@@ -396,6 +396,13 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
         m_materialId = geometryParams->GetMaterialId();
         m_class = geometryParams->GetGeometryClass();
         }
+    if (nullptr != graphicParams)
+        {
+        m_rasterWidth = graphicParams->GetWidth();
+        m_fillColor   = graphicParams->GetFillColor().GetValue();
+        m_linePixels  = graphicParams->GetLinePixels();
+        }
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,6 +429,9 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
     if (m_rasterWidth != rhs.m_rasterWidth)
         return m_rasterWidth < rhs.m_rasterWidth;
+
+    if (m_linePixels != rhs.m_linePixels)
+        return m_linePixels < rhs.m_linePixels;
 
     if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
         return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();
@@ -2881,30 +2891,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
-//#define VALIDATE_POLYFACE_DENSITY
-#ifdef VALIDATE_POLYFACE_DENSITY
-        size_t          facetCount = 0;
-        static size_t   s_maxFacetDensityLimit = 1000;
-
-        for (auto& polyface : polyfaces)
-            facetCount += polyface.m_polyface->GetFaceCount();
-
-        size_t     facetDensity = facetCount / rangePixels;
-    
-        if (facetDensity > s_maxFacetDensity)
-            s_maxFacetDensity = facetDensity;
-
-        BeAssert (facetCount / rangePixels > s_maxFacetDensityLimit && "Facet Density Limit exceeded");
-#endif
-
-
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsCPtr   displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
-            // unused - size_t                  pointCount = polyface->GetPointCount();
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -3099,6 +3091,7 @@ TileDisplayParamsCPtr TileDisplayParams::Clone() const
     clone->m_class = m_class;
     clone->m_ignoreLighting = m_ignoreLighting;
     clone->m_textureImage = m_textureImage;
+    clone->m_linePixels = m_linePixels;
 
     return clone;
     }
@@ -3129,6 +3122,7 @@ bool TileDisplayParams::IsStrictlyLessThan(TileDisplayParamsCR rhs) const
     TEST_LESS_THAN(m_rasterWidth, rhs.m_rasterWidth);
     TEST_LESS_THAN(m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
     TEST_LESS_THAN(m_textureImage.get(), rhs.m_textureImage.get());
+    TEST_LESS_THAN(m_linePixels, rhs.m_linePixels);
     TEST_LESS_THAN(static_cast<uint32_t>(m_class), static_cast<uint32_t>(rhs.m_class));
 
     if (m_ignoreLighting != rhs.m_ignoreLighting)
@@ -3151,6 +3145,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_materialId.GetValueUnchecked());
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
+    TEST_EQUAL(m_linePixels);
 
     return true;
     }

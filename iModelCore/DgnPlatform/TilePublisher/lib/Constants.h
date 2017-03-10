@@ -288,28 +288,8 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
         }
 )RAW_STRING";
 
-// Polyline shaders.
-static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
-    attribute vec3 a_pos;
-    attribute vec3 a_prev;
-    attribute vec3 a_next;
-    attribute vec3 a_delta;
-    attribute vec3 a_scale; 
-    uniform mat4 u_mv;
-    uniform mat4 u_proj;
-    uniform float u_width;
-    varying vec2    v_texc;
-
-    void main(void)
-        {
-        mat4 mvProj     = u_proj * u_mv;
-        gl_Position    = mvProj * vec4(a_pos,  1.0);
-        float           imagesPerPixel = 1.0 / 32.0;
-        float           scaleMetersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
-        float           imagesPerMeter = imagesPerPixel/scaleMetersPerPixel;
-
-        v_texc.x = a_delta.x * imagesPerMeter;
-        v_texc.y = .5;
+static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
+        gl_Position    = u_proj * u_mv * vec4(a_pos,  1.0);
 
         if (0.0 != a_delta.y)
             {
@@ -322,7 +302,7 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
             vec2    nextDir    = normalize(nextDelta);
             vec2    thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
             vec2    perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
-            float   dist       = u_width;
+            float   dist       = u_width / 2.0;
             vec2    delta      = vec2(0.0, 0.0);
 
             if (dot(prevDir, nextDir) < .99999)
@@ -355,43 +335,167 @@ static std::string s_tesselatedPolylineVertexCommon = R"RAW_STRING(
                 {
                 delta = perp * dist;
                 }
-            v_texc.x += dot(thisDir, delta) * imagesPerPixel;
-            v_texc.y += dot(perp, delta) * imagesPerPixel;
 
             gl_Position.x += delta.x * 2.0 * gl_Position.w / czm_viewport.z;
             gl_Position.y += delta.y * 2.0 * gl_Position.w / czm_viewport.w;
+)RAW_STRING";
+
+
+// Polyline shaders.
+static std::string s_tesselatedTexturedPolylineVertexCommon = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec3 a_prev;
+    attribute vec3 a_next;
+    attribute vec3 a_delta;
+    attribute vec3 a_scale; 
+    uniform mat4   u_mv;
+    uniform mat4   u_proj;
+    uniform float  u_width;
+    uniform float  u_texLength;
+    varying vec2   v_texc;
+
+    void main(void)
+        {
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        vec2            imagesPerPixel, imagesPerMeter;
+
+        if (u_texLength < 0.0)
+            {   // Cosmetic.
+            imagesPerPixel = vec2(- 1.0 / u_texLength, 1.0 / u_width);
+            imagesPerMeter = imagesPerPixel / metersPerPixel; 
             }
-        //v_color = computeColor();
+        else
+            {
+            imagesPerMeter = vec2(u_texLength, u_width);
+            imagesPerPixel = imagesPerMeter * metersPerPixel;
+            }
+
+        v_texc.x = a_delta.x * imagesPerMeter.x;
+        v_texc.y = .5;
+
+)RAW_STRING"
+
+       + s_tesselatedPolylinePositionCalculation + 
+
+R"RAW_STRING(
+            v_texc.x += dot(thisDir, delta) * imagesPerPixel.x;
+            v_texc.y += a_delta.y * dot(perp, delta) * imagesPerPixel.y;
+            }
+        v_color = computeColor();
         }
 )RAW_STRING";
 
-static std::string s_tesselatedPolylineFragmentShader = R"RAW_STRING(
-varying vec2        v_texc;  
-uniform sampler2D   u_tex; 
+// Polyline shaders.
+static std::string s_tesselatedSolidPolylineVertexCommon = R"RAW_STRING(
+    attribute vec3 a_pos;
+    attribute vec3 a_prev;
+    attribute vec3 a_next;
+    attribute vec3 a_delta;
+    uniform mat4   u_mv;
+    uniform mat4   u_proj;
+    uniform float  u_width;
 
-void main(void)
-    {
-    vec4 textureColor = texture2D(u_tex, v_texc);
-    if (0.0 == textureColor.a) discard;
-
-    gl_FragColor = textureColor;
-    }
+    void main(void)
+        {
+)RAW_STRING" 
++ s_tesselatedPolylinePositionCalculation +
+R"RAW_STRING(
+            }
+        v_color = computeColor();
+        }
 )RAW_STRING";
 
-static std::string s_simplePolylineVertexCommon = R"RAW_STRING(
+
+static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
                                                                                                                                                                                       
     void main(void)
         {
-        vec4 modelPos = vec4(a_pos, 1.0);
-        gl_Position =  u_proj * u_mv  * modelPos;
+        gl_Position =  u_proj * u_mv * vec4(a_pos, 1.0);
         v_color = computeColor();
         }
 )RAW_STRING";
 
-static std::string s_simplePolylineFragmentShader = R"RAW_STRING(
+static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
+    attribute vec3  a_pos;
+    attribute vec3  a_scale; 
+    attribute float a_delta;
+    uniform mat4    u_mv;
+    uniform mat4    u_proj;
+    uniform float   u_texLength;
+    varying vec2    v_texc;
+                                                                                                                                                                                      
+    void main(void)
+        {
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           imagesPerPixel, imagesPerMeter;
+
+        if (u_texLength < 0.0)
+            {   // Cosmetic.
+            imagesPerPixel = - 1.0 / u_texLength;
+            imagesPerMeter = imagesPerPixel / metersPerPixel; 
+            }
+        else
+            {
+            imagesPerMeter = u_texLength;
+            imagesPerPixel = imagesPerMeter * metersPerPixel;
+            }
+
+        v_texc = vec2(a_delta * imagesPerMeter, .5);
+        gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
+        v_color =  computeColor();
+        }
+)RAW_STRING";
+
+
+static std::string s_tesselatedTexturedPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_tesselatedTexturedPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_tesselatedTexturedPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_tesselatedTexturedPolylineVertexCommon
+    };
+
+static std::string s_tesselatedSolidPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_tesselatedSolidPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_tesselatedSolidPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_tesselatedSolidPolylineVertexCommon
+    };
+
+static std::string s_simpleTexturedPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_simpleTexturedPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_simpleTexturedPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_simpleTexturedPolylineVertexCommon
+    };
+
+static std::string s_simpleSolidPolylineVertexShaders[3] =
+    {
+    s_computeIndexedColor[0] + s_simpleSolidPolylineVertexCommon,
+    s_computeIndexedColor[1] + s_simpleSolidPolylineVertexCommon,
+    s_computeIndexedColor[2] + s_simpleSolidPolylineVertexCommon
+    };
+
+
+
+static std::string s_texturedPolylineFragmentShader = R"RAW_STRING(
+varying vec2        v_texc;  
+uniform sampler2D   u_tex;
+varying vec4        v_color;
+ 
+void main(void)
+    {
+    vec4 textureColor = texture2D(u_tex, v_texc);
+    if (0.0 == textureColor.a)
+        discard;
+
+    gl_FragColor = v_color;     // * textureColor;
+    }
+)RAW_STRING";
+
+static std::string s_solidPolylineFragmentShader = R"RAW_STRING(
 varying vec4 v_color;
 
 void main(void)
@@ -400,19 +504,6 @@ void main(void)
     }
 )RAW_STRING";
 
-static std::string s_simplePolylineVertexShaders[3] =
-    {
-    s_computeIndexedColor[0] + s_simplePolylineVertexCommon,
-    s_computeIndexedColor[1] + s_simplePolylineVertexCommon,
-    s_computeIndexedColor[2] + s_simplePolylineVertexCommon
-    };
-
-static std::string s_tesselatedPolylineVertexShaders[3] =
-    {
-    s_computeIndexedColor[0] + s_tesselatedPolylineVertexCommon,
-    s_computeIndexedColor[1] + s_tesselatedPolylineVertexCommon,
-    s_computeIndexedColor[2] + s_tesselatedPolylineVertexCommon
-    };
 
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,

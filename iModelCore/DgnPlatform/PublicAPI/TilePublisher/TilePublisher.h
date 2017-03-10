@@ -114,7 +114,7 @@ protected:
     TileMaterial(Utf8StringCR name) : m_name(name) { }
 
     void AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
-    void AddColorOrTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
+    void AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
 
 public:
     Utf8StringCR GetName() const { return m_name; }
@@ -146,6 +146,8 @@ struct PolylineMaterial : TileMaterial
 {
 private:
     PolylineType            m_type;
+    double                  m_width;
+    double                  m_textureLength;       // If positive, meters, if negative, pixels (Cosmetic).
 public:
     PolylineMaterial(TileMeshCR mesh, Utf8CP suffix);
 
@@ -158,6 +160,8 @@ public:
     Utf8String GetTechniqueNamePrefix();
     void AddTechniqueParameters(Json::Value& technique, Json::Value& programRoot, PublishTileData& tileData) const;
     Utf8String GetTechniqueNamePrefix() const;
+    double GetWidth() const { return m_width; }
+    double GetTextureLength() const { return m_textureLength; }
 
 };
 
@@ -372,7 +376,7 @@ private:
     void AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void TesselatePolylineSegment(bvector<DPoint3d>& origins, bvector<DVec3d>& directions, bvector<DPoint2d>& params, bvector<uint16_t>& colors, bvector<uint16_t>& attributes, bvector<uint32_t>& indices, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, double& currLength, TileMeshR mesh, size_t meshIndex, bool doBatchIds);
     MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
-    void  AddMaterialTextureOrColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix);
+    void  AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix);
     PolylineMaterial AddSimplePolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     PolylineMaterial AddTesselatedPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     PolylineMaterial AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
