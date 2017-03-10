@@ -415,3 +415,170 @@ void SaveWalls ()
 };
 
 
+ValidatedDVec3d SinglePointAreaShift
+(
+DPoint3dCR xyz,
+bvector<DPoint3d> const &neighborXYZ,
+bvector<double> const &sectorArea,
+bvector<double> const &sectorTargetArea
+)
+    {
+// Let U and V be outbound vectors from A to neighbors B and C in an area.
+//     C
+//     |\R
+//     |\
+//     |  \
+//     |   \
+//     |    \
+// W<--A-----B      (W is an arbitrary displacement vector from A)
+//
+// U = A-B
+// R = C-B
+// W is an additional vector of offset from A.
+// The area is a(W) = R cross (U+W) = (R cross U + R cross W) / 2
+// da(W) / dwx = -Ry/2
+// da(W) / dwy = Rx/2
+// Note that a second derivative wrt either var is identically 0.
+// We are given a target area for each sector around A.
+// Let EE(W) = sum of squared differences from the target = SUM (ee(W)) over all ee
+//  ee(W) = ( a(w) -  targetArea) ^2
+//  d ee(W) / dx = 2 da(W)/dx   * (a(w) - targetArea)
+//  d ee(w) / dx dx = 2 [ da(W)/dx * da(w)/dx ]
+//  d ee(w) / dx dy = 2 [ da(W)/dx * da(w)/dy ]
+// etc.
+// This is a 2-var newton raphson with analytic derivatives.
+// No, its easier.  da(S) /dwx is a constant function.
+// d ee(W)/dx is linear in W.
+// So it solves in one step !!!
+    BeAssert (neighborXYZ.size () == sectorArea.size ());
+    BeAssert (neighborXYZ.size () == sectorTargetArea.size ());
+    DVec3d F, dFdx, dFdy;
+    F.Zero ();
+    dFdx.Zero ();
+    dFdy.Zero ();
+    for (size_t i = 0, n = neighborXYZ.size (); i < n; i++)
+        {
+        size_t j = i + 1;
+        if (j >= n)
+            j = 0;
+        double e0 = sectorArea[i] - sectorTargetArea[i];// Assume R cross U is included in current sectorArea !!!
+        DVec3d R = neighborXYZ[j] - neighborXYZ[i];
+        DVec3d dRcrossW = DVec3d::From (-0.5 * R.y, 0.5 * R.x );
+        F = F + e0 * dRcrossW;
+        dFdx.x += dRcrossW.x * dRcrossW.x;
+        dFdx.y += dRcrossW.x * dRcrossW.y;
+        dFdy.x += dRcrossW.y * dRcrossW.x;
+        dFdy.y += dRcrossW.y * dRcrossW.y;
+        }
+    double dx, dy;
+    if (bsiSVD_solve2x2 (&dx, &dy,
+            dFdx.x, dFdx.y,
+            dFdy.x, dFdy.y,
+            F.x, F.y
+            ))
+        {
+        return ValidatedDVec3d (DVec3d::From (dx, dy, 0.0), true);
+        }
+    return ValidatedDVec3d (DVec3d::From (0.0, 0.0, 0.0), true);
+    }
+
+// return each area[i] = additionalArea + area of triangle xyz0 to 2 neighbors.
+void FillAreasFromNeighbors (bvector<double> &areas, DPoint3dCR xyz0, bvector<DPoint3d> &neighborXYZ, double additionalArea)
+    {
+    size_t n = neighborXYZ.size ();
+    areas.clear ();
+    for (size_t i = 0; i < n; i++)
+        {
+        size_t i1 = (i + 1) % n;
+        areas.push_back (additionalArea + 0.5 * xyz0.CrossProductToPointsXY (neighborXYZ[i], neighborXYZ[i1]));
+        }
+    }
+
+void RunSinglePointAreaShiftTest (bvector<DPoint3d> &neighbors)
+    {
+    auto loop = neighbors;
+    loop.push_back (neighbors.front ());
+    SaveAndRestoreCheckTransform shifter (4.0,0.0,0);
+    bvector<DPoint3d> path;
+    DPoint3d xyz0;
+    xyz0.Zero ();   // Always pin the target at 000.  Initial areas are compute from this start
+    //for (double additionalArea : bvector<double> { 0/*, 0.1, 0.5 */}) // EDL March 9 2017 Additional area does not change the path.
+    double additionalArea = 0.0;
+    double relaxationFactor = 1.0;
+    //for (double relaxationFactor : bvector<double> {1.0, 0.9, 0.8, 0.75, 0.7})
+        {
+        SaveAndRestoreCheckTransform shifter (0,2.5, 0);
+        Check::SaveTransformed (loop);
+        // additionalArea = 0 ==> true diamond.
+        // additionalArea = a ==> each quadrant has additional area a beyond its diagonal.
+        bvector<double> sectorTargetArea, sectorArea;
+        double b = 0.1;
+        FillAreasFromNeighbors (sectorTargetArea, xyz0, neighbors, additionalArea);
+        static double s_expectedConvergenceFactor = 0.8;
+        static double s_distanceTol = 1.0e-8;
+        for (auto theta : bvector<Angle> {
+                    Angle::FromDegrees (0),
+                    Angle::FromDegrees (90),
+                    Angle::FromDegrees (45),
+                    Angle::FromDegrees (135.0),
+                    Angle::FromDegrees (108.0),
+                    Angle::FromDegrees (200.0),
+                    Angle::FromDegrees (270.0),
+                    Angle::FromDegrees (345.0),
+
+                    })
+            {
+            path.clear ();
+            auto xyz = DPoint3d::From (b * theta.Cos (), b * theta.Sin (), 0.0);
+            path.push_back (xyz);
+#ifdef IterativeCalls
+            double d0 = xyz0.Distance (xyz);
+            double d1 = d0;
+            double f = 1.5;
+            size_t iteration = 0;
+            for (iteration = 0; iteration < 8; iteration++)
+                {
+                FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
+                auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
+                if (!delta.IsValid ())
+                    break;
+                xyz = xyz - delta * relaxationFactor;
+                path.push_back (xyz);
+                d1 = delta.Value ().Magnitude ();
+                if (d1 < s_distanceTol)
+                    break;
+                f *= s_expectedConvergenceFactor;
+                }
+            Check::True (d1 < f * d0, "Area shift converging?");
+#else
+        FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
+        auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
+        if (Check::True (delta.IsValid ()))
+            {
+            auto xyz1 = xyz - delta;
+            Check::Near (xyz0, xyz1);
+            path.push_back (xyz1);
+            }
+#endif
+            Check::SaveTransformed (path);
+            }
+        }
+    }
+TEST(SinglePointAreaShift,Diamond)
+    {
+    bvector<DPoint3d> neighbors
+        {
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (0,1,0),
+        DPoint3d::From (-1,0,0),
+        DPoint3d::From (0,-1,0),
+        };
+    RunSinglePointAreaShiftTest (neighbors);
+    neighbors[0].x += 0.25;
+    RunSinglePointAreaShiftTest (neighbors);
+    neighbors[1].x -= 0.15;
+    RunSinglePointAreaShiftTest (neighbors);
+    neighbors[2].y += 0.45;
+    RunSinglePointAreaShiftTest (neighbors);
+    Check::ClearGeometry ("SinglePointAreaShift.Diamond");
+    }
