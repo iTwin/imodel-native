@@ -9,6 +9,10 @@
     #include <windows.h>
 #elif defined (BENTLEY_WINRT)
     #include <wrl.h>
+    #include <setjmp.h>
+    static int s_test_failure_status = 101;
+    static jmp_buf s_test_failure_jmp_buf;
+
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
         #include <pthread.h>
@@ -71,7 +75,11 @@ struct BeTestThrowFailureHandler : BeTest::IFailureHandler
                 return;
             s_disableThrows = true; // I rely on the test runner to call _OnFailureHandled to allow me clear this flag.
             }
+#ifdef BENTLEY_WINRT
+        longjmp(s_test_failure_jmp_buf, s_test_failure_status);
+#else
         throw "failure";
+#endif
         }
 
     public:
@@ -1017,6 +1025,17 @@ static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void testing::Test::RunTest()
     {
+#ifdef BENTLEY_WINRT
+    int failure_detected = setjmp(s_test_failure_jmp_buf);
+    if (s_test_failure_status == failure_detected)
+        {
+        incrementErrorCountAndEnableThrows();
+        return;
+        }
+   
+    InvokeTestBody();
+    rethrowAssertFromOtherTreads ();
+#else
     try {
         InvokeTestBody();
         rethrowAssertFromOtherTreads ();
@@ -1025,6 +1044,7 @@ void testing::Test::RunTest()
         {
         incrementErrorCountAndEnableThrows();
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
