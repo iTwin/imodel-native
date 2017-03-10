@@ -1241,7 +1241,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
 #endif
 
-    if (m_smPtr->IsTerrain())
+    //if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
          if (appData->m_smTerrainPhysicalModelP == nullptr)
@@ -1334,6 +1334,34 @@ void ScalableMeshModel::CloseFile()
     m_tryOpen = false;
     }
 
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Simon.Normand                   03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
+    {
+    if (!m_tryOpen || !GetPath().IsEmpty())
+        {
+        BeAssert(!"We can only reload a file which we have failed to open");
+        return ERROR;
+        }
+
+    if (!BeFileName::DoesPathExist(newFilename))
+        return ERROR;
+    
+    BeFileName dbFileName(m_dgndb.GetDbFileName());
+    BeFileName basePath = dbFileName.GetDirectoryName();
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
+    OpenFile(newFilename, GetDgnDb());
+
+    Update();
+
+    // file will be open when required
+    return SUCCESS;
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1376,6 +1404,9 @@ BeFileName ScalableMeshModel::GetPath()
 //----------------------------------------------------------------------------------------
 IScalableMesh* ScalableMeshModel::GetScalableMesh(bool wantGroup)
     {
+    if (m_smPtr.IsNull())
+        return NULL;
+
     if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty() && wantGroup)
         return m_smPtr->GetGroup().get();
     return m_smPtr.get();
@@ -1509,29 +1540,35 @@ void ScalableMeshModel::InitializeTerrainRegions()
     ScalableMeshModel::GetAllScalableMeshes(GetDgnDb(), allScalableMeshes);
     if (!m_subModel) SetDefaultClipsActive();
 
+    bvector<uint64_t> ids;
+    m_smPtr->GetCoverageIds(ids);
+
     for (auto& sm : allScalableMeshes)
         {
         BeFileName coveragePath = m_basePath;
-        coveragePath.AppendString(L"_terrain");
+        //coveragePath.AppendString(L"_terrain");
         ScalableMeshModelP smP = ((ScalableMeshModelP)sm);
         if (smP != this && smP->GetPath().ContainsI(coveragePath) == true)
             {
             smP->GetScalableMesh()->SetInvertClip(true);
-            m_terrainParts.push_back(smP);
-            smP->m_subModel = true;
+            for(auto& id: ids)
+                if (smP->GetPath().ContainsI(std::to_wstring(id).c_str()))
+                {
+                    bvector<DPoint3d> regionData;
+                    m_smPtr->GetClip(id, regionData);
+                    AddTerrainRegion(id, smP, regionData);
+                }
             }
         }
     m_loadedAllModels = true;
 
     ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP != nullptr) && ((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
+    if (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP == nullptr || (((ScalableMeshModelP)appData->m_smTerrainPhysicalModelP)->m_subModel == true && !m_subModel)) && (m_smPtr->IsTerrain() || !m_terrainParts.empty()))
         {
         appData->m_smTerrainPhysicalModelP = this;
         appData->m_modelSearched = true;
         }
 
-    bvector<uint64_t> ids;
-    m_smPtr->GetCoverageIds(ids);
 
     for (auto& smP : m_terrainParts)
         {
@@ -1666,7 +1703,7 @@ void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
             DgnElementId id = DgnElementId(reg.id);
             ReloadClipMask(id, true);
 
-            terrainRegion->GetScalableMesh()->AddClip(reg.regionData.data(), reg.regionData.size(), reg.id);
+            terrainRegion->GetScalableMesh()->AddClip(reg.regionData.data(), reg.regionData.size(), reg.id, SMClipGeometryType::Polygon, SMNonDestructiveClipType::Boundary, true);
             sm->SetInvertClip(true);
             terrainRegion->ActivateClip(reg.id, ClipMode::Clip);
 
