@@ -281,6 +281,30 @@ const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
         }
     }
 
+Utf8String Utils::FormatProblemDescription(FormatProblemCode code)
+    {
+    switch (code)
+        {
+        case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
+        case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
+        case FormatProblemCode::CNS_InconsistentFactorSet: return "Inconsistent set of factors";
+        case FormatProblemCode::CNS_InconsistentUnitSet: return "Inconsistent set of units";
+        case FormatProblemCode::CNS_UncomparableUnits: return "Units are not comparable";
+        case FormatProblemCode::CNS_InvalidUnitName: return "Unknown name of the Unit";
+        case FormatProblemCode::CNS_InvalidMajorUnit: return "Unknown name of the Major Unit";
+        case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
+        case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
+        case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
+        case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
+        case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
+        case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
+        case FormatProblemCode::NoProblems:
+        default: return "No problems";
+        }
+    };
+
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -298,26 +322,6 @@ size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
         return index;
     }
 
-Utf8CP Utils::GetFormatProblemDescription(FormatProblemCode code)
-    {
-    switch (code)
-        {
-        case FormatProblemCode::NoProblems:
-            return "No problem";
-        case FormatProblemCode::CNS_UncomparableUnits:
-            return "Uncomparable Units";
-        case FormatProblemCode::CNS_InconsistentFactorSet:
-            return "Inconsistent set of ratios";
-        case FormatProblemCode::CNS_InconsistentUnitSet:
-            return "Inconsistent set of units";
-        case FormatProblemCode::CNS_InvalidMajorUnit:
-            return "Invalid or undefined Major Unit";
-        case FormatProblemCode::CNS_InvalidUnitName:
-            return "Invalid unit name";
-        default:
-            return "invalid error code";
-        }
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
@@ -863,7 +867,30 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
 //----------------------------------------------------------------------------------------
 FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
-    
+    m_problemCode = FormatProblemCode::NoProblems;
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
+    FormattingWord unit = curs.ExtractWord();
+    FormattingWord fnam = curs.ExtractWord();
+    m_format = StdFormatSet::FindFormat(fnam.GetText());
+    m_unit = UnitRegistry::Instance().LookupUnit(unit.GetText());
+    if (nullptr == m_format)
+        m_problemCode = FormatProblemCode::UnknownStdFormatName;
+    else
+        {
+        if (nullptr == m_unit)
+            m_problemCode = FormatProblemCode::UnknownUnitName;
+        }
+    }
+
+
+
+Utf8String FormatUnitSet::ToText(bool useAlias)
+    {
+    if (HasProblem())
+        return "";
+    char buf[256];
+    sprintf(buf, "%s(%s)", m_unit->GetName(), (useAlias? m_format->GetAlias().c_str() : m_format->GetName().c_str()));
+    return buf;
     }
 
 
@@ -873,6 +900,71 @@ Utf8String FormatUnitSet::FormatQuantity(QuantityCR qty)
 
     return txt;
     }
+
+//===================================================
+//
+// FormatUnitGroup
+//
+//===================================================
+//----------------------------------------------------------------------------------------
+//  The text string has format <unitName>(<formatName>)
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//----------------------------------------------------------------------------------------
+FormatUnitGroup::FormatUnitGroup(Utf8CP description)
+    {
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
+    m_problemCode = FormatProblemCode::NoProblems;
+    curs.SkipBlanks();
+    FormattingWord unit = curs.ExtractWord();
+    FormattingWord fnam = curs.ExtractWord();
+    Utf8Char unitDelim = unit.GetDelim();
+    Utf8Char fnamDelim = fnam.GetDelim();
+    while (FormatProblemCode::NoProblems == m_problemCode)
+        {
+        if ('(' == unitDelim && ')' == fnamDelim)
+            {
+            FormatUnitSet fus = FormatUnitSet(fnam.GetText(), unit.GetText());
+            if (fus.HasProblem())
+                m_problemCode = fus.GetProblemCode();
+            else
+                {
+                m_group.push_back(fus);
+                unit = curs.ExtractWord();
+                if (unit.IsEndLine())
+                    break;
+                if (unit.IsSeparator())
+                    {
+                    curs.SkipBlanks();
+                    unit = curs.ExtractWord();
+                    fnam = curs.ExtractWord();
+                    unitDelim = unit.GetDelim();
+                    fnamDelim = fnam.GetDelim();
+                    }
+                }
+            }
+        else
+            m_problemCode = FormatProblemCode::FUS_InvalidSyntax;
+        }
+    }
+
+
+Utf8String FormatUnitGroup::ToText(bool useAlias)
+    {
+    if (HasProblem())
+        return "";
+    Utf8String txt;
+    int i = 0;
+
+    for (FormatUnitSetP fus = m_group.begin(); fus != m_group.end(); ++fus)
+        {
+        if (0 < i++)
+            txt += ",";
+        txt += fus->ToText(useAlias);
+        }
+
+    return txt;
+    }
+
 
 
 
@@ -889,10 +981,42 @@ FormattingDividers::FormattingDividers(Utf8CP div)
         }
     }
 
+FormattingDividers::FormattingDividers(FormattingDividersCR other)
+    {
+    memcpy(m_markers, other.m_markers, sizeof(m_markers));
+    }
+
 bool FormattingDividers::IsDivider(char c)
     {
+    if (0 == c)
+        return true;
     return (0 != ((m_markers[(c & 0x78) >> 3]) & (FormatConstant::TriadBitMask(c))));
     }
+
+
+//===================================================
+//
+// FormattingWord
+//
+//===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii)
+    {
+    m_cursor = cursor;
+    m_word = "";
+    size_t len = (nullptr == buffer) ? 0 : strlen(buffer);
+    if(0 < len)
+        m_word = buffer;
+    len = (nullptr == delim) ? 0 : strlen(delim);
+    memset(m_delim, 0, sizeof(delim));
+    if (0 < len)
+        memcpy(m_delim, delim, Utils::MinInt(maxDelim, len));
+    m_isASCII = isAscii;
+    }
+
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

@@ -30,6 +30,8 @@ FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormatSpec)
 FORMATTING_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 //===================================================
 //
 // Enumerations
@@ -252,7 +254,8 @@ enum class FormatProblemCode
     QT_PhenomenaNotSame = 102,
     QT_InvalidTopMidUnits = 103,
     QT_InvalidMidLowUnits = 104,
-    QT_InvalidUnitCombination = 105
+    QT_InvalidUnitCombination = 105,
+    FUS_InvalidSyntax = 151
     };
 
 //! Type of the ComboSpec describes one of allowable value transformations
@@ -283,8 +286,11 @@ struct Utils
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
     UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
     UNITS_EXPORT static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return (nullptr == name || strlen(name) == 0)? subs : name; }
-    UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
+    //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
     UNITS_EXPORT static bool AreUnitsComparable(UnitCP un1, UnitCP u2);
+    static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
+    static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
+    UNITS_EXPORT static Utf8String FormatProblemDescription(FormatProblemCode code);
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
@@ -604,6 +610,22 @@ public:
     UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
     UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty);
     UNITS_EXPORT FormatUnitSet(Utf8CP description);
+    bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    FormatProblemCode GetProblemCode() { return m_problemCode; }
+    UNITS_EXPORT Utf8String ToText(bool useAlias);
+    //UNITS_EXPORT static bvector<FormatUnitSet> VectorFUS(Utf8CP description);
+    };
+
+struct FormatUnitGroup
+    {
+private:
+    bvector<FormatUnitSet> m_group;
+    FormatProblemCode m_problemCode;
+public:
+    UNITS_EXPORT FormatUnitGroup(Utf8CP description);
+    UNITS_EXPORT Utf8String ToText(bool useAlias);
+    bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+    FormatProblemCode GetProblemCode() { return m_problemCode; }
     };
 
 //=======================================================================================
@@ -789,8 +811,6 @@ public:
     UnitCP GetTopUnit() { return m_topUnit; }
     UnitCP GetMidUnit() { return m_midUnit; }
     UnitCP GetLowUnit() { return m_lowUnit; }
-
-
     };
 
 struct StdFormatSet
@@ -879,6 +899,24 @@ public:
 
     };
 
+struct FormattingDividers
+    {
+    // only 32 ASCII characters are regarded as allowable dividers in all formatting related text strings and expressions
+    //  Their ASCII codes are quite stable and not going to change for the foreseeable future. The simplest and fastest 
+    //   approach for marking dividers/stopperswill be creating an array of 128 bit flags occupying 128/8=16 bytes (or two doubles)
+    //    Each bit in this array marks the code point that is considered as a astopper. This approach is also very flexible 
+    //   since it will allow to directly control what is and what is not included into the set of stoppers.
+    private:
+        char m_markers[16];
+    public:
+        //UNITS_EXPORT FormattingDividers() { memset(m_markers, 0, sizeof(m_markers)); };
+        UNITS_EXPORT FormattingDividers(Utf8CP div);
+        UNITS_EXPORT FormattingDividers(FormattingDividersCR other);
+        UNITS_EXPORT bool IsDivider(char c);
+        CharCP GetMarkers() const { return m_markers; }
+
+    };
+
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
@@ -890,10 +928,12 @@ private:
     size_t m_cursorPosition;     // the index of the next byte to be scanned
     size_t m_lastScannedCount;   // the number of bytes processed in the last step
     size_t m_uniCode;
+    FormattingDividers m_dividers;
     //union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
     bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
     UnicodeConstantP m_unicodeConst; // reference to constants and character processors
     ScannerCursorStatus m_status;
+    size_t m_effectiveBytes;
     char m_temp;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
@@ -903,11 +943,12 @@ private:
     int AddTrailingByte();
     size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
     //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
+    
 
 public:
     //! Construct a cursor attached to the given Utf8 string 
-
-    UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
+   // FormattingScannerCursor();
+    UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div=nullptr);
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
     UnicodeConstant* GetConstants() { return m_unicodeConst; }
     size_t GetCurrentPosition() { return m_cursorPosition; }
@@ -924,22 +965,28 @@ public:
     size_t GetLastScanned() { return m_lastScannedCount; }
     UNITS_EXPORT size_t SkipBlanks();
     UNITS_EXPORT Utf8String SelectKeyWord();
+    void SetDividers(CharCP div) { m_dividers = FormattingDividers(div); }
+    bool IsDivider() { return m_isASCII ? m_dividers.IsDivider((char)(m_uniCode & 0x7F)) : false; }
+    size_t GetEffectiveBytes() { return m_effectiveBytes; }
+    UNITS_EXPORT FormattingWord ExtractWord();
     };
 
-struct FormattingDividers
+struct FormattingWord
     {
-    // only 32 ASCII characters are regarded as allowable dividers in all formatting related text strings and expressions
-    //  Their ASCII codes are quite stable and not going to change for the foreseeable future. The simplest and fastest 
-    //   approach for marking dividers/stopperswill be creating an array of 128 bit flags occupying 128/8=16 bytes (or two doubles)
-    //    Each bit in this array marks the code point that is considered as a astopper. This approach is also very flexible 
-    //   since it will allow to directly control what is and what is not included into the set of stoppers.
 private:
-    char m_markers[16];
+    static const int maxDelim = 4;   // the maximum number of ASCII characters in the delimiting group/clause
+    FormattingScannerCursorP m_cursor;  // just a reference to the cursor that has been used
+    Utf8String m_word;
+    Utf8Char m_delim[maxDelim+2];
+    bool m_isASCII;
 public:
-    UNITS_EXPORT FormattingDividers(Utf8CP div);
-    UNITS_EXPORT bool IsDivider(char c);
-    CharCP GetMarkers() const { return m_markers; }
-
+    UNITS_EXPORT FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii);
+    Utf8String GetWord() { return m_word; }
+    Utf8Char GetDelim() { return m_delim[0]; }
+    Utf8CP GetText() { return m_word.c_str(); }
+    bool IsDelimeterOnly() { return ((0 == m_word.length()) && (0 != m_delim[0])); }
+    bool IsEndLine() { return ((0 == m_word.length()) && (0 == m_delim[0])); }
+    bool IsSeparator() { return ((0 == m_word.length()) && (',' == m_delim[0] || ' ' == m_delim[0])); }
     };
 
 struct FormattingToken
@@ -953,10 +1000,12 @@ private:
     bvector<size_t> m_delim;
     bool m_isASCII;
     UNITS_EXPORT void Init();
+
 public:
     UNITS_EXPORT FormattingToken(FormattingScannerCursorP cursor);
-
-    UNITS_EXPORT WString GetNextToken();
+    UNITS_EXPORT WCharCP GetNextTokenW();
+    UNITS_EXPORT CharCP GetASCII();
+    UNITS_EXPORT Utf8Char GetDelimeter();
     };
 
 struct FormatStopWatch

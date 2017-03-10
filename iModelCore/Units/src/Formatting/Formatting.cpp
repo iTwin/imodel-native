@@ -1224,6 +1224,25 @@ Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+void FormattingScannerCursor::Rewind()
+    {
+    m_cursorPosition = 0;
+    m_lastScannedCount = 0;
+    m_uniCode = 0;
+    m_isASCII = false;
+    m_status = ScannerCursorStatus::Success;
+    m_effectiveBytes = 0;
+    m_dividers = FormattingDividers(nullptr);
+    return;
+    }
+
+//FormattingScannerCursor::FormattingScannerCursor()
+//    {
+//    Rewind();
+//    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
     {
     const bool end = FormatConstant::IsLittleEndian();
@@ -1234,40 +1253,32 @@ size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
     }
 
 //---------------------------------------------------------------------------------------
-// Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength) 
+FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength, CharCP div):m_dividers(div)
     { 
     m_text = utf8Text;
-    /*m_cursorPosition = 0;
-    m_lastScannedCount = 0;
-    m_code.word = 0;
-    m_isASCII = false;
-    m_status = ScannerCursorStatus::Success;*/
     Rewind();
     //m_unicodeConst = new UnicodeConstant();
     m_totalScanLength = (nullptr == utf8Text)? 0 : strlen(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
+    //m_dividers = FormattingDividers(div);
     }
 
-FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other)
-    {
-    }
-
-//----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-void FormattingScannerCursor::Rewind()
-{
-    m_cursorPosition = 0;
-    m_lastScannedCount = 0;
-    m_uniCode = 0;
-    m_isASCII = false;
-    m_status = ScannerCursorStatus::Success;
-    return;
-}
+//---------------------------------------------------------------------------------------
+FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other):m_dividers(other.m_dividers)
+    {
+    m_text = other.m_text;
+    m_cursorPosition = other.m_cursorPosition;
+    m_lastScannedCount = other.m_lastScannedCount;
+    m_uniCode = other.m_uniCode;
+    m_isASCII = other.m_isASCII;
+    m_status = other.m_status;
+    //m_dividers = FormattingDividers(other.m_dividers);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1290,15 +1301,49 @@ int FormattingScannerCursor::AddTrailingByte()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+FormattingWord FormattingScannerCursor::ExtractWord()
+{
+    static const size_t maxDelim = 4;
+    Utf8P buff = (Utf8P)alloca(m_totalScanLength + 1);
+    buff[0] = 0;
+    m_status = ScannerCursorStatus::Success;
+    m_lastScannedCount = 0;
+    m_isASCII = true;
+    Utf8CP c = &m_text.c_str()[m_cursorPosition];
+
+    while (!m_dividers.IsDivider(*c))
+        {
+        buff[m_lastScannedCount++] = *c;
+        buff[m_lastScannedCount] = 0;
+        if (0 != (*c & 0x80))
+            m_isASCII = false;
+        c++;
+        }
+
+    Utf8P delim = (Utf8P)alloca(maxDelim);
+    memset(delim, 0, maxDelim);
+    delim[0] = *c;
+    m_cursorPosition += ++m_lastScannedCount;
+    FormattingWord word = FormattingWord(this, buff, delim, m_isASCII);
+    return word;
+}
+
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::GetNextSymbol()
     {
+    unsigned int temp = 0;
     m_status = ScannerCursorStatus::Success;
     m_lastScannedCount = 0;
     m_uniCode = 0;
+    m_effectiveBytes = 1;
     m_isASCII = true;
-    char c = m_text.c_str()[m_cursorPosition];
+    unsigned char c = m_text.c_str()[m_cursorPosition];
     m_temp = 0;
     size_t seqLen = FormatConstant::GetSequenceLength(c);
     if(0 == seqLen)
@@ -1315,6 +1360,9 @@ size_t FormattingScannerCursor::GetNextSymbol()
             m_uniCode = (size_t)(c &  ~FormatConstant::UTF_2ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_isASCII = false;
+            temp = m_uniCode & 0xFFFFFF00;
+            if (0 != (m_uniCode & 0xFFFFFF00))
+                m_effectiveBytes = 2;
             break;
         case 3: // Three byte sequence
            // m_code.octet[TrueIndex(2, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
@@ -1322,14 +1370,21 @@ size_t FormattingScannerCursor::GetNextSymbol()
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
             m_isASCII = false;
+            temp = m_uniCode & 0xFFFF0000;
+            if (0 != (m_uniCode & 0xFFFFFF00))
+                m_effectiveBytes = 2;
+            if (0 != (m_uniCode & 0xFFFF0000))
+                m_effectiveBytes = 3;
             break;
-        case 4: // Three byte sequence
+        case 4: // Four byte sequence
             //m_code.octet[TrueIndex(3, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
             m_uniCode = (size_t)(c &  ~FormatConstant::UTF_4ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
             m_isASCII = false;
+            if (0 != (m_uniCode & 0xFF000000))
+                m_effectiveBytes = 4;
             break;
         }
     if (IsSuccess())
@@ -1342,13 +1397,15 @@ size_t FormattingScannerCursor::GetNextSymbol()
 //----------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::SkipBlanks()
     {
-    size_t code = GetNextSymbol();
+    Utf8CP c = &m_text.c_str()[m_cursorPosition];
+
     size_t skipped = 0;
-    while (IsASCII() && isspace((int)code))
+    while (isspace(*c))
         {
-        skipped += m_lastScannedCount;
-        code = GetNextSymbol();
+        skipped++;
+        c++;
         }
+    m_cursorPosition += skipped;
     return skipped;
     }
 
@@ -1359,37 +1416,40 @@ void FormattingToken::Init()
     m_delim.clear();
     m_tokenLength = 0;
     m_tokenBytes = 0;
-    m_isASCII = false;
+    m_isASCII = true;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-FormattingToken::FormattingToken(FormattingScannerCursorP cursor)
-    {
-    m_cursor = cursor;
-    Init();
-   /* 
-   m_cursorStart = m_cursor->GetCurrentPosition();
-   m_word.clear();
-    m_delim.clear();
-    m_tokenLength = 0;
-    m_tokenBytes = 0;
-    m_isASCII = false;*/
-    }
-
+//FormattingToken::FormattingToken(FormattingScannerCursorP cursor)
+//    {
+//    m_cursor = cursor;
+//    Init();
+//    }
+//
 //WString FormattingToken::GetNextToken()
 //    {
 //    /*bvector<size_t> m_word;
 //    bvector<size_t> m_delim;*/
 //    
 //    Init();
-//    size_t skip = m_cursor->SkipBlanks();
+//    //size_t skip = m_cursor->SkipBlanks();
 //    size_t code = m_cursor->GetNextSymbol();
-//    /*while (0 != code)
+//    while (!m_cursor->IsDivider())
 //        {
-//        if(m_cursor->IsASCII() && )
-//        }*/
+//        if (!m_cursor->IsASCII())
+//            m_isASCII = false;
+//        m_word.push_back(code);
+//        code = m_cursor->GetNextSymbol();
+//        }
+//    m_delim.push_back(code);
+//    WString ws;
+//    return ws;
 //    }
 
+//CharCP FormattingToken::GetASCII()
+//    {
+//    if()
+//    }
 
 END_BENTLEY_FORMATTING_NAMESPACE

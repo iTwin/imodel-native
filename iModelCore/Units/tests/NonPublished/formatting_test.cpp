@@ -29,15 +29,24 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 TEST(FormattingTest, Preliminary)
     {
     FormattingDividers fdiv = FormattingDividers(nullptr);
-    //LOG.infov("================  Formatting Log ===========================");
-    //const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
-    //FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
+    const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";
+    NumericFormatSpec numFmt = NumericFormatSpec("Default");
+    LOG.infov("================  Formatting Log ===========================");
+    FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
     //LOG.infov("Initial string: %s", uni);
     //size_t skipped = curs.SkipBlanks();
     //LOG.infov("Skipped blanks: %d", skipped);
 
+    size_t cod = curs.GetNextSymbol();
+    int i = 0;
+    while (0 != cod)
+        {
+        LOG.infov("cod[%d]: %d Ascii(%s) EffBytes=%d", ++i, cod, FormatConstant::BoolText(curs.IsASCII()), curs.GetEffectiveBytes());
+        LOG.infov(numFmt.IntToBinaryText((int)cod, true).c_str());
+        cod = curs.GetNextSymbol();
+        }
 
-    //NumericFormatSpec numFmt = NumericFormatSpec("Default");
+
     //CharCP p = fdiv.GetMarkers();
     //for (int i = 0; i < 16; ++i)
     //    {
@@ -52,6 +61,22 @@ TEST(FormattingTest, Preliminary)
     EXPECT_TRUE(fdiv.IsDivider(')'));
     EXPECT_TRUE(fdiv.IsDivider('{'));
     EXPECT_FALSE(fdiv.IsDivider('A'));
+
+    /*curs = FormattingScannerCursor("MM(real4)", -1);
+    FormattingWord unit = curs.ExtractWord();
+    LOG.infov("Unit %s  %c", unit.GetText(), unit.GetDelim());
+    FormattingWord fnam = curs.ExtractWord();
+    LOG.infov("Format %s  %c", fnam.GetText(), fnam.GetDelim());
+    FormatUnitSet fus = FormatUnitSet(fnam.GetText(), unit.GetText());
+    LOG.infov("FUS  %s", fus.ToText(true).c_str());*/
+
+    FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
+    //if(fusG.HasProblem())
+    //    LOG.infov("FUS  %s", Utils::FormatProblemDescription(fusG.GetProblemCode()).c_str());
+    //else
+    //    LOG.infov("FUSgroup:  %s", fusG.ToText(false).c_str());
+    EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
+    EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
     }
 
 TEST(FormattingTest, PhysValues)

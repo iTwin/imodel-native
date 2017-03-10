@@ -213,7 +213,7 @@ bool CompositeValueSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonC
 
 Utf8CP CompositeValueSpec::GetProblemDescription()
     {
-    return Utils::GetFormatProblemDescription(m_problemCode);
+    return Utils::FormatProblemDescription(m_problemCode).c_str();
     }
 //---------------------------------------------------------------------------------------
 // The problem code will be updated only if it was not already set to some non-zero value
