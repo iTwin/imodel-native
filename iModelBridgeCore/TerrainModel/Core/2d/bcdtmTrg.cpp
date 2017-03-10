@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTrg.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Core\bcDTMBaseDef.h>
@@ -8085,10 +8085,16 @@ BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ*
     if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, DTM_NULL_USER_TAG, 1, &dtmFeatureId, points, numPoints))
         return DTM_ERROR;
 
-    dtmP->memFeatures += numTriangles;
+    long oldIncFeatures = dtmP->incFeatures;
+    if (firstPointIndex != 0 )
+        dtmP->memFeatures += numTriangles;
+    else
+        dtmP->incFeatures += numTriangles;
 
     if (bcdtmObject_allocateFeaturesMemoryDtmObject(dtmP))
         return DTM_ERROR;
+
+    dtmP->incFeatures = oldIncFeatures;
 
     for (int i = 0; i < numTriangles; i++)
         {

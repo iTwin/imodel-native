@@ -172,6 +172,7 @@ public:
 
 
 private:
+    
     bool                                m_useViewFilters;
     bool                                m_isMultiThread;    
     float                               m_density;
