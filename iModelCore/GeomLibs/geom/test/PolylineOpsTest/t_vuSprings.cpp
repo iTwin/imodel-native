@@ -494,91 +494,164 @@ void FillAreasFromNeighbors (bvector<double> &areas, DPoint3dCR xyz0, bvector<DP
         }
     }
 
-void RunSinglePointAreaShiftTest (bvector<DPoint3d> &neighbors)
+void RunSinglePointAreaShiftTest (
+bvector<DPoint3d> &neighbors,
+double spreadAreaFraction = 0.0,   // In area targets, this fraction of area0 is subtracted from area0 and equal parts added to others.
+                        // This creates area distributions that do not have exact solution.
+                        // (Expected values are smallish fractions == maybe up to .25 in extreme?)
+double areaLossFactor = 0.0     // This fraction of the spreadArea is lost.
+)
     {
     auto loop = neighbors;
     loop.push_back (neighbors.front ());
-    SaveAndRestoreCheckTransform shifter (4.0,0.0,0);
     bvector<DPoint3d> path;
     DPoint3d xyz0;
-    xyz0.Zero ();   // Always pin the target at 000.  Initial areas are compute from this start
-    //for (double additionalArea : bvector<double> { 0/*, 0.1, 0.5 */}) // EDL March 9 2017 Additional area does not change the path.
+    xyz0.Zero ();
+    
     double additionalArea = 0.0;
     double relaxationFactor = 1.0;
-    //for (double relaxationFactor : bvector<double> {1.0, 0.9, 0.8, 0.75, 0.7})
+    SaveAndRestoreCheckTransform shifter (4.0, 0,0);
+    Check::SaveTransformed (loop);
+    // additionalArea = 0 ==> true diamond.
+    // additionalArea = a ==> each quadrant has additional area a beyond its diagonal.
+    bvector<double> sectorTargetArea, sectorArea;
+    double b = 0.1;
+    FillAreasFromNeighbors (sectorTargetArea, xyz0, neighbors, additionalArea);
+    if (spreadAreaFraction != 0.0)
         {
-        SaveAndRestoreCheckTransform shifter (0,2.5, 0);
-        Check::SaveTransformed (loop);
-        // additionalArea = 0 ==> true diamond.
-        // additionalArea = a ==> each quadrant has additional area a beyond its diagonal.
-        bvector<double> sectorTargetArea, sectorArea;
-        double b = 0.1;
-        FillAreasFromNeighbors (sectorTargetArea, xyz0, neighbors, additionalArea);
-        static double s_expectedConvergenceFactor = 0.8;
-        static double s_distanceTol = 1.0e-8;
-        for (auto theta : bvector<Angle> {
-                    Angle::FromDegrees (0),
-                    Angle::FromDegrees (90),
-                    Angle::FromDegrees (45),
-                    Angle::FromDegrees (135.0),
-                    Angle::FromDegrees (108.0),
-                    Angle::FromDegrees (200.0),
-                    Angle::FromDegrees (270.0),
-                    Angle::FromDegrees (345.0),
+        double shiftedArea = spreadAreaFraction * sectorTargetArea[0];
+        sectorTargetArea[0] -= shiftedArea;
+        double dA = shiftedArea * (1.0 - areaLossFactor) / (sectorTargetArea.size () - 1.0);
+        for (size_t i = 1; i < sectorTargetArea.size (); i++)
+            sectorTargetArea[i] +=dA;
+        }
 
-                    })
-            {
-            path.clear ();
-            auto xyz = DPoint3d::From (b * theta.Cos (), b * theta.Sin (), 0.0);
-            path.push_back (xyz);
+    // To acheive area A in a triangle with base b, the altitude is 2*A/b.
+    // Draw parallel lines at target altitude.   Their failure to intersect makes the problem an optimization rather than exact solution.
+    bvector<DSegment3d> segments;
+    size_t n = sectorTargetArea.size ();
+    static double s_displayFraction0 = 0.25;
+    for (int i0 = 0; i0 < n; i0++)
+        {
+        size_t i1 = (i0 + 1) % n;
+        DVec3d edgeVector = neighbors[i1] - neighbors[i0];
+        double b = edgeVector.Normalize ();     // normalie in place, return prior length.
+        double h = sectorTargetArea[i0] * 2.0 / b;
+        DVec3d perpVector;
+        perpVector.UnitPerpendicularXY (edgeVector);
+        DPoint3d xyzA = DPoint3d::FromInterpolate (neighbors[i0], s_displayFraction0, neighbors[i1]);
+        DPoint3d xyzB = DPoint3d::FromInterpolate (neighbors[i1], s_displayFraction0, neighbors[i0]);
+        segments.push_back (DSegment3d::From (
+                            xyzA + h * perpVector,
+                            xyzB + h * perpVector
+                            ));
+        }
+    Check::SaveTransformed (segments);
+
+    static double s_expectedConvergenceFactor = 0.8;
+    static double s_distanceTol = 1.0e-8;
+    for (auto theta : bvector<Angle> {
+                Angle::FromDegrees (0),
+                Angle::FromDegrees (90),
+                Angle::FromDegrees (45),
+                Angle::FromDegrees (135.0),
+                Angle::FromDegrees (108.0),
+                Angle::FromDegrees (200.0),
+                Angle::FromDegrees (270.0),
+                Angle::FromDegrees (345.0),
+
+                })
+        {
+        path.clear ();
+        auto xyz = DPoint3d::From (b * theta.Cos (), b * theta.Sin (), 0.0);
+        path.push_back (xyz);
+#define IterativeCalls
 #ifdef IterativeCalls
-            double d0 = xyz0.Distance (xyz);
-            double d1 = d0;
-            double f = 1.5;
-            size_t iteration = 0;
-            for (iteration = 0; iteration < 8; iteration++)
-                {
-                FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
-                auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
-                if (!delta.IsValid ())
-                    break;
-                xyz = xyz - delta * relaxationFactor;
-                path.push_back (xyz);
-                d1 = delta.Value ().Magnitude ();
-                if (d1 < s_distanceTol)
-                    break;
-                f *= s_expectedConvergenceFactor;
-                }
-            Check::True (d1 < f * d0, "Area shift converging?");
-#else
-        FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
-        auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
-        if (Check::True (delta.IsValid ()))
+        double d0 = xyz0.Distance (xyz);
+        double d1 = d0;
+        double f = 1.5;
+        size_t iteration = 0;
+        for (iteration = 0; iteration < 8; iteration++)
             {
-            auto xyz1 = xyz - delta;
-            Check::Near (xyz0, xyz1);
-            path.push_back (xyz1);
+            FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
+            auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
+            if (!delta.IsValid ())
+                break;
+            xyz = xyz - delta * relaxationFactor;
+            path.push_back (xyz);
+            d1 = delta.Value ().Magnitude ();
+            if (d1 < s_distanceTol)
+                break;
+            f *= s_expectedConvergenceFactor;
             }
+        Check::True (d1 < f * d0, "Area shift converging?");
+#else
+    FillAreasFromNeighbors (sectorArea, xyz, neighbors, additionalArea);
+    auto delta = SinglePointAreaShift (xyz, neighbors, sectorArea, sectorTargetArea);
+    if (Check::True (delta.IsValid ()))
+        {
+        auto xyz1 = xyz - delta;
+        Check::Near (xyz0, xyz1);
+        path.push_back (xyz1);
+        }
 #endif
-            Check::SaveTransformed (path);
-            }
+        Check::SaveTransformed (path);
         }
     }
 TEST(SinglePointAreaShift,Diamond)
     {
-    bvector<DPoint3d> neighbors
+    for (double shiftFactor : bvector<double> {0.0, 0.05, 0.10, -0.5, -0.10})
         {
-        DPoint3d::From (1,0,0),
-        DPoint3d::From (0,1,0),
-        DPoint3d::From (-1,0,0),
-        DPoint3d::From (0,-1,0),
-        };
-    RunSinglePointAreaShiftTest (neighbors);
-    neighbors[0].x += 0.25;
-    RunSinglePointAreaShiftTest (neighbors);
-    neighbors[1].x -= 0.15;
-    RunSinglePointAreaShiftTest (neighbors);
-    neighbors[2].y += 0.45;
-    RunSinglePointAreaShiftTest (neighbors);
+        SaveAndRestoreCheckTransform shifter (0.0, 2.5,0.0);
+        bvector<DPoint3d> neighbors
+            {
+            DPoint3d::From (1,0,0),
+            DPoint3d::From (0,1,0),
+            DPoint3d::From (-1,0,0),
+            DPoint3d::From (0,-1,0),
+            };
+        RunSinglePointAreaShiftTest (neighbors, shiftFactor);
+        neighbors[0].x += 0.25;
+        RunSinglePointAreaShiftTest (neighbors, shiftFactor);
+        neighbors[1].x -= 0.15;
+        RunSinglePointAreaShiftTest (neighbors, shiftFactor);
+        neighbors[2].y += 0.45;
+        RunSinglePointAreaShiftTest (neighbors, shiftFactor);
+        }
     Check::ClearGeometry ("SinglePointAreaShift.Diamond");
+    }
+
+TEST(SinglePointAreaShift,RegularNGon)
+    {
+    for (int numEdge : bvector<int> {3, 4, 5, 8})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0, 0.0, 0.0);
+        auto cv = CurveVector::CreateRegularPolygonXY (DPoint3d::From (0,0,0), 1.0, numEdge, true, CurveVector::BOUNDARY_TYPE_Outer);
+        for (double shiftFactor : bvector<double> {0.0, 0.05, 0.10, -0.5, -0.10})
+            {
+            SaveAndRestoreCheckTransform shifter (0.0, 2.5,0.0);
+            bvector<DPoint3d> points = *cv->at (0)->GetLineStringCP ();
+            points.pop_back ();     // eliminate the closure point
+            RunSinglePointAreaShiftTest (points, shiftFactor, 0.0);
+            }
+        }
+    Check::ClearGeometry ("SinglePointAreaShift.RegularNgon");
+    }
+
+TEST(SinglePointAreaShift,RegularNGonAreaImbalance)
+    {
+    int numEdge = 5;
+    for (double areaLossFactor : bvector<double> {0, -0.5, 0.5, 0.1, 0.2})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0, 0.0, 0.0);
+        auto cv = CurveVector::CreateRegularPolygonXY (DPoint3d::From (0,0,0), 1.0, numEdge, true, CurveVector::BOUNDARY_TYPE_Outer);
+        for (double shiftFactor : bvector<double> {0.0, 0.05, 0.10, -0.5, -0.10})
+            {
+            SaveAndRestoreCheckTransform shifter (0.0, 2.5,0.0);
+            bvector<DPoint3d> points = *cv->at (0)->GetLineStringCP ();
+            points.pop_back ();     // eliminate the closure point
+            RunSinglePointAreaShiftTest (points, shiftFactor, areaLossFactor);
+            }
+        }
+    Check::ClearGeometry ("SinglePointAreaShift.RegularNGonAreaImbalance");
     }
