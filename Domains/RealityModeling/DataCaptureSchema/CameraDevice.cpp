@@ -552,8 +552,8 @@ void                    CameraDevice::SetSkew(double val) { m_skew = val; }
 double                  CameraDevice::GetSensorSize() const { return m_sensorSize; }
 void                    CameraDevice::SetSensorSize(double val) { m_sensorSize= val; }
 
-double                  CameraDevice::GetPixelToMeterRatio() const { return m_pixelToMeterRatio;  };
-void                    CameraDevice::SetPixelToMeterRatio(double val) { m_pixelToMeterRatio = val; };
+//double                  CameraDevice::GetPixelToMeterRatio() const { return m_pixelToMeterRatio;  };
+//void                    CameraDevice::SetPixelToMeterRatio(double val) { m_pixelToMeterRatio = val; };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -896,9 +896,9 @@ DPoint2d CameraDevice::ComputeFieldOfView(CameraDeviceCR camDevice)
     {
     DPoint2d fieldofView;
 
-    //Everything must be in pixels
-    fieldofView.x = atan2(camDevice.GetImageWidth(), 2 * camDevice.GetFocalLength() / camDevice.GetPixelToMeterRatio());
-    fieldofView.y = atan2(camDevice.GetImageHeight(), 2 * camDevice.GetFocalLength()/ camDevice.GetPixelToMeterRatio());
+    //Everything must be in meters
+    fieldofView.x = atan2(camDevice.GetImageWidth() * camDevice.GetSensorSize(), 2 * camDevice.GetFocalLength());
+    fieldofView.y = atan2(camDevice.GetImageHeight() * camDevice.GetSensorSize(), 2 * camDevice.GetFocalLength());
 
     return fieldofView;
     }
