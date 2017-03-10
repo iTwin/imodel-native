@@ -728,6 +728,9 @@
     <ClInclude Include="DgnHandlers\DgnECTypeAdapters.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\ViewDefinition.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">
@@ -1176,6 +1179,9 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnHandlers\DgnECInteropStringFormatter.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ViewDefinition.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
   </ItemGroup>

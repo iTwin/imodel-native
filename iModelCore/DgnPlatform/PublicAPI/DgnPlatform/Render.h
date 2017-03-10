@@ -988,8 +988,9 @@ public:
         Code5 = 0xe0e0e0e0, // 5
         Code6 = 0xf888f888, // 6
         Code7 = 0xff18ff18, // 7
-        HiddenLine = 0xcccccccc,    // hidden lines 
+        HiddenLine = 0xcccccccc,  // hidden lines 
         Invisible = 0x00000001, // nearly invisible
+        Invalid = 0xffffffff,
         };
 
     void Cook(GeometryParamsCR, ViewContextR);
@@ -1587,16 +1588,24 @@ struct FrustumPlanes
 //=======================================================================================
 struct HiddenLineParams
 {
-    bool m_overrideEdgeColor = false;
-    bool m_overrideElementColor = false;
-    uint32_t m_pattern = (uint32_t) GraphicParams::LinePixels::HiddenLine;
-    uint32_t m_visibleEdgeWidth = 1;
-    uint32_t m_hiddenEdgeWidth = 1;
-    ColorDef m_edgeColor;
-    ColorDef m_elementColor;
+    struct Style
+    {
+        bool m_ovrColor;
+        ColorDef m_color;
+        GraphicParams::LinePixels m_pattern;
+        uint32_t m_width; // 0 means don't override
+        Style(bool ovrColor, ColorDef color, GraphicParams::LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
+        bool operator==(Style const& rhs) const {return m_ovrColor==rhs.m_ovrColor && m_color==rhs.m_color && m_pattern==rhs.m_pattern && m_width==rhs.m_width;}
+        bool operator!=(Style const& rhs) const {return !(*this==rhs);}
+        Json::Value ToJson() const;
+        void FromJson(JsonValueCR);
+    };
+
+    Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
+    Style m_hidden = Style(true, ColorDef::Black(), GraphicParams::LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
-    bool operator==(HiddenLineParams const& rhs) const {return ToJson() == rhs.ToJson();}
+    bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
     bool operator!=(HiddenLineParams const& rhs) const {return !(*this==rhs);}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static HiddenLineParams FromJson(JsonValueCR);
