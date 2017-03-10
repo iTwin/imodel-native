@@ -237,6 +237,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\ViewAttachment.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ViewContext.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ViewController.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ViewDefinition.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\VolumeElement.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\WebMercator.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\XmlHelper.h" />
@@ -380,6 +381,7 @@
     <ClCompile Include="DgnCore\VecMathDGNTolerances.cpp" />
     <ClCompile Include="DgnCore\ViewContext.cpp" />
     <ClCompile Include="DgnCore\ViewController.cpp" />
+    <ClCompile Include="DgnCore\ViewDefinition.cpp" />
     <ClCompile Include="DgnCore\VolumeElement.cpp" />
     <ClCompile Include="DgnCore\WebMercator.cpp" />
     <ClCompile Include="DgnGeoCoord\AuxCoordSysProcessor.cpp" />
