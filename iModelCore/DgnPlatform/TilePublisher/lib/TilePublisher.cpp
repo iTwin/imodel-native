@@ -1889,22 +1889,25 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
 
         AddTechniqueParameter(technique, "prev", GLTF_FLOAT_VEC3, "PREV");
         AddTechniqueParameter(technique, "next", GLTF_FLOAT_VEC3, "NEXT");
-        AddTechniqueParameter(technique, "delta", GLTF_FLOAT_VEC3, "DELTA");
 
         technique["attributes"]["a_prev"] = "prev";
         technique["attributes"]["a_next"] = "next";
-        technique["attributes"]["a_delta"] = "delta";
         AppendProgramAttribute(programRoot, "a_prev");
         AppendProgramAttribute(programRoot, "a_next");
-        AppendProgramAttribute(programRoot, "a_delta");
         }
     if (mat.IsTextured())
         {
         AddTechniqueParameter(technique, "texLength", GLTF_FLOAT, nullptr);
         technique["uniforms"]["u_texLength"] = "texLength";
+
         AddTechniqueParameter(technique, "scale", GLTF_FLOAT_VEC3, "SCALE");
         technique["attributes"]["a_scale"] = "scale";
         AppendProgramAttribute(programRoot, "a_scale");
+
+        technique["attributes"]["a_delta"] = "delta";
+        AddTechniqueParameter(technique, "delta", GLTF_FLOAT_VEC3, "DELTA");
+        AppendProgramAttribute(programRoot, "a_delta");
+
         }
 
 
