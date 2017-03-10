@@ -112,7 +112,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
     DisplayInfo ("an option can be selected by its Index or by its Value\n", DisplayOption::Question);
-    DisplayInfo ("by using either \"Index #\" or \"Value NameOfValue\" \n  ?", DisplayOption::Question);
+    DisplayInfo (" by using either \"Index #\" or \"Value NameOfValue\" \n  ?", DisplayOption::Question);
     
     uint64_t choice;
     InterpretCommand();
@@ -178,22 +178,22 @@ void RealityDataConsole::Run()
 
 void RealityDataConsole::Usage()
     {
-    DisplayInfo ("RealityDataConsole tool for RDS V1.0\n\n");
-    DisplayInfo ("Avalaible Commands (case insensitive):\n");
-    DisplayInfo ("Quit \t Exit the application\n");
-    DisplayInfo ("Retry \t (during a multi-step operation) Restart current operation\n");
-    DisplayInfo ("Help \t Print current Display\n");
-    DisplayInfo ("SetServer \t Change server settings (server url, repository and schema)\n");
-    DisplayInfo ("List \t List all subfiles/folders for the given location on your server\n");
-    DisplayInfo ("Dir \t same as List\n");
-    DisplayInfo ("cd \t Change current location. Must be called in one of the following ways\n");
-    DisplayInfo ("cd [number] \t navigates to node at the given index, as specified in the most recent List command\n");
-    DisplayInfo ("cd .. \t go up one level\n");
-    DisplayInfo ("ListAll \t List every file beneath the current location (paged)\n");
-    DisplayInfo ("Details \t show the details for the location\n");
-    DisplayInfo ("Stat \t show enterprise statistics\n");
-    DisplayInfo ("Download\t Download files from the current location on the server\n");
-    DisplayInfo ("Upload \t Upload files to the server\n");
+    DisplayInfo ("  RealityDataConsole tool for RDS V1.0\n\n");
+    DisplayInfo ("  Avalaible Commands (case insensitive):\n");
+    DisplayInfo ("  Quit        Exit the application\n");
+    DisplayInfo ("  Retry       (during a multi-step operation) Restart current operation\n");
+    DisplayInfo ("  Help        Print current Display\n");
+    DisplayInfo ("  SetServer   Change server settings (server url, repository and schema)\n");
+    DisplayInfo ("  List        List all subfiles/folders for the given location on your server\n");
+    DisplayInfo ("  Dir         same as List\n");
+    DisplayInfo ("  cd          Change current location. Must be called in one of the following ways\n");
+    DisplayInfo ("  cd [number] navigates to node at the given index, as specified in the most recent List command\n");
+    DisplayInfo ("  cd ..       go up one level\n");
+    DisplayInfo ("  ListAll     List every file beneath the current location (paged)\n");
+    DisplayInfo ("  Details     show the details for the location\n");
+    DisplayInfo ("  Stat        show enterprise statistics\n");
+    DisplayInfo ("  Download    Download files from the current location on the server\n");
+    DisplayInfo ("  Upload      Upload files to the server\n");
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -562,14 +562,14 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo (Utf8PrintfString("Document : %s\n", document->GetName()));
-        DisplayInfo (Utf8PrintfString("Container name : %s\n", document->GetContainerName()));
-        DisplayInfo (Utf8PrintfString("Id : %s\n", document->GetId()));
-        DisplayInfo (Utf8PrintfString("Folder Id %s\n: ", document->GetFolderId()));
-        DisplayInfo (Utf8PrintfString("Access Url : %s\n", document->GetAccessUrl()));
-        DisplayInfo (Utf8PrintfString("RealityData Id : %s\n", document->GetRealityDataId()));
-        DisplayInfo (Utf8PrintfString("ContentType : %s\n", document->GetContentType()));
-        DisplayInfo (Utf8PrintfString("Size : %lu\n", document->GetSize()));
+        DisplayInfo (Utf8PrintfString(" Document       : %s\n", document->GetName()));
+        DisplayInfo (Utf8PrintfString(" Container name : %s\n", document->GetContainerName()));
+        DisplayInfo (Utf8PrintfString(" Id             : %s\n", document->GetId()));
+        DisplayInfo (Utf8PrintfString(" Folder Id      : %s\n", document->GetFolderId()));
+        DisplayInfo (Utf8PrintfString(" Access Url     : %s\n", document->GetAccessUrl()));
+        DisplayInfo (Utf8PrintfString(" RealityData Id : %s\n", document->GetRealityDataId()));
+        DisplayInfo (Utf8PrintfString(" ContentType    : %s\n", document->GetContentType()));
+        DisplayInfo (Utf8PrintfString(" Size           : %lu\n", document->GetSize()));
         }
     else if (className == "Folder")
         {
@@ -582,8 +582,8 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo (Utf8PrintfString("Folder : %s\n", folder->GetName()));
-        DisplayInfo (Utf8PrintfString("Parent folder : %s\n", folder->GetParentId()));
+        DisplayInfo (Utf8PrintfString("Folder         : %s\n", folder->GetName()));
+        DisplayInfo (Utf8PrintfString("Parent folder  : %s\n", folder->GetParentId()));
         DisplayInfo (Utf8PrintfString("RealityData Id : %s\n", folder->GetRealityDataId()));
         }
     else if (className == "RealityData")
@@ -597,18 +597,18 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo (Utf8PrintfString("RealityData name : %s\n", entity->GetName()));
-        DisplayInfo (Utf8PrintfString("Id : %s\n", entity->GetIdentifier()));
-        DisplayInfo (Utf8PrintfString("Container name : %s\n", entity->GetContainerName()));
-        DisplayInfo (Utf8PrintfString("Dataset : %s\n", entity->GetDataset()));
-        DisplayInfo (Utf8PrintfString("Description : %s\n", entity->GetDescription()));
-        DisplayInfo (Utf8PrintfString("Root document : %s\n", entity->GetRootDocument()));
-        DisplayInfo (Utf8PrintfString("Size (kb) : %lu", entity->GetIdentifier()));
-        DisplayInfo (Utf8PrintfString("Classification : %s\n", entity->GetClassificationTag()));
-        DisplayInfo (Utf8PrintfString("Type : %s\n", entity->GetRealityDataType()));
-        DisplayInfo (Utf8PrintfString("Accuracy (m) : %f", entity->GetAccuracyValue()));
-        DisplayInfo (Utf8PrintfString("Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
-        DisplayInfo (Utf8PrintfString("Created timestamp : %s\n", entity->GetCreationDateTime().ToString()));
+        DisplayInfo (Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
+        DisplayInfo (Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
+        DisplayInfo (Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
+        DisplayInfo (Utf8PrintfString(" Dataset            : %s\n", entity->GetDataset()));
+        DisplayInfo (Utf8PrintfString(" Description        : %s\n", entity->GetDescription()));
+        DisplayInfo (Utf8PrintfString(" Root document      : %s\n", entity->GetRootDocument()));
+        DisplayInfo (Utf8PrintfString(" Size (kb)          : %lu", entity->GetIdentifier()));
+        DisplayInfo (Utf8PrintfString(" Classification     : %s\n", entity->GetClassificationTag()));
+        DisplayInfo (Utf8PrintfString(" Type               : %s\n", entity->GetRealityDataType()));
+        DisplayInfo (Utf8PrintfString(" Accuracy (m)       : %f", entity->GetAccuracyValue()));
+        DisplayInfo (Utf8PrintfString(" Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
+        DisplayInfo (Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
         }
     }
 
