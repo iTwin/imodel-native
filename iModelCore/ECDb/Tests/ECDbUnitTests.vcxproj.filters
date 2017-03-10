@@ -13,9 +13,6 @@
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework</Filter>
     </ClCompile>
@@ -86,9 +83,6 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECDbProfile_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbSchemas_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\FSRTests.cpp">
@@ -222,6 +216,9 @@
     </ClCompile>
     <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp">
       <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbRelationship_Test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

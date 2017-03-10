@@ -311,11 +311,18 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 
     ClassMappingCACache const& caCache = *caCacheCP;
 
-    ECDbClassMap const& classMap = caCache.GetClassMap();
+    ECDbClassMap const& classMapCA = caCache.GetClassMap();
 
-    if (classMap.IsValid())
+    if (classMapCA.IsValid())
         {
-        if (SUCCESS != classMap.TryGetTableName(m_tableName))
+        if (m_ecClass.IsEntityClass() && m_ecClass.GetEntityClassCP()->IsMixin())
+            {
+            Issues().Report("Failed to map Mixin ECClass %s. Mixins may not have the ClassMap custom attribute.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        if (SUCCESS != classMapCA.TryGetTableName(m_tableName))
             return ERROR;
 
         MapStrategy strategy = caCache.GetStrategy();
@@ -332,13 +339,13 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             {
             if (!m_tableName.empty())
                 {
-                Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'SharedTable' or 'ExistingTable'.",
+                Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'ExistingTable' or 'SharedTable'.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }
             }
 
-        if (SUCCESS != classMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
+        if (SUCCESS != classMapCA.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
             return ERROR;
         }
 

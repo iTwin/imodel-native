@@ -147,22 +147,33 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ECDbCR ecdb, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString, MapStrategyExtendedInfo const& mapStrategy)
+BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams& params, ClassMap const& classMap, PrimitiveECPropertyCR ecProp, Utf8StringCR accessString)
     {
     Utf8String columnName;
     bool isNullable = true;
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
 
+    IssueReporter const& issues = classMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter();
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
-        if (SUCCESS != customPropMap.TryGetColumnName(columnName))
-            return ERROR;
-
-        if (!columnName.empty() && mapStrategy.GetStrategy() != MapStrategy::ExistingTable)
+        if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
+            issues.Report("Failed to map Mixin ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap which is not allowed for mixins.",
+                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            return ERROR;
+            }
+
+        if (SUCCESS != customPropMap.TryGetColumnName(columnName))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (!columnName.empty() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
+            {
+            issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
                                                           ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
             return ERROR;
             }
@@ -179,7 +190,7 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
 
         if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
+            issues.Report("Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
                                                           ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(),
                                                           collationStr.c_str());
             return ERROR;
@@ -201,7 +212,6 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-//static 
 RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
     Utf8String accessString = ComputeAccessString(property, compoundPropMap);
@@ -209,7 +219,7 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     DbColumn::CreateParams createParams;
     if (m_loadContext == nullptr)
         {
-        if (SUCCESS != DetermineColumnInfoForPrimitiveProperty(createParams, m_classMap.GetDbMap().GetECDb(), property, accessString, m_classMap.GetMapStrategy()))
+        if (SUCCESS != DetermineColumnInfoForPrimitiveProperty(createParams, m_classMap, property, accessString))
             return nullptr;
         }
 

@@ -4871,4 +4871,27 @@ TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
     ASSERT_EQ((int) expectedCodes.size(), rowCount);
     }
 
+//---------------------------------------------------------------------------------
+// Verifies correct ECSQL parsing on Android
+// @bsimethod                              Affan.Khan                       10/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ECSqlParseTreeFormatter_ParseAndFormatECSqlParseNodeTree)
+    {
+    auto AssertParseECSql = [] (ECDbCR ecdb, Utf8CP ecsql)
+        {
+        Utf8String parseTree;
+        ASSERT_EQ(SUCCESS, ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, ecdb, ecsql)) << "Failed to parse ECSQL";
+        };
+
+    ECDb ecdb; // only needed for issue listener, doesn't need to represent a file on disk
+    AssertParseECSql(ecdb, "SELECT '''' FROM stco.Hardware");
+    AssertParseECSql(ecdb, "SELECT 'aa', '''', b FROM stco.Hardware WHERE Name = 'a''b'");
+    AssertParseECSql(ecdb, "SELECT _Aa, _bC, _123, Abc, a123, a_123, a_b, _a_b_c FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql(ecdb, "SELECT * FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql(ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo]");
+    AssertParseECSql(ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo] WHERE [Name] = 'HelloWorld'");
+    AssertParseECSql(ecdb, "Select EQUIP_NO From only appdw.Equipment where EQUIP_NO = '50E-101A' ");
+    AssertParseECSql(ecdb, "INSERT INTO [V8TagsetDefinitions].[STRUCTURE_IL1] ([VarFixedStartZ], [DeviceID1], [ObjectType], [PlaceMethod], [CopyConstrDrwToProj]) VALUES ('?', '-E1-1', 'SGL', '1', 'Y')");
+    AssertParseECSql(ecdb, "INSERT INTO [V8TagsetDefinitions].[grid__x0024__0__x0024__CB_1] ([CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457],[CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454]) VALUES ('', '1.1', '', '', '', '2.2', '', '', '', '2.5', '', '', '', '2.5', '', '', '', '2.1', '', '', '', 'E.3', '', '', '', 'B.4', '', '', '', 'D.4', '', '')");
+    }
 END_ECDBUNITTESTS_NAMESPACE

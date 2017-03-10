@@ -195,6 +195,36 @@ TEST_F(ECDbSchemaRules, BaseClasses)
 
     testSchemas.push_back(SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IMixin1" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IMixin2" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop3" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base</BaseClass>
+                      <BaseClass>IMixin1</BaseClass>
+                      <BaseClass>IMixin2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                     </ECEntityClass>
+               </ECSchema>)xml", true, "Implementing multiple mixins is supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECStructClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECStructClass>
@@ -304,6 +334,94 @@ TEST_F(ECDbSchemaRules, BaseClasses)
     AssertSchemaImport(testSchemas, "ecdbschemarules_baseclasses.ecdb");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, MixinsAndECDbMapCAs)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>NotMapped</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have ClassMap CA"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have ClassMap CA"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                       <IsUnique>False</IsUnique>
+                                       <Name>myindex</Name>
+                                       <Properties>
+                                          <string>Prop1</string>
+                                       </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                            </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have DbIndexList CA"));
+
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" >
+                        <ECCustomAttributes>
+                            <PropertyMap xmlns="ECDbMap.02.00">
+                                <IsNullable>false</IsNullable>
+                            </PropertyMap>
+                        </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have PropertyMap CA"));
+
+    AssertSchemaImport(testSchemas, "ecdbschemarules_mixins_ecdbmapcas.ecdb");
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------

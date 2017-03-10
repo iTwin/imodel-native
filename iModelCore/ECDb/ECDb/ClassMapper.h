@@ -37,7 +37,7 @@ struct ClassMapper final
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
-        static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ECDbCR, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString, MapStrategyExtendedInfo const& mapStrategy);
+        static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
     public:
         static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);
