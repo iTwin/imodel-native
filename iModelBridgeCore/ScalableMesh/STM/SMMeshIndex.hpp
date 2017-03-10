@@ -3901,7 +3901,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<bpair<double, int>> metadata;
     //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
-    size_t indexOfBiggestPoly = 0;
+   // size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);

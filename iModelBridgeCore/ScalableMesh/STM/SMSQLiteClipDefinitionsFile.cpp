@@ -486,5 +486,5 @@ void SMSQLiteClipDefinitionsFile::SetClipOnOrOff(uint64_t id, bool isActive)
     m_database->GetCachedStatement(stmt, "UPDATE SMClipDefinitions SET OnOff=? where PolygonId=?");
     stmt->BindInt64(1, isActive? 1 : 0);
     stmt->BindInt64(2, id);
-    DbResult status = stmt->Step();
+    stmt->Step();
     }
