@@ -397,7 +397,7 @@ TEST_F(ECDbSchemaRules, MixinsAndECDbMapCAs)
                         </ECCustomAttributes>
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECEntityClass>
-               </ECSchema>)xml", false, "Mixin may not have DbIndexList CA"));
+               </ECSchema>)xml", true, "Mixin may have DbIndexList CA"));
 
 
     testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>

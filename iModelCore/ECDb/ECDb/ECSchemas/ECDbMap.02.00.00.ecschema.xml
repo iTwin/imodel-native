@@ -4,8 +4,8 @@
         <ECProperty propertyName="TablePrefix" typeName="string" description="The prefix should be 2-4 letters followed by an underbar, e.g. plnt_."/>
     </ECCustomAttributeClass>
     <ECCustomAttributeClass typeName="ClassMap" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
-        <ECProperty propertyName="MapStrategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), TablePerHierarchy, ExistingTable, SharedTable, NotMapped"/>
-        <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is ExistingTable or SharedTable provide the table name here"/>
+        <ECProperty propertyName="MapStrategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), TablePerHierarchy, ExistingTable, NotMapped"/>
+        <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is ExistingTable provide the table name here"/>
         <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify custom 'primary key' column which must be of type Int64."/>
     </ECCustomAttributeClass>
     <ECCustomAttributeClass typeName="JoinedTablePerDirectSubclass" description="Maps subclasses and their children to a joined table. Can only be applied to classes in a hierarchy using MapStrategy TablePerHierarchy." modifier="Sealed" appliesTo="EntityClass"/>

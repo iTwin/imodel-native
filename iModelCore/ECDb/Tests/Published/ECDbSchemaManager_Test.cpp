@@ -1343,7 +1343,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_FALSE(validationFailed);
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
-    ASSERT_EQ(37, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
+    ASSERT_EQ(36, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
     }
 
 //---------------------------------------------------------------------------------------

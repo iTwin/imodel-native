@@ -73,7 +73,21 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, ""));
+        "</ECSchema>"));
+
+    testItems.push_back(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml", false, "TablePerHierarchy on sealed class is not allowed"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -320,8 +334,7 @@ TEST_F(ECDbMappingTestFixture, OwnTableCATests)
         "        <BaseClass>Parent</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>SharedTable</MapStrategy>"
-        "                <TableName>TestTable</TableName>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P3' typeName='int' />"
@@ -529,41 +542,7 @@ TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
     }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiMethod                                      Muhammad Hassan                  01/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedTableCATests)
-    {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                   "    <ECEntityClass typeName='Class' modifier='None'>"
-                                   "        <ECCustomAttributes>"
-                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                   "                <MapStrategy>SharedTable</MapStrategy>"
-                                   "            </ClassMap>"
-                                   "        </ECCustomAttributes>"
-                                   "        <ECProperty propertyName='Price' typeName='double' />"
-                                   "    </ECEntityClass>"
-                                   "</ECSchema>", false, "MapStrategy SharedTable expects TableName to be set."));
 
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                   "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                   "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                   "    <ECEntityClass typeName='Class' modifier='None'>"
-                                   "        <ECCustomAttributes>"
-                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                   "                <MapStrategy>SharedTable</MapStrategy>"
-                                   "                <TableName>idontexist</TableName>"
-                                   "            </ClassMap>"
-                                   "        </ECCustomAttributes>"
-                                   "        <ECProperty propertyName='Price' typeName='double' />"
-                                   "    </ECEntityClass>"
-                                   "</ECSchema>", true, "MapStrategy SharedTable doesn't expect table specified in TableName to be set."));
-
-    AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
-    }
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -931,7 +910,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>Sub</BaseClass>"
                                                   "        <ECProperty propertyName='P2' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "SharedTable(polymorphic) within Class Hierarchy is not supported where Root has Strategy NotMapped"),
+                                                  "</ECSchema>", false, "TPH within Class Hierarchy is not supported where Root has Strategy NotMapped"),
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
     }
@@ -963,7 +942,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>Sub</BaseClass>"
                                                   "        <ECProperty propertyName='P2' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "OwnTable) within Class Hierarchy is not supported where Root has Strategy NotMapped"),
+                                                  "</ECSchema>", false, "OwnTable within Class Hierarchy is not supported where Root has Strategy NotMapped"),
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
     }
@@ -1030,7 +1009,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                                                   "    <ECEntityClass typeName='Sub' modifier='None'>"
                                                   "        <ECCustomAttributes>"
                                                   "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                                  "                <MapStrategy>SharedTable</MapStrategy>"
+                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                                                   "            </ClassMap>"
                                                   "        </ECCustomAttributes>"
                                                   "        <BaseClass>Base</BaseClass>"
@@ -1040,7 +1019,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                                                   "        <BaseClass>Sub</BaseClass>"
                                                   "        <ECProperty propertyName='P2' typeName='int' />"
                                                   "    </ECEntityClass>"
-                                                  "</ECSchema>", false, "SharedTable cannot be applied to subclass if base class has NotMapped"),
+                                                  "</ECSchema>", false, "TablePerHierarchy cannot be applied to subclass if base class has NotMapped"),
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
     }
@@ -1280,13 +1259,13 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
                                    "    <ECEntityClass typeName='ClassA' modifier='None'>"
                                    "        <ECCustomAttributes>"
                                    "            <ClassMap xmlns='ECDbMap.02.00'>"
-                                   "                <MapStrategy>SharedTable</MapStrategy>"
+                                   "                <MapStrategy>OwnTable</MapStrategy>"
                                    "            </ClassMap>"
                                    "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy SharedTable"));
+                                   "</ECSchema>", false, "Option JoinedTablePerDirectSubclass can only be used with strategy TablePerHierarchy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2003,25 +1982,6 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAWithoutTPH)
         "        <ECProperty propertyName='Cost' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "ShareColumns with MapStrategy ExistingTable is not supported"));
-
-    testItems.push_back(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>SharedTable</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Sub1' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
-        "        <ECProperty propertyName='Cost' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>", false, "ShareColumns with MapStrategy SharedTable is not supported"));
 
     AssertSchemaImport(testItems, "invalidsharecolumnsca.ecdb");
     }
@@ -3896,21 +3856,6 @@ TEST_F(ECDbMappingTestFixture, AbstractClass)
                                    true, "Abstract class with no MapStrategy specified"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                        "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.02.00'>"
-                        "                <MapStrategy>SharedTable</MapStrategy>"
-                        "                <TableName>MyName</TableName>"
-                        "            </ClassMap>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='Prop' typeName='int' />"
-                        "    </ECEntityClass>"
-                        "</ECSchema>",
-                        false, "Abstract class can only have TablePerHierarchy or NotMapped MapStrategy"));
-
-    testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='AbstractClassTest' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
@@ -5152,82 +5097,6 @@ TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
 
     ASSERT_FALSE(ecdb.ColumnExists("Foo", "P3"));
     ASSERT_FALSE(ecdb.ColumnExists("Foo", "P4"));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Maha Nasir                     08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                        "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                        "   <ECEntityClass typeName='ClassA' Modifier='None'>"
-                        "       <ECCustomAttributes>"
-                        "           <ClassMap xmlns='ECDbMap.02.00'>"
-                        "               <MapStrategy>SharedTable</MapStrategy>"
-                        "               <TableName>TestTable</TableName>"
-                        "           </ClassMap>"
-                        "       </ECCustomAttributes>"
-                        "       <ECProperty propertyName='P1' typeName='string' />"
-                        "   </ECEntityClass>"
-                        "   <ECEntityClass typeName='ClassB' modifier='None'>"
-                        "<ECCustomAttributes>"
-                        "           <ClassMap xmlns='ECDbMap.02.00'>"
-                        "               <MapStrategy>SharedTable</MapStrategy>"
-                        "               <TableName>TestTable</TableName>"
-                        "           </ClassMap>"
-                        "       </ECCustomAttributes>"
-                        "       <ECProperty propertyName='P2' typeName='string' />"
-                        "   </ECEntityClass>"
-                        "   <ECEntityClass typeName='ClassC' modifier='None'>"
-                        "       <ECCustomAttributes>"
-                        "           <ClassMap xmlns='ECDbMap.02.00'>"
-                        "               <MapStrategy>SharedTable</MapStrategy>"
-                        "           <TableName>TestTable</TableName>"
-                        "           </ClassMap>"
-                        "       </ECCustomAttributes>"
-                        "       <ECProperty propertyName='P3' typeName='string' />"
-                        "   </ECEntityClass>"
-                        "</ECSchema>", true);
-
-    ECDb ecdb;
-    bool asserted = false;
-    ECSqlStatement statment;
-
-    AssertSchemaImport(ecdb, asserted, testItem, "SharedTableTest.ecdb");
-    ASSERT_FALSE(asserted);
-
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("TestSchema");
-    EXPECT_TRUE(testSchema != nullptr);
-
-    //Inserts values in Class A,B and C.
-    EXPECT_EQ(ECSqlStatus::Success, statment.Prepare(ecdb, "INSERT INTO t.ClassA(P1) VALUES ('Testval1')"));
-    EXPECT_TRUE(BE_SQLITE_DONE == statment.Step());
-    statment.Finalize();
-
-    EXPECT_EQ(ECSqlStatus::Success, statment.Prepare(ecdb, "INSERT INTO t.ClassB(P2) VALUES ('Testval2')"));
-    EXPECT_TRUE(BE_SQLITE_DONE == statment.Step());
-    statment.Finalize();
-
-    EXPECT_EQ(ECSqlStatus::Success, statment.Prepare(ecdb, "INSERT INTO t.ClassC(P3) VALUES ('Testval3')"));
-    EXPECT_TRUE(BE_SQLITE_DONE == statment.Step());
-    statment.Finalize();
-
-    //Deletes the instance of ClassA.
-    EXPECT_EQ(ECSqlStatus::Success, statment.Prepare(ecdb, "DELETE FROM t.ClassA"));
-    EXPECT_TRUE(BE_SQLITE_DONE == statment.Step());
-    statment.Finalize();
-
-    BeSQLite::Statement stmt;
-    EXPECT_EQ(DbResult::BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT COUNT(*) FROM TestTable"));
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    EXPECT_EQ(2, stmt.GetValueInt(0));
-
-    //Updates the instance of ClassB.
-    EXPECT_EQ(ECSqlStatus::Success, statment.Prepare(ecdb, "UPDATE t.ClassB SET P2='UpdatedValue'"));
-    EXPECT_TRUE(BE_SQLITE_DONE == statment.Step());
-    statment.Finalize();
     }
 
 

@@ -122,8 +122,7 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy()
         if (m_mapsToVirtualTable) // abstract class
             {
             if (caCache.HasMapStrategy() && (caCache.GetStrategy() == MapStrategy::ExistingTable ||
-                caCache.GetStrategy() == MapStrategy::OwnTable ||
-                caCache.GetStrategy() == MapStrategy::SharedTable))
+                caCache.GetStrategy() == MapStrategy::OwnTable))
                 {
                 Issues().Report("Invalid MapStrategy '%s' on abstract ECClass '%s'. Only MapStrategies 'TablePerHierarchy' or 'NotMapped' are allowed on abstract classes.", MapStrategyExtendedInfo::ToString(caCache.GetStrategy()), m_ecClass.GetFullName());
                 return ClassMappingStatus::Error;
@@ -140,7 +139,6 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy()
         {
             case MapStrategy::OwnTable:
             case MapStrategy::ExistingTable:
-            case MapStrategy::SharedTable:
                 //Those parent strategies are not inherited to subclasses.
                 return AssignMapStrategy(caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
@@ -325,12 +323,20 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
         if (SUCCESS != classMapCA.TryGetTableName(m_tableName))
             return ERROR;
 
-        MapStrategy strategy = caCache.GetStrategy();
-        if (strategy == MapStrategy::ExistingTable || strategy == MapStrategy::SharedTable)
+        const MapStrategy strategy = caCache.GetStrategy();
+
+        if (strategy == MapStrategy::TablePerHierarchy && m_ecClass.GetClassModifier() == ECClassModifier::Sealed)
+            {
+            Issues().Report("Failed to map ECClass %s. MapStrategy 'TablePerHierarchy' cannot be applied to ECClasses with modifier 'Sealed'.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        if (strategy == MapStrategy::ExistingTable)
             {
             if (m_tableName.empty())
                 {
-                Issues().Report("Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'SharedTable' or 'ExistingTable'.",
+                Issues().Report("Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }
@@ -339,11 +345,12 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             {
             if (!m_tableName.empty())
                 {
-                Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'ExistingTable' or 'SharedTable'.",
+                Issues().Report("Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'ExistingTable'.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }
             }
+
 
         if (SUCCESS != classMapCA.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName))
             return ERROR;
@@ -681,9 +688,9 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return ClassMappingStatus::Success;
             }
 
-        if (baseStrategy == MapStrategy::OwnTable || baseStrategy == MapStrategy::ExistingTable || baseStrategy == MapStrategy::SharedTable)
+        if (baseStrategy == MapStrategy::OwnTable || baseStrategy == MapStrategy::ExistingTable)
             {
-            Issues().Report("Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'OwnTable', 'ExistingTable' or 'SharedTable' which is not supported in an ECRelationshipClass hierarchy.",
+            Issues().Report("Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'OwnTable' or 'ExistingTable' which is not supported in an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
             return ClassMappingStatus::Error;
             }
@@ -763,7 +770,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
-        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
+        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
@@ -843,7 +850,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
     
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
-        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
+        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
