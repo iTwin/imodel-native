@@ -1548,7 +1548,12 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
+    WString name = L"E:\\output\\scmesh\\2017-02-26\\bcdtm_";
+    name.append(std::to_wstring(indices.size()).c_str());
+    name.append(L".bcdtm");
+    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());
 
+    std::cout << " Writing to " << std::to_string(indices.size())<<std::endl;
     assert(status == SUCCESS);
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
@@ -2525,9 +2530,9 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     return _IsClippingUpToDate();
     }
 
-void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
-    return _GetSkirtMeshes(meshes);
+    return _GetSkirtMeshes(meshes, activeClips);
     }
 
 #ifdef WIP_MESH_IMPORT

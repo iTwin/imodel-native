@@ -1875,7 +1875,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
         if (!textureData.IsValid())
             return false;
         }    
-
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
@@ -1894,7 +1895,8 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
         if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr || textureData->GetData() == nullptr)
             return false;
         }
-
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    if (meshNode->m_SMIndex->IsTextured() != IndexTexture::None && m_cachedDisplayTextureData.empty()) return false;
     return true;
     }
 
@@ -2674,13 +2676,27 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     return *m_meshNode->GetTileDTM()->GetData();
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
+
         if (d.toggledForID) continue;
+
+        bool isVisibleSkirt = false;
+
+        for (auto& activeClipId : activeClips)
+            { 
+            if (d.clientID == activeClipId)
+                { 
+                isVisibleSkirt = true;
+                break;
+                }            
+            }
+
+        if (!isVisibleSkirt) continue;
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
         

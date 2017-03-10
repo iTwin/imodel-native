@@ -10,18 +10,28 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+
 class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     {
     public:
-    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
+    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize, SMClipGeometryType geom = SMClipGeometryType::Polygon, SMNonDestructiveClipType type = SMNonDestructiveClipType::Mask, bool isActive = true);
     virtual void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions);
     virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
     virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
 
     virtual void DeleteClipPolygon(int64_t clipID);
 
-    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
     virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
+    
+    virtual void SetClipOnOrOff(uint64_t id, bool isActive);
+    virtual void GetIsClipActive(uint64_t id,  bool& isActive);
+
+    virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
+
+    virtual void GetAllClipIDs(bvector<uint64_t>& allIds) override;
+
+    virtual void GetAllCoverageIDs(bvector<uint64_t>& ids) override;
 
     virtual size_t GetClipPolygonByteCount(int64_t clipID);
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID);

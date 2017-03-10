@@ -173,7 +173,7 @@ public:
     size_t GetNumberOfMetadataChars(int64_t nodeId);
 #endif
 
-    void GetAllClipIDs(bvector<uint64_t>& allIds); 
+    virtual void GetAllClipIDs(bvector<uint64_t>& allIds) { assert(false); };
 
     bool GetFileName(Utf8String& fileName) const; 
 
@@ -185,13 +185,19 @@ public:
 
     virtual size_t GetNumberOfFeaturePoints(int64_t featureID) { assert(false); return 0; }
 
-    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize, SMClipGeometryType geom = SMClipGeometryType::Polygon, SMNonDestructiveClipType type = SMNonDestructiveClipType::Mask, bool isActive = true) { assert(false); }
     virtual void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions) { assert(false); }
     virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions) { assert(false); }
     virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
 
-    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) { assert(false); }
     virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+
+    virtual void SetClipOnOrOff(uint64_t id, bool isActive) { assert(false); }
+
+    virtual void GetIsClipActive(uint64_t id, bool& isActive) { assert(false); }
+
+    virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) { assert(false); }
 
     virtual size_t GetClipPolygonByteCount(int64_t clipID) { assert(false); return 0; }
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID) { assert(false); return 0; }
@@ -199,6 +205,8 @@ public:
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID) { assert(false); return 0; }
+
+    virtual void GetAllCoverageIDs(bvector<uint64_t>& ids) { assert(false); }
 
     virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes) { assert(false); }
 
