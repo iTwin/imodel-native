@@ -425,11 +425,11 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
 
     //GetDiffSetPtr();
     
-    assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
 extern std::mutex s_createdNodeMutex;
@@ -525,8 +525,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         {
         static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore);
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
-        disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
-        this->m_pSubNodeNoSplit = nullptr;
+        //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
+        //this->m_pSubNodeNoSplit = nullptr;
         }
     else
         {
@@ -536,8 +536,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
                 {
                 static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore);
                 loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
-                disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
-                this->m_apSubNodes[indexNode] = nullptr;
+                //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
+                //this->m_apSubNodes[indexNode] = nullptr;
                 }
             }
         }
@@ -552,7 +552,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Publish
         //distributor->Go();
         std::cout << "Time to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
         distributor = nullptr;
-        std::cout << "Time to gather data: " << (double)loadDataTime / CLOCKS_PER_SEC / 7 << std::endl;
+        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / 7 << std::endl;
         std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / 7 << std::endl;
         std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / 7 << std::endl;
         std::cout << "Total time: " << (double)(clock() - startTime) / CLOCKS_PER_SEC << std::endl;
