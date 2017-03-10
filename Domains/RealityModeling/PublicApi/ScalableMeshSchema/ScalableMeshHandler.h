@@ -189,6 +189,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
 
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
+
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
         //! A DgnDb can have only one terrain. 
