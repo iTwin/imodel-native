@@ -2,13 +2,14 @@
 |
 |     $Source: DataCaptureSchema/DataCaptureSchemaInternal.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <DataCaptureSchema/DataCaptureSchemaApi.h>
 #include <DgnPlatform/DgnCoreAPI.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 
 USING_NAMESPACE_BENTLEY_SQLITE

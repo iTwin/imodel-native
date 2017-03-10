@@ -31,6 +31,8 @@ protected:
     Angle m_omega;
     Angle m_phi;
     Angle m_kappa;
+    DPoint3d  m_centerECEF;
+    RotMatrix m_rotationECEF;
 
     explicit Pose(CreateParams const& params);
 
@@ -95,8 +97,9 @@ public:
     DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target);
 
 
+    //Position and orientation in current GCS system
     DATACAPTURE_EXPORT DPoint3dCR           GetCenter() const;
-    DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val, bool synchECEF=true);
     DATACAPTURE_EXPORT AngleCR              GetOmega() const;
     DATACAPTURE_EXPORT AngleCR              GetPhi() const;
     DATACAPTURE_EXPORT AngleCR              GetKappa() const;
@@ -104,8 +107,15 @@ public:
     DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi);
     DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
 
+    //Position and orientation in ECEF system
+    DATACAPTURE_EXPORT DPoint3dCR           GetCenterECEF() const;
+    DATACAPTURE_EXPORT void                 SetCenterECEF(DPoint3dCR val, bool synchlocalGCS=true);
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrixECEF() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrixECEF(RotMatrixCR rotation,bool synchYPR=true);
+
+
     DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
-    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles);
+    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles, bool synchRotMatrix=true);
 
     DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
     DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
