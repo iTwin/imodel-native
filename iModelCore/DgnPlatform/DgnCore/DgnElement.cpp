@@ -4112,3 +4112,18 @@ DgnDbStatus DgnElement::GenericMultiAspect::SetAspect(DgnElementR el, ECN::IECIn
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
+    {
+    auto parentId = GetParentId();
+    if (!parentId.IsValid())
+        return false;
+    if (parentId == ancestorId)
+        return true;
+    auto parent = GetDgnDb().Elements().GetElement(parentId);
+    if (!parent.IsValid())
+        return false;
+    return parent->IsDescendantOf(ancestorId); 
+    }

@@ -1639,6 +1639,9 @@ public:
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
 
+    //! Test if \a ancestorId identifies the parent of this element or of its parent, recursively.
+    DGNPLATFORM_EXPORT bool IsDescendantOf(DgnElementId ancestorId) const;
+
     //! Get the DgnClassId of the ElementOwnsChildElements subclass used to relate this element to its parent element.
     //! @return Will be invalid if this element does not have a parent element.
     DgnClassId GetParentRelClassId() const {return m_parentId.IsValid() ? m_parentRelClassId : DgnClassId();}
