@@ -1334,6 +1334,34 @@ void ScalableMeshModel::CloseFile()
     m_tryOpen = false;
     }
 
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Simon.Normand                   03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
+    {
+    if (!m_tryOpen || !GetPath().IsEmpty())
+        {
+        BeAssert(!"We can only reload a file which we have failed to open");
+        return ERROR;
+        }
+
+    if (!BeFileName::DoesPathExist(newFilename))
+        return ERROR;
+    
+    BeFileName dbFileName(m_dgndb.GetDbFileName());
+    BeFileName basePath = dbFileName.GetDirectoryName();
+    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
+    OpenFile(newFilename, GetDgnDb());
+
+    Update();
+
+    // file will be open when required
+    return SUCCESS;
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1376,6 +1404,9 @@ BeFileName ScalableMeshModel::GetPath()
 //----------------------------------------------------------------------------------------
 IScalableMesh* ScalableMeshModel::GetScalableMesh(bool wantGroup)
     {
+    if (m_smPtr.IsNull())
+        return NULL;
+
     if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty() && wantGroup)
         return m_smPtr->GetGroup().get();
     return m_smPtr.get();
