@@ -367,7 +367,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-// WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.ForeignECInstanceId_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
+// WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.FK_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
 TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
