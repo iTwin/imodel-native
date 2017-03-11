@@ -3901,12 +3901,15 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<bpair<double, int>> metadata;
     //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
+    bset<uint64_t> addedPolyIds;
    // size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
         if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && diffSet.toggledForID)
             {
+            if (addedPolyIds.count(diffSet.clientID) > 0) continue;
+            addedPolyIds.insert(diffSet.clientID);
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
             SMClipGeometryType geom;
@@ -3957,15 +3960,21 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 bvector<DPoint3d> currentLoop;
                 for (auto& pt : polys.back())
                     {
-                    currentLoop.push_back(pt);
                     if (pt.IsDisconnect())
                         {
                         nOfLoops++;
                         polyLoops.push_back(currentLoop);
                         currentLoop.clear();
                         }
+                    else currentLoop.push_back(pt);
                     }
 
+                if (!currentLoop.empty())
+                    {
+                    nOfLoops++;
+                    polyLoops.push_back(currentLoop);
+                    currentLoop.clear();
+                    }
 
                 polys.resize(polys.size() - 1);
                 clipIds.resize(clipIds.size() - 1);

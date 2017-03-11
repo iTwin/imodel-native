@@ -305,12 +305,46 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
          {
          if (!m_regions[i].hasRestrictedRegion)
              {
-             if (m_members[i]->AddClip(pts, ptsSize, clipID)) return true;
+             if (m_members[i]->AddClip(pts, ptsSize, clipID, geom, type, isActive)) return true;
              }
          }
 
      return false;
      }
+
+ bool                               ScalableMeshGroup::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+     {
+     auto clipPrim = ICurvePrimitive::CreateLineString(pts, ptsSize);
+     CurveVectorPtr clipVecPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, clipPrim);
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (m_regions[i].hasRestrictedRegion)
+             {
+             auto curvePtr = ICurvePrimitive::CreateLineString(m_regions[i].region);
+             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+             CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
+             if (!intersection.IsNull())
+                 {
+                 bvector<bvector<DPoint3d>> loops;
+                 if (intersection->CollectLinearGeometry(loops) && !loops.empty())
+                     if (m_members[i]->ModifyClip(loops.front().data(), loops.front().size(), clipID, geom, type, isActive)) return true;
+                 }
+             }
+         }
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (!m_regions[i].hasRestrictedRegion)
+             {
+             if (m_members[i]->ModifyClip(pts, ptsSize, clipID, geom, type, isActive)) return true;
+             }
+         }
+
+     return false;
+     }
+
 
 bool                               ScalableMeshGroup::_RemoveClip(uint64_t clipID)
     {
