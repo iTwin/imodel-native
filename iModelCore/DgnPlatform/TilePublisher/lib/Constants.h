@@ -294,12 +294,10 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
         if (0.0 != a_delta.y)
             {
             vec4    projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
-            vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_prev, 1.0));
-            vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_next, 1.0));
-            vec2    prevDelta  = projPos.xy - projPrev.xy;
-            vec2    nextDelta  = projNext.xy - projPos.xy;
-            vec2    prevDir    = normalize(prevDelta);
-            vec2    nextDir    = normalize(nextDelta);
+            vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_prev), 1.0));
+            vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_next), 1.0));
+            vec2    prevDir    = normalize(projPos.xy - projPrev.xy);
+            vec2    nextDir    = normalize(projNext.xy - projPos.xy);
             vec2    thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
             vec2    perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
             float   dist       = u_width / 2.0;
@@ -316,9 +314,8 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                     if (dotP < 0.0)
                         {
                         float   miter  = dist / dotP;
-                        float   prevLimit  = -length(prevDelta) / dot(prevDir, bisector), nextLimit = length(nextDelta) / dot(nextDir, bisector);
             
-                        delta = bisector * max(miter, max(prevLimit, nextLimit));
+                        delta = bisector * max(miter, - 5.0 * dist);
                         }
                     else
                         {
@@ -342,10 +339,10 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
 
 
 // Polyline shaders.
-static std::string s_tesselatedTexturedPolylineVertexCommon = R"RAW_STRING(
+static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3 a_pos;
-    attribute vec3 a_prev;
-    attribute vec3 a_next;
+    attribute vec2 a_prev;
+    attribute vec2 a_next;
     attribute vec3 a_delta;
     attribute vec3 a_scale; 
     uniform mat4   u_mv;
@@ -386,10 +383,10 @@ R"RAW_STRING(
 )RAW_STRING";
 
 // Polyline shaders.
-static std::string s_tesselatedSolidPolylineVertexCommon = R"RAW_STRING(
+static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3 a_pos;
-    attribute vec3 a_prev;
-    attribute vec3 a_next;
+    attribute vec2 a_prev;
+    attribute vec2 a_next;
     attribute vec3 a_delta;
     uniform mat4   u_mv;
     uniform mat4   u_proj;
