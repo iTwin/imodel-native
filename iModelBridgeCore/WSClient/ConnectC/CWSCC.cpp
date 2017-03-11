@@ -23,7 +23,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     BeFileName temporaryDirectory(wTemporaryDirectory);
@@ -63,7 +64,8 @@ IHTTPHANDLERPTR customHandler
         &proxyUrl,
         &proxyUsername,
         &proxyPassword,
-        customHandlerPtr
+        customHandlerPtr,
+        securityStoreInitializer
         );
     }
 
@@ -100,7 +102,8 @@ IHTTPHANDLERPTR customHandler
         wproxyUrl,
         wproxyUsername,
         wproxyPassword,
-        customHandler
+        customHandler,
+        nullptr
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
@@ -131,7 +134,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     Utf8String username;
@@ -151,7 +155,8 @@ IHTTPHANDLERPTR customHandler
         wproxyUrl,
         wproxyUsername,
         wproxyPassword,
-        customHandler
+        customHandler,
+        securityStoreInitializer
         );
 
     if (api->AttemptLoginUsingCredentials(Credentials(username, password)))
@@ -373,7 +378,8 @@ Utf8String applicationProductId,
 Utf8StringP proxyUrl,
 Utf8StringP proxyUsername,
 Utf8StringP proxyPassword,
-IHttpHandlerPtr customHandler
+IHttpHandlerPtr customHandler,
+void*   secureStoreInitializer
 )
 : m_pathProvider(temporaryDirectory, assetsRootDirectory)
     {
@@ -392,7 +398,8 @@ IHttpHandlerPtr customHandler
         applicationName,
         applicationVersion,
         applicationGUID,
-        applicationProductId
+        applicationProductId,
+        secureStoreInitializer
         );
     }
 
@@ -406,7 +413,8 @@ BeFileName assetsRootDirectory,
 Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
-Utf8String applicationProductId
+Utf8String applicationProductId,
+void* securityStoreInitializer
 )
     {
     m_lastStatusMessage = Utf8String("");
@@ -431,6 +439,10 @@ Utf8String applicationProductId
 #else
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &s_localState, bclient);
 #endif
+
+    if (securityStoreInitializer != nullptr)
+        SecureStore::Initialize(securityStoreInitializer);
+
     m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
     m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, &s_localState);
     }
