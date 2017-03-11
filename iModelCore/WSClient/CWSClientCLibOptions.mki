@@ -26,14 +26,3 @@ AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
 # Ignore unknown pragmas
 LLVMCommonCompOpts + -Wno-unknown-pragmas
 
-# Choose options for release build or debug build
-%if defined (DEBUG)
-	LLVMCommonCompOpts + -DDEBUG=1 -g
-	#LLVMDebugOpts + -DDEBUG=1 -g
-%endif
-
-%message ----------------------------
-%message  CWSClientCLibOptions.mki  called
-%message ----------------------------
-
-
