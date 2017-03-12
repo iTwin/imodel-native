@@ -11,6 +11,7 @@
 #include "MapStrategy.h"
 #include "DbSchema.h"
 #include "IssueReporter.h"
+#include <set>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
