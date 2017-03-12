@@ -36,6 +36,7 @@ public:
     SchemaLocalizedStrings() { m_empty = true; }
     //! Constructs a map of localized strings from the input localization supplemental schema
     //! @param[in]  localizationSupplemental  The supplemental schema containing the localized strings.
+    //! @param[in]  primarySchema       The priamry schema to which the localized strings will be applied
     ECOBJECTS_EXPORT SchemaLocalizedStrings(ECSchemaCP localizationSupplemental, ECSchemaR primarySchema);
 
     ECOBJECTS_EXPORT Utf8StringCR GetSchemaDisplayLabel(ECSchemaCP ecSchema, Utf8StringCR invariantDisplayLabel) const;

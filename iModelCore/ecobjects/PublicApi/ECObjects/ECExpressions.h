@@ -1041,7 +1041,7 @@ public:
     ECOBJECTS_EXPORT bool   Remap (ECSchemaCR oldSchema, ECSchemaCR newSchema, IECSchemaRemapperCR remapper);
 #endif
     //! Tries to generate a resolved tree.
-    //! @Returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
+    //! @returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
     //! @remarks A resolved tree can be executed much more efficiently that a tree that has not been resolved.
     ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
 

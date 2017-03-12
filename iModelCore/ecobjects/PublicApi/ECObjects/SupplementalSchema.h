@@ -345,7 +345,7 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
-    //! the primary schema.
+    //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true);
 
@@ -357,6 +357,8 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @param[in]  locale  The localization supplemental with this locale will be applied if found.
+    //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
+    //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute = true);
     }; // SupplementalSchemaBuilder

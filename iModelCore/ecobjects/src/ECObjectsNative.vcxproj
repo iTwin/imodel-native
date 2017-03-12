@@ -124,7 +124,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\ECEvent.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
@@ -135,6 +134,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />

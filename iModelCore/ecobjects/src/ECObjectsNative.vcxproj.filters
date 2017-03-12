@@ -329,9 +329,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\ECEvent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -442,6 +439,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\EcPresentationRules\UserSettingsGroup.h">
       <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
