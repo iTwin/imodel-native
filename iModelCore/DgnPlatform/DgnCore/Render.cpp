@@ -607,8 +607,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
         }
 
     // If we got here, we know that we have been able draw all elements in the scene in the time allotted at least most of the time.
-    
-    if (0 == (m_drawCount % (int)frameRateGoal))
+    if (0 == (m_drawCount % (int) frameRateGoal))
         {
         // If we have been succeeding for 1 second or more, then maybe we should increase the frame rate.
         // That would have the benefit of making everything smoother. However, that would also have the effect of making the update planner reduce
@@ -631,13 +630,15 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform   Render::Material::Trans2x3::GetTransform() const
+Transform Render::Material::Trans2x3::GetTransform() const
     {
-    Transform   transform = Transform::FromIdentity ();
+    Transform transform = Transform::FromIdentity();
 
-    for (size_t i=0; i<2; i++)
-        for (size_t j=0; j<3; j++)
+    for (size_t i=0; i<2; ++i)
+        {
+        for (size_t j=0; j<3; ++j)
             transform.form3d[i][j] = m_val[i][j];
+        }
 
     return transform;
     }
