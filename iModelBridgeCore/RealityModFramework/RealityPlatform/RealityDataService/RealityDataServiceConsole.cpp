@@ -131,7 +131,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
             {
             if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) == BentleyStatus::SUCCESS)
                 {
-                if(choice > options.size())
+                if(choice >= options.size())
                     {
                     DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 0 and %lu \n", (options.size() - 1)), DisplayOption::Error);
                     m_lastCommand = Command::Retry;
@@ -520,6 +520,10 @@ void RealityDataConsole::Upload()
     {
     DisplayInfo("please enter the source folder on the local machine (must be existing folder)\n  ?", DisplayOption::Question);
     
+    InterpretCommand();
+    if (m_lastCommand == Command::Cancel)
+        return;
+
     BeFileName fileName = BeFileName(m_lastInput);
     if (!fileName.DoesPathExist())
         {

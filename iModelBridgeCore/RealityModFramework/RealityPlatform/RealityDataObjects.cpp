@@ -319,7 +319,7 @@ double RealityDataBase::GetAccuracyValue() const
         {
         bvector<Utf8String> tokens;
         BeStringUtilities::Split(m_accuracy.c_str(), "x", tokens);
-        BeAssert(2 == tokens.size());
+//DMxx        BeAssert(2 == tokens.size());
         if (2 == tokens.size()) 
             {
             // Convert to double.
