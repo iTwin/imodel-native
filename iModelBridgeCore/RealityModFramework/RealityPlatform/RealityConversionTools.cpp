@@ -110,6 +110,39 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8Stri
 
 
 /*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+/*StatusInt RealityConversionTools::JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData)
+{
+    // Make sure data exists.
+    if (Utf8String::IsNullOrEmpty(data))
+        return ERROR;
+
+    // Parse.
+    Json::Value root(Json::objectValue);
+    if (!Json::Reader::Parse(data, root))
+        return ERROR;
+
+    // Instances must be a root node.
+    if (!root.isMember("instances"))
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+    {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        SpatialEntityPtr entity = JsonToSpatialEntity(properties);
+
+        outData->push_back(entity);
+    }
+    return SUCCESS;
+}*/
+
+/*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<RealityDataPtr>* outData)
@@ -428,6 +461,68 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     return data;
     }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+/*SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource(Json::Value properties)
+    {
+        // Required information to get.
+        DateTime date;
+
+        Utf8String footprintStr;
+
+        SpatialEntityDataSourcePtr data = SpatialEntityDataSource::Create();
+
+        // Id
+        if (properties.isMember("Id") && !properties["Id"].isNull())
+            data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+
+        // Name
+        if (properties.isMember("MainURL") && !properties["MainURL"].isNull())
+            data->SetName(Utf8CP(properties["MainURL"].asString().c_str()));
+
+        // Dataset
+        if (properties.isMember("ParametrizedURL") && !properties["ParametrizedURL"].isNull())
+            data->SetDataset(Utf8CP(properties["ParametrizedURL"].asString().c_str()));
+
+        // Description
+        if (properties.isMember("CompoundType") && !properties["CompoundType"].isNull())
+            data->SetDescription(Utf8CP(properties["CompoundType"].asString().c_str()));
+
+        // DataType
+        if (properties.isMember("LocationInCompound") && !properties["LocationInCompound"].isNull())
+            data->SetDataType(Utf8CP(properties["LocationInCompound"].asString().c_str()));
+
+        // Classification
+        if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
+            data->SetClassificationByTag(Utf8CP(properties["DataSourceType"].asString().c_str()));
+
+        // Thumbnail URL
+        if (properties.isMember("SisterFiles") && !properties["SisterFiles"].isNull())
+            data->SetThumbnailURL(Utf8CP(properties["SisterFiles"].asString().c_str()));
+
+        // MetadataURL
+        if (properties.isMember("NoDataValue") && !properties["NoDataValue"].isNull())
+            data->SetThumbnailURL(Utf8CP(properties["SisterFiles"].asString().c_str()));
+
+        if (properties.isMember("FileSize") && !properties["FileSize"].isNull())
+            data->SetAccuracy(Utf8CP(properties["FileSize"].asString().c_str()));
+
+        // Provider
+        if (properties.isMember("CoordinateSystem") && !properties["CoordinateSystem"].isNull())
+            data->SetProvider(Utf8CP(properties["CoordinateSystem"].asString().c_str()));
+
+        // Visibility
+        if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
+            data->SetVisibilityByTag(Utf8CP(properties["Streamed"].asString().c_str()));
+
+        //// Approximate file size
+        if (properties.isMember("Metadata") && !properties["Metadata"].isNull())
+            data->SetApproximateFileSize(std::stoi(properties["Metadata"].asString().c_str()));
+
+        return data;
+    }*/
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016

@@ -43,6 +43,8 @@ public:
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntity(Utf8CP data, bvector<SpatialEntityPtr>* outData);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntity(Utf8CP data, bmap<Utf8String, SpatialEntityPtr>* outData);
 
+    //REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData);
+
     //! The first version provides a simple list of extracted Reality Data while the second version
     //! fills a map for which the spatial entity name is the key.
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToRealityData(Utf8CP data, bvector<RealityDataPtr>* outData);
@@ -53,8 +55,10 @@ public:
 
     //! Utility function to extract a SpatialEntity from a SpatialEntityWithDetailsView JSON fragment.
     //! They take the JSON value as input and creates the SpatialEntity or Reality Data object.    
-    static SpatialEntityPtr JsonToSpatialEntity(Json::Value properties);    
-    static RealityDataPtr JsonToRealityData(Json::Value properties);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr JsonToSpatialEntity(Json::Value properties);
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr JsonToRealityData(Json::Value properties);
+
+    //REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr JsonToSpatialEntityDataSource(Json::Value properties);
 
     //! Utility methods that convert a file containing a GeoCoordinationService package, the package itself or a string containing the package
     //! and produces a download list according tot he package content including alternate data sources as mirror sites and so on.

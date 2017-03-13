@@ -364,6 +364,11 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create();
 
     //! Get/Set
+    //! The Id of the data source
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8CP id);
+
+    //! Get/Set
     //! The full Url to the data source
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUrl() const;
     REALITYDATAPLATFORM_EXPORT void SetUrl(Utf8CP url);
@@ -417,6 +422,11 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocationInCompound() const;
     REALITYDATAPLATFORM_EXPORT void SetLocationInCompound(Utf8CP location);
 
+    //! Get/Set
+    //! The Coordinate System
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCoordinateSystem() const;
+    REALITYDATAPLATFORM_EXPORT void SetCoordinateSystem(Utf8CP coordSys);
+
     //! The following fields concern data sources that are multiband in nature. Instead of
     //! deriving a class we opted to add the fields in the main data source.
     //! By default a data source is not multiband.
@@ -463,6 +473,7 @@ public:
 protected:
     SpatialEntityDataSource();
 
+    Utf8String m_id;
     Utf8String m_url;
     Utf8String m_geoCS;
     Utf8String m_compoundType;
@@ -471,6 +482,7 @@ protected:
     Utf8String m_locationInCompound;
     SpatialEntityServerPtr m_pServer;
     Utf8String m_noDataValue;
+    Utf8String m_coordinateSystem;
 
 
     bool m_isMultiband = false;

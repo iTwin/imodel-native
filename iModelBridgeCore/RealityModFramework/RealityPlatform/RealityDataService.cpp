@@ -1718,11 +1718,25 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     RequestStatus status;
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
     BeFileName downloadLocation;
+    WString path;
+    size_t parts;
 
     for( int i = 0; i < filesInRepo.size(); ++i)
         {
+        path = filesInRepo[i].first;
+        parts = path.ReplaceAll(L"/", L"/"); // only way I've found to count occurences in a string, replace if better exists
+        if(parts > 0) //if file is in a directory
+            {
+            downloadLocation = targetLocation;
+            downloadLocation.AppendToPath(path.c_str());
+            downloadLocation.PopDir();
+
+            if (!downloadLocation.DoesPathExist())
+                BeFileName::CreateNewDirectory(downloadLocation.c_str());
+            }
+
         downloadLocation = targetLocation;
-        downloadLocation.AppendToPath(filesInRepo[i].first.c_str());
+        downloadLocation.AppendToPath(path.c_str());
 
         m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i, filesInRepo[i].second));
         }

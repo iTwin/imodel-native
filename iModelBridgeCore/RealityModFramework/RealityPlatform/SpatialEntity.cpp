@@ -31,6 +31,9 @@ SpatialEntityDataSourcePtr SpatialEntityDataSource::Create()
 // @bsimethod                                   Alain.Robert                   4/2016
 //-------------------------------------------------------------------------------------
 
+Utf8StringCR SpatialEntityDataSource::GetId() const { return m_id; }
+void SpatialEntityDataSource::SetId(Utf8CP id) { m_id = id; }
+
 Utf8StringCR SpatialEntityDataSource::GetUrl() const { return m_url; }
 void SpatialEntityDataSource::SetUrl(Utf8CP url) { m_url = url; }
 
@@ -54,6 +57,9 @@ void SpatialEntityDataSource::SetLocationInCompound(Utf8CP location) { m_locatio
 
 SpatialEntityServerCP SpatialEntityDataSource::GetServerCP() const { return m_pServer.get(); }
 void SpatialEntityDataSource::SetServer(SpatialEntityServerP server) { m_pServer = server; }
+
+Utf8StringCR SpatialEntityDataSource::GetCoordinateSystem() const { return m_coordinateSystem; }
+void SpatialEntityDataSource::SetCoordinateSystem(Utf8CP coordSys) { m_coordinateSystem = coordSys; }
 
 bool SpatialEntityDataSource::GetIsMultiband() const { return m_isMultiband; }
 void SpatialEntityDataSource::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }

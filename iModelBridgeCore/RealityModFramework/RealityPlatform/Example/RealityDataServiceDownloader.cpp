@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, sourceOnServer);
     download.SetProgressCallBack(progressFunc);
-    download.SetProgressStep(0.05);
+    download.SetProgressStep(0.5);
     download.OnlyReportErrors(true);
     TransferReport* tReport = download.Perform();
     Utf8String report;
@@ -67,5 +67,6 @@ int main(int argc, char *argv[])
     std::cout << "if any files failed to download, they will be listed here: " << std::endl;
     std::cout << report << std::endl;
     
+    getch();
     return 0;
     }
