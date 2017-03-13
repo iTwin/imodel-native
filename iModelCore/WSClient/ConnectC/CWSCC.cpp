@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
-
+#include "DgnClientFx/Device.h"
 
 /*---------------------------------------------------------------------------------**//**
 * Initializer.
@@ -442,6 +442,20 @@ void* securityStoreInitializer
 
     if (securityStoreInitializer != nullptr)
         SecureStore::Initialize(securityStoreInitializer);
+
+#if defined (__ANDROID__)
+    // Ideally, DgnClientFx::Device::GetDeviceId() would return a proper id (MEID, most likely) for android.
+    // However, it doesn't right now and most people are setting it using this
+    // "CacheAndroidDeviceId()" everywhere (not sure why we can't just set the string (deviceId = "TEST_DEVICE_ID"),
+    //  we will follow suit here. We need to supply something on connect calls.
+    // NOTE: there looks like there is code on the interwebs to retrieve the IMEI\MEID from an android phone.
+    // That should replace this dummy value at some point.
+    if (DgnClientFx::Device::GetDeviceId().empty())
+    {
+        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+    }
+#endif
+
 
     m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
     m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, &s_localState);
