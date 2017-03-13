@@ -1312,7 +1312,8 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     if (m_loadContext.WasAborted())
         return;
 
-    DisplayParamsCR displayParams = *strokes.m_displayParams;
+    // NB: The polyface is shared amongst many instances, each of which may have its own display params. Use the params from the instance.
+    DisplayParamsCR displayParams = geom.GetDisplayParams();
     MeshMergeKey key(displayParams, false, false);
     MeshBuilderR builder = GetMeshBuilder(key);
 
