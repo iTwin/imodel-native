@@ -48,7 +48,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
 
-enum class RequestStatus
+enum RequestStatus
 {
     SUCCESS = 0,
     ERROR = 1,
@@ -704,12 +704,6 @@ private:
     void DownloadFromNavNode(BeFileName targetLocation, Utf8String id);
     };
 
-enum RequestStatus
-    {
-    SUCCESS = 0,
-    ERROR = 1,
-    NOMOREPAGES = 2
-    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
