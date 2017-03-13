@@ -371,6 +371,13 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
     if (ca == nullptr)
         return SUCCESS;
 
+    if (m_ecClass.IsEntityClass() && m_ecClass.GetEntityClassCP()->IsMixin())
+        {
+        Issues().Report("Failed to map Mixin ECClass %s. Mixins may not have the ClassHasCurrentTimeStampProperty custom attribute.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
     ECValue v;
     if (ca->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
         {
@@ -1027,8 +1034,7 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
             Utf8CP whereClause = index.GetWhereClause();
             if (!Utf8String::IsNullOrEmpty(whereClause))
                 {
-                if (BeStringUtilities::StricmpAscii(whereClause, "IndexedColumnsAreNotNull") == 0 ||
-                    BeStringUtilities::StricmpAscii(whereClause, "ECDB_NOTNULL") == 0) //legacy support
+                if (BeStringUtilities::StricmpAscii(whereClause, "IndexedColumnsAreNotNull") == 0)
                     addPropsAreNotNullWhereExp = true;
                 else
                     {

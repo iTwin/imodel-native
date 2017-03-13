@@ -351,6 +351,19 @@ ECSchemaPtr ECDbTestFixture::ReadECSchemaFromDisk(ECSchemaReadContextPtr& contex
     }
 
 //---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbResult ECDbTestFixture::ExecuteNonSelectECSql(ECDbCR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+        return BE_SQLITE_ERROR;
+
+    return stmt.Step();
+    }
+
+//---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static

@@ -10539,18 +10539,6 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
             }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
-void AssertAndExecuteECSql(ECDbCR ecdb, Utf8CP ecsql, ECSqlStatus prepareStatus = ECSqlStatus::Success, DbResult stepStatus = BE_SQLITE_DONE)
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(stmt.Prepare(ecdb, ecsql), prepareStatus) << "Prepare failed for: " << ecsql;
-    if (stmt.IsPrepared())
-        {
-        ASSERT_EQ(stmt.Step(), stepStatus) << "Step failed for: " << ecsql;
-        }
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
@@ -10589,31 +10577,31 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationshi
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select statements
     {
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %s", item->GetId().ToString().c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -10638,48 +10626,48 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationshi
 
     //Insert Statements
     {
-    Utf8String ecsql;
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
+    Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     //relationship between UNIT and ITEM_3D(new derived Class)
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 202, %llu, 301, %llu)", unit->GetId().GetValue(), item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select statements
     {
-    Utf8String ecsql;
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
+    Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND TargetECClassId = %llu", item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     }
 
@@ -10720,31 +10708,31 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select Statements
     {
     Utf8String ecsql;
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -10771,46 +10759,46 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
     {
     Utf8String ecsql;
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     //relationship between UNIT_3D(new derived Class) and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(102, 'itemString2')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(102, 'itemString2')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 301, %llu, 102, %llu)", unit_3D->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select Statements
     {
-    Utf8String ecsql;
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
+    Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%s", unit_3D->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     }
 
@@ -10852,26 +10840,26 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(401, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select statements
     {
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //update Statement
     {
-    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401"));
     }
 
     //Delete Statements
@@ -10879,10 +10867,10 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(),
                   item->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //verify Deltion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -10913,55 +10901,55 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(501, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     //relationship between UNIT_3D and ITEM_3D newly added derived classes
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')");
-    AssertAndExecuteECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(502, 401, %llu, 301, %llu, 'relPropString2')", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //Select statements
     {
-    AssertAndExecuteECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM", ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str(), ECSqlStatus::Success, DbResult::BE_SQLITE_ROW);
+    ASSERT_EQ(BE_SQLITE_ROW, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
 
     //update Statement
     {
-    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501"));
 
     //update relationship between newly added derived classes
-    AssertAndExecuteECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502");
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502"));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
 
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit_3D->GetId().ToString().c_str(), item_3D->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    AssertAndExecuteECSql(ecdb, ecsql.c_str());
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(ecdb, ecsql.c_str()));
     }
     }
 
@@ -11027,7 +11015,7 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
     {
-    SetupECDb("classhascurrenttimestampCAonmixin.ecdb", SchemaItem(
+    AssertSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
@@ -11048,57 +11036,9 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
             <BaseClass>IHasLastMod</BaseClass>
             <ECProperty propertyName="Code" typeName="int" />
         </ECEntityClass>
-        </ECSchema>)xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-
-    ECInstanceKey key;
-    {
-    ECSqlStatement insertStatement;
-    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(GetECDb(), "INSERT INTO ts.Foo(Code) VALUES(12)"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+        </ECSchema>)xml", false, "ClassHasCurrentTimeStampProperty may not be assigned to Mixin"), "classhascurrenttimestampCAonmixin.ecdb");
     }
 
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT LastMod FROM ts.Foo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
-
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_FALSE(statement.IsValueNull(0));
-    DateTime lastMod1 = statement.GetValueDateTime(0);
-    statement.Reset();
-    statement.ClearBindings();
-
-    {
-    BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
-    ECSqlStatement updateStatement;
-    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
-    }
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
-    ASSERT_FALSE(statement.IsValueNull(0));
-    DateTime lastMod2 = statement.GetValueDateTime(0);
-
-    int64_t lastMod1Msec, lastMod2Msec;
-    ASSERT_EQ(SUCCESS, lastMod1.ToUnixMilliseconds(lastMod1Msec));
-    ASSERT_EQ(SUCCESS, lastMod2.ToUnixMilliseconds(lastMod2Msec));
-    ASSERT_TRUE(lastMod2Msec - lastMod1Msec > INT64_C(100)) << "LastMod should have been updated after the last UPDATE statement";
-    }
-
-struct ECSqlHelper
-    {
-    public:
-        static DbResult ExecuteNoQuery(ECDbCR db, Utf8CP ecsql)
-            {
-            ECSqlStatement stmt;
-            if (stmt.Prepare(db, ecsql) != ECSqlStatus::Success)
-                return BE_SQLITE_ERROR;
-
-            return stmt.Step();
-            }
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
@@ -11160,17 +11100,17 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
     ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
     ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
 
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), Utf8PrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     GetECDb().SaveChanges();
     }
 

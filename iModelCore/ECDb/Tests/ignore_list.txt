@@ -25,6 +25,3 @@ ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
-
-#TFS 672224
-ECDbMappingTestFixture.ClassHasCurrentTimeStampCAOnMixin
