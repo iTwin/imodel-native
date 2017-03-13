@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/DataCaptureDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DataCaptureSchemaInternal.h>
@@ -93,3 +93,48 @@ Utf8String DataCaptureDomain::BuildDefaultName(Utf8CP prefix, BeBriefcaseBasedId
     return defaultName;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus DataCaptureDomain::UpdateSchema(SchemaUpdateDataCaptureDgnDbParams& params) const
+    {
+    auto dcDomainCP = params.m_dgnDb->Domains().FindDomain(BDCP_SCHEMA_NAME);
+
+    if (dcDomainCP)
+        {         
+        // Ignoring VersionDigit2 as it is not completely hooked-up in DgnDb06 by lower layers
+        Statement stmt;
+        if (DbResult::BE_SQLITE_OK != stmt.Prepare(*params.m_dgnDb, "SELECT VersionDigit1, VersionDigit3 FROM ec_Schema WHERE Name = ?;"))
+            return DgnDbStatus::ReadError;
+
+        if (DbResult::BE_SQLITE_OK != stmt.BindText(1, BDCP_SCHEMA_NAME, Statement::MakeCopy::No) ||
+            DbResult::BE_SQLITE_ROW != stmt.Step())
+            return DgnDbStatus::ReadError;
+
+        int digit1 = stmt.GetValueInt(0);
+        int digit3 = stmt.GetValueInt(1);
+
+        if (digit1 != GetExpectedSchemaVersionDigit1() || (uint32_t)digit3 > GetExpectedSchemaVersionDigit3())
+            return DgnDbStatus::InvalidSchemaVersion;
+
+        if (digit3 == GetExpectedSchemaVersionDigit3())
+            return DgnDbStatus::Success;
+
+        // Finalizing statement early in order to avoid db-locking while updating schema
+        stmt.Finalize();
+        }
+
+    BeFileName schemaFileName = params.m_assetsRootDir;
+    schemaFileName.AppendToPath(BDCP_SCHEMA_LOCATION);
+    schemaFileName.AppendToPath(BDCP_SCHEMA_FILE);
+
+    DgnDbStatus retVal;
+    if (DgnDbStatus::Success != (retVal = DataCaptureDomain::GetDomain().ImportSchema(*params.m_dgnDb, schemaFileName)))
+        return retVal;
+
+    Utf8String schemaUpdateDescr("SAVECHANGES_SchemaUpdate");
+    if (DbResult::BE_SQLITE_OK != params.m_dgnDb->SaveChanges(schemaUpdateDescr.c_str()))
+        retVal = DgnDbStatus::WriteError;
+
+    return retVal;
+    }
