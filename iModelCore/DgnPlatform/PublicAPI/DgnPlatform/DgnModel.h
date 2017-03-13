@@ -171,8 +171,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList = true) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList=true, bool isTemplate=false) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList), m_isTemplate(isTemplate)
             {
             }
 

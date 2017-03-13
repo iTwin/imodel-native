@@ -449,9 +449,17 @@ DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Subject::CreateCode(SubjectCR parentSubject, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_Subject, parentSubject, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnModelId modelId = DgnModel::RepositoryModelId();
@@ -459,10 +467,10 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnElementId parentId = parentSubject.GetElementId();
     DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
-    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !label || !*label)
+    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !name || !*name)
         return nullptr;
 
-    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
+    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, CreateCode(parentSubject, name), nullptr, parentId, parentRelClassId));
     if (description && *description)
         subject->SetDescription(description);
 
@@ -472,9 +480,9 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    SubjectPtr subject = Create(parentSubject, label, description);
+    SubjectPtr subject = Create(parentSubject, name, description);
     return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
     }
 
