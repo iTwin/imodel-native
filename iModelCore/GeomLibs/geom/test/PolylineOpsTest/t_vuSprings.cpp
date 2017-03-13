@@ -415,6 +415,125 @@ void SaveWalls ()
 };
 
 
+
+static bvector<bvector <DPoint3d>> s_testFloorPlanParityLoops
+    {
+    bvector<DPoint3d>
+        {
+        DPoint3d::From (0,0),
+        DPoint3d::From (10,0),
+        DPoint3d::From (10,10),
+        DPoint3d::From (20,10),
+        DPoint3d::From (20,30),
+        DPoint3d::From (0,30),
+        DPoint3d::From (0,0)
+        },
+    bvector<DPoint3d>
+        {
+        DPoint3d::From (5,5),
+        DPoint3d::From (8,5),
+        DPoint3d::From (8,11),
+        DPoint3d::From (5,11),
+        DPoint3d::From (5,5)
+        }
+    };
+
+bvector<bvector <DPoint3d>> s_testFloorPlanOpenChains
+    {
+    bvector<DPoint3d>
+        {
+        DPoint3d::From (2,15),
+        DPoint3d::From (11,15),
+        DPoint3d::From (15,12)
+        }
+    };
+
+bool TryLoadTestFloorPlan (GriddedSpaceManager &manager, double meshSize)
+    {
+    //bvector<DPoint3d> isolatedPoints;
+    //bvector<double> uBreaks;
+    //bvector<double> vBreaks;
+    return manager.TryLoad (s_testFloorPlanParityLoops, s_testFloorPlanOpenChains);
+    }
+
+void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
+    {
+    GriddedSpaceManager manager;
+    GriddedSpaceQueries queries (manager);
+    GriddedSpace_FloodFromSingleNode flooder (manager);
+    double ax = 35.0;
+    double ay = 35.0;
+    SaveAndRestoreCheckTransform shifter (0, ay, 0);
+
+    manager.SetMeshParams (meshSize, isoGrid, smoothGrid);
+    if (TryLoadTestFloorPlan (manager, 1.0))
+        {
+        // output the raw grid ...
+        TaggedPolygonVector polygons;
+        VuOps::CollectLoopsWithMaskSummary (manager.Graph (), polygons, VU_EXTERIOR_EDGE, true);
+        for (auto &loop : polygons)
+            {
+            if (!((int)loop.GetIndexA () & VU_EXTERIOR_EDGE))
+                Check::SaveTransformed (loop.GetPointsCR ());
+            }
+        Check::Shift (ax, 0,0);
+        bvector<int> spaceIds;
+        bvector<double> baseAreas;
+        // create spaces with minimal area ..
+        baseAreas.push_back (20.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (15,16,0), baseAreas.back ()));
+        baseAreas.push_back (15.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
+
+        // successively grow each space to larger and larger multiples of the original ....
+        queries.SaveWalls ();
+        double dz = 0.2;
+        Check::Shift (0,0,10.0 * dz);
+        queries.SaveSpaceBoundaries ();
+        Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
+
+        for (double spaceFactor : bvector<double>{1.0, 1.5, 2.0, 2.5, 3.0, 3.5})
+            {
+            for (size_t i = 0; i < baseAreas.size (); i++)
+                {
+                flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
+                }
+            queries.SaveSpaceBoundaries ();
+            Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
+            }
+        }
+    }
+/////CONCEPTSTATION_END_CUT
+TEST(GriddedSpaceManager,VaryMeshSizeWithSquareGrid)
+    {
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, false, false);
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSquareGrid");
+    }
+
+TEST(GriddedSpaceManager,VaryMeshSizeWithIsoGrid)
+    {
+    // Preshift to be friends with peers ...
+    Check::Shift (100,0,0);
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, true, false);
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithIsoGrid");
+    }
+
+TEST(GriddedSpaceManager,VaryMeshSizeWithSmoothGrid)
+    {
+    // Preshift to be friends with peers ...
+    Check::Shift (200,0,0);
+    for (double meshSize : bvector<double>{1,2,3,4})
+        TestGriddedSpaceManager (meshSize, true, true);
+    Check::ClearGeometry ("GriddedSpaceManager.VaryMeshSizeWithSmoothGrid");
+    }
+
+
+
+
+//---------------------------------------------------------------------------------------------------------------------------------
+
 ValidatedDVec3d SinglePointAreaShift
 (
 DPoint3dCR xyz,
