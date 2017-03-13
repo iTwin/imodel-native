@@ -452,3 +452,51 @@ TEST(PolyfaceVisitor,StrokeSearch_PartiallyVisible)
 
 
     }
+
+TEST(PolyfaceVisitor,SmallFacetA)
+    {
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (783708.52280560206, 191504.78227908278, 334.12211475864831),
+        DPoint3d::From (783711.09831022169, 191506.52366021139, 334.18416969387607),
+        DPoint3d::From (783708.52758241841, 191504.77489877801, 334.12151951666914)
+        };
+
+    auto ray = DRay3d::FromOriginAndVector (
+                        DPoint3d::From (783752.23315180629, 191449.51577484963, 331.68015499682446),
+                        DVec3d::From (0.00000000000000000, 0.00000000000000000, 6.4370673650085450)
+                        );
+    auto polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
+    polyface->AddPolygon (points);
+    auto visitor = PolyfaceVisitor::Attach (*polyface);
+    Check::SaveTransformed (*polyface);
+    bvector<DSegment3d> segments;
+    double a = 1000.0;
+    segments.push_back (DSegment3d::From (ray.origin, ray.origin + 10.0 * a * ray.direction));
+    DVec3d xVec, yVec, zVec;
+    ray.direction.GetNormalizedTriad (xVec, yVec, zVec);
+    DPoint3d facetPoint;
+    double rayFraction;
+    for (visitor->Reset ();
+        visitor->AdvanceToFacetBySearchRay (ray, 0.01, facetPoint, rayFraction);
+        )
+        {
+        segments.push_back (DSegment3d::From (facetPoint, ray.FractionParameterToPoint (rayFraction)));
+        }
+
+    Check::SaveTransformed (segments);
+    Check::ShiftToLowerRight (10.0);
+
+    Check::SaveTransformed (*polyface);
+    segments.resize (1);    // go back to the segment
+    for (visitor->Reset ();
+        visitor->AdvanceToFacetBySearchRay (ray, 1000.0, facetPoint, rayFraction);
+        )
+        {
+        segments.push_back (DSegment3d::From (facetPoint, ray.FractionParameterToPoint (rayFraction)));
+        }
+    Check::SaveTransformed (segments);
+
+
+    Check::ClearGeometry ("PolyfaceVisitor.SmallFacetA");
+    }

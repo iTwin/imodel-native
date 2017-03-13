@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/polygon3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -75,13 +75,13 @@ double      tolDistSquared
     //int     firstTime = true;
     int     code = -1;
     double polygonLength = bsiGeom_polylineLength (pPointArray, nPoint);
-    double tol = roundoffRelTol * polygonLength;
-    double minTolSquared = tol * tol;
+    double edgeTol = roundoffRelTol * polygonLength;    // for closure test in the facet.
+    double minTolSquared = edgeTol * edgeTol;
     if (minTolSquared > tolDistSquared)
-        tolDistSquared = minTolSquared;
-    tol = sqrt (tolDistSquared);
+        tolDistSquared = minTolSquared; // for hit comparisons
 
-    while (nPoint > 1 && pPointArray[0].Distance (pPointArray[nPoint - 1]) <= tol)
+
+    while (nPoint > 1 && pPointArray[0].Distance (pPointArray[nPoint - 1]) <= edgeTol)
         nPoint--;
     if (nPoint == 0)
         return 0;
