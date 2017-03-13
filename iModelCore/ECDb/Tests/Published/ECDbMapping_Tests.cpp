@@ -8455,6 +8455,40 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, IsNullForIncompletePoints)
+    {
+    ECDbR ecdb = SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (P2D.X, Code) VALUES (21.5,'C1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT P2D, P3D FROM ts.Element WHERE Code='C1'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    IECSqlValue const& point2D = stmt.GetValue(0);
+    IECSqlValue const& point3D = stmt.GetValue(1);
+
+    //IsNull only returns true if all coordinates cols are NULL.
+    ASSERT_FALSE(point2D.IsNull());
+    ASSERT_TRUE(point3D.IsNull());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
