@@ -169,8 +169,8 @@ void RealityDataConsole::Run()
     while(m_lastCommand != Command::Quit)
         {
         if(m_currentNode != nullptr)
-            DisplayInfo (Utf8PrintfString("%s", m_currentNode->node.GetInstanceId()));
-            DisplayInfo ("> ");
+            DisplayInfo (Utf8PrintfString("%s", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+            DisplayInfo ("> ", DisplayOption::Tip);
         InterpretCommand();
         (this->*(m_functionMap[m_lastCommand]))();
         }
@@ -443,8 +443,8 @@ void RealityDataConsole::EnterpriseStat()
     RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
 
     DisplayInfo ("Enterprise statistics: \n");
-    DisplayInfo (Utf8PrintfString("   NbRealityData: %lu", NbRealityData));
-    DisplayInfo (Utf8PrintfString("   TotalSize(KB): %lu", TotalSizeKB));
+    DisplayInfo (Utf8PrintfString("   NbRealityData: %lu\n", NbRealityData));
+    DisplayInfo (Utf8PrintfString("   TotalSize(KB): %lu\n\n", TotalSizeKB));
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
