@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_rangeTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -346,4 +346,43 @@ void TestGridCutFill (DPoint3dDVec3dDVec3d frameA, DPoint3dDVec3dDVec3d frameB, 
     TestGridCutFill (frameA, frameB1, "Flat0*Slope1UP");
     TestGridCutFill (frameA, frameB2, "Flat0*Slope1DOWN");
 
+    }
+
+void CollectDrape (PolyfaceHeaderPtr  &mesh, double x0, double x1, double y, double z = 1.0)
+    {
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (x0,y, z), DPoint3d::From (x1,y, z)
+        };
+    DVec3d viewVector = DVec3d::From (0,0.1, -1); // view direction tips to make top view expose result.
+    auto cv = mesh->DrapeLinestring (points, viewVector);
+    points.push_back (points.back () + viewVector);
+    Check::SaveTransformed (points);
+    if (cv.IsValid ())
+        Check::SaveTransformed (*cv);
+    }
+TEST(Polyface,DrapeLinestring)
+    {
+    double b = 10.0;
+    double c = 300.0;
+    DPoint3dDVec3dDVec3d frameA (0,0,0,   b,0,0,   c,c,0);  // slant so the facet is much smaller than its range box
+    auto facet = UnitGridPolyface (frameA, 1, 1, false);
+    facet->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    Check::SaveTransformed (*facet);
+    Check::Shift (0,0,0.1);     // keep the lines strictly above the facet.
+    double y = 1.0;
+    bvector<double> allX {-5, -1, 0, 3, 6, 10, 12, 15};
+    double dy = 1.0;
+    double y0 = 100.0;  // facet right edge is x=y
+    for (auto x0 : allX)
+        {
+        y0 += 20.0;
+        y = y0;
+        for (double x1 : allX)
+            {
+            CollectDrape (facet, y + x0, y + x1, y);
+            y += dy;
+            }
+        }
+    Check::ClearGeometry ("Polyface.DrapeLinestring");
     }

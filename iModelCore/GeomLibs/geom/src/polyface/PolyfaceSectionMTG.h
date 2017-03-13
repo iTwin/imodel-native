@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceSectionMTG.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 // REMARK:  PolyfaceSection.h is included into PolyhfaceClip.h -- shared support classes.
@@ -98,7 +98,7 @@ bvector<DSegment3d> &segments           // output segments.
         cutPoints[i + 1].GetXYZ (fullSegment.point[1]);
         double g;
         DSegment3d clippedSegment = fullSegment;
-        if ((f0 < 1.0 || f1 > 0.0) && f1 > f0)
+        if (f0 < 1.0 && f1 > 0.0 && f1 > f0)
             {
             double df = f1 - f0;
             if (f0 < 0.0)
