@@ -50,6 +50,14 @@ enum class Command
 struct RealityDataConsole
     {
 public:
+    enum class DisplayOption
+    {
+        Info,
+        Question,
+        Tip,
+        Error
+    };
+
     RealityDataConsole();
 
     void Run();
@@ -68,6 +76,8 @@ public:
     void DummyFunction(){}
     void InputError();
 
+    void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
+
 private:    
     typedef void (RealityDataConsole::*FUNCTION)();
     bmap<Command, FUNCTION> m_functionMap;
@@ -79,6 +89,8 @@ private:
     bvector<Utf8String>  m_machineRepos;
     //Utf8String           m_currentNode;
     NodeList*            m_currentNode;
+
+    HANDLE        m_hConsole;
     };
 
 

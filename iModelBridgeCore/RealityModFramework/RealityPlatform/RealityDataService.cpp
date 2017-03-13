@@ -929,7 +929,7 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/");
     m_httpRequestString.append(RealityDataService::GetSchemaName());
     m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    //m_httpRequestString.append(m_id);
     m_requestHeader.push_back("Content-Type: application/json");
     }
 

@@ -169,8 +169,8 @@ namespace UsageDataExtractor
                 {
                 using ( StreamWriter fileToWrite = new System.IO.StreamWriter(baseResultName + ".txt") )
                     {
-                    //fileToWrite.WriteLine("PackageId, Date, Email, Country, Polygon");
-                    fileToWrite.WriteLine("PackageId, Email, Country, Polygon");
+                    fileToWrite.WriteLine("PackageId, Date, Email, Country, Polygon");
+                    //fileToWrite.WriteLine("PackageId, Email, Country, Polygon");
                     while ( (line = file.ReadLine()) != null )
                         {
 
@@ -183,11 +183,11 @@ namespace UsageDataExtractor
                                 }
                             var split = line.Split(' ');
                             string packageId = line.Split(' ').First();
-                            //string date;
+                            string date;
                             string poly;
                             try
                                 {
-                                poly = GetPolygon(packageId, serverURL, base64Token, baseResultName/*, out date*/);
+                                poly = GetPolygon(packageId, serverURL, base64Token, baseResultName, out date);
                                 }
                             catch (Exception)
                                 {
@@ -210,7 +210,7 @@ namespace UsageDataExtractor
                                 CountryCounter[country] = 1;
                                 }
 
-                            fileToWrite.WriteLine(line.Split(' ').First() + /*", " + date.Substring(0, 10) + */", " + email + ", " + country + ", " + poly);
+                            fileToWrite.WriteLine(line.Split(' ').First() + ", " + date.Substring(0, 10) + ", " + email + ", " + country + ", " + poly);
 
                             }
                         }
@@ -322,7 +322,7 @@ namespace UsageDataExtractor
             return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(tokenString));
             }
 
-        private static string GetPolygon (string packageId, string serverURL, string base64Token, string baseResultName/*, out string date*/)
+        private static string GetPolygon (string packageId, string serverURL, string base64Token, string baseResultName, out string date)
             {
 
             using ( HttpClient client = new HttpClient() )
@@ -350,7 +350,7 @@ namespace UsageDataExtractor
                             var document = XDocument.Parse(xrdpPackage);
                             XNamespace ns = "http://www.bentley.com/RealityDataServer/v1";
 
-                            //date = document.Root.Element(ns + "CreationDate").Value;
+                            date = document.Root.Element(ns + "CreationDate").Value;
 
                             return document.Root.Element(ns + "BoundingPolygon").Value;
                             //XmlDocument xmlDoc = new XmlDocument();
