@@ -403,7 +403,7 @@ void RealityDataConsole::ListAll()
             step = (size < (placeholder + 20)) ? size : placeholder + 20;
             for (; placeholder < step; ++placeholder)
                 {
-                DisplayInfo(Utf8String(WPrintfString(L"%s %lu \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
+                DisplayInfo(Utf8String(WPrintfString(L"%s %lu bytes \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
                 }
             }
         }

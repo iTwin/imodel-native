@@ -187,7 +187,7 @@ enum RequestType
     BodyNoToken = 2
     };
 
-enum class RequestStatus
+enum RequestStatus
     {
     SUCCESS = 0,
     ERROR = 1,
