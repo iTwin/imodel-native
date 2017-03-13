@@ -299,12 +299,12 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void PropertyNameExp::_DoToECSql(Utf8StringR ecsql) const
+void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (!m_classAlias.empty())
-        ecsql.append(m_classAlias).append(".");
+        ctx.AppendToECSql(m_classAlias).AppendToECSql(".");
 
-    ecsql.append(m_propertyPath.ToString(true, false));
+    ctx.AppendToECSql(m_propertyPath.ToString(true, false));
     }
 
 //-----------------------------------------------------------------------------------------

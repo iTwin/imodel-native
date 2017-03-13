@@ -36,44 +36,29 @@ FromExp const* JoinExp::FindFromExpression() const
 //+---------------+---------------+---------------+---------------+---------------+------
 JoinConditionExp::JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition) : JoinSpecExp(Type::JoinCondition)
     {
-    AddChild (move (searchCondition));
+    AddChild(move(searchCondition));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-//virtual
-Utf8String JoinConditionExp::_ToECSql() const
-    {
-    return "ON " + GetSearchCondition ()->ToECSql();
-    }
+BooleanExp const* JoinConditionExp::GetSearchCondition() const { return GetChild<BooleanExp>(0); }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void JoinConditionExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql("ON ").AppendToECSql(*GetSearchCondition());
+    }
 
 //*************************** NaturalJoinExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String NaturalJoinExp::_ToECSql() const 
+void NaturalJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    return GetFromClassRef().ToECSql() + " NATURAL " + ExpHelper::ToSql(m_appliedJoinType)+ " " + GetToClassRef().ToECSql();
-    }
-
-//*************************** QualifiedJoinExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-QualifiedJoinExp::QualifiedJoinExp (std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp ) 
-    : JoinExp(Type::QualifiedJoin, joinType, move (from), move (to))
-    {
-    m_nJoinSpecIndex = AddChild (std::move (joinSpecExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String QualifiedJoinExp::_ToECSql() const 
-    {
-    return GetFromClassRef().ToECSql() + " " + ExpHelper::ToSql(GetJoinType()) + " " + GetToClassRef().ToECSql() + " "+ GetJoinSpec ()->ToECSql();
+    ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" NATURAL ").AppendToECSql(ExpHelper::ToSql(m_appliedJoinType)).AppendToECSql(" ").AppendToECSql(GetToClassRef());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -86,6 +71,27 @@ Utf8String NaturalJoinExp::_ToString() const
     return str;
     }
 
+//*************************** QualifiedJoinExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan       08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+QualifiedJoinExp::QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, ECSqlJoinType joinType, std::unique_ptr<JoinSpecExp> joinSpecExp)
+    : JoinExp(Type::QualifiedJoin, joinType, move(from), move(to))
+    {
+    m_nJoinSpecIndex = AddChild(std::move(joinSpecExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan       08/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+void QualifiedJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(GetJoinType())).AppendToECSql(" ");
+    ctx.AppendToECSql(GetToClassRef()).AppendToECSql(" ").AppendToECSql(*GetJoinSpec());
+    }
+
+
+
 //*************************** RelationshipJoinExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
@@ -94,7 +100,7 @@ Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseConte
     {
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
         {
-        if (ResolveRelationshipEnds (ctx) != SUCCESS)
+        if (ResolveRelationshipEnds(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
 
         return FinalizeParseStatus::Completed;
@@ -105,7 +111,7 @@ Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseConte
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx)
+BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& ctx)
     {
     auto fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
@@ -114,7 +120,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ERROR);
 
-    auto relationshipClass = GetRelationshipClass().GetInfo().GetMap().GetClass().GetRelationshipClassCP();
+    auto relationshipClass = GetRelationshipClassNameExp().GetInfo().GetMap().GetClass().GetRelationshipClassCP();
     PRECONDITION(relationshipClass != nullptr, ERROR);
 
     ResolvedEndPoint fromEP, toEP;
@@ -149,13 +155,13 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
 
         if (sourceContainsAnyClass)
             {
-            toEP.SetLocation (ClassLocation::ExistInSource, true);
-            toEP.SetAnyClass (true);
+            toEP.SetLocation(ClassLocation::ExistInSource, true);
+            toEP.SetAnyClass(true);
             }
         else if (targetContainsAnyClass)
             {
-            toEP.SetLocation (ClassLocation::ExistInTarget, true);
-            toEP.SetAnyClass (true);
+            toEP.SetLocation(ClassLocation::ExistInTarget, true);
+            toEP.SetAnyClass(true);
             }
         else
             {
@@ -164,19 +170,19 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
             }
         }
 
-    bmap<ECClassId,ClassNameExp const*> fromClassExistsInSourceList;
-    bmap<ECClassId,ClassNameExp const*> fromClassExistsInTargetList;
+    bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
+    bmap<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
 
-    for(RangeClassInfo const& classRef : fromClassRefs)
+    for (RangeClassInfo const& classRef : fromClassRefs)
         {
         if (classRef.GetExp().GetType() != Exp::Type::ClassName)
             continue;
-            
-        if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClass())
-            continue; 
+
+        if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClassNameExp())
+            continue;
 
         ClassNameExp const& fromClassNameExpression = classRef.GetExp().GetAs<ClassNameExp>();
-        ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass ().GetId ();
+        ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass().GetId();
 
         //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
         if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
@@ -190,7 +196,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
 
         if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
             {
-            auto itor = targetList.find(fromClassId);    
+            auto itor = targetList.find(fromClassId);
             if (itor != targetList.end())
                 fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
             else if (targetContainsAnyClass && fromClassExistsInTargetList.empty()) //only the first class found is use as target
@@ -211,7 +217,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
         ctx.Issues().Report("Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
-        
+
     if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
@@ -234,9 +240,9 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
         }
 
 
-    bool isSelf = (fromEP.GetLocation() == ClassLocation::ExistInBoth && toEP.GetLocation() == ClassLocation:: ExistInBoth);
+    bool isSelf = (fromEP.GetLocation() == ClassLocation::ExistInBoth && toEP.GetLocation() == ClassLocation::ExistInBoth);
     if (!isSelf)
-        {        
+        {
         //make other side unambiguous
         if (fromEP.GetLocation() != ClassLocation::ExistInBoth)
             {
@@ -284,22 +290,22 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String ECRelationshipJoinExp::_ToECSql() const 
+void ECRelationshipJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    auto tmp = GetFromClassRef().ToECSql() + " JOIN " + GetToClassRef().ToECSql() + " USING " + GetRelationshipClass ().ToECSql();
-    if (m_direction != JoinDirection::Implied)
-        tmp += Utf8String(" ") + ExpHelper::ToECSql(m_direction);
+    ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" JOIN ").AppendToECSql(GetToClassRef());
+    ctx.AppendToECSql(" USING ").AppendToECSql(GetRelationshipClassNameExp());
 
-    return tmp;
+    if (m_direction != JoinDirection::Implied)
+        ctx.AppendToECSql(" ").AppendToECSql(ExpHelper::ToECSql(m_direction));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String ECRelationshipJoinExp::_ToString() const 
+Utf8String ECRelationshipJoinExp::_ToString() const
     {
-    Utf8String str ("RelationshipJoin [Direction: ");
-    str.append (ExpHelper::ToECSql (m_direction)).append ("]");
+    Utf8String str("RelationshipJoin [Direction: ");
+    str.append(ExpHelper::ToECSql(m_direction)).append("]");
     return str;
     }
 

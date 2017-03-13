@@ -464,9 +464,25 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
+    
+    const int ecInstanceIdPropNameIx = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
+
     const size_t propNameCount = propNameListExp->GetChildrenCount();
-    std::map<DbTable const*, std::vector<std::tuple<PropertyNameExp const*, ValueExp const*, bool>>> expsByMappedTable;
-    std::map<Utf8StringCP, std::set<DbTable const*>, CompareIUtf8Ascii> namedParametersAcrossTables;
+
+    struct PropNameValueInfo
+        {
+    public:
+        PropertyNameExp const* m_propNameExp = nullptr;
+        ValueExp const* m_valueExp = nullptr;
+        std::vector<ParameterExp const*> m_containedParameterExps;
+
+        PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp) {}
+        };
+
+    std::map<DbTable const*, std::vector<PropNameValueInfo>> expsByMappedTable;
+    std::vector<ParameterExp const*> parameterExpListOrderedbyIndex;
+    bmap<int, bset<DbTable const*>> parameterIndexInTables;
+
     for (size_t i = 0; i < propNameCount; i++)
         {
         PropertyNameExp const* propNameExp = propNameListExp->GetPropertyNameExp(i);
@@ -487,40 +503,69 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
         ValueExp const* valueExp = valuesListExp->GetValueExp(i);
 
-        bool containsParameter = false;
+        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp);
+
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            containsParameter = true;
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-            if (paramExp.IsNamedParameter())
-                namedParametersAcrossTables[&paramExp.GetParameterName()].insert(table);
+            propNameValueInfo.m_containedParameterExps.push_back(&paramExp);
+            parameterIndexInTables[paramExp.GetParameterIndex()].insert(table);
             }
 
-
-        expsByMappedTable[table].push_back(std::make_tuple(propNameExp, valuesListExp->GetValueExp(i), containsParameter));
+        expsByMappedTable[table].push_back(propNameValueInfo);
         }
 
+    bool isPrimaryTable = true;
     for (DbTable const* table : classMap.GetTables())
         {
         auto it = expsByMappedTable.find(table);
         BeAssert(it != expsByMappedTable.end());
-        std::vector<std::tuple<PropertyNameExp const*, ValueExp const*, bool>> const& exps = it->second;
+        std::vector<PropNameValueInfo> const& propNameValueInfos = it->second;
 
         Utf8String propNameECSqlClause;
         Utf8String valuesECSqlClause;
-        for (std::tuple<PropertyNameExp const*, ValueExp const*, bool> const& expPair : exps)
+
+        bool isFirstToken = true;
+
+        if (!isPrimaryTable || ecInstanceIdPropNameIx <= 0)
             {
-            propNameECSqlClause.append(std::get<0>(expPair)->ToECSql()).append(",");
-            valuesECSqlClause.append(std::get<1>(expPair)->ToECSql()).append(",");
+            //if user didn't specify ECInstanceId in the ECSQL or if this is a secondary table ECSQL
+            //we have to add the ECInstanceId ourselves to the ECSQL
+            propNameECSqlClause.append(ECDBSYS_PROP_ECInstanceId);
+            valuesECSqlClause.append(":_ecdb_ecsqlparam_id");
+            isFirstToken = false;
             }
 
-        propNameECSqlClause.append(ECDBSYS_PROP_ECInstanceId);
-        valuesECSqlClause.append(":_ecdbsysparam_id");
+        for (PropNameValueInfo const& propNameValueInfo : propNameValueInfos)
+            {
+            if (!isFirstToken)
+                {
+                propNameECSqlClause.append(",");
+                valuesECSqlClause.append(",");
+                }
+
+            propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
+
+            Utf8String valueECSqlToken = propNameValueInfo.m_valueExp->ToECSql();
+
+            if (propNameValueInfo.m_containedParameterExps.empty())
+                valuesECSqlClause.append(propNameValueInfo.m_valueExp->ToECSql());
+            else
+                {
+                //for (ParameterExp const* paramExp : propNameValueInfo.m_containedParameterExps)
+                //    {
+
+                 //   }
+                }
+
+            valuesECSqlClause.append(valueECSqlToken);
+
+            isFirstToken = false;
+            }
 
         Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO %s(%s) VALUES(%s)",
-                                 classMap.GetClass().GetECSqlName().c_str(), propNameECSqlClause.c_str(),
-                                 valuesECSqlClause.c_str());
+        ecsql.Sprintf("INSERT INTO %s(%s) VALUES(%s)", classMap.GetClass().GetECSqlName().c_str(), propNameECSqlClause.c_str(),
+                                                        valuesECSqlClause.c_str());
 
         ECSqlParser parser;
         std::unique_ptr<Exp> parseTree = parser.Parse(m_ecdb, ecsql.c_str());
@@ -531,6 +576,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         ECSqlStatus stat = m_statements.back()->Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
+
+        isPrimaryTable = false;
         }
 
     return ECSqlStatus::Success;

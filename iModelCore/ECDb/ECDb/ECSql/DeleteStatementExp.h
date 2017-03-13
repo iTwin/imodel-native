@@ -26,7 +26,7 @@ struct DeleteStatementExp final : Exp
         RangeClassInfo::List m_finalizeParsingArgCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "Delete"; }
 
     public:

@@ -23,26 +23,28 @@ Utf8CP const Exp::ASTERISK_TOKEN = "*";
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindRecusive(std::vector<Exp const*>& expList, Exp::Type ofType) const
+void Exp::FindRecursive(std::vector<Exp const*>& expList, Exp::Type ofType) const
     {
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (auto child : GetChildren())
-        child->FindRecusive(expList, ofType);
+    for (Exp const* child : m_children)
+        child->FindRecursive(expList, ofType);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Exp::Type ofType) const
+void Exp::FindInDirectDecendents(std::vector<Exp const*>& expList, Exp::Type ofType) const
     {
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (auto child : GetChildren())
+    for (Exp const* child : m_children)
+        {
         if (child->GetType() == ofType)
             expList.push_back(this);
+        }
     }
 
 //-----------------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ Exp const* Exp::FindParent(Exp::Type type) const
         p = p->GetParent();
         } while (p != nullptr && p->GetType() != type);
 
-        return p;
+    return p;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -66,45 +68,12 @@ std::vector<Exp const*> Exp::Find(Exp::Type ofType, bool recusive) const
     {
     std::vector<Exp const*> tmp;
     if (recusive)
-        FindRecusive(tmp, ofType);
+        FindRecursive(tmp, ofType);
     else
-        FindInDirectDecedentOnly(tmp, ofType);
+        FindInDirectDecendents(tmp, ofType);
 
     return tmp;
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus Exp::_FinalizeParsing(ECSqlParseContext&, FinalizeParseMode)
-    {
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::_TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const
-    {
-    return false;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection const& Exp::GetChildren() const
-    {
-    return m_children;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection& Exp::GetChildrenR() const
-    {
-    return m_children;
-    }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
@@ -139,7 +108,7 @@ BentleyStatus Exp::FinalizeParsing(ECSqlParseContext& ctx)
             }
         }
 
-    for (auto child : GetChildrenR())
+    for (Exp* child : m_children)
         {
         if (SUCCESS != child->FinalizeParsing(ctx))
             return ERROR;
@@ -172,22 +141,6 @@ bool Exp::TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& par
         return parentExp->TryDetermineParameterExpType(ctx, parameterExp);
 
     return false;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    05/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String Exp::ToECSql() const
-    {
-    return _ToECSql();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String Exp::ToString() const
-    {
-    return _ToString();
     }
 
 
@@ -448,7 +401,6 @@ Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes) const
     tmp.Sprintf("%s[%d]", m_propertyName.c_str(), GetArrayIndex());
     return tmp;
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

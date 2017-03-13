@@ -90,7 +90,7 @@ private:
     Utf8StringCR _GetId() const override;
     bool _ContainProperty(Utf8CP propertyName) const override;
     BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
-    Utf8String _ToECSql() const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString () const override;
 
 public:
@@ -99,21 +99,9 @@ public:
         {}
 
     bool HasMetaInfo() const { return m_info != nullptr;}
-    ClassNameExp::Info const&  GetInfo() const { return *m_info;}
+    ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
-    Utf8String GetFullName () const
-        {
-        Utf8String fullName;
-        if (!m_catalogName.empty ())
-            fullName.append (m_catalogName).append (".");
-
-        if (!m_schemaAlias.empty ())
-            fullName.append (m_schemaAlias).append (".");
-
-        fullName.append (m_className);
-
-        return fullName;
-        }
+    Utf8String GetFullName() const;
 
     Utf8StringCR GetClassName() const { return m_className;}
     Utf8StringCR GetSchemaName() const { return m_schemaAlias;}

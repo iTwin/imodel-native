@@ -93,6 +93,23 @@ Utf8StringCR ClassNameExp::_GetId() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ClassNameExp::GetFullName() const
+    {
+    Utf8String fullName;
+    if (!m_catalogName.empty())
+        fullName.append(m_catalogName).append(".");
+
+    if (!m_schemaAlias.empty())
+        fullName.append(m_schemaAlias).append(".");
+
+    fullName.append(m_className);
+
+    return fullName;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ClassNameExp::_ToString() const
     {
     Utf8String str("ClassName [Catalog: ");
@@ -104,17 +121,16 @@ Utf8String ClassNameExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ClassNameExp::_ToECSql() const
+void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    Utf8String tmp;
     if (!IsPolymorphic())
-        tmp.append("ONLY ");
+        ctx.AppendToECSql("ONLY ");
 
-    tmp.append(GetFullName());
+    ctx.AppendToECSql(GetFullName());
 
     if (!GetAlias().empty())
-        tmp.append(" ").append(GetAlias());
-    return tmp;
+        ctx.AppendToECSql(" ").AppendToECSql(GetAlias());
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

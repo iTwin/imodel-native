@@ -1138,7 +1138,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
         }
 
-    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClass();
+    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClassNameExp();
 
     //Render previous sql part as is
     r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());

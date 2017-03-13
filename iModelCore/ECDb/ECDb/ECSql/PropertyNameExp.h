@@ -50,7 +50,7 @@ struct PropertyNameExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         void SetClassRefExp(RangeClassRefExp const& classRefExp);
         void SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:

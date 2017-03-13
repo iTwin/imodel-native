@@ -42,7 +42,7 @@ struct BetweenRangeValueExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
-        void _DoToECSql(Utf8StringR ecsql) const override { ecsql.append(GetLowerBoundOperand()->ToECSql()).append(" AND ").append(GetUpperBoundOperand()->ToECSql()); }
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "BetweenRangeValue"; }
 
     public:
@@ -70,7 +70,7 @@ struct BinaryValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -99,7 +99,7 @@ struct CastExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -140,7 +140,7 @@ struct LiteralValueExp final : ValueExp
 
         BentleyStatus ResolveDataType(ECSqlParseContext&);
 
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -165,7 +165,7 @@ struct FunctionCallExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
         static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8StringCR functionName, int argCount);
@@ -194,7 +194,7 @@ struct LikeRhsValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "LikeRhsValue"; }
 
     public:
@@ -222,7 +222,7 @@ struct ParameterExp final : ValueExp
         ComputedExp const* m_targetExp = nullptr;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -248,7 +248,7 @@ struct UnaryValueExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:

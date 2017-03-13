@@ -85,21 +85,17 @@ OptionsExp const* DeleteStatementExp::GetOptionsClauseExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String DeleteStatementExp::_ToECSql () const
+void DeleteStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    Utf8String ecsql ("DELETE FROM ");
-
-    ecsql.append (GetClassNameExp ()->ToECSql ());
+    ctx.AppendToECSql("DELETE FROM ").AppendToECSql(*GetClassNameExp());
 
     Exp const* exp = GetWhereClauseExp ();
     if (exp != nullptr)
-        ecsql.append (" ").append (exp->ToECSql ());
+        ctx.AppendToECSql(" ").AppendToECSql(*exp);
 
     exp = GetOptionsClauseExp();
     if (exp != nullptr)
-        ecsql.append(" ").append(exp->ToECSql());
-
-    return ecsql;
+        ctx.AppendToECSql(" ").AppendToECSql(*exp);
     }
 
 
