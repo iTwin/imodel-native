@@ -870,10 +870,15 @@ AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("
     BeStringUtilities::Split(id.c_str(), "/", parts);
 
     m_id = parts[0];
-    m_filter = id;
-    id = parts[0];
-    id.append("/");
-    m_filter.ReplaceAll(id.c_str(),"");
+    if(m_id == id)
+        m_filter = "";
+    else
+        {
+        m_filter = id;
+        id = parts[0];
+        id.append("/");
+        m_filter.ReplaceAll(id.c_str(),"");
+        }
     }
 
 //=====================================================================================

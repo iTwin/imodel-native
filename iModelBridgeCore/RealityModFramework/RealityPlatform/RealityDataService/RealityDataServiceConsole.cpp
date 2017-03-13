@@ -30,6 +30,11 @@ void RealityDataConsole::InterpretCommand()
 
     bvector<Utf8String> args;
     BeStringUtilities::ParseArguments(args, m_lastInput.c_str());
+    if(args.size() < 1)
+        {
+        DisplayInfo("missing input. Please refer to \"Help\" \n", DisplayOption::Error);
+        return;
+        }
     if(args.size() > 2)
         {
         DisplayInfo("too many inputs to parse. Please refer to \"Help\" \n", DisplayOption::Error);
@@ -56,6 +61,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Download;
     else if (args[0].ContainsI("Upload"))
         m_lastCommand = Command::Upload;
+    else if (args[0].ContainsI("SetServer"))
+        m_lastCommand = Command::SetServer;
     else
         {
         m_lastCommand = Command::Error;
@@ -312,7 +319,7 @@ void RealityDataConsole::ConfigureServer()
             }
         else
             {
-            DisplayInfo("please select a repository from the following options\n", DisplayOption::Question);
+            std::cout << "please select a repository from the following options" << std::endl;
             Choice(schemaNames, schema);
             switch(m_lastCommand)
                 {
@@ -383,16 +390,24 @@ void RealityDataConsole::ListAll()
     DisplayInfo ("these will be displayed, 20 at a time. Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
 
     std::string str;
-    while (m_lastCommand != Command::Cancel)
+    size_t placeholder = 0;
+    size_t step;
+    size_t size = filesInRepo.size();
+    while (m_lastCommand != Command::Cancel && placeholder < size)
         {
-        for (bpair<WString, uint64_t> file : filesInRepo)
-            {
-            DisplayInfo(Utf8PrintfString("%s %lu \n", file.first.c_str(), file.second));
-            }
         std::getline(std::cin, str);
         if(Utf8String(str.c_str()).ContainsI("Cancel"))
             m_lastCommand = Command::Cancel;
+        else
+            {
+            step = (size < (placeholder + 20)) ? size : placeholder + 20;
+            for (; placeholder < step; ++placeholder)
+                {
+                DisplayInfo(Utf8String(WPrintfString(L"%s %lu \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
+                }
+            }
         }
+    DisplayInfo("----------------\nexiting listing\n----------------\n", DisplayOption::Tip);
     }
 
 void RealityDataConsole::ChangeDir()
@@ -411,6 +426,7 @@ void RealityDataConsole::ChangeDir()
             delete m_currentNode;
             m_currentNode = nullptr;
             }
+        List();
         return;
         }
 

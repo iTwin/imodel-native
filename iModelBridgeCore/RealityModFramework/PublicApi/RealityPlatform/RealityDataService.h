@@ -48,13 +48,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
     };
 
-enum class RequestStatus
-{
-    SUCCESS = 0,
-    ERROR = 1,
-    NOMOREPAGES = 2
-};
-
 //=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
 //! RealityDataEnterpriseStat

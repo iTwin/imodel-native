@@ -185,6 +185,13 @@ enum RequestType
     BodyNoToken = 2
     };
 
+enum class RequestStatus
+    {
+    SUCCESS = 0,
+    ERROR = 1,
+    NOMOREPAGES = 2
+    };
+
 struct NavNode
     {
 public:
