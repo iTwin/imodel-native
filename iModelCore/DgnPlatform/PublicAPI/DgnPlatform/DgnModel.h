@@ -959,6 +959,9 @@ protected:
 public:
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPartitionCR modeledElement);
+
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create (SpatialLocationPortionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert (SpatialLocationPortionCR modeledElement);
 };
 
 //=======================================================================================
