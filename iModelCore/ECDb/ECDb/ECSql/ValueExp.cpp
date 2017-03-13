@@ -797,8 +797,8 @@ void ParameterExp::_DoToECSql(Utf8StringR ecsql) const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ParameterExp::_ToString() const
     {
-    Utf8String str("Parameter [Name: ");
-    str.append(m_parameterName).append("]");
+    Utf8String str;
+    str.Sprintf("Parameter [Index: %d, Name: %s]", m_parameterIndex, IsNamedParameter() ? m_parameterName.c_str() : "-");
     return str;
     }
 
