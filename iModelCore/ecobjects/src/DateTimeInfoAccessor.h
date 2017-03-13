@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! DateTimeInfoAccessor allows to access the DateTimeInfo custom attribute on a date time ECProperty
 //! @bsiclass
 //=======================================================================================    
-struct DateTimeInfoAccessor sealed : NonCopyableClass
+struct DateTimeInfoAccessor final : NonCopyableClass
     {
     private:
         //static class
