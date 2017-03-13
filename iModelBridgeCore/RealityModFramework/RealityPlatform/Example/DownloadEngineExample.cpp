@@ -151,7 +151,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
 
         // Only the raster and terrain for the moment. 
         //    for the other, need to rework the code to determine the filename.
-        bvector<RealityPackage::RealityDataPtr> DownloadList (pDataPackage->GetImageryGroup().begin(), pDataPackage->GetImageryGroup().end());
+        bvector<RealityPackage::PackageRealityDataPtr> DownloadList (pDataPackage->GetImageryGroup().begin(), pDataPackage->GetImageryGroup().end());
         DownloadList.insert (DownloadList.end(), pDataPackage->GetTerrainGroup().begin(), pDataPackage->GetTerrainGroup().end());
         //DownloadList.insert(DownloadList.end(), pDataPackage->GetModelGroup().begin(), pDataPackage->GetModelGroup().end());
 

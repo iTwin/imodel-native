@@ -384,16 +384,16 @@ Utf8String RealityDataPackage::BuildCreationDateUTC()
     }
 
 //=======================================================================================
-//                              RealityData
+//                              PackageRealityData
 //=======================================================================================
 
-RealityDataSourceR RealityData::GetSourceR(size_t index) 
+RealityDataSourceR PackageRealityData::GetSourceR(size_t index) 
     {
     BeAssert(index < m_Sources.size());
         
     return *(m_Sources[index]);
     }
-RealityDataSourceCR RealityData::GetSource(size_t index) const 
+RealityDataSourceCR PackageRealityData::GetSource(size_t index) const 
     {
     BeAssert(index < m_Sources.size());
 
@@ -401,7 +401,7 @@ RealityDataSourceCR RealityData::GetSource(size_t index) const
     }
 
 
-void RealityData::AddSource(RealityDataSourceR dataSource)
+void PackageRealityData::AddSource(RealityDataSourceR dataSource)
     {
     m_Sources.push_back(RealityDataSourcePtr(&dataSource));
     }
@@ -409,29 +409,29 @@ void RealityData::AddSource(RealityDataSourceR dataSource)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Alain.Robert  3/2016
 //----------------------------------------------------------------------------------------
-Utf8StringCR RealityData::GetDataId() const {return m_id;}
-void RealityData::SetDataId(Utf8CP dataId) {m_id = dataId;}
-Utf8StringCR RealityData::GetDataName() const {return m_name;}
-void RealityData::SetDataName(Utf8CP dataName) {m_name = dataName;}
-Utf8StringCR RealityData::GetDataset() const {return m_dataset;}
-void RealityData::SetDataset(Utf8CP dataset) {m_dataset = dataset;}
-size_t RealityData::GetNumSources() const {return m_Sources.size();}
+Utf8StringCR PackageRealityData::GetDataId() const {return m_id;}
+void PackageRealityData::SetDataId(Utf8CP dataId) {m_id = dataId;}
+Utf8StringCR PackageRealityData::GetDataName() const {return m_name;}
+void PackageRealityData::SetDataName(Utf8CP dataName) {m_name = dataName;}
+Utf8StringCR PackageRealityData::GetDataset() const {return m_dataset;}
+void PackageRealityData::SetDataset(Utf8CP dataset) {m_dataset = dataset;}
+size_t PackageRealityData::GetNumSources() const {return m_Sources.size();}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityData::RealityData(RealityDataSourceR dataSource)  {m_Sources.push_back(RealityDataSourcePtr(&dataSource));}
+PackageRealityData::PackageRealityData(RealityDataSourceR dataSource)  {m_Sources.push_back(RealityDataSourcePtr(&dataSource));}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityData::~RealityData(){}
+PackageRealityData::~PackageRealityData(){}
 
 
 //=======================================================================================
 //                              ImageryData
 //=======================================================================================
-ImageryData::ImageryData(RealityDataSourceR dataSource, GeoPoint2dCP pCorners):RealityData(dataSource){SetCorners(pCorners);}
+ImageryData::ImageryData(RealityDataSourceR dataSource, GeoPoint2dCP pCorners):PackageRealityData(dataSource){SetCorners(pCorners);}
 
 ImageryData::~ImageryData(){}
 
@@ -496,7 +496,7 @@ void ImageryData::SetCorners(GeoPoint2dCP pCorners)
 //=======================================================================================
 //                              ModelData
 //=======================================================================================
-ModelData::ModelData(RealityDataSourceR dataSource):RealityData(dataSource){}
+ModelData::ModelData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
 ModelData::~ModelData(){}
 
 //----------------------------------------------------------------------------------------
@@ -511,7 +511,7 @@ ModelDataPtr ModelData::Create(RealityDataSourceR dataSource)
 //=======================================================================================
 //                              PinnedData
 //=======================================================================================
-PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):RealityData(dataSource){m_location.Init(longitude, latitude);}
+PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):PackageRealityData(dataSource){m_location.Init(longitude, latitude);}
 PinnedData::~PinnedData(){}
 
 //----------------------------------------------------------------------------------------
@@ -552,7 +552,7 @@ bool PinnedData::SetArea(BoundingPolygonR area)
 //=======================================================================================
 //                              TerrainData
 //=======================================================================================
-TerrainData::TerrainData(RealityDataSourceR dataSource):RealityData(dataSource){}
+TerrainData::TerrainData(RealityDataSourceR dataSource):PackageRealityData(dataSource){}
 TerrainData::~TerrainData(){}
 
 //----------------------------------------------------------------------------------------

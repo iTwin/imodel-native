@@ -34,6 +34,9 @@ static size_t WriteData(void *contents, size_t size, size_t nmemb, FILE *stream)
     return written;
 }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Francis Boily         	    02/2017
+//-------------------------------------------------------------------------------------
 CurlConstructor::CurlConstructor()
     {
     RefreshToken();
@@ -47,12 +50,22 @@ CurlConstructor::CurlConstructor()
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGRequest::WSGRequest() : CurlConstructor()
     {
     s_instance = this;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGRequest* WSGRequest::s_instance = nullptr;
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGRequest& WSGRequest::GetInstance()
     {
     if(nullptr == s_instance)
@@ -60,6 +73,9 @@ WSGRequest& WSGRequest::GetInstance()
     return *s_instance;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 Utf8String CurlConstructor::GetToken()
     {
     if((std::time(nullptr) - m_tokenRefreshTimer) > (59 * 60)) //refresh required every 60 minutes
@@ -67,6 +83,9 @@ Utf8String CurlConstructor::GetToken()
     return m_token;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void CurlConstructor::RefreshToken()
     {
     m_tokenRefreshTimer = std::time(nullptr);
@@ -113,25 +132,37 @@ void CurlConstructor::RefreshToken()
     delete charToken;
     }
 
-Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+Utf8String WSGRequest::PerformRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer, FILE* file, bool retry) const
     {
     result = RequestType::Body;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
-Utf8String WSGRequest::PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+Utf8String WSGRequest::PerformHeaderRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer, FILE* file, bool retry) const
     {
     result = RequestType::Header;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
-Utf8String WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+Utf8String WSGRequest::PerformAzureRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer, FILE* file, bool retry) const
     {
     result = RequestType::BodyNoToken;
     return _PerformRequest(wsgRequest, result, verifyPeer, file, retry);
     }
 
-CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, bool verifyPeer, FILE* file) const
     {
     CURL* curl = curl_easy_init();
     if (nullptr == curl)
@@ -157,7 +188,7 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, int veri
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, verifyPeer);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1: 0));
 
     curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -166,7 +197,10 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, int veri
     return curl;
     }
 
-CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, int verifyPeer, FILE* file, bool retry) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, bool verifyPeer, FILE* file, bool retry) const
     {
     CURL* curl = PrepareCurl(wsgRequest, result, verifyPeer, file);
 
@@ -193,7 +227,10 @@ CURL* WSGRequest::PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8Stri
     return curl;
     }
 
-Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer, FILE* file, bool retry) const
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer, FILE* file, bool retry) const
     {
     Utf8StringP curlString = new Utf8String();
     auto curl = PrepareRequest(wsgRequest, result, curlString, verifyPeer, file, retry);
@@ -212,23 +249,29 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, in
     return returnString;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGURL::WSGURL(Utf8String url) : 
     m_validRequestString(true), m_requestType(HttpRequestType::GET_Request), m_httpRequestString(url), m_requestHeader(bvector<Utf8String>())
     {}
 
-WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
-    :m_serverName(server), m_version(version), m_repoId(repoId), m_pluginName(pluginName), m_schema(schema), m_interface(_interface), m_className(className), m_id(id), m_objectContent(objectContent),
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+WSGURL::WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent)
+    :m_serverName(server), m_version(version), m_repoId(repoId), m_schema(schema), m_interface(_interface), m_className(className), m_id(id), m_objectContent(objectContent),
     m_validRequestString(false), m_requestType(HttpRequestType::GET_Request)
     {}
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR WSGURL::GetServerName() const { return m_serverName; }
 void WSGURL::SetServerName(Utf8String serverName) { m_serverName = serverName; }
 
 Utf8StringCR WSGURL::GetVersion() const { return m_version; }
 void WSGURL::SetVersion(Utf8String version) { m_version = version; }
-
-Utf8StringCR WSGURL::GetPluginName() const { return m_pluginName; }
-void WSGURL::SetPluginName(Utf8String pluginName) { m_pluginName = pluginName; }
 
 Utf8StringCR WSGURL::GetSchema() const { return m_schema; }
 void WSGURL::SetSchema(Utf8String schema) { m_schema = schema; }
@@ -248,6 +291,9 @@ WSGURL::HttpRequestType WSGURL::GetRequestType() const { return m_requestType; }
 Utf8StringCR WSGURL::GetRepoId() const { return m_repoId; }
 void WSGURL::SetRepoId(Utf8String repoId) { m_repoId = repoId; }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGURL::_PrepareHttpRequestStringAndPayload() const
     {
     m_validRequestString = false;
@@ -255,7 +301,8 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString = "https://";
     m_httpRequestString.append(m_serverName);
     
-    m_requestHeader = bvector<Utf8String>();
+    // Clear previous header
+    m_requestHeader.clear(); //  = bvector<Utf8String>();
     /*m_requestHeader.push_back("Accept: application / json");
     m_requestHeader.push_back("Content-Type: application/json");
     m_requestHeader.push_back("charsets: utf-8");*/
@@ -263,9 +310,15 @@ void WSGURL::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 NavNode::NavNode() : m_navString("ROOT")
     {}
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
     {
     m_rootNode = rootNode;
@@ -292,6 +345,9 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 Utf8String NavNode::GetNavString()  { return m_navString; }
 Utf8String NavNode::GetTypeSystem() { return m_typeSystem; }
 Utf8String NavNode::GetSchemaName() { return m_schemaName; }
@@ -301,7 +357,13 @@ Utf8String NavNode::GetLabel()      { return m_label; }
 Utf8String NavNode::GetRootNode()   { return m_rootNode; }
 Utf8String NavNode::GetRootId()     { return m_rootId; }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 NodeNavigator* NodeNavigator::s_nnInstance = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 NodeNavigator& NodeNavigator::GetInstance()
     {
     if (nullptr == s_nnInstance)
@@ -309,20 +371,29 @@ NodeNavigator& NodeNavigator::GetInstance()
     return *s_nnInstance;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 NodeNavigator::NodeNavigator()
     {
     s_nnInstance = this;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetRootNodes(Utf8String serverName, Utf8String repoId)
     {
     WSGServer server = WSGServer(serverName, false);
     return GetRootNodes(server, repoId);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId)
     {
-    bvector<NavNode> returnVector = bvector<NavNode>();
+    bvector<NavNode> returnVector;
     WSGNavRootRequest* navRoot = new WSGNavRootRequest(server.GetServerName(), server.GetVersion(), repoId);
 
     int status = RequestType::Body;
@@ -339,6 +410,9 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
     return returnVector;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode)
     {
     Utf8String navString = parentNode.GetRootNode();
@@ -350,6 +424,9 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
     return GetChildNodes(server, repoId, navString);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath)
 {
     nodePath.ReplaceAll("/", "~2F");
@@ -360,7 +437,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 
     Utf8String rootId = rootNode.substr(rootNode.length() - 36, rootNode.length()); // 36 = size of GUID
 
-    bvector<NavNode> returnVector = bvector<NavNode>();
+    bvector<NavNode> returnVector;
     WSGNavNodeRequest* navNode = new WSGNavNodeRequest(server.GetServerName(), server.GetVersion(), repoId, nodePath);
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*navNode, status, 0);
@@ -376,6 +453,9 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
     return returnVector;
 }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8String repoId)
     {
     m_serverName = server;
@@ -386,6 +466,9 @@ WSGNavRootRequest::WSGNavRootRequest(Utf8String server, Utf8String version, Utf8
     m_interface = WSGInterface::NavNode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -396,6 +479,9 @@ void WSGNavRootRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/Navigation/NavNode/");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String nodeId)
     {
     m_serverName = server;
@@ -407,6 +493,9 @@ WSGNavNodeRequest::WSGNavNodeRequest(Utf8String server, Utf8String version, Utf8
     m_interface = WSGInterface::NavNode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -419,6 +508,9 @@ void WSGNavNodeRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/NavNode");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId)
     {
     m_serverName = server;
@@ -431,6 +523,9 @@ WSGObjectRequest::WSGObjectRequest(Utf8String server, Utf8String version, Utf8St
     m_requestType = HttpRequestType::GET_Request;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -446,6 +541,9 @@ void WSGObjectRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append(m_id);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String version, Utf8String repoName, Utf8String schema, Utf8String className, Utf8String objectId)
     {
     m_serverName = server;
@@ -458,6 +556,9 @@ WSGObjectContentRequest::WSGObjectContentRequest(Utf8String server, Utf8String v
     m_requestType = HttpRequestType::GET_Request;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -474,19 +575,25 @@ void WSGObjectContentRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/$file");
     }
 
-WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8String version, Utf8String pluginName, Utf8String schema, Utf8String className)
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
+WSGObjectListPagedRequest::WSGObjectListPagedRequest(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, Utf8String className)
     {
     m_startIndex = 0;
     m_pageSize = 25;
     m_serverName = server;
     m_version = version;
-    m_pluginName = pluginName;
+    m_repoId = repoId;
     m_schema = schema;
     m_className = className;
     m_validRequestString = false;
     m_requestType = HttpRequestType::GET_Request;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     WSGURL::_PrepareHttpRequestStringAndPayload();
@@ -504,6 +611,9 @@ void WSGObjectListPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<Utf8String> WSGServer::GetPlugins() const
     {
     //https://localhost/v2.4/Plugins 
@@ -511,9 +621,9 @@ bvector<Utf8String> WSGServer::GetPlugins() const
     serverName.append("/v");
     serverName.append(GetVersion());
     serverName.append("/Plugins");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
-    bvector<Utf8String> returnVec = bvector<Utf8String>();
+    bvector<Utf8String> returnVec;
 
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
@@ -531,6 +641,9 @@ bvector<Utf8String> WSGServer::GetPlugins() const
     return returnVec;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 Utf8String WSGServer::GetVersion() const
     {
     if(m_version.length() > 0)
@@ -538,9 +651,7 @@ Utf8String WSGServer::GetVersion() const
 
     Utf8String serverName = m_serverName;
     serverName.append("/v2.4/Plugins");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
-
-    bvector<Utf8String> returnVec = bvector<Utf8String>();
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
     int status = RequestType::Header;
 
@@ -563,6 +674,9 @@ Utf8String WSGServer::GetVersion() const
     return m_version;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<Utf8String> WSGServer::GetRepositories() const
     {
     //https://localhost/ws/v2.1/Repositories 
@@ -570,9 +684,9 @@ bvector<Utf8String> WSGServer::GetRepositories() const
     serverName.append("/v");
     serverName.append(GetVersion());
     serverName.append("/Repositories");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
-    bvector<Utf8String> returnVec = bvector<Utf8String>();
+    bvector<Utf8String> returnVec;
 
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
@@ -590,6 +704,9 @@ bvector<Utf8String> WSGServer::GetRepositories() const
     return returnVec;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
     {
     //GET https://localhost/ws/v2.1/Repositories/{repoId}/MetaSchema/ECSchemaDef
@@ -600,9 +717,9 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
     serverName.append(repoName);
     serverName.append("/MetaSchema/ECSchemaDef");
 
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
-    bvector<Utf8String> returnVec = bvector<Utf8String>();
+    bvector<Utf8String> returnVec;
 
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
@@ -620,6 +737,9 @@ bvector<Utf8String> WSGServer::GetSchemaNames(Utf8String repoName) const
     return returnVec;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schemaName)
     {
     //https://localhost/ws/v2.1/Repositories/{repoId}/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+[‘{schemaName}’]
@@ -631,9 +751,9 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     serverName.append("/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+['");
     serverName.append(schemaName);
     serverName.append("']");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
-    bvector<Utf8String> returnVec = bvector<Utf8String>();
+    bvector<Utf8String> returnVec;
 
     int status = RequestType::Body;
     Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);
@@ -651,6 +771,9 @@ bvector<Utf8String> WSGServer::GetClassNames(Utf8String repoId, Utf8String schem
     return returnVec;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                02/2017
+//-------------------------------------------------------------------------------------
 Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String schemaName, Utf8String className)
     {
     //https://localhost/ws/v2.1/Repositories/{repoId}/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+[‘{schemaName}’]
@@ -662,7 +785,7 @@ Utf8String WSGServer::GetJSONClassDefinition(Utf8String repoName, Utf8String sch
     serverName.append("/MetaSchema/ECClassDef?$filter=SchemaHasClass-backward-ECSchemaDef.Name+in+['");
     serverName.append(schemaName);
     serverName.append("']");
-    WSGURL wsgurl = WSGURL(serverName, "", "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
+    WSGURL wsgurl = WSGURL(serverName, "", "", "", WSGURL::WSGInterface::Repositories, "", "", false);
 
     int status = RequestType::Body;
     Utf8String returnString = WSGRequest::GetInstance().PerformRequest(wsgurl, status, m_verifyPeer);

@@ -61,9 +61,9 @@ public:
     REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String url);
     
     //! Creates a WSG URL from the various provided components
-    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String pluginName, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent);
+    REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent);
 
-    //! Get/Set the server name. The string provided or returned only contains
+    //! Get the server name. The string provided or returned only contains
     //! the server name without trailling or leading slashes and without the communication version
     //! for example the server name could be 'dev-contextservices.connect.com'
     //! SetServer() will return an error is the server string provided is invalid
@@ -74,8 +74,8 @@ public:
     //! Note that the method does not validate the support of the specified version.
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetVersion() const;
 
-    //! A string containing the plug-in name. A WSG server can host many plug-ins so specification is required.
-    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetPluginName() const;
+    //! A string containing the repository id. A WSG server can host many repositories so specification is required.
+    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRepoId() const;
 
     //! The Schema. A plugin can publish many schemas so specification is required.
     //! Note that the method does not validate the publication of the specified schema.
@@ -100,16 +100,15 @@ public:
     //! The default is false.
     REALITYDATAPLATFORM_EXPORT virtual bool GetContentFlag() const;
 
-    enum class HttpRequestType
+    enum HttpRequestType
         {
         GET_Request,
         PUT_Request,
         POST_Request
         };
 
+    //! The type of http request (GET, PUT, POST)
     REALITYDATAPLATFORM_EXPORT virtual HttpRequestType GetRequestType() const;
-
-    REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRepoId() const;
 
     //! Returns the full http request string
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetHttpRequestString() const
@@ -123,6 +122,7 @@ public:
         return m_httpRequestString;
         };
 
+    //! Returns the request payload if any
     REALITYDATAPLATFORM_EXPORT virtual Utf8StringCR GetRequestPayload() const
         {
         if (!m_validRequestString)
@@ -133,6 +133,7 @@ public:
         return m_requestPayload;
         }
 
+    //! Returns the http header components
     REALITYDATAPLATFORM_EXPORT virtual bvector<Utf8String> const & GetRequestHeader() const
         {
         if (!m_validRequestString)
@@ -143,13 +144,12 @@ public:
         return m_requestHeader;
         }
 
-    WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request){}
+    WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_interface(WSGInterface::Repositories), m_objectContent(false) {}
     ~WSGURL() {}
     WSGURL(WSGURL const& object);
     WSGURL& operator=(WSGURL const & object);
 
 protected:
-    // Default constructor
     void SetServerName(Utf8String serverName);
     void SetPluginName(Utf8String pluginName);
     void SetVersion(Utf8String version);
@@ -162,7 +162,6 @@ protected:
 
     mutable Utf8String m_serverName;
     Utf8String m_version;
-    Utf8String m_pluginName;
     Utf8String m_schema;
     Utf8String m_className;
     WSGInterface m_interface = WSGInterface::Repositories;
@@ -178,6 +177,9 @@ protected:
     mutable HttpRequestType m_requestType;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              02/2017
+//=====================================================================================
 enum RequestType
     {
     Body = 0,
@@ -227,12 +229,14 @@ struct NodeNavigator
 
 public:
     REALITYDATAPLATFORM_EXPORT static NodeNavigator& GetInstance();
-    NodeNavigator();
 
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(Utf8String serverName, Utf8String repoId);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetRootNodes(WSGServer server, Utf8String repoId);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath);
     REALITYDATAPLATFORM_EXPORT bvector<NavNode> GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode);
+
+private:    
+    NodeNavigator();
     };
 
 //=====================================================================================
@@ -294,7 +298,7 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
 //! WSGPagedRequest
-//! This class represents a request to WSG Service that results in
+//! This class represents a request to a WSG Service that results in
 //! a list of objects of potential unknown length.
 //! This class inherits from the general request class but adds additional 
 //! control for paging.
@@ -305,27 +309,33 @@ protected:
 struct WSGPagedRequest : public WSGURL
     {
 public:
+    
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest() : m_startIndex(0), m_pageSize(25) {}
-    REALITYDATAPLATFORM_EXPORT WSGPagedRequest(uint16_t startIndex, uint8_t pageSize) : m_startIndex(startIndex), m_pageSize(pageSize) {BeAssert(m_pageSize >0);}
+    REALITYDATAPLATFORM_EXPORT WSGPagedRequest(uint32_t startIndex, uint16_t pageSize) : m_startIndex(startIndex), m_pageSize(pageSize) {BeAssert(m_pageSize >0);}
 
     REALITYDATAPLATFORM_EXPORT ~WSGPagedRequest() {}
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(WSGPagedRequest const& object);
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object);
 
-    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint8_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
-    REALITYDATAPLATFORM_EXPORT uint8_t GetPageSize() const {return m_pageSize;}
+    //! Get/Set the page size. It must be greater or equal to 1 
+    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) {BeAssert(pageSize > 0); m_pageSize = pageSize;}
+    REALITYDATAPLATFORM_EXPORT uint16_t GetPageSize() const {return m_pageSize;}
   
-    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint16_t startIndex) {m_startIndex = startIndex;} 
+    //! The start index of the request.
+    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint32_t startIndex) {m_startIndex = startIndex;} 
+    REALITYDATAPLATFORM_EXPORT uint32_t GetStartIndex() const {return m_startIndex;}
 
+    //! Page oriented methods. These methods advance a page, rewind a page or go to specified page.
+    //! according to current page size and start index
     REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() {m_validRequestString = false; m_startIndex += m_pageSize;}
     REALITYDATAPLATFORM_EXPORT void RewindPage() {m_validRequestString = false; m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);}
-    REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint16_t)(page * m_pageSize);}
+    REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint32_t)(page * m_pageSize);}
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
 
-    mutable uint16_t m_startIndex;
-    uint8_t m_pageSize;
+    mutable uint32_t m_startIndex;
+    uint16_t m_pageSize;
     };
 
 //=====================================================================================
@@ -358,7 +368,7 @@ struct WSGServer
     {
 public:
     
-    REALITYDATAPLATFORM_EXPORT WSGServer(Utf8String serverName, bool verifyPeer = true) : m_serverName(serverName), m_version("") { m_verifyPeer = verifyPeer?1:0; }
+    REALITYDATAPLATFORM_EXPORT WSGServer(Utf8String serverName, bool verifyPeer = true) : m_serverName(serverName), m_version("") { m_verifyPeer = verifyPeer; }
     
     //! Returns a list plugins installed to the indicated WSG server
     REALITYDATAPLATFORM_EXPORT bvector<Utf8String> GetPlugins() const;
@@ -382,7 +392,7 @@ public:
 
 private:
     Utf8String m_serverName;
-    int m_verifyPeer;
+    bool m_verifyPeer;
     mutable Utf8String m_version;
     };
 
@@ -396,7 +406,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
 protected:
-    REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file) const;
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, int& code, bool verifyPeer, FILE* file) const;
 
     Utf8String          m_token;
     BeFileName          m_certificatePath;
@@ -408,17 +418,17 @@ struct WSGRequest : public CurlConstructor
 private:
     static WSGRequest* s_instance;
 
-    Utf8String _PerformRequest(const WSGURL& wsgRequest, int& code, int verifyPeer, FILE* file, bool retry) const;
+    Utf8String _PerformRequest(const WSGURL& wsgRequest, int& code, bool verifyPeer, FILE* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();
     WSGRequest();
 
     //! General method. Performs a WSG request and returns de result code in result and
     //! the body in the returned string. If a FILE is provided, the result will be written to a file
-    REALITYDATAPLATFORM_EXPORT Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PerformHeaderRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT Utf8String PerformAzureRequest(const WSGURL& wsgRequest, int& result, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
-    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, int verifyPeer = 1, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformHeaderRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT Utf8String PerformAzureRequest(const WSGURL& wsgRequest, int& result, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
+    REALITYDATAPLATFORM_EXPORT CURL* PrepareRequest(const WSGURL& wsgRequest, int& result, Utf8StringP returnString, bool verifyPeer = true, FILE* file = nullptr, bool retry = true) const;
     };
 
 

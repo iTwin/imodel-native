@@ -721,7 +721,7 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
         order.append("Id");
         break;
     case RealityDataField::EnterpriseId:
-        order.append("Enterprise");
+        order.append("EnterpriseId");
         break;
     case RealityDataField::ContainerName:
         order.append("ContainerName");
@@ -1501,7 +1501,7 @@ bool RealityDataServiceTransfer::SetupNextEntry()
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, int verifyPeer)
+void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool verifyPeer)
     {
     // If cancel requested, don't queue new files
     if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
@@ -1762,7 +1762,7 @@ Utf8String RealityDataService::s_realityDataWSGProtocol = "2.4";
 Utf8String RealityDataService::s_realityDataRepoName = "IndexECPlugin-Server";
 Utf8String RealityDataService::s_realityDataSchemaName = "RealityModeling";
 
-int RealityDataService::s_verifyPeer = 0;
+bool RealityDataService::s_verifyPeer = false;
 Utf8String RealityDataService::s_realityDataCertificatePath = "";
 
 const Utf8String RealityDataService::s_ImageryKey = "Imagery";
@@ -1774,7 +1774,7 @@ Utf8StringCR RealityDataService::GetServerName() { return s_realityDataServer; }
 Utf8StringCR RealityDataService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
 Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataRepoName; }
 Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaName; }
-const int RealityDataService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
+const bool RealityDataService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 
 //=====================================================================================
