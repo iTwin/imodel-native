@@ -11,22 +11,30 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
-/*----------------------------------------------------------------------------------**//**
-* @bsimethod                             Donald.Morissette                       3/2017
-+-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB)
+StatusInt RealityConversionTools::JsonToObjectBase(Utf8CP data, Json::Value& json)
     {
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
         return ERROR;
 
     // Parse.
-    Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
+    if (!Json::Reader::Parse(data, json))
         return ERROR;
 
     // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (!json.isMember("instances"))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Donald.Morissette                       3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB)
+    {
+    Json::Value root(Json::objectValue);
+    if(JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
@@ -50,17 +58,8 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, uint64_t* pN
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bvector<SpatialEntityPtr>* outData)
     {
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return ERROR;
-
-    // Parse.
     Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return ERROR;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
@@ -80,17 +79,8 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bvector<Spati
 
 StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8String, SpatialEntityPtr>* outData)
     {
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return ERROR;
-
-    // Parse.
     Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return ERROR;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
@@ -108,56 +98,61 @@ StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8Stri
     return SUCCESS;
     }
 
-
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            3/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-/*StatusInt RealityConversionTools::JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData)
-{
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return ERROR;
-
-    // Parse.
+StatusInt RealityConversionTools::JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData)
+    {
     Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return ERROR;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
     for (const auto& instance : root["instances"])
-    {
+        {
         if (!instance.isMember("properties"))
             break;
 
         const Json::Value properties = instance["properties"];
 
-        SpatialEntityPtr entity = JsonToSpatialEntity(properties);
+        SpatialEntityDataSourcePtr entity = JsonToSpatialEntityDataSource(properties);
 
         outData->push_back(entity);
-    }
+        }
     return SUCCESS;
-}*/
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToSpatialEntityServer(Utf8CP data, bvector<SpatialEntityServerPtr>* outData)
+    {
+    Json::Value root(Json::objectValue);
+    if (JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        SpatialEntityServerPtr entity = JsonToSpatialEntityServer(properties);
+
+        outData->push_back(entity);
+        }
+    return SUCCESS;
+    }
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<RealityDataPtr>* outData)
     {
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return ERROR;
-
-    // Parse.
     Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return ERROR;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
@@ -177,17 +172,8 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<Reality
 
 StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bmap<Utf8String, RealityDataPtr>* outData)
     {
-    // Make sure data exists.
-    if (Utf8String::IsNullOrEmpty(data))
-        return ERROR;
-
-    // Parse.
     Json::Value root(Json::objectValue);
-    if (!Json::Reader::Parse(data, root))
-        return ERROR;
-
-    // Instances must be a root node.
-    if (!root.isMember("instances"))
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
@@ -465,64 +451,150 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            3/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-/*SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource(Json::Value properties)
+SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource(Json::Value properties)
     {
-        // Required information to get.
-        DateTime date;
+    SpatialEntityDataSourcePtr data = SpatialEntityDataSource::Create();
 
-        Utf8String footprintStr;
+    // Id
+    if (properties.isMember("Id") && !properties["Id"].isNull())
+        data->SetId(Utf8CP(properties["Id"].asString().c_str()));
 
-        SpatialEntityDataSourcePtr data = SpatialEntityDataSource::Create();
+    // Main Url
+    if (properties.isMember("MainURL") && !properties["MainURL"].isNull())
+        data->SetUrl(Utf8CP(properties["MainURL"].asString().c_str()));
 
-        // Id
-        if (properties.isMember("Id") && !properties["Id"].isNull())
-            data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+    // Parametrized URL
+    /*if (properties.isMember("ParametrizedURL") && !properties["ParametrizedURL"].isNull())
+        data->SetDataset(Utf8CP(properties["ParametrizedURL"].asString().c_str()));*/
 
-        // Name
-        if (properties.isMember("MainURL") && !properties["MainURL"].isNull())
-            data->SetName(Utf8CP(properties["MainURL"].asString().c_str()));
+    // CompoundType
+    if (properties.isMember("CompoundType") && !properties["CompoundType"].isNull())
+        data->SetCompoundType(Utf8CP(properties["CompoundType"].asString().c_str()));
 
-        // Dataset
-        if (properties.isMember("ParametrizedURL") && !properties["ParametrizedURL"].isNull())
-            data->SetDataset(Utf8CP(properties["ParametrizedURL"].asString().c_str()));
+    // Location In Compound
+    if (properties.isMember("LocationInCompound") && !properties["LocationInCompound"].isNull())
+        data->SetLocationInCompound(Utf8CP(properties["LocationInCompound"].asString().c_str()));
 
-        // Description
-        if (properties.isMember("CompoundType") && !properties["CompoundType"].isNull())
-            data->SetDescription(Utf8CP(properties["CompoundType"].asString().c_str()));
+    // DataSourceType
+    if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
+        data->SetDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
 
-        // DataType
-        if (properties.isMember("LocationInCompound") && !properties["LocationInCompound"].isNull())
-            data->SetDataType(Utf8CP(properties["LocationInCompound"].asString().c_str()));
+    // Sister Files
+    /*if (properties.isMember("SisterFiles") && !properties["SisterFiles"].isNull())
+        data->SetThumbnailURL(Utf8CP(properties["SisterFiles"].asString().c_str()));*/
 
-        // Classification
-        if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
-            data->SetClassificationByTag(Utf8CP(properties["DataSourceType"].asString().c_str()));
+    // No Data Value
+    if (properties.isMember("NoDataValue") && !properties["NoDataValue"].isNull())
+        data->SetNoDataValue(Utf8CP(properties["SisterFiles"].asString().c_str()));
 
-        // Thumbnail URL
-        if (properties.isMember("SisterFiles") && !properties["SisterFiles"].isNull())
-            data->SetThumbnailURL(Utf8CP(properties["SisterFiles"].asString().c_str()));
+    // File Size
+    if (properties.isMember("FileSize") && !properties["FileSize"].isNull())
+        data->SetSize(Utf8CP(properties["FileSize"].asString().c_str()));
 
-        // MetadataURL
-        if (properties.isMember("NoDataValue") && !properties["NoDataValue"].isNull())
-            data->SetThumbnailURL(Utf8CP(properties["SisterFiles"].asString().c_str()));
+    // Coordinate System
+    if (properties.isMember("CoordinateSystem") && !properties["CoordinateSystem"].isNull())
+        data->SetCoordinateSystem(Utf8CP(properties["CoordinateSystem"].asString().c_str()));
 
-        if (properties.isMember("FileSize") && !properties["FileSize"].isNull())
-            data->SetAccuracy(Utf8CP(properties["FileSize"].asString().c_str()));
+    // Streamed
+    /*if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
+        data->SetVisibilityByTag(Utf8CP(properties["Streamed"].asString().c_str()));
 
-        // Provider
-        if (properties.isMember("CoordinateSystem") && !properties["CoordinateSystem"].isNull())
-            data->SetProvider(Utf8CP(properties["CoordinateSystem"].asString().c_str()));
+    // Metadata
+    if (properties.isMember("Metadata") && !properties["Metadata"].isNull())
+        data->SetApproximateFileSize(std::stoi(properties["Metadata"].asString().c_str()));*/
 
-        // Visibility
-        if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
-            data->SetVisibilityByTag(Utf8CP(properties["Streamed"].asString().c_str()));
+    return data;
+    }
 
-        //// Approximate file size
-        if (properties.isMember("Metadata") && !properties["Metadata"].isNull())
-            data->SetApproximateFileSize(std::stoi(properties["Metadata"].asString().c_str()));
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+SpatialEntityServerPtr RealityConversionTools::JsonToSpatialEntityServer(Json::Value properties)
+{
+    SpatialEntityServerPtr data = SpatialEntityServer::Create();
 
-        return data;
-    }*/
+    // Id
+    if (properties.isMember("Id") && !properties["Id"].isNull())
+        data->SetId(Utf8CP(properties["Id"].asString().c_str()));
+
+    // Communication Protocol
+    if (properties.isMember("CommunicationProtocol") && !properties["CommunicationProtocol"].isNull())
+        data->SetProtocol(Utf8CP(properties["CommunicationProtocol"].asString().c_str()));
+
+    // Streamed
+    if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
+        data->SetStreamed(properties["Streamed"].asBool());
+
+    // Login Key
+    if (properties.isMember("LoginKey") && !properties["LoginKey"].isNull())
+        data->SetLoginKey(Utf8CP(properties["LoginKey"].asString().c_str()));
+
+    // Login Method
+    if (properties.isMember("LoginMethod") && !properties["LoginMethod"].isNull())
+        data->SetLoginMethod(Utf8CP(properties["LoginMethod"].asString().c_str()));
+
+    // Registration Page
+    if (properties.isMember("RegistrationPage") && !properties["RegistrationPage"].isNull())
+        data->SetRegistrationPage(Utf8CP(properties["RegistrationPage"].asString().c_str()));
+
+    // Organisation Page
+    if (properties.isMember("OrganisationPage") && !properties["OrganisationPage"].isNull())
+        data->SetOrganisationPage(Utf8CP(properties["OrganisationPage"].asString().c_str()));
+
+    // Name
+    if (properties.isMember("Name") && !properties["Name"].isNull())
+        data->SetName(Utf8CP(properties["Name"].asString().c_str()));
+
+    // URL
+    if (properties.isMember("URL") && !properties["URL"].isNull())
+        data->SetUrl(Utf8CP(properties["URL"].asString().c_str()));
+
+    // Server Contact Information
+    if (properties.isMember("ServerContactInformation") && !properties["ServerContactInformation"].isNull())
+        data->SetContactInfo(Utf8CP(properties["ServerContactInformation"].asString().c_str()));
+
+    // Fees
+    if (properties.isMember("Fees") && !properties["Fees"].isNull())
+        data->SetFees(Utf8CP(properties["Fees"].asString().c_str()));
+
+    // Legal
+    if (properties.isMember("Legal") && !properties["Legal"].isNull())
+        data->SetLegal(Utf8CP(properties["Legal"].asString().c_str()));
+
+    // Access Constraints
+    if (properties.isMember("AccessConstraints") && !properties["AccessConstraints"].isNull())
+        data->SetAccessConstraints(Utf8CP(properties["AccessConstraints"].asString().c_str()));
+
+    // Online
+    if (properties.isMember("Online") && !properties["Online"].isNull())
+        data->SetOnline(properties["Online"].asBool());
+
+    // Last Check
+    if (properties.isMember("LastCheck") && !properties["LastCheck"].isNull())
+        data->SetLastCheck(Utf8CP(properties["LastCheck"].asString().c_str()));
+
+    // Last Time Online
+    if (properties.isMember("LastTimeOnline") && !properties["LastTimeOnline"].isNull())
+        data->SetLastTimeOnline(Utf8CP(properties["LastTimeOnline"].asString().c_str()));
+
+    // Latency
+    if (properties.isMember("Latency") && !properties["Latency"].isNull())
+        data->SetLatency(properties["Latency"].asDouble());
+
+    // Mean Reachability Stats
+    if (properties.isMember("MeanReachabilityStats") && !properties["MeanReachabilityStats"].isNull())
+        data->SetMeanReachabilityStats(properties["MeanReachabilityStats"].asInt());
+
+    // State
+    if (properties.isMember("State") && !properties["State"].isNull())
+        data->SetState(Utf8CP(properties["State"].asString().c_str()));
+
+    // Type
+    if (properties.isMember("Type") && !properties["Type"].isNull())
+        data->SetType(Utf8CP(properties["Type"].asString().c_str()));
+
+    return data;
+}
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016

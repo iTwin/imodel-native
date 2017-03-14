@@ -46,6 +46,9 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
 
 //=====================================================================================
@@ -385,6 +388,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
 
 protected:
+    REALITYDATAPLATFORM_EXPORT void _PrepareBaseRequestString() const;
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
     int m_informationSourceFilter;

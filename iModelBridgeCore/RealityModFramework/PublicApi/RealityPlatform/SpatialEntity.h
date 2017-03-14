@@ -244,6 +244,11 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Create(Utf8CP url, Utf8CP name = NULL);
 
     //! Get/Set
+    //! The Id used to access this SpatialEntityServer on the GCS server
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8CP id);
+
+    //! Get/Set
     //! A key indicating the communication/transport protocol. Usually ‘http’ or ‘ftp’
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProtocol() const;
     REALITYDATAPLATFORM_EXPORT void SetProtocol(Utf8CP protocol);
@@ -287,11 +292,13 @@ public:
     //! Last time server was checked
     REALITYDATAPLATFORM_EXPORT DateTimeCR GetLastCheck() const;
     REALITYDATAPLATFORM_EXPORT void SetLastCheck(DateTimeCR time);
+    REALITYDATAPLATFORM_EXPORT void SetLastCheck(Utf8CP time);
 
     //! Get/Set
     //! The last time the server was checked and was on-line.
     REALITYDATAPLATFORM_EXPORT DateTimeCR GetLastTimeOnline() const;
     REALITYDATAPLATFORM_EXPORT void SetLastTimeOnline(DateTimeCR time);
+    REALITYDATAPLATFORM_EXPORT void SetLastTimeOnline(Utf8CP time);
 
     //! Get/Set
     //! Latency of server in seconds if known. A value of zero means unknown. A negative value is invalid.
@@ -327,24 +334,51 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLoginMethod() const;
     REALITYDATAPLATFORM_EXPORT void SetLoginMethod(Utf8CP loginMethod);
 
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRegistrationPage() const;
+    REALITYDATAPLATFORM_EXPORT void SetRegistrationPage(Utf8CP registrationPage);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOrganisationPage() const;
+    REALITYDATAPLATFORM_EXPORT void SetOrganisationPage(Utf8CP organisationPage);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFees() const;
+    REALITYDATAPLATFORM_EXPORT void SetFees(Utf8CP fees);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAccessConstraints() const;
+    REALITYDATAPLATFORM_EXPORT void SetAccessConstraints(Utf8CP accessConstraints);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT uint64_t GetMeanReachabilityStats() const;
+    REALITYDATAPLATFORM_EXPORT void SetMeanReachabilityStats(uint64_t meanReachabilityStats);
+
 protected:
     SpatialEntityServer();
     SpatialEntityServer(Utf8CP url, Utf8CP name);
 
-    Utf8String m_protocol;
-    Utf8String m_name;
-    Utf8String m_url;
-    Utf8String m_contactInfo;
-    Utf8String m_legal;
-    bool m_online;
-    DateTime m_lastCheck;
-    DateTime m_lastTimeOnline;
-    double m_latency;
-    Utf8String m_state;
-    Utf8String m_type;
-    Utf8String m_loginKey;
-    Utf8String m_loginMethod;
-    bool m_streamed;
+    Utf8String  m_id;
+    Utf8String  m_protocol;
+    Utf8String  m_name;
+    Utf8String  m_url;
+    Utf8String  m_contactInfo;
+    Utf8String  m_legal;
+    bool        m_online;
+    DateTime    m_lastCheck;
+    DateTime    m_lastTimeOnline;
+    double      m_latency;
+    Utf8String  m_state;
+    Utf8String  m_type;
+    Utf8String  m_loginKey;
+    Utf8String  m_loginMethod;
+    bool        m_streamed;
+    
+    Utf8String  m_registrationPage; 
+    Utf8String  m_organisationPage;
+    Utf8String  m_fees;
+    Utf8String  m_accessConstraints;
+    uint64_t    m_meanReachabilityStats;
     };
 
 
@@ -394,6 +428,7 @@ public:
     //! The size in kilobytes of the data source file.
     REALITYDATAPLATFORM_EXPORT uint64_t GetSize() const; // in bytes.
     REALITYDATAPLATFORM_EXPORT void SetSize(uint64_t size); // in bytes.
+    REALITYDATAPLATFORM_EXPORT void SetSize(Utf8CP size);
 
     //! Get/Set
     //! A string containing the description of the sample value of the data source that should be considered 

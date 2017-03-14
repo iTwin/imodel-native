@@ -45,6 +45,7 @@ void SpatialEntityDataSource::SetCompoundType(Utf8CP type) { m_compoundType = ty
 
 uint64_t SpatialEntityDataSource::GetSize() const { return m_size; }
 void SpatialEntityDataSource::SetSize(uint64_t size) { m_size = size; }
+void SpatialEntityDataSource::SetSize(Utf8CP size) { BeStringUtilities::ParseUInt64(m_size, size); }
 
 Utf8StringCR SpatialEntityDataSource::GetNoDataValue() const { return m_noDataValue; }
 void SpatialEntityDataSource::SetNoDataValue(Utf8CP value) { m_noDataValue = value; }
@@ -385,6 +386,10 @@ SpatialEntityServerPtr SpatialEntityServer::Create(Utf8CP url, Utf8CP name)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
+
+Utf8StringCR SpatialEntityServer::GetId() const { return m_id; }
+void SpatialEntityServer::SetId(Utf8CP id) { m_id = id; }
+
 Utf8StringCR SpatialEntityServer::GetProtocol() const { return m_protocol; }
 void SpatialEntityServer::SetProtocol(Utf8CP protocol) { m_protocol = protocol; }
 
@@ -404,10 +409,12 @@ bool SpatialEntityServer::IsOnline() const { return m_online; }
 void SpatialEntityServer::SetOnline(bool online) { m_online = online; }
 
 DateTimeCR SpatialEntityServer::GetLastCheck() const { return m_lastCheck; }
-void SpatialEntityServer::SetLastCheck(DateTimeCR data) { m_lastCheck = data; }
+void SpatialEntityServer::SetLastCheck(DateTimeCR date) { m_lastCheck = date; }
+void SpatialEntityServer::SetLastCheck(Utf8CP date) { DateTime::FromString(m_lastCheck, date); }
 
 DateTimeCR SpatialEntityServer::GetLastTimeOnline() const { return m_lastTimeOnline; }
-void SpatialEntityServer::SetLastTimeOnline(DateTimeCR data) { m_lastTimeOnline = data; }
+void SpatialEntityServer::SetLastTimeOnline(DateTimeCR date) { m_lastTimeOnline = date; }
+void SpatialEntityServer::SetLastTimeOnline(Utf8CP date) { DateTime::FromString(m_lastTimeOnline, date); }
 
 double SpatialEntityServer::GetLatency() const { return m_latency; }
 void SpatialEntityServer::SetLatency(double latency) { m_latency = latency; }
@@ -427,6 +434,20 @@ void SpatialEntityServer::SetLoginMethod(Utf8CP loginMethod) { m_loginMethod = l
 bool SpatialEntityServer::IsStreamed() const { return m_streamed; }
 void SpatialEntityServer::SetStreamed(bool streamed) { m_streamed = streamed; }
 
+Utf8StringCR SpatialEntityServer::GetRegistrationPage() const { return m_registrationPage; }
+void SpatialEntityServer::SetRegistrationPage(Utf8CP registrationPage) { m_registrationPage = registrationPage; }
+
+Utf8StringCR SpatialEntityServer::GetOrganisationPage() const { return m_organisationPage; }
+void SpatialEntityServer::SetOrganisationPage(Utf8CP organisationPage) { m_organisationPage = organisationPage; }
+
+Utf8StringCR SpatialEntityServer::GetFees() const { return m_fees; }
+void SpatialEntityServer::SetFees(Utf8CP fees) { m_fees = fees; }
+
+Utf8StringCR SpatialEntityServer::GetAccessConstraints() const { return m_accessConstraints; }
+void SpatialEntityServer::SetAccessConstraints(Utf8CP accessConstraints) { m_accessConstraints = accessConstraints; }
+
+uint64_t SpatialEntityServer::GetMeanReachabilityStats() const { return m_meanReachabilityStats; }
+void SpatialEntityServer::SetMeanReachabilityStats(uint64_t meanReachabilityStats) { m_meanReachabilityStats = meanReachabilityStats; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
