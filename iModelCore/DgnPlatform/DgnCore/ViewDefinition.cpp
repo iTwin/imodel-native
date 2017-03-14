@@ -19,6 +19,7 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(DrawingView);
     HANDLER_DEFINE_MEMBERS(SheetView);
     HANDLER_DEFINE_MEMBERS(SpatialView);
+    HANDLER_DEFINE_MEMBERS(TemplateView2d);
     HANDLER_DEFINE_MEMBERS(TemplateView3d);
     HANDLER_DEFINE_MEMBERS(OrthographicView);
     HANDLER_DEFINE_MEMBERS(ViewModels);
@@ -58,7 +59,6 @@ namespace ViewProperties
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
-    static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
     static constexpr Utf8CP str_Hidden() {return "hidden";}
     static constexpr Utf8CP str_Visible() {return "visible";}
     static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
@@ -2323,31 +2323,6 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateView3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_TemplateModel(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            TemplateViewDefinition3dCR viewDef = (TemplateViewDefinition3dCR)el;
-            value.SetLong(viewDef.GetTemplateModelId().GetValue());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsLong())
-                return DgnDbStatus::BadArg;
-
-            TemplateViewDefinition3d& viewDef = (TemplateViewDefinition3dR)el;
-            viewDef.m_templateModelId = DgnModelId((uint64_t) value.GetLong());
-            return DgnDbStatus::Success;
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
@@ -2446,7 +2421,6 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     recorder->_RecordMeasurement("CreateSceneComplete", measurement);
     }
 
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
@@ -2455,21 +2429,17 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
     {
-    if (!templateModel.IsTemplate())
-        return nullptr;
-
-    DgnDbR db = templateModel.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
     CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
 
-    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
-    viewDef->m_templateModelId = templateModel.GetModelId();
+    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
+    viewDef->SetDisplayStyle(*displayStyle);
 
     if (nullptr == categorySelectorIn)
         {
@@ -2483,41 +2453,31 @@ TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TemplateViewDefinition3d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
     {
-    m_templateModelId = statement.GetValueNavigation<DgnModelId>(params.GetSelectIndex(str_TemplateModel()));
-    return T_Super::_ReadSelectParams(statement, params);
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    if (!classId.IsValid())
+        return nullptr;
+
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
+    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+
+    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
+    if (nullptr == categorySelectorIn)
+        {
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+            viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+        }
+
+    return viewDef;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
+ViewControllerPtr TemplateViewDefinition2d::_SupplyController() const
     {
-    T_Super::_BindWriteParams(statement, forInsert);
-    statement.BindNavigationValue(statement.GetParameterIndex(str_TemplateModel()), m_templateModelId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_CopyFrom(DgnElementCR element)
-    {
-    T_Super::_CopyFrom(element);
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) element;
-    m_templateModelId = other.m_templateModelId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TemplateViewDefinition3d::_EqualState(ViewDefinitionR in)
-    {
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) in;
-    if (m_templateModelId != other.m_templateModelId)
-        return false;
-
-    return T_Super::_EqualState(in);
+    return new TemplateViewController2d(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
