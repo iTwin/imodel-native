@@ -108,6 +108,7 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
 
     if (nullptr == m_smPtr.get()) return ERROR;
     m_isInsertingClips = true;
+    m_startClipCount++;
     m_smPtr->SetIsInsertingClips(true);
     return SUCCESS;
     }
@@ -121,6 +122,8 @@ BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
 //        return SUCCESS;
 
     if (nullptr == m_smPtr.get()) return ERROR;
+    m_startClipCount--;
+    if (0 != m_startClipCount) return SUCCESS;
     m_isInsertingClips = false;
     m_smPtr->SetIsInsertingClips(false);
 
@@ -1139,6 +1142,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_isInsertingClips = false;
     m_subModel = false;
     m_loadedAllModels = false;
+    m_startClipCount = 0;
     }
 
 //----------------------------------------------------------------------------------------

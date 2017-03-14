@@ -114,6 +114,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         BeFileName                              m_path;
         bool                                    m_isProgressiveDisplayOn;    
         bool                                    m_isInsertingClips;
+        int                                     m_startClipCount;
 
         bvector<ScalableMeshModel*>             m_terrainParts;
         bmap<uint64_t, bpair<ClipMode, bool>>                m_currentClips;
