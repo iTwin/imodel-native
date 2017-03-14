@@ -322,9 +322,12 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_monoColor = style.GetMonochromeColor();
     m_viewFlags = style.GetViewFlags();
 
-    auto def3d = def.ToView3dP();
-    if (def3d)
-        m_hline = def3d->GetDisplayStyle3d().GetHiddenLineParams();
+    auto style3d = style.ToDisplayStyle3dP();
+    if (style3d)
+        {
+        m_hline = style3d->GetHiddenLineParams();
+        m_sceneLights = style3d->GetSceneLights();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
