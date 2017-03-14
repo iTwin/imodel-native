@@ -344,8 +344,8 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
     attribute vec2  a_prev;
     attribute vec2  a_next;
     attribute vec2  a_param;
-    attribute float a_delta;
-    attribute vec3  a_scale; 
+    attribute float a_distance;
+    attribute vec3  a_texScalePnt; 
     uniform mat4    u_mv;
     uniform mat4    u_proj;
     uniform float   u_width;
@@ -354,7 +354,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
 
     void main(void)
         {
-        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_texScalePnt, 1.0));
         vec2            imagesPerPixel, imagesPerMeter;
 
         if (u_texLength < 0.0)
@@ -368,7 +368,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc.x = a_delta * imagesPerMeter.x;
+        v_texc.x = a_distance * imagesPerMeter.x;
         v_texc.y = .5;
 
 )RAW_STRING"
@@ -418,8 +418,8 @@ static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
 
 static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3  a_pos;
-    attribute vec3  a_scale; 
-    attribute float a_delta;
+    attribute vec3  a_texScalePnt; 
+    attribute float a_distance;
     uniform mat4    u_mv;
     uniform mat4    u_proj;
     uniform float   u_texLength;
@@ -427,7 +427,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
                                                                                                                                                                                       
     void main(void)
         {
-        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_texScalePnt, 1.0));
         float           imagesPerPixel, imagesPerMeter;
 
         if (u_texLength < 0.0)
@@ -441,7 +441,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc = vec2(a_delta * imagesPerMeter, .5);
+        v_texc = vec2(a_distance * imagesPerMeter, .5);
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
         v_color =  computeColor();
         }

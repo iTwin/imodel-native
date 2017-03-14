@@ -1906,13 +1906,13 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
         AddTechniqueParameter(technique, "texLength", GLTF_FLOAT, nullptr);
         technique["uniforms"]["u_texLength"] = "texLength";
 
-        AddTechniqueParameter(technique, "scale", GLTF_FLOAT_VEC3, "SCALE");
-        technique["attributes"]["a_scale"] = "scale";
-        AppendProgramAttribute(programRoot, "a_scale");
+        AddTechniqueParameter(technique, "texScalePnt", GLTF_FLOAT_VEC3, "TEXSCALEPNT");
+        technique["attributes"]["a_texScalePnt"] = "texScalePnt";
+        AppendProgramAttribute(programRoot, "a_texScalePnt");
 
-        technique["attributes"]["a_delta"] = "delta";
-        AppendProgramAttribute(programRoot, "a_delta");
-        AddTechniqueParameter(technique, "delta", GLTF_FLOAT, "DELTA");
+        technique["attributes"]["a_distance"] = "distance";
+        AppendProgramAttribute(programRoot, "a_distance");
+        AddTechniqueParameter(technique, "distance", GLTF_FLOAT, "DISTANCE");
         }
 
 
@@ -2447,8 +2447,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
     if (mat.IsTextured())
         {
-        primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Delta", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
-        primitive["attributes"]["SCALE"]  = AddMeshVertexAttributes (tileData, &tesselation.m_scalePoints.front().x, "Scale", idStr.c_str(), 3, tesselation.m_scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Distance", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
+        primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &tesselation.m_scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, tesselation.m_scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 
 
@@ -2527,8 +2527,8 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
 
     if (mat.IsTextured())
         {
-        primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Delta", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &distances.front(), &distances.back());
-        primitive["attributes"]["SCALE"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "Scale", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &distances.front(), &distances.back());
+        primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 
     if (doBatchIds)
