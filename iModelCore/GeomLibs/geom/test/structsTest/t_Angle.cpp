@@ -1454,7 +1454,7 @@ TEST(HSV,RoundOff)
         {
         result.push_back ((int)( (0.5 + 255.0 * value / MAXFACTOR)));
         int result1 = (int)std::round (255.0 * value / MAXFACTOR);
-        Check::Int (result1, (int)result.back (), "hsv std::round versus (int)");
+        EXPECT_EQ (result1, (int)result.back ()) << "hsv std::round versus (int)";
         }
 #ifdef PRINT_HSV_PERCENTAGE_TABLE
     for (size_t i = 0; i < result.size (); i++)
@@ -1466,7 +1466,7 @@ TEST(HSV,RoundOff)
 #endif
     for (size_t i = 0; i <= MAXFACTOR; i++)
         {
-        Check::Int ((int)hsv128[i], result[i], "HSV rounding");
+        EXPECT_EQ ((int)hsv128[i], result[i]) << "HSV rounding";
         }
     }
 
