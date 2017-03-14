@@ -1208,7 +1208,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetInGuiList());
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetInGuiList(), model.IsTemplate());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
