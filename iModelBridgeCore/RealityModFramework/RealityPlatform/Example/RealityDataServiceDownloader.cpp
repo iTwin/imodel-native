@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     TransferReport* tReport = download.Perform();
     Utf8String report;
     tReport->ToXml(report);
-    std::cout << "if any files failed to download, they will be listed here: " << std::endl;
+    std::cout << std::endl << "if any files failed to download, they will be listed here: " << std::endl;
     std::cout << report << std::endl;
     
     std::cout << "Press a key to continue..." << std::endl;
