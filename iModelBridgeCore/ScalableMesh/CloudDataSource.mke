@@ -8,7 +8,6 @@
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
-BUILD_USING_VS2013=1
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 

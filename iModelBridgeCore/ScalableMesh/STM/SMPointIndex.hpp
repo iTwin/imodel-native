@@ -6740,6 +6740,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::PostQu
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::GetNbObjects() const
     {
+    if (!IsLoaded())
+        Load();
+
     if (m_NbObjects == -1 || IsDirty())
         {
         uint32_t NbObjects;
