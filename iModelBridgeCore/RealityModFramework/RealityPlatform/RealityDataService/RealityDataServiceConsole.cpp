@@ -154,7 +154,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
         case Command::Error:
             {
             DisplayInfo("input error, please enter your choice in one of the following formats\n", DisplayOption::Error);
-            DisplayInfo(" Index # \n or \n Value NameOfValue\n", DisplayOption::Error);
+            DisplayInfo(" Index #  or Value NameOfValue\n", DisplayOption::Error);
             m_lastCommand = Command::Retry;
             }
         }
@@ -319,7 +319,7 @@ void RealityDataConsole::ConfigureServer()
             }
         else
             {
-            std::cout << "please select a repository from the following options" << std::endl;
+            DisplayInfo("please select a repository from the following options\n", DisplayOption::Question);
             Choice(schemaNames, schema);
             switch(m_lastCommand)
                 {
@@ -662,7 +662,8 @@ void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
     if (!msg.empty())
         std::cout << msg;
 
-    SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+    // commande
+    SetConsoleTextAttribute(m_hConsole, FOREGROUND_GREEN | FOREGROUND_RED | BACKGROUND_BLUE);
     }
 
 
