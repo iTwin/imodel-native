@@ -1878,8 +1878,6 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
         AppendProgramAttribute(programRoot, "a_batchId");
 
     mat.AddTechniqueParameters(technique, programRoot, tileData);
-    technique["attributes"]["a_delta"] = "delta";
-    AppendProgramAttribute(programRoot, "a_delta");
 
 
     if (mat.IsTesselated())
@@ -1892,17 +1890,15 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
 
         AddTechniqueParameter(technique, "prev", GLTF_FLOAT_VEC3, "PREV");
         AddTechniqueParameter(technique, "next", GLTF_FLOAT_VEC3, "NEXT");
+        AddTechniqueParameter(technique, "param", GLTF_FLOAT_VEC2, "PARAM");
+
 
         technique["attributes"]["a_prev"] = "prev";
         technique["attributes"]["a_next"] = "next";
+        technique["attributes"]["a_param"] = "param";
         AppendProgramAttribute(programRoot, "a_prev");
         AppendProgramAttribute(programRoot, "a_next");
-
-        AddTechniqueParameter(technique, "delta", GLTF_FLOAT_VEC3, "DELTA");
-        }
-    else
-        {
-        AddTechniqueParameter(technique, "delta", GLTF_FLOAT, "DELTA");
+        AppendProgramAttribute(programRoot, "a_param");
         }
 
     if (mat.IsTextured())
@@ -1914,7 +1910,9 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
         technique["attributes"]["a_scale"] = "scale";
         AppendProgramAttribute(programRoot, "a_scale");
 
-
+        technique["attributes"]["a_delta"] = "delta";
+        AppendProgramAttribute(programRoot, "a_delta");
+        AddTechniqueParameter(technique, "delta", GLTF_FLOAT, "DELTA");
         }
 
 
@@ -2270,7 +2268,8 @@ struct  PolylineTesselation
     bvector<DPoint3d>           m_points;
     bvector<DVec3d>             m_prevDirs;
     bvector<DVec3d>             m_nextDirs;
-    bvector<DPoint3d>           m_deltas;
+    bvector<double>             m_distances;
+    bvector<DPoint2d>           m_params;
     bvector<DPoint3d>           m_scalePoints;
     bvector<uint16_t>           m_attributes;
     bvector<uint16_t>           m_colors;
@@ -2284,12 +2283,13 @@ struct  PolylineTesselation
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Ray.Bentley     03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, DVec3dCR delta, uint16_t attrib, uint16_t color, DPoint3dCR center)
+    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint16_t attrib, uint16_t color, DPoint3dCR center)
         {
         m_points.push_back(point);
         m_prevDirs.push_back(prev);
         m_nextDirs.push_back(next);
-        m_deltas.push_back(delta);
+        m_distances.push_back(delta);
+        m_params.push_back(param);
         m_attributes.push_back(attrib);
         m_colors.push_back(color);
         m_scalePoints.push_back(center);
@@ -2316,7 +2316,7 @@ struct  PolylineTesselation
             AddTriangle(0, index, m_points.size() + i + 1, m_points.size() + i);
 
         for (size_t i=0; i < s_nPoints; i++)
-            AddPoint(p, prev, next, DVec3d::From(length, 1.0, param + (double) i * paramDelta), attribute, color, center); 
+            AddPoint(p, prev, next, length, DVec2d::From(1.0, param + (double) i * paramDelta), attribute, color, center); 
         }
 };
 
@@ -2412,7 +2412,8 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 tesselation.AddPoint (basePoint ? p0 : p1,
                                       basePoint ? prevDir0 : prevDir1,
                                       basePoint ? nextDir0 : nextDir1,
-                                      DVec3d::From(basePoint ? length0 : length1, deltaYs[j], basePoint ? 0.0 : 4.0),
+                                      basePoint ? length0 : length1,
+                                      DVec2d::From(deltaYs[j], basePoint ? 0.0 : 4.001),
                                       basePoint ? attributes0 : attributes1,
                                       basePoint ? colors0 : colors1,
                                       rangeCenter);
@@ -2436,11 +2437,14 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     primitive["attributes"]["POSITION"]  = accPositionId;
     primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevDirs.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
     primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextDirs.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
-    primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_deltas.front().x, "Delta", idStr.c_str(), 3, tesselation.m_deltas.size(), "VEC3", VertexEncoding::UnquantizedDoubles, nullptr, nullptr);
+    primitive["attributes"]["PARAM"]  = AddMeshVertexAttributes (tileData, &tesselation.m_params.front().x, "Param", idStr.c_str(), 2, tesselation.m_params.size(), "VEC2", VertexEncoding::UnquantizedDoubles, nullptr, nullptr);
     primitive["indices"] = AddMeshIndices (tileData, "Index", tesselation.m_indices, idStr);
 
     if (mat.IsTextured())
+        {
+        primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Delta", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &tesselation.m_distances.front(), &tesselation.m_distances.back());
         primitive["attributes"]["SCALE"]  = AddMeshVertexAttributes (tileData, &tesselation.m_scalePoints.front().x, "Scale", idStr.c_str(), 3, tesselation.m_scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+        }
 
 
     if (doBatchIds)
