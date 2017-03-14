@@ -199,6 +199,7 @@ struct NavNode
 public:
     REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
     REALITYDATAPLATFORM_EXPORT NavNode();
+    REALITYDATAPLATFORM_EXPORT NavNode(Utf8String schema, Utf8String id);
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
     REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();

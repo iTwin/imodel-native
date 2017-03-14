@@ -125,7 +125,7 @@ StatusInt RealityConversionTools::JsonToSpatialEntityDataSource(Utf8CP data, bve
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            3/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToSpatialEntityServer(Utf8CP data, bvector<SpatialEntityServerPtr>* outData)
+/*StatusInt RealityConversionTools::JsonToSpatialEntityServer(Utf8CP data, bvector<SpatialEntityServerPtr>* outData)
     {
     Json::Value root(Json::objectValue);
     if (JsonToObjectBase(data, root) == ERROR)
@@ -144,7 +144,7 @@ StatusInt RealityConversionTools::JsonToSpatialEntityServer(Utf8CP data, bvector
         outData->push_back(entity);
         }
     return SUCCESS;
-    }
+    }*/
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
@@ -509,7 +509,7 @@ SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            3/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-SpatialEntityServerPtr RealityConversionTools::JsonToSpatialEntityServer(Json::Value properties)
+/*SpatialEntityServerPtr RealityConversionTools::JsonToSpatialEntityServer(Json::Value properties)
 {
     SpatialEntityServerPtr data = SpatialEntityServer::Create();
 
@@ -594,7 +594,7 @@ SpatialEntityServerPtr RealityConversionTools::JsonToSpatialEntityServer(Json::V
         data->SetType(Utf8CP(properties["Type"].asString().c_str()));
 
     return data;
-}
+}*/
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016

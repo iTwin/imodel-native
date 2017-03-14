@@ -68,6 +68,7 @@ public:
     void InterpretCommand();
     void List();
     void ListAll();
+    void ListRoots();
     void ChangeDir();
     void EnterpriseStat();
     void Download();

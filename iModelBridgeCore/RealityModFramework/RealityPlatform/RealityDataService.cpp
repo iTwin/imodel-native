@@ -775,7 +775,7 @@ void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append("/RealityData?$filter=Enterprise+eq+'");
+    m_httpRequestString.append("/RealityData?$filter=EnterpriseId+eq+'");
 
     if(m_id.length() == 0)
         {

@@ -439,7 +439,11 @@ SpatialEntityServerPtr Request(SpatialEntityServerByIdRequestCR request)
     return entities[0];
     }
 
-SpatialEntityMetadataPtr Request(SpatialEntityMetadataByIdRequestCR request);
+SpatialEntityMetadataPtr Request(SpatialEntityMetadataByIdRequestCR request)
+    {
+
+    }
+
 bvector<SpatialEntityPtr> Request(SpatialEntityWithDetailsSpatialRequestCR request);
 
 //=====================================================================================

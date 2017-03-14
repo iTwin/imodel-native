@@ -346,7 +346,7 @@ void RealityDataConsole::List()
     bvector<Utf8String> nodeStrings;
 
     if(m_currentNode == nullptr)
-        m_serverNodes = NodeNavigator::GetInstance().GetRootNodes(m_server, RealityDataService::GetRepoName());
+        return ListRoots();//m_serverNodes = NodeNavigator::GetInstance().GetRootNodes(m_server, RealityDataService::GetRepoName());
     else
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node);
 
@@ -359,6 +359,32 @@ void RealityDataConsole::List()
         }
 
     PrintResults(nodeStrings);
+    }
+
+void RealityDataConsole::ListRoots()
+    {
+    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest();
+    RequestStatus status = RequestStatus::SUCCESS;
+    bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
+    bvector<RealityDataPtr> partialVec;
+    while(status == RequestStatus::SUCCESS)
+        {
+        partialVec = RealityDataService::Request(enterpriseReq, status);
+        enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        }
+    bvector<Utf8String> nodes = bvector<Utf8String>();
+
+    Utf8String schema = RealityDataService::GetSchemaName();
+    for(RealityDataPtr rData : enterpriseVec)
+        {
+        if(rData->IsListable())
+            {
+            nodes.push_back(rData->GetName());
+            m_serverNodes.push_back(NavNode(schema, rData->GetName()));
+            }
+        }
+
+    PrintResults(nodes);
     }
 
 void RealityDataConsole::ListAll()
