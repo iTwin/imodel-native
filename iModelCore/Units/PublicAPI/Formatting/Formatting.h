@@ -284,8 +284,8 @@ struct Utils
     static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
-    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
-    UNITS_EXPORT static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return (nullptr == name || strlen(name) == 0)? subs : name; }
+    static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
+    static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return IsNameNullOrEmpty(name) ? subs : name; }
     //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
     UNITS_EXPORT static bool AreUnitsComparable(UnitCP un1, UnitCP u2);
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
@@ -660,17 +660,10 @@ protected:
     CompositeSpecType m_type;
     NumericFormatSpecCP m_formatSpec;
 
-    bool SetUnitLabel(int index, Utf8CP label);
-    bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
-    CompositeSpecType InferSpecType();
-    //bool IsUnitPairMatch(UnitCP unit, UnitCP subunit);
+    void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(UnitCP upper, UnitCP lower);
     void ResetType() { m_type = CompositeSpecType::Undefined; }
-    void CheckRatios();
-    CompositeValueSpec();
     void Init();
-    void SetRatios(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub);
-    void SetUnits(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit);
     UnitCP SetInputUnit(UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
@@ -678,7 +671,7 @@ protected:
     UnitCP GetSmallestUnit();
 public:
 
-    UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
+   // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
     UNITS_EXPORT CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit=nullptr, UnitCP MinorUnit=nullptr, UnitCP subUnit = nullptr);
     UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
     UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
@@ -1044,7 +1037,8 @@ struct KindOfQuantity
         Utf8String m_defaultPresentationUnit;
         bvector<Utf8String> m_alternativePresentationUnitList;
 
-        Quantity m_persistenceResolution;
+        FormatUnitSet m_persistenceFUS;
+        ////Quantity m_persistenceResolution;     // 1.0e-6 M   100.000003 1.100001
         double m_relativeAccuracy;   // a parameter related to the accuracy of the measurement methods.
         bvector<FormatUnitSet> m_presentationFUS;
         mutable KindOfQuantityId m_kindOfQuantityId;

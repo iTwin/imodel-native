@@ -67,14 +67,12 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("Unit %s  %c", unit.GetText(), unit.GetDelim());
     FormattingWord fnam = curs.ExtractWord();
     LOG.infov("Format %s  %c", fnam.GetText(), fnam.GetDelim());
-    FormatUnitSet fus = FormatUnitSet(fnam.GetText(), unit.GetText());
+    
     LOG.infov("FUS  %s", fus.ToText(true).c_str());*/
 
+    FormatUnitSet fus = FormatUnitSet("FT(fract8)");
     FormatUnitGroup fusG = FormatUnitGroup("FT(fract8)  IN(fract8), M(real4), MM(Real2)");
-    //if(fusG.HasProblem())
-    //    LOG.infov("FUS  %s", Utils::FormatProblemDescription(fusG.GetProblemCode()).c_str());
-    //else
-    //    LOG.infov("FUSgroup:  %s", fusG.ToText(false).c_str());
+   
     EXPECT_STREQ ("FT(fract8),IN(fract8),M(real4),MM(real2)", fusG.ToText(true).c_str());
     EXPECT_STREQ ("FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2)", fusG.ToText(false).c_str());
     }

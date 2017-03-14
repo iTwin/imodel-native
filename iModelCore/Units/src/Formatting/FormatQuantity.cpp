@@ -38,9 +38,12 @@ void CompositeValueSpec::Init()
 //---------------------------------------------------------------------------------------
 size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
     {
-    if (nullptr == subunit) // subunit is not defined - which is OK regardless of wheteh the unit is defined
+    if (nullptr == subunit) // subunit is not defined - which is OK regardless of whether the unit is defined
         return 0;
-    if (nullptr != unit)  // this is not allowed because defined subunit requires unit to be defined
+
+    if (nullptr == unit)  // this is not allowed because defined subunit requires unit to be defined
+        UpdateProblemCode(FormatProblemCode::CNS_InconsistentUnitSet);
+    else
         {
         if (unit->GetPhenomenon() != subunit->GetPhenomenon())
             {
@@ -53,60 +56,71 @@ size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
         else
             UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
         }
-    else
-        UpdateProblemCode(FormatProblemCode::CNS_InconsistentUnitSet);
     return 0;
     }
 
-void CompositeValueSpec::CheckRatios()
+//---------------------------------------------------------------------------------------
+// Checks comparability and calculates ratios between UOM of the parts and checks their consistency
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+void CompositeValueSpec::SetUnitRatios()
     {
-    size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
-    if (1 < m_ratio[indxMajor]) ratioBits |= 0x1;
-    if (1 < m_ratio[indxMiddle]) ratioBits |= 0x2;
-    if (1 < m_ratio[indxMinor]) ratioBits |= 0x4;
     m_type = CompositeSpecType::Undefined;
+    size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
+    memset(m_ratio, 0, sizeof(m_ratio));
+    m_ratio[indxMajor] = UnitRatio(m_units[indxMajor], m_units[indxMiddle]);
 
-    switch (ratioBits)
+    if (NoProblem())
         {
-        case 0x3:
-            m_type = CompositeSpecType::Triple;
-            break;
-        case 0x7:
-            m_type = CompositeSpecType::Quatro;
-            break;
-        case 0x1:
-            m_type = CompositeSpecType::Double;
-            break;
-        case 0:
-            m_type = CompositeSpecType::Single;
-            break;
-        default:
-            UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
-            break;
+        if (1 < m_ratio[indxMajor]) ratioBits |= 0x1;
+        m_ratio[indxMiddle] = UnitRatio(m_units[indxMiddle], m_units[indxMinor]);
+        if (1 < m_ratio[indxMiddle]) ratioBits |= 0x2;
+        if (NoProblem())
+            {
+            m_ratio[indxMinor] = UnitRatio(m_units[indxMinor], m_units[indxSub]);
+            if (1 < m_ratio[indxMinor]) ratioBits |= 0x4;
+            switch (ratioBits)
+                {
+                case 0x3:
+                    m_type = CompositeSpecType::Triple;
+                    break;
+                case 0x7:
+                    m_type = CompositeSpecType::Quatro;
+                    break;
+                case 0x1:
+                    m_type = CompositeSpecType::Double;
+                    break;
+                case 0:
+                    m_type = CompositeSpecType::Single;
+                    break;
+                default:
+                    UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
+                    break;
+                }
+            }
         }
     }
 
-void CompositeValueSpec::SetRatios(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+void CompositeValueSpec::SetUnitLabel(int index, Utf8CP label)
     {
-    m_ratio[indxMajor] = MajorToMiddle;
-    m_ratio[indxMiddle] = MiddleToMinor;
-    m_ratio[indxMinor] = MinorToSub;
+    if (indxMajor <= index && index < indxLimit)
+        m_unitLabel[index] = label;
     }
 
-void CompositeValueSpec::SetUnits(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
-    {
-    m_units[indxMajor] = MajorUnit;
-    m_units[indxMiddle] = MiddleUnit;
-    m_units[indxMinor] = MinorUnit;
-    m_units[indxSub] = SubUnit;
-    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+void CompositeValueSpec::SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab, Utf8CP MinorLab, Utf8CP SubLab)
+{
+    m_unitLabel[indxMajor] = MajorLab;
+    m_unitLabel[indxMiddle] = MiddleLab;
+    m_unitLabel[indxMinor] = MinorLab;
+    m_unitLabel[indxSub] = SubLab;
+}
 
-void CompositeValueSpec::SetUnitRatios()
-    {
-    m_ratio[indxMajor] = UnitRatio(m_units[indxMajor], m_units[indxMiddle]);
-    m_ratio[indxMiddle] = UnitRatio(m_units[indxMiddle], m_units[indxMinor]);
-    m_ratio[indxMinor] = UnitRatio(m_units[indxMinor], m_units[indxSub]);
-    }
 
 //---------------------------------------------------------------------------------------
 // returns the smallest partial unit or null if no units were defined
@@ -116,7 +130,7 @@ UnitCP CompositeValueSpec::GetSmallestUnit()
     {
     if (CompositeSpecType::Undefined != m_type)
         {
-        for (int i = indxSub; i >= 0; i--)
+        for (int i = indxSub; i >= 0; --i)
             {
             if (nullptr != m_units[i])
                 return m_units[i];
@@ -157,12 +171,12 @@ bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8C
 //  could be this approach - is not prohibited
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
-    {
-    Init();
-    SetRatios(MajorToMiddle, MiddleToMinor, MinorToSub);
-    CheckRatios();
-    }
+//CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor, size_t MinorToSub)
+//    {
+//    Init();
+//    SetRatios(MajorToMiddle, MiddleToMinor, MinorToSub);
+//    CheckRatios();
+//    }
 
 //---------------------------------------------------------------------------------------
 // Constructor
@@ -171,12 +185,12 @@ CompositeValueSpec::CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMino
 CompositeValueSpec::CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
     {
     Init();
-    SetUnits(MajorUnit, MiddleUnit, MinorUnit, SubUnit);
+    m_units[indxMajor] = MajorUnit;
+    m_units[indxMiddle] = MiddleUnit;
+    m_units[indxMinor] = MinorUnit;
+    m_units[indxSub] = SubUnit;
     SetUnitRatios();
-    CheckRatios();
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // Constructor
@@ -186,30 +200,9 @@ CompositeValueSpec::CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8
     {
     Init();
     if (!SetUnitNames(MajorUnit, MiddleUnit, MinorUnit, SubUnit))
-        {
         SetUnitRatios();
-        CheckRatios();
-        }
     }
 
-//---------------------------------------------------------------------------------------
-// Using CompositeValueSpec is possible only when the quantity of the source value is defined and at least
-//   the top UOM is also defined. Regarding middle and low Units wqe may have three valid cases:
-//    1. Both of them not defined
-//    2. Middle is defined but low is not (null)
-//    3. Both of them are not defined
-//  if either of three "target" UOM are defined their associated phenomenon must be the same as
-//    the phenomenon of the source quantity
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//---------------------------------------------------------------------------------------
-bool CompositeValueSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
-    {
-    if (nullptr == srcPhen || nullptr == targPhen)
-        return UpdateProblemCode(FormatProblemCode::QT_PhenomenonNotDefined);
-    if (srcPhen != targPhen)
-        return UpdateProblemCode(FormatProblemCode::QT_PhenomenaNotSame);
-    return IsProblem();
-    }
 
 Utf8CP CompositeValueSpec::GetProblemDescription()
     {
