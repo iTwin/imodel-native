@@ -60,6 +60,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
             Token = 2
             };
 
+        struct Authentication
+            {
+            AuthenticationType type = AuthenticationType::None;
+            IConnectAuthenticationPersistencePtr persistence;
+            IConnectTokenProviderPtr tokenProvider;
+            };
+
     private:
         mutable BeCriticalSection m_cs;
 
@@ -69,10 +76,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         Configuration m_config;
 
-        AuthenticationType m_authType = AuthenticationType::None;
-
-        IConnectAuthenticationPersistencePtr m_persistence;
+        Authentication m_auth;
         bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
+
         std::function<void()> m_tokenExpiredHandler;
         std::function<void()> m_userChangeHandler;
         std::function<void()> m_userSignInHandler;
@@ -84,14 +90,17 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         void CheckUserChange();
         void StoreSignedInUser();
 
-        AuthenticationType GetAuthenticationType();
+        AuthenticationType ReadAuthenticationType();
         void StoreAuthenticationType(AuthenticationType type);
 
-        IConnectAuthenticationPersistencePtr GetPersistenceMatchingAuthenticationType();
-        IConnectTokenProviderPtr GetBaseTokenProviderMatchingAuthenticationType();
+        Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr);
+        void Configure(Authentication& auth);
 
         IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri);
         void ClearSignInData();
+
+        void CheckAndUpdateTokenNoLock();
+        bool IsSignedInNoLock();
 
     public:
         //! Can be created after MobileDgn is initialized.
@@ -155,8 +164,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will be called after user sign-out
         WSCLIENT_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
 
-        //! Get authentication handler for specific server when signed in.
-        //! It will automatically authenticate all HttpRequests that is used with.
+        //! Get authentication handler for specific server.
+        //! Will automatically authenticate all HttpRequests that is used with. 
+        //! Will always represent user that is signed-in when authenticating.
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
@@ -164,7 +174,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
         //! Only use this if AuthenticationHandlerPtr cannot be used.
-        //! See IConnectTokenProvider API for more info how to use it
+        //! Will always represent user that is signed-in when prividing token.
         //! @param rpUri relying party URI to use token for
         WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
 
