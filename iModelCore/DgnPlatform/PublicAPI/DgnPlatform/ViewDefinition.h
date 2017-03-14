@@ -24,7 +24,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace ViewElementHandler
 {
-    struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView3d;
+    struct View; struct View3d; struct View2d; struct OrthographicView; struct DrawingView; struct SheetView; struct TemplateView2d; struct TemplateView3d;
     struct ViewModels; struct ViewCategories; struct ViewDisplayStyle; struct ViewDisplayStyle3d;
 }
 
@@ -173,7 +173,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
-    static constexpr Utf8CP str_HLine() {return "HLine";}
+    static constexpr Utf8CP str_HLine() {return "hline";}
+    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
@@ -198,6 +199,9 @@ public:
 
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
+
+    Render::SceneLights GetSceneLights() {return Render::SceneLights::FromJson(GetStyle(str_SceneLights()));}
+    void SetSceneLights(Render::SceneLights const& lights) {SetStyle(str_SceneLights(), lights.ToJson());}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -387,6 +391,8 @@ protected:
     virtual SpatialViewDefinitionCP _ToSpatialView() const {return nullptr;}
     virtual DrawingViewDefinitionCP _ToDrawingView() const {return nullptr;}
     virtual SheetViewDefinitionCP _ToSheetView() const {return nullptr;}
+    virtual TemplateViewDefinition2dCP _ToTemplateView2d() const {return nullptr;}
+    virtual TemplateViewDefinition3dCP _ToTemplateView3d() const {return nullptr;}
     virtual bool _ViewsModel(DgnModelId mid) = 0;
     virtual DPoint3d _GetOrigin() const = 0;
     virtual DVec3d _GetExtents() const = 0;
@@ -526,16 +532,22 @@ public:
     bool IsDrawingView() const {return nullptr != _ToDrawingView();}
     bool IsSheetView() const {return nullptr != _ToSheetView();}
     ViewDefinition2dCP ToView2d() const {return _ToView2d();}
+    bool IsTemplateView2d() const {return nullptr != _ToTemplateView2d();}
+    bool IsTemplateView3d() const {return nullptr != _ToTemplateView3d();}
     ViewDefinition3dCP ToView3d() const {return _ToView3d();}
     OrthographicViewDefinitionCP ToOrthographicView() const {return _ToOrthographicView();}
     SpatialViewDefinitionCP ToSpatialView() const {return _ToSpatialView();}
     DrawingViewDefinitionCP ToDrawingView() const {return _ToDrawingView();}
     SheetViewDefinitionCP ToSheetView() const {return _ToSheetView();}
+    TemplateViewDefinition2dCP ToTemplateView2d() const {return _ToTemplateView2d();}
+    TemplateViewDefinition3dCP ToTemplateView3d() const {return _ToTemplateView3d();}
     ViewDefinition3dP ToView3dP() {return const_cast<ViewDefinition3dP>(ToView3d());}
     ViewDefinition2dP ToView2dP() {return const_cast<ViewDefinition2dP>(ToView2d());}
     SpatialViewDefinitionP ToSpatialViewP() {return const_cast<SpatialViewDefinitionP>(ToSpatialView());}
     DrawingViewDefinitionP ToDrawingViewP() {return const_cast<DrawingViewDefinitionP>(ToDrawingView());}
     SheetViewDefinitionP ToSheetViewP() {return const_cast<SheetViewDefinitionP>(ToSheetView());}
+    TemplateViewDefinition2dP ToTemplateView2dP() {return const_cast<TemplateViewDefinition2dP>(ToTemplateView2d());}
+    TemplateViewDefinition3dP ToTemplateView3dP() {return const_cast<TemplateViewDefinition3dP>(ToTemplateView3d());}
 
     //! Get the CategorySelector for this ViewDefinition. 
     //! @note this is a non-const method and may only be called on a writeable copy of a ViewDefinition.
@@ -1075,32 +1087,6 @@ public:
 };
 
 //=======================================================================================
-//! Defines a view of a single 3d template model.
-// @bsiclass                                                      Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
-    friend struct ViewElementHandler::TemplateView3d;
-
-protected:
-    DgnModelId m_templateModelId;
-
-    bool _ViewsModel(DgnModelId modelId) override final {return modelId == GetTemplateModelId();}
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
-    DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
-    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
-    explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
-
-    DgnModelId GetTemplateModelId() const {return m_templateModelId;} //!< Get the model displayed in this view
-};
-
-//=======================================================================================
 //! Defines a view of a 2d model.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
@@ -1216,6 +1202,44 @@ public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}
 };
 
+//=======================================================================================
+//! A ViewDefinition used to display a 2D template model.
+// @bsiclass                                                      Shaun.Sewall    03/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition2d : ViewDefinition2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition2d, ViewDefinition2d);
+    friend struct ViewElementHandler::TemplateView2d;
+
+protected:
+    TemplateViewDefinition2dCP _ToTemplateView2d() const override final {return this;}
+    bool _ViewsModel(DgnModelId modelId) override final {return false;} // TemplateViewController2d determines which model to view
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    explicit TemplateViewDefinition2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyleP displayStyle=nullptr);
+};
+
+//=======================================================================================
+//! A ViewDefinition used to display a 3D template model.
+// @bsiclass                                                      Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
+    friend struct ViewElementHandler::TemplateView3d;
+
+protected:
+    TemplateViewDefinition3dCP _ToTemplateView3d() const override final {return this;}
+    bool _ViewsModel(DgnModelId modelId) override final {return false;} // TemplateViewController3d determines which model to view
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
+};
+
 namespace ViewElementHandler
 {
     using dgn_ElementHandler::Definition;
@@ -1228,12 +1252,6 @@ namespace ViewElementHandler
     struct View3d : View
     {
         ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT(BIS_CLASS_ViewDefinition3d, ViewDefinition3d, View3d, View, DGNPLATFORM_EXPORT);
-        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
-    };
-
-    struct TemplateView3d : View3d
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, TemplateViewDefinition3d, TemplateView3d, View3d, DGNPLATFORM_EXPORT);
         DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
@@ -1262,6 +1280,16 @@ namespace ViewElementHandler
     struct SheetView : View2d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetView, View2d, DGNPLATFORM_EXPORT);
+    };
+
+    struct TemplateView2d : View2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition2d, TemplateViewDefinition2d, TemplateView2d, View2d, DGNPLATFORM_EXPORT);
+    };
+
+    struct TemplateView3d : View3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, TemplateViewDefinition3d, TemplateView3d, View3d, DGNPLATFORM_EXPORT);
     };
 
     struct ViewModels : Definition

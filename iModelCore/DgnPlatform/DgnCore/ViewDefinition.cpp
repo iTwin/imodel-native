@@ -19,6 +19,7 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(DrawingView);
     HANDLER_DEFINE_MEMBERS(SheetView);
     HANDLER_DEFINE_MEMBERS(SpatialView);
+    HANDLER_DEFINE_MEMBERS(TemplateView2d);
     HANDLER_DEFINE_MEMBERS(TemplateView3d);
     HANDLER_DEFINE_MEMBERS(OrthographicView);
     HANDLER_DEFINE_MEMBERS(ViewModels);
@@ -58,18 +59,27 @@ namespace ViewProperties
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
-    static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
     static constexpr Utf8CP str_Hidden() {return "hidden";}
     static constexpr Utf8CP str_Visible() {return "visible";}
     static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
     static constexpr Utf8CP str_Color() {return "color";}
     static constexpr Utf8CP str_Pattern() {return "pattern";}
     static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_GridOrient() {return "GridOrient";}
-    static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
-    static constexpr Utf8CP str_GridSpaceY() {return "GridSpaceY";}
-    static constexpr Utf8CP str_GridPerRef() {return "GridPerRef";}
-
+    static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
+    static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
+    static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
+    static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
+    static constexpr Utf8CP str_Ambient() {return "ambient";}
+    static constexpr Utf8CP str_Flash() {return "flash";}
+    static constexpr Utf8CP str_PortraitLeft() {return "left";}
+    static constexpr Utf8CP str_PortraitRight() {return "right";}
+    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    static constexpr Utf8CP str_AvgLum() {return "avgLum";}
+    static constexpr Utf8CP str_MaxLum() {return "maxLum";}
+    static constexpr Utf8CP str_Fstop() {return "fstop";}
+    static constexpr Utf8CP str_Sun() {return "sun";}
+    static constexpr Utf8CP str_Intensity() {return "intensity";}
+    static constexpr Utf8CP str_Direction() {return "dir";}
 };
 
 using namespace ViewProperties;
@@ -1087,6 +1097,89 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::SceneLights::Solar::FromJson(JsonValueCR val)
+    {
+    m_enabled = false;
+    if (val.isNull())
+        return;
+
+    m_enabled = true;
+    m_intensity = val[str_Intensity()].asDouble();
+    JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::Solar::ToJson() const
+    {
+    Json::Value val;
+    val[Json::StaticString(str_Intensity())] = m_intensity;
+    JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
+    {
+    if (val.isNull())
+        return;
+    m_avgLum = val[str_AvgLum()].asDouble(0.0);
+    m_maxLum = val[str_MaxLum()].asDouble(0.0);
+    m_fstop = val[str_Fstop()].asDouble(0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::Brightness::ToJson() const
+    {
+    Json::Value val;
+    if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
+    if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
+    if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
+    {
+    SceneLights lights;
+
+    if (!val.isNull())
+        {
+        lights.m_ambient = val[str_Ambient()].asDouble(0.0);
+        lights.m_flash = val[str_Flash()].asDouble(0.0);
+        lights.m_portraitLeft = val[str_PortraitLeft()].asDouble(0.0);
+        lights.m_portraitRight = val[str_PortraitRight()].asDouble(0.0);
+        lights.m_brightness.FromJson(val[str_Brightness()]);
+        lights.m_sun.FromJson(val[str_Sun()]);
+        }
+    return lights;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::ToJson() const
+    {
+    Json::Value val;
+    if (0.0 != m_ambient) val[Json::StaticString(str_Ambient())] = m_ambient;
+    if (0.0 != m_flash) val[Json::StaticString(str_Flash())] = m_flash;
+    if (0.0 != m_portraitLeft) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft;
+    if (0.0 != m_portraitRight) val[Json::StaticString(str_PortraitRight())] = m_portraitRight;
+    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
+    if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
@@ -1105,7 +1198,9 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     else
+        {
         BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2228,31 +2323,6 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateView3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_TemplateModel(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            TemplateViewDefinition3dCR viewDef = (TemplateViewDefinition3dCR)el;
-            value.SetLong(viewDef.GetTemplateModelId().GetValue());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsLong())
-                return DgnDbStatus::BadArg;
-
-            TemplateViewDefinition3d& viewDef = (TemplateViewDefinition3dR)el;
-            viewDef.m_templateModelId = DgnModelId((uint64_t) value.GetLong());
-            return DgnDbStatus::Success;
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
@@ -2351,7 +2421,6 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     recorder->_RecordMeasurement("CreateSceneComplete", measurement);
     }
 
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
@@ -2360,21 +2429,17 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
     {
-    if (!templateModel.IsTemplate())
-        return nullptr;
-
-    DgnDbR db = templateModel.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
     CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
 
-    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
-    viewDef->m_templateModelId = templateModel.GetModelId();
+    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
+    viewDef->SetDisplayStyle(*displayStyle);
 
     if (nullptr == categorySelectorIn)
         {
@@ -2388,41 +2453,31 @@ TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TemplateViewDefinition3d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
     {
-    m_templateModelId = statement.GetValueNavigation<DgnModelId>(params.GetSelectIndex(str_TemplateModel()));
-    return T_Super::_ReadSelectParams(statement, params);
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    if (!classId.IsValid())
+        return nullptr;
+
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
+    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+
+    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
+    if (nullptr == categorySelectorIn)
+        {
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+            viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+        }
+
+    return viewDef;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
+ViewControllerPtr TemplateViewDefinition2d::_SupplyController() const
     {
-    T_Super::_BindWriteParams(statement, forInsert);
-    statement.BindNavigationValue(statement.GetParameterIndex(str_TemplateModel()), m_templateModelId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_CopyFrom(DgnElementCR element)
-    {
-    T_Super::_CopyFrom(element);
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) element;
-    m_templateModelId = other.m_templateModelId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TemplateViewDefinition3d::_EqualState(ViewDefinitionR in)
-    {
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) in;
-    if (m_templateModelId != other.m_templateModelId)
-        return false;
-
-    return T_Super::_EqualState(in);
+    return new TemplateViewController2d(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -66,7 +66,8 @@ struct TypeTests : public DgnDbTestFixture
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
-    DgnViewId InsertTemplateView3d(GeometricModel3dR, Utf8CP);
+    DgnViewId InsertTemplateView2d(DgnDbR, Utf8CP);
+    DgnViewId InsertTemplateView3d(DgnDbR, Utf8CP);
 };
 
 //---------------------------------------------------------------------------------------
@@ -890,16 +891,30 @@ DgnDbStatus TypeTests::DropSpatialElementToGeometry(SpatialModelR model, Spatial
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    03/2017
+//---------------------------------------------------------------------------------------
+DgnViewId TypeTests::InsertTemplateView2d(DgnDbR db, Utf8CP name)
+    {
+    TemplateViewDefinition2dPtr view = TemplateViewDefinition2d::Create(db, name);
+    if (view.IsValid())
+        {
+        view->SetStandardViewRotation(StandardView::Top);
+        view->Insert();
+        }
+
+    BeAssert(view.IsValid() && view->GetViewId().IsValid());
+    return view.IsValid() ? view->GetViewId() : DgnViewId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnViewId TypeTests::InsertTemplateView3d(GeometricModel3dR model, Utf8CP name)
+DgnViewId TypeTests::InsertTemplateView3d(DgnDbR db, Utf8CP name)
     {
-    DgnDbR db = model.GetDgnDb();
-    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(model, name);
+    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(db, name);
     if (view.IsValid())
         {
         view->SetStandardViewRotation(StandardView::Iso);
-        view->LookAtVolume(model.QueryModelRange());
         view->Insert();
         }
 
@@ -1035,10 +1050,8 @@ TEST_F(TypeTests, CreateSampleBim)
     ASSERT_EQ(DgnDbStatus::Success, dropStatus);
     InsertSpatialView(*drop3B1, "Drop 3B1 View");
 
-    InsertTemplateView3d(*templateModel3A, "Template View 3-A");
-    InsertTemplateView3d(*templateModel3B, "Template View 3-B");
-    InsertTemplateView3d(*templateModel3C, "Template View 3-C");
-    InsertTemplateView3d(*templateModel3E, "Template View 3-E");
+    InsertTemplateView2d(*m_db, "2D Template View");
+    InsertTemplateView3d(*m_db, "3D Template View");
     }
 
 //---------------------------------------------------------------------------------------

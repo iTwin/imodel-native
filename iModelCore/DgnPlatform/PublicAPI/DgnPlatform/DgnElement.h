@@ -3150,12 +3150,15 @@ protected:
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for a Subject with a specified parent Subject
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 
     Utf8String GetDescription() const {return GetPropertyValueString("Description");}
     void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
