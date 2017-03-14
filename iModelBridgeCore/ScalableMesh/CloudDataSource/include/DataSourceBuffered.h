@@ -16,7 +16,7 @@ protected:
 
 protected:
 
-    DataSourceStatus            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = true);
+    DataSourceStatus            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = false);
 
 public:
                                 DataSourceBuffered      (DataSourceAccount *sourceAccount);

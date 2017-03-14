@@ -708,9 +708,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     {
 #ifndef VANCOUVER_API
     // compute node tolerance (for the geometric error)
-    bool useContentExtent = header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume () > 0*/;
-    DRange3d cesiumRange = useContentExtent ? header->m_contentExtent : header->m_nodeExtent;
-
     // Different attempts to compute the Cesium 3D tiles "geometric error" value:
     //DVec3d      diagonal = DVec3d::FromStartEnd(cesiumRange.low, cesiumRange.high);
     //if (!useContentExtent) diagonal.SetComponent(0.0, 2);
@@ -725,12 +722,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
     //transformDbToTile.Multiply(transformedRange, transformedRange);
 
+    DRange3d tileRange = header->m_nodeExtent;
     tile["refine"] = "replace";
     tile["geometricError"] = tolerance;
-    TilePublisher::WriteBoundingVolume(tile, cesiumRange);
+    TilePublisher::WriteBoundingVolume(tile, tileRange);
 
     if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
         {
+        DRange3d contentRange = header->m_contentExtent;
+        TilePublisher::WriteBoundingVolume(tile["content"], contentRange);
         tile["content"]["url"] = Utf8String(("p_" + std::to_string(blockID.m_integerID) + ".b3dm").c_str());
         }
 
@@ -1585,7 +1585,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         DataSource *dataSource = m_dataSourceAccount->createDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
 
-        writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
+        writeStatus = dataSource->open(url, DataSourceMode_Write);
         assert(writeStatus.isOK()); // problem opening a DataSource
 
         writeStatus = dataSource->write(dataToWrite, sizeToWrite);
