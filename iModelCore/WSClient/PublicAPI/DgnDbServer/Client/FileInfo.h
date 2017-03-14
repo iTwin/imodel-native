@@ -26,6 +26,15 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerFileAccessKey);
 DEFINE_TASK_TYPEDEFS(DgnDbServerFileAccessKeyPtr, DgnDbServerFileAccessKey);
 
 
+enum class InitializationState
+	{
+	Success,
+	NotStarted,
+	Scheduled,
+	Failed,
+	OutdatedFile
+	};
+
 //=======================================================================================
 //! Information about revision file that is on server.
 //@bsiclass                                      Karolis.Dziedzelis             10/2015
@@ -45,7 +54,7 @@ struct FileInfo
         Utf8String  m_userUploaded;
         DateTime    m_uploadedDate;
         bool        m_areFileDetailsAvailable;
-        bool        m_initialized;
+        InitializationState m_initialized;
         DgnDbServerFileAccessKeyPtr m_fileAccessKey;
         bool        m_containsFileAccessKey;
 
@@ -82,7 +91,7 @@ struct FileInfo
         DGNDBSERVERCLIENT_EXPORT uint64_t     GetSize() const; //!< Size of the file.
         DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetUserUploaded() const; //!< Name of the user that uploaded the file.
         DGNDBSERVERCLIENT_EXPORT DateTimeCR   GetUploadedDate() const; //!< Date when the file was uploaded.
-        DGNDBSERVERCLIENT_EXPORT bool         GetInitialized() const; //!< Flag if file is initialized.
+        DGNDBSERVERCLIENT_EXPORT InitializationState GetInitialized() const; //!< State of file initialization.
     };
 
 //__PUBLISH_SECTION_END__
