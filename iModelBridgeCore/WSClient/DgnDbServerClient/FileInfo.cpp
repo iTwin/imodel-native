@@ -11,6 +11,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
@@ -151,7 +152,7 @@ DateTimeCR FileInfo::GetUploadedDate() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
-bool FileInfo::GetInitialized() const
+InitializationState FileInfo::GetInitialized() const
     {
     return m_initialized;
     }
@@ -213,7 +214,8 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
     if (!dateStr.empty())
         DateTime::FromString(info->m_uploadedDate, dateStr.c_str());
 
-    info->m_initialized = properties.HasMember(ServerSchema::Property::Initialized) ? properties[ServerSchema::Property::Initialized].GetBool() : false;
+    info->m_initialized = properties.HasMember(ServerSchema::Property::Initialized) ?
+		(InitializationState)properties[ServerSchema::Property::Initialized].GetInt() : InitializationState::NotStarted;
 
     return info;
     }

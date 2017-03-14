@@ -138,6 +138,8 @@ IHttpHandlerPtr            customHandler
     options.EnableRequestCompression(true, 1024);
     wsRepositoryClient->Config().SetCompressionOptions(options);
     wsRepositoryClient->SetCredentials(credentials);
+    if (repository.GetServerURL().Contains("azurewebsites.net"))
+        wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
     }
@@ -202,10 +204,7 @@ IHttpHandlerPtr          customHandler
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, customHandler));
-    #ifndef DEBUG
-    if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
-    #endif
-        repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
+    repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
@@ -486,16 +485,24 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnlockRepository(ICancellati
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             03/2017
+//---------------------------------------------------------------------------------------
+bool IsInitializationFinished(InitializationState state)
+	{
+	return !(InitializationState::NotStarted == state || InitializationState::Scheduled == state);
+	}
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
 void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDbServerFileResultPtr finalResult) const
     {
-    bool fileInitialized = false;
-    int retriesLeft = 100;
+    InitializationState initializationState = InitializationState::NotStarted;
+    int retriesLeft = 300;
     const Utf8String methodName = "DgnDbClient::WaitForInitializedBIMFile";
     BeThreadUtilities::BeSleep(1000);
 
-    while (!fileInitialized && retriesLeft > 0)
+    while (!IsInitializationFinished(initializationState) && retriesLeft > 0)
         {
         auto masterFilesResult = GetMasterFileById(fileGuid)->GetResult();
         if (!masterFilesResult.IsSuccess())
@@ -506,14 +513,14 @@ void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDb
             }
 
         auto masterFile = masterFilesResult.GetValue();
-        fileInitialized = masterFile->GetInitialized();
+		initializationState = masterFile->GetInitialized();
         
-        if (!fileInitialized)
+        if (!IsInitializationFinished(initializationState))
             BeThreadUtilities::BeSleep(1000);
         retriesLeft--;
         }
 
-    if (!fileInitialized)
+    if (initializationState != InitializationState::Success)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Repository is not initialized.");
         finalResult->SetError({ DgnDbServerError::Id::RepositoryIsNotInitialized });
