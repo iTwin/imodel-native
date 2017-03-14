@@ -61,7 +61,8 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_ValidParamete
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -88,7 +89,8 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithCredentials_UnsuccessfulL
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api == nullptr);
     }
@@ -114,7 +116,8 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_ValidParameters_Ini
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -138,7 +141,8 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFr
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api == nullptr);
     }
@@ -164,7 +168,8 @@ TEST_F(ConnectWebServicesClientCTests, InitalizeApiWithToken_UnsuccessfulLoginFr
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api == nullptr);
     }
@@ -195,7 +200,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadOrganization_V2List_ThreeOrganization
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -256,7 +262,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateOrganization_ValidOrganizationParam
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -303,7 +310,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadOrganization_OneOrganizationReturned_
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -365,7 +373,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectV4List_FiveProjectsReturned_Va
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -479,7 +488,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectV4_ValidProjectParameters_Pr
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -533,7 +543,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectV4_OneProjectReturned_ValidBuf
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -646,7 +657,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProjectV4_OneProjectReturned_Projec
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -697,7 +709,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProjectV4_ValidDeletionParameters_P
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -743,7 +756,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4List_ThreeProjectsR
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
     );
     ASSERT_TRUE(api != nullptr);
 
@@ -857,7 +871,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProjectFavorite_V4_ValidProjectPara
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
     );
     ASSERT_TRUE(api != nullptr);
 
@@ -902,7 +917,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProjectFavorite_V4_OneProjectReturned
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
     );
     ASSERT_TRUE(api != nullptr);
 
@@ -1015,7 +1031,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProjectFavorite_V4_ValidDeletionPar
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
     );
     ASSERT_TRUE(api != nullptr);
 
@@ -1064,7 +1081,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsClassNotF
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1114,7 +1132,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSchemaNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1166,7 +1185,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsRepositor
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1218,7 +1238,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsPropertyN
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1270,7 +1291,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsInstanceN
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1322,7 +1344,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsNotEnough
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1374,7 +1397,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsSslRequir
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1426,7 +1450,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsServerErr
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1472,7 +1497,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsConflict_
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1519,7 +1545,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4List_ServerReturnsBadReques
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1565,7 +1592,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsClassNotFou
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1626,7 +1654,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSchemaNotFo
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1689,7 +1718,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsRepositoryN
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1752,7 +1782,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsPropertyNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1815,7 +1846,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsNotEnoughRi
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1878,7 +1910,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsSslRequired
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1941,7 +1974,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsServerError
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -1995,7 +2029,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsConflict_AP
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2054,7 +2089,8 @@ TEST_F(ConnectWebServicesClientCTests, CreateProject_V4_ServerReturnsBadRequest_
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2108,7 +2144,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsClassNotFound
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2158,7 +2195,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSchemaNotFoun
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2210,7 +2248,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsRepositoryNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2262,7 +2301,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsPropertyNotFo
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2314,7 +2354,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsInstanceNotFo
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2366,7 +2407,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsNotEnoughRigh
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2418,7 +2460,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsSslRequired_A
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2470,7 +2513,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsServerError_A
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2516,7 +2560,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsConflict_APIR
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2563,7 +2608,8 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_V4_ServerReturnsBadRequest_AP
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2609,7 +2655,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsClassNotFou
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2671,7 +2718,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSchemaNotFo
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2732,7 +2780,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsRepositoryN
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2793,7 +2842,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsPropertyNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2854,7 +2904,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsInstanceNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2918,7 +2969,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsNotEnoughRi
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -2980,7 +3032,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsSslRequired
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3044,7 +3097,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsServerError
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3100,7 +3154,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsConflict_AP
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3156,7 +3211,8 @@ TEST_F(ConnectWebServicesClientCTests, UpdateProject_V4_ServerReturnsBadRequest_
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3211,7 +3267,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsClassNotFou
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3260,7 +3317,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSchemaNotFo
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3311,7 +3369,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsRepositoryN
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3362,7 +3421,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsPropertyNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3413,7 +3473,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsInstanceNot
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3464,7 +3525,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsNotEnoughRi
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3515,7 +3577,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsSslRequired
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3566,7 +3629,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsServerError
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3611,7 +3675,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsConflict_AP
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 
@@ -3657,7 +3722,8 @@ TEST_F(ConnectWebServicesClientCTests, DeleteProject_V4_ServerReturnsBadRequest_
         nullptr,
         nullptr,
         nullptr,
-        reinterpret_cast<void *>(&mockHttpHandler)
+        reinterpret_cast<void *>(&mockHttpHandler),
+		nullptr
         );
     ASSERT_TRUE(api != nullptr);
 

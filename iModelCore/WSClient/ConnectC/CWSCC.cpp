@@ -85,7 +85,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     Utf8String authenticatedToken;
@@ -103,7 +104,7 @@ IHTTPHANDLERPTR customHandler
         wproxyUsername,
         wproxyPassword,
         customHandler,
-        nullptr
+        securityStoreInitializer
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
