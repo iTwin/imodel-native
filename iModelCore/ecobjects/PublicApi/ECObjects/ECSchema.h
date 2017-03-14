@@ -1287,7 +1287,6 @@ private:
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
-    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
@@ -1459,6 +1458,12 @@ public:
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
     //! @return     An iterable container of ECProperties
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
+
+    //! Renames a property (and potentially all derived properties) if its name conflicts.  A new name is automatically generated.
+    //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
+    //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
+    //! @param[in]  renameDerivedProperties Whether to also rename derived properties
+    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties);
 
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
