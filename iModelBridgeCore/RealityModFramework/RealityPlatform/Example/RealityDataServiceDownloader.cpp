@@ -19,9 +19,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 static void progressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
-    char progressString[1024];
-    sprintf(progressString, "percentage of files downloaded : %f", repoProgress * 100.0);
-    std::cout << progressString << std::endl;
+    std::cout << Utf8PrintfString("percentage of files downloaded : %3.0f%%\r", repoProgress * 100.0);
     }
 
 void PrintUsage()
@@ -51,10 +49,30 @@ int main(int argc, char *argv[])
     Utf8String sourceOnServer = Utf8String(argv[4]);
 
     BeFileName fileName = BeFileName(argv[5]);
-    if (!fileName.DoesPathExist())
+    std::cout << "OutputPath : " << fileName.GetNameUtf8() << std::endl;
+    if (fileName.DoesPathExist())
         {
-        std::cout << "could not validate specified path. Please verify that the folder exists and try again" << std::endl;
-        return -1;
+        std::cout << "The specified path exist, Ok to overwrite it ? (y/n) ";
+        std::string str;
+        std::getline(std::cin, str);
+        Utf8String input(str.c_str());
+        if (!input.EqualsI("y"))
+            {
+            std::cout << "Press a key to continue..." << std::endl;
+            getch();
+            return -1;
+            }
+        }
+    else
+        {
+        if (BeFileName::CreateNewDirectory(fileName.GetName()) != BeFileNameStatus::Success)
+            {
+            std::cout << "Not able to create the path file. Please verify that the folder exists and try again" << std::endl;
+
+            std::cout << "Press a key to continue..." << std::endl;
+            getch();
+            return -1;
+            }
         }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, sourceOnServer);
@@ -67,6 +85,7 @@ int main(int argc, char *argv[])
     std::cout << "if any files failed to download, they will be listed here: " << std::endl;
     std::cout << report << std::endl;
     
+    std::cout << "Press a key to continue..." << std::endl;
     getch();
     return 0;
     }
