@@ -65,10 +65,21 @@ namespace ViewProperties
     static constexpr Utf8CP str_Color() {return "color";}
     static constexpr Utf8CP str_Pattern() {return "pattern";}
     static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_GridOrient() {return "GridOrient";}
-    static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
-    static constexpr Utf8CP str_GridSpaceY() {return "GridSpaceY";}
-    static constexpr Utf8CP str_GridPerRef() {return "GridPerRef";}
+    static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
+    static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
+    static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
+    static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
+    static constexpr Utf8CP str_Ambient() {return "ambient";}
+    static constexpr Utf8CP str_Flash() {return "flash";}
+    static constexpr Utf8CP str_PortraitLeft() {return "left";}
+    static constexpr Utf8CP str_PortraitRight() {return "right";}
+    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    static constexpr Utf8CP str_AvgLum() {return "avgLum";}
+    static constexpr Utf8CP str_MaxLum() {return "maxLum";}
+    static constexpr Utf8CP str_Fstop() {return "fstop";}
+    static constexpr Utf8CP str_Sun() {return "sun";}
+    static constexpr Utf8CP str_Intensity() {return "intensity";}
+    static constexpr Utf8CP str_Direction() {return "dir";}
 };
 
 using namespace ViewProperties;
@@ -1086,6 +1097,89 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::SceneLights::Solar::FromJson(JsonValueCR val)
+    {
+    m_enabled = false;
+    if (val.isNull())
+        return;
+
+    m_enabled = true;
+    m_intensity = val[str_Intensity()].asDouble();
+    JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::Solar::ToJson() const
+    {
+    Json::Value val;
+    val[Json::StaticString(str_Intensity())] = m_intensity;
+    JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
+    {
+    if (val.isNull())
+        return;
+    m_avgLum = val[str_AvgLum()].asDouble(0.0);
+    m_maxLum = val[str_MaxLum()].asDouble(0.0);
+    m_fstop = val[str_Fstop()].asDouble(0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::Brightness::ToJson() const
+    {
+    Json::Value val;
+    if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
+    if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
+    if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
+    {
+    SceneLights lights;
+
+    if (!val.isNull())
+        {
+        lights.m_ambient = val[str_Ambient()].asDouble(0.0);
+        lights.m_flash = val[str_Flash()].asDouble(0.0);
+        lights.m_portraitLeft = val[str_PortraitLeft()].asDouble(0.0);
+        lights.m_portraitRight = val[str_PortraitRight()].asDouble(0.0);
+        lights.m_brightness.FromJson(val[str_Brightness()]);
+        lights.m_sun.FromJson(val[str_Sun()]);
+        }
+    return lights;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::ToJson() const
+    {
+    Json::Value val;
+    if (0.0 != m_ambient) val[Json::StaticString(str_Ambient())] = m_ambient;
+    if (0.0 != m_flash) val[Json::StaticString(str_Flash())] = m_flash;
+    if (0.0 != m_portraitLeft) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft;
+    if (0.0 != m_portraitRight) val[Json::StaticString(str_PortraitRight())] = m_portraitRight;
+    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
+    if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
@@ -1104,7 +1198,9 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     else
+        {
         BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
