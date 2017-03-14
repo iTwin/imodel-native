@@ -184,6 +184,7 @@
     <ClInclude Include="Cache\CacheNavigationTask.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />

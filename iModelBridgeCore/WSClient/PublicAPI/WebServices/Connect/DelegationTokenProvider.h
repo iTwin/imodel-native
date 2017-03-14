@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/DelegationTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,6 +49,7 @@ struct DelegationTokenProvider : public IConnectTokenProvider
 
         WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
+        void ClearCache();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

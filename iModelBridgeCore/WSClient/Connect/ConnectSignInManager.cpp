@@ -18,6 +18,7 @@
 #include "Connect.xliff.h"
 #include "IdentityTokenProvider.h"
 #include "IdentityAuthenticationPersistence.h"
+#include "WrapperTokenProvider.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -34,7 +35,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore) :
 m_client(client),
 m_localState(localState ? *localState : MobileDgnCommon::LocalState()),
-m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
+m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState)),
+m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_cs, m_auth.tokenProvider))
     {
     m_auth = CreateAuthentication(ReadAuthenticationType());
     CheckAndUpdateTokenNoLock();
@@ -95,7 +97,10 @@ void ConnectSignInManager::Configure(Configuration config)
     {
     BeCriticalSectionHolder lock(m_cs);
     m_config = config;
-    m_tokenProviders.clear();
+
+    for (auto provider : m_publicDelegationTokenProviders)
+        Configure(*provider.second);
+    
     Configure(m_auth);
     CheckAndUpdateTokenNoLock();
     }
@@ -222,8 +227,9 @@ void ConnectSignInManager::SignOut()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSignInManager::ClearSignInData()
     {
-    m_tokenProviders.clear();
-
+    for (auto provider : m_publicDelegationTokenProviders)
+        provider.second->ClearCache();
+    
     StoreAuthenticationType(AuthenticationType::None);
 
     m_auth.persistence->SetToken(nullptr);
@@ -343,15 +349,15 @@ IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpU
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8StringCR rpUri)
     {
-    auto it = m_tokenProviders.find(rpUri);
-    if (it != m_tokenProviders.end())
+    auto it = m_publicDelegationTokenProviders.find(rpUri);
+    if (it != m_publicDelegationTokenProviders.end())
         return it->second;
 
-    auto delegationProvider = std::make_shared<DelegationTokenProvider>(m_client, rpUri, m_auth.tokenProvider);
-    delegationProvider->Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
+    auto provider = std::make_shared<DelegationTokenProvider>(m_client, rpUri, m_publicIdentityTokenProvider);
+    Configure(*provider);
 
-    m_tokenProviders[rpUri] = delegationProvider;
-    return delegationProvider;
+    m_publicDelegationTokenProviders[rpUri] = provider;
+    return provider;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -430,6 +436,14 @@ void ConnectSignInManager::Configure(Authentication& auth)
         auto provider = static_cast<ConnectTokenProvider*>(auth.tokenProvider.get());
         provider->Configure(m_config.identityTokenLifetime);
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectSignInManager::Configure(DelegationTokenProvider& provider)
+    {
+    provider.Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
     }
 
 /*--------------------------------------------------------------------------------------+

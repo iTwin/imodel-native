@@ -77,7 +77,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         Configuration m_config;
 
         Authentication m_auth;
-        bmap<Utf8String, IConnectTokenProviderPtr> m_tokenProviders;
+
+        IConnectTokenProviderPtr m_publicIdentityTokenProvider;
+        bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
 
         std::function<void()> m_tokenExpiredHandler;
         std::function<void()> m_userChangeHandler;
@@ -95,6 +97,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
 
         Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr);
         void Configure(Authentication& auth);
+        void Configure(struct DelegationTokenProvider& provider);
 
         IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri);
         void ClearSignInData();
