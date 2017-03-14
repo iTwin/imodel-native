@@ -2359,6 +2359,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
     PolylineTesselation         tesselation;
     bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+    double                      minLength = 0.0, maxLength = 0.0;
 
     for (auto const& polyline : mesh.Polylines())
         {
@@ -2371,7 +2372,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
         DRange3d        polylineRange = DRange3d::From(polylinePoints);
         DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
         double          cumulativeLength = 0.0;
-
+        
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
             DPoint3d            p0 = polylinePoints[i], p1 = polylinePoints[i+1];
@@ -2428,6 +2429,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
             if (!isEnd)
                 tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
             }
+        maxLength = std::max(maxLength, cumulativeLength);
         }
 
     Json::Value     primitive = Json::objectValue;
@@ -2445,7 +2447,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
     if (mat.IsTextured())
         {
-        primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Delta", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &tesselation.m_distances.front(), &tesselation.m_distances.back());
+        primitive["attributes"]["DELTA"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Delta", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
         primitive["attributes"]["SCALE"]  = AddMeshVertexAttributes (tileData, &tesselation.m_scalePoints.front().x, "Scale", idStr.c_str(), 3, tesselation.m_scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 

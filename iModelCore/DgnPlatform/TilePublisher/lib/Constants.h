@@ -298,30 +298,18 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
             vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_next), 1.0));
             vec2    prevDir    = normalize(projPos.xy - projPrev.xy);
             vec2    nextDir    = normalize(projNext.xy - projPos.xy);
+            vec2    thisDir    = (a_param.y < 3.5) ? nextDir : prevDir;
+            vec2    perp       = a_param.x * vec2 (-thisDir.y, thisDir.x);
             float   dist       = u_width / 2.0;
             vec2    delta      = vec2(0.0, 0.0);
-            float   jointParam;
-            vec2    thisDir;
-
-            if (a_param.y < 3.5)
-                {
-                thisDir = nextDir;
-                jointParam = a_param.y;
-                }
-            else
-                {
-                thisDir = prevDir;
-                jointParam = a_param.y - 4.0;
-                }
-
-            vec2    perp       = a_param.x * vec2 (-thisDir.y, thisDir.x);
 
             if (dot(prevDir, nextDir) < .99999)
                 {
                 vec2    bisector   = normalize(prevDir - nextDir);
                 float   dotP       = dot(bisector, perp);
-                
-                if (jointParam < 1.01)
+                float   jointParam = mod(a_param.y, 4.0);
+
+                if (jointParam < 0.01)
                     {
                     if (dotP < 0.0)
                         {
@@ -336,7 +324,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                     }
                 else
                     {
-                    jointParam -= 2.0;
+                    jointParam -= 1.0;
                     delta = normalize((1.0 - jointParam) * bisector + (dotP < 0.0 ? -jointParam : jointParam) * perp) * dist;
                     }
                 }
