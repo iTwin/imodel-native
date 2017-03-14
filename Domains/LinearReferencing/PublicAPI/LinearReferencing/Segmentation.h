@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/Segmentation.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -75,6 +75,9 @@ public:
 struct CascadeFromToLocationChangesAlgorithm : ICascadeLinearLocationChangesAlgorithm
 {
 DEFINE_T_SUPER(ICascadeLinearLocationChangesAlgorithm)
+
+private:
+    Dgn::DgnElementId m_processingId;
 
 protected:
     CascadeFromToLocationChangesAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action):

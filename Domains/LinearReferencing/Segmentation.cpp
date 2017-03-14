@@ -2,7 +2,7 @@
 |
 |     $Source: Segmentation.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LinearReferencingInternal.h"
@@ -83,7 +83,7 @@ void AppendILinearlyLocatedClassIdsECSQL(bset<DgnClassId> const& iLinearlyLocate
     if (iLinearlyLocatedClassIds.empty())
         return;
 
-    ecSql.append("AND ECClassId ");
+    ecSql.append("AND ClassHasAllBaseClasses.TargetECInstanceId ");
 
     if (1 == iLinearlyLocatedClassIds.size())
         ecSql.append(Utf8PrintfString("= %d ", iLinearlyLocatedClassIds.begin()->GetValue()).c_str());
@@ -108,7 +108,8 @@ void GetAtLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Ut
     ecSql.append(
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.ECInstanceId "
-        "FROM (SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -146,7 +147,8 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
     ecSql.append(
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart, FromToLocation.ECInstanceId "
-        "FROM (SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -188,7 +190,8 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
         "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
         "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
         "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
-        "FROM ((SELECT ECInstanceId, ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " WHERE ILinearElement = ? ");
+        "FROM ((SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
@@ -309,7 +312,30 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
     BeAssert(iSegmentableLinearElemCP != nullptr);
 
     bset<DgnClassId> classIds;
-    classIds.insert(GetOriginal().ToElement().GetElementClassId());
+    auto ecClassCP = GetOriginal().ToElement().GetElementClass();
+    ECClassCP ecClassMixingInILinearlyLocated = nullptr;
+
+    do
+        {
+        ECClassCP firstBaseClassCP = nullptr;
+        for (auto baseClassCP : ecClassCP->GetBaseClasses())
+            {
+            if (!firstBaseClassCP)
+                firstBaseClassCP = baseClassCP;
+
+            if (baseClassCP->GetName().Equals(BLR_CLASS_ILinearlyLocatedAttribution) ||
+                baseClassCP->GetName().Equals(BLR_CLASS_ILinearlyLocatedElement))
+                {
+                ecClassMixingInILinearlyLocated = ecClassCP;
+                break;
+                }
+            }
+
+        ecClassCP = firstBaseClassCP;
+        } while (!ecClassMixingInILinearlyLocated && ecClassCP);
+
+    BeAssert(ecClassMixingInILinearlyLocated != nullptr);
+    classIds.insert(ecClassMixingInILinearlyLocated->GetId());
     auto linearSegmentVector = iSegmentableLinearElemCP->QuerySegments(classIds);
 
     return _Prepare(source, linearSegmentVector, fromToLocationsChanged);
@@ -349,13 +375,13 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
             {
             double newFromDistanceAlong = fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart();
 
-            LinearSegment const* prevSegment = iter - 1;
-            if (fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart() < prevSegment->GetStartDistanceAlong())
+            LinearSegment const* prevSegmentCP = iter - 1;
+            if (fromToLocationCP->GetFromPosition().GetDistanceAlongFromStart() < prevSegmentCP->GetStartDistanceAlong())
                 return DgnDbStatus::BadRequest; // New start distance along can't go before previous segment's start distance along
 
-            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(linearSegmentCR.GetILinearlyLocatedId());
+            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(prevSegmentCP->GetILinearlyLocatedId());
             auto linearlyLocatedP = dynamic_cast<ILinearlyLocatedP>(impactedDgnElementPtr.get());
-            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(prevSegment->GetLinearlyReferencedLocationId());
+            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(prevSegmentCP->GetLinearlyReferencedLocationId());
             prevLocationP->GetToPositionR().SetDistanceAlongFromStart(newFromDistanceAlong);
 
             _AddImpactedDgnElement(impactedDgnElementPtr);
@@ -367,14 +393,14 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
             {
             double newToDistanceAlong = fromToLocationCP->GetToPosition().GetDistanceAlongFromStart();
 
-            LinearSegment const* nextSegment = iter + 1;
-            if (fromToLocationCP->GetToPosition().GetDistanceAlongFromStart() > nextSegment->GetStopDistanceAlong())
+            LinearSegment const* nextSegmentCP = iter + 1;
+            if (fromToLocationCP->GetToPosition().GetDistanceAlongFromStart() > nextSegmentCP->GetStopDistanceAlong())
                 return DgnDbStatus::BadRequest; // New stop distance along can't go after next segment's stop distance along
 
-            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(linearSegmentCR.GetILinearlyLocatedId());
+            auto impactedDgnElementPtr = source.ToElement().GetDgnDb().Elements().GetForEdit<DgnElement>(nextSegmentCP->GetILinearlyLocatedId());
             auto linearlyLocatedP = dynamic_cast<ILinearlyLocatedP>(impactedDgnElementPtr.get());
-            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(nextSegment->GetLinearlyReferencedLocationId());
-            prevLocationP->GetToPositionR().SetDistanceAlongFromStart(newToDistanceAlong);
+            auto prevLocationP = linearlyLocatedP->GetLinearlyReferencedFromToLocationP(nextSegmentCP->GetLinearlyReferencedLocationId());
+            prevLocationP->GetFromPositionR().SetDistanceAlongFromStart(newToDistanceAlong);
 
             _AddImpactedDgnElement(impactedDgnElementPtr);
             }
@@ -389,9 +415,16 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Prepare(ILinearElementSource
 DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Commit(ILinearElementSourceCR source)
     {
     DgnDbStatus status = DgnDbStatus::Success;
+
     for (auto& dgnElementPtr : _GetImpactedDgnElements())
+        {
+        if (m_processingId == dgnElementPtr->GetElementId())
+            continue;
+
+        m_processingId = dgnElementPtr->GetElementId();
         if (dgnElementPtr->Update(&status).IsNull())
             return status;
+        }
 
     return status;
     }

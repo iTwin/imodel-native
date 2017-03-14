@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/LinearReferencingApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,6 +71,8 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BLR_CLASS_ILinearElement                                    "ILinearElement"
 #define BLR_CLASS_ILinearlyLocated                                  "ILinearlyLocated"
+#define BLR_CLASS_ILinearlyLocatedAttribution                       "ILinearlyLocatedAttribution"
+#define BLR_CLASS_ILinearlyLocatedElement                           "ILinearlyLocatedElement"
 #define BLR_CLASS_LinearlyReferencedAtLocation                      "LinearlyReferencedAtLocation"
 #define BLR_CLASS_LinearlyReferencedFromToLocation                  "LinearlyReferencedFromToLocation"
 #define BLR_CLASS_LinearlyReferencedLocation                        "LinearlyReferencedLocation"
