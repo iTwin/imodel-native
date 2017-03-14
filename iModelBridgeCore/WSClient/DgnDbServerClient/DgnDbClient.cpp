@@ -38,6 +38,21 @@ DgnDbRepositoryConnectionResult DgnDbClient::CreateRepositoryConnection(Reposito
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
+IWSRepositoryClientPtr DgnDbClient::CreateProjectConnection() const
+    {
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
+    client->SetCredentials(m_credentials);
+    if (m_serverUrl.Contains("azurewebsites.net"))
+        client->GetWSClient()->EnableWsgServerHeader(true);
+    return client;
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
 DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::ConnectToRepository";
@@ -114,11 +129,7 @@ Json::Value BasicUserCreationJson(Credentials credentials, bool isAdmin = false)
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbClient::CreateBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken)
     {
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
+    IWSRepositoryClientPtr client = CreateProjectConnection();
 
     Json::Value basicUserCreationJson = BasicUserCreationJson(credentials);
     return client->SendCreateObjectRequest(basicUserCreationJson, BeFileName(), nullptr, cancellationToken)
@@ -136,11 +147,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::CreateBasicUser(Credentials credentials, I
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbClient::RemoveBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken)
     {
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
+    IWSRepositoryClientPtr client = CreateProjectConnection();
 
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::UserDefinition);
     Utf8String filter;
@@ -245,13 +252,10 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, "");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", project.c_str());
+    IWSRepositoryClientPtr client = CreateProjectConnection();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", m_projectId.c_str());
     return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoriesResult>
         ([=](const WSObjectsResult& response)
         {
@@ -299,11 +303,8 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryByName(Utf8StringCR repos
     filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::RepositoryName, repositoryName.c_str());
     query.SetFilter(filter);
 
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, "");
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
+    IWSRepositoryClientPtr client = CreateProjectConnection();
 
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRepositoryResult>([=] (WSObjectsResult const& result)
         {
@@ -341,12 +342,9 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryById(Utf8StringCR reposit
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repository with id %s.", repositoryId.c_str());
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, repositoryId);
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
+    ObjectId repositoriesObject(ServerSchema::Schema::Project, ServerSchema::Class::Repository, repositoryId);
+    IWSRepositoryClientPtr client = CreateProjectConnection();
 
     return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoryResult>([=] (WSObjectsResult const& result)
         {
@@ -386,12 +384,10 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
     {
     const Utf8String methodName = "DgnDbClient::CreateRepositoryInstance";
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
+
     Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description);
-    client->SetCredentials(m_credentials);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create repository request for project %s.", project.c_str());
+    IWSRepositoryClientPtr client = CreateProjectConnection();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create repository request for project %s.", m_projectId.c_str());
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
         ->Then([=](const WSCreateObjectResult& createRepositoryResult)
         {
@@ -977,6 +973,8 @@ DgnDbServerStatusTaskPtr DgnDbClient::AbandonBriefcase(RepositoryInfoCR reposito
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, repositoryInfo.GetWSRepositoryName(), m_clientInfo, nullptr, m_customHandler);
     client->SetCredentials(m_credentials);
+    if (m_serverUrl.Contains("azurewebsites.net"))
+        client->GetWSClient()->EnableWsgServerHeader(true);
 
     Utf8String briefcaseIdString;
     briefcaseIdString.Sprintf("%u", briefcaseId);
@@ -1007,10 +1005,8 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
     const Utf8String methodName = "DgnDbClient::DeleteRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_customHandler);
-    client->SetCredentials(m_credentials);
+
+    IWSRepositoryClientPtr client = CreateProjectConnection();
     ObjectId repositoryId = ObjectId("BIMCSProject", "BIMRepository", repositoryInfo.GetId());
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete repository request. Repository ID: %s.", repositoryInfo.GetId().c_str());
     return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=](WSDeleteObjectResult const& result)

@@ -58,6 +58,7 @@ private:
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
     DgnDbRepositoryConnectionResult CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const;
+    IWSRepositoryClientPtr CreateProjectConnection() const;
     DgnDbServerRepositoryTaskPtr GetRepositoryFromQuery(WSQueryCR query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
