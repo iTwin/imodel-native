@@ -10,30 +10,12 @@
 #include "ValueExp.h"
 #include "ExpHelper.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //NOTE: The code in this file is sorted by the class names. This should make maintenance easier as there are too many types in this single file
 
-//*************************** ComputedExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       05/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ComputedExp::_ToECSql() const
-    {
-    Utf8String ecsql;
-    if (HasParentheses())
-        ecsql.append("(");
-
-    _DoToECSql(ecsql);
-
-    if (HasParentheses())
-        ecsql.append(")");
-
-    return ecsql;
-    }
 
 //*************************** BooleanBinaryExp ******************************************
 //-----------------------------------------------------------------------------------------
@@ -264,20 +246,27 @@ bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
+void BinaryBooleanExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToSql(m_op)).append(" ");
+    if (HasParentheses())
+        ctx.AppendToECSql("(");
+
+    ctx.AppendToECSql(*GetLeftOperand()).AppendToECSql(" ").AppendToECSql(ExpHelper::ToSql(m_op)).AppendToECSql(" ");
 
     ComputedExp const* rhs = GetRightOperand();
     const bool rhsNeedsParens = m_op == BooleanSqlOperator::NotIn || m_op == BooleanSqlOperator::In;
 
     if (rhsNeedsParens)
-        ecsql.append("(");
+        ctx.AppendToECSql("(");
 
-    ecsql.append(rhs->ToECSql());
+    ctx.AppendToECSql(*rhs);
 
     if (rhsNeedsParens)
-        ecsql.append(")");
+        ctx.AppendToECSql(")");
+
+    if (HasParentheses())
+        ctx.AppendToECSql(")");
+
     }
 
 //-----------------------------------------------------------------------------------------
@@ -294,7 +283,7 @@ Utf8String BinaryBooleanExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BooleanFactorExp::BooleanFactorExp(unique_ptr<BooleanExp> operand, bool notOperator)
+BooleanFactorExp::BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool notOperator)
     : BooleanExp(Type::BooleanFactor), m_notOperator(notOperator)
     {
     m_operandExpIndex = AddChild(std::move(operand));
@@ -303,12 +292,18 @@ BooleanFactorExp::BooleanFactorExp(unique_ptr<BooleanExp> operand, bool notOpera
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void BooleanFactorExp::_DoToECSql(Utf8StringR ecsql) const
+void BooleanFactorExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    if (m_notOperator)
-        ecsql.append("NOT ");
+    if (HasParentheses())
+        ctx.AppendToECSql("(");
 
-    ecsql.append(GetOperand()->ToECSql());
+    if (m_notOperator)
+        ctx.AppendToECSql("NOT ");
+
+    ctx.AppendToECSql(*GetOperand());
+
+    if (HasParentheses())
+        ctx.AppendToECSql(")");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -330,7 +325,7 @@ Utf8String BooleanFactorExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-UnaryPredicateExp::UnaryPredicateExp(unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate)
+UnaryPredicateExp::UnaryPredicateExp(std::unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate)
     {
     m_booleanValueExpIndex = AddChild(std::move(booleanValueExp));
     }
@@ -354,14 +349,18 @@ Exp::FinalizeParseStatus UnaryPredicateExp::_FinalizeParsing(ECSqlParseContext& 
     return FinalizeParseStatus::Completed;
     }
 
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-void UnaryPredicateExp::_DoToECSql(Utf8StringR ecsql) const
+void UnaryPredicateExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    ecsql.append(GetValueExp()->ToECSql());
-    }
+    if (HasParentheses())
+        ctx.AppendToECSql("(");
 
+    ctx.AppendToECSql(*GetValueExp());
+
+    if (HasParentheses())
+        ctx.AppendToECSql(")");
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

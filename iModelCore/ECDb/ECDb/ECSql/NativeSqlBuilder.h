@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,9 +71,9 @@ struct NativeSqlBuilder
         NativeSqlBuilder& Append(SqlSetQuantifier);
         NativeSqlBuilder& Append(UnarySqlOperator);
         //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex);
+        NativeSqlBuilder& AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex);
         //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex);
+        NativeSqlBuilder& AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex);
 
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
 

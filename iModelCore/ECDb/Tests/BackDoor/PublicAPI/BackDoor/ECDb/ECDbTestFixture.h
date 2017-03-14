@@ -62,6 +62,8 @@ protected:
 
     ECN::ECSchemaPtr ReadECSchemaFromDisk(ECN::ECSchemaReadContextPtr& ctx, BeFileNameCR schemaFileName) const { return ReadECSchemaFromDisk(ctx, GetECDb(), schemaFileName); }
 
+    static DbResult ExecuteNonSelectECSql(ECDbCR, Utf8CP ecsql);
+
 public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture () {};

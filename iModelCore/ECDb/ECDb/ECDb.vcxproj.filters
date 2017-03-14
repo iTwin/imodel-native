@@ -202,9 +202,6 @@
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlPreparedStatement.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbPolicyManager.h" />
     <ClInclude Include="ECSql\NativeSqlBuilder.h">
       <Filter>ECSql</Filter>
@@ -414,6 +411,12 @@
     <ClInclude Include="ECSql\ArrayECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
+    <ClInclude Include="ECSql\ECSqlPreparedStatement_Old.h">
+      <Filter>ECSql\ECSqlStatement</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\ECSqlPreparedStatement.h">
+      <Filter>ECSql\ECSqlStatement</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -579,9 +582,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp">
-      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp">
@@ -756,6 +756,12 @@
     </ClCompile>
     <ClCompile Include="ECSql\ArrayECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\ECSqlPreparedStatement_Old.cpp">
+      <Filter>ECSql\ECSqlStatement</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp">
+      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

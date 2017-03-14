@@ -8,8 +8,6 @@
 #include "ECDbPch.h"
 #include "UpdateStatementExp.h"
 
-using namespace std;
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************** UpdateStatementExp ******************************************
@@ -17,18 +15,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-UpdateStatementExp::UpdateStatementExp (unique_ptr<ClassRefExp> classNameExp, unique_ptr<AssignmentListExp> assignmentListExp, unique_ptr<WhereExp> whereClauseExp, unique_ptr<OptionsExp> optionsExp)
-    : Exp(Type::Update), m_whereClauseIndex (UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
+UpdateStatementExp::UpdateStatementExp(std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<AssignmentListExp> assignmentListExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsExp)
+    : Exp(Type::Update), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
-    BeAssert (classNameExp->GetType () == Exp::Type::ClassName);
-    m_classNameExpIndex = AddChild (move (classNameExp));
-    m_assignmentListExpIndex = AddChild (move (assignmentListExp));
+    BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
+    m_classNameExpIndex = AddChild(std::move(classNameExp));
+    m_assignmentListExpIndex = AddChild(std::move(assignmentListExp));
 
     if (whereClauseExp != nullptr)
-        m_whereClauseIndex = (int) AddChild (move (whereClauseExp));
+        m_whereClauseIndex = (int) AddChild(std::move(whereClauseExp));
 
     if (optionsExp != nullptr)
-        m_optionsClauseIndex = (int) AddChild(move(optionsExp));
+        m_optionsClauseIndex = (int) AddChild(std::move(optionsExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -38,17 +36,17 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        auto classNameExp = GetClassNameExp ();
+        auto classNameExp = GetClassNameExp();
         RangeClassInfo::List classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
         m_finalizeParsingArgCache = classList;
-        ctx.PushFinalizeParseArg (&m_finalizeParsingArgCache);
+        ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
 
         return FinalizeParseStatus::NotCompleted;
         }
     else
         {
-        ctx.PopFinalizeParseArg ();
+        ctx.PopFinalizeParseArg();
         m_finalizeParsingArgCache.clear();
 
         return FinalizeParseStatus::Completed;
@@ -58,28 +56,12 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* UpdateStatementExp::GetClassNameExp () const
-    {
-    return GetChild<ClassNameExp> (m_classNameExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-AssignmentListExp const* UpdateStatementExp::GetAssignmentListExp () const
-    {
-    return GetChild<AssignmentListExp> (m_assignmentListExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-WhereExp const* UpdateStatementExp::GetWhereClauseExp () const
+WhereExp const* UpdateStatementExp::GetWhereClauseExp() const
     {
     if (m_whereClauseIndex < 0)
         return nullptr;
 
-    return GetChild<WhereExp> ((size_t) m_whereClauseIndex);
+    return GetChild<WhereExp>((size_t) m_whereClauseIndex);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -96,34 +78,28 @@ OptionsExp const* UpdateStatementExp::GetOptionsClauseExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String UpdateStatementExp::_ToECSql () const
+void UpdateStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    Utf8String ecsql ("UPDATE ");
+    ctx.AppendToECSql("UPDATE ").AppendToECSql(*GetClassNameExp()).AppendToECSql("SET ").AppendToECSql(*GetAssignmentListExp());
 
-    ecsql.append (GetClassNameExp ()->ToECSql ());
-
-    ecsql.append ("SET ").append (GetAssignmentListExp ()->ToECSql ());
-
-    Exp const* exp = GetWhereClauseExp ();
+    Exp const* exp = GetWhereClauseExp();
     if (exp != nullptr)
-        ecsql.append (" ").append (exp->ToECSql ());
+        ctx.AppendToECSql(" ").AppendToECSql(*exp);
 
     exp = GetOptionsClauseExp();
     if (exp != nullptr)
-        ecsql.append(" ").append(exp->ToECSql());
-
-    return ecsql;
+        ctx.AppendToECSql(" ").AppendToECSql(*exp);
     }
 
 //*************************** AssignmentExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-AssignmentExp::AssignmentExp (std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp)
-    : Exp (Type::Assignment)
+AssignmentExp::AssignmentExp(std::unique_ptr<PropertyNameExp> propNameExp, std::unique_ptr<ValueExp> valueExp)
+    : Exp(Type::Assignment)
     {
-    m_propNameExpIndex = AddChild (move (propNameExp));
-    m_valueExpIndex = AddChild (move (valueExp));
+    m_propNameExpIndex = AddChild(move(propNameExp));
+    m_valueExpIndex = AddChild(move(valueExp));
     }
 
 
@@ -138,17 +114,17 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx,
                 return FinalizeParseStatus::NotCompleted;
 
             case FinalizeParseMode::AfterFinalizingChildren:
+            {
+            Utf8String errorMessage;
+            ValueExp const* valueExp = GetValueExp();
+            if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
                 {
-                Utf8String errorMessage;
-                ValueExp const* valueExp = GetValueExp();
-                if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
-                    {
-                    ctx.Issues().Report("Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
-                    return FinalizeParseStatus::Error;
-                    }
-
-                return FinalizeParseStatus::Completed;
+                ctx.Issues().Report("Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
+                return FinalizeParseStatus::Error;
                 }
+
+            return FinalizeParseStatus::Completed;
+            }
 
             default:
                 BeAssert(false);
@@ -164,34 +140,6 @@ bool AssignmentExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Parame
     //Assign the prop name exp to the parameter exp
     parameterExp.SetTargetExpInfo(*GetPropertyNameExp());
     return true;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp const* AssignmentExp::GetPropertyNameExp () const
-    {
-    return GetChild<PropertyNameExp> (m_propNameExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-ValueExp const* AssignmentExp::GetValueExp () const
-    {
-    return GetChild<ValueExp> (m_valueExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-//virtual
-Utf8String AssignmentExp::_ToECSql () const
-    {
-    Utf8String ecsql = GetPropertyNameExp ()->ToECSql ();
-    ecsql.append (" = ").append (GetValueExp ()->ToECSql ());
-
-    return ecsql;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -29,8 +29,6 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
                 return "NotMapped";
             case MapStrategy::OwnTable:
                 return "OwnTable";
-            case MapStrategy::SharedTable:
-                return "SharedTable";
             case MapStrategy::TablePerHierarchy:
                 return "TablePerHierarchy";
             default:
@@ -199,8 +197,6 @@ BentleyStatus ClassMappingCACache::TryParse(MapStrategy& mapStrategy, Utf8CP map
         mapStrategy = MapStrategy::NotMapped;
     else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "TablePerHierarchy") == 0)
         mapStrategy = MapStrategy::TablePerHierarchy;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "SharedTable") == 0)
-        mapStrategy = MapStrategy::SharedTable;
     else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
         mapStrategy = MapStrategy::ExistingTable;
     else

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -223,11 +223,11 @@ Utf8String NativeSqlBuilder::Pop()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex)
+NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex)
     {
-    if (!Utf8String::IsNullOrEmpty(ecsqlParameterName))
+    if (!ecsqlParameterName.empty())
         {
-        Append(":").Append(ecsqlParameterName, false);
+        Append(":").Append(ecsqlParameterName.c_str(), false);
 
         Utf8String nativeSqlParameterName;
         nativeSqlParameterName.Sprintf("_%d", ecsqlParameterComponentIndex);
@@ -245,12 +245,10 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, i
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex)
+NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex)
     {
     AppendParameter(ecsqlParameterName, ecsqlParameterComponentIndex, globalIndex);
-
     m_parameterIndexMappings.push_back(ECSqlParameterIndex(ecsqlParameterIndex, ecsqlParameterComponentIndex, globalIndex));
-
     return *this;
     }
 

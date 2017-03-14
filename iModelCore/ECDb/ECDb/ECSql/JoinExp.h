@@ -98,7 +98,7 @@ struct JoinSpecExp : Exp
 struct CrossJoinExp final : JoinExp
     {
     private:
-        Utf8String _ToECSql() const override { return GetFromClassRef().ToECSql() + " CROSS JOIN " + GetToClassRef().ToECSql(); }
+        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" CROSS JOIN ").AppendToECSql(GetToClassRef()); }
         Utf8String _ToString() const override { return "CrossJoin"; }
     public:
         CrossJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to)
@@ -114,7 +114,7 @@ struct NaturalJoinExp final : JoinExp
     private:
         ECSqlJoinType m_appliedJoinType;
 
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -130,7 +130,7 @@ struct QualifiedJoinExp final : JoinExp
     {
     private:
         size_t m_nJoinSpecIndex;
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override { return "QualifiedJoin"; }
 
     public:
@@ -185,11 +185,11 @@ struct ECRelationshipJoinExp final : JoinExp
             };
     private:
         JoinDirection           m_direction;
-        size_t                  m_relationshipClassIndex;
+        size_t                  m_relationshipClassNameExpIndex;
         ResolvedEndPoint        m_resolvedFrom;
         ResolvedEndPoint        m_resolvedTo;
 
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override;
         BentleyStatus ResolveRelationshipEnds(ECSqlParseContext&);
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
@@ -198,10 +198,10 @@ struct ECRelationshipJoinExp final : JoinExp
         ECRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
             : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction)
             {
-            m_relationshipClassIndex = AddChild(move(relationship));
+            m_relationshipClassNameExpIndex = AddChild(move(relationship));
             }
 
-        ClassNameExp const& GetRelationshipClass() const { return *GetChild<ClassNameExp>(m_relationshipClassIndex); }
+        ClassNameExp const& GetRelationshipClassNameExp() const { return *GetChild<ClassNameExp>(m_relationshipClassNameExpIndex); }
 
         ResolvedEndPoint const&  GetResolvedFromEndPoint() const { return m_resolvedFrom; }
         ResolvedEndPoint const&  GetResolvedToEndPoint() const { return m_resolvedTo; }
@@ -219,18 +219,20 @@ struct NamedPropertiesJoinExp final : JoinSpecExp
     private:
         std::vector<Utf8String> m_properties;
 
-        Utf8String _ToECSql() const override
+        void _ToECSql(ECSqlRenderContext& ctx) const override
             {
-            Utf8String tmp = "USING (";
-            auto end = &m_properties.at(m_properties.size() - 1);
-            for (auto& property : m_properties)
+            ctx.AppendToECSql("USING (");
+            bool isFirstProp = true;
+            for (Utf8StringCR property : m_properties)
                 {
-                tmp.append(property);
-                if (&property != end)
-                    tmp.append(", ");
+                if (!isFirstProp)
+                    ctx.AppendToECSql(", ");
+
+                ctx.AppendToECSql(property);
+                isFirstProp = false;
                 }
-            tmp.append(")");
-            return tmp;
+
+            ctx.AppendToECSql(")");
             }
 
         Utf8String _ToString() const override
@@ -263,13 +265,12 @@ struct BooleanExp;
 struct JoinConditionExp final : JoinSpecExp
     {
     private:
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
         Utf8String _ToString() const override { return "JoinCondition"; }
 
     public:
         explicit JoinConditionExp(std::unique_ptr<BooleanExp> searchCondition);
-
-        BooleanExp const* GetSearchCondition() const { return GetChild<BooleanExp>(0); }
+        BooleanExp const* GetSearchCondition() const;
     };
 
 

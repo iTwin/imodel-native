@@ -574,6 +574,38 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
+    {
+    ECDbR ecdb = SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (P2D.X, Code) VALUES (21.5,'C1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT P2D, P3D FROM ts.Element WHERE Code='C1'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    IECSqlValue const& point2D = stmt.GetValue(0);
+    IECSqlValue const& point3D = stmt.GetValue(1);
+
+    //IsNull only returns true if all coordinates cols are NULL.
+    ASSERT_FALSE(point2D.IsNull());
+    ASSERT_TRUE(point3D.IsNull());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsitest                                     Krischan.Eberle            02/17
@@ -1138,6 +1170,31 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
         ASSERT_EQ(rowCountPerClass * 2, actualRowCount) << ecsql;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CoalesceInECSql)
+    {
+    ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,S) VALUES(22, null)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,S) VALUES(null, 'Foo')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I,COALESCE(I,S) FROM ecsql.P"));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (stmt.IsValueNull(0))
+            ASSERT_STREQ("Foo", stmt.GetValueText(1));
+        else
+            ASSERT_EQ(22, stmt.GetValueInt(1));
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4871,4 +4928,27 @@ TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
     ASSERT_EQ((int) expectedCodes.size(), rowCount);
     }
 
+//---------------------------------------------------------------------------------
+// Verifies correct ECSQL parsing on Android
+// @bsimethod                              Affan.Khan                       10/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ECSqlParseTreeFormatter_ParseAndFormatECSqlParseNodeTree)
+    {
+    auto AssertParseECSql = [] (ECDbCR ecdb, Utf8CP ecsql)
+        {
+        Utf8String parseTree;
+        ASSERT_EQ(SUCCESS, ECSqlParseTreeFormatter::ParseAndFormatECSqlParseNodeTree(parseTree, ecdb, ecsql)) << "Failed to parse ECSQL";
+        };
+
+    ECDb ecdb; // only needed for issue listener, doesn't need to represent a file on disk
+    AssertParseECSql(ecdb, "SELECT '''' FROM stco.Hardware");
+    AssertParseECSql(ecdb, "SELECT 'aa', '''', b FROM stco.Hardware WHERE Name = 'a''b'");
+    AssertParseECSql(ecdb, "SELECT _Aa, _bC, _123, Abc, a123, a_123, a_b, _a_b_c FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql(ecdb, "SELECT * FROM stco.Hardware WHERE Name = 'Fusion'");
+    AssertParseECSql(ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo]");
+    AssertParseECSql(ecdb, "SELECT [Foo].[Name] FROM stco.[Hardware] [Foo] WHERE [Name] = 'HelloWorld'");
+    AssertParseECSql(ecdb, "Select EQUIP_NO From only appdw.Equipment where EQUIP_NO = '50E-101A' ");
+    AssertParseECSql(ecdb, "INSERT INTO [V8TagsetDefinitions].[STRUCTURE_IL1] ([VarFixedStartZ], [DeviceID1], [ObjectType], [PlaceMethod], [CopyConstrDrwToProj]) VALUES ('?', '-E1-1', 'SGL', '1', 'Y')");
+    AssertParseECSql(ecdb, "INSERT INTO [V8TagsetDefinitions].[grid__x0024__0__x0024__CB_1] ([CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457],[CB_1_8456], [CB_1_8455], [CB_1_8454], [CB_1_8457], [CB_1_8456], [CB_1_8455], [CB_1_8454]) VALUES ('', '1.1', '', '', '', '2.2', '', '', '', '2.5', '', '', '', '2.5', '', '', '', '2.1', '', '', '', 'E.3', '', '', '', 'B.4', '', '', '', 'D.4', '', '')");
+    }
 END_ECDBUNITTESTS_NAMESPACE

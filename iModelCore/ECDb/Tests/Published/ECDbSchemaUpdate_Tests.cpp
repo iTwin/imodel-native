@@ -2187,7 +2187,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
 
-    Utf8CP updatedSchema =
+    Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2210,7 +2210,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(updatedSchema, filePath, {false, false}, "Adding SharedColumnCount");
+    AssertSchemaUpdate(editedSchemaXml, filePath, { false, false }, "Adding SharedColumnCount is supported");
     }
 
 //---------------------------------------------------------------------------------------

@@ -240,7 +240,7 @@
     <ECEntityClass typeName="IsmPropertyHolder" modifier="None"/>
     <ECEntityClass typeName="IsmObject" modifier="None">
         <BaseClass>IsmPropertyHolder</BaseClass>
-        <ECProperty propertyName="Id" typeName="string" description="ISM GUID" readOnly="false"/>
+        <ECProperty propertyName="IsmId" typeName="string" description="ISM GUID" readOnly="false"/>
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECEntityClass typeName="IsmConnectionPoint" modifier="None">

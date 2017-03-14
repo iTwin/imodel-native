@@ -18,13 +18,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct WhereExp final : Exp
     {
 private:
-    Utf8String _ToECSql() const override { return "WHERE " + GetSearchConditionExp()->ToECSql(); }
+    void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("WHERE ").AppendToECSql(*GetSearchConditionExp()); }
     Utf8String _ToString() const override { return "Where"; }
 
 public:
     explicit WhereExp(std::unique_ptr<BooleanExp> expression);
 
-    BooleanExp const* GetSearchConditionExp() const;
+    BooleanExp const* GetSearchConditionExp() const { return GetChild<BooleanExp>(0); }
+    std::set<DbTable const*> GetReferencedTables() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

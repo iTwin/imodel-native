@@ -383,4 +383,16 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
     return ECSqlStatus::Success;
     }
 
+//***************************************************************************************
+//    ProxyECSqlBinder
+//***************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2017
+//---------------------------------------------------------------------------------------
+IECSqlBinder& ProxyECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
+    {
+    BeAssert(false && "Should not be called");
+    return NoopECSqlBinder::Get();
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

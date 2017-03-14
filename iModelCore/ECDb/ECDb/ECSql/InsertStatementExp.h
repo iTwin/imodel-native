@@ -30,7 +30,7 @@ private:
 
     FinalizeParseStatus Validate (ECSqlParseContext&) const;
 
-    Utf8String _ToECSql() const override;
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
     Utf8String _ToString() const override { return "Insert"; }
 
     PropertyNameListExp* GetPropertyNameListExpP () const;

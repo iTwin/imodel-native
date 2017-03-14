@@ -12,9 +12,13 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using namespace std;
-
 //****************** AssignmentListExp *************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       01/2014
+//+---------------+---------------+---------------+---------------+---------------+--------
+void AssignmentListExp::AddAssignmentExp(std::unique_ptr<AssignmentExp> assignmentExp) { AddChild(std::move(assignmentExp)); }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -37,37 +41,22 @@ Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-void AssignmentListExp::AddAssignmentExp(std::unique_ptr<AssignmentExp> assignmentExp)
-    {
-    AddChild(move(assignmentExp));
-    }
+AssignmentExp const* AssignmentListExp::GetAssignmentExp(size_t index) const { return GetChild<AssignmentExp>(index); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-AssignmentExp const* AssignmentListExp::GetAssignmentExp(size_t index) const
-    {
-    return GetChild<AssignmentExp>(index);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       01/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String AssignmentListExp::_ToECSql() const
-    {
-    Utf8String ecsql;
-
+void AssignmentListExp::_ToECSql(ECSqlRenderContext& ctx) const
+{
     bool isFirstItem = true;
-    for (auto childExp : GetChildren())
+    for (Exp const* childExp : GetChildren())
         {
         if (!isFirstItem)
-            ecsql.append(", ");
+            ctx.AppendToECSql(", ");
 
-        ecsql.append(childExp->ToECSql());
+        ctx.AppendToECSql(*childExp);
         isFirstItem = false;
         }
-
-    return ecsql;
     }
 
 
@@ -93,49 +82,25 @@ Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyNameListExp::AddPropertyNameExp(std::unique_ptr<PropertyNameExp>& propertyNameExp)
+void PropertyNameListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    AddChild(move(propertyNameExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp const* PropertyNameListExp::GetPropertyNameExp(size_t index) const
-    {
-    return GetChild<PropertyNameExp>(index);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String PropertyNameListExp::_ToECSql() const
-    {
-    Utf8String tmp("(");
+    ctx.AppendToECSql("(");
 
     bool isFirstItem = true;
-    for (auto childExp : GetChildren())
+    for (Exp const* childExp : GetChildren())
         {
         if (!isFirstItem)
-            tmp.append(", ");
+            ctx.AppendToECSql(", ");
 
-        tmp.append(childExp->ToECSql());
+        ctx.AppendToECSql(*childExp);
         isFirstItem = false;
         }
-    tmp.append(")");
-    return tmp;
+
+    ctx.AppendToECSql(")");
     }
 
 
 //*************************** ValueListExp ******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ValueExpListExp::AddValueExp(unique_ptr<ValueExp>& valueExp)
-    {
-    AddChild(move(valueExp));
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -147,15 +112,6 @@ Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing(ECSqlParseContext& ct
 
     return FinalizeParseStatus::Completed;
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       04/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-ValueExp const* ValueExpListExp::GetValueExp(size_t index) const
-    {
-    return GetChild<ValueExp>(index);
-    }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
@@ -172,15 +128,15 @@ ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ValueExpListExp::_DoToECSql(Utf8StringR ecsql) const
+void ValueExpListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     bool isFirstItem = true;
-    for (auto childExp : GetChildren())
+    for (Exp const* childExp : GetChildren())
         {
         if (!isFirstItem)
-            ecsql.append(", ");
+            ctx.AppendToECSql(", ");
 
-        ecsql.append(childExp->ToECSql());
+        ctx.AppendToECSql(*childExp);
         isFirstItem = false;
         }
     }

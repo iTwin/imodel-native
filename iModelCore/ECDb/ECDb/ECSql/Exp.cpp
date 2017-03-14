@@ -19,57 +19,32 @@ using namespace std;
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8CP const Exp::ASTERISK_TOKEN = "*";
 
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::set<DbTable const*> Exp::GetReferencedTables() const
-    {
-    std::set<DbTable const*> tmp;
-    if (!IsComplete())
-        {
-        BeAssert(false && "This operation is supported on resolved expressions");
-        return tmp;
-        }
-
-    std::vector<Exp const*> expList = Find(Type::PropertyName, true);
-    for (Exp const* exp : expList)
-        {
-        PropertyNameExp const& propertyNameExp = exp->GetAs<PropertyNameExp>();
-        if (propertyNameExp.IsPropertyRef())
-            continue;
-
-        PropertyMap const* propertyMap = propertyNameExp.GetTypeInfo().GetPropertyMap();
-        if (propertyMap->IsSystem())
-            tmp.insert(&propertyMap->GetClassMap().GetJoinedTable());
-        else
-            tmp.insert(&propertyMap->GetAs<DataPropertyMap>().GetTable());
-        }
-
-    return tmp;
-    }
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    09/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindRecusive(std::vector<Exp const*>& expList, Exp::Type ofType) const
+void Exp::FindRecursive(std::vector<Exp const*>& expList, Exp::Type ofType) const
     {
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (auto child : GetChildren())
-        child->FindRecusive(expList, ofType);
+    for (Exp const* child : m_children)
+        child->FindRecursive(expList, ofType);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-void Exp::FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Exp::Type ofType) const
+void Exp::FindInDirectDecendents(std::vector<Exp const*>& expList, Exp::Type ofType) const
     {
     if (GetType() == ofType)
         expList.push_back(this);
 
-    for (auto child : GetChildren())
+    for (Exp const* child : m_children)
+        {
         if (child->GetType() == ofType)
             expList.push_back(this);
+        }
     }
 
 //-----------------------------------------------------------------------------------------
@@ -83,19 +58,19 @@ Exp const* Exp::FindParent(Exp::Type type) const
         p = p->GetParent();
         } while (p != nullptr && p->GetType() != type);
 
-        return p;
+    return p;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    09/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-std::vector<Exp const*> Exp::Find( Exp::Type ofType, bool recusive) const
+std::vector<Exp const*> Exp::Find(Exp::Type ofType, bool recusive) const
     {
     std::vector<Exp const*> tmp;
     if (recusive)
-        FindRecusive(tmp, ofType);
+        FindRecursive(tmp, ofType);
     else
-        FindInDirectDecedentOnly(tmp, ofType);
+        FindInDirectDecendents(tmp, ofType);
 
     return tmp;
     }
@@ -103,84 +78,51 @@ std::vector<Exp const*> Exp::Find( Exp::Type ofType, bool recusive) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus Exp::_FinalizeParsing(ECSqlParseContext&, FinalizeParseMode)
+size_t Exp::AddChild(unique_ptr<Exp> child)
     {
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::_TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const
-    {
-    return false;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection const& Exp::GetChildren () const
-    {
-    return m_children;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection& Exp::GetChildrenR () const
-    {
-    return m_children;
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-size_t Exp::AddChild (unique_ptr<Exp> child)
-    {
-    BeAssert (child != nullptr);
+    BeAssert(child != nullptr);
     child->m_parent = this;
-    m_children.m_collection.push_back (move (child));
+    m_children.m_collection.push_back(move(child));
     //return index of added child
-    return m_children.size () - 1;
+    return m_children.size() - 1;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus Exp::FinalizeParsing (ECSqlParseContext& ctx)
+BentleyStatus Exp::FinalizeParsing(ECSqlParseContext& ctx)
     {
     //some expressions need to finalize themselves before its children and some after their children.
     //So _FinalizeParsing is called two times on each Exp.
-    if (!IsComplete ())
+    if (!IsComplete())
         {
-        FinalizeParseStatus stat = _FinalizeParsing (ctx, FinalizeParseMode::BeforeFinalizingChildren);
+        FinalizeParseStatus stat = _FinalizeParsing(ctx, FinalizeParseMode::BeforeFinalizingChildren);
         switch (stat)
             {
-            case FinalizeParseStatus::Completed:
-                SetIsComplete ();
-                break;
+                case FinalizeParseStatus::Completed:
+                    SetIsComplete();
+                    break;
 
-            case FinalizeParseStatus::Error:
-                return ERROR;
+                case FinalizeParseStatus::Error:
+                    return ERROR;
             }
         }
 
-    for (auto child : GetChildrenR ())
+    for (Exp* child : m_children)
         {
         if (SUCCESS != child->FinalizeParsing(ctx))
             return ERROR;
         }
 
-    if (!IsComplete ())
+    if (!IsComplete())
         {
         FinalizeParseStatus stat = _FinalizeParsing(ctx, FinalizeParseMode::AfterFinalizingChildren);
         if (stat == FinalizeParseStatus::Error)
             return ERROR;
 
-        BeAssert (IsParameterExp() || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
+        BeAssert(IsParameterExp() || stat != FinalizeParseStatus::NotCompleted && "Every expression except for parameter exps is expected to be either completed or return an error from finalize parsing.");
         if (stat == FinalizeParseStatus::Completed)
-            SetIsComplete ();
+            SetIsComplete();
         }
 
     return SUCCESS;
@@ -201,108 +143,30 @@ bool Exp::TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& par
     return false;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    05/2015
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String Exp::ToECSql() const
-    {
-    return _ToECSql();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String Exp::ToString () const
-    {
-    return _ToString ();
-    }
-
 
 //************************* Exp::Collection *******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-size_t Exp::Collection::size () const
-    {
-    return m_collection.size ();
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::Collection::empty () const
+bool Exp::Collection::Replace(ExpCR replacee, std::vector<std::unique_ptr<Exp>>& replaceWith)
     {
-    return m_collection.empty ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ExpCP Exp::Collection::operator[] (size_t i) const
-    {
-    return m_collection[i].get ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp* Exp::Collection::operator[] (size_t i)
-    {
-    return m_collection[i].get ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<ExpCP> Exp::Collection::begin () const
-    {
-    return const_iterator<ExpCP> (m_collection.begin ());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<Exp*> Exp::Collection::begin ()
-    {
-    return const_iterator<Exp*> (m_collection.begin ());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<ExpCP> Exp::Collection::end () const
-    {
-    return const_iterator<ExpCP> (m_collection.end ());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-Exp::Collection::const_iterator<Exp*> Exp::Collection::end ()
-    {
-    return const_iterator<Exp*> (m_collection.end ());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::Collection::Replace (ExpCR replacee, std::vector<std::unique_ptr<Exp>>& replaceWith)
-    {
-    std::vector<std::unique_ptr<Exp>> copiedCollection = move (m_collection);
-    BeAssert (m_collection.empty ());
+    std::vector<std::unique_ptr<Exp>> copiedCollection = move(m_collection);
+    BeAssert(m_collection.empty());
 
     bool found = false;
-    for (size_t i = 0; i < copiedCollection.size (); i++)
+    for (size_t i = 0; i < copiedCollection.size(); i++)
         {
         auto& expr = copiedCollection[i];
-        if (expr.get () != &replacee)
-            m_collection.push_back (move (expr));
+        if (expr.get() != &replacee)
+            m_collection.push_back(move(expr));
         else
             {
             for (auto& newExp : replaceWith)
                 {
-                m_collection.push_back (move (newExp));
+                m_collection.push_back(move(newExp));
                 }
+
             found = true;
             }
         }
@@ -353,24 +217,6 @@ bool PropertyPath::IsResolved() const
 
     return true;
     }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void PropertyPath::Push(Utf8StringCR propertyName, size_t arrayIndex)
-    {
-    m_path.push_back(Location(propertyName, (int) arrayIndex));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void PropertyPath::Push(Utf8StringCR propertyName)
-    {
-    m_path.push_back(Location(propertyName, Location::NOT_ARRAY));
-    }
-
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -447,7 +293,7 @@ Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true
         {
         if (!isFirstLoc)
             str.append(".");
-        
+
         if (escape)
             str.append("[");
 
@@ -484,7 +330,9 @@ BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedProperty
     bvector<Utf8String> propertyNames;
     BeStringUtilities::Split(propertyPath.c_str(), ".", nullptr, propertyNames);
     for (Utf8StringCR propertyName : propertyNames)
-        resolvedPropertyPath.Push(propertyName.c_str());
+        {
+        resolvedPropertyPath.Push(propertyName);
+        }
 
     ECClassCP targetClass = ecdb.Schemas().GetECClass(schemaName, className, ResolveSchema::AutoDetect);
     if (targetClass == nullptr)
@@ -546,14 +394,13 @@ void PropertyPath::Location::SetProperty(ECPropertyCR property)
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes) const
     {
-    if (GetArrayIndex() == NOT_ARRAY || !includeArrayIndexes)
+    if (GetArrayIndex() < 0 || !includeArrayIndexes)
         return m_propertyName;
 
     Utf8String tmp;
     tmp.Sprintf("%s[%d]", m_propertyName.c_str(), GetArrayIndex());
     return tmp;
     }
-
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

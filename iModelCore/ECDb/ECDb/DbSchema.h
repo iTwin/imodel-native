@@ -94,7 +94,7 @@ public:
         {
         //NOTE: do not assign other ints to the values as they get persisted as is in the ECDb file
         Unknown = 0, //! Not known to ECDb or user define columns
-        ECInstanceId = 1, //! ECInstanceId system column also primary key of the table
+        ECInstanceId = 1, //! ECInstanceId system column, i.e.the primary key of the table
         ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
         SourceECInstanceId = 4,
         SourceECClassId = 8,
@@ -403,7 +403,7 @@ public:
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
-    ECN::ECClassId const& GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+    ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);

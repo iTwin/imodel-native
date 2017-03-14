@@ -70,6 +70,197 @@ struct ECSqlBinder : IECSqlBinder
     };
 
 //=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2017
+//+===============+===============+===============+===============+===============+======
+struct ProxyECSqlBinder final : IECSqlBinder
+    {
+private:
+    std::vector<IECSqlBinder*> m_binders;
+    std::map<Utf8CP, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBinders;
+    std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
+
+    ECSqlStatus _BindNull() override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindNull();
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindBoolean(bool value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindBoolean(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindBlob(value, blobSize, makeCopy);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindZeroBlob(int blobSize) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindZeroBlob(blobSize);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindDateTime(julianDay, dtInfo);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindDateTime(julianDayMsec, dtInfo);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindDouble(double value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindDouble(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindInt(int value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindInt(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindInt64(int64_t value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindInt64(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindPoint2d(DPoint2dCR value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindPoint2d(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+    ECSqlStatus _BindPoint3d(DPoint3dCR value) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindPoint3d(value);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override
+        {
+        for (IECSqlBinder* binder : m_binders)
+            {
+            ECSqlStatus stat = binder->BindText(value, makeCopy, byteCount);
+            if (!stat.IsSuccess())
+                return stat;
+            }
+
+        return ECSqlStatus::Success;
+        }
+
+    IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override
+        {
+        auto it = m_structMemberProxyBinders.find(structMemberPropertyName);
+        if (it != m_structMemberProxyBinders.end())
+            return *it->second;
+
+        auto ret = m_structMemberProxyBinders.insert(std::make_pair(structMemberPropertyName, std::make_unique<ProxyECSqlBinder>()));
+        ProxyECSqlBinder& memberProxyBinder = *ret.first->second;
+
+        for (IECSqlBinder* binderP : m_binders)
+            {
+            IECSqlBinder& binder = *binderP;
+            memberProxyBinder.AddBinder(binder[structMemberPropertyName]);
+            }
+
+        return memberProxyBinder;
+        }
+
+    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+
+    IECSqlBinder& _AddArrayElement() override
+        {
+        m_arrayElementProxyBinder = std::make_unique<ProxyECSqlBinder>();
+        
+        for (IECSqlBinder* binderP : m_binders)
+            {
+            IECSqlBinder& binder = *binderP;
+            m_arrayElementProxyBinder->AddBinder(binder.AddArrayElement());
+            }
+
+        return *m_arrayElementProxyBinder;
+        }
+
+ public:
+    ProxyECSqlBinder() {}
+    void AddBinder(IECSqlBinder& binder) { m_binders.push_back(&binder); }
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    08/2013
 //+===============+===============+===============+===============+===============+======
 struct ECSqlParameterMap : NonCopyableClass

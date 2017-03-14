@@ -6,16 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlPreparer.h"
-#include "ECSqlSelectPreparer.h"
-#include "ECSqlInsertPreparer.h"
-#include "ECSqlUpdatePreparer.h"
-#include "ECSqlDeletePreparer.h"
-#include "ECSqlPropertyNameExpPreparer.h"
-#include "ECSqlPreparedStatement.h"
-#include "../SqlNames.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -161,7 +152,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
             if (exp.HasParentheses())
                 nativeSqlBuilder.AppendParenRight();
 
-            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+            nativeSqlSnippets.push_back(nativeSqlBuilder);
             }
 
         return ECSqlStatus::Success;
@@ -260,7 +251,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     if (wrapInParens)
         sqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(sqlBuilder));
+    nativeSqlSnippets.push_back(sqlBuilder);
     return ECSqlStatus::Success;
     }
 
@@ -314,7 +305,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
         if (exp.HasParentheses())
             sqlBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(sqlBuilder));
+        nativeSqlSnippets.push_back(sqlBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -363,7 +354,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -511,7 +502,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             }
 
         classViewSql.AppendSpace().AppendEscaped(exp.GetId().c_str());
-        nativeSqlSnippets.push_back(move(classViewSql));
+        nativeSqlSnippets.push_back(classViewSql);
 
         return ECSqlStatus::Success;
         }
@@ -540,7 +531,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 NativeSqlBuilder nativeSqlSnippet;
                 nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewName().c_str());
-                nativeSqlSnippets.push_back(move(nativeSqlSnippet));
+                nativeSqlSnippets.push_back(nativeSqlSnippet);
                 return ECSqlStatus::Success;
                 }
 
@@ -560,7 +551,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
     NativeSqlBuilder nativeSqlSnippet;
     nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
-    nativeSqlSnippets.push_back(move(nativeSqlSnippet));
+    nativeSqlSnippets.push_back(nativeSqlSnippet);
     return ECSqlStatus::Success;
     }
 
@@ -694,7 +685,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
     return ECSqlStatus::Success;
     }
 
@@ -931,7 +922,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     {
     BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
     
-    Utf8CP parameterName = exp.GetParameterName();
+    Utf8StringCR parameterName = exp.GetParameterName();
     ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     int nativeSqlParameterCount = -1;
     ECSqlBinder* binder = nullptr;
@@ -963,7 +954,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
         if (exp.HasParentheses())
             parameterBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(parameterBuilder));
+        nativeSqlSnippets.push_back(parameterBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -1147,7 +1138,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
         }
 
-    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClass();
+    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClassNameExp();
 
     //Render previous sql part as is
     r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
@@ -1306,7 +1297,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     if (exp.HasParentheses())
         nativeSql.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(nativeSql));
+    nativeSqlSnippets.push_back(nativeSql);
     return ECSqlStatus::Success;
     }
 
@@ -1459,7 +1450,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativ
         if (exp.HasParentheses())
             unaryExpBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(unaryExpBuilder));
+        nativeSqlSnippets.push_back(unaryExpBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -1525,7 +1516,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::List& nat
                     builder.AppendParenLeft();
 
                 builder.Append(listItemExpBuilders[i]);
-                nativeSqlSnippets.push_back(move(builder));
+                nativeSqlSnippets.push_back(builder);
                 }
             else
                 {

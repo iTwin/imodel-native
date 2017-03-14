@@ -57,7 +57,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                         propNameListExp->AddPropertyNameExp(propNameExp);
                     };
 
-                if (SUCCESS != classNameExp->CreatePropertyNameExpList(addDelegate))
+                if (SUCCESS != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
                     return FinalizeParseStatus::Error;
 
                 }
@@ -150,53 +150,34 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ClassNameExp const* InsertStatementExp::GetClassNameExp() const
-    {
-    return GetChild<ClassNameExp>(m_classNameExpIndex);
-    }
+ClassNameExp const* InsertStatementExp::GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameListExp const* InsertStatementExp::GetPropertyNameListExp() const
-    {
-    return GetChild<PropertyNameListExp>(m_propertyNameListExpIndex);
-    }
+PropertyNameListExp const* InsertStatementExp::GetPropertyNameListExp() const { return GetChild<PropertyNameListExp>(m_propertyNameListExpIndex); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameListExp* InsertStatementExp::GetPropertyNameListExpP() const
-    {
-    return GetChildP<PropertyNameListExp>(m_propertyNameListExpIndex);
-    }
+PropertyNameListExp* InsertStatementExp::GetPropertyNameListExpP() const { return GetChildP<PropertyNameListExp>(m_propertyNameListExpIndex); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ValueExpListExp const* InsertStatementExp::GetValuesExp() const
-    {
-    return GetChild<ValueExpListExp>(m_valuesExpIndex);
-    }
+ValueExpListExp const* InsertStatementExp::GetValuesExp() const { return GetChild<ValueExpListExp>(m_valuesExpIndex); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String InsertStatementExp::_ToECSql() const
+void InsertStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    Utf8String ecsql("INSERT INTO ");
-
-    ecsql.append(GetClassNameExp()->ToECSql());
+    ctx.AppendToECSql("INSERT INTO ").AppendToECSql(*GetClassNameExp());
 
     if (!IsOriginalPropertyNameListUnset())
-        {
-        auto propertyNameListExp = GetPropertyNameListExp();
-        ecsql.append(" ").append(propertyNameListExp->ToECSql());
-        }
+        ctx.AppendToECSql(" ").AppendToECSql(*GetPropertyNameListExp());
 
-    ecsql.append(" VALUES (").append(GetValuesExp()->ToECSql()).append(")");
-
-    return ecsql;
+    ctx.AppendToECSql(" VALUES (").AppendToECSql(*GetValuesExp()).AppendToECSql(")");
     }
 
 

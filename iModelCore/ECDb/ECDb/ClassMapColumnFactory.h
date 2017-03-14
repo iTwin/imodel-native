@@ -19,6 +19,20 @@ struct PropertyMap;
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
+//ColumnMapping Steps for ECSchema Import/Update
+//1. For none TPH/SharedColumn is not documented here.
+//2. For TPH/SharedColumn Algorithm is as following
+//    a. Find deepest derived classes of the ECClass that is about to be mapped called it X int a list DL<ClassMap>.
+//    b. Find all the mixins that is implemented by X or one of its derived Classes and put it in map LM<MixIN,ClassMap>
+//    c. Remove any mixin from LM if its implemented by DL.
+//    d. Any mixin that is not resolved into a classMap
+//    a. Find an implementation of Mixin by tranversing its derive classes until we find a ClassMap that implements it and is int the same table as X.
+//    b. For MixIn in LM that is not resolved by previous step traverse its baseClasses until we find a baseClass that has a implementation in same table as X.
+//    e. Find all the relationships that will be stored in same table as X and has X as end point of the relationship. Store it in list RM
+//    c. Go over each ClassMap in DL and add its property map to a map CM<AccessString,DbColumn>
+//    d. Go over each MixIn map and add property map for mixin to CM.
+//    e. Go over each EndTable relationship ClassMap in RM and add its ECInstanceId,ECClassId propertyMap in CM that is map to same table as X.
+//    f. return CM.
 //===============+===============+===============+===============+===============+======
 struct ClassMapColumnFactory final : NonCopyableClass
     {

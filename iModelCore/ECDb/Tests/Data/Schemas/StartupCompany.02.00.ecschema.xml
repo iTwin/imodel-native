@@ -425,16 +425,6 @@
             <Class class="Bar"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="LikesToShare2">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>SharedTable</MapStrategy>
-                <TableName>SharedTable</TableName>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Conflicted" typeName="boolean"/>
-        <ECProperty propertyName="Unique2" typeName="string"/>
-    </ECEntityClass>
     <ECEntityClass typeName="Monitor">
         <BaseClass>Hardware</BaseClass>
         <ECProperty propertyName="Size" typeName="int"/>

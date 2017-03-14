@@ -77,10 +77,18 @@
 #include "ECSql/ECSqlTypeInfo.h"
 
 #include "ECSql/ECSqlPrepareContext.h"
+#include "ECSql/ECSqlPreparer.h"
+#include "ECSql/ECSqlSelectPreparer.h"
+#include "ECSql/ECSqlInsertPreparer.h"
+#include "ECSql/ECSqlUpdatePreparer.h"
 #include "ECSql/ECSqlDeletePreparer.h"
+#include "ECSql/ECSqlPropertyNameExpPreparer.h"
+
 
 #include "ECSql/ECSqlStatementBase.h"
 #include "ECSql/ECSqlStatementImpl.h"
+#include "ECSql/ECSqlPreparedStatement.h"
+#include "ECSql/ECSqlPreparedStatement_Old.h"
 
 #include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"

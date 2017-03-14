@@ -195,6 +195,36 @@ TEST_F(ECDbSchemaRules, BaseClasses)
 
     testSchemas.push_back(SchemaItem(
         R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IMixin1" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="IMixin2" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop3" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Abstract">
+                      <BaseClass>Base</BaseClass>
+                      <BaseClass>IMixin1</BaseClass>
+                      <BaseClass>IMixin2</BaseClass>
+                      <ECProperty propertyName="SubProp1" typeName="string" />
+                     </ECEntityClass>
+               </ECSchema>)xml", true, "Implementing multiple mixins is supported"));
+
+    testSchemas.push_back(SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
                    <ECStructClass typeName="Base1" modifier="Abstract">
                         <ECProperty propertyName="Prop1" typeName="string" />
                     </ECStructClass>
@@ -304,6 +334,94 @@ TEST_F(ECDbSchemaRules, BaseClasses)
     AssertSchemaImport(testSchemas, "ecdbschemarules_baseclasses.ecdb");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, MixinsAndECDbMapCAs)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>NotMapped</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have ClassMap CA"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have ClassMap CA"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                <Indexes>
+                                    <DbIndex>
+                                       <IsUnique>False</IsUnique>
+                                       <Name>myindex</Name>
+                                       <Properties>
+                                          <string>Prop1</string>
+                                       </Properties>
+                                    </DbIndex>
+                                </Indexes>
+                            </DbIndexList>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                    </ECEntityClass>
+               </ECSchema>)xml", true, "Mixin may have DbIndexList CA"));
+
+
+    testSchemas.push_back(SchemaItem(R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                   <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                   <ECEntityClass typeName="Base" modifier="Abstract"/>
+                   <ECEntityClass typeName="IMixin" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                <AppliesToEntityClass>Base</AppliesToEntityClass>
+                            </IsMixin>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Prop1" typeName="string" >
+                        <ECCustomAttributes>
+                            <PropertyMap xmlns="ECDbMap.02.00">
+                                <IsNullable>false</IsNullable>
+                            </PropertyMap>
+                        </ECCustomAttributes>
+                        </ECProperty>
+                    </ECEntityClass>
+               </ECSchema>)xml", false, "Mixin may not have PropertyMap CA"));
+
+    AssertSchemaImport(testSchemas, "ecdbschemarules_mixins_ecdbmapcas.ecdb");
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -430,7 +548,7 @@ TEST_F(ECDbSchemaRules, Relationship)
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='B'>"
-        "    <ECProperty propertyName='Id' typeName='string' />"
+        "    <ECProperty propertyName='CodeId' typeName='string' />"
         "  </ECEntityClass>"
         "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
         "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -449,7 +567,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECEntityClass typeName='B'>"
-                   "    <ECProperty propertyName='Id' typeName='string' />"
+                   "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -468,7 +586,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECEntityClass typeName='B'>"
-                   "    <ECProperty propertyName='Id' typeName='string' />"
+                   "    <ECProperty propertyName='CodeId' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
                    "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Source'>"
@@ -487,7 +605,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECEntityClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -513,7 +631,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECEntityClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -539,7 +657,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECEntityClass typeName='B'>"
-                 "    <ECProperty propertyName='Id' typeName='string' />"
+                 "    <ECProperty propertyName='CodeId' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -566,7 +684,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECEntityClass typeName='B'>"
-                    "    <ECProperty propertyName='Id' typeName='string' />"
+                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                     "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -583,7 +701,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECEntityClass typeName='B'>"
-                    "    <ECProperty propertyName='Id' typeName='string' />"
+                    "    <ECProperty propertyName='CodeId' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                     "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
@@ -598,7 +716,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
                  "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -615,7 +733,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -629,7 +747,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
                 "    <Target multiplicity='(0..1)' polymorphic='True' roleLabel='Target'>"
@@ -643,7 +761,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -694,8 +812,8 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
-                "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
+                "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                 "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
@@ -716,7 +834,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             aStmt.Reset();
 
             ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId.Id) VALUES (?)"));
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
             bStmt.ClearBindings();
@@ -759,8 +877,8 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
-                "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
+                "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                 "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
@@ -781,7 +899,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             aStmt.Reset();
 
             ECSqlStatement bStmt;
-            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(AId.Id) VALUES (?)"));
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
             ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
             bStmt.Reset();
             bStmt.ClearBindings();
@@ -818,7 +936,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -884,7 +1002,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECEntityClass typeName='B'>"
-                "    <ECProperty propertyName='Id' typeName='string' />"
+                "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
@@ -1704,8 +1822,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     ecdb.SaveChanges();
     //WIP_REL: Fails because ECSQL DELETE is incorrectly prepared (exp: 126=129)
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=129 AND TargetECInstanceId=2 AND TargetECClassId=127
-    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ts_ParentHasChildren] = NULL
-    //       WHERE [ts_Child].[ForeignECInstanceId_ts_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
+    //->SQL: UPDATE [ts_Child] SET [FK_ts_ParentHasChildren] = NULL
+    //       WHERE [ts_Child].[FK_ts_ParentHasChildren] = 1 AND 126 = 129 AND [ts_Child].[ECInstanceId] = 2 AND [ts_Child].[ECClassId] = 127
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
 
@@ -1763,7 +1881,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     //WIP_REL: Fails because ECSQL DELETE fails to prepare
     //ECSQL: DELETE FROM TestSchema.ParentHasChildren WHERE SourceECInstanceId=1 AND SourceECClassId=128 AND TargetECInstanceId=2 AND TargetECClassId=126
-    //->SQL: UPDATE [ts_Child] SET [ForeignECInstanceId_ts_ParentHasChildren] = NULL WHERE [ts_Child].[ForeignECInstanceId_ts_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
+    //->SQL: UPDATE [ts_Child] SET [FK_ts_ParentHasChildren] = NULL WHERE [ts_Child].[FK_ts_ParentHasChildren] = 1 AND [ts_Parent].[ECClassId] = 128 AND [ts_Child].[ECInstanceId] = 2 AND 126 = 126
     //failed to prepare with error code BE_SQLITE_ERROR : no such column : ts_Parent.ECClassId(BE_SQLITE_ERROR)    
     AssertRelationship(ecdb, testSchema, "TestSchema", "ParentHasChildren", parentKey, childKey);
     }
