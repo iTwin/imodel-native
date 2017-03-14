@@ -1432,3 +1432,41 @@ TEST(Angle, YawPitchRoll)
     anglesYPR = YawPitchRollAngles::FromRadians(1.0e-12, 1.0e-13, 0.1e-12);
     Check::True(anglesYPR.IsIdentity());
     }
+static bvector<uint32_t> hsv128
+{
+  0,   3,   5,   8,  10,  13,  15,  18,  20,  23, 
+ 26,  28,  31,  33,  36,  38,  41,  43,  46,  48, 
+ 51,  54,  56,  59,  61,  64,  66,  69,  71,  74, 
+ 77,  79,  82,  84,  87,  89,  92,  94,  97,  99, 
+102, 105, 107, 110, 112, 115, 117, 120, 122, 125, 
+128, 130, 133, 135, 138, 140, 143, 145, 148, 150, 
+153, 156, 158, 161, 163, 166, 168, 171, 173, 176, 
+179, 181, 184, 186, 189, 191, 194, 196, 199, 201, 
+204, 207, 209, 212, 214, 217, 219, 222, 224, 227, 
+230, 232, 235, 237, 240, 242, 245, 247, 250, 252, 
+255
+};
+TEST(HSV,RoundOff)
+    {
+#define MAXFACTOR 100
+    bvector<uint32_t> result;
+    for (uint32_t value = 0; value <= MAXFACTOR; value++)
+        {
+        result.push_back ((int)( (0.5 + 255.0 * value / MAXFACTOR)));
+        int result1 = (int)std::round (255.0 * value / MAXFACTOR);
+        Check::Int (result1, (int)result.back (), "hsv std::round versus (int)");
+        }
+#ifdef PRINT_HSV_PERCENTAGE_TABLE
+    for (size_t i = 0; i < result.size (); i++)
+        {
+        printf("%3d, ", result[i]);
+        if (((i+1) % 10) == 0)
+            printf ("\n");
+        }
+#endif
+    for (size_t i = 0; i <= MAXFACTOR; i++)
+        {
+        Check::Int ((int)hsv128[i], result[i], "HSV rounding");
+        }
+    }
+
