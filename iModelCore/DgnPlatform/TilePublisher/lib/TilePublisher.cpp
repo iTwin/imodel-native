@@ -1990,11 +1990,14 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
                 }
 
             bvector <unsigned short>    quantizedValues;
+            bvector<float> testVals;
 
             for (size_t i=0; i<nValues; i++)
                 {
                 size_t  componentIndex = i % nComponents;
                 quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
+
+                testVals.push_back( min[componentIndex] + (max[componentIndex] -  min[componentIndex]) * (double) quantizedValues.back() / range);
                 }
             tileData.AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
             break;
@@ -2420,15 +2423,15 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                 }
             
             if (!isStart)
-                tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 1.0, rangeCenter);
+                tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
             if (!isEnd)
-                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 5.0, rangeCenter);
+                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
             }
         }
 
     Json::Value     primitive = Json::objectValue;
-    DRange3d        pointRange = DRange3d::From(tesselation.m_points);
+    DRange3d        pointRange = DRange3d::From(tesselation.m_points), paramRange = DRange3d::From(tesselation.m_params, 0.0);
 
     primitive["material"] = mat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
@@ -2437,7 +2440,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
     primitive["attributes"]["POSITION"]  = accPositionId;
     primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevDirs.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
     primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextDirs.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
-    primitive["attributes"]["PARAM"]  = AddMeshVertexAttributes (tileData, &tesselation.m_params.front().x, "Param", idStr.c_str(), 2, tesselation.m_params.size(), "VEC2", VertexEncoding::UnquantizedDoubles, nullptr, nullptr);
+    primitive["attributes"]["PARAM"]  = AddMeshVertexAttributes (tileData, &tesselation.m_params.front().x, "Param", idStr.c_str(), 2, tesselation.m_params.size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
     primitive["indices"] = AddMeshIndices (tileData, "Index", tesselation.m_indices, idStr);
 
     if (mat.IsTextured())
