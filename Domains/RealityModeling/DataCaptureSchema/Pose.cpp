@@ -358,7 +358,7 @@ void Pose::SetCenterECEF(DPoint3dCR val, bool synchlocalGCS)
 
         if (!gcs.IsValid()) //gcs is not valid return an empty GeoPoint
             {
-            m_center = val;
+            SetCenter(val, false);
             return;
             }
 
