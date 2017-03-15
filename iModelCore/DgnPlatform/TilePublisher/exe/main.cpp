@@ -372,8 +372,8 @@ int wmain(int ac, wchar_t const** av)
     Host host;
     DgnPlatformLib::Initialize(host, false);
 
-    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain());
-    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain());
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), true, false);
                                                                                   
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())

@@ -56,49 +56,6 @@ GenericDomain::~GenericDomain()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-static BeFileName getSchemaPathname()
-    {
-    BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    genericDomainSchemaFile.AppendToPath(GENERIC_DOMAIN_ECSCHEMA_PATH);
-    BeAssert(genericDomainSchemaFile.DoesPathExist());
-
-    return genericDomainSchemaFile;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DbResult GenericDomain::ValidateSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = GenericDomain::GetDomain();
-    return dgnDomain.ValidateSchema(db, getSchemaPathname());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DgnDbStatus GenericDomain::UpgradeSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = GenericDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.UpgradeSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = GenericDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.ImportSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      02/17
 //---------------------------------------------------------------------------------------
 static void createGenericCodeSpecs(DgnDbR db)

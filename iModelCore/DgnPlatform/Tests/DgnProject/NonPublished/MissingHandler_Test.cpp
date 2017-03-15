@@ -94,6 +94,10 @@ struct Elem2Handler : dgn_ElementHandler::Physical
 struct MissingHandlerDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(MissingHandlerDomain, );
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml"; }
+
 public:
     MissingHandlerDomain() : DgnDomain(MHTEST_SCHEMA, "Missing Handlers domain", 1)
         {
@@ -101,12 +105,6 @@ public:
         RegisterHandler(Elem2Handler::GetHandler());
         }
 
-    void ImportSchema(DgnDbR db, BeFileNameCR schemasDir)
-        {
-        BeFileName schemaFile = schemasDir;
-        schemaFile.AppendToPath(L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml");
-        ASSERT_TRUE(DgnDbStatus::Success == DgnDomain::ImportSchema(db, schemaFile));
-        }
 };
 
 HANDLER_DEFINE_MEMBERS(Elem1Handler);
@@ -339,14 +337,17 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Create a new dgndb, with our domain + handlers loaded
         {
         ScopedDgnHost host;
+
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(MissingHandlerTest::s_seedFileInfo.fileName, L"HandlerRestrictions");
         ASSERT_TRUE(db.IsValid());
         fullDgnDbFileName = db->GetFileName();
 
+
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain);
-        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
+		
+		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
         // Populate the db with elements belonging to our domain
         InitDb(*db);
@@ -385,7 +386,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain);
+        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
 
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
