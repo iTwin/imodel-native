@@ -550,9 +550,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
-    if (DgnDbStatus::Success != ImportMarkupSchema())
-        return BE_SQLITE_ERROR;
-
     SaveSettings();
     SaveChanges();
 
@@ -560,19 +557,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     BeAssert(!mpp.GetSpatialRedlining() || IsSpatialRedlineProject());
 
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnMarkupProject::ImportMarkupSchema()
-    {
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(MARKUP_SCHEMA_PATH);
-
-    DgnDbStatus status = MarkupDomain::GetDomain().ImportSchema(*this, schemaFile);
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

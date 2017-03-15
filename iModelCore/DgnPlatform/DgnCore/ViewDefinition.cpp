@@ -19,6 +19,7 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(DrawingView);
     HANDLER_DEFINE_MEMBERS(SheetView);
     HANDLER_DEFINE_MEMBERS(SpatialView);
+    HANDLER_DEFINE_MEMBERS(TemplateView2d);
     HANDLER_DEFINE_MEMBERS(TemplateView3d);
     HANDLER_DEFINE_MEMBERS(OrthographicView);
     HANDLER_DEFINE_MEMBERS(ViewModels);
@@ -58,21 +59,11 @@ namespace ViewProperties
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
-    static constexpr Utf8CP str_TemplateModel() {return "TemplateModel";}
-    static constexpr Utf8CP str_OvrEdgeColor() {return "ovrEdgeColor";}
-    static constexpr Utf8CP str_OvrElementColor() {return "ovrElemColor";}
-    static constexpr Utf8CP str_Pattern() {return "pattern";}
-    static constexpr Utf8CP str_VisEdgeWidth() {return "visEdgeWidth";}
-    static constexpr Utf8CP str_HiddenEdgeWidth() {return "hiddenEdgeWidth";}
-    static constexpr Utf8CP str_EdgeColor() {return "edgeColor";}
-    static constexpr Utf8CP str_ElementColor() {return "elemColor";}
-    static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_GridOrient() {return "GridOrient";}
-    static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
-    static constexpr Utf8CP str_GridSpaceY() {return "GridSpaceY";}
-    static constexpr Utf8CP str_GridPerRef() {return "GridPerRef";}
+    static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
+    static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
+    static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
+    static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
     static constexpr Utf8CP str_ACS() {return "ACS";}
-
 };
 
 using namespace ViewProperties;
@@ -1059,45 +1050,6 @@ DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::HiddenLineParams::ToJson() const
-    {
-    HiddenLineParams defaults;
-    Json::Value val;
-    if (!m_overrideEdgeColor) val[Json::StaticString(str_OvrEdgeColor())] = true;
-    if (!m_overrideElementColor) val[Json::StaticString(str_OvrElementColor())] = true;
-    if (m_pattern!=defaults.m_pattern) val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
-    if (m_visibleEdgeWidth!=defaults.m_visibleEdgeWidth) val[Json::StaticString(str_VisEdgeWidth())] = m_visibleEdgeWidth;
-    if (m_hiddenEdgeWidth!=defaults.m_hiddenEdgeWidth) val[Json::StaticString(str_HiddenEdgeWidth())] = m_hiddenEdgeWidth;
-    if (m_edgeColor != defaults.m_edgeColor) val[Json::StaticString(str_EdgeColor())] = m_edgeColor.GetValue();
-    if (m_elementColor != defaults.m_elementColor) val[Json::StaticString(str_ElementColor())] = m_elementColor.GetValue();
-    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
-    {
-    HiddenLineParams params;
-
-    if (!val.isNull())
-        {
-        params.m_overrideEdgeColor = val[str_OvrEdgeColor()].asBool(false);
-        params.m_overrideElementColor = val[str_OvrElementColor()].asBool(false);
-        params.m_pattern = val[str_Pattern()].asUInt(params.m_pattern);
-        params.m_visibleEdgeWidth =  val[str_VisEdgeWidth()].asUInt(params.m_visibleEdgeWidth);
-        params.m_hiddenEdgeWidth =  val[str_HiddenEdgeWidth()].asUInt(params.m_hiddenEdgeWidth);
-        params.m_edgeColor = ColorDef(val[str_EdgeColor()].asUInt(params.m_edgeColor.GetValue()));
-        params.m_elementColor = ColorDef(val[str_ElementColor()].asUInt(params.m_elementColor.GetValue()));
-        params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
-        }
-    return params;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
@@ -1116,7 +1068,9 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     else
+        {
         BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1985,7 +1939,20 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
                 return DgnDbStatus::BadArg;
 
             ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            viewDef.SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+            auto view3d = viewDef.ToView3dP();
+            if (view3d)
+                {
+                auto style3d = style->ToDisplayStyle3d();
+                if (nullptr == style3d)
+                    return DgnDbStatus::BadArg;
+                view3d->SetDisplayStyle3d(*style3d->MakeCopy<Dgn::DisplayStyle3d>());
+                }
+            else
+                {
+                auto view2d = viewDef.ToView2dP();
+                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                }
+
             return DgnDbStatus::Success;
             });
 
@@ -2025,6 +1992,14 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     #define SET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; EXPR; return DgnDbStatus::Success;
     #define SET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); EXPR; viewDef.SetRotation(angles.ToRotMatrix()); return DgnDbStatus::Success;
 
+    #define VALIDATE_POINT3d_VALUE(VALUE) if (VALUE.IsNull() || !VALUE.IsPoint3d()) return DgnDbStatus::BadArg;
+    #define TO_DOUBLE(VALUE,VALUEIN)                                                    \
+            if (VALUEIN.IsNull() || VALUEIN.IsBoolean() || !VALUEIN.IsPrimitive())      \
+                return DgnDbStatus::BadArg;                                             \
+            ECN::ECValue VALUE(VALUEIN);                                                \
+            if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
+                return DgnDbStatus::BadArg;
+
     params.RegisterPropertyAccessors(layout, str_Origin(), 
         [](ECValueR value, DgnElementCR el)
             {
@@ -2032,6 +2007,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT3d_VALUE(value);
             SET_POINT(viewDef.SetOrigin(value.GetPoint3d()));
             });
 
@@ -2042,6 +2018,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT3d_VALUE(value);
             SET_POINT(viewDef.SetExtents(DVec3d::From(value.GetPoint3d())));
             });
 
@@ -2050,8 +2027,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetYaw().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetYaw(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
@@ -2060,8 +2038,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetPitch().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetPitch(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
@@ -2070,8 +2049,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetRoll().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
@@ -2084,9 +2064,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsPoint3d())
-                return DgnDbStatus::BadArg;
-
+            VALIDATE_POINT3d_VALUE(value);
             ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
             viewDef.SetEyePoint(value.GetPoint3d());
             return DgnDbStatus::Success;
@@ -2096,14 +2074,12 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
-            value.SetLong(viewDef.GetLensAngle().Radians());
+            value.SetDouble(viewDef.GetLensAngle().Radians());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
+            TO_DOUBLE(value, valueIn);
             ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
             viewDef.SetLensAngle(Angle::FromRadians(value.GetDouble()));
             return DgnDbStatus::Success;
@@ -2116,11 +2092,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             value.SetDouble(viewDef.GetFocusDistance());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
+            TO_DOUBLE(value, valueIn);
             ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
             viewDef.SetFocusDistance(value.GetDouble());
             return DgnDbStatus::Success;
@@ -2138,6 +2112,8 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             return DgnDbStatus::ReadOnly;
             });
 
+#undef TO_DOUBLE
+#undef VALIDATE_POINT3d_VALUE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2149,6 +2125,14 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
 
     #define GET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; value.SetPoint2d(EXPR); return DgnDbStatus::Success;
     #define SET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; EXPR; return DgnDbStatus::Success;
+
+    #define VALIDATE_POINT2d_VALUE(VALUE) if (VALUE.IsNull() || !VALUE.IsPoint2d()) return DgnDbStatus::BadArg;
+    #define TO_DOUBLE(VALUE,VALUEIN)                                                    \
+            if (VALUEIN.IsNull() || VALUEIN.IsBoolean() || !VALUEIN.IsPrimitive())      \
+                return DgnDbStatus::BadArg;                                             \
+            ECN::ECValue VALUE(VALUEIN);                                                \
+            if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
+                return DgnDbStatus::BadArg;
 
     params.RegisterPropertyAccessors(layout, str_BaseModel(), 
         [](ECValueR value, DgnElementCR el)
@@ -2171,14 +2155,12 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
-            value.SetLong(Angle::FromRadians(viewDef.GetRotAngle()).Degrees());
+            value.SetDouble(Angle::FromRadians(viewDef.GetRotAngle()).Degrees());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
+            TO_DOUBLE(value, valueIn);
             ViewDefinition2d& viewDef = (ViewDefinition2d&)el;
             viewDef.SetRotAngle(Angle::FromDegrees(value.GetDouble()).Radians());
             return DgnDbStatus::Success;
@@ -2191,6 +2173,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT2d_VALUE(value);
             SET_POINT2d(viewDef.SetOrigin2d(value.GetPoint2d()));
             });
 
@@ -2201,33 +2184,12 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT2d_VALUE(value);
             SET_POINT2d(viewDef.SetDelta2d(DVec2d::From(value.GetPoint2d())));
             });
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateView3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
-    {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_TemplateModel(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            TemplateViewDefinition3dCR viewDef = (TemplateViewDefinition3dCR)el;
-            value.SetLong(viewDef.GetTemplateModelId().GetValue());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsLong())
-                return DgnDbStatus::BadArg;
-
-            TemplateViewDefinition3d& viewDef = (TemplateViewDefinition3dR)el;
-            viewDef.m_templateModelId = DgnModelId((uint64_t) value.GetLong());
-            return DgnDbStatus::Success;
-            });
+#undef TO_DOUBLE
+#undef VALIDATE_POINT2d_VALUE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2317,8 +2279,17 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     {
     if (!IDisplayMetricsRecorder::IsRecorderActive())
         return;
-    }
 
+    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    Json::Value measurement(Json::objectValue);
+    measurement["seconds"] = seconds;
+    if (aborted)
+        measurement["aborted"] = 1;
+    if (!complete)
+        measurement["incomplete"] = 1;
+        
+    recorder->_RecordMeasurement("CreateSceneComplete", measurement);
+    }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -2328,21 +2299,17 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR templateModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
     {
-    if (!templateModel.IsTemplate())
-        return nullptr;
-
-    DgnDbR db = templateModel.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
     if (!classId.IsValid())
         return nullptr;
 
     CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
 
-    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
-    viewDef->m_templateModelId = templateModel.GetModelId();
+    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
+    viewDef->SetDisplayStyle(*displayStyle);
 
     if (nullptr == categorySelectorIn)
         {
@@ -2356,41 +2323,31 @@ TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(GeometricModel3dR t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TemplateViewDefinition3d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
     {
-    m_templateModelId = statement.GetValueNavigation<DgnModelId>(params.GetSelectIndex(str_TemplateModel()));
-    return T_Super::_ReadSelectParams(statement, params);
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    if (!classId.IsValid())
+        return nullptr;
+
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
+    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+
+    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
+    if (nullptr == categorySelectorIn)
+        {
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+            viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+        }
+
+    return viewDef;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
+ViewControllerPtr TemplateViewDefinition2d::_SupplyController() const
     {
-    T_Super::_BindWriteParams(statement, forInsert);
-    statement.BindNavigationValue(statement.GetParameterIndex(str_TemplateModel()), m_templateModelId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TemplateViewDefinition3d::_CopyFrom(DgnElementCR element)
-    {
-    T_Super::_CopyFrom(element);
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) element;
-    m_templateModelId = other.m_templateModelId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TemplateViewDefinition3d::_EqualState(ViewDefinitionR in)
-    {
-    TemplateViewDefinition3dCR other = (TemplateViewDefinition3dCR) in;
-    if (m_templateModelId != other.m_templateModelId)
-        return false;
-
-    return T_Super::_EqualState(in);
+    return new TemplateViewController2d(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -88,8 +88,7 @@
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
-
-    <ECEntityClass typeName="CodeSpec" modifier="Sealed" displayLabel="Code Specification" description="A Code Specification captures the rules for encoding and decoding significant business information into and from a Code (string). This specification is used to generate and validate Codes.">
+    <ECEntityClass typeName="CodeSpec" modifier="None" displayLabel="Code Specification" description="A Code Specification captures the rules for encoding and decoding significant business information into and from a Code (string). This specification is used to generate and validate Codes.">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
@@ -1969,15 +1968,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="TemplateView3dDisplaysModel" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..*)" roleLabel="displays" polymorphic="true">
-            <Class class="TemplateViewDefinition3d"/>
-        </Source>
-        <Target multiplicity="(1..1)" roleLabel="is displayed by" polymorphic="true">
-            <Class class="GeometricModel3d"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="Sealed">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
@@ -2089,14 +2079,6 @@
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TemplateViewDefinition3d" displayLabel="3D Template View Definition" description="A view of a single 3D template model.">
-        <BaseClass>ViewDefinition3d</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="TemplateModel" relationshipName="TemplateView3dDisplaysModel" direction="Forward">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract" displayLabel="2D View Definition" description="A view of a 2D model that has its own local coordinate system.">
         <BaseClass>ViewDefinition</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
@@ -2123,7 +2105,22 @@
         <BaseClass>ViewDefinition2d</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
-  
+
+    <ECEntityClass typeName="TemplateViewDefinition2d" displayLabel="2D Template View Definition" description="A View Definition used to display a 2D template model.">
+        <!-- Note: TemplateViewController2d determines which model to view (the model to view is not persisted in this view definition) -->
+        <BaseClass>ViewDefinition2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TemplateViewDefinition3d" displayLabel="3D Template View Definition" description="A View Definition used to display a 3D template model.">
+        <!-- Note: TemplateViewController3d determines which model to view (the model to view is not persisted in this view definition) -->
+        <BaseClass>ViewDefinition3d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECRelationshipClass typeName="ElementHasLinks" strength="referencing" modifier="None" description="Associates links to an element.">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..*)" roleLabel="has" polymorphic="true">

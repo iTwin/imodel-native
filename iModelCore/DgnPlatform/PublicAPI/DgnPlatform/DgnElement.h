@@ -1639,6 +1639,9 @@ public:
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
 
+    //! Test if \a ancestorId identifies the parent of this element or of its parent, recursively.
+    DGNPLATFORM_EXPORT bool IsDescendantOf(DgnElementId ancestorId) const;
+
     //! Get the DgnClassId of the ElementOwnsChildElements subclass used to relate this element to its parent element.
     //! @return Will be invalid if this element does not have a parent element.
     DgnClassId GetParentRelClassId() const {return m_parentId.IsValid() ? m_parentRelClassId : DgnClassId();}
@@ -2429,6 +2432,9 @@ public:
     DGNPLATFORM_EXPORT SpatialLocationTypeCPtr GetSpatialLocationType() const;
 };
 
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS (SpatialLocationPortion)
+DEFINE_REF_COUNTED_PTR (SpatialLocationPortion)
 //=======================================================================================
 //! A SpatialLocationPortion represents an arbitrary portion of a larger SpatialLocationElement that will be broken down in more detail in a separate (sub) SpatialLocationModel.
 //! @ingroup GROUP_DgnElement
@@ -3144,12 +3150,15 @@ protected:
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a DgnCode for a Subject with a specified parent Subject
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
+
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
-    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 
     Utf8String GetDescription() const {return GetPropertyValueString("Description");}
     void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}

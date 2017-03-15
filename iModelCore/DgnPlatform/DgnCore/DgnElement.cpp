@@ -256,8 +256,12 @@ RepositoryStatus DgnElement::_PopulateRequest(IBriefcaseManager::Request& reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
         {
@@ -449,9 +453,17 @@ DgnDbStatus Subject::_OnSubModelInsert(DgnModelCR model) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Subject::CreateCode(SubjectCR parentSubject, Utf8CP name)
+    {
+    return CodeSpec::CreateCode(BIS_CODESPEC_Subject, parentSubject, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnModelId modelId = DgnModel::RepositoryModelId();
@@ -459,10 +471,10 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
     DgnElementId parentId = parentSubject.GetElementId();
     DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
-    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !label || !*label)
+    if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !name || !*name)
         return nullptr;
 
-    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, DgnCode(), label, parentId, parentRelClassId));
+    SubjectPtr subject = new Subject(CreateParams(db, modelId, classId, CreateCode(parentSubject, name), nullptr, parentId, parentRelClassId));
     if (description && *description)
         subject->SetDescription(description);
 
@@ -472,9 +484,9 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP descrip
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    SubjectPtr subject = Create(parentSubject, label, description);
+    SubjectPtr subject = Create(parentSubject, name, description);
     return subject.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject) : nullptr;
     }
 
@@ -897,8 +909,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
 
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
@@ -971,8 +987,12 @@ void DgnElement::_OnAppliedUpdate(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Delete))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -4112,3 +4132,18 @@ DgnDbStatus DgnElement::GenericMultiAspect::SetAspect(DgnElementR el, ECN::IECIn
     return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
+    {
+    auto parentId = GetParentId();
+    if (!parentId.IsValid())
+        return false;
+    if (parentId == ancestorId)
+        return true;
+    auto parent = GetDgnDb().Elements().GetElement(parentId);
+    if (!parent.IsValid())
+        return false;
+    return parent->IsDescendantOf(ancestorId); 
+    }
