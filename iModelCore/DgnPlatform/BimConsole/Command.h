@@ -118,13 +118,7 @@ struct CreateCommand final : public Command
 struct FileInfoCommand final : public Command
     {
     private:
-        enum class KnownProfile
-            {
-            BeSQLite,
-            ECDb,
-            DgnDb,
-            Unknown
-            };
+        
 
         Utf8String _GetName() const override { return ".fileinfo"; }
         Utf8String _GetUsage() const override { return " .fileinfo                      Displays information about the open file"; }
