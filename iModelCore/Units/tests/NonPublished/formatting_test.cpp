@@ -17,9 +17,12 @@
 
 //#define FORMAT_DEBUG_PRINT
 
-using namespace BentleyApi::Units;
+//using namespace BentleyApi::Units;
 //USING_BENTLEY_FORMATTING;
 using namespace BentleyApi::Formatting;
+#define BEGIN_BENTLEY_FORMATTEST_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace FormatTests {
+#define END_BENTLEY_FORMATTEST_NAMESPACE   } }
+#define USING_BENTLEY_FORMATTEST using namespace BENTLEY_NAMESPACE_NAME::FormatTests;
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 #undef LOG
@@ -81,33 +84,33 @@ TEST(FormattingTest, PhysValues)
     {
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units
-    UnitCP yrdUOM = UnitRegistry::Instance().LookupUnit("YRD");
-    UnitRegistry::Instance().AddSynonym("YRD", "YARD");
-    UnitCP yardUOM = UnitRegistry::Instance().LookupUnit("YARD");
-    UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
-    UnitCP yrdsdUOM = UnitRegistry::Instance().LookupUnit("YRDS");
+    BEU::UnitCP yrdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRD");
+    BEU::UnitRegistry::Instance().AddSynonym("YRD", "YARD");
+    BEU::UnitCP yardUOM = BEU::UnitRegistry::Instance().LookupUnit("YARD");
+    BEU::UnitRegistry::Instance().AddSynonym("YARD", "YRDS");
+    BEU::UnitCP yrdsdUOM = BEU::UnitRegistry::Instance().LookupUnit("YRDS");
   
-    UnitCP ftUOM = UnitRegistry::Instance().LookupUnit("FT");
-    UnitRegistry::Instance().AddSynonym("FT", "FOOT");
-    UnitRegistry::Instance().AddSynonym("IN", "INCH");
-    UnitCP inUOM = UnitRegistry::Instance().LookupUnit("IN");
-    UnitCP degUOM = UnitRegistry::Instance().LookupUnit("ARC_DEG");
-    UnitCP minUOM = UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
-    UnitCP secUOM = UnitRegistry::Instance().LookupUnit("ARC_SECOND");
-    UnitCP metrUOM = UnitRegistry::Instance().LookupUnit("M");
+    BEU::UnitCP ftUOM = BEU::UnitRegistry::Instance().LookupUnit("FT");
+    BEU::UnitRegistry::Instance().AddSynonym("FT", "FOOT");
+    BEU::UnitRegistry::Instance().AddSynonym("IN", "INCH");
+    BEU::UnitCP inUOM = BEU::UnitRegistry::Instance().LookupUnit("IN");
+    BEU::UnitCP degUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_DEG");
+    BEU::UnitCP minUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_MINUTE");
+    BEU::UnitCP secUOM = BEU::UnitRegistry::Instance().LookupUnit("ARC_SECOND");
+    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnit("M");
     // creating several quantites of various kinds using two different constructors:
     //  one with the Uint Name and another with the pointer to a Unit definition
 
 
-    Quantity const len = Quantity(22.7, *metrUOM);
+    BEU::Quantity const len = BEU::Quantity(22.7, *metrUOM);
 
-    Quantity ang = Quantity(135.0 + 23.0 / 120.0, *degUOM);
+    BEU::Quantity ang = BEU::Quantity(135.0 + 23.0 / 120.0, *degUOM);
 
     QuantityTriadSpec qtr = QuantityTriadSpec(len, yrdUOM, ftUOM, inUOM);
 
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
-    //StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
+    //StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
     EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract", len, ftUOM).c_str());
     EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity("fract16", len, ftUOM).c_str());
     EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract32", len, ftUOM).c_str());

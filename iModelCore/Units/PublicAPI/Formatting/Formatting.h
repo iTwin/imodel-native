@@ -10,7 +10,9 @@
 
 #include <Formatting/FormattingDefinitions.h>
 #include <Units/Units.h>
-using namespace BentleyApi::Units;
+
+namespace BEU = BentleyApi::Units;
+//using namespace BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -226,19 +228,6 @@ enum class ScannerCursorStatus
     IncompleteSequence = 2
     };
 
-enum class StdFormatCode
-    {
-    DefaultReal = 100,
-    SignedReal = 150,
-    ParenthsReal = 200,
-    DefaultFractional = 300,
-    SignedFractional = 350,
-    DefaultExp = 400,
-    NormalExp  = 450,
-    SignedExp = 500,
-    DefaultInt = 600
-    };
-
 //! Codes of problems might help in finding the source of the problem
 enum class FormatProblemCode
     {
@@ -287,7 +276,7 @@ struct Utils
     static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return IsNameNullOrEmpty(name) ? subs : name; }
     //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
-    UNITS_EXPORT static bool AreUnitsComparable(UnitCP un1, UnitCP u2);
+    UNITS_EXPORT static bool AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP u2);
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
     static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
     UNITS_EXPORT static Utf8String FormatProblemDescription(FormatProblemCode code);
@@ -574,10 +563,10 @@ struct NumericFormatSpec
     UNITS_EXPORT size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0);
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8P stdName, double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec = -1, double round = -1.0);
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
     //UNITS_EXPORT static Utf8String StdFormatComboValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
@@ -602,13 +591,13 @@ struct FormatUnitSet
     {
 private: 
     NumericFormatSpecCP m_format;
-    UnitCP m_unit;
+    BEU::UnitCP m_unit;
     FormatProblemCode m_problemCode;
 
 public:
-    UNITS_EXPORT FormatUnitSet(NumericFormatSpecCP format, UnitCP unit);
+    UNITS_EXPORT FormatUnitSet(NumericFormatSpecCP format, BEU::UnitCP unit);
     UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
-    UNITS_EXPORT Utf8String FormatQuantity(QuantityCR qty);
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
     UNITS_EXPORT FormatUnitSet(Utf8CP description);
     bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     FormatProblemCode GetProblemCode() { return m_problemCode; }
@@ -654,25 +643,25 @@ protected:
     static const size_t  indxInput  = 4;
     static const size_t  indxLimit  = 5;   
     size_t m_ratio[indxSub];
-    UnitCP m_units[indxLimit];
+    BEU::UnitCP m_units[indxLimit];
     Utf8CP m_unitLabel[indxLimit];
     FormatProblemCode m_problemCode;
     CompositeSpecType m_type;
     NumericFormatSpecCP m_formatSpec;
 
     void SetUnitLabel(int index, Utf8CP label);
-    size_t UnitRatio(UnitCP upper, UnitCP lower);
+    size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     void ResetType() { m_type = CompositeSpecType::Undefined; }
     void Init();
-    UnitCP SetInputUnit(UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
+    BEU::UnitCP SetInputUnit(BEU::UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
     size_t GetRightmostRatioIndex();
-    UnitCP GetSmallestUnit();
+    BEU::UnitCP GetSmallestUnit();
 public:
 
    // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
-    UNITS_EXPORT CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit=nullptr, UnitCP MinorUnit=nullptr, UnitCP subUnit = nullptr);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit=nullptr, BEU::UnitCP MinorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
     UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
     UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
     UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[indxMajor]; }
@@ -689,7 +678,7 @@ public:
     UNITS_EXPORT Utf8CP GetProblemDescription();
     UNITS_EXPORT NumericFormatSpecCP AssignFormatSpec(NumericFormatSpecCP spec) { return (m_formatSpec = spec); }
 
-    UNITS_EXPORT CompositeValue DecomposeValue(double dval, UnitCP uom = nullptr);
+    UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
     UNITS_EXPORT Utf8String DecomposeValue(double dval, Utf8CP uomName = nullptr);
 
     };
@@ -710,11 +699,11 @@ public:
     double SetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub] = dval; }
     double SetInput(double dval)  { return m_parts[CompositeValueSpec::indxInput] = dval; }
 
-    double GetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor]; }
-    double GetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle]; }
-    double GetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor]; }
-    double GetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub]; }
-    double GetInput(double dval)  { return m_parts[CompositeValueSpec::indxInput]; }
+    double GetMajor()  { return m_parts[CompositeValueSpec::indxMajor]; }
+    double GetMiddle() { return m_parts[CompositeValueSpec::indxMiddle]; }
+    double GetMinor()  { return m_parts[CompositeValueSpec::indxMinor]; }
+    double GetSub()    { return m_parts[CompositeValueSpec::indxSub]; }
+    double GetInput()  { return m_parts[CompositeValueSpec::indxInput]; }
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     };
@@ -767,10 +756,10 @@ public:
 struct QuantityTriadSpec : NumericTriad
     {
 private:
-    QuantityCP m_quant;
-    UnitCP m_topUnit;
-    UnitCP m_midUnit;
-    UnitCP m_lowUnit;
+    BEU::QuantityCP m_quant;
+    BEU::UnitCP m_topUnit;
+    BEU::UnitCP m_midUnit;
+    BEU::UnitCP m_lowUnit;
     Utf8CP m_topUnitLabel;
     Utf8CP m_midUnitLabel;
     Utf8CP m_lowUnitLabel;
@@ -779,8 +768,8 @@ private:
 
     void Init(bool incl0);
     QuantityTriadSpec();
-    bool ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen);
-    // UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
+    bool ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::PhenomenonCP targPhen);
+    // UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
 public:
 
     Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
@@ -791,8 +780,8 @@ public:
     Utf8CP GetLowUnitLabel() { return m_lowUnitLabel; }
     bool SetIncludeZero(bool val) { return m_includeZero = val; }
     bool GetIncludeZero() const { return m_includeZero; }
-    UNITS_EXPORT static size_t UnitRatio(UnitCP un1, UnitCP un2);
-    UNITS_EXPORT QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midUnit = nullptr, UnitCP lowUnit = nullptr, bool incl0 = false);
+    UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
+    UNITS_EXPORT QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit = nullptr, BEU::UnitCP lowUnit = nullptr, bool incl0 = false);
 
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     FormatProblemCode GetProblemCode() { return m_problemCode; }
@@ -801,9 +790,9 @@ public:
     Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
     Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
     Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
-    UnitCP GetTopUnit() { return m_topUnit; }
-    UnitCP GetMidUnit() { return m_midUnit; }
-    UnitCP GetLowUnit() { return m_lowUnit; }
+    BEU::UnitCP GetTopUnit() { return m_topUnit; }
+    BEU::UnitCP GetMidUnit() { return m_midUnit; }
+    BEU::UnitCP GetLowUnit() { return m_lowUnit; }
     };
 
 struct StdFormatSet

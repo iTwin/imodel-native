@@ -30,14 +30,13 @@ private:
     double       m_magnitude;
     UnitCP       m_unit;
 
-    Quantity() :m_tolerance(1000), m_magnitude(0.0), m_unit(nullptr) {}   // Invalid - empty - quantity
 
     //BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
     BentleyStatus ConvertTo(UnitCP unit, double& value) const;
     UnitsProblemCode GetConvertedMagnitude(double& value, UnitCP unit) const;
-
 public:
 
+    Quantity() :m_tolerance(1000), m_magnitude(0.0), m_unit(nullptr) {}   // Invalid - empty - quantity
     UNITS_EXPORT  bool IsNullQuantity() const;// { return (0.0 == m_magnitude && nullptr == m_unit); }
     UNITS_EXPORT  Quantity(QuantityCR rhs);
  //   UNITS_EXPORT static QuantityCP Create (double magnitude, Utf8CP unitName);
@@ -45,7 +44,7 @@ public:
 
     //UNITS_EXPORT static QuantityPtr Create(double magnitude, Utf8CP unitName);
     //UNITS_EXPORT static QuantityPtr Create(double magnitude, UnitCP unit);
-
+    bool ISValid() { return (nullptr != m_unit); }
     double GetMagnitude() const { return m_magnitude; }
     UnitCP GetUnit () const { return m_unit; }
     UNITS_EXPORT Quantity ConvertTo(UnitCP unit) const;

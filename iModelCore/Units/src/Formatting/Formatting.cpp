@@ -696,12 +696,12 @@ Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
     return Utf8String(buf);
     }
 
-Utf8String NumericFormatSpec::FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
     {
     if (!qty.IsNullQuantity())
         return Utf8String();
-    UnitCP unitQ = qty.GetUnit();
-    Quantity temp = qty.ConvertTo(unitQ);
+    BEU::UnitCP unitQ = qty.GetUnit();
+    BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
     FormatDouble(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     return Utf8String(buf);
@@ -731,7 +731,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int pr
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -740,7 +740,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, U
         return "";
     //UnitCP unitQ = qty.GetUnit();   
    // Utf8CP useUOM = (nullptr == useUnit) ? unitQ->GetName() : useUnit->GetName();
-    Quantity temp = qty.ConvertTo(useUnit);
+    BEU::Quantity temp = qty.ConvertTo(useUnit);
     return fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
     }
 
@@ -751,30 +751,30 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, U
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
-      UnitCP fromUnit = UnitRegistry::Instance().LookupUnit(fromUOM);
-      Quantity qty = Quantity(dval, *fromUnit);
-      UnitCP toUnit = UnitRegistry::Instance().LookupUnit(toUOM);
+    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
+    BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);
+    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnit(toUOM);
      // UnitCP fromUnit = qty.GetUnit();
-      PhenomenonCP phTo = toUnit->GetPhenomenon();
-      PhenomenonCP phFrom = fromUnit->GetPhenomenon();
-      if (phTo != phFrom)
-          {
-          Utf8String txt = "Impossible conversion from ";
-          txt += fromUnit->GetName();
-          txt += " to ";
-          txt +=toUnit->GetName();
-          return txt;
-          }
-      Utf8String str = StdFormatQuantity(stdName, qty, toUnit, prec, round);
-      if (nullptr != space)
-          {
-          str += space;
-          if (nullptr == toLabel)
-              str += toUnit->GetName();
-          }
-      if (nullptr != toLabel)
-          str += toLabel;
-      return str;
+    BEU::PhenomenonCP phTo = toUnit->GetPhenomenon();
+    BEU::PhenomenonCP phFrom = fromUnit->GetPhenomenon();
+    if (phTo != phFrom)
+        {
+        Utf8String txt = "Impossible conversion from ";
+        txt += fromUnit->GetName();
+        txt += " to ";
+        txt +=toUnit->GetName();
+        return txt;
+        }
+    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, prec, round);
+    if (nullptr != space)
+        {
+        str += space;
+        if (nullptr == toLabel)
+            str += toUnit->GetName();
+        }
+    if (nullptr != toLabel)
+        str += toLabel;
+    return str;
     }
 
 

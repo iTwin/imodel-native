@@ -325,10 +325,10 @@ size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
-bool Utils::AreUnitsComparable(UnitCP un1, UnitCP un2) 
+bool Utils::AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP un2)
     {
-    PhenomenonCP ph1 = (nullptr == un1) ? nullptr : un1->GetPhenomenon();
-    PhenomenonCP ph2 = (nullptr == un2) ? nullptr : un2->GetPhenomenon();
+    BEU::PhenomenonCP ph1 = (nullptr == un1) ? nullptr : un1->GetPhenomenon();
+    BEU::PhenomenonCP ph2 = (nullptr == un2) ? nullptr : un2->GetPhenomenon();
     return (ph1 == ph2);
     }
 
@@ -830,7 +830,7 @@ POP_MSVC_IGNORE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(NumericFormatSpecCP format, UnitCP unit)
+FormatUnitSet::FormatUnitSet(NumericFormatSpecCP format, BEU::UnitCP unit)
     {
     m_format = format;
     m_unit = unit;
@@ -854,7 +854,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
     else
         {
-        m_unit = UnitRegistry::Instance().LookupUnit(unitName);
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
         if (nullptr == m_unit)
             m_problemCode = FormatProblemCode::UnknownUnitName;
         }
@@ -871,7 +871,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
     m_format = StdFormatSet::FindFormat(fnam.GetText());
-    m_unit = UnitRegistry::Instance().LookupUnit(unit.GetText());
+    m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.GetText());
     if (nullptr == m_format)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
     else
@@ -893,7 +893,7 @@ Utf8String FormatUnitSet::ToText(bool useAlias)
     }
 
 
-Utf8String FormatUnitSet::FormatQuantity(QuantityCR qty)
+Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty)
     {
     Utf8String txt;
 
