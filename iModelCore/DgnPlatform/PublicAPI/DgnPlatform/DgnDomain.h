@@ -477,7 +477,7 @@ public:
     //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
     //! to access that DgnDb.
     //! </ul>
-    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, bool isRequired, bool isReadonly);
+    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, bool isRequired=false, bool isReadonly=false);
 
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
