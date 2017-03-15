@@ -144,7 +144,7 @@ public:
     //! Determine whether any data changes tracked by this ChangeTracker
     BE_SQLITE_EXPORT bool HasDataChanges() const;
 
-    //! Determine whether any schema changes ahve beeen tracked by this ChangeTracker
+    //! Determine whether any schema changes have beeen tracked by this ChangeTracker
     bool HasSchemaChanges() const { return !m_schemaChanges.IsEmpty(); } 
 
     //! Clear the contents of this ChangeTracker and re-start it.
