@@ -55,13 +55,13 @@
         {
         class Test
             {
-            void    RunTest();
           protected:
             virtual void SetUp() {;}
             virtual void TearDown() {;}
             virtual void TestBody() {;}
             virtual void InvokeTestBody() { TestBody(); }
           public:
+            BENTLEYDLL_EXPORT void    RunTest();
             static void SetUpTestCase() {;}
             static void TearDownTestCase() {;}
             Test() {;}
@@ -442,6 +442,26 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
         static bset<Utf8String>            s_failedTests;
         static size_t                      s_errorCount;
         static bool                        s_breakOnFailure;
+
+public:
+    //! Non-gtest only: Used by custom test runner to record an error.
+    //! @note This function is needed only by a test that overrides InvokeTestBody. This function must be called if
+    //! the test fails.
+    BENTLEYDLL_EXPORT static void IncrementErrorCountAndEnableThrows();
+
+    //! Non-gtest only: Used by custom test runner to propagate an assertion failure
+    //! @note This function is needed only by a test that overrides InvokeTestBody. This function must be called if
+    //! the test succeeds.
+    BENTLEYDLL_EXPORT static void RethrowAssertFromOtherTreads();
+
+#ifdef BENTLEY_WINRT
+    //! Non-gtest only / WinRT only: Tell failure-handling code where to resume execution when aborting a failing test. 
+    //! @note This function is needed only by a test that overrides InvokeTestBody. In that case, the test must do its
+    //! own error-checking and reporting. On UWP only, when a test fails and must be terminated, BeTest calls longjmp.
+    //! The purpose of this function is to allow the caller to tell BeTest what jmp_buf it should use.
+    //! @param jmpbufptr    Must be a pointer to a real jmp_buf that has been set up by the caller with setjmp
+    BENTLEYDLL_EXPORT static void SetFailureJmpbuf(void* jmpbufptr);
+#endif
 
 #else
 
