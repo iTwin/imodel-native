@@ -1,4 +1,5 @@
 #include "testHarness.h"
+#include <Bentley/BeNumerical.h>
 
 void TestFunc (double a, double b)
     {
@@ -1450,7 +1451,7 @@ TEST(HSV,RoundOff)
     {
 #define MAXFACTOR 100
     bvector<uint32_t> computed;
-    static double s_roundingEpsilon = 1.0e-14;
+    static double s_roundingEpsilon = 6.0e-14;  // At 256, the granularity above is 5.6e-14, below is 2.8e-14.
     double roundingValue = 0.5 + s_roundingEpsilon;
     for (uint32_t value = 0; value <= MAXFACTOR; value++)
         {
@@ -1473,6 +1474,19 @@ TEST(HSV,RoundOff)
         char s[200];
         sprintf (s, "HSV Rounding (i %d) (windows %d) (computed %d)", (int)i, (int)windowsResult[i], (int)computed[i]);
         EXPECT_EQ ((int)windowsResult[i], computed[i]) << s;
+        }
+    }
+
+TEST(HSV,PrintFloatingPointGranularity)
+    {
+    for (int i = 1; i <= 256; i *= 2)
+        {
+        double d = (double)i;
+        printf (" (i %d) (before %8.2e)  (after %8.2e)\n",
+                    i,
+                    d - BeNumerical::BeNextafter (d, -DBL_MAX),
+                    BeNumerical::BeNextafter (d, DBL_MAX) - d
+                    );
         }
     }
 
