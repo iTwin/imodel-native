@@ -270,26 +270,7 @@ void BeDuration::Sleep()
     if (!IsTowardsFuture())
         return;
 
-#if defined (BENTLEY_WINRT)
-     // Thanks to http://blogs.msdn.com/b/shawnhar/archive/2012/03/12/createthread-for-windows-8-metro.aspx for the work-around idea
-    static HANDLE s_sleepEvent = nullptr;
-    if (s_sleepEvent == nullptr)
-        {
-        BeSystemMutexHolder singletonlock;
-        if (s_sleepEvent == nullptr)
-            {
-            s_sleepEvent = CreateEventExW (nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
-            if (s_sleepEvent == nullptr)
-                return;
-            }
-        }
-
-    // Emulate sleep by waiting with timeout on an event that is never signalled.
-    Milliseconds millis(*this);
-    WaitForSingleObjectEx(s_sleepEvent, (uint32_t)millis.count(), false);
-#else
     std::this_thread::sleep_for(*this);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
