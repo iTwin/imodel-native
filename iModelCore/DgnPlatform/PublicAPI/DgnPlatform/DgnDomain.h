@@ -143,58 +143,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         //! To implement a DgnDomain::Handler::Extension, derive from that class and put the HANDLER_EXTENSION_DECLARE_MEMBERS macro in
         //! your class declaration and the HANDLER_EXTENSION_DEFINE_MEMBERS in your implementation. E.g.:
 
-        /**
-    @verbatim
-    struct ExampleInterface : DgnDomain::Handler::Extension
-        {
-        HANDLER_EXTENSION_DECLARE_MEMBERS (ExampleInterface,)
-        virtual void _DoExample(ElementHandleCR) = 0;
-        };
-    HANDLER_EXTENSION_DEFINE_MEMBERS(ExampleInterface)
-        @endverbatim
-        You can then implement your interface on many classes, e.g.:
-        @verbatim
-    struct Example1 : ExampleInterface
-        {
-        virtual void _DoExample(DgnElementCR) override {printf("Example1");}
-        };
-    struct Example2 : ExampleInterface
-        {
-        virtual void _DoExample(DgnElementCR) override {printf("Example2");}
-        };
-        @endverbatim
-        Then, register your Handler::Extension on an existing Handler by calling the Handler::Extension's "RegisterExtension" method.
-        For example, to register your extension on ModelHandler, use:
-        @verbatim
-    ExampleInterface::RegisterExtension (ModelHandler::Handler(), *new Example1());
-        @endverbatim
-        A Handler can have many registered Handler::Extensions, but can only be extended by one instance of a given Handler::Extension. Therefore:
-        @verbatim
-    status = ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example1()); // SUCCESS
-    status = ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example2()); // ERROR - already extended with Example1!
-        @endverbatim
-        Will fail. However, you can add your extension at any level in the Handler class hierarchy. So:
-        @verbatim
-    ExampleInterface::RegisterExtension(ModelHandler::Handler(), *new Example1());
-    ExampleInterface::RegisterExtension(Model2dHandler::Handler(), *new Example2());
-        @endverbatim
-        Will extend all ModelHandler classes with "Example1", but the Model2dHandler class (which is a subclass of ModelHandler)
-        with "Example2".<p>
-        You can then look up your extension on a Handler by calling the Handler::Extension's "Cast" method. E.g.:
-        @verbatim
-    void doExample (DgnElementCR el)
-        {
-        ExampleInterface* exampleExt = ExampleInterface::Cast(el.GetElementHandler());
-        if (NULL != exampleExt)
-            exampleExt->_DoExample(el);
-        }
-        @endverbatim
-        This will print "Example2" for all Model2ds and "Example1" for all other types of Models.<p>
-        To remove a Handler::Extension, call "DropExtension". E.g.:
-        @verbatim
-    ExampleInterface::DropExtension (LineHandler::Handler());
-        @endverbatim
-        */
         struct Extension
         {
             friend struct Handler;

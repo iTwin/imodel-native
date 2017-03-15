@@ -10,6 +10,7 @@
 
 #include "Render.h"
 #include "DgnTexture.h"
+#include "DgnMaterial.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <folly/futures/Future.h>
@@ -346,7 +347,7 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileTriangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
@@ -530,10 +531,12 @@ private:
     double                  m_tolerance;
     double                  m_areaTolerance;
     size_t                  m_triangleIndex;
+    DgnMaterialCPtr         m_materialEl;
     RenderingAssetCP        m_material = nullptr;
     FeatureAttributesMapR   m_attributes;
     Transform               m_transformToDgn;
 
+    bool GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb);
     TileMeshBuilder(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) { m_transformToDgn.InverseOf(transformFromDgn); }
 public:

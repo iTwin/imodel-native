@@ -7,14 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-RenderingAssetCP RenderingAsset::Load(DgnMaterialId materialId, DgnDbR dgnDb)
-    {
-    DgnMaterialCPtr material = DgnMaterial::Get(dgnDb, materialId);
-    return material.IsValid() ? &material->GetRenderingAsset() : nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015

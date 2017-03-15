@@ -119,7 +119,6 @@ public:
     bool IsValid() const {return !isNull();}
 
     DGNPLATFORM_EXPORT TextureMap GetPatternMap() const;
-    DGNPLATFORM_EXPORT static RenderingAssetCP Load(DgnMaterialId materialId, DgnDbR dgnDb);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
