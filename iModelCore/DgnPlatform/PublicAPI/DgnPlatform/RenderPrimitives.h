@@ -321,6 +321,9 @@ private:
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 
     DPoint3d GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const;
+
+    friend struct MeshBuilder;
+    void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
     static MeshPtr Create(DisplayParamsCR params) { return new Mesh(params); }
 
@@ -455,6 +458,8 @@ public:
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
     double GetTolerance() const { return m_tolerance; }
+
+    void SetDisplayParams(DisplayParamsCR params) { m_mesh->SetDisplayParams(params); }
 };
 
 //=======================================================================================

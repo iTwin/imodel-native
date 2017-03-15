@@ -1275,15 +1275,25 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (doDecimate)
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
 
+    bool anyContributed = false;
     uint32_t fillColor = displayParams.GetFillColor();
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
         {
         if (isContained || m_tileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
             {
+            anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
             builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
         }
+
+    // NB: The mesh's display params contain a fill color, which is used by the tri mesh primitive if the color table is empty (uniform)
+    // But each polyface's display params may have a different fill color.
+    // If a polyface contributes no vertices, we may end up incorrectly using its fill color for the primitive
+    // Make sure the mesh's display params match one (any) mesh which actually contributed vertices, so that if the result is a uniform color,
+    // we will use the fill color of the (only) mesh which contributed.
+    if (anyContributed)
+        builder.SetDisplayParams(displayParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
