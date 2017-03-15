@@ -1,4 +1,5 @@
 #include "testHarness.h"
+#include <Bentley/BeNumerical.h>
 
 void TestFunc (double a, double b)
     {
@@ -1432,7 +1433,7 @@ TEST(Angle, YawPitchRoll)
     anglesYPR = YawPitchRollAngles::FromRadians(1.0e-12, 1.0e-13, 0.1e-12);
     Check::True(anglesYPR.IsIdentity());
     }
-static bvector<uint32_t> hsv128
+static bvector<uint32_t> windowsResult
 {
   0,   3,   5,   8,  10,  13,  15,  18,  20,  23, 
  26,  28,  31,  33,  36,  38,  41,  43,  46,  48, 
@@ -1449,24 +1450,43 @@ static bvector<uint32_t> hsv128
 TEST(HSV,RoundOff)
     {
 #define MAXFACTOR 100
-    bvector<uint32_t> result;
+    bvector<uint32_t> computed;
+    static double s_roundingEpsilon = 6.0e-14;  // At 256, the granularity above is 5.6e-14, below is 2.8e-14.
+    double roundingValue = 0.5 + s_roundingEpsilon;
     for (uint32_t value = 0; value <= MAXFACTOR; value++)
         {
-        result.push_back ((int)( (0.5 + 255.0 * value / MAXFACTOR)));
-        int result1 = (int)std::round (255.0 * value / MAXFACTOR);
-        EXPECT_EQ (result1, (int)result.back ()) << "hsv std::round versus (int)";
+        computed.push_back ((int)( (roundingValue + 255.0 * value / MAXFACTOR)));
+#ifdef TestStdRound
+        int computed1 = (int)std::round (255.0 * value / MAXFACTOR);
+        EXPECT_EQ (computed1, (int)computed.back ()) << "hsv std::round versus (int)";
+#endif
         }
 #ifdef PRINT_HSV_PERCENTAGE_TABLE
-    for (size_t i = 0; i < result.size (); i++)
+    for (size_t i = 0; i < computed.size (); i++)
         {
-        printf("%3d, ", result[i]);
+        printf("%3d, ", computed[i]);
         if (((i+1) % 10) == 0)
             printf ("\n");
         }
 #endif
     for (size_t i = 0; i <= MAXFACTOR; i++)
         {
-        EXPECT_EQ ((int)hsv128[i], result[i]) << "HSV rounding";
+        char s[200];
+        sprintf (s, "HSV Rounding (i %d) (windows %d) (computed %d)", (int)i, (int)windowsResult[i], (int)computed[i]);
+        EXPECT_EQ ((int)windowsResult[i], computed[i]) << s;
+        }
+    }
+
+TEST(HSV,PrintFloatingPointGranularity)
+    {
+    for (int i = 1; i <= 256; i *= 2)
+        {
+        double d = (double)i;
+        printf (" (i %d) (before %8.2e)  (after %8.2e)\n",
+                    i,
+                    d - BeNumerical::BeNextafter (d, -DBL_MAX),
+                    BeNumerical::BeNextafter (d, DBL_MAX) - d
+                    );
         }
     }
 
