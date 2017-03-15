@@ -209,7 +209,7 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
 //---------------------------------------------------------------------------------------
 DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
     {
-    if (nullptr != dynamic_cast<GenericGroupP>(&element))
+    if (nullptr != dynamic_cast<GroupInformationElementP>(&element))
         return T_Super::_OnInsertElement(element);
 
     BeAssert(false);
