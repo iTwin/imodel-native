@@ -298,7 +298,7 @@ namespace IndexECPlugin.Source
                             throw new UserFriendlyException("This source does not exist. Choose between " + SourceStringMap.GetAllSourceStrings());
                             }
                         }
-                    return QueryMultipleSources(query, querySettings, schema, sourcesList, Convert.ToBase64String(Encoding.UTF8.GetBytes(connection.ConnectionInfo.GetField("Token").Value)));
+                    return QueryMultipleSources(query, querySettings, schema, sourcesList, Convert.ToBase64String(Encoding.UTF8.GetBytes(GetToken(connection))));
                     }
                 }
             catch ( Exception e )
@@ -340,7 +340,7 @@ namespace IndexECPlugin.Source
                 }
             }
 
-        private IEnumerable<IECInstance> QueryMultipleSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema, IEnumerable<DataSource> sources, string token)
+        private IEnumerable<IECInstance> QueryMultipleSources (ECQuery query, ECQuerySettings querySettings, IECSchema schema, IEnumerable<DataSource> sources, string base64token)
             {
             List<IECInstance> instanceList = new List<IECInstance>();
 
@@ -372,6 +372,15 @@ namespace IndexECPlugin.Source
                             {
                             exceptions.Add(e);
                             Log.Logger.error(String.Format("Index query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            if ( e is AggregateException )
+                                {
+                                AggregateException ae = (AggregateException) e;
+                                foreach ( Exception ie in ae.InnerExceptions )
+                                    {
+                                    Log.Logger.error("Index Aggregate exception message: " + ie.Message);
+                                    }
+
+                                }
                             }
                         }
                 });
@@ -399,6 +408,15 @@ namespace IndexECPlugin.Source
                             {
                             exceptions.Add(e);
                             Log.Logger.error(String.Format("USGS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            if ( e is AggregateException )
+                                {
+                                AggregateException ae = (AggregateException) e;
+                                foreach ( Exception ie in ae.InnerExceptions )
+                                    {
+                                    Log.Logger.error("USGS Aggregate exception message: " + ie.Message);
+                                    }
+
+                                }
                             }
                         }
                 });
@@ -416,7 +434,7 @@ namespace IndexECPlugin.Source
                         {
                         //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                         //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, ConnectionString, schema, token);
+                        IECQueryProvider helper = new RdsAPIQueryProvider(query, querySettings, ConnectionString, schema, base64token);
                         rdsInstances = helper.CreateInstanceList();
                         //instanceOverrider.Modify(usgsInstances, DataSource.RDS, ConnectionString);
                         //instanceComplement.Modify(usgsInstances, DataSource.RDS, ConnectionString);
@@ -427,7 +445,16 @@ namespace IndexECPlugin.Source
                         lock ( exceptionsLock )
                             {
                             exceptions.Add(e);
-                            Log.Logger.error(String.Format("RDS query aborted. Error message : {0}. Stack trace : {1}", e.Message, e.StackTrace));
+                            Log.Logger.error(String.Format("RDS query aborted. Error message : {0}. Stack trace : {1}", e.GetBaseException().Message, e.StackTrace));
+                                if (e is AggregateException)
+                                {
+                                    AggregateException ae = (AggregateException) e;
+                                    foreach (Exception ie in ae.InnerExceptions)
+                                    {
+                                        Log.Logger.error("RDS Aggregate exception message: " + ie.Message);
+                                    }
+
+                                }
                             }
                         }
                 });
@@ -707,9 +734,9 @@ namespace IndexECPlugin.Source
         private void OpenConnection (ConnectionModule sender,
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
-            {
+        {
 
-            string token = connection.ConnectionInfo.GetField("Token").Value;
+            string token = GetToken(connection);
 
             try
                 {
@@ -842,15 +869,7 @@ namespace IndexECPlugin.Source
                 {
                 }
                 //if on connect environment use this
-                string token;
-                try
-                {
-                token = Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
-                }
-                catch (Exception)
-                {
-                    token = connection.ConnectionInfo.GetField("Token").Value;
-                }
+                string token = GetToken(connection);
                 
                 var xml = new XmlDocument();
                 xml.LoadXml(token);
@@ -860,7 +879,19 @@ namespace IndexECPlugin.Source
                 return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='emailaddress']", nsmgr).InnerText.ToLower();
                 }
 
-        /// <summary>
+        private static string GetToken(RepositoryConnection connection)
+            {
+                try
+                {
+                    return Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
+                }
+                catch (Exception)
+                {
+                    return connection.ConnectionInfo.GetField("Token").Value;
+                }
+            }
+
+            /// <summary>
         /// Get user Id address of the caller from the connection
         /// </summary>
         /// <param name="connection"></param>
@@ -870,46 +901,40 @@ namespace IndexECPlugin.Source
             RepositoryConnection connection
         )
             {
-            try
+                try
                 {
-                //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
-                var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
-                if ( !isAuth )
+                    //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                    if (!isAuth)
                     {
-                    throw (new Exception());
+                        throw (new Exception());
                     }
-                else
+                    else
                     {
-                    //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                        //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
 
-                    IEnumerable<Claim> claims =
-                        ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
-                    Claim userIdClaim =
-                        claims.FirstOrDefault(
+                        IEnumerable<Claim> claims =
+                            ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                        Claim userIdClaim =
+                            claims.FirstOrDefault(
                                 c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/userid");
-                    return userIdClaim.Value.ToLower();
+                        return userIdClaim.Value.ToLower();
                     }
                 }
-            catch
+                catch
                 {
-                }
-            //if on connect environment use this
-            string token;
-            try
-                {
-                token = Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
-                }
-            catch ( Exception )
-                {
-                token = connection.ConnectionInfo.GetField("Token").Value;
-                }
+                    //if on connect environment use this
+                    string token = GetToken(connection);
 
-            var xml = new XmlDocument();
-            xml.LoadXml(token);
-            var nsmgr = new XmlNamespaceManager(xml.NameTable);
-            nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+                    var xml = new XmlDocument();
+                    xml.LoadXml(token);
+                    var nsmgr = new XmlNamespaceManager(xml.NameTable);
+                    nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
 
-            return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='userid']", nsmgr).InnerText.ToLower();
+                    return
+                        xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='userid']", nsmgr)
+                            .InnerText.ToLower();
+                }
             }
 
             /// <summary>
@@ -937,29 +962,26 @@ namespace IndexECPlugin.Source
                         IEnumerable<Claim> claims =
                             ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
                         Claim employeeClaim =
-                            claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/isbentleyemployee");
+                            claims.FirstOrDefault(
+                                c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/isbentleyemployee");
                         return (employeeClaim.Value.ToLower() == "true");
                     }
                 }
                 catch
                 {
-                }
-//if on connect environment use this
-                string token;
-                try
-                {
-                token = Encoding.UTF8.GetString(Convert.FromBase64String(connection.ConnectionInfo.GetField("Token").Value.Trim()));
-                }
-                catch (Exception)
-                {
-                    token = connection.ConnectionInfo.GetField("Token").Value;
-                }
-                var xml = new XmlDocument();
-                xml.LoadXml(token);
-                var nsmgr = new XmlNamespaceManager(xml.NameTable);
-                nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
 
-                return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='isbentleyemployee']", nsmgr).InnerText.ToLower() == "true";
+//if on connect environment use this
+                    string token = GetToken(connection);
+                    var xml = new XmlDocument();
+                    xml.LoadXml(token);
+                    var nsmgr = new XmlNamespaceManager(xml.NameTable);
+                    nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+
+                    return
+                        xml.SelectSingleNode(
+                                "//saml:AttributeStatement//saml:Attribute[@AttributeName='isbentleyemployee']", nsmgr)
+                            .InnerText.ToLower() == "true";
+                }
 
             }
 

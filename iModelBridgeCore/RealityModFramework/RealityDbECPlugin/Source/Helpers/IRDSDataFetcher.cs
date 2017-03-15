@@ -55,15 +55,15 @@ namespace IndexECPlugin.Source.Helpers
             }
         //const string RealityDataClass = "RealityData/";
 
-        string m_token;
+        string m_base64token;
 
         /// <summary>
         /// RDSDataFetcher constructor
         /// </summary>
-        /// <param name="token">Then IMS token used to communicate with RDS</param>
-        public RDSDataFetcher (string token)
+        /// <param name="base64token">Then IMS token used to communicate with RDS</param>
+        public RDSDataFetcher (string base64token)
             {
-            m_token = token;
+            m_base64token = base64token;
 
             m_rdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase");
             if(m_rdsUrlBase == null)
@@ -76,7 +76,7 @@ namespace IndexECPlugin.Source.Helpers
             {
             using ( HttpClient client = new HttpClient() )
                 {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_token);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_base64token);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 using ( HttpResponseMessage response = client.GetAsync(url).Result )
                     {
