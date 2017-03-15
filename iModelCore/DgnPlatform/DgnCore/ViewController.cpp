@@ -791,17 +791,6 @@ void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) c
     {
     gridsPerRef = m_gridsPerRef;
     spacing = m_gridSpacing;
-
-    // Apply ACS scale to grid if ACS Context Lock active even if grid isn't aligned to ACS...
-    if (!DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())
-        return;
-
-    IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
-
-    if (nullptr == acs)
-        return;
-
-    spacing.Scale(spacing, acs->GetScale());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,7 +810,7 @@ void ViewController::PointToGrid(DPoint3dR point) const
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
+        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
 
         if (nullptr != acs)
             acs->PointToGrid(*m_vp, point);
@@ -854,9 +843,9 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP   acs;
+        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
 
-        if (NULL != (acs = IACSManager::GetManager().GetActive(vp)))
+        if (nullptr != acs)
             acs->DrawGrid(context);
         }
     else

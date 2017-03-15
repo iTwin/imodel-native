@@ -71,6 +71,7 @@ namespace ViewProperties
     static constexpr Utf8CP str_GridSpaceX() {return "GridSpaceX";}
     static constexpr Utf8CP str_GridSpaceY() {return "GridSpaceY";}
     static constexpr Utf8CP str_GridPerRef() {return "GridPerRef";}
+    static constexpr Utf8CP str_ACS() {return "ACS";}
 
 };
 
@@ -277,6 +278,29 @@ void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR
 
     JsonValueCR valY = GetDetail(str_GridSpaceY());
     spacing.y = valY.isNull() ? spacing.x : valY.asDouble();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
+    {
+    JsonValueCR val = GetDetail(str_ACS());
+
+    return val.isNull() ? DgnElementId() : DgnElementId(val.asUInt64());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
+    {
+    BeAssert(!IsPersistent());
+
+    if (acsId.IsValid())
+        SetDetail(str_ACS(), Json::Value(acsId.GetValue()));
+    else
+        RemoveDetail(str_ACS());
     }
 
 /*---------------------------------------------------------------------------------**//**

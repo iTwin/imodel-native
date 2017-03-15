@@ -978,9 +978,22 @@ struct LegacyDecFracAccuracy
 PointFormatterPtr   PointFormatter::Create()           { return new PointFormatter(); }
 PointFormatterPtr   PointFormatter::Create(DistanceFormatterCR distanceFormatter) { return new PointFormatter(distanceFormatter); }
 /* ctor */          PointFormatter::PointFormatter()   { Init(); }
-void                PointFormatter::SetAuxCoordSys(IAuxCoordSysCR acs)    { m_acs = acs.Clone(); }
 void                PointFormatter::SetDistanceFormatter(DistanceFormatterCR f)    { m_distanceFormatter = f.Clone(); }
-PointFormatterPtr   PointFormatter::Clone() const       { return new PointFormatter(*this); }
+PointFormatterPtr   PointFormatter::Clone() const      { return new PointFormatter(*this); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    01/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void                PointFormatter::SetAuxCoordSys(AuxCoordSystemCP acs)
+    {
+    if (nullptr == acs)
+        {
+        m_acs = nullptr;
+        return;
+        }
+
+    m_acs = acs->MakeCopy<AuxCoordSystem>();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
@@ -996,7 +1009,7 @@ void            PointFormatter::Init()
 /*ctor*/        PointFormatter::PointFormatter(PointFormatterCR source)
     {
     if (source.m_acs.IsValid())
-        m_acs = source.m_acs->Clone();
+        m_acs = source.m_acs->MakeCopy<AuxCoordSystem>();
 
     if (source.m_distanceFormatter.IsValid())
         m_distanceFormatter = source.m_distanceFormatter->Clone();
@@ -1027,12 +1040,9 @@ DistanceFormatterR  PointFormatter::GetDistanceFormatter()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysR   PointFormatter::GetAuxCoordSys()
+AuxCoordSystemP   PointFormatter::GetAuxCoordSys()
     {
-    if ( ! m_acs.IsValid())
-        m_acs = IACSManager::GetManager().CreateACS ();
-
-    return *m_acs;
+    return m_acs.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1043,14 +1053,18 @@ void            PointFormatter::InitModelSettings(GeometricModelCR model, bool a
     m_distanceFormatter = DistanceFormatter::Create(model);
 
     auto geomModel = model.ToGeometricModel();
+    m_is3d = nullptr != geomModel && geomModel->Is3d();
+
     if (addGlobalOrigin && nullptr != geomModel)
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
-        m_acs = IACSManager::GetManager().CreateACS ();
+        if (m_is3d)
+            m_acs = new AuxCoordSystem3d(geomModel->GetDgnDb());
+        else
+            m_acs = new AuxCoordSystem2d(geomModel->GetDgnDb());
+
         m_acs->SetOrigin(geomModel->GetDgnDb().GeoLocation().GetGlobalOrigin());
         }
-
-    m_is3d = nullptr != geomModel && geomModel->Is3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1092,14 +1106,11 @@ PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void transformByACS(DPoint3d point, IAuxCoordSysCR acs)
+static void transformByACS(DPoint3d point, AuxCoordSystemCR acs)
     {
-    double      scale = acs.GetScale();
-    DPoint3d    origin;
-    RotMatrix   rotation;
-
-    acs.GetOrigin(origin);
-    acs.GetRotation(rotation);
+    double      scale = 1.0;
+    DPoint3d    origin = acs.GetOrigin();
+    RotMatrix   rotation = acs.GetRotation();
 
     point.Subtract(origin);
     rotation.Multiply(point);
@@ -1114,11 +1125,12 @@ static void transformByACS(DPoint3d point, IAuxCoordSysCR acs)
 Utf8String PointFormatter::ToString(DPoint3dCR point) const
     {
     // Ensure that these are initialized
-    (const_cast <PointFormatterP> (this))->GetAuxCoordSys();
     (const_cast <PointFormatterP> (this))->GetDistanceFormatter();
 
     DPoint3d offpnt = point;
-    transformByACS (offpnt, *m_acs);
+
+    if (m_acs.IsValid())
+        transformByACS (offpnt, *m_acs);
 
     Utf8String outputString;
 

@@ -544,6 +544,12 @@ public:
     //! Set the DisplayStyle for this view.
     void SetDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
 
+    //! Get the AuxiliaryCoordinateSystem for this ViewDefinition
+    DGNPLATFORM_EXPORT DgnElementId GetAuxiliaryCoordinateSystemId() const;
+
+    //! Set the AuxiliaryCoordinateSystem for this view.
+    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId); // NEEDWORK: Make protected, ViewDefinition2d/3d should take AuxiliaryCoordinateSystem2d/3d...
+
     //! Query if the specified model is displayed in this view
     bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
 

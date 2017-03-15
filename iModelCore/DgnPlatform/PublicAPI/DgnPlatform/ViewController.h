@@ -77,6 +77,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
     friend struct SceneQueue::Task;
     friend struct CreateSceneTask;
+    friend struct AuxCoordSystem;
 
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
@@ -557,7 +558,7 @@ protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     Render::MaterialPtr m_skybox;
-    IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
+    AuxCoordSystemCPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -611,11 +612,11 @@ public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
 
     //! Gets the Auxiliary Coordinate System for this view.
-    IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
+    AuxCoordSystemCP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
 
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
-    void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
+    void SetAuxCoordinateSystem(AuxCoordSystemCP acs) {m_auxCoordSys = acs;}
 
     //! Get the Level-of-Detail filtering size for scene creation for this SpatialViewController. This is the size, in pixels, of one side of a square. 
     //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
