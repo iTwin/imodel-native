@@ -22,13 +22,13 @@ static void progressFunc(Utf8String filename, double fileProgress, double repoPr
     std::cout << Utf8PrintfString("Upload percent : %3.0f%%\r", repoProgress * 100.0);
     }
 
-static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
+/*static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if(ErrorCode > 0)
         std::cout << Utf8PrintfString("Curl error code : %d /n %s", ErrorCode, pMsg);
     else
         std::cout << pMsg;
-    }
+    }*/
 
 int main(int argc, char *argv[])
 {
