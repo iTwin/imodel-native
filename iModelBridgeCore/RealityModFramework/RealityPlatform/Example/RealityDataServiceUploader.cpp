@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     std::cin >> schema;
     
     RealityDataService::SetServerComponents(server, version, repo, schema);*/
-    RealityDataService::SetServerComponents("qa-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
 
 #if (1) 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
     properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
 
-    properties.Insert(RealityDataField::Visility, "PUBLIC");
+    properties.Insert(RealityDataField::Visibility, "PUBLIC");
 
     BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Barmettes");
 #endif
