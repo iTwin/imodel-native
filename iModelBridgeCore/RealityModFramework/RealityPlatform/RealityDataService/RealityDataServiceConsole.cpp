@@ -742,7 +742,7 @@ void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
         std::cout << msg;
 
     // commande
-    SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+    SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 }
 
 
