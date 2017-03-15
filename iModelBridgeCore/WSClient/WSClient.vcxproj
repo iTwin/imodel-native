@@ -184,6 +184,7 @@
     <ClInclude Include="Cache\CacheNavigationTask.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
@@ -303,12 +304,12 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSessionAuthenticationPersistence.h" />
+    <ClInclude Include="Connect\ConnectSessionAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
-    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h" />
+    <ClInclude Include="Connect\DelegationTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h" />
     <ClInclude Include="Connect\IdentityTokenProvider.h" />
     <ClInclude Include="Connect\IdentityAuthenticationPersistence.h" />

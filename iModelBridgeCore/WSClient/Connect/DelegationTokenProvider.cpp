@@ -2,12 +2,12 @@
 |
 |     $Source: Connect/DelegationTokenProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/DelegationTokenProvider.h>
 #include "../Client/Logging.h"
+#include "DelegationTokenProvider.h"
 
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ImsClient.h>
@@ -63,6 +63,15 @@ SamlTokenPtr DelegationTokenProvider::GetToken()
     {
     ValidateToken();
     return m_token;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                      
++---------------+---------------+---------------+---------------+---------------+------*/
+void DelegationTokenProvider::ClearCache()
+    {
+    m_tokenLifetime = 0;
+    m_token = nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+

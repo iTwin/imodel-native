@@ -2,11 +2,11 @@
 |
 |     $Source: Connect/ConnectSessionAuthenticationPersistence.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
+#include "ConnectSessionAuthenticationPersistence.h"
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

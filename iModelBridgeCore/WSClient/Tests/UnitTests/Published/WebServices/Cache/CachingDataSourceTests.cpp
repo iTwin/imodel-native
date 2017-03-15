@@ -4956,6 +4956,33 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
     EXPECT_THAT(result.GetValue(), IsEmpty());
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFileButInstanceIsThenDeleted_SkipsFileDownload)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    auto instanceKey = StubECInstanceKey(11, 22);
+    ObjectId objectId("TestSchema.TestClass", "TestId");
+    EXPECT_CALL(*cache, FindInstance(instanceKey)).WillRepeatedly(Return(ObjectId()));
+    EXPECT_CALL(*cache, FindInstance(objectId)).WillRepeatedly(Return(instanceKey));
+
+    EXPECT_CALL(*client, SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillOnce(Return(true));
+
+    // Download & cache file
+    EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillRepeatedly(Return(SUCCESS));
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+
+    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();

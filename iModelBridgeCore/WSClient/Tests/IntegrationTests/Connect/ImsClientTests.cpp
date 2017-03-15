@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,10 +15,10 @@
 
 TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
     {
-    StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState);
-
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -33,10 +33,10 @@ TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
 
 TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
     {
-    StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
-
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -51,10 +51,10 @@ TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
 
 TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaultLifetime)
     {
-    StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
-
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -70,10 +70,10 @@ TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaul
 
 TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
     {
-    StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
-
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -89,10 +89,10 @@ TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifie
 
 TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
     {
-    StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
-
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
     auto client = ImsClient::Create(StubValidClientInfo(), proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
@@ -107,18 +107,19 @@ TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_Retriev
     EXPECT_TRUE(token->IsValidNow(2));
     EXPECT_EQ(5, token->GetLifetime());
     }
-    
+
 TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
     {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
 
     StubLocalState localState;
-    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
 
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    auto client = ImsClient::Create (StubClientInfo(), proxy);
+    auto client = ImsClient::Create(StubClientInfo(), proxy);
 
     SamlTokenResult result;
 

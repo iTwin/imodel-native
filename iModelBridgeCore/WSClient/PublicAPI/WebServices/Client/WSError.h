@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ struct WSError : public AsyncError
             // Could not verify HTTPS certificate
             CertificateError,
 
-            // See error id for more information
+            // See WSError::Id for more information
             ReceivedError
             };
 
@@ -52,7 +52,7 @@ struct WSError : public AsyncError
             // Server did not return enough information or not WSError::Status::ReceivedError
             Unknown,
 
-            // Server error ids
+            // Server returned error ids
             LoginFailed,
             SslRequired,
             NotEnoughRights,
@@ -90,20 +90,26 @@ struct WSError : public AsyncError
         void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
     public:
+        //! Create error with WSError::Status::None
         WSCLIENT_EXPORT WSError();
         //! Handle supported server response
         WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
-        //! Do not use in production code, this is for testing purposes only
+        //! Do not use in production code, this is for testing purposes only.
+        //! Create error with WSError::Status::ReceivedError and specified Id.
         WSCLIENT_EXPORT WSError(Id errorId);
 
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedError();
         WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError();
 
-        WSCLIENT_EXPORT Status       GetStatus() const;
-        WSCLIENT_EXPORT Id           GetId() const;
+        //! Get error status describing origin of error
+        WSCLIENT_EXPORT Status GetStatus() const;
+        //! Get error id returned from server when GetStatus() returns WSError::Status::ReceivedError
+        WSCLIENT_EXPORT Id GetId() const;
+        //! DEPRECATED! Use GetMessage()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
+        //! DEPRECATED! Use GetDescription()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };
 
