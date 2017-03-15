@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <WebServices/Connect/DelegationTokenProvider.h>
 #include "../Client/Logging.h"
+#include "DelegationTokenProvider.h"
 
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ImsClient.h>

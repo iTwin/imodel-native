@@ -10,12 +10,15 @@
 
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ImsClient.h>
+
+// These should be removed from public API in future. Currently FieldApps/MobileUtils depend on those APIs.
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/ConnectSessionAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/DelegationTokenProvider.h>
+
 #include "Connect.xliff.h"
+#include "ConnectSessionAuthenticationPersistence.h"
+#include "DelegationTokenProvider.h"
 #include "IdentityTokenProvider.h"
 #include "IdentityAuthenticationPersistence.h"
 #include "WrapperTokenProvider.h"
