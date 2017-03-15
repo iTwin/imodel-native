@@ -53,6 +53,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_SCHEMA_NAME                             "RoadRailAlignment"
 #define BRRA_SCHEMA_FILE                             L"RoadRailAlignment.01.00.00.ecschema.xml"
 #define BRRA_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
+#define BRRA_SCHEMA_PATH                             BRRA_SCHEMA_LOCATION BRRA_SCHEMA_FILE
 #define BRRA_SCHEMA(name)                            BRRA_SCHEMA_NAME "." name
 #define BRRA_SCHEMA_CODE(name)                       BRRA_SCHEMA_NAME "_" name
 

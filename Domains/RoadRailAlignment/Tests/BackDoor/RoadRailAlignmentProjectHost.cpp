@@ -160,15 +160,11 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
     BeFileName schemaRootDir = assetsRootDir;
     schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
 
-    DgnDbStatus status;
-    BeFileName lrSchemaFileName = schemaRootDir;
-    lrSchemaFileName.AppendToPath(BLR_SCHEMA_FILE);    
-    if (DgnDbStatus::Success != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr, lrSchemaFileName)))
+    DbResult status;
+    if (DbResult::BE_SQLITE_OK != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    BeFileName alignSchemaFileName = schemaRootDir;
-    alignSchemaFileName.AppendToPath(BRRA_SCHEMA_FILE);
-    if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
+    if (DbResult::BE_SQLITE_OK != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
     projectPtr->Schemas().CreateECClassViewsInDb();
@@ -203,8 +199,8 @@ RoadRailAlignmentProjectHostImpl::RoadRailAlignmentProjectHostImpl() : m_isIniti
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain());
-    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain());
+    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), true);
+    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), true);
     m_isInitialized = true;
     }
 
