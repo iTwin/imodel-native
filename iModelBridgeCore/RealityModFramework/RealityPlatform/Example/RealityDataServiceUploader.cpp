@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     std::cin >> schema;
     
     RealityDataService::SetServerComponents(server, version, repo, schema);*/
-    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("qa-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
 
 #if (1) 
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     properties.Insert(RealityDataField::Group, "SPAR Demo");
     properties.Insert(RealityDataField::Description, "SPAR Demo Viewer Cesium");
     properties.Insert(RealityDataField::RootDocument, "Barmettes.json");
-    properties.Insert(RealityDataField::Classification, "Exemple Test 2");
+    properties.Insert(RealityDataField::Classification, "Model");
     properties.Insert(RealityDataField::Type, "3DTiles");
 //    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
 //    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
@@ -61,12 +61,15 @@ int main(int argc, char *argv[])
 //    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
     properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
+
+    properties.Insert(RealityDataField::Visility, "PUBLIC");
+
     BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Barmettes");
 #endif
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, "15d33ed9-24d9-4b95-8e05-90de075b939b", propertyString, true);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Utf8String("716E4465-915C-4BB9-B4ED-F2E0589F9F81").ToLower(), propertyString, true);
     if (upload->IsValidUpload())
         {
         upload->SetProgressCallBack(progressFunc);
@@ -82,5 +85,7 @@ int main(int argc, char *argv[])
         std::cout << time2 << std::endl;
         }
 
+    std::cout << "Press a key to continue...";
+    getch();
     return 0;
 }
