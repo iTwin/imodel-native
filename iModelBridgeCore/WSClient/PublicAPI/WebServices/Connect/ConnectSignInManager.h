@@ -79,7 +79,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         Authentication m_auth;
 
         IConnectTokenProviderPtr m_publicIdentityTokenProvider;
-        bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
+        mutable bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
 
         std::function<void()> m_tokenExpiredHandler;
         std::function<void()> m_userChangeHandler;
@@ -92,18 +92,18 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         void CheckUserChange();
         void StoreSignedInUser();
 
-        AuthenticationType ReadAuthenticationType();
+        AuthenticationType ReadAuthenticationType() const;
         void StoreAuthenticationType(AuthenticationType type);
 
-        Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr);
-        void Configure(Authentication& auth);
-        void Configure(struct DelegationTokenProvider& provider);
+        Authentication CreateAuthentication(AuthenticationType type, IConnectAuthenticationPersistencePtr persistence = nullptr) const;
+        void Configure(Authentication& auth) const;
+        void Configure(struct DelegationTokenProvider& provider) const;
 
-        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri);
+        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri) const;
         void ClearSignInData();
 
         void CheckAndUpdateTokenNoLock();
-        bool IsSignedInNoLock();
+        bool IsSignedInNoLock()  const;
 
     public:
         //! Can be created after MobileDgn is initialized.
@@ -147,13 +147,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Sign-out user and remove all user information from disk
         WSCLIENT_EXPORT void SignOut();
         //! Check if user is signed-in
-        WSCLIENT_EXPORT bool IsSignedIn();
+        WSCLIENT_EXPORT bool IsSignedIn() const;
         //! Get user information stored in identity token
-        WSCLIENT_EXPORT UserInfo GetUserInfo();
+        WSCLIENT_EXPORT UserInfo GetUserInfo() const;
         //! Get user information stored in token
         WSCLIENT_EXPORT static UserInfo GetUserInfo(SamlTokenCR token);
         //! Get last or current user that was signed in. Returns empty if no user was signed in
-        WSCLIENT_EXPORT Utf8String GetLastUsername();
+        WSCLIENT_EXPORT Utf8String GetLastUsername() const;
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
@@ -173,13 +173,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
-        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) override;
+        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) const override;
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
         //! Only use this if AuthenticationHandlerPtr cannot be used.
         //! Will always represent user that is signed-in when prividing token.
         //! @param rpUri relying party URI to use token for
-        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri);
+        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri) const;
 
         //! Check if token expired and renew/handle expiration
         WSCLIENT_EXPORT void CheckAndUpdateToken();

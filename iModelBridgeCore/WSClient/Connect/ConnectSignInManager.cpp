@@ -196,7 +196,7 @@ void ConnectSignInManager::FinalizeSignIn()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsSignedIn()
+bool ConnectSignInManager::IsSignedIn() const
     {
     BeCriticalSectionHolder lock(m_cs);
     return IsSignedInNoLock();
@@ -205,7 +205,7 @@ bool ConnectSignInManager::IsSignedIn()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsSignedInNoLock()
+bool ConnectSignInManager::IsSignedInNoLock() const
     {
     return AuthenticationType::None != m_auth.type;
     }
@@ -243,7 +243,7 @@ void ConnectSignInManager::ClearSignInData()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
+ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
     {
     BeCriticalSectionHolder lock(m_cs);
 
@@ -282,7 +282,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR tok
 //--------------------------------------------------------------------------------------
 // @bsimethod                                           Andrius.Paulauskas     06/2016
 //--------------------------------------------------------------------------------------
-Utf8String ConnectSignInManager::GetLastUsername()
+Utf8String ConnectSignInManager::GetLastUsername() const
     {
     return m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
     }
@@ -327,7 +327,7 @@ void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler)
+AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler) const
     {
     BeCriticalSectionHolder lock(m_cs);
 
@@ -341,7 +341,7 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri)
+IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri) const
     {
     BeCriticalSectionHolder lock(m_cs);
     return GetCachedTokenProvider(rpUri);
@@ -350,7 +350,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpU
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8StringCR rpUri)
+IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8StringCR rpUri) const
     {
     auto it = m_publicDelegationTokenProviders.find(rpUri);
     if (it != m_publicDelegationTokenProviders.end())
@@ -366,7 +366,7 @@ IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8String
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticationType()
+ConnectSignInManager::AuthenticationType ConnectSignInManager::ReadAuthenticationType() const
     {
     return static_cast<AuthenticationType>(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType).asInt());
     }
@@ -386,7 +386,7 @@ ConnectSignInManager::Authentication ConnectSignInManager::CreateAuthentication
 (
 AuthenticationType type,
 IConnectAuthenticationPersistencePtr persistence
-)
+) const
     {
     Authentication auth;
     auth.type = type;
@@ -424,7 +424,7 @@ IConnectAuthenticationPersistencePtr persistence
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::Configure(Authentication& auth)
+void ConnectSignInManager::Configure(Authentication& auth) const
     {
     if (!auth.tokenProvider)
         return;
@@ -444,7 +444,7 @@ void ConnectSignInManager::Configure(Authentication& auth)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::Configure(DelegationTokenProvider& provider)
+void ConnectSignInManager::Configure(DelegationTokenProvider& provider) const
     {
     provider.Configure(m_config.delegationTokenLifetime, m_config.delegationTokenExpirationThreshold);
     }
