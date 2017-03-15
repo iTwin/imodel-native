@@ -27,12 +27,14 @@ private:
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
-    DPoint3d m_center;
+    DPoint3d            m_centerECEF;
+    RotMatrix           m_rotationECEF;
+    DPoint3d            m_centerLocal;
+    RotMatrix           m_rotationLocal;
+    bool                m_isECEFSupported;
     Angle m_omega;
     Angle m_phi;
     Angle m_kappa;
-    DPoint3d  m_centerECEF;
-    RotMatrix m_rotationECEF;
 
     explicit Pose(CreateParams const& params);
 
@@ -90,32 +92,31 @@ public:
     DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
 
 
-    //Rotation can be express in omega/phi/kappa or by a rotation matrix 
-    //Use utility methods below to do your convertion 
-    DATACAPTURE_EXPORT static RotMatrix     GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
     DATACAPTURE_EXPORT static bool          GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
     DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target);
 
 
     //Position and orientation in current GCS system
+    DATACAPTURE_EXPORT bool                 IsECEF() const;
+    DATACAPTURE_EXPORT void                 SetIsECEF(bool isECEF);
     DATACAPTURE_EXPORT DPoint3dCR           GetCenter() const;
     DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val, bool synchECEF=true);
     DATACAPTURE_EXPORT AngleCR              GetOmega() const;
     DATACAPTURE_EXPORT AngleCR              GetPhi() const;
     DATACAPTURE_EXPORT AngleCR              GetKappa() const;
-    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega);
-    DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi);
-    DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
+    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega,bool synchECEF=true, bool synchRotMatrix=true); 
+    DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi, bool synchECEF=true, bool synchRotMatrix=true);
+    DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa, bool synchECEF=true, bool synchRotMatrix=true);
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrix() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrix(RotMatrixCR rotation, bool synchECEF=true);
+    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
+    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles, bool synchECEF=true);
 
     //Position and orientation in ECEF system
     DATACAPTURE_EXPORT DPoint3dCR           GetCenterECEF() const;
-    DATACAPTURE_EXPORT void                 SetCenterECEF(DPoint3dCR val, bool synchlocalGCS=true);
+    DATACAPTURE_EXPORT void                 SetCenterECEF(DPoint3dCR val, bool synchLocal=true);
     DATACAPTURE_EXPORT RotMatrix            GetRotMatrixECEF() const;
-    DATACAPTURE_EXPORT void                 SetRotMatrixECEF(RotMatrixCR rotation,bool synchYPR=true);
-
-
-    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
-    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles, bool synchRotMatrix=true);
+    DATACAPTURE_EXPORT void                 SetRotMatrixECEF(RotMatrixCR rotation,bool synchLocal=true);
 
     DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
     DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
