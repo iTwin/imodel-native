@@ -99,8 +99,7 @@ struct DgnDomains;
 //! for its ECClasses. It is not possible for one DgnDomain to supply a DgnDomain::Handler for a different DgnDomain.
 //! Domains are "registered" at program startup time (via that static method DgnDomains::RegisterDomain),
 //! remain for an entire session, and apply to all DgnDb's that are opened
-//! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
-//! and becomes required to access that DgnDb in the future.
+//! or created during that session. 
 //! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
@@ -322,24 +321,34 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     };
 
 private:
-    ECN::ECSchemaReadContextPtr ReadSchema(DgnDbStatus& status, DgnDbCR db, BeFileNameCR schemaFile) const;
-    
+    bool m_isReadonly;
+    bool m_isRequired;
+
+    BeFileName GetSchemaPathname() const;
+    bool ValidateSchemaPathname() const;
+    void CallOnSchemaImported(DgnDbR db) const { _OnSchemaImported(db); }
+    void CallOnSchemaUpgraded(DgnDbR db) const { _OnSchemaUpgraded(db); }
+
 protected:
     int32_t         m_version;
     Utf8String      m_domainName;
     Utf8String      m_domainDescr;
     bvector<Handler*> m_handlers;
     bvector<TableHandler*> m_tableHandlers;
+
     virtual ~DgnDomain() {}
     DgnDbStatus VerifySuperclass(Handler& handler);
 
     BeSQLite::DbResult LoadHandlers(DgnDbR) const;
 
-    //! Called after this DgnDomain's schema has been imported into the supplied DgnDb.
+    //! Called after this DgnDomain's schema has been imported into the supplied DgnDb
     //! @param[in] db The DgnDb into which the schema was imported.
     //! @note Domains are expected to override this method and use it to create required domain objects (like categories, for example).
-    //! @see ImportSchema
     virtual void _OnSchemaImported(DgnDbR db) const {}
+
+    //! Called after this DgnDomain's schema has been upgraded in the supplied DgnDb
+    //! @param[in] db The DgnDb in which the schema was upgraded.
+    virtual void _OnSchemaUpgraded(DgnDbR db) const {}
 
     //! Called after a DgnDb containing this schema is opened. Domains may register SQL functions in this method, for example.
     //! @param[in] db The DgnDb that was just opened.
@@ -349,12 +358,16 @@ protected:
     //! @param[in] db The DgnDb that is about to be closed.
     virtual void _OnDgnDbClose(DgnDbR db) const {}
 
+    //! Implemented by the domain to provide the path of the schema on disk relative to the DgnPlatform assets directory
+    //! @see T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory()
+    virtual WCharCP _GetSchemaRelativePath() const = 0;
+
 public:
     //! Construct a new DgnDomain.
     //! @param[in] name Domain name. Must match filename of ECSchema this domain handles.
     //! @param[in] descr A description of this domain. For information purposes only, not used internally.
     //! @param[in] version The version of this DgnDomain API.
-    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr) {m_version=version;}
+    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr), m_isRequired(false), m_isReadonly(false) {m_version=version;}
 
     //! Get the name of this DgnDomain.
     Utf8CP GetDomainName() const {return m_domainName.c_str();}
@@ -364,6 +377,22 @@ public:
 
     //! Get the version of this DgnDomain.
     int32_t GetVersion() const {return m_version;}
+
+    //! Returns true if the domain is setup to be ReadOnly in this session. 
+    bool IsReadonly() const { return m_isReadonly; }
+
+    //! Setup this domain to be read-only/read-write in this session. 
+    void SetReadonly(bool isReadonly) { m_isReadonly = isReadonly; }
+
+    //! Returns true if the domain is setup to be required or optional in this session
+    bool IsRequired() const { return m_isRequired; }
+
+    //! Setup this domain to be required/optional in this session
+    void SetRequired(bool isRequired) { m_isRequired = isRequired; }
+
+    //! Imports the schema of this domain and it's dependencies into the supplied DgnDb. 
+    //! @remarks This needs to be only called for optional (not required) domains
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
 
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
 
@@ -378,24 +407,6 @@ public:
     //! Register a table handler with this DgnDomain.
     void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}
 
-    //! Validate ECSchema for this DgnDomain, and it's references, against any existing schemas in the DgnDb
-    //! @param[in] db DgnDb containing the schemas
-    //! @param[in] schemaFileName The domain ECSchema file to validate
-    //! @return BE_SQLITE_OK if all schemas are valid. Depending on the validation issue
-    //! returns one of the error states - BE_SQLITE_ERROR_FileNotFound, BE_SQLITE_ERROR_SchemaIncompatible, 
-    //! BE_SQLITE_ERROR_SchemaUpgradeRequired or BE_SQLITE_ERROR_SchemaUpgradeRecommended
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ValidateSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
-
-    //! Upgrade an ECSchema and it's references for this DgnDomain. 
-    //! @param[in] db DgnDb containing the schema to upgrade
-    //! @param[in] schemaFileName The domain ECSchema file to upgrade
-    DGNPLATFORM_EXPORT DgnDbStatus UpgradeSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
-
-    //! Import an ECSchema and it's references for this DgnDomain.
-    //! @param[in] db Import the domain schema into this DgnDb
-    //! @param[in] schemaFileName The domain ECSchema file to import
-    //! @see ECDbSchemaManager::CreateECClassViewsInDb
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
 };
 
 //=======================================================================================
@@ -427,6 +438,14 @@ private:
     void OnDbClose();
     void SyncWithSchemas();
 
+    void SetReadonly(bool isReadonly);
+    BeSQLite::DbResult ValidateSchemas();
+    BeSQLite::DbResult ImportSchemas();
+    BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
+    static BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
+    ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
+    static BeSQLite::DbResult DoImportSchemas(DgnDbR dgndb, bvector<ECN::ECSchemaCP> const& schemasToImport, bool isImportingFromV8);
+    
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
 
 public:
@@ -437,8 +456,28 @@ public:
 
     //! Register a domain to be used for this session. This supplies all of the handlers for classes of that domain.
     //! @param[in] domain The domain to register. Domains are singletons and cannot change during a session.
-    //! @note This call must be made before any DgnDbs are created or opened.
-    DGNPLATFORM_EXPORT static void RegisterDomain(DgnDomain& domain);
+    //! @param[in] isRequired Pass true to ensure/validate that all DgnDb-s that are created/opened in this 
+    //! session have this domain enabled. Pass false if the domain is optional. 
+    //! @param[in] isReadonly Pass true to use the domain only for reading instances, or false to allow
+    //! all CRUD operations (assuming the DgnDb itself is writeable)
+    //! @remarks
+    //! <ul>
+    //! <li> If isRequired=true, newly created DgnDb-s will have the ECSchema of the domain (and any dependencies)
+    //! imported in, and enables use of the domain's CRUD API. Opening previously created DgnDb-s will trigger 
+    //! validation of the ECSchema of the domain against the corresponding version in the DgnDb. Any subsequent 
+    //! validation errors will cause the open to fail, but the issue may be resolvable by call to 
+    //! DgnDomains::UpgradeSchemas() - the process however requires locking of the schemas, and is typically done 
+    //! by a Project Administrator. 
+    //! <li> If isRequired=false, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's 
+    //! ECSchema into newly created DgnDbs. Like before, the call will require locking of the schemas, and 
+    //! is typically done by a Project Administrator. 
+    //! <li> If a domain is registered to be required, it's name is recorded in every DgnDb accessed during 
+    //! the session, and becomes required to access that DgnDb in the future.
+    //! <li> If a domain is registered as optional (not required), it's name is recorded in the DgnDb only if 
+    //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
+    //! to access that DgnDb.
+    //! </ul>
+    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, bool isRequired, bool isReadonly);
 
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
@@ -455,7 +494,15 @@ public:
     //! of handlerId towards baseClassId until it finds a registered handler.
     //! @note The DgnClassId @b is a ECClassId.
     DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
+
+    //! Upgrades EC Schemas of all registered domains by comparing the versions 
+    //! supplied by the domains against those in the Db.
+    //! @return BE_SQLITE_OK if successful. Appropriate BE_SQLITE_ERROR_Schema* error status otherwise. 
+    //! Requires a lock on the schemas and is typically done by a project administrator
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpgradeSchemas();
 };
+
+struct CreateDgnDbParams;
 
 //=======================================================================================
 //! The DgnDomain for the base "dgn" schema.
@@ -465,21 +512,20 @@ public:
 //=======================================================================================
 struct BisCoreDomain : DgnDomain
 {
+    friend struct DgnDb;
     DOMAIN_DECLARE_MEMBERS(BisCoreDomain,DGNPLATFORM_EXPORT)
 
+private:
+    CreateDgnDbParams const* m_createParams = nullptr;
+
+    void SetCreateParams(CreateDgnDbParams const& createParams) { m_createParams = &createParams; }
+
+    WCharCP _GetSchemaRelativePath() const override { return BISCORE_ECSCHEMA_PATH; }
     void _OnDgnDbOpened(DgnDbR db) const override;
+    void _OnSchemaImported(DgnDbR) const override;
 
 public:
     BisCoreDomain();
-
-    //! Validate the ECSchema for the BisCoreDomain against the specified DgnDb
-    static BeSQLite::DbResult ValidateSchema(DgnDbR);
-
-    //! Import the ECSchema for the BisCoreDomain into the specified DgnDb
-    static DgnDbStatus ImportSchema(DgnDbR);
-
-    //! Upgrade the ECSchema for the BisCoreDomain in the specified DgnDb
-    static DgnDbStatus UpgradeSchema(DgnDbR);
 };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -215,43 +215,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                  02 / 2017
 //---------------------------------------------------------------------------------------
-static BeFileName getSchemaPathname()
+void BisCoreDomain::_OnSchemaImported(DgnDbR db) const
     {
-    BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    genericDomainSchemaFile.AppendToPath(BISCORE_ECSCHEMA_PATH);
-    BeAssert(genericDomainSchemaFile.DoesPathExist());
-
-    return genericDomainSchemaFile;
+    BeAssert(m_createParams != nullptr && "SetCreateParams() before importing the BisCoreDomain");
+    db.SetupNewDgnDb(*m_createParams);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DbResult BisCoreDomain::ValidateSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    return dgnDomain.ValidateSchema(db, getSchemaPathname());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DgnDbStatus BisCoreDomain::UpgradeSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.UpgradeSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus BisCoreDomain::ImportSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.ImportSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-

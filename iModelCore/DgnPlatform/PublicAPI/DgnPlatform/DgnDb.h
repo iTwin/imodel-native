@@ -136,6 +136,7 @@ public:
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 {
+    friend struct BisCoreDomain;
     DEFINE_T_SUPER(BeSQLite::EC::ECDb)
 
     //=======================================================================================
@@ -143,17 +144,43 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
     {
-        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn=BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
-        virtual ~OpenParams() {}
+    friend struct DgnDb;
+    private:
+        bool m_allowSchemaUpgrade;
 
-        BeSQLite::DbResult UpgradeSchema(DgnDbR) const;
-        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnDbProfileVersion& from) const;
+        bool GetAllowSchemaUpgrade() const { return m_allowSchemaUpgrade; }
+        BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
+
+    protected:
+        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgradeProfile(DgnDbR, DgnDbProfileVersion& from) const;
+
+    public:
+        //! Constructor
+        //! @param[in] openMode The mode for opening the database
+        //! @param[in] startDefaultTxn Whether to start a default transaction on the database
+        //! @param[in] allowSchemaUpgrade Pass true to allow upgrading the ECSchemas in the DgnDb with those 
+        //! supplied by the various DgnDomain-s. 
+        //! @remarks
+        //! <ul>
+        //! <li> On opening the DgnDb, the ECSchemas supplied by the various DgnDomain-s are always validated against 
+        //! the ECSchemas in the DgnDb. 
+        //! <li> By default, allowSchemaUpgrade is set to false when opening the DgnDb, and any validation error will cause the 
+        //! open to fail. An error status of BE_SQLITE_ERROR_SchemaUpgradeRequired would suggest that the ECSchemas
+        //! in the DgnDb need to be (and can be) upgraded. 
+        //! <li> If allowSchemaUpgrade is set to true, typically by a project administrator, the open will succeed even if the 
+        //! error status is BE_SQLITE_ERROR_SchemaUpgradeRequired. The project administrator would then need to upgrade 
+        //! the schemas, create and upload the resulting revisions.
+        //! </ul>
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, bool allowSchemaUpgrade = false) : Db::OpenParams(openMode, startDefaultTxn), m_allowSchemaUpgrade(allowSchemaUpgrade) {}
+
+        void SetAllowSchemaUpgrade(bool value) { m_allowSchemaUpgrade = value; }
+        virtual ~OpenParams() {}
     };
 
 private:
     void Destroy();
     BeSQLite::DbResult PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
-    DgnDbStatus DoImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8);
+    void SetupNewDgnDb(CreateDgnDbParams const& params);
 
 protected:
     friend struct Txns;
@@ -216,6 +243,26 @@ public:
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
     //! @note A DgnDb can have an expiration date. See Db::IsExpired
+    //! @note The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
+    //! an appropriate error status is returned if necessary. See table below for the various ECSchema compatibility errors, 
+    //! and @see OpenParams for setting the option to allow upgrade of the ECSchema-s. 
+    //! <pre>
+    //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
+    //! ----------------------------------------------------------------------------------------------
+    //! Application   |  Validation result                    | Validation result
+    //! Version       |  (Readonly)                           | (ReadWrite)
+    //! ----------------------------------------------------------------------------------------------
+    //! 2.2.2 (same)  | BE_SQLITE_OK                          | BE_SQLITE_OK
+    //! ----------------------------------------------------------------------------------------------
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew          | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                          | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
+    //! ----------------------------------------------------------------------------------------------
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaUpgradeRequired | BE_SQLITE_ERROR_SchemaUpgradeRequired
+    //! ----------------------------------------------------------------------------------------------
+    //! </pre>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
@@ -244,19 +291,12 @@ public:
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
-    //! Validates EC Schemas against the versions held in the DgnDb
-    //! @param[in] schemas Schemas to be validated.
-    //! @return BE_SQLITE_OK if all schemas are valid. Depending on the validation issue
-    //! returns one of the error states - BE_SQLITE_ERROR_SchemaIncompatible, 
-    //! BE_SQLITE_ERROR_SchemaUpgradeRequired or BE_SQLITE_ERROR_SchemaUpgradeRecommended
-    BeSQLite::DbResult ValidateSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
-
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 
-    //! @remarks Only used for cases where the schemas are NOT paired with a domain. @see DgnDomain::ImportSchema().
+    //! @remarks Only used for cases where the schemas are NOT paired with a domain.
     //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an eror happens during the import, the new transaction is abandoned in the call. 
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
     //! Inserts a new non-Navigation ECRelationship. 
     //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
@@ -372,7 +412,7 @@ public:
     BeSQLite::EC::ECSchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
 
     //! @private internal use only (v8 importer)
-    DGNPLATFORM_EXPORT DgnDbStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
 };
 
 END_BENTLEY_DGN_NAMESPACE

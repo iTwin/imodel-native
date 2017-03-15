@@ -697,8 +697,12 @@ void DgnModel::_OnUpdated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdate()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -871,8 +875,12 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
     if (DgnDbStatus::Success != stat)
@@ -1013,8 +1021,12 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     // Ensure db is not exclusively locked and code reserved
     return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
