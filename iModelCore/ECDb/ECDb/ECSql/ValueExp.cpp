@@ -844,17 +844,36 @@ void ParameterExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    if (!IsNamedParameter())
+    if (IsNamedParameter())
         {
-        ctx.AppendToECSql("?");
+        ctx.AppendToECSql(":[").AppendToECSql(m_parameterName).AppendToECSql("]");
+        if (ctx.GetMode() == Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter)
+            ctx.AddParameterIndexNameMapping(m_parameterIndex, m_parameterName, false);
+        }
+    else
+        {
+        switch (ctx.GetMode())
+            {
+                case ECSqlRenderContext::Mode::Default:
+                    ctx.AppendToECSql("?");
+                    break;
 
-        if (HasParentheses())
-            ctx.AppendToECSql(")");
+                case ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter:
+                {
+                Utf8String systemNamedParameter;
+                systemNamedParameter.Sprintf(ECSQLSYS_PARAM_FORMAT, m_parameterIndex);
+                ctx.AppendToECSql(":").AppendToECSql(systemNamedParameter);
 
-        return;
+                ctx.AddParameterIndexNameMapping(m_parameterIndex, systemNamedParameter, true);
+                break;
+                }
+                default:
+                    BeAssert(false && "ECSqlRenderContext::Mode enum has changed. This code needs to be adjusted");
+                    ctx.AppendToECSql("?");
+                    break;
+            }
         }
 
-    ctx.AppendToECSql(":[").AppendToECSql(m_parameterName).AppendToECSql("]");
     if (HasParentheses())
         ctx.AppendToECSql(")");
     }

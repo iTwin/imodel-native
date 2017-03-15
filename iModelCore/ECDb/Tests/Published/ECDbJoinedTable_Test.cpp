@@ -780,19 +780,19 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter"), ECSqlStatus::Success);
-    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooId]=:id_0", stmt.GetNativeSql());
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1", stmt.GetNativeSql());
     }
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id]=:id_0", stmt.GetNativeSql());
+    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1", stmt.GetNativeSql());
     }
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id"), ECSqlStatus::Success);
     Utf8String expectedSql;
-    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooId]=:id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
 	ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     }
@@ -801,7 +801,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = :id"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
-    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id]=:id_0 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id]=:id_col1 AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
     }
@@ -810,12 +810,12 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_0 AND [A]=:a_0)", stmt.GetNativeSql());
+    ASSERT_STREQ("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1)", stmt.GetNativeSql());
     }
     {
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a  ECSQLOPTIONS NoECClassIdFilter "), ECSqlStatus::Success);
-    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_0 AND [A]=:a_0)", stmt.GetNativeSql());
+    ASSERT_STREQ("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1)", stmt.GetNativeSql());
     }
 
     {
@@ -823,7 +823,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
     ASSERT_EQ(stmt.Prepare(db, "UPDATE dgn.Goo SET C= :c, D= :d WHERE ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
-    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_0,[D]=:d_0 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_0 AND [A]=:a_0) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+    expectedSql.Sprintf("UPDATE [dgn_Goo] SET [C]=:c_col1,[D]=:d_col1 WHERE [FooId] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
     }
@@ -832,7 +832,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, VerifyWhereClauseOptimization)
     ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE  ECInstanceId = :id AND A = :a"), ECSqlStatus::Success);
 
     Utf8String expectedSql;
-    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_0 AND [A]=:a_0) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
+    expectedSql.Sprintf("DELETE FROM [dgn_Foo] WHERE [Id] IN (SELECT [dgn_Foo].[Id] FROM [dgn_Foo] INNER JOIN [dgn_Goo] ON [dgn_Goo].[FooId]=[dgn_Foo].[Id] WHERE [FooId]=:id_col1 AND [A]=:a_col1) AND (ECClassId IN (SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=%s))",
                         gooClassId.ToString().c_str());
     ASSERT_STREQ(stmt.GetNativeSql(), expectedSql.c_str()) << stmt.GetECSql();
     }

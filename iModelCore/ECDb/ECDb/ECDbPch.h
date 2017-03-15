@@ -99,7 +99,6 @@
 #include "ECSql/NavigationPropertyECSqlField.h"
 
 #include "ECSql/ECSqlBinder.h"
-#include "ECSql/ECSqlBinderFactory.h"
 #include "ECSql/IdECSqlBinder.h"
 #include "ECSql/NavigationPropertyECSqlBinder.h"
 #include "ECSql/PointECSqlBinder.h"

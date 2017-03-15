@@ -18,12 +18,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct IdECSqlBinder final : public ECSqlBinder
     {
 private:
-    int m_sqliteIndex;
     bool m_isNoop;
 
-public:
-    void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
+    int GetSqlParamIndex() const 
+        { 
+        if (m_isNoop) 
+            return -1; 
+        
+        BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
+        return GetSqliteStatementR().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+        }
 
+public:
     ECSqlStatus _BindNull() override;
     ECSqlStatus _BindBoolean(bool value) override;
     ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
@@ -43,7 +49,7 @@ public:
     IECSqlBinder& _AddArrayElement() override;
 
     public:
-        IdECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&, bool isNoop);
+        IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);
         ~IdECSqlBinder() {}
     };
 

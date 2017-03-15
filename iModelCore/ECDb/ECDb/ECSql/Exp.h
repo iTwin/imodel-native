@@ -240,23 +240,35 @@ struct Exp : NonCopyableClass
                 enum class Mode
                     {
                     Default = 0,
-                    ReplaceUnnamedParameterBySystemNamedParameter = 1
+                    GenerateNameForUnnamedParameter = 1
                     };
 
             private:
-                Utf8String m_ecsqlBuilder;
                 Mode m_mode;
+                bmap<int, bpair<Utf8String, bool>> m_parameterIndexNameMap;
+
+                Utf8String m_ecsqlBuilder;
 
             public:
                 explicit ECSqlRenderContext(Mode mode = Mode::Default) : m_mode(mode) {}
 
                 Mode GetMode() const { return m_mode; }
-
+                bmap<int, bpair<Utf8String, bool>>& GetParameterIndexNameMap() { BeAssert(m_mode == Mode::GenerateNameForUnnamedParameter); return m_parameterIndexNameMap; }
                 ECSqlRenderContext& AppendToECSql(Utf8StringCR str) { m_ecsqlBuilder.append(str); return *this; }
                 ECSqlRenderContext& AppendToECSql(Utf8CP str) { m_ecsqlBuilder.append(str);  return *this; }
                 ECSqlRenderContext& AppendToECSql(Exp const& exp) { exp.ToECSql(*this);  return *this; }
 
+                void AddParameterIndexNameMapping(int index, Utf8StringCR name, bool isSystemName)
+                    {
+                    auto it = m_parameterIndexNameMap.find(index);
+                    BeAssert(it == m_parameterIndexNameMap.end() || (it->second.first.Equals(name) && it->second.second == isSystemName));
+
+                    if (it == m_parameterIndexNameMap.end())
+                        m_parameterIndexNameMap[index] = bpair<Utf8String, bool>(name, isSystemName);
+                    }
+
                 Utf8StringCR GetECSql() const { return m_ecsqlBuilder; }
+                void ResetECSqlBuilder() { m_ecsqlBuilder.clear(); }
             };
 
     protected:

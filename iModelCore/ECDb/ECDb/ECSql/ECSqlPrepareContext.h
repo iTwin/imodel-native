@@ -194,19 +194,21 @@ struct ECSqlPrepareContext
 
     private:
         ECDbCR m_ecdb;
-        ECCrudWriteToken const* m_writeToken;
+        ECCrudWriteToken const* m_writeToken = nullptr;
 
         ECSqlStatementBase& m_ecsqlStatement;
-        ECSqlPrepareContext const* m_parentCtx;
-        ECN::ArrayECPropertyCP m_parentArrayProperty;
-        ECSqlColumnInfo const* m_parentColumnInfo;
+        ECSqlPrepareContext const* m_parentCtx = nullptr;
+        ECN::ArrayECPropertyCP m_parentArrayProperty = nullptr;
+        ECSqlColumnInfo const* m_parentColumnInfo = nullptr;
         NativeSqlBuilder m_nativeSqlBuilder;
-        bool m_nativeStatementIsNoop;
+        bool m_nativeStatementIsNoop = false;
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
         std::unique_ptr<JoinedTableInfo> m_joinedTableInfo;
         ECN::ECClassId m_joinedTableClassId;
-        int m_nextParamterIndex;
+
+        int m_nextSystemSqlParameterNameSuffix = 0;
+
     public:
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECCrudWriteToken const*);
         ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId, ECCrudWriteToken const*);
@@ -243,7 +245,7 @@ struct ECSqlPrepareContext
         bool IsEmbeddedStatement() const { return m_parentCtx != nullptr; }
         bool IsPrimaryStatement() const { return !IsEmbeddedStatement(); }
 
-        int NextParameterIndex();
+        int IncrementSystemSqlParameterSuffix() { m_nextSystemSqlParameterNameSuffix++; return m_nextSystemSqlParameterNameSuffix; }
     };
 
 

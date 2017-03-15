@@ -15,8 +15,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ArrayECSqlBinder::ArrayECSqlBinder(ECSqlStatementBase& stmt, ECSqlTypeInfo const& typeInfo)
-    : ECSqlBinder(stmt, typeInfo, 1, true, true)
+ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true)
     {
     BeAssert(GetTypeInfo().IsArray());
     Initialize();
@@ -41,21 +41,26 @@ void ArrayECSqlBinder::Initialize()
 ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
     {
     const uint32_t arrayLength = m_json.IsNull() ? 0 : (uint32_t) m_json.Size();
-    ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), arrayLength);
+    const ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), arrayLength);
     if (!stat.IsSuccess())
         return stat;
 
     if (arrayLength == 0)
         return ECSqlStatus::Success;
 
-    PrimitiveECSqlBinder jsonBinder(GetECSqlStatementR(), ECSqlTypeInfo(PRIMITIVETYPE_String));
-    jsonBinder.SetSqliteIndex(m_sqliteIndex);
-
     BeAssert(m_json.IsArray());
     rapidjson::StringBuffer jsonStr;
     rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
     m_json.Accept(writer);
-    return jsonBinder.BindText(jsonStr.GetString(), IECSqlBinder::MakeCopy::Yes);
+
+    Statement& sqliteStmt = GetSqliteStatementR();
+    BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
+    const int sqlParamIx = sqliteStmt.GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+    const DbResult dbRes = sqliteStmt.BindText(sqlParamIx, jsonStr.GetString(), Statement::MakeCopy::Yes);
+    if (BE_SQLITE_OK == dbRes)
+        return ECSqlStatus::Success;
+
+    return ECSqlStatus(dbRes);
     }
 
 

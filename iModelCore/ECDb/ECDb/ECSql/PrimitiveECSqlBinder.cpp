@@ -10,13 +10,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-void PrimitiveECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
-    {
-    m_sqliteIndex = (int) sqliteIndex;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
@@ -34,7 +27,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindNull()
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindNull(m_sqliteIndex);
+    const DbResult sqliteStat = GetSqliteStatementR().BindNull(GetSqlParameterIndex());
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull");
 
@@ -61,7 +54,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBoolean(bool value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value ? 1 : 0);
+    const auto sqliteStat = GetSqliteStatementR().BindInt(GetSqlParameterIndex(), value ? 1 : 0);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBoolean");
 
@@ -88,7 +81,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBlob(const void* value, int binarySize, I
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindBlob(m_sqliteIndex, value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
+    const auto sqliteStat = GetSqliteStatementR().BindBlob(GetSqlParameterIndex(), value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBlob");
 
@@ -115,7 +108,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindZeroBlob(int blobSize)
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindZeroBlob(m_sqliteIndex, blobSize);
+    const DbResult sqliteStat = GetSqliteStatementR().BindZeroBlob(GetSqlParameterIndex(), blobSize);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindZeroBlob");
 
@@ -152,7 +145,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info
         LOG.error("Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
         return ECSqlStatus::Error;
         }
-    
+
     std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
     if (ehs != nullptr)
         {
@@ -164,7 +157,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindDouble(m_sqliteIndex, julianDay);
+    const DbResult sqliteStat = GetSqliteStatementR().BindDouble(GetSqlParameterIndex(), julianDay);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDateTime");
 
@@ -192,7 +185,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDouble(double value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindDouble(m_sqliteIndex, value);
+    const auto sqliteStat = GetSqliteStatementR().BindDouble(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDouble");
 
@@ -219,7 +212,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt(int value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindInt(m_sqliteIndex, value);
+    const auto sqliteStat = GetSqliteStatementR().BindInt(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt");
 
@@ -246,7 +239,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt64(int64_t value)
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR ().BindInt64(m_sqliteIndex, value);
+    const DbResult sqliteStat = GetSqliteStatementR().BindInt64(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
 
@@ -273,7 +266,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR ().BindText(m_sqliteIndex, value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
+    const auto sqliteStat = GetSqliteStatementR().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
 
@@ -338,25 +331,25 @@ ECSqlStatus PrimitiveECSqlBinder::CanBind(ECN::PrimitiveType requestedType) cons
     switch (fieldDataType)
         {
             case PRIMITIVETYPE_DateTime:
+            {
+            if (requestedType != fieldDataType)
                 {
-                if (requestedType != fieldDataType)
-                    {
-                    LOG.error("Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
-                    return ECSqlStatus::Error;
-                    }
-                else
-                    break;
+                LOG.error("Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
+                return ECSqlStatus::Error;
                 }
+            else
+                break;
+            }
             case PRIMITIVETYPE_IGeometry:
+            {
+            if (requestedType != PRIMITIVETYPE_IGeometry && requestedType != PRIMITIVETYPE_Binary)
                 {
-                if (requestedType != PRIMITIVETYPE_IGeometry && requestedType != PRIMITIVETYPE_Binary)
-                    {
-                    LOG.error("Type mismatch: only BindGeometry or BindBlob can be called for a column of the IGeometry type.");
-                    return ECSqlStatus::Error;
-                    }
-                else
-                    break;
+                LOG.error("Type mismatch: only BindGeometry or BindBlob can be called for a column of the IGeometry type.");
+                return ECSqlStatus::Error;
                 }
+            else
+                break;
+            }
 
             default:
                 break;
@@ -365,25 +358,25 @@ ECSqlStatus PrimitiveECSqlBinder::CanBind(ECN::PrimitiveType requestedType) cons
     switch (requestedType)
         {
             case PRIMITIVETYPE_DateTime:
+            {
+            if (requestedType != fieldDataType)
                 {
-                if (requestedType != fieldDataType)
-                    {
-                    LOG.error("Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
-                    return ECSqlStatus::Error;
-                    }
-                else
-                    break;
+                LOG.error("Type mismatch: BindDateTime cannot be called for a column which is not of the DateTime type.");
+                return ECSqlStatus::Error;
                 }
+            else
+                break;
+            }
             case PRIMITIVETYPE_IGeometry:
+            {
+            if (requestedType != fieldDataType)
                 {
-                if (requestedType != fieldDataType)
-                    {
-                    LOG.error("Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
-                    return ECSqlStatus::Error;
-                    }
-                else
-                    break;
+                LOG.error("Type mismatch: BindGeometry cannot be called for a column which is not of the IGeometry type.");
+                return ECSqlStatus::Error;
                 }
+            else
+                break;
+            }
             default:
                 break;
         }

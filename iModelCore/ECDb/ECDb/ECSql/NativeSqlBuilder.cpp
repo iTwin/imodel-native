@@ -19,10 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder const& rhs)
     {
     if (this != &rhs)
-        {
         m_nativeSql = rhs.m_nativeSql;
-        m_parameterIndexMappings = rhs.m_parameterIndexMappings;
-        }
 
     return *this;
     }
@@ -34,24 +31,11 @@ NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder const& rhs)
 NativeSqlBuilder& NativeSqlBuilder::operator= (NativeSqlBuilder&& rhs)
     {
     if (this != &rhs)
-        {
         m_nativeSql = std::move(rhs.m_nativeSql);
-        m_parameterIndexMappings = std::move(rhs.m_parameterIndexMappings);
-        }
 
     return *this;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    08/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::CopyParameters(NativeSqlBuilder const& sqlBuilder)
-    {
-    if (this != &sqlBuilder)
-        m_parameterIndexMappings = sqlBuilder.m_parameterIndexMappings;
-
-    return *this;
-    }
 
 
 //-----------------------------------------------------------------------------------------
@@ -66,13 +50,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append(ECN::ECClassId id)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::Append(NativeSqlBuilder const& builder)
-    {
-    if (!builder.m_parameterIndexMappings.empty())
-        m_parameterIndexMappings.insert(m_parameterIndexMappings.end(), builder.m_parameterIndexMappings.begin(), builder.m_parameterIndexMappings.end());
-
-    return Append(builder.ToString());
-    }
+NativeSqlBuilder& NativeSqlBuilder::Append(NativeSqlBuilder const& builder) { return Append(builder.ToString()); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
@@ -218,38 +196,6 @@ Utf8String NativeSqlBuilder::Pop()
     m_nativeSql = m_stack.back();
     m_stack.pop_back();
     return r;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex)
-    {
-    if (!ecsqlParameterName.empty())
-        {
-        Append(":").Append(ecsqlParameterName.c_str(), false);
-
-        Utf8String nativeSqlParameterName;
-        nativeSqlParameterName.Sprintf("_%d", ecsqlParameterComponentIndex);
-        Append(nativeSqlParameterName.c_str());
-        }
-    else
-        {
-        //internal naming scheme for unnamed ECSQL parameters
-        AppendFormatted(":_ecdbparam%d", globalIndex);
-        }
-
-    return *this;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8StringCR ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex)
-    {
-    AppendParameter(ecsqlParameterName, ecsqlParameterComponentIndex, globalIndex);
-    m_parameterIndexMappings.push_back(ECSqlParameterIndex(ecsqlParameterIndex, ecsqlParameterComponentIndex, globalIndex));
-    return *this;
     }
 
 //-----------------------------------------------------------------------------------------

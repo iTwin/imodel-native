@@ -145,9 +145,6 @@
     <ClInclude Include="ECSql\ECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\ECSqlBinderFactory.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\PointECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
@@ -503,9 +500,6 @@
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\ECSqlBinderFactory.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\PointECSqlBinder.cpp">

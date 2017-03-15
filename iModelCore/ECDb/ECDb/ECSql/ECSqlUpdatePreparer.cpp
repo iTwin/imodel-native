@@ -142,7 +142,6 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 
                 //topLevelWhereClause.GetParameterIndexMappings()
                 topLevelWhereClause = snippet;
-                topLevelWhereClause.CopyIndexMappingFrom(whereClause);
                 }
             }
         else

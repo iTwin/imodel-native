@@ -474,14 +474,12 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     public:
         PropertyNameExp const* m_propNameExp = nullptr;
         ValueExp const* m_valueExp = nullptr;
-        std::vector<ParameterExp const*> m_containedParameterExps;
 
         PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp) {}
         };
 
     std::map<DbTable const*, std::vector<PropNameValueInfo>> expsByMappedTable;
-    std::vector<ParameterExp const*> parameterExpListOrderedbyIndex;
-    bmap<int, bset<DbTable const*>> parameterIndexInTables;
+    std::vector<std::set<DbTable const*>> parameterIndexInTables;
 
     for (size_t i = 0; i < propNameCount; i++)
         {
@@ -508,12 +506,21 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
-            propNameValueInfo.m_containedParameterExps.push_back(&paramExp);
-            parameterIndexInTables[paramExp.GetParameterIndex()].insert(table);
+            const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
+            if (zeroBasedParameterIndex == parameterIndexInTables.size())
+                parameterIndexInTables.push_back(std::set<DbTable const*> {table});
+            else if (zeroBasedParameterIndex < parameterIndexInTables.size())
+                parameterIndexInTables[zeroBasedParameterIndex].insert(table);
+            else
+                {
+                BeAssert(false);
+                }
             }
 
         expsByMappedTable[table].push_back(propNameValueInfo);
         }
+
+    Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
     bool isPrimaryTable = true;
     for (DbTable const* table : classMap.GetTables())
@@ -532,7 +539,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             //if user didn't specify ECInstanceId in the ECSQL or if this is a secondary table ECSQL
             //we have to add the ECInstanceId ourselves to the ECSQL
             propNameECSqlClause.append(ECDBSYS_PROP_ECInstanceId);
-            valuesECSqlClause.append(":_ecdb_ecsqlparam_id");
+            valuesECSqlClause.append(":" ECSQLSYS_PARAM_Id);
             isFirstToken = false;
             }
 
@@ -546,20 +553,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
             propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
 
-            Utf8String valueECSqlToken = propNameValueInfo.m_valueExp->ToECSql();
-
-            if (propNameValueInfo.m_containedParameterExps.empty())
-                valuesECSqlClause.append(propNameValueInfo.m_valueExp->ToECSql());
-            else
-                {
-                //for (ParameterExp const* paramExp : propNameValueInfo.m_containedParameterExps)
-                //    {
-
-                 //   }
-                }
-
-            valuesECSqlClause.append(valueECSqlToken);
-
+            propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
+            valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
+            ecsqlRenderCtx.ResetECSqlBuilder();
             isFirstToken = false;
             }
 
@@ -580,6 +576,10 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         isPrimaryTable = false;
         }
 
+    for (size_t zeroBasedParameterIndex = 0; zeroBasedParameterIndex < parameterIndexInTables.size(); zeroBasedParameterIndex++)
+        {
+
+        }
     return ECSqlStatus::Success;
     }
 

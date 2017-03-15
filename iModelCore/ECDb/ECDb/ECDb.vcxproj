@@ -65,7 +65,6 @@
     <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp" />
     <ClCompile Include="ECSql\ECSqlField.cpp" />
     <ClCompile Include="ECSql\ECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\ECSqlBinderFactory.cpp" />
     <ClCompile Include="ECSql\ECSqlParser.cpp" />
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
@@ -175,7 +174,6 @@
     <ClInclude Include="ECSql\ComputedExp.h" />
     <ClInclude Include="ECSql\DynamicSelectClauseECClass.h" />
     <ClInclude Include="ECSql\ECSqlFieldFactory.h" />
-    <ClInclude Include="ECSql\ECSqlBinderFactory.h" />
     <ClInclude Include="ECSql\ECSqlParser.h" />
     <ClInclude Include="ECSql\ECSqlPrepareContext.h" />
     <ClInclude Include="ECSql\ECSqlPreparer.h" />

@@ -98,7 +98,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \
                 $(baseDir)ECSql/ECSqlStatementNoopImpls.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
-                $(baseDir)ECSql/ECSqlBinderFactory.h \
                 $(baseDir)ECSql/PrimitiveECSqlBinder.h \
                 $(baseDir)ECSql/PointECSqlBinder.h \
                 $(baseDir)ECSql/StructECSqlBinder.h \
@@ -312,8 +311,6 @@ $(o)JsonUpdater$(oext):                                       $(baseDir)ECSql/Js
 $(o)ECSqlStatementNoopImpls$(oext):                           $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlBinder$(oext):                                       $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlBinderFactory$(oext):                                $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveECSqlBinder$(oext):                              $(baseDir)ECSql/PrimitiveECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 

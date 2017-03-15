@@ -18,11 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PrimitiveECSqlBinder final : public ECSqlBinder
     {
 private:
-    int m_sqliteIndex;
-
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
-
-    void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
 
     ECSqlStatus _BindNull() override;
     ECSqlStatus _BindBoolean(bool value) override;
@@ -42,10 +38,15 @@ private:
 
     IECSqlBinder& _AddArrayElement() override;
 
-public:
-    PrimitiveECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
-        : ECSqlBinder(ecsqlStatement, typeInfo, 1, false, false), m_sqliteIndex(-1) {}
+    int GetSqlParameterIndex() const 
+        { 
+        BeAssert(GetMappedSqlParameterNames().size() == 1); 
+        BeAssert(!GetMappedSqlParameterNames()[0].empty());
+        return GetSqliteStatementR().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+        }
 
+public:
+    PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false) {}
     ~PrimitiveECSqlBinder() {}
     };
 
