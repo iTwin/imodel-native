@@ -56,6 +56,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_SCHEMA_NAME                             "RoadRailPhysical"
 #define BRRP_SCHEMA_FILE                             L"RoadRailPhysical.01.00.00.ecschema.xml"
 #define BRRP_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
+#define BRRP_SCHEMA_PATH                             BRRP_SCHEMA_LOCATION BRRP_SCHEMA_FILE
 #define BRRP_SCHEMA(name)                            BRRP_SCHEMA_NAME "." name
 #define BRRP_SCHEMA_CODE(name)                       BRRP_SCHEMA_NAME "_" name
 
