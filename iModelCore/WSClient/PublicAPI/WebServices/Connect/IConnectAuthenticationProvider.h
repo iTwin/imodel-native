@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectAuthenticationProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationProvider
         //! Get authentication handler for specific service server
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
-        virtual AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) = 0;
+        virtual AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) const = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
