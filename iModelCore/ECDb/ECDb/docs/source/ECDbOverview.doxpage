@@ -348,7 +348,8 @@
     - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
     If the custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
-    <b>Cardinality is not enforced either in that case.</b>
+
+    @note This does not affect how ECDb enforces cardinality.
 
     #### Rule
 
