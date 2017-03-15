@@ -68,21 +68,13 @@ struct GenericDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(GenericDomain, DGNPLATFORM_EXPORT)
 
-protected:
+private:
+    WCharCP _GetSchemaRelativePath() const override { return GENERIC_DOMAIN_ECSCHEMA_PATH; }
     void _OnSchemaImported(DgnDbR) const override;
 
 public:
     GenericDomain();
     ~GenericDomain();
-
-    //! Validate the ECSchema for the GenericDomain against the specified DgnDb
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult ValidateSchema(DgnDbR);
-
-    //! Import the ECSchema for the GenericDomain into the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
-
-    //! Upgrade the ECSchema for the GenericDomain in the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus UpgradeSchema(DgnDbR);
 };
 
 //=======================================================================================

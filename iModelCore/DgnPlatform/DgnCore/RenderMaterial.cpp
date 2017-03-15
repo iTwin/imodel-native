@@ -119,56 +119,42 @@ RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const
 //---------------------------------------------------------------------------------------
 Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
     {
+    Transform   uvTransform = Transform::FromIdentity();
+    DPoint2d    scale = GetScale();
+    DPoint2d    offset = GetOffset();
+    bool        xFlip = GetBool(RENDER_MATERIAL_PatternFlipU, false);
+    bool        yFlip = GetBool(RENDER_MATERIAL_PatternFlipV, false);
+    double      angleRadians= Angle::DegreesToRadians(GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
+    static double  MIN_MapScale = 1.0E-6;
+
+
+    if (scale.x > MIN_MapScale)
+        uvTransform.ScaleMatrixColumns (((xFlip ? -1.0 : 1.0) / scale.x), 1.0, 1.0);
+
+    if (scale.y > MIN_MapScale)
+        uvTransform.ScaleMatrixColumns (1.0, ((yFlip ? -1.0 : 1.0) / scale.y), 1.0);
+
+    if (0.0 != angleRadians)
+        {
+        RotMatrix rotateMatrix;
+        rotateMatrix.InitFromAxisAndRotationAngle (2, angleRadians);
+        uvTransform.InitProduct (uvTransform, rotateMatrix);
+        }
+
+    if (Render::Material::MapMode::ElevationDrape == GetMode())
+        uvTransform.TranslateInLocalCoordinates (uvTransform, -offset.x, -offset.y, 0.0);
+    else
+        uvTransform.SetTranslation (DPoint3d::FromXYZ (offset.x, -offset.y, 0.0));
+
     Render::Material::Trans2x3 trans;
 
     for (size_t i=0; i<2; i++)
-        {
-        for (size_t j=0; j<3; j++)
-            trans.m_val[i][j] = (i==j) ? 1.0 : 0.0;
-        }
-    
-    double angleRadians= Angle::DegreesToRadians(GetDouble(RENDER_MATERIAL_PatternAngle, 0.0));
-    double cosAngle = cos(angleRadians);
-    double sinAngle = sin(angleRadians);
-    bool xFlip = GetBool(RENDER_MATERIAL_PatternFlipU, false);
-    bool yFlip = GetBool(RENDER_MATERIAL_PatternFlipV, false);
-    DPoint2d scale = GetScale();
-    DPoint2d offset = GetOffset();
-    static double s_minScale = 1.0E-10;
- 
-    Units units = GetUnits();
-    if (Units::Relative != units)
-        scale.Scale(GetUnitScale(units));
+        for (size_t j=0; j<2; j++)
+            trans.m_val[i][j] = uvTransform.form3d[i][j];
 
-    scale.x = std::max(scale.x, s_minScale);
-    scale.y = std::max(scale.y, s_minScale);
 
-    if (xFlip)
-        scale.x = -scale.x;
-
-    if (yFlip)
-        scale.y = -scale.y;
-
-    if (Render::Material::MapMode::ElevationDrape == GetMode())
-        {
-        trans.m_val[0][0] = cosAngle / scale.x;
-        trans.m_val[0][1] = sinAngle / scale.x;
-        trans.m_val[0][2] = -(offset.x * trans.m_val[0][0] + offset.y * trans.m_val[0][1]);
-
-        trans.m_val[1][0] = sinAngle / scale.y;
-        trans.m_val[1][1] = -cosAngle / scale.y;
-        trans.m_val[1][2] = 1.0 - (offset.x * trans.m_val[1][0] + offset.y * trans.m_val[1][1]);
-        }
-    else
-        {
-        trans.m_val[0][0] = cosAngle / scale.x;
-        trans.m_val[0][1] = sinAngle / scale.x;
-        trans.m_val[0][2] = offset.x;
-
-        trans.m_val[1][0] =  sinAngle / scale.y;
-        trans.m_val[1][1] = -cosAngle / scale.y;
-        trans.m_val[1][2] = offset.y;
-        }
+    trans.m_val[0][2] = uvTransform.form3d[0][3];
+    trans.m_val[1][2] = uvTransform.form3d[1][3];
 
     return trans;
     }
@@ -299,12 +285,15 @@ static void computePlanarUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
-static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform)
+static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, TransformCP transformToDgn)
     {
     for (size_t i = 0, count = visitor.NumEdgesThisFace(); i<count; i++)
         {
         DPoint3d    point        = *(visitor.GetPointCP() + i);
         DPoint2dP   outParam    = params + i;
+
+        if (nullptr != transformToDgn)
+            transformToDgn->Multiply(point);
 
         outParam->Init (point);
         uvTransform.Multiply (*outParam, *outParam);
@@ -315,7 +304,7 @@ static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR v
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const
+BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
     {
     Transform           uvTransform = GetTransform().GetTransform();
 
@@ -344,7 +333,7 @@ BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& pa
             }
 
         case Render::Material::MapMode::ElevationDrape:
-            computeElevationDrapeUVParams (&params[0], visitor, uvTransform);
+            computeElevationDrapeUVParams (&params[0], visitor, uvTransform, transformToDgn);
             return SUCCESS;
 
 #ifdef WIP

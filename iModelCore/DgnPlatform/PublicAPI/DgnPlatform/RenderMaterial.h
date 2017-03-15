@@ -102,7 +102,7 @@ public:
         double GetDouble(Utf8CP name, double defaultVal) const {return (m_value[name].isDouble() || m_value[name].isInt()) ? m_value[name].asDouble() : defaultVal;}
         bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
         Json::Value const& GetValue() const {return m_value;}
-        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const;
+        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
         TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
     }; // TextureMap
 

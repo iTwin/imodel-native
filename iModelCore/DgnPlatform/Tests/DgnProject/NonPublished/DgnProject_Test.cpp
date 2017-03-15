@@ -588,7 +588,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    return (DgnDbStatus::Success == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
+    return (BE_SQLITE_OK == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,7 +712,7 @@ struct ElementUriTests : ::testing::Test
     ElementUriTests()
         {
         // Must register my domain whenever I initialize a host
-        DgnPlatformTestDomain::Register();
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
         }
 
     CodeSpec& GetTestCodeSpec(DgnDbR db)
@@ -991,6 +991,6 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(DgnDbStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }
