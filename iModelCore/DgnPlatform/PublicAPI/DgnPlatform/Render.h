@@ -1614,43 +1614,55 @@ struct HiddenLineParams
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
+struct Light
+{
+    double m_intensity = 0.0; //!< lumens/square meter
+    ColorDef m_color = ColorDef::White();
+    bool IsEnabled() const {return m_intensity>0.0;}
+    Json::Value ToJson() const;
+    void FromJson(JsonValueCR val);
+};
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct DirectionalLight : Light
+{
+    DEFINE_T_SUPER(Light)
+    DVec3d m_direction = DVec3d::From(0.0,0.0,0.0);
+    Json::Value ToJson() const;
+    void FromJson(JsonValueCR val);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
 struct SceneLights
 {
-    struct Solar
-    {
-        bool m_enabled = false;
-        double m_intensity = 0.0;
-        DVec3d m_direction = DVec3d::From(0.0,0.0,0.0);
-        bool IsEnabled() const {return m_enabled;}
-        Json::Value ToJson() const;
-        void FromJson(JsonValueCR val);
-    };
-
     struct Brightness
     {
-        double m_avgLum = 0.0;
+        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
         double m_maxLum = 0.0;
-        double m_fstop = 0.0;
+        double m_fstop = 0.0; //!< must be between -3 and +3
         bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
         Json::Value ToJson() const;
         void FromJson(JsonValueCR val);
     };
 
-    double m_ambient = 0.0;     //!< 0 - 1.0
-    double m_flash = 0.0;
-    double m_portraitLeft = 0.0;
-    double m_portraitRight = 0.0;
+    Light m_ambient; //!< ambient light
+    Light m_flash; //!< flash bulb at camera
+    Light m_portraitLeft; //!< over the left sholder
+    Light m_portraitRight; //!< over the right sholder
+    DirectionalLight m_sun;
     Brightness m_brightness;
-    Solar m_sun;
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static SceneLights FromJson(JsonValueCR val);
-    bool IsValid() const {return m_ambient!=0.0 || m_flash!=0.0 || m_portraitLeft!=0.0 || m_portraitRight!=0.0;}
+    bool IsValid() const {return m_ambient.IsEnabled() || m_flash.IsEnabled() || m_portraitLeft.IsEnabled() || m_portraitRight.IsEnabled();}
 };
 
 //=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
-//! the current Render::Scene into a Render::Target.
+//! a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Plan

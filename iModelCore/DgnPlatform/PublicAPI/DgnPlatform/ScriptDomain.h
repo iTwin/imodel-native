@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ScriptDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -166,22 +166,16 @@ struct ScriptDefinitionElementHandler : dgn_ElementHandler::Definition
 // @bsiclass                                                    Sam.Wilson      07/2016
 //=======================================================================================
 struct ScriptDomain : DgnDomain
-    {
+{
     DOMAIN_DECLARE_MEMBERS(ScriptDomain, DGNPLATFORM_EXPORT)
 
-        ScriptDomain() : DgnDomain(SCRIPT_DOMAIN_NAME, "Script Domain", 1)
-            {
-            ScriptDefinitionElementHandler::Register(*this);
-            }
+    ScriptDomain() : DgnDomain(SCRIPT_DOMAIN_NAME, "Script Domain", 1)
+        {
+        ScriptDefinitionElementHandler::Register(*this);
+        }
 
-    public:
-        static void Register()
-            {
-            DgnDomains::RegisterDomain(GetDomain());
-            }
-
-        //! Import the ECSchema for the ScriptDomain into the specified DgnDb
-        DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
-    };
+private:
+    WCharCP _GetSchemaRelativePath() const override { return SCRIPT_DOMAIN_ECSCHEMA_PATH; }
+};
 
 END_BENTLEY_DGN_NAMESPACE

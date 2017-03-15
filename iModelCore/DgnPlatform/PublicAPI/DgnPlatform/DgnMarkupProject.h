@@ -89,6 +89,9 @@ enum DgnMarkupProjectSchemaValues
 struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+
+    private:
+        WCharCP _GetSchemaRelativePath() const override { return MARKUP_SCHEMA_PATH; }
         void _OnDgnDbOpened(DgnDbR) const override;
         void _OnSchemaImported(DgnDbR) const override;
     public:
@@ -378,8 +381,6 @@ private:
     DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
     BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
-
-    DgnDbStatus ImportMarkupSchema();
 
 public:
     BentleyStatus CheckIsOpen();

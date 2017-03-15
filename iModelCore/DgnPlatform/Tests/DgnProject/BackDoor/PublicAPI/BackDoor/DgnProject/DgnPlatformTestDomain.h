@@ -622,10 +622,7 @@ struct DgnPlatformTestDomain : Dgn::DgnDomain
 private:
     DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
     DgnPlatformTestDomain();
-
-public:
-    static Dgn::DgnDbStatus Register();
-    static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
     };
 
 END_BENTLEY_DPTEST_NAMESPACE
