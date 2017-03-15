@@ -73,7 +73,10 @@ void RealityDataConsole::InterpretCommand()
             m_lastCommand = Command::ChoiceValue;
         else if (args[0].ContainsI("cd"))
             m_lastCommand = Command::ChangeDir;
-        
+        else if (args[0].ContainsI("FileAccess"))
+            m_lastCommand = Command::FileAccess;
+        else if (args[0].ContainsI("AzureAdress"))
+            m_lastCommand = Command::AzureAdress;
         if(m_lastCommand != Command::Error)
             {
             if (args.size() > 1)
@@ -104,6 +107,8 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
     m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
+    m_functionMap.Insert(Command::FileAccess, &RealityDataConsole::FileAccess);
+    m_functionMap.Insert(Command::AzureAdress, &RealityDataConsole::AzureAdress);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
@@ -661,6 +666,50 @@ void RealityDataConsole::Details()
         DisplayInfo (Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
         }
     }
+
+void RealityDataConsole::FileAccess()
+    {
+    AzureHandshake* handshake;
+    if(m_lastInput.ContainsI("w"))
+        handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
+    else
+        handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
+    DisplayInfo(Utf8PrintfString("%s\n", handshake->GetHttpRequestString()));
+    delete handshake;
+    }
+
+void RealityDataConsole::AzureAdress()
+{
+    AzureHandshake* handshake;
+    if (m_lastInput.ContainsI("w"))
+        handshake = new AzureHandshake(m_currentNode->node.GetRootId(), true);
+    else
+        handshake = new AzureHandshake(m_currentNode->node.GetRootId(), false);
+
+    RequestStatus status;
+    RealityDataByIdRequest idReq = RealityDataByIdRequest(m_currentNode->node.GetRootId());
+    RealityDataPtr entity = RealityDataService::Request(idReq, status);
+
+    if (entity == nullptr)
+        {
+        DisplayInfo("There was an error retrieving information for this item\n", DisplayOption::Error);
+        return;
+        }
+
+    RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
+    Utf8String azureServer;
+    Utf8String azureToken;
+    int64_t tokenTimer;
+    BentleyStatus handshakeStatus = handshake->ParseResponse(azureServer, azureToken, tokenTimer);
+    delete handshake;
+    if (handshakeStatus != BentleyStatus::SUCCESS)
+        {
+        DisplayInfo("Failure retrieving Azure adress\n", DisplayOption::Error);
+        return;
+        }
+    else
+        DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, entity->GetRootDocument(), azureToken));
+}
 
 void RealityDataConsole::InputError()
     {

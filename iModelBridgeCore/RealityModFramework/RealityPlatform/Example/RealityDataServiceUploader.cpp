@@ -25,7 +25,7 @@ static void progressFunc(Utf8String filename, double fileProgress, double repoPr
 /*static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if(ErrorCode > 0)
-        std::cout << Utf8PrintfString("Curl error code : %d /n %s", ErrorCode, pMsg);
+        std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg);
     else
         std::cout << pMsg;
     }*/

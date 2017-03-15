@@ -253,7 +253,7 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
         data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
 
     // RootDocument
-    if (properties.isMember("RootDocument") && !properties["Description"].isNull())
+    if (properties.isMember("RootDocument") && !properties["RootDocument"].isNull())
         data->SetRootDocument(Utf8CP(properties["RootDocument"].asString().c_str()));
 
     // DataType
@@ -279,7 +279,7 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
-        data->SetVisibilityByTag(Utf8CP(properties["PublicAccess"].asString().c_str()));
+        data->SetVisibilityByTag(Utf8CP(properties["Visibility"].asString().c_str()));
 
     // Listable
     if (properties.isMember("Listable") && !properties["Listable"].isNull())
@@ -414,7 +414,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
-        data->SetVisibilityByTag(Utf8CP(properties["PublicAccess"].asString().c_str()));
+        data->SetVisibilityByTag(Utf8CP(properties["Visibility"].asString().c_str()));
 
     // Date
     if (properties.isMember("Date") && !properties["Date"].isNull())
@@ -509,7 +509,7 @@ SpatialEntityDataSourcePtr RealityConversionTools::JsonToSpatialEntityDataSource
 
     // No Data Value
     if (properties.isMember("NoDataValue") && !properties["NoDataValue"].isNull())
-        data->SetNoDataValue(Utf8CP(properties["SisterFiles"].asString().c_str()));
+        data->SetNoDataValue(Utf8CP(properties["NoDataValue"].asString().c_str()));
 
     // File Size
     if (properties.isMember("FileSize") && !properties["FileSize"].isNull())
