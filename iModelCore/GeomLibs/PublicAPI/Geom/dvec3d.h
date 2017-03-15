@@ -1205,10 +1205,7 @@ bool AlmostEqual (DVec3d const & dataB) const;
 
 //flex|| all zeros || vector.IsZero () ||
 //! @description checks if the vector has all zeros
-bool      IsZero ();
-
-
-
+bool IsZero() const {return x == 0.0 && y == 0.0 && z == 0.0;}
 
 #endif
 };
