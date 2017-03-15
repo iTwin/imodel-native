@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloud/PointCloudDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,10 @@ BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 struct PointCloudDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(PointCloudDomain, POINTCLOUD_EXPORT)
-
     static  void        InitializeApi();
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/Domain/" POINTCLOUD_SCHEMA_FILE; }
 
 protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;

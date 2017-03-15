@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -34,4 +34,3 @@ RasterDomain::RasterDomain() : DgnDomain(RASTER_SCHEMA_NAME, "Raster Domain", 1)
 void RasterDomain::_OnSchemaImported(DgnDbR db) const
     {
     }
-
