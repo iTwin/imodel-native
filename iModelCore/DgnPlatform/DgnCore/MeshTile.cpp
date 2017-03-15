@@ -828,7 +828,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
         if (patternMap.IsValid())
             {
             BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
                 params = computedParams;
             }
         }
@@ -2908,7 +2908,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, m_transformFromDgn, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
             if (polyface.IsValid())
                 {
@@ -2945,7 +2945,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
+                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, m_transformFromDgn, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels, displayParams->GetFillColor());

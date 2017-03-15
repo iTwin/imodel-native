@@ -639,9 +639,11 @@ Transform Render::Material::Trans2x3::GetTransform() const
 
     for (size_t i=0; i<2; ++i)
         {
-        for (size_t j=0; j<3; ++j)
+        for (size_t j=0; j<2; ++j)
             transform.form3d[i][j] = m_val[i][j];
         }
 
+    transform.form3d[0][3] = m_val[0][2];
+    transform.form3d[1][3] = m_val[1][2];
     return transform;
     }
