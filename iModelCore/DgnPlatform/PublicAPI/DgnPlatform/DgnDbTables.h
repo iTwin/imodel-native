@@ -90,10 +90,12 @@
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
 #define BIS_CLASS_SpatialLocationModel      "SpatialLocationModel"
 #define BIS_CLASS_SpatialLocationPartition  "SpatialLocationPartition"
+#define BIS_CLASS_SpatialLocationType       "SpatialLocationType"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_SubCategory               "SubCategory"
 #define BIS_CLASS_Subject                   "Subject"
+#define BIS_CLASS_TemplateViewDefinition2d  "TemplateViewDefinition2d"
 #define BIS_CLASS_TemplateViewDefinition3d  "TemplateViewDefinition3d"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
@@ -334,7 +336,7 @@ public:
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        bool GetIsTemplate() const {return m_isTemplate;}
+        bool IsTemplate() const {return m_isTemplate;}
     }; // Model
 
 public:

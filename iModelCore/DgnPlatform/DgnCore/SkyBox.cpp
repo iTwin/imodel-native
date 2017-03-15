@@ -140,16 +140,21 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     if (!texture.IsValid())
         {
         enum {GRADIENT_PIXEL_COUNT=1024};
-
-        // set up the gradient
         ByteStream buffer(GRADIENT_PIXEL_COUNT * sizeof(ColorDef));
         ColorDef* thisColor = (ColorDef*) buffer.GetDataP();
+        ColorDef color1, color2;
+
+        // set up the 4 color gradient
         for (int i = 0; i < GRADIENT_PIXEL_COUNT; ++i, ++thisColor)
             {
             double frac = (double) i / (double) GRADIENT_PIXEL_COUNT;
-            ColorDef color1, color2;
 
-            if (frac > 0.5)
+            if (env.m_skybox.m_twoColor)
+                {
+                color1 = env.m_skybox.m_zenithColor;
+                color2 = env.m_skybox.m_nadirColor;
+                }
+            else if (frac > 0.5)
                 {
                 color1 = env.m_skybox.m_nadirColor;
                 color2 = env.m_skybox.m_groundColor;
@@ -174,6 +179,10 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
         }
 
     Material::CreateParams matParams;
+    matParams.SetDiffuseColor(ColorDef::White());
+    matParams.SetShadows(false);
+    matParams.SetAmbient(1.0);
+    matParams.SetDiffuse(0.0);
     matParams.SetShadows(false);
     m_skybox = system._CreateMaterial(matParams);
 
@@ -322,13 +331,14 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     flags.SetShowMaterials(true);
     flags.SetShowShadows(false);
     flags.SetIgnoreLighting(true);
+    flags.SetMonochrome(false);
 
     GraphicBranch branch;
     branch.Add(*skyGraphic); // put the mesh into the branch
     branch.SetViewFlags(flags); // and set its Viewflags
 
     // now add the skybox branch to the terrain context.
-    context.OutputGraphic(*context.CreateBranch(branch), nullptr);
+    context.GetList()->Add(*context.CreateBranch(branch), nullptr, 0);
     }
 
 //=======================================================================================
@@ -350,6 +360,7 @@ namespace EnvironmentJson
     namespace SkyBoxJson
     {
         static constexpr Utf8CP str_Filename()    {return "file";}
+        static constexpr Utf8CP str_TwoColor()    {return "twoColor";}
         static constexpr Utf8CP str_SkyColor()    {return "skyColor";}
         static constexpr Utf8CP str_ZenithColor() {return "zenithColor";}
         static constexpr Utf8CP str_NadirColor()  {return "nadirColor";}
@@ -358,8 +369,7 @@ namespace EnvironmentJson
         static constexpr Utf8CP str_GroundExponent() {return "groundExponent";}
     };
 
-    static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
-    static double GetDouble(JsonValueCR in, Utf8CP name, double defaultVal) {JsonValueCR json = in[name]; return json.isDouble() ? json.asDouble() : defaultVal;}
+    static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {return ColorDef(in[name].asInt(defaultVal.GetValue()));}
 };
 
 using namespace EnvironmentJson;
@@ -393,9 +403,10 @@ void DisplayStyle3d::_OnLoadedJsonProperties()
     JsonValueCR sky = env[str_Sky()];
 
     m_environment.m_skybox.m_enabled = sky[str_Display()].asBool();
+    m_environment.m_skybox.m_twoColor= sky[SkyBoxJson::str_TwoColor()].asBool();
     m_environment.m_skybox.m_jpegFile = sky[SkyBoxJson::str_Filename()].asString();
-    m_environment.m_skybox.m_groundExponent = GetDouble(sky, SkyBoxJson::str_GroundExponent(), 4.0);
-    m_environment.m_skybox.m_skyExponent = GetDouble(sky, SkyBoxJson::str_SkyExponent(), 4.0);
+    m_environment.m_skybox.m_groundExponent = sky[SkyBoxJson::str_GroundExponent()].asDouble(4.0);
+    m_environment.m_skybox.m_skyExponent = sky[SkyBoxJson::str_SkyExponent()].asDouble(4.0);
     m_environment.m_skybox.m_groundColor = GetColor(sky, SkyBoxJson::str_GroundColor(), ColorDef(120,143,125));
     m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::str_ZenithColor(), ColorDef(54,117,255));
     m_environment.m_skybox.m_nadirColor  = GetColor(sky, SkyBoxJson::str_NadirColor(), ColorDef(40,15,0));

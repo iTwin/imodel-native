@@ -237,6 +237,7 @@
     <ClInclude Include="PublicAPI\DgnPlatform\ViewAttachment.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ViewContext.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\ViewController.h" />
+    <ClInclude Include="PublicAPI\DgnPlatform\ViewDefinition.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\VolumeElement.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\WebMercator.h" />
     <ClInclude Include="PublicAPI\DgnPlatform\XmlHelper.h" />
@@ -380,6 +381,7 @@
     <ClCompile Include="DgnCore\VecMathDGNTolerances.cpp" />
     <ClCompile Include="DgnCore\ViewContext.cpp" />
     <ClCompile Include="DgnCore\ViewController.cpp" />
+    <ClCompile Include="DgnCore\ViewDefinition.cpp" />
     <ClCompile Include="DgnCore\VolumeElement.cpp" />
     <ClCompile Include="DgnCore\WebMercator.cpp" />
     <ClCompile Include="DgnGeoCoord\AuxCoordSysProcessor.cpp" />
@@ -423,12 +425,12 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\DgnPlatform\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\DgnPlatform\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatform\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatform\</BaseIntermediateOutputPath>
-    <NMakeOutput>DgnPlatform.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\DgnPlatform-Gtest\DgnPlatformTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(ProjectDir)PrivateApi\;$(ProjectDir)\DgnCore\;$(ProjectDir)\DgnHandlers\;$(ProjectDir)\;$(ProjectDir)\PublicAPI\;$(ProjectDir)Tests\DgnProject\NonPublished\;$(ProjectDir)Tests\DgnProject\Performance\;$(ProjectDir)Tests\DgnProject\Published\;$(ProjectDir)Tests\DgnProject\BackDoor\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

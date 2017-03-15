@@ -307,16 +307,27 @@ uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Plan::Plan(DgnViewportCR vp)
     {
-    m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
     m_frustum   = vp.GetFrustum();
-    m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    auto spatial = vp.GetSpatialViewControllerCP();
-    if (nullptr != spatial)
-        m_activeVolume = spatial->GetActiveVolume();
+
+    auto& controller = vp.GetViewController();
+    m_activeVolume = controller.GetActiveVolume();
+
+    auto& def = controller.GetViewDefinition();
+    auto& style = def.GetDisplayStyle();
+    m_bgColor   = style.GetBackgroundColor();
+    m_monoColor = style.GetMonochromeColor();
+    m_viewFlags = style.GetViewFlags();
+
+    auto style3d = style.ToDisplayStyle3dP();
+    if (style3d)
+        {
+        m_hline = style3d->GetHiddenLineParams();
+        m_sceneLights = style3d->GetSceneLights();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -599,8 +610,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
         }
 
     // If we got here, we know that we have been able draw all elements in the scene in the time allotted at least most of the time.
-    
-    if (0 == (m_drawCount % (int)frameRateGoal))
+    if (0 == (m_drawCount % (int) frameRateGoal))
         {
         // If we have been succeeding for 1 second or more, then maybe we should increase the frame rate.
         // That would have the benefit of making everything smoother. However, that would also have the effect of making the update planner reduce
@@ -623,13 +633,15 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform   Render::Material::Trans2x3::GetTransform() const
+Transform Render::Material::Trans2x3::GetTransform() const
     {
-    Transform   transform = Transform::FromIdentity ();
+    Transform transform = Transform::FromIdentity();
 
-    for (size_t i=0; i<2; i++)
-        for (size_t j=0; j<3; j++)
+    for (size_t i=0; i<2; ++i)
+        {
+        for (size_t j=0; j<3; ++j)
             transform.form3d[i][j] = m_val[i][j];
+        }
 
     return transform;
     }

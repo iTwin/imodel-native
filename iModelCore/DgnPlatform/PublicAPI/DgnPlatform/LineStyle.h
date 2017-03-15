@@ -55,7 +55,7 @@ DGNPLATFORM_REF_COUNTED_PTR(LsInternalComponent);
 DGNPLATFORM_REF_COUNTED_PTR(LsCache);
 DGNPLATFORM_REF_COUNTED_PTR(LsRasterImageComponent);
 
-static Utf8CP LINESTYLE_PROP_Descr = "Descr";
+static Utf8CP LINESTYLE_PROP_Description = "Description";
 static Utf8CP LINESTYLE_PROP_Data = "Data";
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -1581,8 +1581,8 @@ public:
 
     Utf8String GetName() const { return GetCode().GetValue(); }
     void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
-    Utf8String GetDescription() const { return GetPropertyValueString(LINESTYLE_PROP_Descr); }
-    void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Descr, value); }
+    Utf8String GetDescription() const { return GetPropertyValueString(LINESTYLE_PROP_Description); }
+    void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Description, value); }
     Utf8String GetData() const { return GetPropertyValueString(LINESTYLE_PROP_Data); }
     void SetData(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Data, value); }
     

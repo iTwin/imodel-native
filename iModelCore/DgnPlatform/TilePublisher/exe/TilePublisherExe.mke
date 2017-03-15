@@ -25,14 +25,6 @@ always:
 libInclude = $(OutputRootDir)build/TilePublisher/
 cIncs + -I$(libInclude)
 
-$(libInclude)DgnPlatform/TilePublisher/TilePublisher.h : $(BuildContext)Delivery/TilePublisher/TilePublisher.h
-    $(msg)
-    $(LinkFirstDepToFirstTarget)
-
-$(libInclude)DgnPlatform/TilePublisher/CesiumPublisher.h : $(BuildContext)Delivery/TilePublisher/CesiumPublisher.h
-    $(msg)
-    $(LinkFirstDepToFirstTarget)
-
 #----------------------------------------------------------------------------------------
 #   Compile and link
 #----------------------------------------------------------------------------------------

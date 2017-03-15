@@ -119,7 +119,6 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
-        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for SpatialLocationElement
@@ -229,6 +228,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GraphicalRecipe2d : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalRecipe2d, Dgn::GraphicalRecipe2d, GraphicalRecipe2d, Definition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SpatialLocationType
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationType : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationType, Dgn::SpatialLocationType, SpatialLocationType, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for Subject

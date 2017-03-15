@@ -541,7 +541,7 @@ DbResult DgnDomains::UpgradeSchemas()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::InsertDomain(DgnDomainCR domain)
     {
-    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
+    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Description,Version) VALUES(?,?,?)"));
     stmt.BindText(1, domain.GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, domain.GetDomainDescription(), Statement::MakeCopy::No);
     stmt.BindInt(3, domain.GetVersion());

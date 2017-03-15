@@ -30,6 +30,9 @@ namespace StyleJson
     static constexpr Utf8CP str_RenderMode()     {return "renderMode";}
     static constexpr Utf8CP str_Shadows()        {return "shadows";}
     static constexpr Utf8CP str_VisibleEdges()   {return "visEdges";}
+    static constexpr Utf8CP str_HlineMatColors() {return "hlMatColors";}
+    static constexpr Utf8CP str_Monochrome()     {return "monochrome";}
+    static constexpr Utf8CP str_EdgeMask()       {return "edgeMask";}
 };
 
 using namespace StyleJson;
@@ -58,6 +61,9 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_shadows = val[str_Shadows()].asBool();
     m_noClipVolume = !val[str_ClipVolume()].asBool();
     m_ignoreLighting = val[str_NoLighting()].asBool();
+    m_monochrome = val[str_Monochrome()].asBool();
+    m_edgeMask = val[str_EdgeMask()].asUInt();
+    m_hLineMaterialColors = val[str_HlineMatColors()].asBool();
 
     // Validate render mode. V8 converter only made sure to set everything above Phong to Smooth...
     uint32_t renderModeValue = val[str_RenderMode()].asUInt();
@@ -94,6 +100,11 @@ Json::Value ViewFlags::ToJson() const
     if (m_shadows) val[Json::StaticString(str_Shadows())] = true;
     if (!m_noClipVolume) val[Json::StaticString(str_ClipVolume())] = true;
     if (m_ignoreLighting) val[Json::StaticString(str_NoLighting())] = true;
+    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
+    if (m_monochrome) val[Json::StaticString(str_Monochrome())] = true;
+    if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
+    if (m_edgeMask!=0) val[Json::StaticString(str_EdgeMask())] = m_edgeMask;
+
     val[Json::StaticString(str_RenderMode())] = (uint8_t) m_renderMode;
     return val;
     }
@@ -305,6 +316,10 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     {
+    auto& cameraDef = GetViewDefinition3dR();
+    if (cameraDef.IsCameraOn())
+        return cameraDef.LookAtUsingLensAngle(cameraDef.GetEyePoint(), cameraDef.GetTargetPoint(), cameraDef.GetYVector(), lensAngle);
+
     if (nullptr == m_vp)
         return ViewportStatus::NotAttached;
 
@@ -320,8 +335,6 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     corners[2].Init(0.0, 0.0, high); // lower left, at closest npc
     corners[3].Init(1.0, 1.0, high); // upper right at closest
     m_vp->NpcToWorld(corners, corners, 4);
-
-    auto& cameraDef = GetViewDefinition3dR();
 
     DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
     DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
@@ -966,4 +979,25 @@ AxisAlignedBox3d TemplateViewController3d::_GetViewedExtents(DgnViewportCR vp) c
     {
     GeometricModelP target = GetViewedModel();
     return (target && target->GetRangeIndex()) ? AxisAlignedBox3d(target->GetRangeIndex()->GetExtents().ToRange3d()) : AxisAlignedBox3d();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
+    {
+    if (m_viewedModelId == viewedModelId)
+        return DgnDbStatus::Success;
+
+    RequestAbort(true);
+    m_viewedModelId = viewedModelId;
+    GeometricModel3dP model = GetViewedModel();
+    if (!model || !model->IsTemplate())
+        {
+        m_viewedModelId.Invalidate();
+        return DgnDbStatus::WrongModel;
+        }
+
+    GetViewDefinition().LookAtVolume(model->QueryModelRange());
+    return DgnDbStatus::Success;
     }
