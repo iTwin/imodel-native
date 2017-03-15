@@ -38,7 +38,7 @@ DataCaptureTestDomain::DataCaptureTestDomain() : DgnDomain("DataCaptureTest", "D
 //---------------------------------------------------------------------------------------
 DgnDbStatus DataCaptureTestDomain::Register()
     {
-    DgnDomains::RegisterDomain(GetDomain()); 
+    DgnDomains::RegisterDomain(GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
     return DgnDbStatus::Success;
     }
 

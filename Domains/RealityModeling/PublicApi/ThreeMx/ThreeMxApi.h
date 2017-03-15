@@ -178,6 +178,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
     THREEMX_EXPORT ThreeMxDomain();
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/Domain/" THREEMX_SCHEMA_FILE; }
 };
 
 //=======================================================================================
