@@ -1107,6 +1107,7 @@ void Render::SceneLights::Solar::FromJson(JsonValueCR val)
 
     m_enabled = true;
     m_intensity = val[str_Intensity()].asDouble();
+    m_color = ColorDef(val[str_Color()].asUInt(ColorDef::White().GetValue()));
     JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
     }
 
@@ -1117,7 +1118,10 @@ Json::Value Render::SceneLights::Solar::ToJson() const
     {
     Json::Value val;
     val[Json::StaticString(str_Intensity())] = m_intensity;
+    if (m_color != ColorDef::White())
+        val[Json::StaticString(str_Color())] = m_color.GetValue();
     JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
+
     return val;
     }
 

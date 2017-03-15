@@ -304,7 +304,7 @@ ColorDef ColorUtil::FromHSV(HsvColorDef hsv)
     if ((!hsv.saturation) || (hsv.hue == -1))
         {
         // hue must be undefined, have no color only white
-        int white_level = (int)ceil(255.0 * hsv.value / MAXFACTOR);
+        int white_level = (int)((255.0 * hsv.value / MAXFACTOR) + 0.5);
         color.SetAllColors(white_level & 0xff);
 
         return color;

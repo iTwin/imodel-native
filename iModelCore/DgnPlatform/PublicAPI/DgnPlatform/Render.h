@@ -1621,6 +1621,7 @@ struct SceneLights
         bool m_enabled = false;
         double m_intensity = 0.0;
         DVec3d m_direction = DVec3d::From(0.0,0.0,0.0);
+        ColorDef m_color = ColorDef::White();
         bool IsEnabled() const {return m_enabled;}
         Json::Value ToJson() const;
         void FromJson(JsonValueCR val);
@@ -1628,18 +1629,18 @@ struct SceneLights
 
     struct Brightness
     {
-        double m_avgLum = 0.0;
+        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
         double m_maxLum = 0.0;
-        double m_fstop = 0.0;
+        double m_fstop = 0.0; //!< must be between -3 and +3
         bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
         Json::Value ToJson() const;
         void FromJson(JsonValueCR val);
     };
 
-    double m_ambient = 0.0;     //!< 0 - 1.0
-    double m_flash = 0.0;
-    double m_portraitLeft = 0.0;
-    double m_portraitRight = 0.0;
+    double m_ambient = 0.0; //!< ambient light. (lumens/square meter)
+    double m_flash = 0.0; //!< flash bulb at camera (lumens/square meter)
+    double m_portraitLeft = 0.0; //!< over the left sholder. (lumens/square meter)
+    double m_portraitRight = 0.0; //!< over the right sholder. (lumens/square meter)
     Brightness m_brightness;
     Solar m_sun;
 
