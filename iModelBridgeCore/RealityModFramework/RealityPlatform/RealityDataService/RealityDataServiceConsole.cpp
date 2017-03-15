@@ -380,7 +380,7 @@ void RealityDataConsole::ListRoots()
         if(rData->IsListable())
             {
             nodes.push_back(rData->GetName());
-            m_serverNodes.push_back(NavNode(schema, rData->GetName()));
+            m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
             }
         }
 
@@ -597,9 +597,13 @@ void RealityDataConsole::Details()
         }
     Utf8String className = m_currentNode->node.GetClassName();
     RequestStatus status;
+    
+    Utf8String instanceId = m_currentNode->node.GetInstanceId();
+    instanceId.ReplaceAll("/", "~2F");
+
     if (className == "Document")
         {
-        RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(m_currentNode->node.GetInstanceId());
+        RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(instanceId);
         RealityDataDocumentPtr document = RealityDataService::Request(documentReq, status);
 
         if(document == nullptr)
@@ -619,7 +623,7 @@ void RealityDataConsole::Details()
         }
     else if (className == "Folder")
         {
-        RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(m_currentNode->node.GetInstanceId());
+        RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(instanceId);
         RealityDataFolderPtr folder = RealityDataService::Request(folderReq, status);
 
         if (folder == nullptr)
@@ -634,7 +638,7 @@ void RealityDataConsole::Details()
         }
     else if (className == "RealityData")
         {
-        RealityDataByIdRequest idReq = RealityDataByIdRequest(m_currentNode->node.GetInstanceId());
+        RealityDataByIdRequest idReq = RealityDataByIdRequest(instanceId);
         RealityDataPtr entity = RealityDataService::Request(idReq, status);
 
         if (entity == nullptr)

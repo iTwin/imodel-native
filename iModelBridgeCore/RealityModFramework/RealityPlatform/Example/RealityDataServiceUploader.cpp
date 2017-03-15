@@ -22,6 +22,14 @@ static void progressFunc(Utf8String filename, double fileProgress, double repoPr
     std::cout << Utf8PrintfString("Upload percent : %3.0f%%\r", repoProgress * 100.0);
     }
 
+static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
+    {
+    if(ErrorCode > 0)
+        std::cout << Utf8PrintfString("Curl error code : %d /n %s", ErrorCode, pMsg);
+    else
+        std::cout << pMsg;
+    }
+
 int main(int argc, char *argv[])
 {
     /*Utf8String server, version, repo, shema;
@@ -58,7 +66,7 @@ int main(int argc, char *argv[])
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, "15D33ED9-24D9-4B95-8E05-90DE075B939B", propertyString, true);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, "15d33ed9-24d9-4b95-8e05-90de075b939b", propertyString, true);
     if (upload->IsValidUpload())
         {
         upload->SetProgressCallBack(progressFunc);

@@ -65,6 +65,8 @@ $(o)RealityDataObjects$(oext) : $(baseDir)RealityDataObjects.cpp $(PublicApiDir)
 
 $(o)RealityDataService$(oext) : $(baseDir)RealityDataService.cpp $(PublicApiDir)RealityDataService.h ${MultiCompileDepends}
 
+#$(o)GeoCoordinationService$(oext) : $(baseDir)GeoCoordinationService.cpp $(PublicApiDir)GeoCoordinationService.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the

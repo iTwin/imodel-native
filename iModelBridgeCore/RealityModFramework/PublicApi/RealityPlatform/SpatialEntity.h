@@ -149,6 +149,10 @@ public:
     REALITYDATAPLATFORM_EXPORT bool IsEmpty() const;
 
     //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8CP id);
+
+    //! Get/Set
     //! Human readable text indicating the provenance of the spatial entity
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvenance() const;
     REALITYDATAPLATFORM_EXPORT void SetProvenance(Utf8CP provenance);
@@ -208,11 +212,16 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
 
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDisplayStyle() const;
+    REALITYDATAPLATFORM_EXPORT void SetDisplayStyle(Utf8CP displayStyle);
+
 protected:
     SpatialEntityMetadata();
     SpatialEntityMetadata(Utf8CP filePath, SpatialEntityMetadataCR metadataSeed);
     SpatialEntityMetadata(SpatialEntityMetadataCR metadataSeed);
 
+    Utf8String m_id;
     Utf8String m_provenance;
     Utf8String m_lineage;
     Utf8String m_description;
@@ -222,6 +231,7 @@ protected:
     Utf8String m_format;
     Utf8String m_keywords;
     Utf8String m_metadataUrl;
+    Utf8String m_displayStyle;
 
     bool m_isEmpty;
     };

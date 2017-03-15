@@ -391,43 +391,43 @@ public:
         }
 public:
     //! Returns the SpatialEntity object requested or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request, RequestStatus& status);
 
     //! Returns a partially filled SpatialEntity object or null if an error occured.
     //! Only fields pertinent to a SpatialEntityWithDetails view will be filled 
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityWithDetailsByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityWithDetailsByIdRequest& request, RequestStatus& status);
 
     //! Returns a SpatialEntitDataSource or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceById& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceById& request, RequestStatus& status);
 
     //! Returns a SpatialEntityServer or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Request(const SpatialEntityServerByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Request(const SpatialEntityServerByIdRequest& request, RequestStatus& status);
 
     //! Returns a SpatialEntityMetadata object ot null if an error occured.
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Request(const SpatialEntityMetadataByIdRequest& request);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Request(const SpatialEntityMetadataByIdRequest& request, RequestStatus& status);
 
     //! Returns a list of partially filled SpatialEntity objects. Only fields returned in a
     //! SpatialEntity with details object will be filled.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const SpatialEntityWithDetailsSpatialRequest& request);
-
-    //! Returns the content of the Package requested or an empty vector if an error occured
-    REALITYDATAPLATFORM_EXPORT static bvector<byte> Request(const PreparedPackageRequest& request);
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> Request(const SpatialEntityWithDetailsSpatialRequest& request, RequestStatus& status);
 
     //! Returns the identifier of the prepared package or an empty string if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const PackagePreparationRequest& request);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const PackagePreparationRequest& request, RequestStatus& status);
+
+    //! Returns the content of the Package requested or an empty vector if an error occured
+    REALITYDATAPLATFORM_EXPORT static bvector<byte> Request(const PreparedPackageRequest& request, RequestStatus& status);
 
     //! Uploads a download report. It is not possible to know if the call worked or not.
-    REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request);
+    REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RequestStatus& status);
 
     //! Returns the full WSG JSON returned by the package preparation request
-    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(GeoCoordinationServiceRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const GeoCoordinationServiceRequest* request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the spatial entity with details spatial request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(GeoCoordinationServicePagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(const GeoCoordinationServicePagedRequest* request, Utf8StringR jsonResponse);
 
     static Utf8String s_geoCoordinationServer = "https://connect-contextservices.bentley.com/";
     static Utf8String s_geoCoordinationWSGProtocol = "2.4";
@@ -442,6 +442,9 @@ public:
     static const Utf8String s_USGSInformationSourceKey = "usgsapi";
     static const Utf8String s_PublicIndexInformationSourceKey = "index";
     static const Utf8String s_AllInformationSourceKey = "all";
+
+private:
+    REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(GeoCoordinationServiceRequest* request);
     }
 
 

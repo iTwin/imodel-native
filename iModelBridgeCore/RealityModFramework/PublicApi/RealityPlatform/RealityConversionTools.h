@@ -45,7 +45,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityDataSource(Utf8CP data, bvector<SpatialEntityDataSourcePtr>* outData);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityServer(Utf8CP data, bvector<SpatialEntityServerPtr>* outData);
-    //REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityMetadata(Utf8CP data, bvector<SpatialEntityMetadataPtr>* outData);
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToSpatialEntityMetadata(Utf8CP data, bvector<SpatialEntityMetadataPtr>* outData);
 
     //! The first version provides a simple list of extracted Reality Data while the second version
     //! fills a map for which the spatial entity name is the key.
@@ -61,7 +61,8 @@ public:
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr JsonToRealityData(Json::Value properties);
 
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr JsonToSpatialEntityDataSource(Json::Value properties);
-    //REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr JsonToSpatialEntityServer(Json::Value properties);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr JsonToSpatialEntityServer(Json::Value properties);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr JsonToSpatialEntityMetadata(Json::Value properties);
 
     //! Utility methods that convert a file containing a GeoCoordinationService package, the package itself or a string containing the package
     //! and produces a download list according tot he package content including alternate data sources as mirror sites and so on.

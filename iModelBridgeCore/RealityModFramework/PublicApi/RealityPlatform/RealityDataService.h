@@ -492,11 +492,18 @@ struct RealityDataServiceCreate : public RealityDataUrl
     REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-
-private:
-    bool m_listable;
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 02/2017
+//! A class used to modify an existing reality data in the reality data service.
+//=====================================================================================
+struct RealityDataServiceChange : public RealityDataUrl
+{
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceChange(Utf8String realityDataId, Utf8String properties);
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+};
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason 02/2017
@@ -816,10 +823,10 @@ public:
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse);
 
 private:
     static Utf8String s_realityDataServer;
