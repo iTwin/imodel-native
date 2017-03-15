@@ -76,7 +76,10 @@ struct BeTestThrowFailureHandler : BeTest::IFailureHandler
             s_disableThrows = true; // I rely on the test runner to call _OnFailureHandled to allow me clear this flag.
             }
 #ifdef BENTLEY_WINRT
-        longjmp(*s_test_failure_jmp_buf_to_use, 101);
+        if (nullptr != s_test_failure_jmp_buf_to_use)
+            longjmp(*s_test_failure_jmp_buf_to_use, 101);
+        else
+            BeTest::IncrementErrorCountAndEnableThrows();
 #else
         throw "failure";
 #endif
