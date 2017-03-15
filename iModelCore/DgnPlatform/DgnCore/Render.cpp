@@ -13,6 +13,25 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_sceneTarget;
     static int s_progressiveTarget;
     static double s_frameRateGoal;
+
+    static constexpr Utf8CP str_Hidden() {return "hidden";}
+    static constexpr Utf8CP str_Visible() {return "visible";}
+    static constexpr Utf8CP str_Width() {return "width";}
+    static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
+    static constexpr Utf8CP str_Color() {return "color";}
+    static constexpr Utf8CP str_Pattern() {return "pattern";}
+    static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
+    static constexpr Utf8CP str_Ambient() {return "ambient";}
+    static constexpr Utf8CP str_Flash() {return "flash";}
+    static constexpr Utf8CP str_PortraitLeft() {return "left";}
+    static constexpr Utf8CP str_PortraitRight() {return "right";}
+    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    static constexpr Utf8CP str_AvgLum() {return "avgLum";}
+    static constexpr Utf8CP str_MaxLum() {return "maxLum";}
+    static constexpr Utf8CP str_Fstop() {return "fstop";}
+    static constexpr Utf8CP str_Sun() {return "sun";}
+    static constexpr Utf8CP str_Intensity() {return "intensity";}
+    static constexpr Utf8CP str_Direction() {return "dir";}
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,9 +341,12 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_monoColor = style.GetMonochromeColor();
     m_viewFlags = style.GetViewFlags();
 
-    auto def3d = def.ToView3dP();
-    if (def3d)
-        m_hline = def3d->GetDisplayStyle3d().GetHiddenLineParams();
+    auto style3d = style.ToDisplayStyle3dP();
+    if (style3d)
+        {
+        m_hline = style3d->GetHiddenLineParams();
+        m_sceneLights = style3d->GetSceneLights();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -636,9 +658,172 @@ Transform Render::Material::Trans2x3::GetTransform() const
 
     for (size_t i=0; i<2; ++i)
         {
-        for (size_t j=0; j<3; ++j)
+        for (size_t j=0; j<2; ++j)
             transform.form3d[i][j] = m_val[i][j];
         }
 
+    transform.form3d[0][3] = m_val[0][2];
+    transform.form3d[1][3] = m_val[1][2];
     return transform;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::HiddenLineParams::Style::ToJson() const
+    {
+    Json::Value val;
+    val[Json::StaticString(str_OvrColorFlag())] = m_ovrColor;
+    val[Json::StaticString(str_Color())] = m_color.GetValue();
+    val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
+    val[Json::StaticString(str_Width())] = (Json::UInt32) m_width;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::HiddenLineParams::Style::FromJson(JsonValueCR val)
+    {
+    m_ovrColor = val[str_OvrColorFlag()].asBool(m_ovrColor);
+    m_color = ColorDef(val[str_Color()].asUInt(m_color.GetValue()));
+    m_pattern = (GraphicParams::LinePixels) val[str_Pattern()].asUInt((uint32_t) m_pattern);
+    m_width = val[str_Width()].asUInt(m_width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::HiddenLineParams::ToJson() const
+    {
+    HiddenLineParams defaults;
+    Json::Value val;
+
+    if (m_visible != defaults.m_visible) val[Json::StaticString(str_Visible())] = m_visible.ToJson();
+    if (m_hidden != defaults.m_hidden) val[Json::StaticString(str_Hidden())] = m_hidden.ToJson();
+    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
+    {
+    HiddenLineParams params;
+
+    if (val.isObject())
+        {
+        params.m_visible.FromJson(val[str_Visible()]);
+        params.m_hidden.FromJson(val[str_Hidden()]);
+        params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
+        }
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Light::FromJson(JsonValueCR val)
+    {
+    if (!val.isObject())
+        {
+        m_intensity = 0.0;
+        return;
+        }
+
+    m_intensity = val[str_Intensity()].asDouble();
+    m_color = ColorDef(val[str_Color()].asUInt(ColorDef::White().GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::Light::ToJson() const
+    {
+    Json::Value val;
+    val[Json::StaticString(str_Intensity())] = m_intensity;
+    if (m_color != ColorDef::White())
+        val[Json::StaticString(str_Color())] = m_color.GetValue();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::DirectionalLight::FromJson(JsonValueCR val)
+    {
+    T_Super::FromJson(val);
+    if (IsEnabled())
+        JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::DirectionalLight::ToJson() const
+    {
+    Json::Value val = T_Super::ToJson();
+    if (!m_direction.IsZero())
+        JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
+    {
+    if (!val.isObject())
+        return;
+    m_avgLum = val[str_AvgLum()].asDouble();
+    m_maxLum = val[str_MaxLum()].asDouble();
+    m_fstop = val[str_Fstop()].asDouble();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::Brightness::ToJson() const
+    {
+    Json::Value val;
+    if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
+    if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
+    if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
+    {
+    SceneLights lights;
+
+    if (val.isObject())
+        {
+        lights.m_ambient.FromJson(val[str_Ambient()]);
+        lights.m_flash.FromJson(val[str_Flash()]);
+        lights.m_portraitLeft.FromJson(val[str_PortraitLeft()]);
+        lights.m_portraitRight.FromJson(val[str_PortraitRight()]);
+        lights.m_sun.FromJson(val[str_Sun()]);
+        lights.m_brightness.FromJson(val[str_Brightness()]);
+        }
+    return lights;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Render::SceneLights::ToJson() const
+    {
+    Json::Value val;
+    if (m_ambient.IsEnabled()) val[Json::StaticString(str_Ambient())] = m_ambient.ToJson();
+    if (m_flash.IsEnabled()) val[Json::StaticString(str_Flash())] = m_flash.ToJson();
+    if (m_portraitLeft.IsEnabled()) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft.ToJson();
+    if (m_portraitRight.IsEnabled()) val[Json::StaticString(str_PortraitRight())] = m_portraitRight.ToJson();
+    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
+    if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
+    return val;
+    }
+

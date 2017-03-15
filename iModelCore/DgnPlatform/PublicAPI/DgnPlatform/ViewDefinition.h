@@ -173,7 +173,8 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
-    static constexpr Utf8CP str_HLine() {return "HLine";}
+    static constexpr Utf8CP str_HLine() {return "hline";}
+    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
@@ -198,6 +199,9 @@ public:
 
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
+
+    Render::SceneLights GetSceneLights() {return Render::SceneLights::FromJson(GetStyle(str_SceneLights()));}
+    void SetSceneLights(Render::SceneLights const& lights) {SetStyle(str_SceneLights(), lights.ToJson());}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}

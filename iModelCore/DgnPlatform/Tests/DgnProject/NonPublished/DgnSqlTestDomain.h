@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTestDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -99,13 +99,15 @@ struct ObstacleElementHandler : dgn_ElementHandler::Physical
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
 struct DgnSqlTestDomain : DgnDomain
-    {
+{
     DOMAIN_DECLARE_MEMBERS(DgnSqlTestDomain, )
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
+
 public:
     DgnSqlTestDomain();
-
-    static void ImportSchemaFromPath(DgnDbR, BeFileNameCR schemasDir);
-    };
+};
 
 }; // namespace DgnSqlTestNamespace
 

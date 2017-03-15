@@ -23,7 +23,7 @@ struct DgnMarkupProjectTest : DgnDbTestFixture
 TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
     {
     SetupSeedProject();
-    DgnDomains::RegisterDomain(MarkupDomain::GetDomain());
+    DgnDomains::RegisterDomain(MarkupDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
 
     Utf8CP     markupProjectBasename = "CreateDgnMarkupProject.markupdb";
     BeFileName markupProjectFileName;

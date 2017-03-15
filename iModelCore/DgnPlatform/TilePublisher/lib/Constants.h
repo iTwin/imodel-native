@@ -291,15 +291,15 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
 static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
         gl_Position    = u_proj * u_mv * vec4(a_pos,  1.0);
 
-        if (0.0 != a_delta.y)
+        if (abs(a_param.x) > .1)
             {
             vec4    projPos    = czm_modelToWindowCoordinates (vec4(a_pos, 1.0));
             vec4    projPrev   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_prev), 1.0));
             vec4    projNext   = czm_modelToWindowCoordinates (vec4(a_pos + .01 * gltf_octDecode(a_next), 1.0));
             vec2    prevDir    = normalize(projPos.xy - projPrev.xy);
             vec2    nextDir    = normalize(projNext.xy - projPos.xy);
-            vec2    thisDir    = (a_delta.z < 3.5) ? nextDir : prevDir;
-            vec2    perp       = a_delta.y * vec2 (-thisDir.y, thisDir.x);
+            vec2    thisDir    = (a_param.y < 3.5) ? nextDir : prevDir;
+            vec2    perp       = a_param.x * vec2 (-thisDir.y, thisDir.x);
             float   dist       = u_width / 2.0;
             vec2    delta      = vec2(0.0, 0.0);
 
@@ -307,9 +307,9 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                 {
                 vec2    bisector   = normalize(prevDir - nextDir);
                 float   dotP       = dot(bisector, perp);
-                float   jointParam = mod(a_delta.z, 4.0);
+                float   jointParam = mod(a_param.y, 4.0);
 
-                if (jointParam < 0.0001)
+                if (jointParam < 0.01)
                     {
                     if (dotP < 0.0)
                         {
@@ -340,20 +340,21 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
 
 // Polyline shaders.
 static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RAW_STRING(
-    attribute vec3 a_pos;
-    attribute vec2 a_prev;
-    attribute vec2 a_next;
-    attribute vec3 a_delta;
-    attribute vec3 a_scale; 
-    uniform mat4   u_mv;
-    uniform mat4   u_proj;
-    uniform float  u_width;
-    uniform float  u_texLength;
-    varying vec2   v_texc;
+    attribute vec3  a_pos;
+    attribute vec2  a_prev;
+    attribute vec2  a_next;
+    attribute vec2  a_param;
+    attribute float a_distance;
+    attribute vec3  a_texScalePnt; 
+    uniform mat4    u_mv;
+    uniform mat4    u_proj;
+    uniform float   u_width;
+    uniform float   u_texLength;
+    varying vec2    v_texc;
 
     void main(void)
         {
-        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_texScalePnt, 1.0));
         vec2            imagesPerPixel, imagesPerMeter;
 
         if (u_texLength < 0.0)
@@ -367,7 +368,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc.x = a_delta.x * imagesPerMeter.x;
+        v_texc.x = a_distance * imagesPerMeter.x;
         v_texc.y = .5;
 
 )RAW_STRING"
@@ -376,7 +377,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
 
 R"RAW_STRING(
             v_texc.x += dot(thisDir, delta) * imagesPerPixel.x;
-            v_texc.y += a_delta.y * dot(perp, delta) * imagesPerPixel.y;
+            v_texc.y += a_param.x * dot(perp, delta) * imagesPerPixel.y;
             }
         v_color = computeColor();
         }
@@ -387,7 +388,7 @@ static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + R"RAW_S
     attribute vec3 a_pos;
     attribute vec2 a_prev;
     attribute vec2 a_next;
-    attribute vec3 a_delta;
+    attribute vec2 a_param;
     uniform mat4   u_mv;
     uniform mat4   u_proj;
     uniform float  u_width;
@@ -417,8 +418,8 @@ static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
 
 static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3  a_pos;
-    attribute vec3  a_scale; 
-    attribute float a_delta;
+    attribute vec3  a_texScalePnt; 
+    attribute float a_distance;
     uniform mat4    u_mv;
     uniform mat4    u_proj;
     uniform float   u_texLength;
@@ -426,7 +427,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
                                                                                                                                                                                       
     void main(void)
         {
-        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_scale, 1.0));
+        float           metersPerPixel = czm_metersPerPixel(u_mv * vec4(a_texScalePnt, 1.0));
         float           imagesPerPixel, imagesPerMeter;
 
         if (u_texLength < 0.0)
@@ -440,7 +441,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc = vec2(a_delta * imagesPerMeter, .5);
+        v_texc = vec2(a_distance * imagesPerMeter, .5);
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
         v_color =  computeColor();
         }
