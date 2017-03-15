@@ -23,7 +23,8 @@ using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define HEADER_MasFileETag "Mas-File-ETag"
+#define HEADER_MasFileETag          "Mas-File-ETag"
+#define HEADER_MasConnectionInfo    "Mas-Connection-Info"
 
 Json::Value StubWSObjectCreationJson()
     {
@@ -47,10 +48,28 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredenti
         .ForRequest(2, [] (HttpRequestCR request)
         {
         EXPECT_EQ(Credentials("TestUser", "TestPassword"), request.GetCredentials());
+        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue(HEADER_MasConnectionInfo));
         return StubHttpResponse();
         });
 
     client->SetCredentials(Credentials("TestUser", "TestPassword"));
+    client->VerifyAccess()->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsAndAutheTypeWindowsPassed_SendsSameCredentialsWithAuthType)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2)
+        .ForRequest(1, StubWSInfoHttpResponseWebApi13())
+        .ForRequest(2, [] (HttpRequestCR request)
+        {
+        EXPECT_EQ(Credentials("TestUser", "TestPassword"), request.GetCredentials());
+        EXPECT_STREQ("CredentialType=Windows", request.GetHeaders().GetValue(HEADER_MasConnectionInfo));
+        return StubHttpResponse();
+        });
+
+    client->SetCredentials(Credentials("TestUser", "TestPassword"), IWSRepositoryClient::AuthenticationType::Windows);
     client->VerifyAccess()->Wait();
     }
 
@@ -376,6 +395,56 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1AndQueryWithNavigationP
     query.SetCustomParameter(WSQuery_CustomParameter_NavigationParentId, "");
     query.SetSelect("Foo,Boo");
     client->SendQueryRequest(query)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndEmptyObjectId_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    BeFileName fileName = StubFilePath();
+    auto result = client->SendGetFileRequest(ObjectId(), fileName)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyObjectId_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    BeFileName fileName = StubFilePath();
+    auto result = client->SendGetFileRequest(ObjectId(), fileName)->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndEmptyFilePath_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
+
+    auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyFilePath_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithFollowRedirects)
@@ -893,7 +962,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV25)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -901,7 +970,22 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 5}));
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 6}));
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.5/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
         });
 

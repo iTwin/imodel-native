@@ -2,7 +2,7 @@
 #
 #     $Source: Connect/Connect.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -15,13 +15,11 @@ ConnectMkiSourceDir = $(ClientSourceDirectory)Connect/
 ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                           \
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h             \
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h         \
-                    $(ConnectMkiPublicApiDir)ConnectSessionAuthenticationPersistence.h  \
                     $(ConnectMkiPublicApiDir)ConnectMessaging.h                         \
                     $(ConnectMkiPublicApiDir)ConnectSetup.h                             \
                     $(ConnectMkiPublicApiDir)ConnectSignInManager.h                     \
                     $(ConnectMkiPublicApiDir)ConnectSpaces.h                            \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
-                    $(ConnectMkiPublicApiDir)DelegationTokenProvider.h                  \
                     $(ConnectMkiPublicApiDir)EulaClient.h                               \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h        \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
@@ -31,6 +29,8 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)Passport.h                                 \
                     $(ConnectMkiPublicApiDir)SamlToken.h                                \
                     $(ConnectMkiSourceDir)AuthenticationData.h                          \
+                    $(ConnectMkiSourceDir)ConnectSessionAuthenticationPersistence.h     \
+                    $(ConnectMkiSourceDir)DelegationTokenProvider.h                     \
                     $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.h           \
                     $(ConnectMkiSourceDir)IdentityTokenProvider.h
 

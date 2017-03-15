@@ -681,10 +681,11 @@ HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!objectId.IsValid() || filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
     if (SchemaInfo::IsDummySchemaId(objectId))
-        {
         return GetSchema(filePath, eTag, downloadProgressCallback, ct);
-        }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
     HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);

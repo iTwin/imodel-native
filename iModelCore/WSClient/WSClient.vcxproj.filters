@@ -785,16 +785,10 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSessionAuthenticationPersistence.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ProgressFilter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h">
@@ -846,6 +840,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\WrapperTokenProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\DelegationTokenProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Connect\ConnectSessionAuthenticationPersistence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

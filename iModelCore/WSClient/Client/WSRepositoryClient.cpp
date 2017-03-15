@@ -2,11 +2,13 @@
 |
 |     $Source: Client/WSRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include "WebApi/WebApiV1.h"
+
+#define HEADER_MasConnectionInfo "Mas-Connection-Info"
 
 using namespace std::placeholders;
 
@@ -21,6 +23,7 @@ const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
 const uint32_t WSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
 const uint32_t WSRepositoryClient::Timeout::Transfer::FileDownload = 30;
 const uint32_t WSRepositoryClient::Timeout::Transfer::Upload = 30;
+const uint32_t WSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -82,9 +85,11 @@ Utf8StringCR WSRepositoryClient::GetRepositoryId() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepositoryClient::SetCredentials(Credentials credentials)
+void WSRepositoryClient::SetCredentials(Credentials credentials, AuthenticationType type)
     {
-    return m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
+    m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
+    if (AuthenticationType::Windows == type)
+        m_connection->GetConfiguration().GetDefaultHeaders().SetValue(HEADER_MasConnectionInfo, "CredentialType=Windows");
     }
 
 /*--------------------------------------------------------------------------------------+

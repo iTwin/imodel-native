@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,11 +20,24 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ClientConfiguration
     {
     private:
+        struct HeaderProvider : public IHttpHeaderProvider
+            {
+            private:
+                const IHttpHeaderProviderPtr m_customProvider;
+                HttpRequestHeaders m_defaultHeaders;
+            public:
+                HeaderProvider(IHttpHeaderProviderPtr provider) : m_customProvider(provider) {};
+                virtual void FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const;
+                HttpRequestHeadersR GetDefaultHeaders() { return m_defaultHeaders; };
+            };
+
+    private:
         const Utf8String m_serverUrl;
         const Utf8String m_repositoryId;
+        const std::shared_ptr<HeaderProvider> m_headerProvider;
         const IWSSchemaProviderPtr m_schemaProvider;
-        std::shared_ptr<HttpClient> m_httpClient;
-        IHttpHandlerPtr m_httpHandler;
+        const std::shared_ptr<HttpClient> m_httpClient;
+        const IHttpHandlerPtr m_httpHandler;
 
     public:
         ClientConfiguration
@@ -41,6 +54,8 @@ struct ClientConfiguration
         HttpClientR GetHttpClient() const;
         IHttpHandlerPtr GetHttpHandler() const;
         BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
+
+        HttpRequestHeadersR GetDefaultHeaders();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

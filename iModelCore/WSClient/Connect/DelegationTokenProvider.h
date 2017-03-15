@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Connect/DelegationTokenProvider.h $
+|     $Source: Connect/DelegationTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,13 +42,14 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! Create token provider for delegating service specific tokens
         //! @param rpUri Relying Party URI for token
         //! @param parentTokenProvider token provider for parent/identity token to be used to delegate new token
-        WSCLIENT_EXPORT DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
+        DelegationTokenProvider(IImsClientPtr client, Utf8String rpUri, IConnectTokenProviderPtr parentTokenProvider);
 
         //! Set new token lifetime and expiration threshold in minutes
-        WSCLIENT_EXPORT void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
+        void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
 
-        WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
+        AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
+        SamlTokenPtr GetToken() override;
+        void ClearCache();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
