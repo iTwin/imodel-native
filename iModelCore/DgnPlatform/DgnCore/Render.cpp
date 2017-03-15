@@ -774,9 +774,9 @@ void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
     {
     if (!val.isObject())
         return;
-    m_avgLum = val[str_AvgLum()].asDouble(0.0);
-    m_maxLum = val[str_MaxLum()].asDouble(0.0);
-    m_fstop = val[str_Fstop()].asDouble(0.0);
+    m_avgLum = val[str_AvgLum()].asDouble();
+    m_maxLum = val[str_MaxLum()].asDouble();
+    m_fstop = val[str_Fstop()].asDouble();
     }
 
 /*---------------------------------------------------------------------------------**//**
