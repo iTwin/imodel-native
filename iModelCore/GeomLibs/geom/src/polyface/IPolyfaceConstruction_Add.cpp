@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/IPolyfaceConstruction_Add.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -3134,6 +3134,7 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
     for (size_t i = 0, n = mesh.GetNormalCount (); i < n; i++)
         oldNormalToNewNormal.push_back (FindOrAddNormal (pNormal[i]));
 
+
     // colors.  Only one index set.
     uint32_t const* pIntColor = mesh.GetIntColorCP ();
     for (size_t i = 0, n = mesh.GetColorCount (); i < n; i++)
@@ -3145,7 +3146,7 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
     bvector<int32_t> &vParamIndex = visitor->ClientParamIndex ();
     bvector<int32_t> &vColorIndex = visitor->ClientColorIndex ();
     bvector<bool> &vVisible = visitor->Visible ();
-
+                                                                                                                      
     visitor->Reset ();
     for (;visitor->AdvanceToNextFace ();)
         {
@@ -3157,6 +3158,11 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
         numErrors += numErrorsThisFace;
         if (numErrorsThisFace == 0)
             {
+            FacetFaceDataCP faceData = visitor->GetFaceDataCP();
+
+            if (nullptr != faceData)
+                SetFaceData(*faceData);
+
             for (size_t i = 0, n = vPointIndex.size (); i < n; i++)
                 AddPointIndex (vPointIndex[i], vVisible [i]);
             AddPointIndexTerminator ();
@@ -3178,6 +3184,8 @@ bool IPolyfaceConstruction::Add (PolyfaceHeaderR mesh)
                     AddColorIndex (vColorIndex[i]);
                 AddColorIndexTerminator ();
                 }
+            if (nullptr != faceData)
+                EndFace();
             }
         }
     return numErrors == 0;
