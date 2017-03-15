@@ -201,21 +201,6 @@ DbResult DgnDb::CreateDictionaryModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateSessionModel()
-    {
-    DgnElementId modeledElementId = Elements().GetSessionPartitionId();
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, BIS_SCHEMA(BIS_CLASS_SessionModel));
-    if (BE_SQLITE_DONE != result)
-        return result;
-
-    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Session::GetHandler());
-    BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, modeledElementId, classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRealityDataSourcesModel()
     {
     DgnElementId modeledElementId = Elements().GetRealityDataSourcesPartitionId();
@@ -310,7 +295,6 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     CreateRootSubject(params);
     ExecuteSql("PRAGMA defer_foreign_keys = false;");
     CreateDictionaryModel();
-    CreateSessionModel();
     CreateRealityDataSourcesModel();
 
     // The Generic domain is used when a conversion process doesn't have enough information to pick something better

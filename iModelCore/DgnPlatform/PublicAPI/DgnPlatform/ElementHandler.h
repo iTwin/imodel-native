@@ -200,12 +200,6 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, Dgn::GroupInformationElement, GroupInformation, InformationContent, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for Session
-    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Session, Dgn::Session, Session, Definition, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for PhysicalType
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
     {

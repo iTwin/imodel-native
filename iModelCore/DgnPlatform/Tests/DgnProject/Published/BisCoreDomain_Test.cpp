@@ -206,7 +206,6 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     ASSERT_TRUE(m_db->GetRepositoryModel().IsValid());
     ASSERT_TRUE(m_db->GetRealityDataSourcesModel().IsValid());
-    ASSERT_TRUE(m_db->GetSessionModel().IsValid());
 
     // make sure that Delete against the root Subject fails
         {
@@ -265,7 +264,6 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LineStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Session)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_SpatialCategory)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_TextAnnotationSeed)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_Texture)->IsRepositoryScope());

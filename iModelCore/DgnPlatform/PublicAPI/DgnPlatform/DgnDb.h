@@ -11,7 +11,6 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "MemoryManager.h"
-#include "SessionManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
@@ -169,7 +168,6 @@ protected:
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
-    SessionManager m_sessionManager;
     MemoryManager m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText m_searchableText;
@@ -190,7 +188,6 @@ protected:
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, Utf8CP); //!< @private
     BeSQLite::DbResult CreateDictionaryModel(); //!< @private
-    BeSQLite::DbResult CreateSessionModel(); //!< @private
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
@@ -240,7 +237,6 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
@@ -341,7 +337,6 @@ public:
     DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
     DGNPLATFORM_EXPORT LinkModelPtr GetRealityDataSourcesModel(); //!< Return the LinkModel listing the reality data sources for this DgnDb.
-    DGNPLATFORM_EXPORT SessionModelPtr GetSessionModel(); //!< Return the SessionModel for this DgnDb.
 
 /** @name DgnPlatform Threads */
 /** @{ */

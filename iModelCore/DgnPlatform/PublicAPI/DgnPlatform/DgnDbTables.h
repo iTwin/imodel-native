@@ -80,8 +80,6 @@
 #define BIS_CLASS_RoleModel                 "RoleModel"
 #define BIS_CLASS_SectionDrawing            "SectionDrawing"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
-#define BIS_CLASS_Session                   "Session"
-#define BIS_CLASS_SessionModel              "SessionModel"
 #define BIS_CLASS_Sheet                     "Sheet"
 #define BIS_CLASS_SheetModel                "SheetModel"
 #define BIS_CLASS_SpatialCategory           "SpatialCategory"

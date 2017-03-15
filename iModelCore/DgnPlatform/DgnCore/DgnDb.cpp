@@ -44,7 +44,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
-                 m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
+                 m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
@@ -78,7 +78,6 @@ extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_sessionManager.ClearCurrent();
     m_sceneQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
@@ -766,18 +765,6 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a " BIS_CLASS_DictionaryModel);
     return *dict;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionModelPtr DgnDb::GetSessionModel()
-    {
-    DefinitionPartitionCPtr partition = Elements().Get<DefinitionPartition>(Elements().GetSessionPartitionId());
-    BeAssert(partition.IsValid() && "A DgnDb always has a sessions partition");
-    SessionModelPtr model = Models().Get<SessionModel>(partition->GetSubModelId());
-    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_SessionModel);
-    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**

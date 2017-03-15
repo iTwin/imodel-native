@@ -41,7 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
-    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct Session; struct SpatialLocationType;
+    struct Definition; struct PhysicalType; struct PhysicalRecipe; struct GraphicalType2d; struct GraphicalRecipe2d; struct SpatialLocationType;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
@@ -2747,60 +2747,6 @@ protected:
 };
 
 //=======================================================================================
-//! A session holds a collection of "session varibles" that save the state of an visualization or editing session of a bim.
-//! Session variables are stored as Json objects grouped by name (typically some top-level namespace).
-// @bsiclass                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Session : DefinitionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Session, DefinitionElement)
-    friend struct dgn_ElementHandler::Session;
-
-protected:
-    mutable bool m_dirty;
-    Json::Value m_variables;
-    
-    explicit Session(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
-    DgnDbStatus _OnInsert() override {SaveVariables(); return T_Super::_OnInsert();}
-    DgnDbStatus _OnUpdate(DgnElementCR original) override {SaveVariables(); return T_Super::_OnUpdate(original);}
-
-public:
-    DGNPLATFORM_EXPORT void SaveVariables() const;
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8StringCR name);
-
-    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this Session
-
-    DGNPLATFORM_EXPORT static SessionCPtr GetByName(DgnDbR db, Utf8StringCR name);
-
-    DGNPLATFORM_EXPORT static SessionPtr Create(DgnDbR db, Utf8CP name);
-
-    //! Make an iterator over all Sessions in the specified DgnDb
-    //! @param[in] db Iterate Sessions in this DgnDb
-    //! @param[in] whereClause The optional where clause starting with WHERE
-    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT static ElementIterator MakeIterator(DgnDbR db, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr);
-
-    //! Get the Json::Value associated with a variable in this Session. If the variable is not present, the returned Json::Value will be "null".
-    //! @param[in] name The namespace of the variable 
-    JsonValueCR GetVariable(Utf8CP name) const {return m_variables[name];}
-
-    //! Set a variable in this Session.
-    //! @param[in] name The name of the variable
-    //! @param[in] value The value for the the variable
-    //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
-    void SetVariable(Utf8CP name, JsonValueCR value) {m_variables[name] = value; m_dirty=true;}
-
-    //! Remove a variable from this Session.
-    //! @param[in] name The name of the variable to remove
-    //! @note  This only changes the variable in memory. It will be saved when/if the Session is saved.
-    void RemoveVariable(Utf8CP name) {m_variables.removeMember(name); m_dirty=true;}
-};
-
-//=======================================================================================
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    02/17
 //=======================================================================================
@@ -3408,14 +3354,11 @@ public:
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
-
     //! Return the root Subject
     SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
 
     //! Get the DgnElementId of the partition that lists the RealityData source for @b this DgnDb
     DgnElementId GetRealityDataSourcesPartitionId() const {return DgnElementId((uint64_t)14LL);}
-    //! Get the DgnElementId of the Session partition for @b this DgnDb
-    DgnElementId GetSessionPartitionId() const {return DgnElementId((uint64_t)15LL);}
     //! Get the DgnElementId of the Dictionary partition for @b this DgnDb
     DgnElementId GetDictionaryPartitionId() const {return DgnElementId((uint64_t)16LL);}
 

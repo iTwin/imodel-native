@@ -255,12 +255,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="SessionModel" modifier="Sealed" displayLabel="Session Model" description="The singleton container for session elements.">
-        <BaseClass>DefinitionModel</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="WebMercatorModel" displayLabel="Web Mercator Model">
         <BaseClass>SpatialModel</BaseClass>
         <ECCustomAttributes>
@@ -1401,14 +1395,6 @@
     </ECEntityClass>
     -->
 
-    <ECEntityClass typeName="Session" modifier="Sealed">
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Variables" typeName="string" />
-    </ECEntityClass>
-
     <ECEntityClass typeName="ViewAttachment" displayLabel="View Attachment">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1951,7 +1937,7 @@
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="false">
             <Class class="CategorySelector"/>
         </Target>
     </ECRelationshipClass>

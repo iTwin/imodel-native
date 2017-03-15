@@ -33,7 +33,6 @@
 #define BIS_CODESPEC_PhysicalType                   BIS_CODESPEC(BIS_CLASS_PhysicalType)
 #define BIS_CODESPEC_PhysicalRecipe                 BIS_CODESPEC(BIS_CLASS_PhysicalRecipe)
 #define BIS_CODESPEC_InformationPartitionElement    BIS_CODESPEC(BIS_CLASS_InformationPartitionElement)
-#define BIS_CODESPEC_Session                        BIS_CODESPEC(BIS_CLASS_Session)
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
 #define BIS_CODESPEC_SpatialCategory                BIS_CODESPEC(BIS_CLASS_SpatialCategory)
 #define BIS_CODESPEC_SpatialLocationType            BIS_CODESPEC(BIS_CLASS_SpatialLocationType)

@@ -495,16 +495,6 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SessionModel::_OnInsertElement(DgnElementR element)
-    {
-    // SessionModel can contain *only* Session elements
-    // WIP: waiting for Session element to be introduced!
-    return T_Super::_OnInsertElement(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
@@ -1842,18 +1832,6 @@ DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext
         *stat = DgnDbStatus::WrongModel;
 
     BeAssert(false && "The dictionary model cannot be cloned");
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr SessionModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const
-    {
-    if (nullptr != stat)
-        *stat = DgnDbStatus::WrongModel;
-
-    BeAssert(false && "The SessionModel cannot be cloned");
     return nullptr;
     }
 
