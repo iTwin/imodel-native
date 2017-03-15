@@ -210,9 +210,10 @@ public:
     //! @see BeSQLite::BlobIO
     ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const;
 
+    //! Clears the ECDb cache
+    ECDB_EXPORT void ClearECDbCache() const;
+
 #if !defined (DOCUMENTATION_GENERATOR)
-    //! Clears the ECDb cache (not exported until we decided whether we need consumers to call it directly or not)
-    void ClearECDbCache() const;
     Impl& GetECDbImplR() const;
     void FireAfterECSchemaImportEvent() const { _OnAfterECSchemaImport(); }
 #endif
