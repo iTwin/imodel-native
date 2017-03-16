@@ -41,43 +41,43 @@ void RealityDataConsole::InterpretCommand()
         return;
         }
 
-    if(args[0].ContainsI("quit"))
+    if(args[0].EqualsI("quit"))
         m_lastCommand = Command::Quit;
-    else if (args[0].ContainsI("retry"))
+    else if (args[0].EqualsI("retry"))
         m_lastCommand = Command::Retry;
-    else if (args[0].ContainsI("ListAll"))
+    else if (args[0].EqualsI("ListAll"))
         m_lastCommand = Command::ListAll;
-    else if (args[0].ContainsI("list") || args[0].ContainsI("dir"))
+    else if (args[0].EqualsI("list") || args[0].EqualsI("dir"))
         m_lastCommand = Command::List;
-    else if (args[0].ContainsI("help"))
+    else if (args[0].EqualsI("help"))
         m_lastCommand = Command::Help;
-    else if (args[0].ContainsI("stat"))
+    else if (args[0].EqualsI("stat"))
         m_lastCommand = Command::Stat;
-    else if (args[0].ContainsI("cancel"))
+    else if (args[0].EqualsI("cancel"))
         m_lastCommand = Command::Cancel;
-    else if (args[0].ContainsI("details"))
+    else if (args[0].EqualsI("details"))
         m_lastCommand = Command::Details;
-    else if (args[0].ContainsI("Download"))
+    else if (args[0].EqualsI("Download"))
         m_lastCommand = Command::Download;
-    else if (args[0].ContainsI("Upload"))
+    else if (args[0].EqualsI("Upload"))
         m_lastCommand = Command::Upload;
-    else if (args[0].ContainsI("SetServer"))
+    else if (args[0].EqualsI("SetServer"))
         m_lastCommand = Command::SetServer;
-    else if (args[0].ContainsI("ChangeProps"))
+    else if (args[0].EqualsI("ChangeProps"))
         m_lastCommand = Command::ChangeProps;
     else
         {
         m_lastCommand = Command::Error;
 
-        if (args[0].ContainsI("index"))
+        if (args[0].EqualsI("index"))
             m_lastCommand = Command::ChoiceIndex;
-        else if (args[0].ContainsI("value"))
+        else if (args[0].EqualsI("value"))
             m_lastCommand = Command::ChoiceValue;
-        else if (args[0].ContainsI("cd"))
+        else if (args[0].EqualsI("cd"))
             m_lastCommand = Command::ChangeDir;
-        else if (args[0].ContainsI("FileAccess"))
+        else if (args[0].EqualsI("FileAccess"))
             m_lastCommand = Command::FileAccess;
-        else if (args[0].ContainsI("AzureAdress"))
+        else if (args[0].EqualsI("AzureAdress"))
             m_lastCommand = Command::AzureAdress;
         if(m_lastCommand != Command::Error)
             {
@@ -269,12 +269,12 @@ void RealityDataConsole::ConfigureServer()
         Utf8String temp;
         std::getline(std::cin, input);
         temp = Utf8String(input.c_str());
-        if(temp.ContainsI("y"))
+        if(temp.EqualsI("y"))
             {
             verifyCertificate = true;
             break;
             }
-        else if(temp.ContainsI("n"))
+        else if(temp.EqualsI("n"))
             {
             verifyCertificate = false;
             break;
@@ -462,7 +462,7 @@ void RealityDataConsole::ListAll()
     while (m_lastCommand != Command::Cancel && placeholder < size)
         {
         std::getline(std::cin, str);
-        if(Utf8String(str.c_str()).ContainsI("Cancel"))
+        if(Utf8String(str.c_str()).EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
         else
             {

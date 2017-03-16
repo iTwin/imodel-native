@@ -255,7 +255,7 @@ public:
     //! The path defined by the given polygon must not autocross, contains segments that overlap.
     //! The final clossing point is mandatory.
     REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys);
+    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys="4326");
     REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprintString(Utf8CP footprint);
 
