@@ -184,6 +184,7 @@ void CheckSpiralStroke (DSpiral2dBaseR spiral)
     // stroke0 is defaults.    In examples, size0 is "small" -- e.g. 11
     // if stroke0 is driven by the max edge length (rather than angle), stroke1 and 2 are respectively 10x and 40X points.
     // Difference d12 is "usually" smaller -- one exception being BiQuadratic.   Is the discontinuity affecting things?
+    printf("(d01 %8.2g) (d12 %8.2g)\n",d01, d12);
     Check::NearZero (d01, "stroke spirals match", 1000.0);
     Check::NearZero (d12, "Heavily stroke spirals match", 100.0);
     }
