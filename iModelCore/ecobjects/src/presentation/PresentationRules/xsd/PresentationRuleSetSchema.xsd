@@ -179,6 +179,7 @@
             <xs:attribute name="PropertyName"             type="xs:string"/>
             <xs:attribute name="UseInversedPropertyValue" type="xs:boolean" default="false"/>
             <xs:attribute name="DefaultValue"             type="xs:boolean" use="required"/>
+            <xs:attribute name="IsEnabled"                type="xs:string"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="SortingRule">
