@@ -709,6 +709,13 @@ bool AddNode (VuP node)
     node->SetUserDataAsIntAroundFace (m_id);
     return true;
     }
+double SumNodeAreas ()
+    {
+    double area = 0.0;
+    for (auto node : m_nodes)
+        area += vu_area (node);
+    return area;
+    }
 
 };
 
@@ -731,7 +738,7 @@ GriddedSpaceManager () :
     m_graph(nullptr),
     m_isoGrid (true),
     m_smoothTriangles (true),
-    m_meshSize (1.0)
+    m_meshSize (0.0)
     {
     }
 ~GriddedSpaceManager ()
@@ -764,13 +771,16 @@ bvector<bvector <DPoint3d>> &parityLoops,
 bvector<bvector <DPoint3d>> &chains
 )
     {
+    static double s_numGridLine = 20.0;
     if (m_graph != nullptr)
         vu_freeVuSet (m_graph);
     m_graph = nullptr;
     m_parityLoops = parityLoops;
     m_chains      = chains;
     m_lastSpaceId = 0;
-
+    DRange3d range = DRange3d::From (parityLoops);
+	if (m_meshSize <= 0.0)
+	    m_meshSize = DoubleOps::Max (range.XLength (), range.YLength ()) / s_numGridLine;
     m_graph = VuOps::CreateTriangulatedGrid (m_parityLoops, m_chains, bvector<DPoint3d> (),
                         bvector<double> (), bvector<double> (),
                         m_meshSize, m_meshSize, m_meshSize, m_meshSize, m_isoGrid, m_smoothTriangles);
@@ -799,7 +809,7 @@ int CreateSpace (DPoint3dCR xyz, double targetArea)
         return s_invalidSpaceId;
         }
     int id = ++m_lastSpaceId;
-    m_spaces[id] = SpaceDescriptor (xyz, ++m_lastSpaceId, targetArea);
+    m_spaces[id] = SpaceDescriptor (xyz, id, targetArea);
     m_spaces[id].AddNode (node);
     return id;
     }
@@ -889,15 +899,16 @@ bool ExpandSingleSpaceIdToTargetArea (int id, double targetArea)
     // Add all neighbors to the heap.
     for (auto node : space->second.m_nodes)
         {
-        space->second.m_currentArea = vu_area (node);
+        space->second.m_currentArea += vu_area (node);
         AddNeighborsToFloodHeap_weightByDistanceFromRefPoint (space->second, node);
         }
     HeapEntry entry;
     double distance;
+    double a0, a1;
     for (;;)
         {
-        double a0 = space->second.m_currentArea;
-        double a1 = space->second.m_targetArea;
+        a0 = space->second.m_currentArea;
+        a1 = space->second.m_targetArea;
         if (a0 > a1)
             break;
         if (!m_heap.RemoveMin (entry, distance))
@@ -921,7 +932,7 @@ struct GriddedSpaceQueries
 GriddedSpaceManager &m_manager;
 GriddedSpaceQueries (GriddedSpaceManager &manager) : m_manager(manager){}
 
-void SaveSpaceBoundaries ()
+void SaveSpaceBoundaries (bool showCentroid = false)
     {
     double tolerance = DoubleOps::SmallMetricDistance ();
     _VuSet::TempMask boundaryMask (m_manager.m_graph);
@@ -969,10 +980,94 @@ if (seedNode->HasMask (VU_EXTERIOR_EDGE))  // Something is strange -- this shoul
                 }
             DPoint3dOps::Compress (chain, tolerance);
             Check::SaveTransformed (chain);
+            if (showCentroid)
+                {
+                DPoint3d centroid;
+                double area;
+                DVec3d normal;
+                PolygonOps::CentroidNormalAndArea (chain, centroid, normal, area);
+#define CentroidHashFraction 0.05
+                double d = CentroidHashFraction * sqrt (area);
+                bvector<DPoint3d> hash;
+                hash.push_back (DPoint3d::From (centroid.x + d, centroid.y));
+                hash.push_back (DPoint3d::From (centroid.x - d, centroid.y));
+                hash.push_back (DPoint3d::From (centroid.x, centroid.y));
+                hash.push_back (DPoint3d::From (centroid.x, centroid.y - d));
+                hash.push_back (DPoint3d::From (centroid.x, centroid.y + d));
+                Check::SaveTransformed (hash);
+                }
             }
         }
     END_VU_SET_LOOP (seedNode, m_manager.m_graph)
     }
+
+void CollectSpaceBoundaries (TaggedPolygonVectorR spaces, bool smoothBoundaries)
+    {
+    spaces.clear ();
+    double tolerance = DoubleOps::SmallMetricDistance ();
+    _VuSet::TempMask boundaryMask (m_manager.m_graph);
+    m_manager.SetAllSpaceBoundaryMasks (boundaryMask.Mask ());
+    _VuSet::TempMask visitMask (m_manager.m_graph);
+    bvector<VuP> chainNodes;
+    bvector<DPoint3d> chain;
+    bvector<DPoint3d> chain0;   // unsmoothed.
+    VU_SET_LOOP (seedNode, m_manager.m_graph)
+        {
+        if (m_manager.IsOccupied (seedNode) && !visitMask.IsSetAtNode (seedNode) && boundaryMask.IsSetAtNode (seedNode))
+            {
+if (seedNode->HasMask (VU_EXTERIOR_EDGE))  // Something is strange -- this should be filtered by IsOccupied
+    continue;
+            chainNodes.clear ();
+            auto currentNode = seedNode;
+            for (; nullptr != currentNode;)
+                {
+                visitMask.SetAtNode (currentNode);
+                chainNodes.push_back (currentNode);
+                currentNode->SetMask (visitMask.Mask ());
+                currentNode = currentNode->FSucc ()->FindMaskAroundReverseVertex (boundaryMask.Mask ());
+                if (currentNode == seedNode)
+                    break;
+                }
+            // (flood regions are closed ... chain should always close)
+            chain.clear ();
+            chain0.clear ();
+            for (auto node : chainNodes)
+                {
+                DPoint3d xyz0 = node->GetXYZ ();
+                chain0.push_back (xyz0);
+                DPoint3d xyz1 = node->FSucc ()->GetXYZ ();
+                if (m_manager.IsBarrierEdge (node))
+                    {
+                    chain.push_back (xyz0);
+                    chain.push_back (xyz1);
+                    }
+                else
+                    {
+                    chain.push_back (DPoint3d::FromInterpolate (xyz0, 0.5, xyz1));
+                    }
+                }
+            if (currentNode == seedNode)    // closure -- we expect this
+                {
+                auto xyz = chain.front ();
+                chain.push_back (xyz);
+                xyz = chain0.front ();
+                chain0.push_back (xyz);
+                }
+            DPoint3dOps::Compress (chain, tolerance);
+            DPoint3dOps::Compress (chain0, tolerance);
+            if (smoothBoundaries)
+                spaces.push_back (TaggedPolygon (chain, (ptrdiff_t)m_manager.GetSpaceId (seedNode)));
+            else
+                spaces.push_back (TaggedPolygon (chain0, (ptrdiff_t)m_manager.GetSpaceId (seedNode)));
+            Check::SaveTransformed (chain);
+            }
+        }
+    END_VU_SET_LOOP (seedNode, m_manager.m_graph)
+    }
+
+
+
+
 void SaveWalls ()
     {
     Check::SaveTransformed (m_manager.m_parityLoops);
