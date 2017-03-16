@@ -44,21 +44,3 @@ BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
     #       Which is: 1095364799000
     # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
 
-LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed
-    # bim0200dev, x64, DEBUG, random hang
-    # Main Thread:
-    #   ntdll.dll!NtWaitForAlertByThreadId ()      
-    #   ntdll.dll!RtlSleepConditionVariableSRW()   
-    #   KernelBase.dll!SleepConditionVariableSRW () 
-    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   
-    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77    
-    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95      
-    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59       
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178    
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   
-    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182    
-    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345       
-    #   BentleyTest.exe!LimitingTaskQueueTests_Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed_Test::TestBody() Line 51 
-    #   BentleyTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2434      
-    #   BentleyTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2485      
-    #   BentleyTest.exe!testing::Test::Run() Line 2528     
