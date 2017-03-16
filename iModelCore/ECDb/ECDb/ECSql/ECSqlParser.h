@@ -87,6 +87,7 @@ private:
     //No need to free this as it is a static member (See http://bsw-wiki.bentley.com/bin/view.pl/Main/CPlusPlusSpecific)
     static connectivity::OSQLParser* s_sharedParser;
 
+
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseInsertStatement(std::unique_ptr<InsertStatementExp>&, connectivity::OSQLParseNode const&) const;

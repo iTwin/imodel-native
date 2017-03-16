@@ -6,16 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlPreparer.h"
-#include "ECSqlSelectPreparer.h"
-#include "ECSqlInsertPreparer.h"
-#include "ECSqlUpdatePreparer.h"
-#include "ECSqlDeletePreparer.h"
-#include "ECSqlPropertyNameExpPreparer.h"
-#include "ECSqlPreparedStatement.h"
-#include "../SqlNames.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -72,7 +63,8 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         }
 
     nativeSql = context.GetNativeSql();
-    return ECSqlExpPreparer::ResolveParameterMappings(context);
+    ECSqlParameterMap& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
+    return parameterMap.RemapForJoinTable(context);
     }
 
 //************** ECSqlExpPreparer *******************************
@@ -161,7 +153,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryValueExp(NativeSqlBuilder::List& nati
             if (exp.HasParentheses())
                 nativeSqlBuilder.AppendParenRight();
 
-            nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+            nativeSqlSnippets.push_back(nativeSqlBuilder);
             }
 
         return ECSqlStatus::Success;
@@ -260,7 +252,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
     if (wrapInParens)
         sqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(sqlBuilder));
+    nativeSqlSnippets.push_back(sqlBuilder);
     return ECSqlStatus::Success;
     }
 
@@ -314,7 +306,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBooleanFactorExp(NativeSqlBuilder::List& na
         if (exp.HasParentheses())
             sqlBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(sqlBuilder));
+        nativeSqlSnippets.push_back(sqlBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -363,7 +355,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         if (exp.HasParentheses())
             nativeSqlBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -511,7 +503,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             }
 
         classViewSql.AppendSpace().AppendEscaped(exp.GetId().c_str());
-        nativeSqlSnippets.push_back(move(classViewSql));
+        nativeSqlSnippets.push_back(classViewSql);
 
         return ECSqlStatus::Success;
         }
@@ -540,7 +532,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
                 BeAssert(desc.HierarchyMapsToMultipleTables() && exp.IsPolymorphic() && "Returned partition is null only for a polymorphic ECSQL where subclasses are in a separate table");
                 NativeSqlBuilder nativeSqlSnippet;
                 nativeSqlSnippet.AppendEscaped(classMap.GetUpdatableViewName().c_str());
-                nativeSqlSnippets.push_back(move(nativeSqlSnippet));
+                nativeSqlSnippets.push_back(nativeSqlSnippet);
                 return ECSqlStatus::Success;
                 }
 
@@ -560,7 +552,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
     NativeSqlBuilder nativeSqlSnippet;
     nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
-    nativeSqlSnippets.push_back(move(nativeSqlSnippet));
+    nativeSqlSnippets.push_back(nativeSqlSnippet);
     return ECSqlStatus::Success;
     }
 
@@ -694,7 +686,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(nativeSqlBuilder));
+    nativeSqlSnippets.push_back(nativeSqlBuilder);
     return ECSqlStatus::Success;
     }
 
@@ -931,39 +923,28 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     {
     BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
     
-    Utf8CP parameterName = exp.GetParameterName();
     ECSqlParameterMap& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    int nativeSqlParameterCount = -1;
     ECSqlBinder* binder = nullptr;
-    const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, parameterName);
-    if (binderAlreadyExists)
-        nativeSqlParameterCount = binder->GetMappedSqlParameterCount();
-    else
+    const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, exp.GetParameterName());
+    if (!binderAlreadyExists)
         {
         binder = ecsqlParameterMap.AddBinder(ctx, exp);
         if (binder == nullptr)
             return ECSqlStatus::Error;
-
-        nativeSqlParameterCount = binder->GetMappedSqlParameterCount();
         }
 
-    for (int i = 0; i < nativeSqlParameterCount; i++)
+    for (Utf8StringCR sqlParamName : binder->GetMappedSqlParameterNames())
         {
         NativeSqlBuilder parameterBuilder;
         if (exp.HasParentheses())
             parameterBuilder.AppendParenLeft();
 
-        if (binderAlreadyExists)
-            parameterBuilder.AppendParameter(parameterName, i, 0);
-        else
-            {
-            parameterBuilder.AppendParameter(parameterName, exp.GetParameterIndex(), i, ctx.NextParameterIndex());
-            }
+        parameterBuilder.Append(sqlParamName.c_str());
 
         if (exp.HasParentheses())
             parameterBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(parameterBuilder));
+        nativeSqlSnippets.push_back(parameterBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -1147,7 +1128,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
         toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
         }
 
-    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClass();
+    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClassNameExp();
 
     //Render previous sql part as is
     r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
@@ -1306,7 +1287,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     if (exp.HasParentheses())
         nativeSql.AppendParenRight();
 
-    nativeSqlSnippets.push_back(move(nativeSql));
+    nativeSqlSnippets.push_back(nativeSql);
     return ECSqlStatus::Success;
     }
 
@@ -1459,7 +1440,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareUnaryValueExp(NativeSqlBuilder::List& nativ
         if (exp.HasParentheses())
             unaryExpBuilder.AppendParenRight();
 
-        nativeSqlSnippets.push_back(move(unaryExpBuilder));
+        nativeSqlSnippets.push_back(unaryExpBuilder);
         }
 
     return ECSqlStatus::Success;
@@ -1525,7 +1506,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::List& nat
                     builder.AppendParenLeft();
 
                 builder.Append(listItemExpBuilders[i]);
-                nativeSqlSnippets.push_back(move(builder));
+                nativeSqlSnippets.push_back(builder);
                 }
             else
                 {
@@ -1595,77 +1576,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareWhereExp(NativeSqlBuilder& nativeSqlSnippet
     {
     nativeSqlSnippet.Append("WHERE ");
     return PrepareSearchConditionExp(nativeSqlSnippet, ctx, *exp.GetSearchConditionExp());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::ResolveParameterMappings(ECSqlPrepareContext& context)
-    {
-    //resolve parameter mappings
-    //Parameter index mapping: Vector index = SQLite parameter index (minus 1)
-    //                         Vector value = pair of ECSQL parameter index and index of parameter component (for types that map to more than one SQLite parameter)
-    //                                        the SQLite parameter maps to
-    // Ex: ECSQL: SELECT * FROM Foo WHERE IntProp = ? AND Point3dProp = ? would yield these mappings:
-    //     { {1, 0}, // First entry: SQLite index 1 -> Maps to first ECSQL parameter of type Integer. Only one component.
-    //       {2, 0}, // Second entry: SQLite index 2 -> Maps to second ECSQL parameter's first component (X column)
-    //       {2, 1}, // Third entry: SQLite index 3 -> Maps to second ECSQL parameter's second component (Y column)
-    //       {2, 2} } // Fourth entry: SQLite index 4 -> Maps to second ECSQL parameter's third component (Z column)
-
-    std::vector<NativeSqlBuilder::ECSqlParameterIndex> const& parameterIndexMappings = context.GetSqlBuilder().GetParameterIndexMappings();
-    ////!Subquery added it parameter before primary making the above list incorrect. We sort it base on global index before generating sql indexes.
-    //std::sort(parameterIndexMappings.begin(), parameterIndexMappings.end(), 
-    // [](NativeSqlBuilder::ECSqlParameterIndex const& lhs, NativeSqlBuilder::ECSqlParameterIndex const& rhs)
-    // {
-    // return lhs.GetGlobalIndex() < rhs.GetGlobalIndex();
-    // });
-    
-    auto& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
-    const size_t nativeSqlParameterCount = parameterIndexMappings.size();
-    if (nativeSqlParameterCount == 0)
-        return ECSqlStatus::Success;
-
-    int previousECSqlParameterIndex = 0;
-    ECSqlBinder* parameterBinder = nullptr;
-    bool isFirstItem = true;
-    for (size_t i = 0; i < nativeSqlParameterCount; i++)
-        {
-        //Parameter indices are 1-based
-        const size_t nativeSqlIndex = i + 1;
-        //corresponding ECSQL parameter index
-        const int ecsqlParameterIndex = parameterIndexMappings[i].GetIndex();
-        //If ECSQL parameter maps to more than one SQLite parameters, the component index 
-        const int ecsqlParameterComponentIndex = parameterIndexMappings[i].GetComponentIndex();
-
-        //if ECSQL parameter index is same as before, we don't need to look up the parameter binder again
-        if (isFirstItem || ecsqlParameterIndex != previousECSqlParameterIndex)
-            {
-            ECSqlBinder* binder = nullptr;
-            ECSqlStatus stat = ECSqlStatus::Success;
-            if (ecsqlParameterIndex > 0)
-                stat = parameterMap.TryGetBinder(binder, ecsqlParameterIndex);
-            else
-                stat = parameterMap.TryGetInternalBinder(binder, (size_t) ((-1) * ecsqlParameterIndex));
-
-            if (!stat.IsSuccess())
-                {
-                BeAssert(false && "Resolution of parameter mappings failed. Index mismatches.");
-                return ECSqlStatus::Error;
-                }
-
-            parameterBinder = binder;
-            }
-        else
-            BeAssert(parameterBinder != nullptr);
-
-        parameterBinder->SetSqliteIndex(ecsqlParameterComponentIndex, nativeSqlIndex);
-        previousECSqlParameterIndex = ecsqlParameterIndex;
-        isFirstItem = false;
-        }
-
-    parameterMap.RemapForJoinTable(context);
-    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -21,7 +21,7 @@ private:
     Utf8String m_name;
     Utf8String m_val;
 
-    Utf8String _ToECSql() const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString() const override { return "OptionExp"; }
 
 public:
@@ -44,7 +44,7 @@ public:
 private:
     bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_optionsByName;
 
-    Utf8String _ToECSql() const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString() const override { return "OptionsExp"; }
 
 public:

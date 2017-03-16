@@ -133,7 +133,7 @@ bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& con
 // @bsimethod                                   Krischan.Eberle                   03/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP RelationshipClassEndTableMap::DEFAULT_FK_COL_PREFIX = "ForeignECInstanceId_";
+Utf8CP RelationshipClassEndTableMap::DEFAULT_FK_COL_PREFIX = "FK_";
 //static
 Utf8CP RelationshipClassEndTableMap::RELECCLASSID_COLNAME_TOKEN = "RelECClassId";
 
@@ -495,7 +495,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
         fkColName.assign(fkColInfo.GetImpliedFkColumnName());
     else
         {
-        //default name: ForeignECInstanceId_<schema alias>_<rel class name>
+        //default name: FK_<schema alias>_<rel class name>
         fkColName.assign(DEFAULT_FK_COL_PREFIX).append(relClass.GetSchema().GetAlias()).append("_").append(relClass.GetName());
         }
 
@@ -1486,7 +1486,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Source:
             {
             if (linkTableInfo.GetSourceIdColumnName().empty())
-                colName.assign(COL_DEFAULTNAME_SourceECInstanceId);
+                colName.assign(COL_DEFAULTNAME_SourceId);
             else
                 colName.assign(linkTableInfo.GetSourceIdColumnName());
 
@@ -1495,7 +1495,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
             case ECRelationshipEnd_Target:
             {
             if (linkTableInfo.GetTargetIdColumnName().empty())
-                colName.assign(COL_DEFAULTNAME_TargetECInstanceId);
+                colName.assign(COL_DEFAULTNAME_TargetId);
             else
                 colName.assign(linkTableInfo.GetTargetIdColumnName());
 

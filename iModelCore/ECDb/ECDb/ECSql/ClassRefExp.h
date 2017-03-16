@@ -40,7 +40,7 @@ private:
 
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
-    virtual BentleyStatus _CreatePropertyNameExpList (std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
+    virtual BentleyStatus _CreatePropertyNameExpList (ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
     //RangeClassRefExp (Type type) : RangeClassRefExp(type, true) {}
@@ -53,7 +53,7 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
-    BentleyStatus CreatePropertyNameExpList(std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(addDelegate); }
+    BentleyStatus CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(ctx, addDelegate); }
     bool ContainProperty(Utf8CP propertyName) const { return _ContainProperty(propertyName); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
@@ -89,8 +89,8 @@ private:
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     bool _ContainProperty(Utf8CP propertyName) const override;
-    BentleyStatus _CreatePropertyNameExpList(std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
-    Utf8String _ToECSql() const override;
+    BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString () const override;
 
 public:
@@ -99,21 +99,9 @@ public:
         {}
 
     bool HasMetaInfo() const { return m_info != nullptr;}
-    ClassNameExp::Info const&  GetInfo() const { return *m_info;}
+    ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
-    Utf8String GetFullName () const
-        {
-        Utf8String fullName;
-        if (!m_catalogName.empty ())
-            fullName.append (m_catalogName).append (".");
-
-        if (!m_schemaAlias.empty ())
-            fullName.append (m_schemaAlias).append (".");
-
-        fullName.append (m_className);
-
-        return fullName;
-        }
+    Utf8String GetFullName() const;
 
     Utf8StringCR GetClassName() const { return m_className;}
     Utf8StringCR GetSchemaName() const { return m_schemaAlias;}

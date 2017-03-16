@@ -44,10 +44,9 @@
     <ClCompile Include="Published\ECDbMapping_Tests.cpp" />
     <ClCompile Include="Published\ECDbProfile_Test.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
-    <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
+    <ClCompile Include="Published\ECDbRelationship_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaManager_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaRules_Test.cpp" />
-    <ClCompile Include="Published\ECDbSchemas_Test.cpp" />
     <ClCompile Include="Published\ECDbSchemaUpdate_Tests.cpp" />
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
     <ClCompile Include="Published\ECDbTestHelper.cpp" />

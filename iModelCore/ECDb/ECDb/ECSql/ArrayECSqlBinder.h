@@ -69,13 +69,11 @@ private:
 
         };
 
-    int m_sqliteIndex = -1;
     rapidjson::Document m_json;
     std::unique_ptr<JsonValueBinder> m_rootBinder = nullptr;
 
     void Initialize();
 
-    void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override { m_sqliteIndex = (int) sqliteParameterIndex; }
     void _OnClearBindings() override { Initialize(); }
     ECSqlStatus _OnBeforeStep() override;
 
@@ -98,7 +96,7 @@ private:
     IECSqlBinder& _AddArrayElement() override { return m_rootBinder->AddArrayElement(); }
 
 public:
-    ArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);
+    ArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
     ~ArrayECSqlBinder() {}
     };
 

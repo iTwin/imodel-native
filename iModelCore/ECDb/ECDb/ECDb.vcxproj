@@ -52,6 +52,8 @@
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
     <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
+    <ClCompile Include="ECSql\ECSqlPreparedStatement_Old.cpp" />
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp" />
@@ -63,11 +65,9 @@
     <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp" />
     <ClCompile Include="ECSql\ECSqlField.cpp" />
     <ClCompile Include="ECSql\ECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\ECSqlBinderFactory.cpp" />
     <ClCompile Include="ECSql\ECSqlParser.cpp" />
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
-    <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
     <ClCompile Include="ECSql\ECSqlStatus.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
@@ -166,18 +166,18 @@
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h" />
     <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
+    <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
+    <ClInclude Include="ECSql\ECSqlPreparedStatement_Old.h" />
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
     <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
     <ClInclude Include="ECSql\ECSqlStatementBase.h" />
     <ClInclude Include="ECSql\ComputedExp.h" />
     <ClInclude Include="ECSql\DynamicSelectClauseECClass.h" />
     <ClInclude Include="ECSql\ECSqlFieldFactory.h" />
-    <ClInclude Include="ECSql\ECSqlBinderFactory.h" />
     <ClInclude Include="ECSql\ECSqlParser.h" />
     <ClInclude Include="ECSql\ECSqlPrepareContext.h" />
     <ClInclude Include="ECSql\ECSqlPreparer.h" />
     <ClInclude Include="ECSql\ECSqlField.h" />
-    <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
     <ClInclude Include="ECSql\ECSqlTypeInfo.h" />
     <ClInclude Include="ECSql\ECSqlUpdatePreparer.h" />
     <ClInclude Include="ECSql\Exp.h" />
@@ -267,7 +267,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\ECDb\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\ECDb\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECDb\</IntermediateOutputPath>

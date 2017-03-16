@@ -27,9 +27,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define COL_SourceECClassId "SourceECClassId"
 #define COL_TargetECClassId "TargetECClassId"
 
-#define COL_DEFAULTNAME_ECInstanceId "Id"
-#define COL_DEFAULTNAME_SourceECInstanceId "SourceId"
-#define COL_DEFAULTNAME_TargetECInstanceId "TargetId"
+#define COL_DEFAULTNAME_Id "Id"
+#define COL_DEFAULTNAME_SourceId "SourceId"
+#define COL_DEFAULTNAME_TargetId "TargetId"
 
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf
@@ -114,12 +114,10 @@ static_assert(1 == (int) MapStrategy::OwnTable, "Persisted enum MapStrategy has 
 static_assert(2 == (int) MapStrategy::TablePerHierarchy, "Persisted enum MapStrategy has changed");
 #define SQLVAL_MapStrategy_ExistingTable "3"
 static_assert(3 == (int) MapStrategy::ExistingTable, "Persisted enum MapStrategy has changed");
-#define SQLVAL_MapStrategy_SharedTable "4"
-static_assert(4 == (int) MapStrategy::SharedTable, "Persisted enum MapStrategy has changed");
-#define SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "5"
-static_assert(5 == (int) MapStrategy::ForeignKeyRelationshipInSourceTable, "Persisted enum MapStrategy has changed");
-#define SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable "6"
-static_assert(6 == (int) MapStrategy::ForeignKeyRelationshipInTargetTable, "Persisted enum MapStrategy has changed");
+#define SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable "10"
+static_assert(10 == (int) MapStrategy::ForeignKeyRelationshipInTargetTable, "Persisted enum MapStrategy has changed");
+#define SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "11"
+static_assert(11 == (int) MapStrategy::ForeignKeyRelationshipInSourceTable, "Persisted enum MapStrategy has changed");
 
 //List here all other enums whose values are persisted to detect enum changes.
 static_assert((int) ECN::CustomAttributeContainerType::Any == 4095 &&

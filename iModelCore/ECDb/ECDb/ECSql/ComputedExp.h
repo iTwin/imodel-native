@@ -26,9 +26,6 @@ private:
     bool m_hasParentheses;
     ECSqlTypeInfo m_typeInfo;
 
-    Utf8String _ToECSql() const override;
-    virtual void _DoToECSql(Utf8StringR ecsql) const = 0;
-
 protected:
     explicit ComputedExp(Type type) : Exp(type), m_hasParentheses(false) {}
 
@@ -68,7 +65,7 @@ private:
 
     FinalizeParseStatus _FinalizeParsing (ECSqlParseContext&, FinalizeParseMode mode) override;
     bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
-    void _DoToECSql(Utf8StringR ecsql) const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString() const override;
 
     FinalizeParseStatus CanCompareTypes(ECSqlParseContext&, ComputedExp const& lhs, ComputedExp const& rhs) const;
@@ -92,7 +89,7 @@ private:
     bool m_notOperator;
     size_t m_operandExpIndex;
 
-    void _DoToECSql(Utf8StringR ecsql) const override;
+    void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString() const override;
 
 public:
@@ -111,7 +108,7 @@ private:
     size_t m_booleanValueExpIndex;
 
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-    void _DoToECSql(Utf8StringR ecsql) const override;
+    void _ToECSql(ECSqlRenderContext& ctx) const override;
     Utf8String _ToString() const override { return "UnaryPredicate"; }
 
 public:

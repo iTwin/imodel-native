@@ -44,7 +44,7 @@ struct AssignmentListExp final : Exp
         SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "AssignmentListExp"; }
 
     public:
@@ -65,14 +65,14 @@ struct PropertyNameListExp final : Exp
         SystemPropertyExpIndexMap m_specialTokenExpIndexMap;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-        Utf8String _ToECSql() const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "PropertyNameList"; }
 
     public:
         PropertyNameListExp() : Exp(Type::PropertyNameList) {}
 
-        void AddPropertyNameExp(std::unique_ptr<PropertyNameExp>& propertyNameExp);
-        PropertyNameExp const* GetPropertyNameExp(size_t index) const;
+        void AddPropertyNameExp(std::unique_ptr<PropertyNameExp>& propertyNameExp) { AddChild(std::move(propertyNameExp)); }
+        PropertyNameExp const* GetPropertyNameExp(size_t index) const { return GetChild<PropertyNameExp>(index); }
         SystemPropertyExpIndexMap const& GetSpecialTokenExpIndexMap() const { return m_specialTokenExpIndexMap; }
     };
 
@@ -85,15 +85,15 @@ struct ValueExpListExp final : ComputedExp
     {
     private:
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
-        void _DoToECSql(Utf8StringR ecsql) const override;
+        void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "ValueExpList"; }
 
     public:
         ValueExpListExp() : ComputedExp(Type::ValueExpList) {}
 
-        void AddValueExp(std::unique_ptr<ValueExp>& valueExp);
+        void AddValueExp(std::unique_ptr<ValueExp>& valueExp) { AddChild(std::move(valueExp)); }
+        ValueExp const* GetValueExp(size_t index) const { return GetChild<ValueExp>(index); }
         ParameterExp* TryGetAsParameterExpP(size_t index) const;
-        ValueExp const* GetValueExp(size_t index) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

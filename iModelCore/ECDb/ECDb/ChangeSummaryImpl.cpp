@@ -175,7 +175,7 @@ ECN::ECClassId TableMap::GetECClassId() const
 //---------------------------------------------------------------------------------------
 DbDupValue TableMap::QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const
     {
-    Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetECInstanceIdColumn().GetName().c_str());
+    Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetIdColumn().GetName().c_str());
     CachedStatementPtr statement = m_ecdb.GetCachedStatement(ecSql.c_str());
     BeAssert(statement.IsValid());
 
@@ -203,7 +203,7 @@ int TableMap::GetColumnIndexByName(Utf8StringCR columnName) const
 //---------------------------------------------------------------------------------------
 bool TableMap::QueryInstance(ECInstanceId instanceId) const
     {
-    DbDupValue value = QueryValueFromDb(GetECInstanceIdColumn().GetName(), instanceId);
+    DbDupValue value = QueryValueFromDb(GetIdColumn().GetName(), instanceId);
     if (!value.IsValid() || value.IsNull())
         return false;
 
@@ -1961,7 +1961,7 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
     {
     BeAssert(m_tableMap->IsMapped());
 
-    m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetECInstanceIdColumn().GetIndex());
+    m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetIdColumn().GetIndex());
     BeAssert(m_primaryInstanceId.IsValid());
 
     if (m_sqlChange->GetDbOpcode() == DbOpcode::Update && !m_tableMap->QueryInstance(m_primaryInstanceId))

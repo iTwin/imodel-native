@@ -112,7 +112,6 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
     switch (strategy)
         {
             case MapStrategy::ExistingTable:
-            case MapStrategy::SharedTable:
                 return false;
 
                 //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.

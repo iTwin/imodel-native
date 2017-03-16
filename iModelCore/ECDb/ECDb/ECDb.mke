@@ -93,11 +93,11 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlUpdatePreparer.h \
                 $(baseDir)ECSql/ECSqlDeletePreparer.h \
                 $(baseDir)ECSql/ECSqlPreparedStatement.h \
+                $(baseDir)ECSql/ECSqlPreparedStatement_Old.h \
                 $(baseDir)ECSql/ECSqlStatementBase.h \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \
                 $(baseDir)ECSql/ECSqlStatementNoopImpls.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
-                $(baseDir)ECSql/ECSqlBinderFactory.h \
                 $(baseDir)ECSql/PrimitiveECSqlBinder.h \
                 $(baseDir)ECSql/PointECSqlBinder.h \
                 $(baseDir)ECSql/StructECSqlBinder.h \
@@ -282,6 +282,8 @@ $(o)ECSqlStatement$(oext):                                    $(baseDir)ECSql/EC
 
 $(o)ECSqlPreparedStatement$(oext):                            $(baseDir)ECSql/ECSqlPreparedStatement.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlPreparedStatement_Old$(oext):                        $(baseDir)ECSql/ECSqlPreparedStatement_Old.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECSqlStatementBase$(oext):                                $(baseDir)ECSql/ECSqlStatementBase.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlStatementImpl$(oext):                                $(baseDir)ECSql/ECSqlStatementImpl.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -309,8 +311,6 @@ $(o)JsonUpdater$(oext):                                       $(baseDir)ECSql/Js
 $(o)ECSqlStatementNoopImpls$(oext):                           $(baseDir)ECSql/ECSqlStatementNoopImpls.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlBinder$(oext):                                       $(baseDir)ECSql/ECSqlBinder.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlBinderFactory$(oext):                                $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PrimitiveECSqlBinder$(oext):                              $(baseDir)ECSql/PrimitiveECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 

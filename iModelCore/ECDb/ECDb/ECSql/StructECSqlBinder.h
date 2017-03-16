@@ -18,35 +18,11 @@ struct StructECSqlBinder final : public ECSqlBinder
     friend struct ECSqlBinderFactory;
 
     private:
-        //=======================================================================================
-        //! @bsiclass                                                Krischan.Eberle      03/2014
-        //+===============+===============+===============+===============+===============+======
-        struct MemberBinderInfo
-            {
-            private:
-                ECSqlBinder* m_memberBinder;
-                int m_ecsqlComponentIndexOffset;
-
-            public:
-                MemberBinderInfo(ECSqlBinder& memberBinder, int ecsqlComponentIndexOffset)
-                    : m_memberBinder(&memberBinder), m_ecsqlComponentIndexOffset(ecsqlComponentIndexOffset)
-                    {}
-                //use compiler generated dtor/copy ctor/copy assignment op
-
-                ECSqlBinder& GetMemberBinder() const { return *m_memberBinder; }
-                //! Gets the component index of the parent struct binder that maps to the first component
-                //! of this member's binder.
-                int GetECSqlComponentIndexOffset() const { return m_ecsqlComponentIndexOffset; }
-            };
-
         std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlBinder>> m_memberBinders;
-        std::vector<MemberBinderInfo> m_ecsqlComponentIndexToMemberBinderMapping;
 
-        StructECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
-        BentleyStatus Initialize(ECSqlPrepareContext&);
+        StructECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
+        BentleyStatus Initialize(ECSqlPrepareContext&, SqlParamNameGenerator&);
 
-        //only needed at prepare time to set up the binder
-        void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
         void _OnClearBindings() override;
         ECSqlStatus _OnBeforeStep() override;
 

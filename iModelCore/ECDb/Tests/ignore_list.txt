@@ -26,5 +26,5 @@ ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
-#TFS663874 Fails to prepare ECSQL SELECT against mixin. Fails irregularly though.
-ECDbMappingTestFixture.BaseClassAndMixins_Diamond
+#TFS 672890
+ECRelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToUnsharedColumn

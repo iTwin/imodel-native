@@ -348,7 +348,8 @@
     - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
     If the custom attribute is not present:
     - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
-    <b>Cardinality is not enforced either in that case.</b>
+
+    @note This does not affect how ECDb enforces cardinality.
 
     #### Rule
 
@@ -502,7 +503,9 @@
     Customizing the mapping for an ECClass is done by applying the @b ClassMap custom attribute to the respective ECClass.
     (ECDb will only look for it in local attributes on the ECClass).
     Indexes are defined using the @b DbIndexList custom attribute. 
-       
+      
+    @note The @b ClassMap custom attribute cannot be applied to Mixin Entity classes.
+
     Description of the ClassMap properties:
 
     - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
@@ -510,13 +513,11 @@
         applies to the subclasses, too 
         - @c OwnTable (default): This class is mapped to its own table.
         - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table. See also section <i>Additional customization for MapStrategy TablePerHierarchy</i>
-        - @c SharedTable : This class is mapped to @em table shared by other classes as well. The @b TableName ECProperty 
-        must also be specified.
         - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
         The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
         The primary key column must either be called @b Id or its name must be specified in the @b ECInstanceIdColumn ECProperty.
         <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
-    - @b TableName (optional, required for MapStrategies @em ExistingTable and @em SharedTable):
+    - @b TableName (optional, required for MapStrategies @em ExistingTable):
     Specify a table name for this class for the MapStrategy.
     - @b ECInstanceIdColumn (optional): Specify a name for the ECInstanceId column. If not specified, ECDb picks @b Id as default ECInstanceId column name.
 
@@ -610,8 +611,7 @@
     If not specified, the ECProperty name is used.
 
         @note 
-        - You must not specify @em ColumnName or @em Collation for an ECProperty that maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
-        ECDb will fail to import the ECSchema in this case.
+        - the @b PropertyMap custom attribute cannot be applied to Mixin Entity classes.
         - @em IsNullable is ignored if the ECProperty maps to a shared column 
         or if the ECProperty has base classes mapping to the same table (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
         - @em IsUnique is ignored if the ECProperty maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).

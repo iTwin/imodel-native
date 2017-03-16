@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -79,17 +79,15 @@ bool OptionsExp::TryGetOption(OptionExp const*& exp, Utf8CP optionName) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String OptionsExp::_ToECSql() const
+void OptionsExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     BeAssert(GetChildrenCount() != 0);
 
-    Utf8String ecsql("ECSQLOPTIONS");
+    ctx.AppendToECSql("ECSQLOPTIONS");
     for (Exp const* child : GetChildren())
         {
-        ecsql.append(" ").append(child->ToECSql());
+        ctx.AppendToECSql(" ").AppendToECSql(*child);
         }
-
-    return ecsql;
     }
 
 
@@ -97,14 +95,14 @@ Utf8String OptionsExp::_ToECSql() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String OptionExp::_ToECSql() const
+void OptionExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
-    if (!IsNameValuePair())
-        return m_name;
+    ctx.AppendToECSql(m_name);
 
-    Utf8String ecsql(m_name);
-    ecsql.append("=").append(m_val);
-    return ecsql;
+    if (!IsNameValuePair())
+        return;
+
+    ctx.AppendToECSql("=").AppendToECSql(m_val);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

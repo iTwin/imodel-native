@@ -47,7 +47,7 @@ struct PropertyPath
 
                 Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
                 ECN::ECPropertyCP GetProperty() const { return m_property; }
-                bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY; }
+                bool HasArrayIndex() const { return GetArrayIndex() >= 0; }
                 int GetArrayIndex() const { return m_arrayIndex; }
 
                 bool IsResolved() const { return m_property != nullptr; }
@@ -75,11 +75,10 @@ struct PropertyPath
         bool IsEmpty() const { return m_path.empty(); }
         ClassMap const* GetClassMap() const { return m_classMap; }
 
-        void Push(Utf8StringCR propertyName);
-        void Push(Utf8StringCR propertyName, size_t arrayIndex);
+        void Push(Utf8StringCR propertyName, int arrayIndex = Location::NOT_ARRAY) { m_path.push_back(Location(propertyName, arrayIndex)); }
+
         void Pop();
         void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
-
         BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
         bool IsResolved() const;
 
@@ -181,9 +180,7 @@ struct Exp : NonCopyableClass
                             return *this;
                             }
                         //moveable
-                        const_iterator(const_iterator&& rhs)
-                            : m_iterator(std::move(rhs.m_iterator))
-                            {}
+                        const_iterator(const_iterator&& rhs) : m_iterator(std::move(rhs.m_iterator)) {}
 
                         const_iterator& operator= (const_iterator&& rhs)
                             {
@@ -193,25 +190,15 @@ struct Exp : NonCopyableClass
                             return *this;
                             }
 
-                        TExp operator* () const
-                            {
-                            return m_iterator->get();
-                            }
+                        TExp operator* () const { return m_iterator->get(); }
 
                         const_iterator& operator++ ()
                             {
                             m_iterator++;
                             return *this;
                             }
-                        bool operator== (const_iterator const& rhs) const
-                            {
-                            return m_iterator == rhs.m_iterator;
-                            }
-
-                        bool operator!= (const_iterator const& rhs) const
-                            {
-                            return !(*this == rhs);
-                            }
+                        bool operator== (const_iterator const& rhs) const { return m_iterator == rhs.m_iterator; }
+                        bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
                     };
 
 
@@ -221,10 +208,10 @@ struct Exp : NonCopyableClass
                 Collection() {}
                 ~Collection() {}
 
-                size_t size() const;
-                bool empty() const;
-                Exp const* operator[] (size_t i) const;
-                Exp* operator[] (size_t i);
+                size_t size() const { return m_collection.size(); }
+                bool empty() const { return m_collection.empty(); }
+                Exp const* operator[] (size_t i) const { return m_collection[i].get(); }
+                Exp* operator[] (size_t i) { return m_collection[i].get(); }
 
                 template <typename TExp>
                 TExp const* Get(size_t i) const
@@ -236,15 +223,53 @@ struct Exp : NonCopyableClass
 
                 bool Replace(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith);
 
-                const_iterator<Exp*> begin();
-                const_iterator<Exp const*> begin() const;
-                const_iterator<Exp const*> end() const;
-                const_iterator<Exp*> end();
-
-
+                const_iterator<Exp const*> begin() const { return const_iterator<Exp const*>(m_collection.begin()); }
+                const_iterator<Exp*> begin() { return const_iterator<Exp*>(m_collection.begin()); }
+                const_iterator<Exp const*> end() const { return const_iterator<Exp const*>(m_collection.end()); }
+                const_iterator<Exp*> end() { return const_iterator<Exp*>(m_collection.end()); }
             };
 
         enum class FinalizeParseStatus { Completed, NotCompleted, Error };
+
+        //=======================================================================================
+        //! @bsiclass                                               Krischan.Eberle      03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct ECSqlRenderContext final : NonCopyableClass
+            {
+            public:
+                enum class Mode
+                    {
+                    Default = 0,
+                    GenerateNameForUnnamedParameter = 1
+                    };
+
+            private:
+                Mode m_mode;
+                bmap<int, bpair<Utf8String, bool>> m_parameterIndexNameMap;
+
+                Utf8String m_ecsqlBuilder;
+
+            public:
+                explicit ECSqlRenderContext(Mode mode = Mode::Default) : m_mode(mode) {}
+
+                Mode GetMode() const { return m_mode; }
+                bmap<int, bpair<Utf8String, bool>>& GetParameterIndexNameMap() { BeAssert(m_mode == Mode::GenerateNameForUnnamedParameter); return m_parameterIndexNameMap; }
+                ECSqlRenderContext& AppendToECSql(Utf8StringCR str) { m_ecsqlBuilder.append(str); return *this; }
+                ECSqlRenderContext& AppendToECSql(Utf8CP str) { m_ecsqlBuilder.append(str);  return *this; }
+                ECSqlRenderContext& AppendToECSql(Exp const& exp) { exp.ToECSql(*this);  return *this; }
+
+                void AddParameterIndexNameMapping(int index, Utf8StringCR name, bool isSystemName)
+                    {
+                    auto it = m_parameterIndexNameMap.find(index);
+                    BeAssert(it == m_parameterIndexNameMap.end() || (it->second.first.Equals(name) && it->second.second == isSystemName));
+
+                    if (it == m_parameterIndexNameMap.end())
+                        m_parameterIndexNameMap[index] = bpair<Utf8String, bool>(name, isSystemName);
+                    }
+
+                Utf8StringCR GetECSql() const { return m_ecsqlBuilder; }
+                void ResetECSqlBuilder() { m_ecsqlBuilder.clear(); }
+            };
 
     protected:
         enum class FinalizeParseMode { BeforeFinalizingChildren, AfterFinalizingChildren };
@@ -257,35 +282,35 @@ struct Exp : NonCopyableClass
 
     private:
         Type m_type;
-        Exp* m_parent;
+        Exp* m_parent = nullptr;
         mutable Exp::Collection m_children;
-        bool m_isComplete;
+        bool m_isComplete = false;
 
-        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode);
-        virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const;
-        virtual Utf8String _ToECSql() const = 0;
+        virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) { return FinalizeParseStatus::Completed; }
+        virtual bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const { return false; }
+        virtual void _ToECSql(ECSqlRenderContext&) const = 0;
         virtual Utf8String _ToString() const = 0;
 
     protected:
-        explicit Exp(Type type) : m_type(type), m_parent(nullptr), m_isComplete(false) {}
+        explicit Exp(Type type) : m_type(type) {}
 
         void SetIsComplete() { m_isComplete = true; }
 
         template <typename TExp>
-        TExp const* GetChild(size_t index) const { return GetChildren().Get<TExp>(index); }
+        TExp const* GetChild(size_t index) const { return m_children.Get<TExp>(index); }
 
         template <typename TExp>
         TExp* GetChildP(size_t index) const
             {
-            Exp* child = GetChildrenR()[index];
+            Exp* child = m_children[index];
             BeAssert(child == nullptr || dynamic_cast<TExp*> (child) != nullptr);
             return static_cast<TExp*> (child);
             }
 
         size_t AddChild(std::unique_ptr<Exp> child);
-        Collection& GetChildrenR() const;
-        void FindRecusive(std::vector<Exp const*>& expList, Type ofType) const;
-        void FindInDirectDecedentOnly(std::vector<Exp const*>& expList, Type ofType) const;
+        //Collection& GetChildrenR() const { return m_children; }
+        void FindRecursive(std::vector<Exp const*>& expList, Type ofType) const;
+        void FindInDirectDecendents(std::vector<Exp const*>& expList, Type ofType) const;
 
     public:
         virtual ~Exp() {}
@@ -293,13 +318,9 @@ struct Exp : NonCopyableClass
         template <typename TExp>
         TExp const* GetAsCP() const 
             { 
-            if (dynamic_cast<TExp const*> (this) == nullptr)
-                {
-                BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
-                return nullptr;
-                }
-
-            return static_cast<TExp const*> (this); }
+            BeAssert(dynamic_cast<TExp const*> (this) != nullptr);
+            return static_cast<TExp const*> (this); 
+            }
 
         template <typename TExp>
         TExp const& GetAs() const { return *GetAsCP<TExp>(); }
@@ -312,26 +333,28 @@ struct Exp : NonCopyableClass
         Type GetType() const { return m_type; }
         bool IsParameterExp() const { return GetType() == Type::Parameter; }
         Exp const* GetParent() const { return m_parent; }
-        Collection const& GetChildren() const;
+        Collection const& GetChildren() const { return m_children; }
+        Collection& GetChildrenR() { return m_children; }
         size_t GetChildrenCount() const { return m_children.size(); }
 
         //! Converts this expression into an ECSQL snippet.
         //! The child expressions are considered in this conversion.
         //! @return ECSQL snippet representing this expression graph
-        Utf8String ToECSql() const;
+        Utf8String ToECSql() const { ECSqlRenderContext ctx; ToECSql(ctx); return ctx.GetECSql(); }
+        void ToECSql(ECSqlRenderContext& ctx) const { _ToECSql(ctx); }
 
         //! Returns a string description of this expression without recursion into its child expressions.
         //! @return string description of this expression
-        Utf8String ToString() const;
+        Utf8String ToString() const { return _ToString(); }
 
         static bool IsAsteriskToken(Utf8CP token) { return strcmp(token, ASTERISK_TOKEN) == 0; }
-        Exp const* FindParent(Exp::Type type) const;
-        std::vector<Exp const*>  Find(Type ofType, bool recusive) const;
-        std::set<DbTable const*> GetReferencedTables() const;
+        Exp const* FindParent(Exp::Type) const;
+        std::vector<Exp const*> Find(Type ofType, bool recursive) const;
     };
 
 typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
+
 
 
 struct RangeClassRefExp;

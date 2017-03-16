@@ -13,14 +13,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, false), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
-    {}
+NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, false)
+    {
+    Initialize(ctx, paramNameGen);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
+BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx, SqlParamNameGenerator& paramNameGen)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     if (typeInfo.GetPropertyMap() == nullptr || typeInfo.GetPropertyMap()->GetType() != PropertyMap::Type::Navigation)
@@ -31,47 +33,26 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
 
     NavigationPropertyMap const& navPropMap = typeInfo.GetPropertyMap()->GetAs<NavigationPropertyMap>();
 
-    int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap.GetIdPropertyMap();
-    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo::NavigationId());
+    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo::NavigationId(), paramNameGen);
     if (m_idBinder == nullptr)
+        {
+        BeAssert(false);
         return ERROR;
+        }
 
-    int mappedSqliteParameterCount = m_idBinder->GetMappedSqlParameterCount();
-    BeAssert(mappedSqliteParameterCount == 1);
-    totalMappedSqliteParameterCount += mappedSqliteParameterCount;
+    AddChildMemberMappedSqlParameterIndices(*m_idBinder);
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap.GetRelECClassIdPropertyMap();
-    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo::NavigationRelECClassId());
+    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo::NavigationRelECClassId(), paramNameGen);
     if (m_relECClassIdBinder == nullptr)
-        return ERROR;
-
-    mappedSqliteParameterCount = m_relECClassIdBinder->GetMappedSqlParameterCount();
-    totalMappedSqliteParameterCount += mappedSqliteParameterCount;
-
-    SetMappedSqlParameterCount(totalMappedSqliteParameterCount);
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2016
-//---------------------------------------------------------------------------------------
-void NavigationPropertyECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex)
-    {
-    switch (ecsqlParameterComponentIndex)
         {
-            case 0:
-                m_idBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
-                return;
-
-            case 1:
-                m_relECClassIdBinder->SetSqliteIndex((size_t) sqliteParameterIndex);
-                return;
-
-            default:
-                BeAssert(false);
-                return;
+        BeAssert(false);
+        return ERROR;
         }
+
+    AddChildMemberMappedSqlParameterIndices(*m_relECClassIdBinder);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

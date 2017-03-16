@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NativeSqlBuilder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,38 +20,22 @@ struct ECSqlParameter;
 struct NativeSqlBuilder
     {
     public:
-        struct ECSqlParameterIndex
-            {
-        private:
-            int m_index;
-            int m_componentIndex;
-            int m_globalIndex;
-        public:
-            ECSqlParameterIndex(int index, int componentIndex, int globalIndex) : m_index(index), m_componentIndex(componentIndex), m_globalIndex(globalIndex) {}
-            
-            int GetIndex() const { return m_index; }
-            int GetComponentIndex() const { return m_componentIndex; }
-            int GetGlobalIndex() const { return m_globalIndex; }
-            };
 
         typedef std::vector<NativeSqlBuilder> List;
         typedef std::vector<List> ListOfLists;
 
     private:
         Utf8String m_nativeSql;
-        std::vector<ECSqlParameterIndex> m_parameterIndexMappings;
         std::vector<Utf8String> m_stack;
 
     public:
         NativeSqlBuilder() {}
         explicit NativeSqlBuilder(Utf8CP initialStr) : m_nativeSql(initialStr) {}
         ~NativeSqlBuilder() {}
-        NativeSqlBuilder(NativeSqlBuilder const& rhs) : m_nativeSql(rhs.m_nativeSql), m_parameterIndexMappings(rhs.m_parameterIndexMappings) {}
+        NativeSqlBuilder(NativeSqlBuilder const& rhs) : m_nativeSql(rhs.m_nativeSql) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder const& rhs);
-        NativeSqlBuilder(NativeSqlBuilder&& rhs) : m_nativeSql(std::move(rhs.m_nativeSql)), m_parameterIndexMappings(std::move(rhs.m_parameterIndexMappings)) {}
+        NativeSqlBuilder(NativeSqlBuilder&& rhs) : m_nativeSql(std::move(rhs.m_nativeSql)) {}
         NativeSqlBuilder& operator= (NativeSqlBuilder&& rhs);
-
-        NativeSqlBuilder& CopyParameters(NativeSqlBuilder const& sqlBuilder);
 
         NativeSqlBuilder& Append(NativeSqlBuilder const& builder);
         NativeSqlBuilder& Append(Utf8CP str) { m_nativeSql.append(str); return *this; }
@@ -70,10 +54,6 @@ struct NativeSqlBuilder
         NativeSqlBuilder& Append(BooleanSqlOperator);
         NativeSqlBuilder& Append(SqlSetQuantifier);
         NativeSqlBuilder& Append(UnarySqlOperator);
-        //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterIndex, int ecsqlParameterComponentIndex, int globalIndex);
-        //!@param[in] ecsqlParameterName Parameter name of nullptr if parameter is unnamed
-        NativeSqlBuilder& AppendParameter(Utf8CP ecsqlParameterName, int ecsqlParameterComponentIndex, int globalIndex);
 
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
 
@@ -93,9 +73,6 @@ struct NativeSqlBuilder
         void Reset();
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
-
-        std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings() const { return m_parameterIndexMappings; }
-        void CopyIndexMappingFrom(NativeSqlBuilder const& arg) { m_parameterIndexMappings = arg.GetParameterIndexMappings(); }
 
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
