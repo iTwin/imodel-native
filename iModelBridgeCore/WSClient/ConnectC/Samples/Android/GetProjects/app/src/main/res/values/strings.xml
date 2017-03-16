@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">LoadProjects</string>
+    <string name="btn_execute">Execute</string>
+</resources>
