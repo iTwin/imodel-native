@@ -10,6 +10,18 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** ECSqlBinder **************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
+    : m_ecsqlStatement(ctx.GetECSqlStatementR()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+    {
+    for (int i = 0; i < mappedSqlParameterCount; i++)
+        {
+        m_mappedSqlParameterNames.push_back(nameGen.GetNextName());
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      08/2013
@@ -69,6 +81,148 @@ Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy m
                 return Statement::MakeCopy::Yes;
         }
     }
+
+
+//****************** ECSqlBinderFactory **************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContext& ctx, ParameterExp const& parameterExp)
+    {
+    ECSqlBinder::SqlParamNameGenerator paramNameGen(ctx, parameterExp.GetParameterName().c_str());
+
+    ComputedExp const* targetExp = parameterExp.GetTargetExp();
+    if (targetExp != nullptr && targetExp->GetType() == Exp::Type::PropertyName)
+        {
+        PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
+        ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
+        if (sysPropInfo.IsSystemProperty() && sysPropInfo.IsId())
+            return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
+        }
+
+    return CreateBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& nameGen)
+    {
+    ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
+    BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
+
+    switch (typeKind)
+        {
+            case ECSqlTypeInfo::Kind::Primitive:
+            {
+            switch (typeInfo.GetPrimitiveType())
+                {
+                    case ECN::PRIMITIVETYPE_Binary:
+                    case ECN::PRIMITIVETYPE_Boolean:
+                    case ECN::PRIMITIVETYPE_DateTime:
+                    case ECN::PRIMITIVETYPE_Double:
+                    case ECN::PRIMITIVETYPE_IGeometry:
+                    case ECN::PRIMITIVETYPE_Integer:
+                    case ECN::PRIMITIVETYPE_Long:
+                    case ECN::PRIMITIVETYPE_String:
+                        return std::unique_ptr<ECSqlBinder>(new PrimitiveECSqlBinder(ctx, typeInfo, nameGen));
+
+                    case ECN::PRIMITIVETYPE_Point2d:
+                        return std::unique_ptr<ECSqlBinder>(new PointECSqlBinder(ctx, typeInfo, false, nameGen));
+
+                    case ECN::PRIMITIVETYPE_Point3d:
+                        return std::unique_ptr<ECSqlBinder>(new PointECSqlBinder(ctx, typeInfo, true, nameGen));
+
+                    default:
+                        BeAssert(false && "Could not create parameter mapping for the given parameter exp.");
+                        return nullptr;
+                }
+            break;
+            }
+            //the rare case of expressions like this: NULL IS ?
+            case ECSqlTypeInfo::Kind::Null:
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveECSqlBinder(ctx, typeInfo, nameGen));
+
+            case ECSqlTypeInfo::Kind::Struct:
+                return std::unique_ptr<ECSqlBinder>(new StructECSqlBinder(ctx, typeInfo, nameGen));
+
+            case ECSqlTypeInfo::Kind::PrimitiveArray:
+            case ECSqlTypeInfo::Kind::StructArray:
+                return std::unique_ptr<ECSqlBinder>(new ArrayECSqlBinder(ctx, typeInfo, nameGen));
+            case ECSqlTypeInfo::Kind::Navigation:
+                return std::unique_ptr<ECSqlBinder>(new NavigationPropertyECSqlBinder(ctx, typeInfo, nameGen));
+
+            default:
+                BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");
+                return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyInfo const& sysPropertyInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
+    {
+    if (!sysPropertyInfo.IsId())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyInfo);
+    return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx, ECSqlTypeInfo(propMap), isNoopBinder, paramNameGen));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2016
+//---------------------------------------------------------------------------------------
+bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyInfo const& sysPropertyInfo)
+    {
+    const ECSqlType ecsqlType = ctx.GetCurrentScope().GetECSqlType();
+    if (ecsqlType == ECSqlType::Select || ecsqlType == ECSqlType::Delete ||
+        (ecsqlType == ECSqlType::Update && ctx.GetCurrentScope().GetExp().GetType() != Exp::Type::AssignmentList))
+        return false;
+
+
+    //only INSERT and UPDATE SET clauses require no-op binders because they directly translate to columns. All other expressions
+    //can use constant values for virtual columns and therefore don't need no-op binders.
+
+    BeAssert((sysPropertyInfo.GetType() != ECSqlSystemPropertyInfo::Type::Class || sysPropertyInfo.GetClass() != ECSqlSystemPropertyInfo::Class::ECClassId) && "Inserting/updating ECClassId is not supported and should have been caught before");
+    BeAssert(propMap.GetType() != PropertyMap::Type::ECClassId && "Inserting/updating ECClassId is not supported and should have been caught before");
+
+    if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        //for end table relationships we ignore 
+        //* the user provided ECInstanceId as end table relationships don't have their own ECInstanceId
+        //* this end's class id (foreign end class id) as it is the same the end's class ECClassId. It cannot be set through
+        //an ECSQL INSERT INTO ECRel.
+        RelationshipClassEndTableMap const& relClassMap = propMap.GetClassMap().GetAs<RelationshipClassEndTableMap>();
+        if (sysPropertyInfo == ECSqlSystemPropertyInfo::ECInstanceId() ||
+            sysPropertyInfo == (relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId()))
+            return true;
+        }
+
+    switch (propMap.GetType())
+        {
+            case PropertyMap::Type::ConstraintECClassId:
+            {
+            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = propMap.GetAs<ConstraintECClassIdPropertyMap>();
+            if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
+                return true;
+
+            BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
+            DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
+            return constraintClassIdPropMap.IsVirtual(*contextTable);
+            }
+            case PropertyMap::Type::NavigationRelECClassId:
+                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();
+
+            default:
+                return false;
+        }
+    }
+
+
 
 //****************** ECSqlParameterMap **************************
 //---------------------------------------------------------------------------------------
@@ -177,88 +331,94 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 
     auto& baseParameterMap = joinedTableStmt->GetPreparedStatementP()->GetParameterMapR();
     ECSqlPrepareContext::JoinedTableInfo::ParameterSet const& primaryMap = joinInfo->GetParameterMap().GetPrimary();
-    for (size_t oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
+    if (!primaryMap.Empty())
         {
-        ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = primaryMap.Find(oi);
-        if (ECSqlPrepareContext::JoinedTableInfo::Parameter const* orignalParam = param->GetOrignalParameter())
+        for (size_t oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
             {
-            ECSqlBinder* binder = nullptr;
-            if (param->IsShared())
+            ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = primaryMap.Find(oi);
+            if (ECSqlPrepareContext::JoinedTableInfo::Parameter const* orignalParam = param->GetOrignalParameter())
                 {
-                ECSqlBinder* cbinder = nullptr;
-                if (param->IsNamed())
+                ECSqlBinder* binder = nullptr;
+                if (param->IsShared())
                     {
-                    if (!baseParameterMap.TryGetBinder(binder, param->GetName()))
+                    ECSqlBinder* cbinder = nullptr;
+                    if (param->IsNamed())
                         {
-                        BeAssert(false && "Programmer Error: Failed to find named parameter in base");
-                        return ECSqlStatus::Error;
-                        }
+                        if (!baseParameterMap.TryGetBinder(binder, param->GetName()))
+                            {
+                            BeAssert(false && "Programmer Error: Failed to find named parameter in base");
+                            return ECSqlStatus::Error;
+                            }
 
-                    if (!TryGetBinder(cbinder, param->GetName()))
+                        if (!TryGetBinder(cbinder, param->GetName()))
+                            {
+                            BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
+                            return ECSqlStatus::Error;
+                            }
+
+                        ECSqlStatus st = cbinder->SetOnBindEventHandler(*binder);
+                        if (st != ECSqlStatus::Success)
+                            return st;
+                        }
+                    else
                         {
-                        BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
-                        return ECSqlStatus::Error;
-                        }
+                        ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
+                        if (st != ECSqlStatus::Success)
+                            {
+                            BeAssert(false && "Programmer Error: Parameter order is not correct.");
+                            return st;
+                            }
 
-                    ECSqlStatus st = cbinder->SetOnBindEventHandler(*binder);
-                    if (st != ECSqlStatus::Success)
-                        return st;
+                        st = TryGetBinder(cbinder, (int) (orignalParam->GetIndex()));
+                        if (st != ECSqlStatus::Success)
+                            {
+                            BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
+                            return st;
+                            }
+
+                        st = cbinder->SetOnBindEventHandler(*binder);
+                        if (st != ECSqlStatus::Success)
+                            return st;
+                        }
                     }
                 else
                     {
-                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int)(param->GetIndex()));
+                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
                     if (st != ECSqlStatus::Success)
                         {
                         BeAssert(false && "Programmer Error: Parameter order is not correct.");
                         return st;
                         }
 
-                    st = TryGetBinder(cbinder, (int) (orignalParam->GetIndex()));
-                    if (st != ECSqlStatus::Success)
-                        {
-                        BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
-                        return st;
-                        }
-
-                    st = cbinder->SetOnBindEventHandler(*binder);
-                    if (st != ECSqlStatus::Success)
-                        return st;
+                    AddProxyBinder((int) (orignalParam->GetIndex()), *binder, orignalParam->GetName());
                     }
-                }
-            else
-                {
-                ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
-                if (st != ECSqlStatus::Success)
-                    {
-                    BeAssert(false && "Programmer Error: Parameter order is not correct.");
-                    return st;
-                    }
-
-                AddProxyBinder((int) (orignalParam->GetIndex()), *binder, orignalParam->GetName());
                 }
             }
         }
 
     auto& orignalMap = joinInfo->GetParameterMap().GetOrignal();
-    for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
+    if (!orignalMap.Empty())
         {
-        ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = orignalMap.Find(oi);
-        if (param == nullptr || !param->IsNamed())
-            continue;
-
-        ECSqlBinder* abinder = nullptr;
-        ECSqlBinder* bbinder = nullptr;
-
-        baseParameterMap.TryGetBinder(abinder, param->GetName());
-        TryGetBinder(bbinder, param->GetName());
-
-        if (abinder == nullptr && bbinder == nullptr)
+        for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
             {
-            BeAssert(false && "Binding is not valid for joined table");
-            return ECSqlStatus::Error;
+            ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = orignalMap.Find(oi);
+            if (param == nullptr || !param->IsNamed())
+                continue;
+
+            ECSqlBinder* abinder = nullptr;
+            ECSqlBinder* bbinder = nullptr;
+
+            baseParameterMap.TryGetBinder(abinder, param->GetName());
+            TryGetBinder(bbinder, param->GetName());
+
+            if (abinder == nullptr && bbinder == nullptr)
+                {
+                BeAssert(false && "Binding is not valid for joined table");
+                return ECSqlStatus::Error;
+                }
+            if (abinder != nullptr && bbinder == nullptr)
+                AddProxyBinder((int) (param->GetIndex()), *abinder, param->GetName());
             }
-        if (abinder != nullptr && bbinder == nullptr)
-            AddProxyBinder((int) (param->GetIndex()), *abinder, param->GetName());
         }
 
     return ECSqlStatus::Success;
@@ -276,21 +436,20 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
+    std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
     if (binder == nullptr)
         return nullptr;
 
-    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
     m_binders.push_back(binderP);
+    BeAssert(((int) m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
 
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
-
-    BeAssert(static_cast<int> (m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     //insert name to index mapping. 
     if (parameterExp.IsNamedParameter())
@@ -302,13 +461,17 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddInternalBinder(size_t& index, ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo)
+ECSqlBinder* ECSqlParameterMap::AddInternalECInstanceIdBinder(ECSqlPrepareContext& ctx)
     {
-    auto binder = ECSqlBinderFactory::CreateBinder(ctx, typeInfo);
+    ECSqlBinder::SqlParamNameGenerator paramNameGen(ctx, ECSQLSYS_SQLPARAM_Id);
+    std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long), paramNameGen);
     if (binder == nullptr)
+        {
+        BeAssert(false);
         return nullptr;
+        }
 
-    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
     m_internalSqlParameterBinders.push_back(binderP);
 
@@ -317,8 +480,6 @@ ECSqlBinder* ECSqlParameterMap::AddInternalBinder(size_t& index, ECSqlPrepareCon
 
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
-
-    index = m_internalSqlParameterBinders.size() - 1;
 
     return binderP;
     }

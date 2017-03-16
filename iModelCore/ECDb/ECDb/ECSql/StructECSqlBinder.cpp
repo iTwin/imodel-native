@@ -12,55 +12,35 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-StructECSqlBinder::StructECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true)
-    {}
-
+StructECSqlBinder::StructECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, true)
+    {
+    Initialize(ctx, paramNameGen);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
+BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx, SqlParamNameGenerator& paramNameGen)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
     StructPropertyMap const& structPropMap = typeInfo.GetPropertyMap()->GetAs<StructPropertyMap>();
 
-    int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : structPropMap) //GetChildren ensures the correct and always same order
         {
-        std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, *memberPropMap);
+        std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, *memberPropMap, paramNameGen);
         if (binder == nullptr)
+            {
+            BeAssert(false);
             return ERROR;
+            }
 
-        int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount();
-
-        ECSqlBinder* binderP = binder.get(); //cache raw pointer as it is needed after the unique_ptr has been moved into the collection
+        AddChildMemberMappedSqlParameterIndices(*binder);
         m_memberBinders[memberPropMap->GetProperty().GetId()] = std::move(binder);
-
-        //for SetSqliteIndex we need a mapping from a given ECSqlComponent index to the respective member binder
-        //and also the relative component index within that member binder.
-        m_ecsqlComponentIndexToMemberBinderMapping.reserve(mappedSqliteParameterCount);
-        m_ecsqlComponentIndexToMemberBinderMapping.insert(m_ecsqlComponentIndexToMemberBinderMapping.end(), mappedSqliteParameterCount,
-                                                          MemberBinderInfo(*binderP, totalMappedSqliteParameterCount));
-
-        totalMappedSqliteParameterCount += mappedSqliteParameterCount;
         }
 
-    SetMappedSqlParameterCount(totalMappedSqliteParameterCount);
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-void StructECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
-    {
-    BeAssert(ecsqlParameterComponentIndex >= 0 && (size_t) ecsqlParameterComponentIndex < m_ecsqlComponentIndexToMemberBinderMapping.size());
-    auto const& mapping = m_ecsqlComponentIndexToMemberBinderMapping[(size_t) ecsqlParameterComponentIndex];
-    int compIndexOfMember = ecsqlParameterComponentIndex - mapping.GetECSqlComponentIndexOffset();
-
-    mapping.GetMemberBinder().SetSqliteIndex(compIndexOfMember, sqliteIndex);
     }
 
 //---------------------------------------------------------------------------------------

@@ -18,16 +18,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECCrudWriteToken const* writeToken)
-    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
+    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
-    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
-    m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
+    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_joinedTableClassId(joinedTableClassId)
     {}
 
 //-----------------------------------------------------------------------------------------
@@ -42,48 +40,24 @@ ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedT
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const
-    {
-    return m_ecsqlStatement;
-    }
+ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const { return m_ecsqlStatement; }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlPrepareContext::GetNativeSql() const
-    {
-    return m_nativeSqlBuilder.ToString();
-    }
+Utf8CP ECSqlPrepareContext::GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
 
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const
-    {
-    return m_nativeSqlSelectClauseColumnCount;
-    }
+int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const { return m_nativeSqlSelectClauseColumnCount; }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value)
-    {
-    m_nativeSqlSelectClauseColumnCount += (int) (value);
-    }
+void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value) { m_nativeSqlSelectClauseColumnCount += (int) (value); }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       11/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlPrepareContext::NextParameterIndex()
-    {
-    if (m_nextParamterIndex < 0)
-        m_nextParamterIndex = 1;
-    else
-        m_nextParamterIndex++;
-
-    return m_nextParamterIndex;
-    }
 
 //****************************** ECSqlPrepareContext::ExpScope ********************
 //-----------------------------------------------------------------------------------------

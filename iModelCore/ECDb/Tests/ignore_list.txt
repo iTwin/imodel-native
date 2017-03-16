@@ -25,3 +25,6 @@ ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
+
+#TFS 672890
+ECRelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToUnsharedColumn

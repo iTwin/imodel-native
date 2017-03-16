@@ -93,7 +93,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     {
     protected:
         std::vector<std::unique_ptr<LeafECSqlPreparedStatement>> m_statements;
-        mutable bmap<int, ProxyECSqlBinder> m_proxyBinderMap;
+        mutable std::vector<std::unique_ptr<ProxyECSqlBinder>> m_proxyBinders;
         mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
 
     private:

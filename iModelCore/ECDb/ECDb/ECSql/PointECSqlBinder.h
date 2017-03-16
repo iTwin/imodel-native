@@ -17,12 +17,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PointECSqlBinder final : public ECSqlBinder
     {
     private:
-        bool m_isPoint3d;
-        int m_xSqliteIndex;
-        int m_ySqliteIndex;
-        int m_zSqliteIndex;
+        enum class Coordinate
+            {
+            X = 0,
+            Y = 1,
+            Z = 2
+            };
 
-        void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
+        bool m_isPoint3d;
 
         ECSqlStatus _BindNull() override;
         ECSqlStatus _BindBoolean(bool value) override;
@@ -42,10 +44,19 @@ struct PointECSqlBinder final : public ECSqlBinder
 
         IECSqlBinder& _AddArrayElement() override;
 
-        bool IsPoint3d() const { return m_isPoint3d; }
+        int GetCoordSqlParamIndex(Coordinate coord) const
+            {
+            BeAssert(GetMappedSqlParameterNames().size() == (m_isPoint3d ? 3 : 2));
+            BeAssert(Enum::ToInt(coord) <= 3);
+            BeAssert(!GetMappedSqlParameterNames()[(size_t) Enum::ToInt(coord)].empty());
+
+            Utf8StringCR paramName = GetMappedSqlParameterNames()[(size_t) Enum::ToInt(coord)];
+            return GetSqliteStatementR().GetParameterIndex(paramName.c_str());
+            }
+
     public:
-        PointECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo, bool isPoint3d)
-            : ECSqlBinder(ecsqlStatement, typeInfo, isPoint3d ? 3 : 2, false, false), m_isPoint3d(isPoint3d), m_xSqliteIndex(-1), m_ySqliteIndex(-1), m_zSqliteIndex(-1)
+        PointECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, bool isPoint3d, SqlParamNameGenerator& paramNameGen)
+            : ECSqlBinder(ctx, typeInfo, paramNameGen, isPoint3d ? 3 : 2, false, false), m_isPoint3d(isPoint3d)
             {}
 
         ~PointECSqlBinder() {}
