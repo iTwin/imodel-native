@@ -310,7 +310,7 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::Create(PhysicalRecipeCR modeledElement)
+PhysicalModelPtr PhysicalModel::Create(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     if (model.IsValid())
@@ -346,7 +346,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalRecipeCR modeledElement)
+PhysicalModelPtr PhysicalModel::CreateAndInsert(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
     if (!model.IsValid())
@@ -545,9 +545,9 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DrawingModel::_OnInsert()
     {
-    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetModeledElementId()).IsValid())
+    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<TemplateRecipe2d>(GetModeledElementId()).IsValid())
         {
-        BeAssert(false && "A DrawingModel should be modeling a Drawing or GraphicalRecipe2d element");
+        BeAssert(false && "A DrawingModel should be modeling a Drawing or TemplateRecipe2d element");
         return DgnDbStatus::BadElement;
         }
 
@@ -573,7 +573,7 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingModelPtr DrawingModel::Create(GraphicalRecipe2dCR recipe)
+DrawingModelPtr DrawingModel::Create(TemplateRecipe2dCR recipe)
     {
     DgnDbR db = recipe.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();

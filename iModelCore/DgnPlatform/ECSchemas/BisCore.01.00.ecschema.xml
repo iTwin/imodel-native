@@ -509,21 +509,12 @@
         <ECNavigationProperty propertyName="Recipe" relationshipName="TypeDefinitionHasRecipe" direction="Forward">
         </ECNavigationProperty>
     </ECEntityClass>
-    <ECEntityClass typeName="RecipeElement" modifier="Abstract" displayLabel="Recipe" description="Defines a recipe for generating a type.">
-        <BaseClass>DefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
+    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type" description="Defines a set of properties (the 'type') that can be associated with a 2D Graphical Element.">
+        <BaseClass>TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
-            <Class class="TypeDefinitionElement" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
-            <Class class="RecipeElement"/>
-        </Target>
-    </ECRelationshipClass>
-
+    </ECEntityClass>
     <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
         <BaseClass>TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
@@ -536,6 +527,37 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="TypeDefinitionHasRecipe" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+            <Class class="TypeDefinitionElement" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="RecipeDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhysicalTypeHasTemplateRecipe" strength="referencing" modifier="None">
+        <BaseClass>TypeDefinitionHasRecipe</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+            <Class class="PhysicalType" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="TemplateRecipe3d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GraphicalType2dHasTemplateRecipe" strength="referencing" modifier="None">
+        <BaseClass>TypeDefinitionHasRecipe</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
+            <Class class="GraphicalType2d" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="TemplateRecipe2d"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -547,6 +569,18 @@
             <Class class="TypeDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
+            <Class class="GraphicalElement2d" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
+            <Class class="GraphicalType2d"/>
+        </Target>
+    </ECRelationshipClass>
+    
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
@@ -576,56 +610,24 @@
             <Class class="SpatialLocationType"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PhysicalRecipe" modifier="Abstract" displayLabel="Physical Recipe" description="Defines a recipe for generating Physical Types.">
-        <BaseClass>RecipeElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="PhysicalTypeHasRecipe" strength="referencing" modifier="None">
-        <BaseClass>TypeDefinitionHasRecipe</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
-            <Class class="PhysicalType" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
-            <Class class="PhysicalRecipe"/>
-        </Target>
-    </ECRelationshipClass>
 
-    <ECEntityClass typeName="GraphicalType2d" modifier="Abstract" displayLabel="2D Graphical Type" description="Defines a set of properties (the 'type') that can be associated with a 2D Graphical Element.">
-        <BaseClass>TypeDefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+    <ECEntityClass typeName="RecipeDefinitionElement" modifier="Abstract" displayLabel="Recipe" description="Defines a recipe for generating a type.">
+        <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
-            <Class class="GraphicalElement2d" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
-            <Class class="GraphicalType2d"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="GraphicalRecipe2d" modifier="Abstract" displayLabel="2D Graphical Type Recipe" description="Defines a recipe for generating 2D Graphical Types.">
-        <BaseClass>RecipeElement</BaseClass>
+    <ECEntityClass typeName="TemplateRecipe2d" displayLabel="2D Template Recipe" description="A recipe that uses a 2D template for creating new instances.">
+        <BaseClass>RecipeDefinitionElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="GraphicalType2dHasRecipe" strength="referencing" modifier="None">
-        <BaseClass>TypeDefinitionHasRecipe</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="is derived from" polymorphic="true">
-            <Class class="GraphicalType2d" />
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="generates" polymorphic="true">
-            <Class class="GraphicalRecipe2d"/>
-        </Target>
-    </ECRelationshipClass>
+    <ECEntityClass typeName="TemplateRecipe3d" displayLabel="3D Template Recipe" description="A recipe that uses a 3D template for creating new instances.">
+        <BaseClass>RecipeDefinitionElement</BaseClass>
+        <BaseClass>IModellableElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
     <ECEntityClass typeName="Subject" modifier="Sealed" description="A Subject is an information element that describes what this repository (or part thereof) is about.">
         <BaseClass>InformationReferenceElement</BaseClass>
@@ -1688,7 +1690,7 @@
             <Class class="SubCategory"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="SubCategory" modifier="Sealed">
+    <ECEntityClass typeName="SubCategory" modifier="Sealed" displayLabel="Sub-Category">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

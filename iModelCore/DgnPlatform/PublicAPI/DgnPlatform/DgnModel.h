@@ -936,8 +936,8 @@ public:
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalRecipeCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalRecipeCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(TemplateRecipe3dCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(TemplateRecipe3dCR modeledElement);
 };
 
 //=======================================================================================
@@ -1106,8 +1106,8 @@ public:
     //! Create a DrawingModel that breaks down the specified Drawing element
     DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
 
-    //! Create a DrawingModel that breaks down the specified GraphicalRecipe2d element
-    DGNPLATFORM_EXPORT static DrawingModelPtr Create(GraphicalRecipe2dCR drawing);
+    //! Create a DrawingModel that breaks down the specified TemplateRecipe2d element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(TemplateRecipe2dCR drawing);
 };
 
 //=======================================================================================

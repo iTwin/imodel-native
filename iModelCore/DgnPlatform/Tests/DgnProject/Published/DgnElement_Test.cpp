@@ -509,7 +509,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     DgnModelId modelId = model->GetModelId();
     DgnCategoryId categoryId = GetDefaultCategoryId();
-    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     DgnElementId elementId;
 
     // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)

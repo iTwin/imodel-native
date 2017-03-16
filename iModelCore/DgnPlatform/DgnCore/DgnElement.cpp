@@ -28,13 +28,6 @@
  *      BBoxHigh : point3d
  */
 
-namespace ElementStrings
-{
-    static constexpr Utf8CP str_Variables() {return "Variables";}
-};
-
-using namespace ElementStrings;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2889,9 +2882,9 @@ DgnDbStatus GeometricElement3d::SetTypeDefinition(DgnElementId typeDefinitionId,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+RecipeDefinitionElementCPtr TypeDefinitionElement::GetRecipe() const
     {
-    return GetDgnDb().Elements().Get<RecipeElement>(GetRecipeId());
+    return GetDgnDb().Elements().Get<RecipeDefinitionElement>(GetRecipeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2929,17 +2922,20 @@ DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRecipeCPtr PhysicalType::GetRecipe() const
+DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return GetDgnDb().Elements().Get<PhysicalRecipe>(GetRecipeId());
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe3dPtr TemplateRecipe3d::Create(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalRecipe, *model.GetModeledElement(), name);
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TemplateRecipe3d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2961,17 +2957,20 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicalRecipe2dCPtr GraphicalType2d::GetRecipe() const
+DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetRecipeId());
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe2dPtr TemplateRecipe2d::Create(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalRecipe2d, *model.GetModeledElement(), name);
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TemplateRecipe2d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
