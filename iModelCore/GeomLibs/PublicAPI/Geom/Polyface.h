@@ -2012,7 +2012,7 @@ GEOMDLLIMPEXP void ReverseNormals ();
 
 //!
 //! Normalize parameters.
-GEOMDLLIMPEXP void  PolyfaceHeader::NormalizeParameters ();
+GEOMDLLIMPEXP void  NormalizeParameters ();
 
 //!
 //! Collect indices of (1) adjacent facets and (2) points within the active facets.
