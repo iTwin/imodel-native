@@ -881,8 +881,9 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         }
     }
 
-
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatUnitSet::ToText(bool useAlias)
     {
     if (HasProblem())
@@ -892,7 +893,9 @@ Utf8String FormatUnitSet::ToText(bool useAlias)
     return buf;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty)
     {
     Utf8String txt;
@@ -965,8 +968,6 @@ Utf8String FormatUnitGroup::ToText(bool useAlias)
     }
 
 
-
-
 FormattingDividers::FormattingDividers(Utf8CP div)
     {
     if (nullptr == div)
@@ -1015,6 +1016,22 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
     m_isASCII = isAscii;
     }
 
+//===================================================
+//
+// NamedFormatSpec
+//
+//===================================================
+
+NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias, CompositeValueSpecCP compSpec)
+    {
+    m_name = name;
+    m_numericSpec = &numSpec;
+    m_alias = alias;
+    m_compositeSpec = compSpec;
+    m_problemCode = FormatProblemCode::NoProblems;
+    if (Utils::IsNameNullOrEmpty(name))
+        m_problemCode = FormatProblemCode::NFS_InvalidSpecName;
+    }
 
 
 END_BENTLEY_FORMATTING_NAMESPACE

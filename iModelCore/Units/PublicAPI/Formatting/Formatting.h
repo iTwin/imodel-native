@@ -244,7 +244,9 @@ enum class FormatProblemCode
     QT_InvalidTopMidUnits = 103,
     QT_InvalidMidLowUnits = 104,
     QT_InvalidUnitCombination = 105,
-    FUS_InvalidSyntax = 151
+    FUS_InvalidSyntax = 151,
+    NFS_InvalidSpecName = 161,
+    NFS_DuplicateSpecName = 162
     };
 
 //! Type of the ComboSpec describes one of allowable value transformations
@@ -255,6 +257,13 @@ enum class CompositeSpecType
     Double = 2,    //!< indicates of using 2 levels: Major and Middle
     Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
     Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
+    };
+
+enum class FormatSpecType
+    {
+    Undefined = 0,
+    Numeric = 1,   // a pure numeric Spec
+    Combo = 2      // a composite spec is also defined (numeric spec is implied)
     };
 
 struct Utils
@@ -478,81 +487,81 @@ public:
 //=======================================================================================
 struct NumericFormatSpec
     {
-    private:
-        Utf8String          m_name;                  // name or ID of the format
-        Utf8String          m_alias;                 // short alternative name (alias)
-        //double              m_minThreshold;
-        double              m_roundFactor;
-        PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
-        ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
-        FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
-        DecimalPrecision    m_decPrecision;          // Precision0...12
-        FractionalPrecision m_fractPrecision;
-        Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-        Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
-        FractionBarType     m_barType;
+private:
+    Utf8String          m_name;                  // name or ID of the format
+    Utf8String          m_alias;                 // short alternative name (alias)
+    //double              m_minThreshold;
+    double              m_roundFactor;
+    PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
+    ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+    DecimalPrecision    m_decPrecision;          // Precision0...12
+    FractionalPrecision m_fractPrecision;
+    Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+    Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+    FractionBarType     m_barType;
 
-        double EffectiveRoundFactor(double rnd) { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
+    double EffectiveRoundFactor(double rnd) { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-        UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
-        UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
-        UNITS_EXPORT double RoundedValue(double dval, double round);
-        UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index);
-        UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num);
-        NumericFormatSpec() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
+    UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
+    UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    UNITS_EXPORT double RoundedValue(double dval, double round);
+    UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index);
+    UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num);
+    NumericFormatSpec() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
 
-    public:
-        NumericFormatSpec(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
-        NumericFormatSpec(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
-        //UNITS_EXPORT NumericFormat(StdFormatNameR fmtType, size_t precision, double round = -1.0);
-        UNITS_EXPORT NumericFormatSpec(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
-        UNITS_EXPORT NumericFormatSpec(NumericFormatSpecCR other);
-        //UNITS_EXPORT static NumericFormat StdNumericFormat(Utf8P stdName, int prec, double round);
-        void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
-        FormatTraits GetFormatTraits() const { return m_formatTraits; }
-        UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
-        bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
-        UNITS_EXPORT void SetUseLeadingZeroes(bool use);
-        bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
-        UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
-        bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
-        UNITS_EXPORT void SetKeepSingleZero(bool keep);
-        bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
-        UNITS_EXPORT void SetExponentZero(bool keep);
-        bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
-        UNITS_EXPORT void SetZeroEmpty(bool empty);
-        bool IsZeroEmpty() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
-        UNITS_EXPORT void SetUse1000Separator(bool use);
-        bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
-        UNITS_EXPORT void SetApplyRounding(bool use);
-        bool IsApplyRounding() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }
-        bool IsInsertSeparator(bool confirm) { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
-        void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
-        bool IsNegativeParentheses() { return (m_signOption == ShowSignOption::NegativeParentheses); }
-        bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
-        bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
-        bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
-        bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
-        UNITS_EXPORT void SetAlias(Utf8CP alias);
-        Utf8String GetAlias() const { return m_alias; }
-        void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-        DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
-        UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);
-        UNITS_EXPORT double GetDecimalPrecisionFactor(int prec);
-        FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
-        FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
-        double SetRoundingFactor(double round) { return m_roundFactor = round; }
-        double GetRoundingFactor() const { return m_roundFactor; }
-        UNITS_EXPORT void SetPrecisionByValue(int prec);
-        void SetPresentationType(PresentationType type) { m_presentationType = type; }
-        PresentationType GetPresentationType() const { return m_presentationType; }
-        void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-        ShowSignOption GetSignOption() const { return m_signOption; }
-        Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-        Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-        Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-        Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-        FractionBarType  GetFractionalBarType() const { return m_barType; }
+public:
+    NumericFormatSpec(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormatSpec(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
+    //UNITS_EXPORT NumericFormat(StdFormatNameR fmtType, size_t precision, double round = -1.0);
+    UNITS_EXPORT NumericFormatSpec(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormatSpec(NumericFormatSpecCR other);
+    //UNITS_EXPORT static NumericFormat StdNumericFormat(Utf8P stdName, int prec, double round);
+    void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
+    FormatTraits GetFormatTraits() const { return m_formatTraits; }
+    UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
+    bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
+    UNITS_EXPORT void SetUseLeadingZeroes(bool use);
+    bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
+    UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
+    bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
+    UNITS_EXPORT void SetKeepSingleZero(bool keep);
+    bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
+    UNITS_EXPORT void SetExponentZero(bool keep);
+    bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
+    UNITS_EXPORT void SetZeroEmpty(bool empty);
+    bool IsZeroEmpty() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
+    UNITS_EXPORT void SetUse1000Separator(bool use);
+    bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
+    UNITS_EXPORT void SetApplyRounding(bool use);
+    bool IsApplyRounding() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }
+    bool IsInsertSeparator(bool confirm) { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
+    void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
+    bool IsNegativeParentheses() { return (m_signOption == ShowSignOption::NegativeParentheses); }
+    bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
+    bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
+    bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
+    bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
+    UNITS_EXPORT void SetAlias(Utf8CP alias);
+    Utf8String GetAlias() const { return m_alias; }
+    void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
+    UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);
+    UNITS_EXPORT double GetDecimalPrecisionFactor(int prec);
+    FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
+    FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+    double SetRoundingFactor(double round) { return m_roundFactor = round; }
+    double GetRoundingFactor() const { return m_roundFactor; }
+    UNITS_EXPORT void SetPrecisionByValue(int prec);
+    void SetPresentationType(PresentationType type) { m_presentationType = type; }
+    PresentationType GetPresentationType() const { return m_presentationType; }
+    void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
+    ShowSignOption GetSignOption() const { return m_signOption; }
+    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    FractionBarType  GetFractionalBarType() const { return m_barType; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
     bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
@@ -656,7 +665,7 @@ protected:
     BEU::UnitCP SetInputUnit(BEU::UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
-    size_t GetRightmostRatioIndex();
+    //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit();
 public:
 
@@ -668,7 +677,6 @@ public:
     UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[indxMiddle]; }
     UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[indxMinor]; }
     UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[indxSub]; }
-
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     bool NoProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
@@ -677,12 +685,9 @@ public:
     size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
     UNITS_EXPORT Utf8CP GetProblemDescription();
     UNITS_EXPORT NumericFormatSpecCP AssignFormatSpec(NumericFormatSpecCP spec) { return (m_formatSpec = spec); }
-
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
     UNITS_EXPORT Utf8String DecomposeValue(double dval, Utf8CP uomName = nullptr);
-
     };
-
 
 struct CompositeValue
     {
@@ -707,99 +712,41 @@ public:
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     };
+
+
 //=======================================================================================
-//! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
-//! Can be used for presenting angular measurement in the form of Degrees, Minutes and Seconds or 
-//!   length in a form of yards, feet and inches. The parts are called top, middle and low and two ratios between
-//!     top and middle and middle and low define the breakup details. The top is always supposed to be an integer
-//!  represented as double precision number. Both ratios are assumed to be positive integer numbers for avoiding incorrect
-//!   results. If a negative number is provided for either of two ratios its sign will be dropped. 
-//!  
-// @bsiclass                                                    David.Fox-Rabinovitz  10/2016
+// Container for keeping together primary numeric, composite and other types of specs
+//  and referrring them by the unique name. Name and at the valid numeric spec are required
+//   for creating a valid instance of this class. Alias and composite spec are optional at the
+// moment of creation but can be added later
+// @bsiclass                                                    David.Fox-Rabinovitz  03/2017
 //=======================================================================================
-struct NumericTriad
+struct NamedFormatSpec
     {
-protected:
-    double m_dval;            // we keep the originally submitted value for its sign and possible reverse operations
-    double m_topValue;        
-    double m_midValue;
-    double m_lowValue;
-    //DecimalPrecision m_decPrecision;
-    size_t    m_topToMid;
-    size_t    m_midToLow;
-    bool   m_init;
-    bool   m_midAssigned;
-    bool   m_lowAssigned;
-    bool   m_negative;
-    UNITS_EXPORT void Convert();
-    UNITS_EXPORT void SetValue(double dval);
-    UNITS_EXPORT NumericTriad();
-    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); } 
-    size_t SetTopToMid(size_t value) { return  m_topToMid = value; }
-    size_t SetMidToLow(size_t value) { return  m_midToLow = value; }
-    void SetInit() { m_init = true; }
-public:
-    UNITS_EXPORT NumericTriad(double dval, size_t topMid, size_t midLow);
-    
-    double GetWhole() { return m_negative ? -m_dval: m_dval; }
-    void ProcessValue(double dval)  {  SetValue(dval);  Convert(); }
-    void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
-    //void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-    double GetTopValue() { return m_topValue; }
-    double GetMidValue() { return m_midValue; }
-    double GetlowValue() { return m_lowValue; }
-    UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
-    UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero=false);
-    };
+    private:
+        Utf8CP          m_name;                  // name or ID of the format
+        Utf8CP          m_alias;                 // short alternative name (alias)
+        NumericFormatSpecCP   m_numericSpec;
+        CompositeValueSpecCP  m_compositeSpec;
+        FormatSpecType  m_specType;
+        FormatProblemCode m_problemCode;
 
-
-struct QuantityTriadSpec : NumericTriad
-    {
-private:
-    BEU::QuantityCP m_quant;
-    BEU::UnitCP m_topUnit;
-    BEU::UnitCP m_midUnit;
-    BEU::UnitCP m_lowUnit;
-    Utf8CP m_topUnitLabel;
-    Utf8CP m_midUnitLabel;
-    Utf8CP m_lowUnitLabel;
-    bool m_includeZero;
-    FormatProblemCode m_problemCode;
-
-    void Init(bool incl0);
-    QuantityTriadSpec();
-    bool ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::PhenomenonCP targPhen);
-    // UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
-public:
-
-    Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
-    Utf8CP GetTopUnitLabel() { return m_topUnitLabel; }
-    Utf8CP SetMidUnitLabel(Utf8CP symbol) { return m_midUnitLabel = symbol; }
-    Utf8CP GetMidUnitLabel() { return m_midUnitLabel; }
-    Utf8CP SetLowUnitLabel(Utf8CP symbol) { return m_lowUnitLabel = symbol; }
-    Utf8CP GetLowUnitLabel() { return m_lowUnitLabel; }
-    bool SetIncludeZero(bool val) { return m_includeZero = val; }
-    bool GetIncludeZero() const { return m_includeZero; }
-    UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
-    UNITS_EXPORT QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit = nullptr, BEU::UnitCP lowUnit = nullptr, bool incl0 = false);
-
-    bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-    FormatProblemCode GetProblemCode() { return m_problemCode; }
-    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-    UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract=false, bool includeZero = false);
-    Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
-    Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
-    Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
-    BEU::UnitCP GetTopUnit() { return m_topUnit; }
-    BEU::UnitCP GetMidUnit() { return m_midUnit; }
-    BEU::UnitCP GetLowUnit() { return m_lowUnit; }
+    public:
+        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecCP compSpec = nullptr);
+        Utf8CP SetAlias(Utf8CP alias) { return m_alias = alias; }
+        Utf8CP GetAlias() { return m_alias; }
+        FormatSpecType  GetSpecType(){return m_specType;}
+        NumericFormatSpecCP   GetNumericSpec() { return m_numericSpec; }
+        CompositeValueSpecCP  getCompositeSpec() { return  (HasComposite()? m_compositeSpec : nullptr); }
+        bool HasComposite() { return m_specType == FormatSpecType::Combo; }
+        bool IsProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
     };
 
 struct StdFormatSet
     {
 private:
     bvector<NumericFormatSpecP> m_formatSet;
-
+ 
     NumericFormatSpecP AddFormat(NumericFormatSpecP fmtP);
     void StdInit();
     StdFormatSet() { StdInit(); }
@@ -812,6 +759,94 @@ public:
     UNITS_EXPORT static NumericFormatSpecP FindFormat(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
+    };
+
+//=======================================================================================
+//! A class for breaking a given double precision number into 2 or 3 sub-parts defined by their ratios
+//! Can be used for presenting angular measurement in the form of Degrees, Minutes and Seconds or 
+//!   length in a form of yards, feet and inches. The parts are called top, middle and low and two ratios between
+//!     top and middle and middle and low define the breakup details. The top is always supposed to be an integer
+//!  represented as double precision number. Both ratios are assumed to be positive integer numbers for avoiding incorrect
+//!   results. If a negative number is provided for either of two ratios its sign will be dropped. 
+//!  
+// @bsiclass                                                    David.Fox-Rabinovitz  10/2016
+//=======================================================================================
+struct NumericTriad
+    {
+    protected:
+        double m_dval;            // we keep the originally submitted value for its sign and possible reverse operations
+        double m_topValue;
+        double m_midValue;
+        double m_lowValue;
+        //DecimalPrecision m_decPrecision;
+        size_t    m_topToMid;
+        size_t    m_midToLow;
+        bool   m_init;
+        bool   m_midAssigned;
+        bool   m_lowAssigned;
+        bool   m_negative;
+        UNITS_EXPORT void Convert();
+        UNITS_EXPORT void SetValue(double dval);
+        UNITS_EXPORT NumericTriad();
+        UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
+        size_t SetTopToMid(size_t value) { return  m_topToMid = value; }
+        size_t SetMidToLow(size_t value) { return  m_midToLow = value; }
+        void SetInit() { m_init = true; }
+    public:
+        UNITS_EXPORT NumericTriad(double dval, size_t topMid, size_t midLow);
+
+        double GetWhole() { return m_negative ? -m_dval : m_dval; }
+        void ProcessValue(double dval) { SetValue(dval);  Convert(); }
+        void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
+        //void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+        double GetTopValue() { return m_topValue; }
+        double GetMidValue() { return m_midValue; }
+        double GetlowValue() { return m_lowValue; }
+        UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
+        UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero = false);
+    };
+
+
+struct QuantityTriadSpec : NumericTriad
+    {
+    private:
+        BEU::QuantityCP m_quant;
+        BEU::UnitCP m_topUnit;
+        BEU::UnitCP m_midUnit;
+        BEU::UnitCP m_lowUnit;
+        Utf8CP m_topUnitLabel;
+        Utf8CP m_midUnitLabel;
+        Utf8CP m_lowUnitLabel;
+        bool m_includeZero;
+        FormatProblemCode m_problemCode;
+
+        void Init(bool incl0);
+        QuantityTriadSpec();
+        bool ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::PhenomenonCP targPhen);
+        // UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
+    public:
+
+        Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
+        Utf8CP GetTopUnitLabel() { return m_topUnitLabel; }
+        Utf8CP SetMidUnitLabel(Utf8CP symbol) { return m_midUnitLabel = symbol; }
+        Utf8CP GetMidUnitLabel() { return m_midUnitLabel; }
+        Utf8CP SetLowUnitLabel(Utf8CP symbol) { return m_lowUnitLabel = symbol; }
+        Utf8CP GetLowUnitLabel() { return m_lowUnitLabel; }
+        bool SetIncludeZero(bool val) { return m_includeZero = val; }
+        bool GetIncludeZero() const { return m_includeZero; }
+        UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
+        UNITS_EXPORT QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit = nullptr, BEU::UnitCP lowUnit = nullptr, bool incl0 = false);
+
+        bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+        FormatProblemCode GetProblemCode() { return m_problemCode; }
+        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+        UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract = false, bool includeZero = false);
+        Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName(); }
+        Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName(); }
+        Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName(); }
+        BEU::UnitCP GetTopUnit() { return m_topUnit; }
+        BEU::UnitCP GetMidUnit() { return m_midUnit; }
+        BEU::UnitCP GetLowUnit() { return m_lowUnit; }
     };
 
 // Format parameter traits
