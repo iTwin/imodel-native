@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,6 @@
 #include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -74,13 +73,11 @@ struct ArrayInfo
 //=======================================================================================
 struct ECValue
     {
-    //__PUBLISH_SECTION_END__
     public:
         //! Performs a shallow copy
+        //!<@private
         void ShallowCopy(ECValueCR v);
-        //__PUBLISH_SECTION_START__
 
-    public:
         //! Structure to hold information about Navigation values
         struct NavigationInfo
             {
@@ -147,9 +144,7 @@ struct ECValue
         struct StringInfo
             {
             private:
-                //__PUBLISH_SECTION_END__
                 friend void ECValue::ShallowCopy(ECValueCR);
-                //__PUBLISH_SECTION_START__
 
                 Utf8CP              m_utf8;
                 Utf16CP             m_utf16;
@@ -454,12 +449,12 @@ struct ECValue
         ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
 
         ECOBJECTS_EXPORT bool           CanConvertToPrimitiveType(PrimitiveType type) const;
-        /*__PUBLISH_SECTION_END__*/
-            // Attempts to convert this ECValue's primitive value to a different primitive type.
-            // Currently supported conversions (motivated by ECExpressions):
-            //  - double, int, and string are all interconvertible. double => int rounds
-            //  - conversion to and from string is supported for any other primitive type
-            //  - a null value of any primitive type can be converted a null value of any other primitive type
+#ifndef DOCUMENTATION_GENERATOR
+        // Attempts to convert this ECValue's primitive value to a different primitive type.
+        // Currently supported conversions (motivated by ECExpressions):
+        //  - double, int, and string are all interconvertible. double => int rounds
+        //  - conversion to and from string is supported for any other primitive type
+        //  - a null value of any primitive type can be converted a null value of any other primitive type
         ECOBJECTS_EXPORT bool           ConvertToPrimitiveType(PrimitiveType primitiveType);
         // Attempts to convert a primitive ECValue to a string representation suitable for serialization.
         // Fails if this ECValue is not a primitive
@@ -484,8 +479,7 @@ struct ECValue
         // Don't set this flag in ECValues to be returned to external callers who may not expect it to be set.
         ECOBJECTS_EXPORT bool           AllowsPointersIntoInstanceMemory() const;
         ECOBJECTS_EXPORT void           SetAllowsPointersIntoInstanceMemory(bool allow);
-
-        /*__PUBLISH_SECTION_START__*/
+#endif
 
             //! Defines the StructArray for this ECValue
             //! @param[in] count        The initial size of the array
@@ -558,8 +552,7 @@ struct ECValue
         //! Returns the string value as a Utf16CP, if this ECValue holds a string
         ECOBJECTS_EXPORT Utf16CP        GetUtf16CP() const;    // the only real caller of this should be ECDBuffer
 
-        //__PUBLISH_SECTION_END__
-
+#ifndef DOCUMENTATION_GENERATOR
         //! Indicates whether the ECValue instance owns the memory of WCharCP returned by ECValue::GetString.
         //! @remarks Can get return true, even if ECValue::SetWCharCP was called with holdADuplicate = false, as 
         //! ECValue does implicit encoding conversions when the requested encoding is different than the one used at set time.
@@ -580,8 +573,7 @@ struct ECValue
         //! In those cases the ECValue always owns the converted string.
         //! @return bool if ECValue owns the Utf16CP value, false otherwise
         ECOBJECTS_EXPORT bool           OwnsUtf16CP() const;
-
-        //__PUBLISH_SECTION_START__
+#endif
 
         //! Sets the value of this ECValue to the given string
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
@@ -668,13 +660,12 @@ struct ECValue
         //! @return SUCCESS or ERROR
         ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks(int64_t ceTicks, DateTime::Info const& dateTimeMetadata = DateTime::Info());
 
-        //__PUBLISH_SECTION_END__
+#ifndef DOCUMENTATION_GENERATOR
         BentleyStatus                   SetDateTimeMetadata(DateTime::Info const& caDateTimeMetadata);
         bool                            IsDateTimeMetadataSet() const;
         bool                            DateTimeInfoMatches(DateTime::Info const& caDateTimeMetadata) const;
         ECOBJECTS_EXPORT BentleyStatus  SetLocalDateTimeFromUnixMillis(int64_t unixMillis);
-        //__PUBLISH_SECTION_START__
-        //
+#endif
             //! Returns the DPoint2d value, if this ECValue holds a Point2d
         ECOBJECTS_EXPORT DPoint2d       GetPoint2d() const;
         //! Sets the value of this ECValue to the given DPoint2d
@@ -706,7 +697,7 @@ struct ECValue
         ECOBJECTS_EXPORT bool           Equals(ECValueCR v) const;
     };
 
-//__PUBLISH_SECTION_END__
+#ifndef DOCUMENTATION_GENERATOR
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/14
@@ -863,7 +854,7 @@ struct AdhocContainerPropertyIndexCollection
         const_iterator      end() const { return const_iterator(m_enabler, true); }
     };
 
-//__PUBLISH_SECTION_START__
+#endif
 
 //=======================================================================================
 //! A structure used for describing the complete location of an ECValue within an ECInstance.
@@ -902,13 +893,12 @@ struct ECValueAccessor
                 //! @param[in]      loc         The Location to copy
                 //! @return 
                 Location(const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) {}
-                /*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
                 void            SetPropertyIndex(int index) { m_cachedProperty = NULL; m_propertyIndex = index; }
                 void            SetArrayIndex(int index) { m_arrayIndex = index; }
                 void            IncrementArrayIndex() { m_arrayIndex++; }
                 Utf8CP         GetAccessString() const;
-                /*__PUBLISH_SECTION_START__*/
-            public:
+#endif
                 //! Get the enabler associated with this Location
                 //! @return     The enabler associated with this Location
                 ECEnablerCP                     GetEnabler() const { return m_enabler; }
@@ -927,20 +917,17 @@ struct ECValueAccessor
 
         typedef bvector<Location> LocationVector;
 
-        /*__PUBLISH_SECTION_END__*/
-    public:
-        LocationVector const &   GetLocationVectorCR() const;
-
-        /*__PUBLISH_SECTION_START__*/
     private:
         //"BACK" OF VECTOR IS DEEPEST ELEMENT
         LocationVector          m_locationVector;
         bool                    m_isAdhoc;
-        /*__PUBLISH_SECTION_END__*/
+
         const LocationVector&   GetLocationVector() const;
 
         Utf8CP                  GetAccessString(uint32_t depth, bool alwaysIncludeParentStructAccessStrings) const;
     public:
+#ifndef DOCUMENTATION_GENERATOR
+        LocationVector const &   GetLocationVectorCR() const;
         bool                                IsAdhocProperty() const { return m_isAdhoc; }
 
         ECOBJECTS_EXPORT Location&          operator[] (uint32_t depth);
@@ -978,8 +965,8 @@ struct ECValueAccessor
         ECOBJECTS_EXPORT ECN::ECPropertyCP      GetECProperty() const;
 
         ECOBJECTS_EXPORT Utf8String             GetDebugAccessString() const;
-        /*__PUBLISH_SECTION_START__*/
-    public:
+#endif
+
         //! Gets the depth of this Location within the ECValueAccessor.
         //! @return     The depth of this Location within the containing ECValueAccessor.
         ECOBJECTS_EXPORT uint32_t               GetDepth() const;
@@ -1080,20 +1067,20 @@ struct ECValueAccessor
         //! @return     ECObjectsStatus::Success if the ECValueAccessor was successfully populated, otherwise an error status
         //! @private
         ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor(ECValueAccessor& va, ECEnablerCR enabler, Utf8CP managedPropertyAccessor);
-        //__PUBLISH_SECTION_END__
+#ifndef DOCUMENTATION_GENERATOR
         ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor(ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor, bool includeAdhocs);
         // We have modified an ECClass and have an ECValueAccessor defined in terms of the old ECClass. Remap it to refer to the new ECClass.
         ECOBJECTS_EXPORT static ECObjectsStatus RemapValueAccessor(ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa, IECSchemaRemapperCR remapper);
         // We have modified an ECClass and have an access string defined in terms of the old ECClass. Populate it according to the new ECClass, remapping property names as appropriate.
         ECOBJECTS_EXPORT static ECObjectsStatus PopulateAndRemapValueAccessor(ECValueAccessor& va, ECEnablerCR enabler, Utf8CP accessString, IECSchemaRemapperCR remapper);
-        //__PUBLISH_SECTION_START__
+#endif
     };
 
-/*__PUBLISH_SECTION_END__*/
+//!<@private
 struct ECValuesCollection;
+//!<@private
 struct ECValuesCollectionIterator;
 
-/*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
 //! Relates an ECProperty with an ECValue. Used when iterating over the values of an ECInstance
@@ -1101,7 +1088,6 @@ struct ECValuesCollectionIterator;
 //=======================================================================================
 struct ECPropertyValue : RefCountedBase
     {
-    /*__PUBLISH_SECTION_END__*/
     friend struct ECValuesCollection;
     friend struct ECValuesCollectionIterator;
 
@@ -1114,6 +1100,7 @@ struct ECPropertyValue : RefCountedBase
         ECObjectsStatus     EvaluateValue() const;
         void                ResetValue();   // for ECValuesCollection, which reuses the same ECPropertyValue for multiple properties
     public:
+#ifndef DOCUMENTATION_GENERATOR
         ECPropertyValue();
         ECPropertyValue(ECPropertyValueCR);
         ECPropertyValue(IECInstanceCR);
@@ -1123,9 +1110,8 @@ struct ECPropertyValue : RefCountedBase
         ECOBJECTS_EXPORT ECObjectsStatus    Initialize(IECInstanceCR, Utf8CP accessString, ECValueCR);
 
         ECValueAccessorR    GetValueAccessorR();
+#endif
 
-        /*__PUBLISH_SECTION_START__*/
-    public:
         //! Gets the root IECInstance containing this ECPropertyValue
         //! @return     the IECInstance containing this ECPropertyValue
         ECOBJECTS_EXPORT IECInstanceCR          GetInstance() const;
@@ -1158,7 +1144,6 @@ struct ECPropertyValue : RefCountedBase
 //=======================================================================================
 struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         friend struct ECValuesCollection;
 
@@ -1171,8 +1156,6 @@ struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_i
 
         ECPropertyValue     GetFirstPropertyValue(IECInstanceCR);
         ECPropertyValue     GetChildPropertyValue(ECPropertyValueCR parentPropertyValue);
-
-        /*__PUBLISH_SECTION_START__*/
 
     public:
         //! Performs inequality comparison against another ECValuesCollectionIterator
@@ -1234,4 +1217,3 @@ struct ECValuesCollection : RefCountedBase
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (ECN::ECValuesCollection)

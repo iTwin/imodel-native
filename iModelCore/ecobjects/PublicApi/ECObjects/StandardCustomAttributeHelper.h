@@ -120,4 +120,4 @@ struct ConversionCustomAttributeHelper final
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//__PUBLISH_SECTION_END__
+

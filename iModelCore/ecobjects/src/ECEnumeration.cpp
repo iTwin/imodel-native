@@ -2,20 +2,11 @@
 |
 |     $Source: src/ECEnumeration.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#include "SchemaXml.h"
-#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
-#include <iomanip>
-#endif
-#include <Bentley/BeFileName.h>
-#include <Bentley/BeFile.h>
-#include <Bentley/BeFileListIterator.h>
-
-#include <ECObjects/StronglyConnectedGraph.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.

@@ -8,9 +8,7 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
-//  #include "ECInstanceIterable.h"
 #include "ECInstance.h"
 
 #include <ECUnits/Units.h>
@@ -122,7 +120,7 @@ typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalRes
 // check that the caller is an ECInstanceList...rather keep value list methods separate from instance list methods...
 typedef ExpressionStatus (*ExpressionValueListMethod_t)(EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& arguments);
 
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
 
 /*=================================================================================**//**
 *
@@ -191,7 +189,7 @@ public:
     static MethodReferencePtr   Create(ExpressionValueListMethod_t valueListMethod, void* context = nullptr);
 };
 
-/*__PUBLISH_SECTION_START__*/
+#endif
 
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
@@ -203,14 +201,12 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
-
-/*__PUBLISH_SECTION_END__*/
 private:
     ExpressionContextPtr                m_outer;
     EvaluationOptions                   m_options;
 
+#ifndef DOCUMENTATION_GENERATOR
 protected:
-
     virtual                     ~ExpressionContext () {}
                                 ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_options (EVALOPT_Legacy) { }
     virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) { return ExpressionStatus::UnknownSymbol; }
@@ -220,9 +216,9 @@ protected:
     //  The globalContext may be used to find instance methods
     virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
     virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) { return ExpressionStatus::NotImpl; }
-
+#endif
 public:
-
+#ifndef DOCUMENTATION_GENERATOR
     bool                        IsNamespace () const  { return _IsNamespace(); }
     ExpressionContextP          GetOuterP () const   { return m_outer.get(); }
     ExpressionStatus            ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
@@ -234,8 +230,8 @@ public:
     ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
 
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
+#endif
 
-/*__PUBLISH_SECTION_START__*/
     //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
     //! the IECTypeAdapter associated with the ECProperty will be called to perform conversion.
     //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
@@ -267,7 +263,6 @@ public:
 //+===============+===============+===============+===============+===============+======//
 struct          InstanceListExpressionContext : ExpressionContext
     {
-/*__PUBLISH_SECTION_END__*/
 private:
     ECInstanceList              m_instances;
     bool                        m_initialized;
@@ -283,6 +278,7 @@ private:
     ECOBJECTS_EXPORT ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
     ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR instance);
+#ifndef DOCUMENTATION_GENERATOR
 protected:
     // The following protected methods are only relevant to derived classes, which may want to:
     //  -lazily load the instance list, and/or
@@ -294,10 +290,11 @@ protected:
     bool                                        IsInitialized() const { return m_initialized; }
     void                                        Reset() { m_instances.clear(); m_initialized = false; }
     void                                        SetInstanceList (ECInstanceListCR instances) { m_instances = instances; m_initialized = true; }
+#endif
 public:
+    //!<@private
     void                                        Clear() { m_instances.clear(); }
-/*__PUBLISH_SECTION_START__*/
-public:
+
     //! Creates a new InstanceListExpressionContext from the list of IECInstances
     //! @param[in]      instances A list of IECInstances to be associated with the context
     //! @param[in]      outer     An optional ExpressionContext to contain the created context
@@ -305,8 +302,7 @@ public:
     ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances, ExpressionContextP outer = NULL);
     };
 
-//__PUBLISH_SECTION_END__
-
+#ifndef DOCUMENTATION_GENERATOR
 /*---------------------------------------------------------------------------------**//**
 * Manager that holds symbol providers. For use only with internal Symbol Providers.
 * @bsistruct                                                    Bill.Steinbock  04/2015
@@ -331,8 +327,7 @@ public:
 
     ECOBJECTS_EXPORT static InternalECSymbolProviderManager& GetManager ();
     };
-
-//__PUBLISH_SECTION_START__
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * An InstanceListExpressionContext which simply wraps one or more IECInstances.
@@ -340,10 +335,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceExpressionContext : InstanceListExpressionContext
     {
-//__PUBLISH_SECTION_END__
 private:
     InstanceExpressionContext (ExpressionContextP outer) : InstanceListExpressionContext (outer) { }
-//__PUBLISH_SECTION_START__
+
 public:
     //! Creates an InstanceExpressionContext
     //! @param[in]      outer An optional ExpressionContext which will contain the created InstanceExpressionContext
@@ -364,12 +358,11 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE SymbolExpressionContext : ExpressionContext
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     bvector<SymbolPtr>          m_symbols;
 
+#ifndef DOCUMENTATION_GENERATOR
 protected:
-
     ECOBJECTS_EXPORT ExpressionStatus _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
     ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ECOBJECTS_EXPORT ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
@@ -377,9 +370,9 @@ protected:
     ECOBJECTS_EXPORT bool _IsNamespace() const override {return true;}
     
     SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
-
+#endif
 public:
-
+#ifndef DOCUMENTATION_GENERATOR
     ECOBJECTS_EXPORT SymbolCP       FindCP (Utf8CP ident);
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (SymbolR symbol);
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (Utf8CP ident);
@@ -387,8 +380,7 @@ public:
     //! Creates a new SymbolExpressionContext using requested symbol sets and if an ECInstance is passed in it will publish it for "this" access
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<Utf8String> const& requestedSymbolSets, IECInstanceP instance = nullptr);
 
-/*__PUBLISH_SECTION_START__*/
-public:
+#endif
     //! Adds a symbol to the context to be used in expression evaluation
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
     //! Creates a new SymbolExpressionContext from the given ExpressionContext
@@ -406,7 +398,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          Symbol : RefCountedBase
 {
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
 private:
     Utf8String     m_name;
 
@@ -429,7 +421,7 @@ public:
 
     ExpressionStatus GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
                         {return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex);}
-/*__PUBLISH_SECTION_START__*/
+#endif
 
 };  // End of class Symbol
 
@@ -438,17 +430,15 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ContextSymbol : Symbol
 {
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
 protected:
     ExpressionContextPtr        m_context;
 
-                ContextSymbol (Utf8CP name, ExpressionContextR context)
-                                    : Symbol(name), m_context(&context) {}
+    ContextSymbol (Utf8CP name, ExpressionContextR context) : Symbol(name), m_context(&context) {}
 
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
-
-/*__PUBLISH_SECTION_START__*/
+#endif
 
 public:
     //! Creates a new ContextSymbol
@@ -464,10 +454,10 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          MethodSymbol : Symbol
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     MethodReferencePtr  m_methodReference;
 
+#ifndef DOCUMENTATION_GENERATOR
 protected:
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override {return ExpressionStatus::NeedsLValue;}
@@ -475,12 +465,11 @@ protected:
 
     MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
     MethodSymbol(Utf8CP name, ExpressionValueListMethod_t valueListMethod);
-
+#endif
 public:
+    //!<@private
     ECOBJECTS_EXPORT static MethodSymbolPtr     Create (Utf8CP name, ExpressionValueListMethod_t valueListMethod);
 
-/*__PUBLISH_SECTION_START__*/
-public:
     //! Creates a new method symbol context, using the supplied methods
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod, void* context = nullptr);
 };
@@ -545,11 +534,11 @@ private:
             static RefCountedPtr<ContextEvaluator> Create(InstanceType const& instance, GetContextMethod method) {return new TemplatedContextEvaluator(instance, method);}
         };
     
-/*__PUBLISH_SECTION_END__*/
-private:
+
     RefCountedPtr<PropertyEvaluator> m_valueEvaluator;
     RefCountedPtr<ContextEvaluator> m_contextEvaluator;
 
+#ifndef DOCUMENTATION_GENERATOR
 protected:
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, PropertyEvaluator& evaluator);
     ECOBJECTS_EXPORT PropertySymbol(Utf8CP name, ContextEvaluator& evaluator);
@@ -557,7 +546,7 @@ protected:
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
                                 {return ExpressionStatus::NeedsLValue;}
 
-/*__PUBLISH_SECTION_START__*/
+#endif
 public:
     ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create(Utf8CP name, PropertyEvaluator& evaluator);
     ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create(Utf8CP name, ContextEvaluator& evaluator);
@@ -589,10 +578,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE IECSymbolProvider
     {
-/*__PUBLISH_SECTION_END__*/
+    //!<@private
     typedef void(*ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<Utf8String> const&);
 
-/*__PUBLISH_SECTION_START__*/
 protected:
     virtual Utf8CP                  _GetName() const = 0;
     virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const = 0;
@@ -602,11 +590,10 @@ public:
                                         { return _GetName(); }
     ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
                                         { return _PublishSymbols (context, requestedSymbolSets); }
-/*__PUBLISH_SECTION_END__*/
+    //!<@private
     ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
-
+    //!<@private
     ECOBJECTS_EXPORT static void    UnRegisterExternalSymbolPublisher ();
-/*__PUBLISH_SECTION_START__*/
     };
 
 
@@ -681,7 +668,7 @@ enum            ExpressionToken
     TOKEN_PrimaryList         = 206,
     };
 
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
 
 /*=================================================================================**//**
 * @bsiclass                                                     John.Gooding    02/2011
@@ -736,7 +723,7 @@ public:
     ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
-/*__PUBLISH_SECTION_START__*/
+#endif
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -756,7 +743,7 @@ private:
     ValueType           m_valueType;
 
 public:
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
     ValueType           GetValueType() const    { return m_valueType; }
     bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
     bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
@@ -766,7 +753,7 @@ public:
     ExpressionStatus    GetInteger(int32_t& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
 
-/*__PUBLISH_SECTION_START__*/
+#endif
     //  Constructors and destructors
     ECOBJECTS_EXPORT EvaluationResult ();
     ECOBJECTS_EXPORT ~EvaluationResult ();
@@ -801,10 +788,10 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ValueSymbol : Symbol
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     EvaluationResult                m_expressionValue;
 
+#ifndef DOCUMENTATION_GENERATOR
 protected:
     ValueSymbol (Utf8CP name, EvaluationResultCR exprValue);
 
@@ -812,14 +799,16 @@ protected:
     ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ExpressionStatus _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
                                 {return ExpressionStatus::NeedsLValue;}
+#endif
 public:
+#ifndef DOCUMENTATION_GENERATOR
     ECOBJECTS_EXPORT static ValueSymbolPtr  Create (Utf8CP name, EvaluationResultCR value);
 
     ECOBJECTS_EXPORT EvaluationResultCR     GetValue() const;
     ECOBJECTS_EXPORT void                   SetValue (EvaluationResultCR value);
     ECOBJECTS_EXPORT void                   SetValue (ECValueCR value);
 
-/*__PUBLISH_SECTION_START__*/
+#endif
     //! Creates a new ValueSymbol with the given name and given ECValue
     ECOBJECTS_EXPORT static ValueSymbolPtr    Create(Utf8CP name, ECN::ECValueCR exprValue);
 
@@ -860,7 +849,6 @@ struct          NodeVisitor
 +===============+===============+===============+===============+===============+======*/
 struct          ECEvaluator
     {
-/*__PUBLISH_SECTION_END__*/
 private:
     LexerPtr            m_lexer;
     ExpressionContextPtr m_thisContext;
@@ -889,7 +877,6 @@ private:
     bool            CheckComplete ();
                     ECEvaluator(ExpressionContextP thisContext);
 
-/*__PUBLISH_SECTION_START__*/
 public:
     //! Parses a value expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseValueExpressionAndCreateTree(Utf8CP expression);
@@ -908,7 +895,6 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ValueResult : RefCountedBase
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     EvaluationResult    m_evalResult;
 
@@ -916,12 +902,12 @@ private:
     ~ValueResult();
 
 public:
+#ifndef DOCUMENTATION_GENERATOR
     static ValueResultPtr      Create(EvaluationResultR result);
 
     EvaluationResultR           GetResult()         { return m_evalResult; }
     EvaluationResultCR          GetResult() const   { return m_evalResult; }
-
-/*__PUBLISH_SECTION_START__*/
+#endif
     //! Gets the result of the evalution
     ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECN::ECValueR ecValue);
 };
@@ -984,7 +970,7 @@ private:
     bool                m_inParens;  //  Only used for ToString
 protected:
                         Node () { m_inParens = false; }
-/*__PUBLISH_SECTION_END__*/
+#ifndef DOCUMENTATION_GENERATOR
     virtual bool _Traverse(NodeVisitorR visitor) const {return visitor.ProcessNode(*this);}
     virtual Utf8String _ToString() const = 0;
 
@@ -1006,7 +992,9 @@ protected:
     virtual NodeP           _GetRightP () const { return NULL; }
     virtual bool            _SetLeft (NodeR node) { return false; }
     virtual bool            _SetRight (NodeR node) { return false; }
+#endif
 public:
+#ifndef DOCUMENTATION_GENERATOR
     bool                    GetHasParens() const { return m_inParens; }
     void                    SetHasParens(bool hasParens) { m_inParens = hasParens; }
     bool                    IsAdditive ()   const  { return _IsAdditive(); }
@@ -1051,10 +1039,9 @@ public:
     // Remaps access strings within this ECExpression according to the supplied remapper.
     // Returns true if any remapping was actually performed.
     ECOBJECTS_EXPORT bool   Remap (ECSchemaCR oldSchema, ECSchemaCR newSchema, IECSchemaRemapperCR remapper);
-/*__PUBLISH_SECTION_START__*/
-public:
+#endif
     //! Tries to generate a resolved tree.
-    //! @Returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
+    //! @returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
     //! @remarks A resolved tree can be executed much more efficiently that a tree that has not been resolved.
     ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
 
@@ -1074,4 +1061,3 @@ public:
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/** @endcond */

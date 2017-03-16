@@ -6,26 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
 
 #include <assert.h>
 #include <stdarg.h>
-/*__PUBLISH_SECTION_START__*/
 
 #ifndef DesignByContract_H_
 #define DesignByContract_H_
 
-/// @cond BENTLEY_SDK_Internal
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
 struct AssertDisabler
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     static int s_globalIgnoreCount;
 
 public:
-/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
@@ -60,8 +57,7 @@ public:
     //! \endcode
     #define DISABLE_ASSERTS           AssertDisabler assertDisabler;
 
-/*__PUBLISH_SECTION_END__*/
-
+#ifndef DOCUMENTATION_GENERATOR
 #ifdef  NDEBUG
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
     #define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
@@ -211,8 +207,6 @@ END_BENTLEY_ECOBJECT_NAMESPACE
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
 
-/*__PUBLISH_SECTION_START__*/
-
-/// @endcond BENTLEY_SDK_Internal
+#endif
 
 #endif // DesignByContract_H_

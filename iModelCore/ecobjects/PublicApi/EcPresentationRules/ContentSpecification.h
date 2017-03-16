@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -106,5 +105,3 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */

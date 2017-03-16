@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDiff.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,21 +11,16 @@
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECSchema.h>
-#include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
 
-//__PUBLISH_SECTION_END__
 #include <stack>
 #include <set>
-#include <memory>
 
 EC_TYPEDEFS(ECDiffNode);
 EC_TYPEDEFS(ECDiffValue);
-
-//__PUBLISH_SECTION_START__
 EC_TYPEDEFS(ECDiff);
 EC_TYPEDEFS(IECDiffNode);
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -212,7 +207,6 @@ enum class MergeStatus
 //+===============+===============+===============+===============+===============+======
 struct ECDiff : RefCountedBase
     {
-//__PUBLISH_SECTION_END__
     friend struct ECSchemaMergeTool;
     friend struct ECSchemaDiffTool;
     
@@ -221,10 +215,10 @@ private:
     ECN::ECSchemaPtr m_leftSchema;
     ECN::ECSchemaPtr m_rightSchema;
     DiffStatus  m_status;
-private:
+
     ECDiff(ECN::ECSchemaR left, ECN::ECSchemaR right, ECDiffNodeP diff, DiffStatus status);
     ECDiffNodeP GetRoot();
-//__PUBLISH_SECTION_START__
+
 public:
     //! Gets left ECSchema as passed at the time of diff.
     //! @return The retrieved ECSchema
@@ -299,7 +293,7 @@ struct ECDiffValueHelper
 
     };
 
-//__PUBLISH_SECTION_END__
+#ifndef DOCUMENTATION_GENERATOR
 //=======================================================================================
 // For case-sensitive WChar string comparisons in STL collections.
 // @bsistruct
@@ -603,7 +597,7 @@ public:
     static ECDiffNodeP Diff (ECSchemaCR left, ECSchemaCR right);
     };
 
-//__PUBLISH_SECTION_START__
+#endif
 
 /** @endGroup */
 

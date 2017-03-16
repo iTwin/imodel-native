@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECInstance.h>
 #include <Bentley/RefCounted.h>
@@ -51,7 +50,7 @@ private:
     Utf8String m_purpose;
 
     static Utf8CP s_customAttributeAccessor;
-	static Utf8CP s_customAttributeSchemaName;
+    static Utf8CP s_customAttributeSchemaName;
 
     void InitializeFromOldCustomAttribute(IECInstanceCR supplementalSchemaMetaDataCustomAttribute);
 
@@ -346,7 +345,7 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
-    //! the primary schema.
+    //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, bool createCopyOfSupplementalCustomAttribute = true);
 
@@ -358,6 +357,8 @@ public:
     //! @param[in]  supplementalSchemaList  A list of schemas that contain a skeleton structure containing only the classes
     //! and properties needed to hold the supplementary custom attributes
     //! @param[in]  locale  The localization supplemental with this locale will be applied if found.
+    //! @param[in]  createCopyOfSupplementalCustomAttribute Create copy of supplemental custom attribute before putting it on
+    //! the primary schema.  Defaults to true
     //! @returns A status code indicating whether the primarySchema was successfully supplemented
     ECOBJECTS_EXPORT SupplementedSchemaStatus UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute = true);
     }; // SupplementalSchemaBuilder
@@ -414,18 +415,14 @@ public:
     //! @returns    True    If the input schema has the same supplemental schemas as the current schema for the given purpose, or if neither schema is supplemented.
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, Utf8StringCR purpose) const;
 
-    //__PUBLISH_SECTION_END__
     //! Creates a custom attribute defining the supplemental schema names and their purposes
     IECInstancePtr CreateCustomAttribute();
-
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     static Utf8CP GetCustomAttributeAccessor();
-	//! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.
-	static Utf8CP GetCustomAttributeSchemaName();
-    //__PUBLISH_SECTION_START__
+    //! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.
+    static Utf8CP GetCustomAttributeSchemaName();
 
     };
 /** @endGroup */	
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/** @endcond */

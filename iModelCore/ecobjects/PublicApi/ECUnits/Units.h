@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECUnits/Units.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,6 @@
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.
 
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjects.h>
 

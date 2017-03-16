@@ -7,8 +7,8 @@
 +----------------------------------------------------------------------*/
 #pragma once
 
-/*__BENTLEY_INTERNAL_ONLY__*/
-
+//__PUBLISH_SECTION_START__
+#ifndef DOCUMENTATION_GENERATOR
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -38,4 +38,4 @@ public:
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
+#endif

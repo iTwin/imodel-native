@@ -604,9 +604,18 @@ ECObjectsStatus SupplementedSchemaBuilder::SetMergedCustomAttribute(IECCustomAtt
     {
     ECSchemaR customAttributeSchema = const_cast<ECSchemaR>(customAttributeInstance.GetClass().GetSchema());
     ECSchemaP containerSchema = container.GetContainerSchema();
+    IECInstancePtr copiedInstance = nullptr;
     if (containerSchema != &(customAttributeSchema))
         {
-        if (!ECSchema::IsSchemaReferenced(*containerSchema, customAttributeSchema))
+        // Custom attributes should never be defined in a supplemental schema, but there are schemas out there that do this.  So we need to work around that
+        // by copying the class over to the target schema
+        if (customAttributeSchema.IsSupplementalSchema())
+            {
+            ECClassP containerCA = nullptr;
+            containerSchema->CopyClass(containerCA, customAttributeInstance.GetClass());
+            copiedInstance = customAttributeInstance.CreateCopyThroughSerialization(*containerSchema);
+            }
+        else if (!ECSchema::IsSchemaReferenced(*containerSchema, customAttributeSchema))
             {
             ECObjectsStatus status = containerSchema->AddReferencedSchema(customAttributeSchema);
             if (status != ECObjectsStatus::Success)
@@ -615,9 +624,9 @@ ECObjectsStatus SupplementedSchemaBuilder::SetMergedCustomAttribute(IECCustomAtt
         }
 
     if (precedence == SCHEMA_PRECEDENCE_Equal)
-        return container.SetPrimaryCustomAttribute(customAttributeInstance);
+        return container.SetPrimaryCustomAttribute(copiedInstance.IsValid() ? *copiedInstance : customAttributeInstance);
     else
-        return container.SetSupplementedCustomAttribute(customAttributeInstance);
+        return container.SetSupplementedCustomAttribute(copiedInstance.IsValid() ? *copiedInstance : customAttributeInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**

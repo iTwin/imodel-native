@@ -7,15 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#include "SchemaXml.h"
-#if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
-#include <iomanip>
-#endif
-#include <Bentley/BeFileName.h>
-#include <Bentley/BeFile.h>
-#include <Bentley/BeFileListIterator.h>
-
-#include <ECObjects/StronglyConnectedGraph.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

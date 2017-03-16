@@ -84,7 +84,6 @@ EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
 EC_TYPEDEFS (ICustomAttributeDeserializer);
 EC_TYPEDEFS (CustomAttributeDeserializerManager);
-EC_TYPEDEFS (ECInstanceIterable);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
@@ -102,11 +101,11 @@ EC_TYPEDEFS (UnitSpec);
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
 
-//__PUBLISH_SECTION_END__
+#ifndef DOCUMENTATION_GENERATOR
 EC_TYPEDEFS (AdhocPropertyMetadata);
 EC_TYPEDEFS (AdhocPropertyQuery);
 EC_TYPEDEFS (AdhocPropertyEdit);
-//__PUBLISH_SECTION_START__
+#endif
 
 struct IStream;
 
@@ -325,16 +324,13 @@ enum EvaluationOptions
     EVALOPT_EnforceGlobalRepresentation     = (1 << 2),
     };
 
-
-/*__PUBLISH_SECTION_END__*/
-
 //=======================================================================================
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
 //=======================================================================================
-/*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================
 //! Represents the classification of the data type of an ECValue. The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
@@ -348,14 +344,13 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     VALUEKIND_Navigation                     = 0x08, //!< The ECValue holds a navigation type
     };
 
-/*__PUBLISH_SECTION_END__*/
 //=======================================================================================
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
 //=======================================================================================
-/*__PUBLISH_SECTION_START__*/
+
 //=======================================================================================
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
@@ -366,7 +361,6 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     ARRAYKIND_Struct          = 0x02
     };
 
-/*__PUBLISH_SECTION_END__*/
 //=======================================================================================
 // ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
@@ -376,7 +370,6 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 //    - PrimitiveECProperty::_GetTypeName
 // NEEDSWORK types: common geometry, installed primitives
 //=======================================================================================
-/*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
 //! Enumeration of primitive data types for ECProperties

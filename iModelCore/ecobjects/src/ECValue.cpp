@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -101,12 +101,7 @@ void ECValue::StringInfo::ConvertToUtf8(uint8_t& flags)
         {
         Utf8String buf;
         if (NULL != m_utf16)
-            {
-            // ###TODO: eww...can we avoid this?
-            WString wBuf;
-            BeStringUtilities::Utf16ToWChar(wBuf, m_utf16);
-            BeStringUtilities::WCharToUtf8(buf, wBuf.c_str());
-            }
+            BeStringUtilities::Utf16ToUtf8(buf, m_utf16);
 #if !defined (_WIN32)
         else if (NULL != m_wchar)
             BeStringUtilities::WCharToUtf8(buf, m_wchar);
@@ -930,7 +925,7 @@ ECValue::ECValue(DateTimeCR dateTime)
 * ECN::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue(WCharCP string, bool holdADuplicate) //needswork: add an overload that takes utf8
+ECValue::ECValue(WCharCP string, bool holdADuplicate)
     {
     ConstructUninitialized();
     SetWCharCP(string, holdADuplicate);

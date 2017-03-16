@@ -8,6 +8,7 @@
 
 #include "ECObjectsPch.h"
 #include "SchemaXml.h"
+#include "StronglyConnectedGraph.h"
 #if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android
 #include <iomanip>
 #endif
@@ -15,7 +16,6 @@
 #include <Bentley/BeFile.h>
 #include <Bentley/BeFileListIterator.h>
 
-#include <ECObjects/StronglyConnectedGraph.h>
 #include <list>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -2259,43 +2259,6 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
     return referencedSchemas.end() != referencedSchemas.find (potentiallyReferencedSchema.GetSchemaKey());
     }
 
-
-#if defined (NEEDSWORK_LIBXML)
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus     ECSchema::ReadFromXmlStream
-(
-ECSchemaP&                      schemaOut,
-IStreamP                        ecSchemaXmlStream,
-ECSchemaReadContextR schemaContext
-)
-    {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SCHEMA_READ_STATUS_FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-
-    VARIANT_BOOL returnCode = xmlDocPtr->load(ecSchemaXmlStream);
-    if (returnCode != VARIANT_TRUE)
-        {
-        LogXmlLoadError (xmlDom.get());
-        return SchemaReadStatus::FailedToParseXml;
-        }
-
-    status = ReadXml (schemaOut, xmlDocPtr, schemaContext);
-    if (SchemaReadStatus::DuplicateSchema == status)
-        return status; // already logged
-
-    if (ECObjectsStatus::Success != status)
-        LOG.errorv (L"Failed to read XML from stream");
-    return status;
-    return SchemaReadStatus::FailedToParseXml;
-    }
-#endif //defined (NEEDSWORK_LIBXML)
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2350,36 +2313,6 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 
     return SchemaWriteStatus::Success;
     }
-
-#if defined (NEEDSWORK_LIBXML)
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteToXmlStream
-(
-IStreamP ecSchemaXmlStream,
-ECVersion ecXmlVersion,
-bool     utf16
-)
-    {
-    SchemaWriteStatus status = SchemaWriteStatus::Success;
-
-    MSXML2::IXMLDOMDocument2Ptr xmlDocPtr = NULL;
-    VERIFY_HRESULT_OK(xmlDocPtr.CreateInstance(__uuidof(MSXML2::DOMDocument60)), SchemaWriteStatus::FailedToInitializeMsmxl);
-    xmlDocPtr->put_validateOnParse(VARIANT_TRUE);
-    xmlDocPtr->put_async(VARIANT_FALSE);
-    xmlDocPtr->put_preserveWhiteSpace(VARIANT_TRUE);
-    xmlDocPtr->put_resolveExternals(VARIANT_FALSE);
-
-    status = WriteXml(xmlDocPtr);
-    if (status != SchemaWriteStatus::Success)
-        return status;
-
-    VERIFY_HRESULT_OK(xmlDocPtr->save(ecSchemaXmlStream), SchemaWriteStatus::FailedToSaveXml);
-
-    return status;
-    }
-#endif //defined (NEEDSWORK_LIBXML)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

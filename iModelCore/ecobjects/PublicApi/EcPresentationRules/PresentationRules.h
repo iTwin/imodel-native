@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjectsAPI.h>
 
@@ -41,5 +40,3 @@
 #include <ECPresentationRules/SelectedNodeInstancesSpecification.h>
 #include <ECPresentationRules/CalculatedPropertySpecification.h>
 #include <ECPresentationRules/RelatedInstanceSpecification.h>
-
-/** @endcond */

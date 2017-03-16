@@ -151,13 +151,13 @@ struct CustomAttributeDeserializerManager
 //! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
 //!
-//! @if BENTLEY_SDK_Internal
+#ifndef DOCUMENTATION_GENERATOR
 //! ### Comparison to .NET ECObjects
 //! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
-//! @endif
+#endif
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
@@ -292,11 +292,6 @@ protected:
     //! @remarks For when the caller wants to directly set the InternalValue, and not go through any processing, for example with calculated properties
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 
-/*__PUBLISH_SECTION_END__*/
-#ifdef DGN_IMPORTER_REORG_WIP
-    virtual DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
-#endif
-/*__PUBLISH_SECTION_START__*/
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 
@@ -332,13 +327,12 @@ public:
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, Utf8CP propertyAccessString) const;
-//__PUBLISH_SECTION_END__
     //! Gets the value stored in the specified ECProperty, optionally including ad-hoc property values. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, Utf8CP propertyAccessString) const;    
-//__PUBLISH_SECTION_START__
+    //!<@private
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, Utf8CP propertyAccessString) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v                       If successful, will contain the value of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
@@ -363,13 +357,12 @@ public:
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (Utf8CP propertyAccessString, ECValueCR v);
-//__PUBLISH_SECTION_END__
     //! Sets the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);    
-//__PUBLISH_SECTION_START__
+    //!<@private
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
@@ -395,13 +388,12 @@ public:
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (Utf8CP propertyAccessString, ECValueCR v);
-//__PUBLISH_SECTION_END__
     //! Change the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
+    //!<@private
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);    
-//__PUBLISH_SECTION_START__
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
@@ -463,11 +455,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (Utf8CP propertyAccessString, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (Utf8CP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
 
-    // These are provided to avoid the cost of dynamic cast.
-#ifdef DGN_IMPORTER_REORG_WIP
-    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
-    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
-#endif
     ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlWriterR xmlWriter, bool writeInstanceId);
 
     // Copy any properties which are common to both IECInstances, skip the rest.
@@ -489,12 +476,11 @@ public:
     //! @param[in] accessString The access string to the property to check the read-only state for
     //! @returns true if the property is read-only
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (Utf8CP accessString) const;
-//__PUBLISH_SECTION_END__
     //! Given an access string, returns whether that property is readonly. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in] accessString The access string to the property to check the read-only state for
     //! @returns true if the property is read-only
+    //!<@private
     ECOBJECTS_EXPORT bool               IsPropertyOrAdhocReadOnly (Utf8CP accessString) const;
-//__PUBLISH_SECTION_START__
 
     //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
@@ -881,6 +867,3 @@ typedef ECInstanceList const            &ECInstanceListCR;
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_END__*/
-//#pragma make_public (ECN::IECInstance)
-/*__PUBLISH_SECTION_START__*/

@@ -9,7 +9,6 @@
 //#define EC_TRACE_MEMORY
 // This file describes the public API for writing applications using the ECObjects library.
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 /*=================================================================================**//**
 @if ECOBJECTS_MAINPAGE
@@ -46,9 +45,6 @@ capture this information.
 #include <string>
 #include <vector>
 #include <map>
-#ifdef USE_HASHMAP_IN_CLASSLAYOUT   // WIP_NONPORT - No hashmap on Android
-#include <hash_map>
-#endif
 #include <limits>
 
 #include <ECObjects/ECEnabler.h>
@@ -72,12 +68,5 @@ capture this information.
 #include <ECObjects/ECJsonUtilities.h>
 #include <ECObjects/ECRelationshipPath.h>
 
-/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
-#include <ECObjects/ECEvent.h>
-// This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
-#define NON_PUBLISHED_HEADER_INCLUDED
 
-/*__PUBLISH_SECTION_START__*/
-
-/** @endcond */

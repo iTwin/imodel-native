@@ -2,7 +2,7 @@
 #
 #     $Source: mki/ECObjects.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ECObjects_mki__)
@@ -43,10 +43,5 @@ ecunitsPublicAPISrc             = $(ecPublicAPISrc)ECUnits/
 #-----------------------------------------------------------------------
 #The gtest mk* files (which we harvest as a subpart for our gtest builds) rely on this macro being defined
 GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
-
-#-----------------------------------------------------------------------
-# Configure includes
-#-----------------------------------------------------------------------
-PublicApiIncludes       + -I$(ecPublicAPISrc) -I$(BuildContext)SubParts/BoostAPI
 
 

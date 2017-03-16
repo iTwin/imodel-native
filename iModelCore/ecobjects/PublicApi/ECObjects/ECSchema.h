@@ -11,14 +11,10 @@
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/CalculatedProperty.h>
-/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/SchemaLocalizedStrings.h>
-/*__PUBLISH_SECTION_START__*/
-#include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
-#include <Bentley/bset.h>
 #include <Bentley/BeFileName.h>
 
 #define DEFAULT_VERSION_READ       1
@@ -72,7 +68,7 @@ public:
     Utf8StringCR        GetName() const { return m_name; }
     bool                IsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
     Utf8StringCR        GetDisplayLabel() const { return m_displayLabel; }
-#if !defined (DOCUMENTATION_GENERATOR)
+#ifndef DOCUMENTATION_GENERATOR
     void                SetName(Utf8CP name);
     void                SetDisplayLabel(Utf8CP label);
 #endif
@@ -93,12 +89,11 @@ public:
 struct ECNameValidation
     {
 private:
-/*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
 public:
+    //! Encodes special characters in a possibly invalid name to produce a valid name
+    //! Depreciated, use bool EncodeToValidName(Utf8StringR encoded, Utf8StringCR name)
     ECOBJECTS_EXPORT static Utf8String             EncodeToValidName(Utf8StringCR name);
-/*__PUBLISH_SECTION_START__*/
-public:
 
     //! Enumeration defining the result of a validation check
     enum ValidationResult
@@ -232,7 +227,7 @@ private:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
 
-    //! LEGECY METHOD
+    //! LEGECY METHOD, use GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes)
     IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
 protected:
@@ -252,18 +247,15 @@ protected:
 
     ECOBJECTS_EXPORT virtual ~IECCustomAttributeContainer();
 
-/*__PUBLISH_SECTION_END__*/
 public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
 
-    //! LEGECY METHOD
+    //! LEGECY METHOD, use GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className)
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
-//__PUBLISH_SECTION_START__
-public:
     //! Returns true if the container has a custom attribute of a class of the specified name in the current container or base containers
     ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition in the current container or base containers
@@ -389,7 +381,6 @@ public:
         {
         friend struct const_iterator;
         public:
-/*__PUBLISH_SECTION_END__*/
         ECCustomAttributeCollection* m_customAttributes;
         ECCustomAttributeCollection::const_iterator m_customAttributesIterator;
 
@@ -398,7 +389,6 @@ public:
 
         static RefCountedPtr<IteratorState> Create (IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes)
             { return new IteratorState(container, includeBase, includeSupplementalAttributes); } ;
-/*__PUBLISH_SECTION_START__*/
         };
 
     //! Iterator for the custom attribute instances
@@ -408,10 +398,8 @@ public:
             friend struct ECCustomAttributeInstanceIterable;
             RefCountedPtr<IteratorState> m_state;
             bool m_isEnd;
-/*__PUBLISH_SECTION_END__*/
             const_iterator (IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes);
             const_iterator () : m_isEnd(true) {;}
-/*__PUBLISH_SECTION_START__*/
             const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
         public:
@@ -434,7 +422,6 @@ Base class for an object which provides the context for an IECTypeAdapter
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE IECTypeAdapterContext : RefCountedBase
     {
-/*__PUBLISH_SECTION_END__*/
 private:
     EvaluationOptions m_evalOptions;
 
@@ -467,7 +454,6 @@ public:
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, uint32_t componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
     static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, uint32_t componentIndex = COMPONENT_INDEX_None);
-/*__PUBLISH_SECTION_START__*/
     static const uint32_t COMPONENT_INDEX_None = -1;
     };
 
@@ -480,7 +466,6 @@ Base class for an object which adapts the internal value of an ECProperty to a u
 struct IECTypeAdapter : RefCountedBase
     {
     typedef bvector<Utf8String> StandardValuesCollection;
-/*__PUBLISH_SECTION_END__*/
     // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
     // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
 protected:
@@ -551,8 +536,7 @@ public:
 
     //! Returns a default value which can be used as a placeholder for e.g. testing formatting options
     ECOBJECTS_EXPORT bool       GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR context) const;
-//__PUBLISH_SECTION_START__
-public:
+
     //! @return true if it is possible to convert the underlying type to a string
     ECOBJECTS_EXPORT bool                 CanConvertToString (IECTypeAdapterContextCR context) const;
 
@@ -599,10 +583,8 @@ public:
 
     //! @return true if this type adapter provides a finite set of permissible values for the property it represents
     ECOBJECTS_EXPORT bool                 HasStandardValues() const;
-
-/*__PUBLISH_SECTION_END__*/
+    //! If true and the value has sub/child values the value can be expanded to show child members
     ECOBJECTS_EXPORT bool                 AllowExpandMembers() const;
-/*__PUBLISH_SECTION_START__*/
 
     //! @return true if the underlying type is a struct.
     ECOBJECTS_EXPORT bool                 IsStruct() const;
@@ -714,21 +696,26 @@ protected:
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) { return false; }
 
     void                                InvalidateClassLayout();
-/*__PUBLISH_SECTION_END__*/
+
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    //!<@private
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
+    //!<@private
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
+    //!<@private
     IECTypeAdapter*                     GetTypeAdapter() const;
+
+    //! Returns true if the property is explicitly set to read only.  Use GetIsReadOnly to determine if this property is actually readonly.
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
+    //! Returns true if this property was created during supplementation.  Properties created during supplementation should not be serialized.
     bool                                IsForSupplementation() const { return m_forSupplementation; }
 
-    //! Intended to be called by ECDb or a similar system
+    //! Intended to be called by ECDb or a similar system which uses an id to identify elements of a schema
     void SetId(ECPropertyId id) { BeAssert(!m_ecPropertyId.IsValid()); m_ecPropertyId = id; };
+    //! returns true if this property has an id defined
     bool HasId() const { return m_ecPropertyId.IsValid(); };
 
-/*__PUBLISH_SECTION_START__*/
-public:
     //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
      CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
     //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
@@ -942,7 +929,6 @@ public:
 struct StructECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
-/*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 friend struct ECStructClass;
 private:
@@ -961,7 +947,6 @@ protected:
     bool _CanOverride(ECPropertyCR baseProperty) const override;
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::StructProperty;}
 
-//__PUBLISH_SECTION_START__
 public:
     //! The property type.
     //! This type must be an ECStructClass.
@@ -992,21 +977,21 @@ protected:
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
 
-protected:
     SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
     bool                        _IsArray () const override {return true;}
     ArrayECPropertyCP           _GetAsArrayPropertyCP() const override {return this;}
     ArrayECPropertyP            _GetAsArrayPropertyP() override {return this;}
 
-/*__PUBLISH_SECTION_END__*/
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
+    //!<@private
     IECTypeAdapter*                     GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
+    //!<@private
     void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
+    //!<@private
     IECTypeAdapter*                     GetMemberTypeAdapter() const;
-/*__PUBLISH_SECTION_START__*/
-public:
+
     //! The ArrayKind of this ECProperty
     ArrayKind GetKind() const {return m_arrayKind;}
 
@@ -1022,12 +1007,10 @@ public:
     //! Gets the maximum number of array members.
     uint32_t GetMaxOccurs() const {return /* m_maxOccurs; */ UINT_MAX;} // D-106653
 
-//__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
     uint32_t GetStoredMaxOccurs () const {return m_maxOccurs;}
-//__PUBLISH_SECTION_START__
-    };
+   };
 
 //=======================================================================================
 //! The in-memory representation of an PrimitiveArrayECProperty as defined by ECSchemaXML
@@ -1207,7 +1190,6 @@ public:
     struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
-/*__PUBLISH_SECTION_END__*/
         public:
             PropertyList::const_iterator     m_listIterator;
             PropertyList*                    m_properties;
@@ -1216,7 +1198,6 @@ public:
             ~IteratorState();
             static RefCountedPtr<IteratorState> Create (ECClassCR ecClass, bool includeBaseProperties)
                 { return new IteratorState(ecClass, includeBaseProperties); };
-/*__PUBLISH_SECTION_START__*/
         };
 
     //! Iterator over the properties
@@ -1227,10 +1208,8 @@ public:
             RefCountedPtr<IteratorState>   m_state;
             bool m_isEnd;
 
-/*__PUBLISH_SECTION_END__*/
             const_iterator (ECClassCR ecClass, bool includeBaseProperties);
             const_iterator () : m_isEnd(true) {};
-/*__PUBLISH_SECTION_START__*/
             const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
         public:
@@ -1277,8 +1256,6 @@ enum class ECClassType
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ECClass /*abstract*/ : IECCustomAttributeContainer
 {
-/*__PUBLISH_SECTION_END__*/
-
 friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlReader2;
@@ -1288,8 +1265,6 @@ friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
 friend struct ECSchemaConverter;
-
-//__PUBLISH_SECTION_START__
 
 private:
     mutable Utf8String              m_fullName;
@@ -1312,7 +1287,6 @@ private:
     ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
-    ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
@@ -1330,7 +1304,6 @@ private:
     void            RemoveBaseClasses ();
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
-    ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty=true);
 
     void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
@@ -1486,6 +1459,12 @@ public:
     //! @return     An iterable container of ECProperties
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseProperties) const;
 
+    //! Renames a property (and potentially all derived properties) if its name conflicts.  A new name is automatically generated.
+    //! Note: This does not do any checks to determine if the give property's name does actually conflict.  It will always rename the property.
+    //! @param[in]  conflictProperty    The property whose name conflicts with either a base class property or a reserved system property name
+    //! @param[in]  renameDerivedProperties Whether to also rename derived properties
+    ECOBJECTS_EXPORT ECObjectsStatus RenameConflictProperty(ECPropertyP conflictProperty, bool renameDerivedProperties);
+
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
@@ -1576,10 +1555,13 @@ public:
     //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
 
-    //__PUBLISH_SECTION_END__
+    //! Copies the sourceProperty, adds it to the current class and outputs the copied property if the copy was successful
+    //! @param[out]  destProperty           Outputs the copied property.  Only valid if the method returns ::Success
+    //! @param[in]   sourceProperty         The property to copy into this class.  If nullptr, ::NullPointerValue returned.
+    //! @param[in]   copyCustomAttributes   If true the primary custom attributes are copied to the destProperty, supplemental custom attributes are not copied.  A schema references will be added as needed.
     ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+    //! Returns true if this class derives from the input baseClass once and only once.  Returns false if this class does not derive from the input base class or if it is found more than once when traversing base classes
     ECOBJECTS_EXPORT bool IsSingularlyDerivedFrom(ECClassCR baseClass) const;
-    //__PUBLISH_SECTION_START__
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -2126,14 +2108,11 @@ private:
         : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
             m_isPolymorphic(true), m_abstractConstraint(nullptr), m_verified(false) {}
 
-/*__PUBLISH_SECTION_END__*/
 protected:
     ECSchemaCP _GetContainerSchema() const override;
     CustomAttributeContainerType _GetContainerType() const override {return m_isSource ? CustomAttributeContainerType::SourceRelationshipConstraint : CustomAttributeContainerType::TargetRelationshipConstraint;}
 
-/*__PUBLISH_SECTION_START__*/
 public:
- 
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Return relationshipClass to which this constraint is associated
@@ -2636,9 +2615,8 @@ public:
         return str;
         }
 
-//__PUBLISH_SECTION_END__
+    //!<@private
     ECOBJECTS_EXPORT bool   Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
-//__PUBLISH_SECTION_START__
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2686,13 +2664,14 @@ public:
     //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
     //! @return true if the access string identifies a valid ECProperty within the ECEnabler
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
-//__PUBLISH_SECTION_END__
+    //!<@private
     ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
-
+    //!<@private
     Utf8StringR                    GetSchemaNameR()    { return m_schemaName; }
+    //!<@private
     Utf8StringR                    GetClassNameR()     { return m_className; }
+    //!<@private
     Utf8StringR                    GetAccessStringR()  { return m_accessString; }
-//__PUBLISH_SECTION_START__
     };
 
 typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;
@@ -2730,7 +2709,6 @@ typedef const ECSchemaReferenceList&    ECSchemaReferenceListCR;
 //=======================================================================================
 struct ECClassContainer
 {
-/*__PUBLISH_SECTION_END__*/
 private:
     friend struct ECSchema;
     friend struct ECClass;
@@ -2741,7 +2719,6 @@ private:
 public:
     ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
 
-//__PUBLISH_SECTION_START__
 public:
     //=======================================================================================
     // @bsistruct
@@ -2749,13 +2726,11 @@ public:
     struct IteratorState : RefCountedBase
         {
         friend struct const_iterator;
-/*__PUBLISH_SECTION_END__*/
         public:
             ClassMap::const_iterator     m_mapIterator;
 
             IteratorState (ClassMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
             static RefCountedPtr<IteratorState> Create (ClassMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-//__PUBLISH_SECTION_START__
         };
 
     //=======================================================================================
@@ -2767,9 +2742,7 @@ public:
         friend struct ECClassContainer;
         RefCountedPtr<IteratorState>   m_state;
 
-/*__PUBLISH_SECTION_END__*/
         const_iterator (ClassMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
-/*__PUBLISH_SECTION_START__*/
         const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
     public:
@@ -2896,11 +2869,8 @@ struct IStandaloneEnablerLocater
 private:
     DECLARE_KEY_METHOD
 
-/*__PUBLISH_SECTION_END__*/
 protected:
     virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) = 0;
-
-/*__PUBLISH_SECTION_START__*/
 
 public:
     //! Given a SchemaKey and a className, tries to locate the StandaloneEnabler for the ECClass
@@ -2939,11 +2909,8 @@ typedef RefCountedPtr<ECSchemaCache>        ECSchemaCachePtr;
 //! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ECSchemaCache : public RefCountedBase
-//__PUBLISH_SECTION_END__
     ,public IECSchemaLocater
-//__PUBLISH_SECTION_START__
 {
-/*__PUBLISH_SECTION_END__*/
 protected:
     SchemaMap   m_schemas;
 
@@ -2953,9 +2920,8 @@ protected:
 
     ECOBJECTS_EXPORT ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
+    //! Removes the input schema and all schemas which reference it from the cache
     ECObjectsStatus DropAllReferencesOfSchema(ECSchemaR schema);
-//__PUBLISH_SECTION_START__
-public:
     //! Adds a schema to the cache
     //! @param[in] schema   The ECSchema to add to the cache
     //! @returns ECObjectsStatus::DuplicateSchema is the schema is already in the cache, otherwise ECObjectsStatus::Success
@@ -2988,12 +2954,9 @@ public:
     ECOBJECTS_EXPORT void   GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
 };
 
-
-/*__PUBLISH_SECTION_END__*/
-
-
 //=======================================================================================
 //! Locates schemas by looking in a given set of file system folder for ECSchemaXml files
+//! For internal use only, use ECSchemaReadContext to setup search paths for schemas
 //=======================================================================================
 struct SearchPathSchemaFileLocater : IECSchemaLocater, RefCountedBase, NonCopyableClass
 {
@@ -3020,12 +2983,12 @@ protected:
     ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 
 public:
+    //! Get the search paths registered for this locater
     bvector<WString>const& GetSearchPath () const {return m_searchPaths;}
-public:
+    //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths);
 };
 
-/*__PUBLISH_SECTION_START__*/
 struct SupplementalSchemaInfo;
 typedef RefCountedPtr<SupplementalSchemaInfo> SupplementalSchemaInfoPtr;
 
@@ -3104,9 +3067,7 @@ private:
     mutable ECSchemaElementsOrder m_serializationOrder; //mutable because we might modify this during serialization
 
     bmap<ECSchemaP, Utf8String> m_referencedSchemaAliasMap;
-    /*__PUBLISH_SECTION_END__*/
     SchemaLocalizedStrings      m_localizedStrings;
-    /*__PUBLISH_SECTION_START__*/
 
     ECSchema ();
     virtual ~ECSchema();
@@ -3134,19 +3095,18 @@ protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
-/*__PUBLISH_SECTION_END__*/
 public:
     ECOBJECTS_EXPORT void ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
     void SetId(ECSchemaId id) {BeAssert(!m_ecSchemaId.IsValid()); m_ecSchemaId = id;}
     bool HasId() const {return m_ecSchemaId.IsValid();}
 
+    //!<@private
     ECOBJECTS_EXPORT ECObjectsStatus DeleteClass (ECClassR ecClass);
+    //!<@private
     ECOBJECTS_EXPORT ECObjectsStatus RenameClass (ECClassR ecClass, Utf8CP newName);
     SchemaLocalizedStringsCR GetLocalizedStrings() const {return m_localizedStrings;}
 
-//__PUBLISH_SECTION_START__
-public:
     SchemaKeyCR GetSchemaKey() const {return m_key;} //!< Returns a SchemaKey fully describing this schema
     ECOBJECTS_EXPORT void DebugDump() const; //!< Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
 
@@ -3679,5 +3639,3 @@ typedef IECClassLocater& IECClassLocaterR;
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (ECN::ECClass)
-//#pragma make_public (ECN::ECSchema)

@@ -2,13 +2,12 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/CommonTools.h>
 #include <ECPresentationRules/PresentationRulesTypes.h>
@@ -209,5 +208,3 @@ template<> ECOBJECTS_EXPORT UserSettingsGroupList* PresentationRuleSet::GetRules
 template<> ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>();
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/** @endcond */
