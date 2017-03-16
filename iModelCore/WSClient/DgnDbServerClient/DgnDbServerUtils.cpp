@@ -206,8 +206,8 @@ bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplat
     Utf8String     value = "";
     Utf8String     valuePattern = "";
 
-    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(scope, serverJson[ServerSchema::Property::Namespace]))
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::CodeScope]))
         return false;
 
     if (!StringFromJson(value, serverJson[ServerSchema::Property::Value]) &&
@@ -242,29 +242,23 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR reservedValue, RapidJsonValueCR usedValue, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeSQLite::BeBriefcaseId& briefcaseId)
     {
-    if (reservedValue.IsNull())
+    if (stateValue.IsNull())
         return false;
 
-    bool reserved, used;
-
-    reserved = reservedValue.GetBool();
-    used = usedValue.IsNull() ? false : usedValue.GetBool();
+    int parsedState;
+	parsedState = stateValue.GetInt();
     
-    if (reserved)
+    if (1 == parsedState)
         {
         codeState.SetReserved(briefcaseId);
         return true;
         }
-    else if (!reserved && used)
+    if (2 == parsedState)
         {
-        codeState.SetUsed(revisionId);
-        return true;
-        }
-    else if (!reserved && !used)
-        {
-        codeState.SetDiscarded(revisionId);
+        // TODO what state revision???
+        codeState.SetUsed("");
         return true;
         }
 
@@ -274,25 +268,21 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR reservedValue, 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                12/2016
 //---------------------------------------------------------------------------------------
-bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
     BeInt64Id               codeSpecId;
     Utf8String              scope = "";
 
-    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+    if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
         !serverJson.HasMember(ServerSchema::Property::Values) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
-        !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
+        !serverJson.HasMember(ServerSchema::Property::State))
         return false;
 
-    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(scope, serverJson[ServerSchema::Property::Namespace]) ||
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::CodeScope]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
-        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
+        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
-
-    // State revision is optional
-    if (serverJson.HasMember(ServerSchema::Property::StateRevision))
-        StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
 
     auto values = serverJson[ServerSchema::Property::Values].GetArray();
     if (0 == values.Size())
@@ -311,27 +301,23 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
     BeInt64Id      codeSpecId;
     Utf8String     scope = "";
     Utf8String     value = "";
 
-    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+    if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
         !serverJson.HasMember(ServerSchema::Property::Value) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
-        !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
+        !serverJson.HasMember(ServerSchema::Property::State))
         return false;
 
-    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::AuthorityId]) ||
-        !StringFromJson(scope, serverJson[ServerSchema::Property::Namespace]) ||
+    if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
+        !StringFromJson(scope, serverJson[ServerSchema::Property::CodeScope]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
-        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
+        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
-
-    // State revision is optional
-    if (serverJson.HasMember(ServerSchema::Property::StateRevision))
-        StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
 
     code = DgnCode(CodeSpecId(codeSpecId.GetValue()), value, scope);
     
@@ -354,7 +340,7 @@ rapidjson::Document ToRapidJson(JsonValueCR source)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId)
+void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId)
     {
     DgnCodeInfo&      info = *codeInfos.insert(DgnCodeInfo(dgnCode)).first;
     
@@ -368,11 +354,13 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCod
         }
     else if (codeState.IsUsed())
         {
-        info.SetUsed(revisionId);
+        //TODO revision
+        info.SetUsed("");
         }
     else if (codeState.IsDiscarded())
         {
-        info.SetDiscarded(revisionId);
+        //TODO revision
+        info.SetDiscarded("");
         }
     }
 
