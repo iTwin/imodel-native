@@ -15,6 +15,7 @@
 #include <ScalableMesh\GeoCoords\GCS.h>
 
 #include <Bentley\BeDirectoryIterator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -1332,6 +1333,7 @@ void ScalableMeshModel::CloseFile()
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         }
+    //ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(m_path);
     m_progressiveQueryEngine = nullptr;
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
