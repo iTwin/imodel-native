@@ -83,14 +83,17 @@ void RealityDataConsole::InterpretCommand()
                 m_lastInput = args[1];
             else
                 {
-                DisplayInfo("must input a value, with this command\n", DisplayOption::Error);
-                m_lastCommand = Command::Error;
+                if(m_lastCommand = Command::ChangeDir && args[0].Contains(".."))
+                    m_lastInput = ".."; //allow "cd.."
+                else
+                    {
+                    DisplayInfo("must input a value, with this command\n", DisplayOption::Error);
+                    m_lastCommand = Command::Error;
+                    }
                 }
             }
         }
     }
-
-
 
 RealityDataConsole::RealityDataConsole() : 
     m_server( WSGServer("", true)),
@@ -206,6 +209,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  Stat        show enterprise statistics\n");
     DisplayInfo ("  Download    Download files from the current location on the server\n");
     DisplayInfo ("  Upload      Upload files to the server\n");
+    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
+    DisplayInfo ("  AzureAdress Prints the URL to use\n");
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -346,12 +351,13 @@ void RealityDataConsole::ConfigureServer()
     }
 
 void RealityDataConsole::List()
-    {   
+    {
+    m_serverNodes.clear();
     Utf8String nodeString;
     bvector<Utf8String> nodeStrings;
 
     if(m_currentNode == nullptr)
-        return ListRoots();//m_serverNodes = NodeNavigator::GetInstance().GetRootNodes(m_server, RealityDataService::GetRepoName());
+        return ListRoots();
     else
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node);
 
@@ -468,6 +474,12 @@ void RealityDataConsole::ChangeDir()
         return;
         }
 
+    if(m_serverNodes.size() == 0)
+        {   
+        DisplayInfo("Need to use \"List\" or \"Dir\" before using this command\n", DisplayOption::Tip);
+        DisplayInfo("If you have already done this, there may be no listable locations to navigate to\n", DisplayOption::Tip);
+        }
+
     if(choice < (uint64_t)m_serverNodes.size())
         {
         NodeList* newNode = new NodeList();
@@ -476,6 +488,7 @@ void RealityDataConsole::ChangeDir()
         if(m_currentNode != nullptr)
             m_currentNode->childNode = newNode;
         m_currentNode = newNode;
+        m_serverNodes.clear();
         }
     else
         DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 0 and %lu\n", (m_serverNodes.size() - 1)), DisplayOption::Error);
@@ -652,18 +665,27 @@ void RealityDataConsole::Details()
             return;
             }
 
-        DisplayInfo (Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
         DisplayInfo (Utf8PrintfString(" Id                 : %s\n", entity->GetIdentifier()));
+        DisplayInfo (Utf8PrintfString(" EnterpriseId       : %s\n", entity->GetEnterpriseId()));
         DisplayInfo (Utf8PrintfString(" Container name     : %s\n", entity->GetContainerName()));
+        DisplayInfo (Utf8PrintfString(" RealityData name   : %s\n", entity->GetName()));
         DisplayInfo (Utf8PrintfString(" Dataset            : %s\n", entity->GetDataset()));
+        DisplayInfo (Utf8PrintfString(" Group              : %s\n", entity->GetGroup()));
         DisplayInfo (Utf8PrintfString(" Description        : %s\n", entity->GetDescription()));
         DisplayInfo (Utf8PrintfString(" Root document      : %s\n", entity->GetRootDocument()));
-        DisplayInfo (Utf8PrintfString(" Size (kb)          : %lu", entity->GetIdentifier()));
+        DisplayInfo (Utf8PrintfString(" Size (kb)          : %lu\n", entity->GetTotalSize()));
         DisplayInfo (Utf8PrintfString(" Classification     : %s\n", entity->GetClassificationTag()));
         DisplayInfo (Utf8PrintfString(" Type               : %s\n", entity->GetRealityDataType()));
-        DisplayInfo (Utf8PrintfString(" Accuracy (m)       : %f", entity->GetAccuracyValue()));
+        //DisplayInfo (Utf8PrintfString(" Footprint          : %s\n", entity->GetRealityDataType()));
+        //DisplayInfo (Utf8PrintfString(" ThumbnailDocument               : %s\n", entity->GetRealityDataType()));
+        //DisplayInfo (Utf8PrintfString(" MetadataURL               : %s\n", entity->GetRealityDataType()));
+        DisplayInfo (Utf8PrintfString(" AccuracyInMeters   : %s\n", entity->GetAccuracy()));
+        DisplayInfo (Utf8PrintfString(" ResolutionInMeters : %s\n", entity->GetResolution()));
+        DisplayInfo (Utf8PrintfString(" Visibility         : %s\n", entity->GetVisibilityTag()));
+        DisplayInfo (Utf8PrintfString(" Listable           : %s\n", entity->IsListable() ? "true" : "false"));
         DisplayInfo (Utf8PrintfString(" Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
         DisplayInfo (Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
+        DisplayInfo (Utf8PrintfString(" OwnedBy            : %s\n", entity->GetOwner()));
         }
     }
 
@@ -702,13 +724,17 @@ void RealityDataConsole::AzureAdress()
     int64_t tokenTimer;
     BentleyStatus handshakeStatus = handshake->ParseResponse(azureServer, azureToken, tokenTimer);
     delete handshake;
+    Utf8String rootDocument = entity->GetRootDocument();
+
     if (handshakeStatus != BentleyStatus::SUCCESS)
         {
         DisplayInfo("Failure retrieving Azure adress\n", DisplayOption::Error);
         return;
         }
+    else if (rootDocument.length() > 0)
+        DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, rootDocument, azureToken));
     else
-        DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, entity->GetRootDocument(), azureToken));
+        DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer, azureToken));
 }
 
 void RealityDataConsole::InputError()

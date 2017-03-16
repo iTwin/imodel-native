@@ -235,6 +235,10 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     // Enterprise
     if (properties.isMember("EnterpriseId") && !properties["EnterpriseId"].isNull())
         data->SetEnterpriseId(Utf8CP(properties["EnterpriseId"].asString().c_str()));
+
+    // Container Name
+    if (properties.isMember("ContainerName") && !properties["ContainerName"].isNull())
+        data->SetContainerName(Utf8CP(properties["ContainerName"].asString().c_str()));
     
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())

@@ -153,13 +153,13 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
     Utf8String tag(classificationTag);
     if (tag == "Model")
         returnedClassification = Classification::MODEL;
-    if (tag == "Terrain")
+    else if (tag == "Terrain")
         returnedClassification = Classification::TERRAIN;
-    if (tag == "Imagery")
+    else if (tag == "Imagery")
         returnedClassification = Classification::IMAGERY;
-    if (tag == "Pinned")
+    else if (tag == "Pinned")
         returnedClassification = Classification::PINNED;
-    if (tag == "Undefined")
+    else if (tag == "Undefined")
         returnedClassification = Classification::UNDEFINED;
     else
         return ERROR;
@@ -240,13 +240,13 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
     Utf8String tag(visibilityTag);
     if (tag == "PUBLIC")
         returnedVisibility = Visibility::PUBLIC;
-    if (tag == "ENTERPRISE")
+    else if (tag == "ENTERPRISE")
         returnedVisibility = Visibility::ENTERPRISE;
-    if (tag == "PERMISSION")
+    else if (tag == "PERMISSION")
         returnedVisibility = Visibility::PERMISSION;
-    if (tag == "PRIVATE")
+    else if (tag == "PRIVATE")
         returnedVisibility = Visibility::PRIVATE;
-    if (tag == "UNDEFINED")
+    else if (tag == "UNDEFINED")
         returnedVisibility = Visibility::UNDEFINED;
     else
         return ERROR;
