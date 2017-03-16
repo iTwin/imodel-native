@@ -342,7 +342,7 @@ double areaLossFactor = 0.0     // This fraction of the spreadArea is lost.
     bvector<DSegment3d> segments;
     size_t n = sectorTargetArea.size ();
     static double s_displayFraction0 = 0.25;
-    for (int i0 = 0; i0 < n; i0++)
+    for (size_t i0 = 0; i0 < n; i0++)
         {
         size_t i1 = (i0 + 1) % n;
         DVec3d edgeVector = neighbors[i1] - neighbors[i0];
