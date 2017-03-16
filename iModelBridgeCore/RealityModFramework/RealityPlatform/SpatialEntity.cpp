@@ -260,6 +260,9 @@ SpatialEntityMetadataPtr SpatialEntityMetadata::CreateFromMetadata(SpatialEntity
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
+Utf8StringCR SpatialEntityMetadata::GetId() const { return m_id; }
+void SpatialEntityMetadata::SetId(Utf8CP id) { m_id = id; }
+
 Utf8StringCR SpatialEntityMetadata::GetProvenance() const { return m_provenance; }
 void SpatialEntityMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance;  m_isEmpty = false;}
 
@@ -286,6 +289,9 @@ void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format;  m_isE
 
 Utf8StringCR SpatialEntityMetadata::GetMetadataUrl() const { return m_metadataUrl; }
 void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; m_isEmpty = false;}
+
+Utf8StringCR SpatialEntityMetadata::GetDisplayStyle() const { return m_displayStyle; }
+void SpatialEntityMetadata::SetDisplayStyle(Utf8CP displayStyle) { m_displayStyle = displayStyle; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    11/2016

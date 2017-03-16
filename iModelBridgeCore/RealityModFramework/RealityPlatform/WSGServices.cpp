@@ -348,10 +348,10 @@ NavNode::NavNode(Json::Value jsonObject, Utf8String rootNode, Utf8String rootId)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                03/2017
 //-------------------------------------------------------------------------------------
-NavNode::NavNode(Utf8String schema, Utf8String id)
+NavNode::NavNode(Utf8String schema, Utf8String id, Utf8String typeSystem, Utf8String className)
+    : m_typeSystem(typeSystem), m_schemaName(schema), m_rootId(id), m_instanceId(id), m_className(className)
     {
-    m_rootId = id;
-    m_rootNode = m_navString = Utf8PrintfString("ECObjects--%s-RealityData-%s", schema, id);
+    m_rootNode = m_navString = Utf8PrintfString("%s--%s-RealityData-%s", m_typeSystem, m_schemaName, m_instanceId);
     }
 
 //-------------------------------------------------------------------------------------

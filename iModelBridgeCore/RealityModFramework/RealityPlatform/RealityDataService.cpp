@@ -890,9 +890,35 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
-    //m_httpRequestString.append(m_id);
     m_requestHeader.push_back("Content-Type: application/json");
     }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf8String properties)
+{
+    m_id = realityDataId;
+    m_validRequestString = false;
+
+    m_requestType = HttpRequestType::POST_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
+    m_requestPayload.append(properties);
+    m_requestPayload.append("}}}");
+}
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+void RealityDataServiceChange::_PrepareHttpRequestStringAndPayload() const
+{
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/RealityData/");
+    m_httpRequestString.append(m_id);
+    m_requestHeader.push_back("Content-Type: application/json");
+}
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1745,7 +1771,7 @@ Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCert
 bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
+    status = PagedRequestToJSON((&request), jsonString);
 
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
@@ -1769,7 +1795,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
     if (status != RequestStatus::SUCCESS)
         {
@@ -1850,7 +1876,7 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
 RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
     
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
@@ -1870,7 +1896,7 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
 RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
     if (status != RequestStatus::SUCCESS)
         {
@@ -1917,7 +1943,7 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
 RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
     if(status != RequestStatus::SUCCESS)
         {
@@ -1938,7 +1964,7 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
+    status = PagedRequestToJSON(static_cast<const RealityDataPagedRequest*>(&request), jsonString);
 
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (status != RequestStatus::SUCCESS)
@@ -1962,7 +1988,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status)
 {
     Utf8String jsonString;
-    status = RequestToJSON((RealityDataUrl*)(&request), jsonString);
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
     
     Json::Value instances(Json::objectValue);
     Json::Reader::Parse(jsonString, instances);
@@ -1988,7 +2014,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status)
     {   
     Utf8String jsonString;
-    status = PagedRequestToJSON((RealityDataPagedRequest*)(&request), jsonString);
+    status = PagedRequestToJSON(static_cast<const RealityDataPagedRequest*>(&request), jsonString);
 
     Json::Value instances(Json::objectValue);
     Json::Reader::Parse(jsonString, instances);
@@ -2013,7 +2039,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RequestStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* request, Utf8StringR jsonResponse)
+RequestStatus RealityDataService::PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -2031,7 +2057,7 @@ RequestStatus RealityDataService::PagedRequestToJSON(RealityDataPagedRequest* re
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RequestStatus RealityDataService::RequestToJSON(RealityDataUrl* request, Utf8StringR jsonResponse)
+RequestStatus RealityDataService::RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse)
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());

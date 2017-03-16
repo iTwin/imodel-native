@@ -199,7 +199,7 @@ struct NavNode
 public:
     REALITYDATAPLATFORM_EXPORT NavNode(Json::Value jsonObject, Utf8String rootNode = "", Utf8String rootId = "");
     REALITYDATAPLATFORM_EXPORT NavNode();
-    REALITYDATAPLATFORM_EXPORT NavNode(Utf8String schema, Utf8String id);
+    REALITYDATAPLATFORM_EXPORT NavNode(Utf8String schema, Utf8String id, Utf8String typeSystem, Utf8String className);
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetNavString();
     REALITYDATAPLATFORM_EXPORT Utf8String GetTypeSystem();
@@ -328,7 +328,7 @@ public:
 
     //! Page oriented methods. These methods advance a page, rewind a page or go to specified page.
     //! according to current page size and start index
-    REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() {m_validRequestString = false; m_startIndex += m_pageSize;}
+    REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() const {m_validRequestString = false; m_startIndex += m_pageSize;}
     REALITYDATAPLATFORM_EXPORT void RewindPage() {m_validRequestString = false; m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);}
     REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint32_t)(page * m_pageSize);}
 
@@ -336,7 +336,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
 
     mutable uint32_t m_startIndex;
-    uint16_t m_pageSize;
+    mutable uint16_t m_pageSize;
     };
 
 //=====================================================================================

@@ -44,7 +44,9 @@ enum class Command
     ChangeDir,
     Stat,
     Download,
-    Upload
+    Upload,
+    FileAccess,
+    AzureAdress
     };
 
 struct RealityDataConsole
@@ -76,6 +78,8 @@ public:
     void Details();
     void DummyFunction(){}
     void InputError();
+    void FileAccess();
+    void AzureAdress();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

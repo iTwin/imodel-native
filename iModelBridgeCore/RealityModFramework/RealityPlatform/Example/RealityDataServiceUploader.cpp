@@ -19,11 +19,16 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 static void progressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
-    char progressString[1024];
-    //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
-    sprintf(progressString, "upload percent : %f", repoProgress * 100.0);
-    std::cout << progressString << std::endl;
+    std::cout << Utf8PrintfString("Upload percent : %3.0f%%\r", repoProgress * 100.0);
     }
+
+/*static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
+    {
+    if(ErrorCode > 0)
+        std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg);
+    else
+        std::cout << pMsg;
+    }*/
 
 int main(int argc, char *argv[])
 {
@@ -38,47 +43,33 @@ int main(int argc, char *argv[])
     std::cin >> schema;
     
     RealityDataService::SetServerComponents(server, version, repo, schema);*/
-    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "v2.4", "S3MXECPlugin--Server", "S3MX");
+    RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
 
-#if (0) 
-    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Performance Test 1");
-    properties.Insert(RealityDataField::Dataset, "Terrain");
-    properties.Insert(RealityDataField::Group, "Performance group");
-    properties.Insert(RealityDataField::Description, "Test_1");
-    properties.Insert(RealityDataField::RootDocument, "Test_1/SaltLake/3MX/Scene/Production_utsalt_3mx.3mx");
-    properties.Insert(RealityDataField::Classification, "Exemple Test 1");
-    properties.Insert(RealityDataField::Type, "3mx");
-    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
-    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
-    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
-    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
-    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
-    properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
-    BeFileName fName = BeFileName("J:/_Data_Tests/_RDS_Performance/Test_1");
-#endif
 #if (1) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Performance Test 2");
+    properties.Insert(RealityDataField::Name, "Barmettes");
     properties.Insert(RealityDataField::Dataset, "Images");
-    properties.Insert(RealityDataField::Group, "Performance group");
-    properties.Insert(RealityDataField::Description, "Test_2");
-    properties.Insert(RealityDataField::RootDocument, "");
-    properties.Insert(RealityDataField::Classification, "Exemple Test 2");
-    properties.Insert(RealityDataField::Type, "Images");
+    properties.Insert(RealityDataField::Group, "SPAR Demo");
+    properties.Insert(RealityDataField::Description, "SPAR Demo Viewer Cesium");
+    properties.Insert(RealityDataField::RootDocument, "Barmettes.json");
+    properties.Insert(RealityDataField::Classification, "Model");
+    properties.Insert(RealityDataField::Type, "3DTiles");
 //    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
 //    properties.Insert(RealityDataField::ThumbnailDocument, "thumbnail.jpg");
 //    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
 //    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
     properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
-    BeFileName fName = BeFileName("J:/_Data_Tests/_RDS_Performance/Test_2");
+
+    properties.Insert(RealityDataField::Visibility, "PUBLIC");
+
+    BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Barmettes");
 #endif
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, "43a4a51a-bfd3-4271-a9d9-21db56cdcf10", propertyString, true);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Utf8String("716E4465-915C-4BB9-B4ED-F2E0589F9F81").ToLower(), propertyString, true);
     if (upload->IsValidUpload())
         {
         upload->SetProgressCallBack(progressFunc);
@@ -94,5 +85,7 @@ int main(int argc, char *argv[])
         std::cout << time2 << std::endl;
         }
 
+    std::cout << "Press a key to continue...";
+    getch();
     return 0;
 }
