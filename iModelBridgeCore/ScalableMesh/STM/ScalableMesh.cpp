@@ -329,6 +329,12 @@ bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t cli
     return _ModifyClip(pts, ptsSize, clipID);
     }
 
+
+bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    return _ModifyClip(pts, ptsSize, clipID, geom, type, isActive);
+    }
+
 void IScalableMesh::SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
     {
     return _SynchronizeClipData(listOfClips, listOfSkirts);
@@ -2095,6 +2101,29 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
     return true;
 
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ModifyClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+
+    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
+
+    m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
