@@ -235,7 +235,7 @@ DataCaptureProjectHostImpl::DataCaptureProjectHostImpl() : m_isInitialized(false
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     m_isInitialized = true;
     }
 
