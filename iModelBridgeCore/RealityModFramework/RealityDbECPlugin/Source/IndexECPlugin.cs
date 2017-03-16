@@ -377,7 +377,7 @@ namespace IndexECPlugin.Source
                                 AggregateException ae = (AggregateException) e;
                                 foreach ( Exception ie in ae.InnerExceptions )
                                     {
-                                    Log.Logger.error("Index Aggregate exception message: " + ie.Message);
+                                    Log.Logger.error("Index Aggregate exception message: " + ie.GetBaseException().Message);
                                     }
 
                                 }
@@ -413,7 +413,7 @@ namespace IndexECPlugin.Source
                                 AggregateException ae = (AggregateException) e;
                                 foreach ( Exception ie in ae.InnerExceptions )
                                     {
-                                    Log.Logger.error("USGS Aggregate exception message: " + ie.Message);
+                                    Log.Logger.error("USGS Aggregate exception message: " + ie.GetBaseException().Message);
                                     }
 
                                 }
@@ -451,7 +451,7 @@ namespace IndexECPlugin.Source
                                     AggregateException ae = (AggregateException) e;
                                     foreach (Exception ie in ae.InnerExceptions)
                                     {
-                                        Log.Logger.error("RDS Aggregate exception message: " + ie.Message);
+                                    Log.Logger.error("RDS Aggregate exception message: " + ie.GetBaseException().Message);
                                     }
 
                                 }
