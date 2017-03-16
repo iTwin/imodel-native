@@ -109,6 +109,11 @@ void IScalableMeshProgressiveQueryEngine::SetActiveClips(const bset<uint64_t>& a
     return _SetActiveClips(activeClips, scalableMeshPtr);
     }
 
+void IScalableMeshProgressiveQueryEngine::GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr)
+{
+    return _GetActiveClips(activeClips, scalableMeshPtr);
+}
+
 void IScalableMeshProgressiveQueryEngine::InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
     {
     return _InitScalableMesh(scalableMeshPtr);
@@ -1544,6 +1549,12 @@ void ScalableMeshProgressiveQueryEngine::_SetActiveClips(const bset<uint64_t>& a
     m_activeClips = activeClips;
     UpdatePreloadOverview();
     }
+
+
+void ScalableMeshProgressiveQueryEngine::_GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr)
+{
+    activeClips = m_activeClips;
+}
 
 void ScalableMeshProgressiveQueryEngine::_InitScalableMesh(IScalableMeshPtr& scalableMeshPtr)
     {

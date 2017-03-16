@@ -587,6 +587,7 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
         bvector<int32_t> indices;
         bvector<DPoint3d> pts;
         bmap<int, int> mapOfPts;
+        bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfCoordinates(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
         size_t currentPt = 0;
         if (addedFaces.size() >= 3 && addedFaces.size() < 1024 * 1024)
             {
@@ -603,11 +604,14 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 for (size_t j = 0; j < 3;  ++j)
                     {
                     int32_t idx = (int32_t)(addedFaces[i + j] >= firstIndex ? addedFaces[i + j] - firstIndex + nOfPoints + 1 : addedFaces[i + j]);
+                    DPoint3d pointVal = addedFaces[i + j] >= firstIndex ? addedVertices[addedFaces[i + j] - firstIndex] : points[addedFaces[i + j] - 1];
+                    if (mapOfCoordinates.count(pointVal) != 0) idx = mapOfCoordinates[pointVal];
                     assert(idx > 0 && idx <= nOfPoints + addedVertices.size());
                     if (mapOfPts.count(idx) == 0)
                         {
                         mapOfPts[idx] = (int)currentPt;
-                        pts.push_back(addedFaces[i + j] >= firstIndex ? addedVertices[addedFaces[i + j] - firstIndex] : points[addedFaces[i + j] - 1]);
+                        mapOfCoordinates[pointVal] = idx;
+                        pts.push_back(pointVal);
                         currentPt++;
                         }
                     indices.push_back(mapOfPts[idx]+1);
