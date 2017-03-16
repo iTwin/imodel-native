@@ -42,8 +42,6 @@ private:
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;

@@ -355,6 +355,10 @@ ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     {
+    auto& cameraDef = GetViewDefinition3dR();
+    if (cameraDef.IsCameraOn())
+        return cameraDef.LookAtUsingLensAngle(cameraDef.GetEyePoint(), cameraDef.GetTargetPoint(), cameraDef.GetYVector(), lensAngle);
+
     if (nullptr == m_vp)
         return ViewportStatus::NotAttached;
 
@@ -370,8 +374,6 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     corners[2].Init(0.0, 0.0, high); // lower left, at closest npc
     corners[3].Init(1.0, 1.0, high); // upper right at closest
     m_vp->NpcToWorld(corners, corners, 4);
-
-    auto& cameraDef = GetViewDefinition3dR();
 
     DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
     DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
@@ -828,17 +830,6 @@ void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) c
     {
     gridsPerRef = m_gridsPerRef;
     spacing = m_gridSpacing;
-
-    // Apply ACS scale to grid if ACS Context Lock active even if grid isn't aligned to ACS...
-    if (!DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())
-        return;
-
-    IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
-
-    if (nullptr == acs)
-        return;
-
-    spacing.Scale(spacing, acs->GetScale());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -858,7 +849,7 @@ void ViewController::PointToGrid(DPoint3dR point) const
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
+        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
 
         if (nullptr != acs)
             acs->PointToGrid(*m_vp, point);
@@ -891,9 +882,9 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP   acs;
+        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
 
-        if (NULL != (acs = IACSManager::GetManager().GetActive(vp)))
+        if (nullptr != acs)
             acs->DrawGrid(context);
         }
     else
@@ -1016,4 +1007,25 @@ AxisAlignedBox3d TemplateViewController3d::_GetViewedExtents(DgnViewportCR vp) c
     {
     GeometricModelP target = GetViewedModel();
     return (target && target->GetRangeIndex()) ? AxisAlignedBox3d(target->GetRangeIndex()->GetExtents().ToRange3d()) : AxisAlignedBox3d();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
+    {
+    if (m_viewedModelId == viewedModelId)
+        return DgnDbStatus::Success;
+
+    RequestAbort(true);
+    m_viewedModelId = viewedModelId;
+    GeometricModel3dP model = GetViewedModel();
+    if (!model || !model->IsTemplate())
+        {
+        m_viewedModelId.Invalidate();
+        return DgnDbStatus::WrongModel;
+        }
+
+    GetViewDefinition().LookAtVolume(model->QueryModelRange());
+    return DgnDbStatus::Success;
     }

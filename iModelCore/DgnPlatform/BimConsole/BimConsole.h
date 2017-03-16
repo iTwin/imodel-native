@@ -26,6 +26,23 @@ struct SessionFile
             BeSQLite
             };
 
+        struct ProfileInfo final
+            {
+            enum class Type
+                {
+                BeSQLite,
+                ECDb,
+                DgnDb,
+                Unknown
+                };
+
+            Type m_type = Type::Unknown;
+            Utf8String m_name;
+            BeSQLite::SchemaVersion m_version;
+
+            ProfileInfo() : m_version(BeSQLite::SchemaVersion(0,0,0,0)) {}
+            };
+
     private:
         Type m_type;
 
@@ -52,9 +69,13 @@ struct SessionFile
         BeSQLite::EC::ECDb* GetECDbHandleP() const { return _GetECDbHandle(); }
         BeSQLite::Db const& GetHandle() const { return _GetBeSqliteHandle(); }
         BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
+
+        bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
+
         Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
         static Utf8CP TypeToString(Type type);
+
     };
 
 //---------------------------------------------------------------------------------------

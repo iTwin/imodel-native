@@ -171,9 +171,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList = true) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList)
+        //! @param[in] inGuiList Optional parameter that controls the visibility of the new DgnModel in model lists shown to the user
+        //! @param[in] isTemplate Optional parameter that indicates whether the new DgnModel is a template or not
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList=true, bool isTemplate=false) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList), m_isTemplate(isTemplate)
             {
             }
 
@@ -389,7 +390,7 @@ protected:
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
-    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportECRelationshipsFrom after calling this method.
+    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportNonNavigationECRelationshipsFrom after calling this method.
     //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
     //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
     //! @see _ShouldImportElementFrom
@@ -409,9 +410,9 @@ protected:
     //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
     //! This method will be called after all elements (and aspects) have been imported.
     //! <p>
-    //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
+    //! A subclass implementation of _ImportNonNavigationECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
-    //! base Dgn schema, including ElementDrivesElement, ElementUsesGeometryParts, ElementGroupsMembers, and ElementUsesStyles.
+    //! base bis schema, including ElementDrivesElement and ElementGroupsMembers.
     //! <p>
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
     //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
@@ -420,7 +421,20 @@ protected:
     //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
     //! prior to the phase where ECRelationships are copied.
     //! @note The implementation should start by calling the superclass implementation.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! Utility function to import non-Navigation ECRelationships from one DgnDb to another, selecting only the relationship instances whose source and target elements are
+    //! in the specified source model and only if both source and target have already been imported and are registered in the importContext's remap tables. The source and 
+    //! target DgnElementIds of each imported relationship instance are remapped to the destination DgnDb using the importContext's remap tables.
+    //! @param destDb   The destination DgnDb
+    //! @param sourceModel  The model that is being imported. Only ECRelationship instances with both source and target elements from this model are imported. This parameter
+    //!                     also identifies the source DgnDb
+    //! @param importContext The context that contains remapping tables. 
+    //! @param relschema    The schema of the relationship class
+    //! @param relname      The name of the relationship class
+    //! @return non-zero error status if the relationship class does not exist in the source or target DgnDb. Note that this function will return success even if no 
+    //! relationship instances are imported.
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate
@@ -595,7 +609,7 @@ public:
     //! This base class implemenation calls the following methods, in order:
     //!     -# _ImportElementsFrom
     //!     -# _ImportElementAspectsFrom
-    //!     -# _ImportECRelationshipsFrom
+    //!     -# _ImportNonNavigationECRelationshipsFrom
     //! @param[in] sourceModel The model to copy
     //! @param[in] importer Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
@@ -945,6 +959,9 @@ protected:
 public:
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create(SpatialLocationPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert(SpatialLocationPartitionCR modeledElement);
+
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr Create (SpatialLocationPortionCR modeledElement);
+    DGNPLATFORM_EXPORT static SpatialLocationModelPtr CreateAndInsert (SpatialLocationPortionCR modeledElement);
 };
 
 //=======================================================================================

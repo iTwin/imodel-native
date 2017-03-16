@@ -40,8 +40,19 @@ Frustum::Frustum(DRange3dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Super(def)
     {
-    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
-    m_auxCoordSys->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
+    // NEEDSWORK: Move ACS setup to ViewController...
+    DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
+
+    if (acsId.IsValid())
+        m_auxCoordSys = m_dgndb.Elements().Get<AuxCoordSystem>(acsId);
+
+    if (!m_auxCoordSys.IsValid())
+        {
+        AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(def.GetDgnDb());
+
+        auxCoordSys->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
+        m_auxCoordSys = auxCoordSys.get();
+        }
 
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
@@ -54,6 +65,9 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
     DrawGroundPlane(context);
+
+    if (m_auxCoordSys.IsValid() && context.GetViewFlags().ShowAcsTriad()) // NEEDSWORK: Add _DrawAuxCoordSystem method on ViewController...
+        m_auxCoordSys->Display(context, (ACSDisplayOptions::CheckVisible | ACSDisplayOptions::Active));
 
     if (m_copyrightMsgs.empty())
         return;

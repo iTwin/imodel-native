@@ -258,6 +258,8 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationFrameStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationLeaderStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AnnotationTextStyle)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystem2d)->IsRepositoryScope());
+    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_AuxCoordSystem3d)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart)->IsRepositoryScope());

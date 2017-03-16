@@ -270,8 +270,8 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
-    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain());
-    DgnDomains::RegisterDomain(GenericDomain::GetDomain());
+    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(GenericDomain::GetDomain(), true, false);
 
     _SupplyProductName(m_productName);
 

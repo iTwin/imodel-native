@@ -381,7 +381,7 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting) :
-    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (ignoreLighting), m_rasterWidth(nullptr != graphicParams ? graphicParams->GetWidth() : 0)
+                   m_fillColor(0x00ffffff), m_ignoreLighting (ignoreLighting), m_rasterWidth(0), m_linePixels(0)
     {
     if (nullptr != geometryParams)
         {
@@ -390,6 +390,13 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
         m_materialId = geometryParams->GetMaterialId();
         m_class = geometryParams->GetGeometryClass();
         }
+    if (nullptr != graphicParams)
+        {
+        m_rasterWidth = graphicParams->GetWidth();
+        m_fillColor   = graphicParams->GetFillColor().GetValue();
+        m_linePixels  = graphicParams->GetLinePixels();
+        }
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,6 +423,9 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
     if (m_rasterWidth != rhs.m_rasterWidth)
         return m_rasterWidth < rhs.m_rasterWidth;
+
+    if (m_linePixels != rhs.m_linePixels)
+        return m_linePixels < rhs.m_linePixels;
 
     if (m_materialId.GetValueUnchecked() != rhs.m_materialId.GetValueUnchecked())
         return m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked();
@@ -812,7 +822,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
         if (patternMap.IsValid())
             {
             BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
                 params = computedParams;
             }
         }
@@ -2080,6 +2090,7 @@ private:
     IFacetOptionsPtr            m_targetFacetOptions;
     DgnElementId                m_curElemId;
     TileGenerationCacheCR       m_cache;
+    TileDisplayParamsCache      m_displayParamsCache;
     DgnDbR                      m_dgndb;
     TileGeometryList&           m_geometries;
     DRange3d                    m_range;
@@ -2228,12 +2239,14 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
-    TileDisplayParamsCR     displayParams = m_cache.GetDisplayParams(graphicParams, geomParams);
+    TileDisplayParamsCR     displayParams = m_displayParamsCache.Get(graphicParams, geomParams);
     DRange3d                range;
     auto const&             foundPart = m_geomParts.find (geomPart.GetId());
 
     if (foundPart == m_geomParts.end())
         {
+        FlushPolyfaceCache();
+
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
         GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
@@ -2397,7 +2410,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     auto tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     tf.Multiply(range, range);
     
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, m_dgndb));
     return true;
@@ -2434,7 +2447,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     DRange3d                range, thisTileRange;
     ISolidPrimitivePtr      clone = prim.Clone();
     Transform               tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    TileDisplayParamsCR     displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR     displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     clone->GetRange(range);
     tf.Multiply(thisTileRange, range);
@@ -2488,9 +2501,8 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
-#if defined(USE_POLYFACE_CACHE)
     if (m_polyfaceCache.IsNull() || !displayParams.IsStrictlyEqualTo(*m_polyfaceCacheDisplay))
         {
         FlushPolyfaceCache();
@@ -2499,11 +2511,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
         }
 
     m_polyfaceCache->Add(*clone);
-#else
-    DRange3d range = clone->PointRange();
-    IGeometryPtr geom = IGeometry::Create(clone);
-    AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, m_dgndb));
-#endif
  
     return true;
     }
@@ -2537,7 +2544,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 
     localToTile.Multiply(range, range);
 
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
@@ -2562,7 +2569,7 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
 
     Transform::FromProduct (localToTile, clone->ComputeTransform()).Multiply (range, range);
                                
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
@@ -2876,30 +2883,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
         bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
-//#define VALIDATE_POLYFACE_DENSITY
-#ifdef VALIDATE_POLYFACE_DENSITY
-        size_t          facetCount = 0;
-        static size_t   s_maxFacetDensityLimit = 1000;
-
-        for (auto& polyface : polyfaces)
-            facetCount += polyface.m_polyface->GetFaceCount();
-
-        size_t     facetDensity = facetCount / rangePixels;
-    
-        if (facetDensity > s_maxFacetDensity)
-            s_maxFacetDensity = facetDensity;
-
-        BeAssert (facetCount / rangePixels > s_maxFacetDensityLimit && "Facet Density Limit exceeded");
-#endif
-
-
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
             {
             TileDisplayParamsCPtr   displayParams = tilePolyface.m_displayParams;
             PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
             bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
-            // unused - size_t                  pointCount = polyface->GetPointCount();
 
             if (0 == polyface->GetPointCount())
                 continue;
@@ -2911,7 +2900,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
+                builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, m_transformFromDgn, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
             if (polyface.IsValid())
                 {
@@ -2948,7 +2937,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
+                    builderMap[key] = meshBuilder = TileMeshBuilder::Create(*displayParams, m_transformFromDgn, vertexTolerance, facetAreaTolerance, const_cast<FeatureAttributesMapR>(m_attributes));
 
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     meshBuilder->AddPolyline (strokePoints, attributes, rangePixels < s_vertexClusterThresholdPixels, displayParams->GetFillColor());
@@ -3094,6 +3083,7 @@ TileDisplayParamsCPtr TileDisplayParams::Clone() const
     clone->m_class = m_class;
     clone->m_ignoreLighting = m_ignoreLighting;
     clone->m_textureImage = m_textureImage;
+    clone->m_linePixels = m_linePixels;
 
     return clone;
     }
@@ -3124,6 +3114,7 @@ bool TileDisplayParams::IsStrictlyLessThan(TileDisplayParamsCR rhs) const
     TEST_LESS_THAN(m_rasterWidth, rhs.m_rasterWidth);
     TEST_LESS_THAN(m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
     TEST_LESS_THAN(m_textureImage.get(), rhs.m_textureImage.get());
+    TEST_LESS_THAN(m_linePixels, rhs.m_linePixels);
     TEST_LESS_THAN(static_cast<uint32_t>(m_class), static_cast<uint32_t>(rhs.m_class));
 
     if (m_ignoreLighting != rhs.m_ignoreLighting)
@@ -3147,6 +3138,7 @@ bool TileDisplayParams::IsStrictlyEqualTo(TileDisplayParamsCR rhs) const
     TEST_EQUAL(m_textureImage.get());
     TEST_EQUAL(m_ignoreLighting);
     TEST_EQUAL(m_class);
+    TEST_EQUAL(m_linePixels);
 
     return true;
     }
