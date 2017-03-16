@@ -102,7 +102,7 @@ struct SchemaVersionTestDomain : DgnDomain
             m_relativePath.SetNameUtf8(Utf8PrintfString("ECSchemas\\" SCHEMA_VERSION_TEST_SCHEMA_NAME ".%s.ecschema.xml", version));
             }
 
-        static void Register(Utf8CP version, bool isRequired, bool isReadonly)
+        static void Register(Utf8CP version, DgnDomain::Required isRequired, DgnDomain::Readonly isReadonly)
             {
             SchemaVersionTestDomain::GetDomain().SetVersion(version);
             DgnDomains::RegisterDomain(SchemaVersionTestDomain::GetDomain(), isRequired, isReadonly);
@@ -218,7 +218,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     /*
     * Reopen Db after optional registration - BE_SQLITE_OK, schemas are not imported
     */
-    SchemaVersionTestDomain::Register("02.02.02", false /*=isRequired*/, false /*=isReadonly*/);
+    SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::No, DgnDomain::Readonly::No);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
@@ -227,14 +227,14 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     /*
     * Reopen Db after required registration - BE_SQLITE_ERROR_SchemaUpgradeRequired, schemas are not imported
     */
-    SchemaVersionTestDomain::GetDomain().SetRequired(true);
+    SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_ERROR_SchemaUpgradeRequired);
 
     /*
     * Reopen Db after read-write registration with allowSchemaUpgrade flag - BE_SQLITE_OK, schemas can be manually imported, but cannot write to any domain, 
     */
-    SchemaVersionTestDomain::GetDomain().SetRequired(true);
+    SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::Yes);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, true /*=allowSchemaUpgrade*/));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
@@ -259,7 +259,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     /* 
      * Reopen Db - BE_SQLITE_OK, can write to the Db
      */
-    SchemaVersionTestDomain::GetDomain().SetReadonly(false);
+    SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
@@ -279,7 +279,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     /*
     * Reopen Db after read-only registration - no error, but cannot insert or update or delete elements
     */
-    SchemaVersionTestDomain::GetDomain().SetReadonly(true);
+    SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::Yes);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
 
@@ -339,15 +339,15 @@ TEST_F(SchemaVersionTestFixture, UpgradeDomainSchemas)
     BeFileName fileName = m_db->GetFileName();
     SaveDb();
 
-    SchemaVersionTestDomain::Register("02.02.02", true /*=isRequired*/, false /*=isReadonly*/);
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, true /*=upgradeSchemas*/));
+    SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, true /*=alowUpgradeSchemas*/));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
     SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
     EXPECT_TRUE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
 
-    SchemaVersionTestDomain::GetDomain().SetReadonly(false);
+    SchemaVersionTestDomain::GetDomain().SetReadonly(DgnDomain::Readonly::No);
     SaveDb();
 
     BackupTestFile();
@@ -447,7 +447,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     BackupTestFile();
 
     /* Create revision with schema import */
-    SchemaVersionTestDomain::Register("02.02.02", false /*=isRequired*/, false /*=isReadonly*/);
+    SchemaVersionTestDomain::Register("02.02.02", DgnDomain::Required::No, DgnDomain::Readonly::No);
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
@@ -486,7 +486,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     /* Restore baseline */
     RestoreTestFile();
    
-    SchemaVersionTestDomain::GetDomain().SetRequired(false);
+    SchemaVersionTestDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     SchemaVersionTestDomain::GetDomain().SetVersion("02.02.02");
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);

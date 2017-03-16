@@ -43,7 +43,7 @@ struct SqlFunctionsTest : public ::testing::Test
 void SqlFunctionsTest::SetUp()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(DgnSqlTestDomain::GetDomain(), false /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DgnSqlTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,7 +61,7 @@ void SqlFunctionsTest::TearDown()
 void SqlFunctionsTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    DgnDomains::RegisterDomain(DgnSqlTestDomain::GetDomain(), false /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DgnSqlTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     //  Request a root seed file.
     DgnPlatformSeedManager::SeedDbInfo seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, false));

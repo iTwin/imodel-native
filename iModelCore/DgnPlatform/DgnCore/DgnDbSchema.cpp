@@ -524,7 +524,7 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     result = Domains().ValidateSchemas();
     if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && ((DgnDb::OpenParams const&) params).GetAllowSchemaUpgrade())
         {
-        Domains().SetReadonly(true); // Enable admin schema upgrades, but disallow any writing to the individual domains.
+        Domains().SetReadonly(DgnDomain::Readonly::Yes); // Enable admin schema upgrades, but disallow any writing to the individual domains.
         return BE_SQLITE_OK;
         }
 

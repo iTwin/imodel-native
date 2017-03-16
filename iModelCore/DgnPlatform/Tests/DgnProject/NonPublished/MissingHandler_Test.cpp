@@ -345,7 +345,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 		
 		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
@@ -386,7 +386,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());

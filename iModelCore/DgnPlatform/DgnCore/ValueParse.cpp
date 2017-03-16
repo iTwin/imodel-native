@@ -884,30 +884,7 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
 DistanceParserPtr       DistanceParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    DistanceParserPtr   parser = DistanceParser::Create(*targetModel);
-
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return parser;
-
-    parser->SetScale(1 / acs->GetScale());
-#endif
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
-    {
-    DistanceParserPtr      parser = DistanceParser::Create(model);
-
-    parser->SetScale(acs.GetScale());
+    DistanceParserPtr parser = DistanceParser::Create(*targetModel);
 
     return parser;
     }
@@ -1006,33 +983,6 @@ PointParserPtr          PointParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     PointParserPtr parser = PointParser::Create(*targetModel);
-
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return parser;
-
-    // WIP_DGNPLATFORM_UNITS
-    // Needswork: the parser needs to apply the actual ACS transform
-    parser->m_distanceParser->SetScale(1 / acs->GetScale());
-#endif
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
-    {
-    PointParserPtr      parser = PointParser::Create(model);
-
-    // WIP_DGNPLATFORM_UNITS
-    // Needswork: the parser needs to apply the actual ACS transform
-    parser->m_distanceParser->SetScale(acs.GetScale());
 
     return parser;
     }
@@ -1197,17 +1147,6 @@ AreaParserPtr       AreaParser::Create(DgnViewportR viewport)
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     AreaParserPtr   parser = AreaParser::Create(*targetModel);
 
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return parser;
-
-    parser->SetScale(acs->GetScale());
-#endif
-
     return parser;
     }
 
@@ -1217,18 +1156,7 @@ AreaParserPtr       AreaParser::Create(DgnViewportR viewport)
 VolumeParserPtr       VolumeParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    VolumeParserPtr   parser = VolumeParser::Create(*targetModel);
-
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetRoot()->GetPropertiesCP()->GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return parser;
-
-    parser->SetScale(acs->GetScale());
-#endif
+    VolumeParserPtr parser = VolumeParser::Create(*targetModel);
 
     return parser;
     }
