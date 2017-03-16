@@ -94,7 +94,7 @@ struct DgnScriptTest : public DgnDbTestFixture
 {
     void SetUp() override
     {
-        DgnDomains::RegisterDomain(ScriptDomain::GetDomain(), false /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(ScriptDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 };
 /*---------------------------------------------------------------------------------**//**
