@@ -82,6 +82,7 @@
 #define CHECKBOX_RULE_XML_NODE_NAME                                                   "CheckBoxRule"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE                                      "DefaultValue"
+#define CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED                                         "IsEnabled"
 
 #define RENAMENODE_RULE_XML_NODE_NAME                                                 "RenameNodeRule"
 
