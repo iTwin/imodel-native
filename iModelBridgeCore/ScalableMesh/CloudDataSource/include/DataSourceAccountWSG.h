@@ -49,7 +49,7 @@ protected:
     WSGServer::repository                   wsgRepository       = L"S3MXECPlugin--Server";
     WSGServer::schema                       wsgSchema           = L"S3MX";
     WSGServer::class_name                   wsgClassName        = L"Document";
-    WSGServer::organizationID               wsgOrganizationID   = L"e82a584b-9fae-409f-9581-fd154f7b9ef9"; // Connect Bentley QA org id
+    WSGServer::organizationID               wsgOrganizationID; // Obtained by making a first call to RDS
 
 
 public:

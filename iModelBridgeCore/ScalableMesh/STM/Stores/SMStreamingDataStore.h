@@ -14,19 +14,15 @@
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
+#include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
-extern bool s_stream_from_disk;
 extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
-extern bool s_is_legacy_dataset;
-extern bool s_is_legacy_master_header;
-extern bool s_use_azure_sandbox;
-extern bool s_use_public_rds;
 extern bool s_use_qa_azure;
 
 //extern std::mutex fileMutex;
@@ -41,12 +37,56 @@ class DataSourceAccount;
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {
     public:
-        enum FormatType
+        enum FormatType { Binary, Json, Cesium3DTiles };
+        class SMStreamingSettings
             {
-            Binary,
-            Json,
-            Cesium3DTiles
+            public:
+
+                enum ServerLocation { LOCAL, RDS, AZURE };
+                enum CommMethod { FILE, CURL, WASTORAGE };
+                enum DataType { CESIUM3DTILES, SMGROUPS };
+
+            public:
+
+                SMStreamingSettings(const Json::Value& fileName);
+            bool IsLocal()            const   { return m_location == LOCAL; }
+            bool IsPublic()           const   { return m_public; }
+            bool IsUsingCURL()        const   { return m_commMethod == CURL; }
+            bool IsUsingWAStorage()   const   { return m_commMethod == WASTORAGE; }
+            bool IsDataFromLocal()    const   { return m_location == LOCAL; }
+            bool IsDataFromRDS()      const   { return m_location == RDS; }
+            bool IsDataFromAzure()    const   { return m_location == AZURE; }
+
+            WString GetServerID() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_serverID).c_str();
+                }
+
+            WString GetGUID() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_guid).c_str();
+                }
+
+            WString GetURL() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_url).c_str();
+                }
+
+            private:
+
+                SMStreamingSettings();
+
+            public:
+
+            ServerLocation m_location = LOCAL;
+            CommMethod m_commMethod = CURL;
+            DataType m_dataType = CESIUM3DTILES;
+            bool m_public = false;
+            string m_guid;
+            string m_serverID;
+            string m_url;
             };
+
     private : 
         
         bool m_use_node_header_grouping = false;
@@ -72,12 +112,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
     private :
 
-        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory);
-        
+        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+
     public : 
     
         SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
-       
+
+        SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+
         virtual ~SMStreamingStore();
 
 #ifdef VANCOUVER_API

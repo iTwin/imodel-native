@@ -26,6 +26,72 @@
 
 USING_NAMESPACE_IMAGEPP
 
+template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(const Json::Value & config)
+    {
+    if (config.isMember("guid"))
+        {
+        m_guid = config["guid"].asCString();
+        }
+    if (config.isMember("data_type"))
+        {
+        auto const& data_type = config["data_type"].asString();
+        if (data_type == "3DTiles") m_dataType = DataType::CESIUM3DTILES;
+        else if (data_type == "SMGroups") m_dataType = DataType::SMGROUPS;
+        else
+            {
+            assert(!"Unknown data type for streaming");
+            }
+        }
+    if (config.isMember("server"))
+        {
+        auto const& server_config = config["server"];
+        if (!(server_config.isMember("type") && server_config.isMember("settings")))
+            {
+            assert(!"Type and settings must be defined in the config file");
+            }
+        auto const& server_type = server_config["type"].asString();
+        if (server_type == "rds")
+            {
+            m_location = ServerLocation::RDS;
+            m_commMethod = CommMethod::CURL;
+            }
+        else if (server_type == "local")
+            {
+            m_location = ServerLocation::LOCAL;
+            m_commMethod = CommMethod::CURL;
+            }
+        else if (server_type == "azure")
+            {
+            m_location = ServerLocation::AZURE;
+            m_commMethod = CommMethod::CURL;
+            }
+        else
+            {
+            }
+        auto const& server_settings = server_config["settings"];
+        if (server_settings.isMember("id"))
+            {
+            m_serverID = server_settings["id"].asCString();
+            }
+        if (server_settings.isMember("url"))
+            {
+            m_url = server_settings["url"].asCString();
+            }
+        if (server_settings.isMember("authentication"))
+            {
+            auto const& auth = server_settings["authentication"];
+            if (auth.isMember("public") && auth["public"] == true)
+                {
+                m_public = true;
+                s_stream_from_wsg = false;
+                }
+            else
+                {
+                s_stream_from_wsg = true;
+                }
+            }
+        }
+    }
 
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
@@ -35,7 +101,8 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
      m_use_virtual_grouping(isVirtualGrouping),
      m_formatType(formatType)
     {
-    InitializeDataSourceAccount(dataSourceManager, path);
+    assert(!"Must not use this constructor");
+    //InitializeDataSourceAccount(dataSourceManager, path);
 
     if (m_pathToHeaders.empty())
         {
@@ -63,186 +130,144 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     //    }
     }
 
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+    : SMSQLiteSisterFile(nullptr)
+    {
+    InitializeDataSourceAccount(dataSourceManager, settings);
+
+    if (m_pathToHeaders.empty())
+        {
+        // Set default path to headers relative to root directory
+        m_pathToHeaders = s_stream_using_cesium_3d_tiles_format ? L""/*L"data"*/ : L"headers";
+
+        if (m_use_node_header_grouping && m_use_virtual_grouping)
+            {
+            m_NodeHeaderFetchDistributor = new SMNodeDistributor<SMNodeGroup::DistributeData>();
+            SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
+            }
+        }
+
+    m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
+
+    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    //                           and do this in the Cloud API...
+    //if (settings.IsLocal())
+    //    {
+    //    // Create base directory structure to store information if not already done
+    //    BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
+    //    path.AppendToPath(m_pathToHeaders.c_str());
+    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
+    //    }
+    }
+
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
     {
     }
 
-template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory)
+template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
     {
     DataSourceStatus                            status;
-    if (s_stream_from_disk && s_stream_using_curl)
+    DataSourceAccount                       *   account;
+    DataSourceAccount::AccountName              account_name;
+    DataSourceURL                               account_prefix;
+    DataSourceAccount::AccountIdentifier        account_identifier;
+    DataSourceAccount::AccountKey               account_key;
+    DataSourceService                       *   service;
+    DataSourceService::ServiceName              service_name;
+    std::unique_ptr<std::function<string(void)>> callback = nullptr;
+    Utf8String sslCertificatePath;
+
+    if (settings.IsLocal() && settings.IsUsingCURL())
         {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceCURL"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalCURLAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountLocalFile->setPrefixPath(DataSourceURL((L"file:///" + directory).c_str()));
-
-        this->SetDataSourceAccount(accountLocalFile);
+        service_name = L"DataSourceServiceCURL";
+        account_name = L"LocalCURLAccount";
+        account_prefix = DataSourceURL((L"file:///" + settings.GetURL()).c_str());
         }
-    else if (s_stream_from_disk)
+    else if (settings.IsLocal())
         {
-        DataSourceAccount                       *   accountLocalFile;
-        DataSourceService                       *   serviceLocalFile;
-
-        if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        // Create an account on the file service streaming
-        if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        this->SetDataSourceAccount(accountLocalFile);
+        service_name = L"DataSourceServiceFile";
+        account_name = L"LocalFileAccount";
+        account_prefix = DataSourceURL(settings.GetURL().c_str());
         }
-    else if (s_stream_from_wsg)
+    else if (!settings.IsPublic())
         {
+        service_name = L"DataSourceServiceWSG";
+        account_name = L"WSGAccount";
+        account_prefix = DataSourceURL(settings.GetURL().c_str());
+        account_identifier = settings.GetServerID().c_str();
+
         Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
         assert(!tokenUtf8.empty());
 
-        Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
+        account_key = WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str(); // WSG token in this case
+
+        sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
         assert(!sslCertificatePath.empty());
-        wstring orgID, server;
-        bool use_direct_azure_calls = true;
-        if (s_use_qa_azure)
-            {
-            orgID = L"e82a584b-9fae-409f-9581-fd154f7b9ef9";
-            server = L"qa-realitydataservices-eus.cloudapp.net";
-            use_direct_azure_calls = true;
-            }
-        else
-            {
-            orgID = L"5e41126f-6875-400f-9f75-4492c99ee544";
-            server = L"dev-realitydataservices-eus.cloudapp.net";
-            use_direct_azure_calls = true;
-            }
 
-        DataSourceService                       *   serviceWSG;
-        DataSourceAccount                       *   accountWSG;
-        DataSourceAccount::AccountIdentifier        accountIdentifier(server);
-        DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
-
-        serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
-        if (serviceWSG == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
-        if (accountWSG == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
-
-        accountWSG->setWSGTokenGetterCallback([]() -> std::string
+        callback.reset(new std::function<string(void)>([]() -> std::string
             {
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
-            });
-
-        auto* casted_account = static_cast<DataSourceAccountWSG*>(accountWSG);
-        casted_account->setOrganizationID(orgID);
-        casted_account->setUseDirectAzureCalls(use_direct_azure_calls);
-
-        this->SetDataSourceAccount(accountWSG);
+            }));
         }
-    else if (s_stream_from_azure && s_stream_using_curl)
+    else if (settings.IsDataFromRDS() && settings.IsUsingCURL())
         {
-        wstring azureAccount, azureKey;
-        if (s_use_azure_sandbox)
-            {
-            azureAccount = L"s3mxstorageblob";
-            }
-        else if (s_use_public_rds)
-            {
-            azureAccount = L"realityblobdeveussa01";
-            }
-        else
-            {
-            azureAccount = L"pcdsustest";
-            azureKey = L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==";
-            }
-
-        // NEEDS_WORK_STREAMING: the Azure account identifier should be saved in the stub file?
-        DataSourceAccount::AccountIdentifier        accountIdentifier(azureAccount);
-        DataSourceAccount::AccountKey               accountKey(azureKey);
-        DataSourceAccount                       *   accountCURL;
-        DataSourceService                       *   serviceCURL;
-
-        if ((serviceCURL = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        // Create an account on the CURL service streaming
-        if ((accountCURL = serviceCURL->createAccount(DataSourceAccount::AccountName(L"AzureCURLAccount"), accountIdentifier, accountKey)) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountCURL->setPrefixPath(DataSourceURL(directory.c_str()));
-
-        this->SetDataSourceAccount(accountCURL);
+        service_name = L"DataSourceServiceAzureCURL";
+        account_name = L"AzureCURLAccount";
+        account_prefix = DataSourceURL(settings.GetGUID().c_str());
+        account_identifier = settings.GetServerID().c_str();
         }
-    else if (s_stream_from_azure)
+    else if (settings.IsDataFromAzure() && settings.IsUsingCURL())
         {
-        wstring azureAccount, azureKey;
-        if (s_use_azure_sandbox)
-            {
-            azureAccount = L"s3mxstorageblob";
-            }
-        else if (s_use_public_rds)
-            {
-            azureAccount = L"realityblobdeveussa01";
-            }
-        else
-            {
-            azureAccount = L"pcdsustest";
-            azureKey = L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==";
-            }
-
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
-        // NEEDS_WORK_SM_STREAMING: How to specify identifier and key?
-        DataSourceAccount::AccountIdentifier        accountIdentifier(azureAccount);
-        DataSourceAccount::AccountKey               accountKey(azureKey);
-        DataSourceService                       *   serviceAzure;
-        DataSourceAccount                       *   accountAzure;
-        DataSourceAccount                       *   accountCaching;
-        DataSourceService                       *   serviceFile;
-
-        // Setup Azure account
-        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-        if (serviceAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-        if (accountAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        this->SetDataSourceAccount(accountAzure);
-
-        // Setup Caching service
-        if ((serviceFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
-
-        if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
-
-        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-
-        //  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
-        // Set up local file based caching
-        accountAzure->setCaching(*accountCaching, DataSourceURL());
-
-        // Set up default container
-        accountAzure->setPrefixPath(DataSourceURL(directory.c_str()));
+        service_name = L"DataSourceServiceAzureCURL";
+        account_name = L"AzureCURLAccount";
+        assert(!"Not implemented...");
+        }
+    else if (settings.IsDataFromAzure())
+        {
+        // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
+        assert(!"Not implemented...");
         }
     else
         {
         assert(!"Unknown server type for streaming");
         }
+
+    if ((service = dataSourceManager.getService(service_name)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+    // Create an account on the file service streaming
+    if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+    if (callback != nullptr) account->setWSGTokenGetterCallback(*callback.get());
+    account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+    account->setPrefixPath(account_prefix);
+    auto* casted_account = dynamic_cast<DataSourceAccountWSG*>(account);
+    if (casted_account != nullptr)
+        {
+        //casted_account->setOrganizationID(orgID);
+        casted_account->setUseDirectAzureCalls(s_use_qa_azure);
+        }
+
+    if (!settings.IsLocal())
+        {
+        // Setup Caching service + set up local file based caching
+        DataSourceService                       *   serviceCaching;
+        DataSourceAccount                       *   accountCaching;
+        if ((serviceCaching = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
+        if ((accountCaching = serviceCaching->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\SMStreamingCache"));
+
+        account->setCaching(*accountCaching, DataSourceURL());
+        }
+
+    this->SetDataSourceAccount(account);
 
     return DataSourceStatus();
     }
@@ -330,7 +355,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             }
         case SMNodeGroup::StrategyType::CESIUM:
             {
-            swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", (s_is_legacy_master_header ? L"" : L"-compressed"));
+            swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
             break;
             }
         default:
@@ -372,48 +397,18 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
     if (isGrouped)
         {
-        if (s_is_legacy_master_header)
-            {
-            headerSize = readSize;
-            //HCDPacket uncompressedPacket, compressedPacket;
-            //uncompressedPacket.SetBuffer(dest.get(), readSize);
-            //uncompressedPacket.SetDataSize(readSize);
-            //WriteCompressedPacket(uncompressedPacket, compressedPacket);
-            //
-            //wchar_t buffer[10000];
-            //swprintf(buffer, L"E:\\WorkData\\ScalableMesh\\Streaming\\saltlakecity\\SLC_multi\\cloud_cesium\\MasterHeaderWithCesiumGroups-compressed.bin");
-            //std::wstring group_header_filename(buffer);
-            //BeFile file;
-            //if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
-            //    {
-            //    uint32_t NbChars = 0;
-            //    file.Write(&NbChars, &readSize, (uint32_t)sizeof(readSize));
-            //    assert(NbChars == (uint32_t)sizeof(readSize));
-            //
-            //    file.Write(&NbChars, compressedPacket.GetBufferAddress(), (uint32_t)compressedPacket.GetDataSize());
-            //    assert(NbChars == compressedPacket.GetDataSize());
-            //    }
-            //else
-            //    {
-            //    assert(!"Could not open or create file for writing the group master header");
-            //    }
-            //file.Close();
-            }
-        else
-            {
-            // initialize codec
-            bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
-            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
-            const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
-                                                                     readSize - sizeof(readSize),
-                                                                     masterHeader.data(),
-                                                                     masterHeader.size());
-            assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
+        // initialize codec
+        bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
+        HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
+        const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
+            readSize - sizeof(readSize),
+            masterHeader.data(),
+            masterHeader.size());
+        assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
 
-            dest.reset(new uint8_t[masterHeader.size()]);
-            memcpy(dest.get(), masterHeader.data(), masterHeader.size());
-            headerSize = masterHeader.size();
-            }
+        dest.reset(new uint8_t[masterHeader.size()]);
+        memcpy(dest.get(), masterHeader.data(), masterHeader.size());
+        headerSize = masterHeader.size();
 
         size_t position = 0;
 
@@ -438,7 +433,6 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
         short storedGroupMode = m_use_virtual_grouping;
         memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
-        if (s_is_legacy_dataset) storedGroupMode += 1;
         assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
         position += sizeof(storedGroupMode);
 
@@ -447,18 +441,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         while (position < headerSize)
             {
             uint64_t group_id;
-            if (s_is_legacy_dataset)
-                {
-                memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
-                position += sizeof(group_id);
-                }
-            else
-                {
-                uint32_t group_id_tmp;
-                memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
-                position += sizeof(group_id_tmp);
-                group_id = group_id_tmp;
-                }
+            uint32_t group_id_tmp;
+            memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
+            position += sizeof(group_id_tmp);
+            group_id = group_id_tmp;
 
             uint64_t group_totalSizeOfHeaders(0);
             if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
@@ -1505,20 +1491,6 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         }
 
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
-
-    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
-    //if (s_stream_from_disk)
-    //    {
-    //    // Create base directory structure to store information if not already done
-    //    BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
-    //    path.AppendToPath(m_dataSourceURL.c_str());
-    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
-    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
-    //    }
-    //else
-    //    {
-    //    // stream from azure
-    //    }
     }
 
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::~SMStreamingNodeDataStore()
