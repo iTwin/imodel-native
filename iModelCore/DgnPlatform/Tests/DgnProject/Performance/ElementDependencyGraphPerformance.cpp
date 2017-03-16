@@ -154,7 +154,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 TransactionManagerTests::TransactionManagerTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**
