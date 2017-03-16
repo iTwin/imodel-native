@@ -207,6 +207,9 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
+    RegisterHandler(ACSElementHandler::CoordSys2d::GetHandler());
+    RegisterHandler(ACSElementHandler::CoordSys3d::GetHandler());
+
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
     
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
