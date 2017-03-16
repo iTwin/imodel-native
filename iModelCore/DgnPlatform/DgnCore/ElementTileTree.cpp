@@ -1283,7 +1283,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, elemId, doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, Feature(elemId, displayParams), doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
         }
 
@@ -1330,7 +1330,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& strokePoints : strokes.m_strokes)
-        builder.AddPolyline(strokePoints, elemId, rangePixels < GetVertexClusterThresholdPixels(), fillColor);
+        builder.AddPolyline(strokePoints, Feature(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**

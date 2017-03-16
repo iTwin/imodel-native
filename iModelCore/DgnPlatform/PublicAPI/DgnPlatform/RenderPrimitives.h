@@ -38,6 +38,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryListBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Feature);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FeatureTable);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(TextureImage);
@@ -232,17 +234,76 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct Feature
+{
+private:
+    DgnElementId        m_elementId;
+    DgnSubCategoryId    m_subCategoryId;
+    DgnGeometryClass    m_class;
+
+public:
+    Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
+    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+    Feature(DgnElementId elementId, DisplayParamsCR params) : Feature(elementId, params.GetSubCategoryId(), params.GetClass()) { }
+
+    DgnElementId GetElementId() const { return m_elementId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+    DgnGeometryClass GetClass() const { return m_class; }
+
+    bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
+    bool operator==(FeatureCR rhs) const
+        {
+        if (IsUndefined() && rhs.IsUndefined())
+            return true;
+        else
+            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+
+    bool IsDefined() const { return m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class; }
+    bool IsUndefined() const { return !IsDefined(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureTable
+{
+    typedef bmap<Feature, uint16_t> Map;
+private:
+    Map     m_map;
+    
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+public:
+    DGNPLATFORM_EXPORT uint16_t GetIndex(FeatureCR attr);
+
+    bool IsUniform() const { return 1 == size(); }
+    bool IsFull() const { BeAssert(size() <= GetMaxIndex()); return size() >= GetMaxIndex(); }
+    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+
+    typedef Map::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct MeshInstance
 {
 private:
-    DgnElementId        m_instanceId;
-    Transform           m_transform;
+    Feature     m_feature;
+    Transform   m_transform;
 public:
-    MeshInstance(DgnElementId instanceId, TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
+    MeshInstance(FeatureCR feature, TransformCR transform) : m_feature(feature), m_transform(transform) { }
 
-    DgnElementId GetId() const { return m_instanceId; }
+    FeatureCR GetFeature() const { return m_feature; }
     TransformCR GetTransform() const { return m_transform; }
 };
 
@@ -315,6 +376,8 @@ private:
     bvector<FPoint2d>       m_uvParams;
     ColorTable              m_colorTable;
     bvector<uint16_t>       m_colors;
+    FeatureTable            m_featureTable;
+    bvector<uint16_t>       m_features;
 
     explicit Mesh(DisplayParamsCR params) : m_displayParams(&params) { }
 
@@ -348,7 +411,7 @@ public:
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { m_polylines.push_back(polyline); }
-    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor);
+    uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
 };
 
 /*=================================================================================**//**
@@ -385,13 +448,13 @@ struct VertexKey
     DPoint3d        m_point;
     DVec3d          m_normal;
     DPoint2d        m_param;
-    DgnElementId    m_entityId;
+    Feature         m_feature;
     uint32_t        m_fillColor = 0;
     bool            m_normalValid = false;
     bool            m_paramValid = false;
 
     VertexKey() { }
-    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId entityId, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_entityId(entityId), m_fillColor(fillColor)
+    VertexKey(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, FeatureCR feature, uint32_t fillColor) : m_point(point), m_normalValid(nullptr != normal), m_paramValid(nullptr != param), m_feature(feature), m_fillColor(fillColor)
         {
         if(m_normalValid) m_normal = *normal;
         if(m_paramValid) m_param = *param;
@@ -447,9 +510,9 @@ private:
 public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance) { return new MeshBuilder(params, tolerance, areaTolerance); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, DgnElementId entityId, bool doVertexClustering, uint32_t fillColor);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor);
 
     void AddMesh(TriangleCR triangle);
     void AddTriangle(TriangleCR triangle);
@@ -525,6 +588,8 @@ public:
     size_t GetFacetCount(IFacetOptionsR options) const;
     size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
     
+    Feature GetFeature() const { return m_params.IsValid() ? Feature(GetEntityId(), *m_params) : Feature(); }
+
     static IFacetOptionsPtr CreateFacetOptions(double chordTolerance);
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 

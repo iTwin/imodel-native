@@ -354,43 +354,48 @@ bool Mesh::HasNonPlanarNormals() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, bvector<FPoint3d> const& vertices)
+    {
+    // Don't allocate the indices until we have non-uniform values
+    if (table.empty())
+        {
+        table.GetIndex(value);
+        BeAssert(table.IsUniform());
+        BeAssert(0 == table.GetIndex(value));
+        }
+    else if (!table.IsUniform() || table.begin()->first != value)
+        {
+        if (indices.empty())
+            {
+            // back-fill uniform value for existing vertices...
+            indices.resize(vertices.size() - 1);
+            std::fill(indices.begin(), indices.end(), (uint16_t)0);
+            }
+
+        indices.push_back(table.GetIndex(value));
+        BeAssert(!table.IsUniform());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor)
+uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(toFPoint3d(point));
+    insertVertexAttribute(m_features, m_featureTable, feature, m_points);
 
     if (nullptr != normal)
         m_normals.push_back(toFPoint3d(*normal));
                                                                                                                  
     if (nullptr != param)
-        {
         m_uvParams.push_back(toFPoint2d(*param));
-        }
     else
-        {
-        // Don't allocate the color indices until we have non-uniform color...
-        if (m_colorTable.empty())
-            {
-            m_colorTable.GetIndex(fillColor);
-            BeAssert(m_colorTable.IsUniform());
-            BeAssert(0 == m_colorTable.GetIndex(fillColor));
-            }
-        else if (!m_colorTable.IsUniform() || m_colorTable.begin()->first != fillColor)
-            {
-            if (m_colors.empty())
-                {
-                // back-fill uniform color for existing vertices...
-                m_colors.resize(m_points.size()-1);
-                std::fill(m_colors.begin(), m_colors.end(), (uint16_t)0);
-                }
-
-            m_colors.push_back(m_colorTable.GetIndex(fillColor));
-            BeAssert(!m_colorTable.IsUniform());
-            }
-        }
+        insertVertexAttribute(m_colors, m_colorTable, fillColor, m_points);
 
     return index;
     }
@@ -496,7 +501,9 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     static const double s_normalTolerance = .1;     
     static const double s_paramTolerance  = .1;
 
-    COMPARE_VALUES (lhs.m_entityId, rhs.m_entityId);
+    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
+    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
+    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
     COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
 
     COMPARE_VALUES_TOLERANCE (lhs.m_point.x, rhs.m_point.x, m_tolerance);
@@ -542,7 +549,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     auto const&       points = visitor.Point();
     BeAssert(3 == points.size());
@@ -575,7 +582,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     bool haveNormals = !visitor.Normal().empty();
     for (size_t i = 0; i < 3; i++)
         {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), entityId, fillColor);
+        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), feature, fillColor);
         newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
@@ -595,7 +602,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
             if (haveNormals)
                 reverseNormal.Negate(visitor.Normal().at(reverseIndex));
 
-            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), entityId, fillColor);
+            VertexKey vertex(points.at(reverseIndex), haveNormals ? &reverseNormal : nullptr, includeParams || params.empty() ? nullptr : &params.at(reverseIndex), feature, fillColor);
             dupTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             }
 
@@ -606,13 +613,13 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId entityId, bool doVertexCluster, uint32_t fillColor)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor)
     {
     Polyline    newPolyline;
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, nullptr, nullptr, entityId, fillColor);
+        VertexKey vertex(point, nullptr, nullptr, feature, fillColor);
         newPolyline.GetIndices().push_back (doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex));
         }
 
@@ -622,10 +629,10 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId enti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool twoSidedTriangles, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, materialId, dgnDb, entityId, false, twoSidedTriangles, includeParams, fillColor);
+        AddTriangle(*visitor, materialId, dgnDb, feature, false, twoSidedTriangles, includeParams, fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -637,7 +644,7 @@ uint32_t MeshBuilder::AddVertex(VertexKey const& vertex)
     if (m_unclusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
     m_unclusteredVertexMap[vertex] = index;
     return index;
     }
@@ -651,7 +658,7 @@ uint32_t MeshBuilder::AddClusteredVertex(VertexKey const& vertex)
     if (m_clusteredVertexMap.end() != found)
         return found->second;
 
-    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor);
+    auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
     m_clusteredVertexMap[vertex] = index;
     return index;
     }
@@ -1172,7 +1179,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetEntityId(), false, options.WantTwoSidedTriangles(), hasTexture, fillColor);
+                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetFeature(), false, options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
 
         if (!options.WantSurfacesOnly())
@@ -1192,7 +1199,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    meshBuilder->AddPolyline(strokePoints, geom->GetEntityId(), false, fillColor);
+                    meshBuilder->AddPolyline(strokePoints, geom->GetFeature(), false, fillColor);
                 }
             }
         }
@@ -1281,6 +1288,23 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvec
     index.m_colors = colors.data();
     index.m_numColors = GetNumIndices();
     index.m_indices = indices.data();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint16_t FeatureTable::GetIndex(FeatureCR feature)
+    {
+    BeAssert(!IsFull());
+    auto iter = m_map.find(feature);
+    if (m_map.end() != iter)
+        return iter->second;
+    else if (IsFull())
+        return 0;
+
+    uint16_t index = GetNumIndices();
+    m_map[feature] = index;
+    return index;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1954,5 +1978,20 @@ GraphicPtr PrimitiveBuilder::_Finish()
 DisplayParamsCR PrimitiveBuilder::GetDisplayParams(bool ignoreLighting) const
     {
     return m_geomList.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Feature::operator<(FeatureCR rhs) const
+    {
+    if (GetElementId() != rhs.GetElementId())
+        return GetElementId() < rhs.GetElementId();
+    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
+        return GetSubCategoryId() < rhs.GetSubCategoryId();
+    else if (GetClass() != rhs.GetClass())
+        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
+    else
+        return false;
     }
 
