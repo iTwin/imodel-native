@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Utf8String_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -28,7 +28,8 @@
 //---------------------------------------------------------------------------------------
 TEST(Utf8StringTest,ThreadSafeRead)
     {
-    static Utf8String* sharedString = new Utf8String("asdflslfjl3453453");
+    static Utf8String* sharedString;
+    sharedString = new Utf8String("asdflslfjl3453453");     // Note: create explictly, as this test might be run repeatedly in the same process
     
     auto job = []
         {
@@ -57,7 +58,9 @@ TEST(Utf8StringTest,ThreadSafeRead)
         }
 
     delete sharedString;                    // should remove last ref to shared __string_ref
+    sharedString = nullptr;
     }
+
 //---------------------------------------------------------------------------------------
 //                                       Jeff.Marker                 10/14
 //---------------------------------------------------------------------------------------
