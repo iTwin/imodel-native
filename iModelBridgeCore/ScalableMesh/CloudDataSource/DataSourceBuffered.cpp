@@ -124,7 +124,7 @@ DataSourceStatus DataSourceBuffered::write(const Buffer * source, DataSize size)
                                                                 // If buffer is not defined, initialize one
     if (getBuffer() == nullptr)
     {
-        if ((status = initializeBuffer()).isFailed())
+        if ((status = initializeBuffer(size)).isFailed())
             return status;
     }
                                                                 // Append give data to internal buffer
