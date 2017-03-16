@@ -246,15 +246,6 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
-    {
-    // Redline views have their own ACS
-    return T_Super::_GetAuxCoordinateSystem();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef SpatialRedlineViewController::_GetBackgroundColor() const
     {
     // There can only be one background color

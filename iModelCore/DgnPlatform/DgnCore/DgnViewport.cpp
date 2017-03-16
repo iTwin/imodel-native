@@ -201,6 +201,13 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) c
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::IsPointAdjustmentRequired() const {return GetViewController()._IsPointAdjustmentRequired();}
+bool DgnViewport::IsSnapAdjustmentRequired() const {return GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());}
+bool DgnViewport::IsContextRotationRequired() const {return GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());}
+
+/*---------------------------------------------------------------------------------**//**
 * Ensure the rotation matrix for this view is aligns the root z with the view out (i.e. a "2d view").
 * @bsimethod                                    Keith.Bentley                   09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1172,6 +1179,9 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
     {
     m_viewController->_DrawDecorations(context);
     m_viewController->_DrawGrid(context);
+
+    if (context.GetViewFlags().ShowAcsTriad())
+        m_viewController->GetAuxCoordinateSystem().Display(context, (ACSDisplayOptions::CheckVisible | ACSDisplayOptions::Active));
     }
 
 /*---------------------------------------------------------------------------------**//**

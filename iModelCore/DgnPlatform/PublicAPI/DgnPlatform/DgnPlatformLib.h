@@ -582,7 +582,6 @@ public:
         NotificationAdmin*      m_notificationAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
-        IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
@@ -655,7 +654,6 @@ public:
             m_notificationAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
-            m_acsManager = nullptr;
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
@@ -674,7 +672,6 @@ public:
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
-        IACSManagerR            GetAcsManager()            {return *m_acsManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}

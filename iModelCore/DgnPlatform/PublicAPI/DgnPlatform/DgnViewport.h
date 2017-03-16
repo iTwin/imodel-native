@@ -419,6 +419,11 @@ public:
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
     DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+
+    DGNPLATFORM_EXPORT bool IsPointAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsSnapAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsContextRotationRequired() const;
+
 /** @} */
 
 /** @name DgnViewport Parameters */
