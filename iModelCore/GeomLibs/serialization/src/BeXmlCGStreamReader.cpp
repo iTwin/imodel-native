@@ -2,13 +2,13 @@
 |
 |  $Source: serialization/src/BeXmlCGStreamReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "serializationPCH.h"
 #include "MSXmlBinary/MSXmlBinaryReader.h"
-
+#include <mutex>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 typedef struct PlacementOriginZX const &PlacementOriginZXCR;
 typedef struct PlacementOriginZX &PlacementOriginZXR;
@@ -163,7 +163,7 @@ typedef bmap <Utf8String, ParseMethod> ParseDictionary;
 
 static ParseDictionary s_parseTable;
 
-static void InitParseTable ()
+static void InitParseTable_go ()
     {
     if (s_parseTable.empty ())
         {
@@ -223,6 +223,16 @@ static void InitParseTable ()
         s_parseTable[Utf8String("Geometry")] = &BeXmlCGStreamReaderImplementation::ReadIGeometry;
 
         }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Earlin.Lutz         03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void InitParseTable ()
+    {
+    static std::once_flag s_ignoreListOnceFlag;
+    std::call_once(s_ignoreListOnceFlag, InitParseTable_go);
     }
 
 IBeXmlReader &m_reader;
