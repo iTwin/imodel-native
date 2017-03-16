@@ -767,15 +767,15 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
 
 private:
     DgnModelId m_viewedModelId;
+    TileTree::RootPtr m_root;
 
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
     bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
 
 public:
     TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}

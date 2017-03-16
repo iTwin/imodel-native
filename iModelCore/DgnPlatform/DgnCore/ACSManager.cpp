@@ -422,7 +422,7 @@ Utf8String AuxCoordSystem::_GetAxisLabel(uint32_t axis) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AuxCoordSystem::_AddAxisLabel(GraphicBuilderR graphic, uint32_t axis, ACSDisplayOptions options) const
+void AuxCoordSystem::_AddAxisLabel(GraphicBuilderR graphic, uint32_t axis, ACSDisplayOptions options, DgnViewportCR vp) const
     {
     Utf8String  axisLabel = _GetAxisLabel(axis);
 
@@ -455,7 +455,7 @@ void AuxCoordSystem::_AddAxisLabel(GraphicBuilderR graphic, uint32_t axis, ACSDi
     textStr.GetStyleR().SetSize(0.35);
     textStr.SetOriginFromJustificationOrigin(textPt, TextString::HorizontalJustification::Center, TextString::VerticalJustification::Middle);
 
-    ColorDef    color = _GetAdjustedColor(ColorDef::White(), false, *graphic.GetViewport(), options);
+    ColorDef    color = _GetAdjustedColor(ColorDef::White(), false, vp, options);
 
     graphic.SetSymbology(color, color, 2);
     graphic.AddTextString(textStr);
@@ -464,7 +464,7 @@ void AuxCoordSystem::_AddAxisLabel(GraphicBuilderR graphic, uint32_t axis, ACSDi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplayOptions options) const
+void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplayOptions options, DgnViewportCR vp) const
     {
     if (2 == axis)
         {
@@ -474,8 +474,8 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
         memset(linePts, 0, sizeof (linePts));
         linePts[1].z = 0.65;
 
-        ColorDef    lineColor = _GetAdjustedColor(color, false, *builder.GetViewport(), options);
-        ColorDef    fillColor = _GetAdjustedColor(color, true, *builder.GetViewport(), options);
+        ColorDef    lineColor = _GetAdjustedColor(color, false, vp, options);
+        ColorDef    fillColor = _GetAdjustedColor(color, true, vp, options);
 
         builder.SetSymbology(lineColor, lineColor, 6);
         builder.AddPointString(2, linePts);
@@ -486,7 +486,7 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
         double      start = 0.0, sweep = msGeomConst_2pi, scale = ARROW_TIP_WIDTH/2.0;
         DVec3d      xVec, yVec;
         DPoint3d    center;
-        RotMatrix   viewRMatrix = builder.GetViewport()->GetRotMatrix();
+        RotMatrix   viewRMatrix = vp.GetRotMatrix();
 
         memset(&center, 0, sizeof (center));
 
@@ -530,13 +530,13 @@ void AuxCoordSystem::_AddAxis(GraphicBuilderR builder, uint32_t axis, ACSDisplay
         }
 
     ColorDef    color = (0 == axis ? ColorDef::Red() : ColorDef::Green());
-    ColorDef    lineColor = _GetAdjustedColor(color, false, *builder.GetViewport(), options);
-    ColorDef    fillColor = _GetAdjustedColor(color, true, *builder.GetViewport(), options);
+    ColorDef    lineColor = _GetAdjustedColor(color, false, vp, options);
+    ColorDef    fillColor = _GetAdjustedColor(color, true, vp, options);
 
     builder.SetSymbology(lineColor, lineColor, 1);
     builder.AddLineString(8, shapePts);
 
-    _AddAxisLabel(builder, axis, options);
+    _AddAxisLabel(builder, axis, options, vp);
 
     builder.SetBlankingFill(fillColor);
     builder.AddShape(8, shapePts, true);
@@ -612,11 +612,12 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));
+    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), transform));
 
-    _AddAxis(*graphic, 0, options);
-    _AddAxis(*graphic, 1, options);
-    _AddAxis(*graphic, 2, options);
+    DgnViewportR vp = *context.GetViewport();
+    _AddAxis(*graphic, 0, options, vp);
+    _AddAxis(*graphic, 1, options, vp);
+    _AddAxis(*graphic, 2, options, vp);
 
     return graphic;
     }
@@ -631,7 +632,7 @@ void AuxCoordSystem::_Display(DecorateContextR context, ACSDisplayOptions option
     if (!graphic.IsValid())
         return;
 
-    context.AddWorldOverlay(*graphic);
+    context.AddWorldOverlay(*graphic->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
