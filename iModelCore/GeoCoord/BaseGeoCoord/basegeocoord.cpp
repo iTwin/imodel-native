@@ -6008,7 +6008,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     CSDatumDef* datumFromDico = NULL;
     if (NULL == (datumFromDico = CSMap::CS_dtdef (csDatumDef.key_nm)))
         status = ERROR;
-    CSMap::CS_free (datumFromDico);
+    else
+        CSMap::CS_free (datumFromDico);
 
     if (SUCCESS == status)
         {
