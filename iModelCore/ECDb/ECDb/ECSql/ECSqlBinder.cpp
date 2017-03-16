@@ -285,6 +285,7 @@ int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
         return -1;
     }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
@@ -423,6 +424,9 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 
     return ECSqlStatus::Success;
     }
+
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------

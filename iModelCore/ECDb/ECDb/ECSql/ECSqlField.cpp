@@ -23,7 +23,11 @@ ECSqlStatementBase& ECSqlField::GetECSqlStatementR() const { return m_ecsqlState
 Statement& ECSqlField::GetSqliteStatement() const
     {
     BeAssert(GetECSqlStatementR().IsPrepared());
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     return GetECSqlStatementR().GetPreparedStatementP()->GetSqliteStatementR();
+#else
+    return GetECSqlStatementR().GetPreparedStatementP<ECSqlSelectPreparedStatement> ()->GetSqliteStatement();
+#endif
     }
 
 

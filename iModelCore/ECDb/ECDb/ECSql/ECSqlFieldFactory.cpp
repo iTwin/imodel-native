@@ -22,7 +22,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
-    ECSqlSelectPreparedStatement_Old* selectPreparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlSelectPreparedStatement_Old>();
+    ECSqlSelectPreparedStatement* selectPreparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlSelectPreparedStatement>();
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;
@@ -213,16 +213,9 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields(std::unique_ptr<ECSqlFie
 //static
 ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp)
     {
-    ECSqlPropertyPath ecsqlPropPath;
-
-    if (ctx.GetParentColumnInfo() != nullptr)
-        {
-        ECSqlPropertyPathCR parentPropPath = ctx.GetParentColumnInfo()->GetPropertyPath();
-        ecsqlPropPath.InsertEntriesAtBeginning(parentPropPath);
-        }
-
     PropertyPath const& internalPropPath = propertyNameExp.GetPropertyPath();
     size_t entryCount = internalPropPath.Size();
+    ECSqlPropertyPath ecsqlPropPath;
     for (size_t i = 0; i < entryCount; i++)
         {
         PropertyPath::Location const& internalEntry = internalPropPath[i];
@@ -242,14 +235,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSq
 ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromGeneratedProperty(ECSqlPrepareContext const& ctx, ECPropertyCR generatedProperty)
     {
     ECSqlPropertyPath propertyPath;
-    if (ctx.GetParentColumnInfo() != nullptr)
-        {
-        auto const& parentPropPath = ctx.GetParentColumnInfo()->GetPropertyPath();
-        propertyPath.InsertEntriesAtBeginning(parentPropPath);
-        }
-
     propertyPath.AddEntry(generatedProperty);
-
     return ECSqlColumnInfo::CreateTopLevel(true, std::move(propertyPath), generatedProperty.GetClass(), nullptr);
     }
 

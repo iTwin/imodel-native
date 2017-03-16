@@ -344,18 +344,20 @@ struct ECSqlParameterMap : NonCopyableClass
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
         ECSqlBinder* AddInternalECInstanceIdBinder(ECSqlPrepareContext&);
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         //@deprecated
         ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder&, Utf8StringCR parameterName);
-
+#endif
         ECSqlStatus OnBeforeStep();
 
         //Bindings in SQLite have already been cleared at this point. The method
         //allows subclasses to clean-up additional resources tied to binding parameters
         void OnClearBindings();
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         //@deprecated
         ECSqlStatus RemapForJoinTable(ECSqlPrepareContext&);
-
+#endif
     };
 
 

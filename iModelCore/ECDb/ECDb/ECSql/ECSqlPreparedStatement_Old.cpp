@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 USING_NAMESPACE_BENTLEY_EC
+
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -491,3 +494,5 @@ DbResult ECSqlDeletePreparedStatement_Old::Step()
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+#endif

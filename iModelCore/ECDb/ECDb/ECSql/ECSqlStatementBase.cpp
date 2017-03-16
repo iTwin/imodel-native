@@ -44,6 +44,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
         return ECSqlStatus::InvalidECSql;
         }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     //establish joinTable context if any
     ECSqlPrepareContext::JoinedTableInfo const* joinedTableInfo = ctx.TrySetupJoinedTableInfo(*exp, ecsql);
     if (joinedTableInfo != nullptr)
@@ -61,10 +62,10 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
             return ECSqlStatus::InvalidECSql;
             }
         }
-
+#endif
 
     //Step 2: translate into SQLite SQL and prepare SQLite statement
-    ECSqlPreparedStatement_Old& preparedStatement = CreatePreparedStatement(ctx.GetECDb(), *exp);
+    IECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ctx.GetECDb(), *exp);
 
     ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType() != ECSqlType::Select, ctx.GetWriteToken()));
     if (!policy.IsSupported())
@@ -135,19 +136,19 @@ DbResult ECSqlStatementBase::Step()
     switch (ecsqlType)
         {
             case ECSqlType::Select:
-                return GetPreparedStatementP<ECSqlSelectPreparedStatement_Old>()->Step();
+                return GetPreparedStatementP<ECSqlSelectPreparedStatement>()->Step();
 
             case ECSqlType::Insert:
             {
             ECInstanceKey key;
-            return GetPreparedStatementP<ECSqlInsertPreparedStatement_Old>()->Step(key);
+            return GetPreparedStatementP<ECSqlInsertPreparedStatement>()->Step(key);
             }
 
             case ECSqlType::Update:
-                return GetPreparedStatementP<ECSqlUpdatePreparedStatement_Old>()->Step();
+                return GetPreparedStatementP<ECSqlUpdatePreparedStatement>()->Step();
 
             case ECSqlType::Delete:
-                return GetPreparedStatementP<ECSqlDeletePreparedStatement_Old>()->Step();
+                return GetPreparedStatementP<ECSqlDeletePreparedStatement>()->Step();
 
             default:
                 BeAssert(false && "Unhandled ECSqlType in ECSqlStatement::Step.");
@@ -163,7 +164,7 @@ DbResult ECSqlStatementBase::Step(ECInstanceKey& ecInstanceKey)
     if (!FailIfWrongType(ECSqlType::Insert, "Only call Step(ECInstanceKey&) on an ECSQL INSERT statement.").IsSuccess())
         return BE_SQLITE_ERROR;
 
-    return GetPreparedStatementP<ECSqlInsertPreparedStatement_Old>()->Step(ecInstanceKey);
+    return GetPreparedStatementP<ECSqlInsertPreparedStatement>()->Step(ecInstanceKey);
     }
 
 //---------------------------------------------------------------------------------------
@@ -273,32 +274,9 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType(ECSqlType expectedType, Utf8CP e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlPreparedStatement_Old& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb, Exp const& exp)
+IECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb, Exp const& exp)
     {
-    switch (exp.GetType())
-        {
-            case Exp::Type::Select:
-                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement_Old>(new ECSqlSelectPreparedStatement_Old(ecdb));
-                break;
-
-            case Exp::Type::Insert:
-                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement_Old>(new ECSqlInsertPreparedStatement_Old(ecdb));
-                break;
-
-            case Exp::Type::Update:
-                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement_Old>(new ECSqlUpdatePreparedStatement_Old(ecdb));
-                break;
-
-            case Exp::Type::Delete:
-                m_preparedStatement = std::unique_ptr<ECSqlPreparedStatement_Old>(new ECSqlDeletePreparedStatement_Old(ecdb));
-                break;
-
-            default:
-                BeAssert(false && "ECSqlParseTree is expected to only be of type Select, Insert, Update, Delete");
-                break;
-        }
-
-    /* New code
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
     switch (exp.GetType())
         {
             case Exp::Type::Select:
@@ -321,7 +299,30 @@ ECSqlPreparedStatement_Old& ECSqlStatementBase::CreatePreparedStatement(ECDbCR e
                 BeAssert(false && "ECSqlParseTree is expected to only be of type Select, Insert, Update, Delete");
                 break;
         }
-    */
+#else
+    switch (exp.GetType())
+        {
+            case Exp::Type::Select:
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlSelectPreparedStatement_Old(ecdb));
+                break;
+
+            case Exp::Type::Insert:
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlInsertPreparedStatement_Old(ecdb));
+                break;
+
+            case Exp::Type::Update:
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlUpdatePreparedStatement_Old(ecdb));
+                break;
+
+            case Exp::Type::Delete:
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlDeletePreparedStatement_Old(ecdb));
+                break;
+
+            default:
+                BeAssert(false && "ECSqlParseTree is expected to only be of type Select, Insert, Update, Delete");
+                break;
+        }   
+#endif
 
     return *m_preparedStatement;
     }

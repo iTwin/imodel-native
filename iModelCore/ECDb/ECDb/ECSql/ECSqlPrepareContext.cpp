@@ -21,22 +21,14 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment)
     {}
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_joinedTableClassId(joinedTableClassId)
     {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(Exp const& exp, Utf8CP orignalECSQL)
-    {
-    m_joinedTableInfo = JoinedTableInfo::Create(*this, exp, orignalECSQL);
-    return GetJoinedTableInfo();
-    }
-
+#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -161,6 +153,17 @@ bvector<Utf8String> ECSqlPrepareContext::SelectClauseInfo::Split(Utf8StringCR ac
 
     output.push_back(accessString.substr(prev_pos, pos - prev_pos)); // Last word
     return output;
+    }
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo const* ECSqlPrepareContext::TrySetupJoinedTableInfo(Exp const& exp, Utf8CP orignalECSQL)
+    {
+    m_joinedTableInfo = JoinedTableInfo::Create(*this, exp, orignalECSQL);
+    return GetJoinedTableInfo();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -567,6 +570,9 @@ size_t ECSqlPrepareContext::JoinedTableInfo::ParameterSet::First() const
 
     return 0;
     }
+
+#endif
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 

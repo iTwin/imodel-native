@@ -9,7 +9,13 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/IECSqlValue.h>
-#include "ECSqlPreparedStatement_Old.h"
+
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    #include "ECSqlPreparedStatement.h"
+#else
+    #include "ECSqlPreparedStatement_Old.h"
+#endif
+
 #include "ECSqlParser.h"
 #include "ECSqlPrepareContext.h"
 #include "ECSqlStatementNoopImpls.h"
@@ -23,11 +29,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlStatementBase
     {
     private:
-        std::unique_ptr<ECSqlPreparedStatement_Old> m_preparedStatement;
+        std::unique_ptr<IECSqlPreparedStatement> m_preparedStatement;
 
         virtual ECSqlPrepareContext _InitializePrepare(ECDb const&, ECCrudWriteToken const*) = 0;
 
-        ECSqlPreparedStatement_Old& CreatePreparedStatement(ECDb const&, Exp const&);
+        IECSqlPreparedStatement& CreatePreparedStatement(ECDb const&, Exp const&);
 
         ECSqlStatus FailIfNotPrepared(Utf8CP errorMessage) const;
         ECSqlStatus FailIfWrongType(ECSqlType expectedType, Utf8CP errorMessage) const;
@@ -61,7 +67,7 @@ struct ECSqlStatementBase
         void Finalize() { m_preparedStatement = nullptr; BeAssert(!IsPrepared()); }
 
         // Helpers
-        ECSqlPreparedStatement_Old* GetPreparedStatementP() const { return m_preparedStatement.get(); }
+        IECSqlPreparedStatement* GetPreparedStatementP() const { return m_preparedStatement.get(); }
 
         template <class TECSqlPreparedStatement>
         TECSqlPreparedStatement* GetPreparedStatementP() const
@@ -72,6 +78,7 @@ struct ECSqlStatementBase
 
     };
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      12/2015
 //+===============+===============+===============+===============+===============+======
@@ -91,5 +98,5 @@ struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
         void SetECInstanceIdBinder(int ecsqlParameterIndex) { m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex); }
         IECSqlBinder* GetECInstanceIdBinder() { return m_ecInstanceIdBinder; }
     };
-
+#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE
