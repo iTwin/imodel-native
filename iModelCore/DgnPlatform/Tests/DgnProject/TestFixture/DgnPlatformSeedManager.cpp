@@ -64,6 +64,9 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
     if (getOutputPath(info.fileName).DoesPathExist())
         return info;
 
+    if (info.options.testDomain)
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+
     //  First request for this seed file. Create it.
     DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, info.physicalPartitionName.c_str());
@@ -72,9 +75,6 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
     if (info.options.cameraView)
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 
-    if (info.options.testDomain)
-        EXPECT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
-        
     db->SaveSettings();
     db->SaveChanges();
     return info;

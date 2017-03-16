@@ -92,6 +92,10 @@ static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::Geomet
 //=======================================================================================
 struct DgnScriptTest : public DgnDbTestFixture
 {
+    void SetUp() override
+    {
+    DgnDomains::RegisterDomain(ScriptDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    }
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
@@ -450,8 +454,8 @@ TEST_F(DgnScriptTest, CRUD)
 TEST_F(DgnScriptTest, ScriptElementCRUD)
     {
     SetupSeedProject();
-    DgnDbStatus dstatus = ScriptDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, dstatus);
+    DbResult result = ScriptDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
     m_db->SaveChanges();
 
     DgnDbStatus status;

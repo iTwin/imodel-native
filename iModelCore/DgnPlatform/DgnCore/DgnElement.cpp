@@ -256,8 +256,12 @@ RepositoryStatus DgnElement::_PopulateRequest(IBriefcaseManager::Request& reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnInsert()
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Insert))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
         {
@@ -905,8 +909,12 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     if (m_classId != original.m_classId)
         return DgnDbStatus::WrongClass;
 
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Update))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     auto parentId = GetParentId();
     if (parentId.IsValid() && parentId != original.GetParentId() && parentCycleExists(parentId, GetElementId(), GetDgnDb()))
@@ -979,8 +987,12 @@ void DgnElement::_OnAppliedUpdate(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
-    if (GetElementHandler()._IsRestrictedAction(RestrictedAction::Delete))
+    ElementHandlerR elementHandler = GetElementHandler();
+    if (elementHandler._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
+
+    if (elementHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {

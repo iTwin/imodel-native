@@ -295,29 +295,13 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    if (DgnDbStatus::Success != BisCoreDomain::ImportSchema(*this))
+    BisCoreDomain::GetDomain().SetCreateParams(params); // Used by BisCoreDomain::_OnSchemaImported(), and passed to DgnDb::SetupNewDgnDb()
+
+    DbResult result = Domains().ImportSchemas();
+    if (BE_SQLITE_OK != result)
         {
         BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    // Every DgnDb has a few built-in CodeSpec for element codes
-    CreateCodeSpecs();
-
-    // Every DgnDb has a RepositoryModel and a DictionaryModel
-    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
-    CreateRepositoryModel();
-    CreateRootSubject(params);
-    ExecuteSql("PRAGMA defer_foreign_keys = false;");
-    CreateDictionaryModel();
-    CreateSessionModel();
-    CreateRealityDataSourcesModel();
-
-    // The Generic domain is used when a conversion process doesn't have enough information to pick something better
-    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
+        return result;
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
@@ -339,10 +323,29 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    DbResult result = DgnSearchableText::CreateTable(*this);
+    result = DgnSearchableText::CreateTable(*this);
     BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");
 
     return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// Called from BisCoreDomain::_OnSchemaImported to setup a newly created DgnDb
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+void DgnDb::SetupNewDgnDb(CreateDgnDbParams const& params)
+    {
+    // Every DgnDb has a few built-in CodeSpec for element codes
+    CreateCodeSpecs();
+
+    // Every DgnDb has a RepositoryModel and a DictionaryModel
+    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
+    CreateRepositoryModel();
+    CreateRootSubject(params);
+    ExecuteSql("PRAGMA defer_foreign_keys = false;");
+    CreateDictionaryModel();
+    CreateSessionModel();
+    CreateRealityDataSourcesModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,10 +456,10 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* Each call to _DoUpgrade will upgrade the schema from its stored version to the immediately succeeding version.
+* Each call to _DoUpgradeProfile will upgrade the profile from its stored version to the immediately succeeding version.
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnDbProfileVersion& version) const
+DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersion& version) const
     {
 #if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
@@ -480,7 +483,7 @@ DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnDbProfileVersion& vers
 * The schema stored in the newly opened project is too old. Perform an upgrade, if possible.
 * @bsimethod                                    Keith.Bentley                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
+DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
     {
     if (!_ReopenForSchemaUpgrade(project))
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
@@ -488,7 +491,7 @@ DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
     DgnDbProfileVersion version = project.GetProfileVersion();
     for (;;)
         {
-        DbResult stat = _DoUpgrade(project, version);
+        DbResult stat = _DoUpgradeProfile(project, version);
         if (BE_SQLITE_OK != stat)
             return stat;
 
@@ -530,17 +533,80 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     bool profileIsAutoUpgradable = false;
     result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_profileVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
     if (profileIsAutoUpgradable)
-        result = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
+        result = ((DgnDb::OpenParams&)params).UpgradeProfile(*this);
     if (result != BE_SQLITE_OK)
         return result;
 
-    result = BisCoreDomain::ValidateSchema(*this);
-    if (result != BE_SQLITE_OK)
-        return result;
+    result = Domains().ValidateSchemas();
+    if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && ((DgnDb::OpenParams const&) params).GetAllowSchemaUpgrade())
+        {
+        Domains().SetReadonly(DgnDomain::Readonly::Yes); // Enable admin schema upgrades, but disallow any writing to the individual domains.
+        return BE_SQLITE_OK;
+        }
 
-    result = GenericDomain::ValidateSchema(*this);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    bvector<ECN::ECSchemaCP> schemasToImport;
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
     if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "One or more schemas are incompatible.");
         return result;
+        }
+
+    return DgnDomains::DoImportSchemas(*this, schemasToImport, false /*=isImportingFromV8*/);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    bvector<ECN::ECSchemaCP> schemasToImport;
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "One or more schemas are incompatible.");
+        return result;
+        }
+
+    return DgnDomains::DoImportSchemas(*this, schemasToImport, true /*=isImportingFromV8*/);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
+    {
+    importSchemas.clear();
+
+    for (ECSchemaCP appSchema : schemas)
+        {
+        DbResult result = DgnDomains::ValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+
+        if (result == BE_SQLITE_OK)
+            {
+            if (isImportingFromV8)
+                {
+                LOG.infov("Application schema %s was found in the BIM, but re-imported since it's a legacy schema (with unreliable versions)", appSchema->GetFullSchemaName().c_str());
+                importSchemas.push_back(appSchema);
+                }
+            continue;
+            }
+
+        if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
+            return result;
+
+        BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
+
+        importSchemas.push_back(appSchema);
+        }
 
     return BE_SQLITE_OK;
     }

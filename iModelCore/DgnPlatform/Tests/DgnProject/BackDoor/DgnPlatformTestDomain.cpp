@@ -510,43 +510,6 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(PerfElementCHSub3Handler::GetHandler());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnPlatformTestDomain::Register()
-    {
-    DgnDomains::RegisterDomain(GetDomain()); 
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnPlatformTestDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    auto status = GetDomain().DgnDomain::ImportSchema(db, schemaFile);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    auto schema = db.Schemas().GetECSchema(DPTEST_SCHEMA_NAME, true);
-    if (nullptr == schema)
-        return DgnDbStatus::BadSchema;
-
-    if (!TestElement::QueryClassId(db).IsValid())
-        return DgnDbStatus::BadSchema;
-
-    if (nullptr == TestUniqueAspect::GetECClass(db))
-        return DgnDbStatus::BadSchema;
-    
-    if (nullptr == TestMultiAspect::GetECClass(db))
-        return DgnDbStatus::BadSchema;
-
-    return DgnDbStatus::Success;
-    }
-
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
 
 //---------------------------------------------------------------------------------------

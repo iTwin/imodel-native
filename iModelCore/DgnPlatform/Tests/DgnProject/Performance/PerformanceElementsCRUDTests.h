@@ -27,7 +27,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         PerformanceElementsCRUDTestFixture()
             {
-            DgnPlatformTestDomain::Register();
+            DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
             }
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);

@@ -725,8 +725,12 @@ void DgnModel::_OnUpdated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdate()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -899,8 +903,12 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
     if (DgnDbStatus::Success != stat)
@@ -1041,8 +1049,12 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     // Ensure db is not exclusively locked and code reserved
     return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
@@ -1665,44 +1677,57 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getECRelColIds(int& sourceInstanceIdCol, int& targetInstanceIdCol, ECSqlStatementCR sstmt)
+    {
+    sourceInstanceIdCol = 0;
+    targetInstanceIdCol = 0;
+    bool haveSource=false;
+    bool haveTarget=false;
+    for (int i=0, count=sstmt.GetColumnCount(); i<count; ++i)
+        {
+        ECN::ECPropertyCP ecprop = sstmt.GetColumnInfo(i).GetProperty();
+        if (ecprop->GetName().Equals("SourceECInstanceId"))
+            {
+            sourceInstanceIdCol = i;
+            haveSource = true;
+            }
+        else if (ecprop->GetName().Equals("TargetECInstanceId"))
+            {
+            targetInstanceIdCol = i;
+            haveTarget = true;
+            }
+
+        if (haveSource && haveTarget)
+            return BSISUCCESS;
+        }
+
+    BeAssert(false && "This does not seem to be a statement that queries the SourceECInstanceId and TargetECInstanceId columns of an ECRelationship");
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
-    auto dstClass = destDb.Schemas().GetECClass(relschema, relname);
-    if (nullptr == dstClass)
-        return DgnDbStatus::Success;
-    auto dstRelClass = dstClass->GetRelationshipClassCP();
-    if (nullptr == dstRelClass)
-        {
-        BeAssert(false);
-        return DgnDbStatus::Success;
-        }
-
     auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
         "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
         " WHERE rel.SourceECInstanceId=source.ECInstanceId AND rel.TargetECInstanceId=target.ECInstanceId AND source.Model.Id=? AND target.Model.Id=?",
         relschema, relname).c_str());
 
+    if (!sstmt.IsValid())   // the statement will fail to prepare if the ecclass is not found, and that can only be because the necessary domain/schema was not imported
+        return DgnDbStatus::MissingDomain;
+
     sstmt->BindId(1, sourceModel.GetModelId());
     sstmt->BindId(2, sourceModel.GetModelId());
 
-    int sourceInstanceIdCol=0;
-    int targetInstanceIdCol=0;
-    for (int i=0; i<sstmt->GetColumnCount(); ++i)
-        {
-        ECN::ECPropertyCP ecprop = sstmt->GetColumnInfo(i).GetProperty();
-        if (ecprop->GetName().Equals("SourceECInstanceId"))
-            sourceInstanceIdCol = i;
-        else if (ecprop->GetName().Equals("TargetECInstanceId"))
-            targetInstanceIdCol = i;
-        }
+    int sourceInstanceIdCol, targetInstanceIdCol;
+    getECRelColIds(sourceInstanceIdCol, targetInstanceIdCol, *sstmt);
 
-    StopWatch timer(true);
     ECInstanceECSqlSelectAdapter sourceReader(*sstmt);
-    DbResult stepResult = sstmt->Step();
-    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt->GetECSql(), sourceModel.GetModelId().GetValue());
-    while (BE_SQLITE_ROW == stepResult)
+    while (BE_SQLITE_ROW == sstmt->Step())
         {
         DgnElementId remappedSrcId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(sourceInstanceIdCol));
         DgnElementId remappedDstId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(targetInstanceIdCol));
@@ -1710,20 +1735,23 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
             {
             ECN::IECRelationshipInstancePtr relinst(dynamic_cast<ECN::IECRelationshipInstanceP>(sourceReader.GetInstance().get()));
 
-            auto actualDstRelClass = relinst->GetClass().GetRelationshipClassCP();
+            ECN::ECClassCR srcClass = relinst->GetClass();
+            ECClassCP actualDstClass = destDb.Schemas().GetECClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
+            if (nullptr == actualDstClass)
+                {
+                // the lookup will fail to only if the ecclass is not found, and that can only be because the necessary domain/schema was not imported
+                return DgnDbStatus::MissingDomain;
+                }
+            ECN::ECRelationshipClassCP actualDstRelClass = actualDstClass->GetRelationshipClassCP();
             if (nullptr == actualDstRelClass)
                 {
                 BeAssert(false);
-                return DgnDbStatus::Success;
+                return DgnDbStatus::MissingDomain;
                 }
 
             EC::ECInstanceKey ekey;
             destDb.InsertNonNavigationRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
             }
-
-        timer.Start();
-        stepResult = sstmt->Step();
-        logPerformance(timer, "Statement.Step for %s", sstmt->GetECSql());
         }
 
     return DgnDbStatus::Success;
