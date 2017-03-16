@@ -23,7 +23,7 @@
 #define READWRITE Db::OpenMode::ReadWrite
 #endif
 
-const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
+const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 3);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -53,11 +53,11 @@ bool SMSQLiteFile::Close()
     }
 
 
-const SchemaVersion s_listOfReleasedSchemas[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
-const size_t s_numberOfReleasedSchemas = 3;
-double s_expectedTimeUpdate[2] = { 1.2*1e-5, 1e-6 };
+const SchemaVersion s_listOfReleasedSchemas[4] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3) };
+const size_t s_numberOfReleasedSchemas = 4;
+double s_expectedTimeUpdate[3] = { 1.2*1e-5, 1e-6,1e-6};
 //all the functions for each schema transition. 
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[3] = {
     [](BeSQLite::Db* database)
         {
         assert(database->TableExists("SMMasterHeader"));
@@ -140,6 +140,10 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
         database->ExecuteSql("ALTER TABLE SMMasterHeader ADD COLUMN DataResolution REAL DEFAULT 0.0");
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN GeometryResolution REAL DEFAULT 0.0");
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN TextureResolution REAL DEFAULT 0.0");
+        },
+            [](BeSQLite::Db* database)
+        {
+            database->ExecuteSql("ALTER TABLE SMFileMetadata ADD COLUMN Properties TEXT DEFAULT NULL");
         }
     };
 
@@ -200,7 +204,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
+#ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA)
+#endif
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
@@ -593,6 +599,35 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     stmt->ClearBindings();
     return true;
     }
+
+bool SMSQLiteFile::SetProperties(const Json::Value& properties)
+{
+    CachedStatementPtr stmt;
+    Utf8String propertiesStr(Json::FastWriter().write(properties));
+    m_database->GetCachedStatement(stmt, "UPDATE SMFileMetadata SET Properties=?");
+
+    BIND_VALUE_STR(stmt, 1, propertiesStr, MAKE_COPY_NO);
+
+    DbResult status = stmt->Step();
+
+    assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
+    return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
+}
+
+bool SMSQLiteFile::GetProperties(Json::Value& properties)
+{
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Properties  FROM SMFileMetadata");
+    DbResult status = stmt->Step();
+
+    Utf8String propertiesUtf8 = GET_VALUE_STR(stmt, 0);
+    assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW)); 
+
+    Json::Reader reader;
+    reader.parse(propertiesUtf8, properties);
+
+    return !propertiesUtf8.empty();
+}
 
 void SMSQLiteFile::GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize)
     {

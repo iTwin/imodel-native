@@ -4,6 +4,7 @@
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMesh/import/DataSQLite.h>
 #include "ScalableMeshDb.h"
+#include <json/json.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -121,6 +122,7 @@ public:
     bool SetMasterHeader(const SQLiteIndexHeader& newHeader);
     bool SetNodeHeader(const SQLiteNodeHeader& newNodeHeader);
     bool SetSingleFile(bool isSingleFile);
+    bool SetProperties(const Json::Value& properties);
 
     bool GetSource();
     bool GetGCS();
@@ -129,6 +131,7 @@ public:
     bool GetNodeHeader(SQLiteNodeHeader& nodeHeader);
     bool GetAccessMode() { return m_database->IsReadonly(); }
     bool IsSingleFile();
+    bool GetProperties(Json::Value& properties);
 
     //uint64_t GetLastInsertRowId() { return m_database->GetLastInsertRowId(); }
     uint64_t GetLastNodeId();
