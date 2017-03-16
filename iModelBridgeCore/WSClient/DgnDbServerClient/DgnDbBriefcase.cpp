@@ -207,7 +207,8 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforePushRevisionToServer);
 #endif
-    return m_repositoryConnection->Push(revision, *m_db, relinquishCodesLocks, uploadCallback, cancellationToken)
+    // TODO: specify if revision has schema changes
+    return m_repositoryConnection->Push(revision, *m_db, relinquishCodesLocks, false, uploadCallback, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (DgnDbServerStatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)

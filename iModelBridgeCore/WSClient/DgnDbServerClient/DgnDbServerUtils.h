@@ -101,18 +101,15 @@ namespace ServerSchema
         static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP EventTypes = "EventTypes";
         static Utf8CP IsReadOnly = "IsReadOnly";
-        static Utf8CP AuthorityId = "AuthorityId";
-        static Utf8CP Namespace = "Namespace";
+        static Utf8CP CodeSpecId = "CodeSpecId";
+        static Utf8CP CodeScope = "CodeScope";
+        static Utf8CP State = "State";
         static Utf8CP Value = "Value";
         static Utf8CP Values = "Values";
         static Utf8CP ValuePattern = "ValuePattern";
         static Utf8CP Type = "Type";
         static Utf8CP StartIndex = "StartIndex";
         static Utf8CP IncrementBy = "IncrementBy";
-        static Utf8CP StateRevision = "StateRevision";
-        static Utf8CP StateRevisionIndex = "StateRevisionIndex";
-        static Utf8CP Reserved = "Reserved";
-        static Utf8CP Used = "Used";
         static Utf8CP CodeStateInvalid = "CodeStateInvalid";
         static Utf8CP ConflictingCodes = "ConflictingCodes";
         static Utf8CP CodesNotFound = "CodesNotFound";
@@ -191,9 +188,9 @@ struct CallbackQueue
 bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
-bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId);
-bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
-void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
+bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
+bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId);
+void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId);
 bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
 rapidjson::Document ToRapidJson(JsonValueCR source);
 
