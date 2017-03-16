@@ -97,10 +97,9 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
             float axis [] = {0,0,0};
             if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
                 {
-                RotMatrix rot;
+                RotMatrix rot = IACSManager::GetManager().GetActive(*context.GetViewport())->GetRotation();
                 DVec3d direction;
 
-                IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation (rot);
                 rot.GetRow(direction, 2);
                 direction.Normalize();
                 axis[0]= (float)direction.x;
@@ -142,10 +141,9 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         float axis [] = {0,0,0};
         if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
             {
-            RotMatrix rot;
+            RotMatrix rot = IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation();
             DVec3d direction;
-            IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation (rot);
-            rot.GetRow(direction,  2);
+            rot.GetRow(direction, 2);
             direction.Normalize();
             axis[0]= (float)direction.x;
             axis[1]= (float)direction.y;

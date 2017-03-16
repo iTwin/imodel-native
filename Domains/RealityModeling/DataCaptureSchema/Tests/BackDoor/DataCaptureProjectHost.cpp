@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Tests/BackDoor/DataCaptureProjectHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicApi/BackDoor/DataCapture/BackDoor.h"
@@ -235,7 +235,7 @@ DataCaptureProjectHostImpl::DataCaptureProjectHostImpl() : m_isInitialized(false
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain());
+    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
     m_isInitialized = true;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Raster/RasterDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,6 +20,9 @@ BEGIN_BENTLEY_RASTER_NAMESPACE
 struct RasterDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(RasterDomain, RASTER_EXPORT)
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/Domain/" RASTER_SCHEMA_FILE; }
 
 protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
