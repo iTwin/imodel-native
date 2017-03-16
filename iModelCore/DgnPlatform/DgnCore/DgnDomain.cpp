@@ -139,7 +139,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
     {
-    DgnDomain::Required isRequired = m_isRequired;
+    // unused - DgnDomain::Required isRequired = m_isRequired;
 
     SetRequired(DgnDomain::Required::Yes);
 
