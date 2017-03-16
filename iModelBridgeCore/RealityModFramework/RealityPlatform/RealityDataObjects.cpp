@@ -175,8 +175,70 @@ StatusInt RealityDataBase::SetClassificationByTag(Utf8CP classificationTag)
     return GetClassificationFromTag(m_classification, classificationTag);
     }
 
-const bvector<GeoPoint2d>& RealityDataBase::GetFootprint() const { return m_footprint; }
-void RealityDataBase::SetFootprint(bvector<GeoPoint2d> const& footprint) { m_footprint = footprint; m_footprintExtentComputed = false; }
+const bvector<GeoPoint2d>& RealityDataBase::GetFootprint() const 
+    { 
+    if(m_footprint.size() == 0 && m_footprintString.length() > 0)
+        {
+        m_footprint = StringToFootprint(m_footprintString, m_coordSys);
+        }
+        return m_footprint; 
+    }
+
+void RealityDataBase::SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys) { m_coordSys = coordSys; m_footprint = footprint; m_footprintString = ""; m_footprintExtentComputed = false; }
+
+Utf8String RealityDataBase::GetFootprintString() const 
+    { 
+    if (m_footprintString.length() == 0 && m_footprint.size() > 0)
+        {
+        m_footprintString = FootprintToString(m_footprint, m_coordSys);
+        }
+    return m_footprintString;
+    }
+
+void RealityDataBase::SetFootprintString(Utf8CP footprint) { m_footprintString = footprint; m_footprint.clear(); m_coordSys = ""; m_footprintExtentComputed = false; }
+
+Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
+    {
+    Utf8String filter = "polygon={\"points\":[";
+    for (int i = 0; i < footprint.size(); i++)
+        {
+        filter.append(Utf8PrintfString("[%f,%f],", footprint[i].longitude, footprint[i].latitude));
+        }
+    filter.append(Utf8PrintfString("[%f,%f],", footprint[0].longitude, footprint[0].latitude));//close the box
+    filter.append(Utf8PrintfString("]], \"coordinate_system\":\"%lu\"}", coordSys));
+
+    return filter;
+    }
+
+bvector<GeoPoint2d> RealityDataBase::StringToFootprint(Utf8String footprintStr, Utf8String& coordSys)
+    {
+    coordSys = footprintStr;
+    // Extract points.
+    footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
+    size_t delimiterPos = 0;
+    while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
+        footprintStr.erase(delimiterPos, 1);
+    while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
+        footprintStr.erase(delimiterPos, 1);
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
+
+    bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+    for (size_t i = 0; i < tokens.size(); i += 2)
+        {
+        GeoPoint2d pt;
+        pt.longitude = strtod(tokens[i].c_str(), NULL);
+        pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
+
+        footprint.push_back(pt);
+        }
+
+    coordSys = coordSys.substr(coordSys.find_first_of("c"), coordSys.find_last_of("}") - coordSys.find_first_of("c")); // c-oordinate_system
+    coordSys.ReplaceAll("coordinate_system\" : \"", "");
+    coordSys.ReplaceAll("\" }", "");
+    
+    return footprint;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
@@ -361,14 +423,14 @@ RealityDataPtr RealityData::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
-RealityDataPtr RealityData::Create(Utf8StringCR identifier, const DateTime& creationDate, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name)
+RealityDataPtr RealityData::Create(Utf8StringCR identifier, const DateTime& creationDate, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name, Utf8StringCR coordSys)
     {
     RealityDataPtr myRealityData = new RealityData();
 
     myRealityData->SetIdentifier(identifier.c_str());
     myRealityData->SetCreationDateTime(creationDate);
     myRealityData->SetResolution(resolution.c_str());
-    myRealityData->SetFootprint(footprint);
+    myRealityData->SetFootprint(footprint, coordSys);
     myRealityData->SetName(name.c_str());
 
     return myRealityData;

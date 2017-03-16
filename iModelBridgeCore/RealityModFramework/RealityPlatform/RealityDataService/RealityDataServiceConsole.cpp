@@ -63,6 +63,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Upload;
     else if (args[0].ContainsI("SetServer"))
         m_lastCommand = Command::SetServer;
+    else if (args[0].ContainsI("ChangeProps"))
+        m_lastCommand = Command::ChangeProps;
     else
         {
         m_lastCommand = Command::Error;
@@ -83,7 +85,7 @@ void RealityDataConsole::InterpretCommand()
                 m_lastInput = args[1];
             else
                 {
-                if(m_lastCommand = Command::ChangeDir && args[0].Contains(".."))
+                if(m_lastCommand == Command::ChangeDir && args[0].Contains(".."))
                     m_lastInput = ".."; //allow "cd.."
                 else
                     {
@@ -112,6 +114,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
     m_functionMap.Insert(Command::FileAccess, &RealityDataConsole::FileAccess);
     m_functionMap.Insert(Command::AzureAdress, &RealityDataConsole::AzureAdress);
+    m_functionMap.Insert(Command::ChangeProps, &RealityDataConsole::ChangeProps);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
@@ -119,6 +122,30 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Error, &RealityDataConsole::InputError);
     m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
+
+    m_realityDataProperties = bvector<Utf8String>();
+    //m_realityDataProperties.push_back("Id");
+    m_realityDataProperties.push_back("EnterpriseId");
+    //m_realityDataProperties.push_back("ContainerName");
+    m_realityDataProperties.push_back("Name");
+    m_realityDataProperties.push_back("Dataset");
+    m_realityDataProperties.push_back("Group");
+    m_realityDataProperties.push_back("Description");
+    m_realityDataProperties.push_back("RootDocument");
+    //m_realityDataProperties.push_back("Size");
+    m_realityDataProperties.push_back("Classification");
+    m_realityDataProperties.push_back("Type");
+    m_realityDataProperties.push_back("Footprint");
+    m_realityDataProperties.push_back("ThumbnailDocument");
+    m_realityDataProperties.push_back("MetadataURL");
+    m_realityDataProperties.push_back("ResolutionInMeters");
+    m_realityDataProperties.push_back("AccuracyInMeters");
+    m_realityDataProperties.push_back("Visibility");
+    m_realityDataProperties.push_back("Listable");
+    //m_realityDataProperties.push_back("ModifiedTimestamp");
+    //m_realityDataProperties.push_back("CreatedTimestamp");
+    m_realityDataProperties.push_back("OwnedBy");
+    m_realityDataProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
     }
@@ -211,6 +238,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  Upload      Upload files to the server\n");
     DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
     DisplayInfo ("  AzureAdress Prints the URL to use\n");
+    DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
+    
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -595,7 +624,7 @@ void RealityDataConsole::Upload()
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true);
     upload.SetProgressCallBack(uploadProgressFunc);
     upload.SetProgressStep(0.1);
     upload.OnlyReportErrors(true);
@@ -676,9 +705,9 @@ void RealityDataConsole::Details()
         DisplayInfo (Utf8PrintfString(" Size (kb)          : %lu\n", entity->GetTotalSize()));
         DisplayInfo (Utf8PrintfString(" Classification     : %s\n", entity->GetClassificationTag()));
         DisplayInfo (Utf8PrintfString(" Type               : %s\n", entity->GetRealityDataType()));
-        //DisplayInfo (Utf8PrintfString(" Footprint          : %s\n", entity->GetRealityDataType()));
-        //DisplayInfo (Utf8PrintfString(" ThumbnailDocument               : %s\n", entity->GetRealityDataType()));
-        //DisplayInfo (Utf8PrintfString(" MetadataURL               : %s\n", entity->GetRealityDataType()));
+        DisplayInfo (Utf8PrintfString(" Footprint          : %s\n", entity->GetFootprintString()));
+        DisplayInfo (Utf8PrintfString(" ThumbnailDocument  : %s\n", entity->GetThumbnailDocument()));
+        DisplayInfo (Utf8PrintfString(" MetadataURL        : %s\n", entity->GetMetadataURL()));
         DisplayInfo (Utf8PrintfString(" AccuracyInMeters   : %s\n", entity->GetAccuracy()));
         DisplayInfo (Utf8PrintfString(" ResolutionInMeters : %s\n", entity->GetResolution()));
         DisplayInfo (Utf8PrintfString(" Visibility         : %s\n", entity->GetVisibilityTag()));
@@ -701,7 +730,7 @@ void RealityDataConsole::FileAccess()
     }
 
 void RealityDataConsole::AzureAdress()
-{
+    {
     AzureHandshake* handshake;
     if (m_lastInput.ContainsI("w"))
         handshake = new AzureHandshake(m_currentNode->node.GetRootId(), true);
@@ -735,7 +764,46 @@ void RealityDataConsole::AzureAdress()
         DisplayInfo(Utf8PrintfString("%s/%s?%s\n", azureServer, rootDocument, azureToken));
     else
         DisplayInfo(Utf8PrintfString("%s?%s\n", azureServer, azureToken));
-}
+    }
+
+void RealityDataConsole::ChangeProps()
+    {
+    Utf8String input; 
+    DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
+    bmap<RealityDataField, Utf8String> props = bmap<RealityDataField, Utf8String>();
+    std::string str;
+    Utf8String propertyString = "";
+    Utf8String value;
+    while (input != "-Finish-")
+        {
+        Choice(m_realityDataProperties, input);
+        if(input == "-Finish-")
+            break;
+        else
+            {
+            DisplayInfo(Utf8PrintfString("Input value for %s\n", input));
+
+            std::getline(std::cin, str);
+            if(propertyString.length() > 0)
+                propertyString.append(",");
+
+            value = Utf8String(str.c_str());
+            if(input == "Listable")
+                {
+                if(value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
+                    propertyString.append("\"Listable\" : false");
+                else if (value.EqualsI("true"))
+                    propertyString.append("\"Listable\" : true");
+                else
+                    DisplayInfo("Listable is boolean. Value must be true or false\n", DisplayOption::Error);
+                }
+            else
+                propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
+            }
+        }
+    //TODO : send to server
+
+    }
 
 void RealityDataConsole::InputError()
     {

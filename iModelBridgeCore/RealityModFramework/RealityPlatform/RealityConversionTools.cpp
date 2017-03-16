@@ -325,7 +325,8 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
         // Convert Utf8String to GeoPoint2d vector. 
         // The string should look like this:
         // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
-        footprintStr = properties["Footprint"].asString();
+        data->SetFootprintString(properties["Footprint"].asString().c_str());
+        /*footprintStr = properties["Footprint"].asString();
 
         // Extract points.
         footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
@@ -346,7 +347,13 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
             footprint.push_back(pt);
             }
 
-        data->SetFootprint(footprint);
+        footprintStr = properties["Footprint"].asString();
+        // Extract coordSys.
+        footprintStr = footprintStr.substr(footprintStr.find_first_of("c"), footprintStr.find_last_of("}") - footprintStr.find_first_of("c")); // c-oordinate_system
+        footprintStr.ReplaceAll("coordinate_system\" : \"", "");
+        footprintStr.ReplaceAll("\" }", "");
+        
+        data->SetFootprint(footprint, footprintStr);*/
         }
 
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
@@ -449,7 +456,8 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
         // Convert Utf8String to GeoPoint2d vector. 
         // The string should look like this:
         // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
-        footprintStr = properties["Footprint"].asString();
+        data->SetFootprintString(properties["Footprint"].asString().c_str());
+        /*footprintStr = properties["Footprint"].asString();
 
         // Extract points.
         footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
@@ -470,7 +478,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
             footprint.push_back(pt);
             }
 
-        data->SetFootprint(footprint);
+        data->SetFootprint(footprint);*/
         }
 
     return data;

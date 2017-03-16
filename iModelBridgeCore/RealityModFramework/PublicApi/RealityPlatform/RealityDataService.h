@@ -646,7 +646,7 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
     {
     REALITYDATAPLATFORM_EXPORT static Utf8String PackageProperties(bmap<RealityDataField, Utf8String> properties);
 
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true);
 
     //! Set the source path which, all files and folders located in this path will be uploaded
     //!  to the designated reality data
@@ -669,14 +669,11 @@ protected:
     BentleyStatus CreateUpload(Utf8String properties);
 
 private:
-
     Utf8String                  m_sourcePath;
     Utf8String                  m_rootDocument;
     Utf8String                  m_thumbnailDocument;
-
     bool                        m_overwrite;
     };
-
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason                  02/2017

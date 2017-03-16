@@ -46,7 +46,8 @@ enum class Command
     Download,
     Upload,
     FileAccess,
-    AzureAdress
+    AzureAdress,
+    ChangeProps
     };
 
 struct RealityDataConsole
@@ -80,6 +81,7 @@ public:
     void InputError();
     void FileAccess();
     void AzureAdress();
+    void ChangeProps();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
@@ -92,7 +94,7 @@ private:
     WSGServer            m_server;
     bvector<NavNode>     m_serverNodes;
     bvector<Utf8String>  m_machineRepos;
-    //Utf8String           m_currentNode;
+    bvector<Utf8String>  m_realityDataProperties;
     NodeList*            m_currentNode;
 
     HANDLE        m_hConsole;

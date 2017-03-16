@@ -558,7 +558,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create();
 
     // Creator for spatio temporal selector ... fills out some of the most basic fields
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "");
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "", Utf8StringCR coordSys = "4326");
 
     //! Get/Set
     //! A string containing a key to the data provider. Keys are informally attributed and must 

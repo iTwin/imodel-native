@@ -255,7 +255,9 @@ public:
     //! The path defined by the given polygon must not autocross, contains segments that overlap.
     //! The final clossing point is mandatory.
     REALITYDATAPLATFORM_EXPORT const bvector<GeoPoint2d>& GetFootprint() const;
-    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint);
+    REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<GeoPoint2d> const& footprint, Utf8String coordSys);
+    REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const;
+    REALITYDATAPLATFORM_EXPORT void SetFootprintString(Utf8CP footprint);
 
     //! Get/Set
     //! Indicates if the footprint is approximate or not. A typical approximate footprint 
@@ -271,8 +273,9 @@ public:
     //! Textual description of the data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
     REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
-
-  
+    
+    REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
+    REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> StringToFootprint(Utf8String footprint, Utf8String& coordSys);
 
 protected:
     RealityDataBase();
@@ -287,14 +290,16 @@ protected:
     mutable double m_accuracyValue;
     Classification m_classification;
     Utf8String m_dataset;
-    bvector<GeoPoint2d> m_footprint;
+    mutable bvector<GeoPoint2d> m_footprint;
+    mutable Utf8String m_footprintString;
     mutable DRange2d m_footprintExtent;
     mutable bool m_footprintExtentComputed;
     Utf8String m_description;
     bool m_approximateFootprint;
 
-    Visibility m_visibility;
+    mutable Utf8String m_coordSys;
 
+    Visibility m_visibility;
     }; 
 
 //=====================================================================================
@@ -307,13 +312,11 @@ protected:
 struct RealityData : public RealityDataBase
 {
 public:
-
-
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create();
 
     // Creator for spatio temporal selector ... fills out some of the most basic fields
-    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "");
+    REALITYDATAPLATFORM_EXPORT static RealityDataPtr Create(Utf8StringCR identifier, const DateTime& date, Utf8StringCR resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name = "", Utf8StringCR coordSys = "4326");
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataType() const;

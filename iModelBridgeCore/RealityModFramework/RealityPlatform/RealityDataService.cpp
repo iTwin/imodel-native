@@ -1108,134 +1108,51 @@ void TransferReport::ToXml(Utf8StringR report)
     writer->ToString(report);
     }
 
+static bmap<RealityDataField, Utf8String> CreatePropertyMap()
+    {
+    bmap<RealityDataField, Utf8String> m = bmap<RealityDataField, Utf8String>();
+    m.Insert(RealityDataField::Id, "Id");
+    m.Insert(RealityDataField::EnterpriseId, "EnterpriseId");
+    m.Insert(RealityDataField::ContainerName, "ContainerName");
+    m.Insert(RealityDataField::Name, "Name");
+    m.Insert(RealityDataField::Dataset, "Dataset");
+    m.Insert(RealityDataField::Description, "Description");
+    m.Insert(RealityDataField::RootDocument, "RootDocument");
+    m.Insert(RealityDataField::Size, "Size");
+    m.Insert(RealityDataField::Classification, "Classification");
+    m.Insert(RealityDataField::Type, "Type");
+    m.Insert(RealityDataField::Footprint, "Footprint");
+    m.Insert(RealityDataField::ThumbnailDocument, "ThumbnailDocument");
+    m.Insert(RealityDataField::MetadataURL, "MetadataURL");
+    m.Insert(RealityDataField::ResolutionInMeters, "ResolutionInMeters");
+    m.Insert(RealityDataField::AccuracyInMeters, "AccuracyInMeters");
+    m.Insert(RealityDataField::Visibility, "Visibility");
+    m.Insert(RealityDataField::Listable, "Listable");
+    m.Insert(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
+    m.Insert(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
+    m.Insert(RealityDataField::OwnedBy, "OwnedBy");
+    m.Insert(RealityDataField::Group, "Group");
+
+    return m;
+    }
+
+static bmap<RealityDataField, Utf8String> s_propertyMap = CreatePropertyMap();
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Utf8String> properties)
     {
-    Utf8String propertyString;
-    bvector<Utf8String> propertyVector = bvector<Utf8String>();
+    Utf8String propertyString = "";
     RealityDataField field;
     for(bmap<RealityDataField, Utf8String>::iterator it = properties.begin(); it != properties.end(); it.increment())
         {
-        propertyString = "";
         field = it.key();
-        switch (field)
-            {
-        case RealityDataField::Id:
-            propertyString.append("\"Id\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::EnterpriseId:
-            propertyString.append("\"Enterprise\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::ContainerName:
-            propertyString.append("\"ContainerName\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Name:
-            propertyString.append("\"Name\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Dataset:
-            propertyString.append("\"Dataset\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Description:
-            propertyString.append("\"Description\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::RootDocument:
-            propertyString.append("\"RootDocument\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Size:
-            propertyString.append("\"Size\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Classification:
-            propertyString.append("\"Classification\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Type:
-            propertyString.append("\"Type\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Footprint:
-            propertyString.append("\"Footprint\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::ThumbnailDocument:
-            propertyString.append("\"ThumbnailDocument\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::MetadataURL:
-            propertyString.append("\"MetadataURL\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::ResolutionInMeters:
-            propertyString.append("\"ResolutionInMeters\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::AccuracyInMeters:
-            propertyString.append("\"AccuracyInMeters\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Visibility:
-            propertyString.append("\"Visibility\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Listable:
-            propertyString.append("\"Listable\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::ModifiedTimestamp:
-            propertyString.append("\"ModifiedTimestamp\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::CreatedTimestamp:
-            propertyString.append("\"CreatedTimestamp\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::OwnedBy:
-            propertyString.append("\"OwnedBy\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-        case RealityDataField::Group:
-            propertyString.append("\"Group\" : \"");
-            propertyString.append(properties[field]);
-            propertyString.append("\"");
-            break;
-            }
-        propertyVector.push_back(propertyString);
+        if(propertyString.length() > 0)
+            propertyString.append(",");
+        propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field], properties[field]));
         }
-    propertyString = propertyVector[0];
-    for(int i = 1; i < propertyVector.size(); ++i)
-        {
-        propertyString.append(",");
-        propertyString.append(propertyVector[i]);
-        }
+    
     return propertyString;
     }
 
@@ -1615,7 +1532,7 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite) : 
+RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite, bool listable) : 
     m_overwrite(overwrite)
     { 
     m_id = id;
@@ -1627,6 +1544,13 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_currentTransferedAmount = 0;
     m_fullTransferSize = 0;
     m_handshakeRequest = nullptr;
+
+    if(!listable)
+        {
+        if(properties.length() > 0)
+            properties.append(",");
+        properties.append("\"Listable\" : false");
+        }
 
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;

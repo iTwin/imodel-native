@@ -120,14 +120,14 @@ SpatialEntityPtr SpatialEntity::Create()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityPtr SpatialEntity::Create(Utf8StringCR identifier, const DateTime& date, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name)
+SpatialEntityPtr SpatialEntity::Create(Utf8StringCR identifier, const DateTime& date, Utf8String const & resolution, const bvector<GeoPoint2d>& footprint, Utf8StringCR name, Utf8StringCR coordSys)
     {
     SpatialEntityPtr mySpatialEntity = new SpatialEntity();
 
     mySpatialEntity->SetIdentifier(identifier.c_str());
     mySpatialEntity->SetDate(date);
     mySpatialEntity->SetResolution(resolution.c_str());
-    mySpatialEntity->SetFootprint(footprint);
+    mySpatialEntity->SetFootprint(footprint, coordSys);
     mySpatialEntity->SetName(name.c_str());
 
     return mySpatialEntity;
