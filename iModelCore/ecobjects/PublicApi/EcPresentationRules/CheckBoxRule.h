@@ -23,6 +23,7 @@ struct CheckBoxRule : public PresentationRule
         Utf8String              m_propertyName;
         bool                    m_useInversedPropertyValue;
         bool                    m_defaultValue;
+        Utf8String              m_isEnabled;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -39,7 +40,7 @@ struct CheckBoxRule : public PresentationRule
         ECOBJECTS_EXPORT CheckBoxRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT CheckBoxRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR propertyName, bool useInversedPropertyValue, bool defaultValue);
+        ECOBJECTS_EXPORT CheckBoxRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR propertyName, bool useInversedPropertyValue, bool defaultValue, Utf8StringCR isEnabled);
 
         //! ECProperty name to bind check box state.
         ECOBJECTS_EXPORT Utf8StringCR        GetPropertyName (void) const;
@@ -49,6 +50,9 @@ struct CheckBoxRule : public PresentationRule
 
         //! Default check box value.
         ECOBJECTS_EXPORT bool                GetDefaultValue (void) const;
+
+        //! An ECExpression indicating whether check box should be enabled
+        ECOBJECTS_EXPORT Utf8StringCR        GetIsEnabled(void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
