@@ -65,7 +65,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         return info;
 
     if (info.options.testDomain)
-        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);

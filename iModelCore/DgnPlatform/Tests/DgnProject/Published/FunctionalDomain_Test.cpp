@@ -181,8 +181,8 @@ struct FunctionalDomainTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 void FunctionalDomainTests::SetupFunctionalTestDomain()
     {
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), true, false);
-    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), false, false);
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     DbResult result = FunctionalDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(BE_SQLITE_OK, result);

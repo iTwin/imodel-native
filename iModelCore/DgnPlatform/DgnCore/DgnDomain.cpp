@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, bool isRequired, bool isReadonly)
+BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/)
     {
     auto& domains = T_HOST.RegisteredDomains();
     for (DgnDomainCP it : domains)
@@ -139,12 +139,14 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
     {
-    bool isRequired = IsRequired();
-    SetRequired(true);
+    DgnDomain::Required isRequired = m_isRequired;
+
+    SetRequired(DgnDomain::Required::Yes);
 
     DbResult result = dgndb.Domains().UpgradeSchemas();
     
-    SetRequired(isRequired);
+    SetRequired(DgnDomain::Required::No);
+
     return result;
     }
 
@@ -431,7 +433,7 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
     {
     if (dgndb.IsReadonly())
         {
-        BeAssert(false && "Cannot import schemas into a ReadOnly Db");
+        BeAssert(false && "Cannot import schemas into a Readonly Db");
         return BE_SQLITE_READONLY;
         }
 
@@ -505,7 +507,7 @@ DbResult DgnDomains::ValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonly,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                  02 / 2017
 //---------------------------------------------------------------------------------------
-void DgnDomains::SetReadonly(bool isReadonly)
+void DgnDomains::SetReadonly(DgnDomain::Readonly isReadonly)
     {
     auto& hostDomains = T_HOST.RegisteredDomains();
     for (DgnDomainP domain : hostDomains)
