@@ -39,11 +39,3 @@ GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
 
 Verbose=1
 %include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki
-
-#--------------------------------------------------------------------------------------
-#   Deliver the library's archive
-#--------------------------------------------------------------------------------------
-#$(BuildContext)Delivery/mavenArchive/ : $(buildOut)/mavenArchive/
-#    $(LinkFirstDepToFirstTargetAsDirectory)
-
-
