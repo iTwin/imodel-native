@@ -276,8 +276,6 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     _SupplyProductName(m_productName);
 
-    m_acsManager = new IACSManager();
-
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
@@ -296,7 +294,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
         }
 
     ON_HOST_TERMINATE(m_txnAdmin, onProgramExit);
-    ON_HOST_TERMINATE(m_acsManager, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
         ON_HOST_TERMINATE(obj.m_val, onProgramExit);
@@ -316,7 +313,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_notificationAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
-    BeAssert(NULL == m_acsManager);
     BeAssert(NULL == m_formatterAdmin);
     BeAssert(NULL == m_scriptingAdmin);
     BeAssert(NULL == m_exceptionHandler);
