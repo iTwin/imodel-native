@@ -283,28 +283,16 @@
                 <Name>Angola</Name>
                 <Members>
                   <Member>
-                    <KeyName>Camacupa.UTM-32S</KeyName>
+                    <KeyName>Camacupa_1.UTM-32S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22032</KeyName>
+                    <KeyName>Camacupa_1.UTM-33S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Camacupa.UTM-33S</KeyName>
+                    <KeyName>Camacupa_1.TM-1130SE</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22033</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Camacupa.TM-1130SE</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:22091</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Camacupa.TM-12SE</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:22092</KeyName>
+                    <KeyName>Camacupa_1.TM-12SE</KeyName>
                   </Member>
                   <Member>
                     <KeyName>WGS84.TM-12SE</KeyName>
@@ -505,10 +493,7 @@
                     <KeyName>EPSG:2064</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Bissau.UTM-28N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2095</KeyName>
+                    <KeyName>Bissau_1.UTM-28N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Conakry05.UTM-28N</KeyName>
@@ -2035,454 +2020,229 @@
                     <KeyName>Xian80.GK3d/CM-135E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-13</KeyName>
+                    <KeyName>Beijing1954.GK-13</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21413</KeyName>
+                    <KeyName>Beijing1954.GK-14</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-14</KeyName>
+                    <KeyName>Beijing1954.GK-15</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21414</KeyName>
+                    <KeyName>Beijing1954.GK-16</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-15</KeyName>
+                    <KeyName>Beijing1954.GK-17</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21415</KeyName>
+                    <KeyName>Beijing1954.GK-18</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-16</KeyName>
+                    <KeyName>Beijing1954.GK-19</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21416</KeyName>
+                    <KeyName>Beijing1954.GK-20</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-17</KeyName>
+                    <KeyName>Beijing1954.GK-21</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21417</KeyName>
+                    <KeyName>Beijing1954.GK-22</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-18</KeyName>
+                    <KeyName>Beijing1954.GK-23</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21418</KeyName>
+                    <KeyName>Beijing1954.GK/CM-75E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-19</KeyName>
+                    <KeyName>Beijing1954.GK/CM-81E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21419</KeyName>
+                    <KeyName>Beijing1954.GK/CM-87E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-20</KeyName>
+                    <KeyName>Beijing1954.GK/CM-93E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21420</KeyName>
+                    <KeyName>Beijing1954.GK/CM-99E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-21</KeyName>
+                    <KeyName>Beijing1954.GK/CM-105E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21421</KeyName>
+                    <KeyName>Beijing1954.GK/CM-111E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-22</KeyName>
+                    <KeyName>Beijing1954.GK/CM-117E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21422</KeyName>
+                    <KeyName>Beijing1954.GK/CM-123E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-23</KeyName>
+                    <KeyName>Beijing1954.GK/CM-129E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21423</KeyName>
+                    <KeyName>Beijing1954.GK/CM-135E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-75E</KeyName>
+                    <KeyName>Beijing1954.GK-13N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21453</KeyName>
+                    <KeyName>Beijing1954.GK-14N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-81E</KeyName>
+                    <KeyName>Beijing1954.GK-15N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21454</KeyName>
+                    <KeyName>Beijing1954.GK-16N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-87E</KeyName>
+                    <KeyName>Beijing1954.GK-17N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21455</KeyName>
+                    <KeyName>Beijing1954.GK-18N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-93E</KeyName>
+                    <KeyName>Beijing1954.GK-19N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21456</KeyName>
+                    <KeyName>Beijing1954.GK-20N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-99E</KeyName>
+                    <KeyName>Beijing1954.GK-21N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21457</KeyName>
+                    <KeyName>Beijing1954.GK-22N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-105E</KeyName>
+                    <KeyName>Beijing1954.GK-23N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21458</KeyName>
+                    <KeyName>Beijing1954.GK3-25</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-111E</KeyName>
+                    <KeyName>Beijing1954.GK3-26</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21459</KeyName>
+                    <KeyName>Beijing1954.GK3-27</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-117E</KeyName>
+                    <KeyName>Beijing1954.GK3-28</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21460</KeyName>
+                    <KeyName>Beijing1954.GK3-29</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-123E</KeyName>
+                    <KeyName>Beijing1954.GK3-30</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21461</KeyName>
+                    <KeyName>Beijing1954.GK3-31</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-129E</KeyName>
+                    <KeyName>Beijing1954.GK3-32</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21462</KeyName>
+                    <KeyName>Beijing1954.GK3-33</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK/CM-135E</KeyName>
+                    <KeyName>Beijing1954.GK3-34</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21463</KeyName>
+                    <KeyName>Beijing1954.GK3-35</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-13N</KeyName>
+                    <KeyName>Beijing1954.GK3-36</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21473</KeyName>
+                    <KeyName>Beijing1954.GK3-37</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-14N</KeyName>
+                    <KeyName>Beijing1954.GK3-38</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21474</KeyName>
+                    <KeyName>Beijing1954.GK3-39</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-15N</KeyName>
+                    <KeyName>Beijing1954.GK3-40</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21475</KeyName>
+                    <KeyName>Beijing1954.GK3-41</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-16N</KeyName>
+                    <KeyName>Beijing1954.GK3-42</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21476</KeyName>
+                    <KeyName>Beijing1954.GK3-43</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-17N</KeyName>
+                    <KeyName>Beijing1954.GK3-44</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21477</KeyName>
+                    <KeyName>Beijing1954.GK3-45</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-18N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-75E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21478</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-78E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-19N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-81E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21479</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-84E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-20N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-87E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21480</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-90E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-21N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-93E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21481</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-96E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-22N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-99E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21482</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-102E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK-23N</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-105E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21483</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-108E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK3d-25</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-111E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2401</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-114E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK3d-26</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-117E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2402</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-120E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK3d-27</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-123E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2403</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-126E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK3d-28</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-129E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2404</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-132E</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.GK3d-29</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2405</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-30</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2406</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-31</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2407</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-32</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2408</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-33</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2409</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-34</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2410</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-35</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2411</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-36</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2412</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-37</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2413</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-38</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2414</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-39</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2415</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-40</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2416</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-41</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2417</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-42</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2418</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-43</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2419</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-44</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2420</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d-45</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2421</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-75E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2422</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-78E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2423</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-81E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2424</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-84E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2425</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-87E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2426</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-90E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2427</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-93E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2428</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-96E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2429</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-99E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2430</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-102E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2431</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-105E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2432</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-108E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2433</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-111E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2434</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-114E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2435</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-117E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2436</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-120E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2437</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-123E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2438</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-126E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2439</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-129E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2440</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-132E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2441</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Beijing54.GK3d/CM-135E</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2442</KeyName>
+                    <KeyName>Beijing1954.GK3/CM-135E</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3415</KeyName>
@@ -3103,10 +2863,7 @@
                     <KeyName>EPSG:23884</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Batavia.TM-109SE</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2308</KeyName>
+                    <KeyName>Batavia_1.TM-109SE</KeyName>
                   </Member>
                   <Member>
                     <KeyName>WGS84.TM-116SE</KeyName>
@@ -3130,7 +2887,7 @@
                     <KeyName>Segara.NEIEZ</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Batavia.NEIEZ</KeyName>
+                    <KeyName>Batavia_1.NEIEZ</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Makassar.NEIEZ</KeyName>
@@ -3139,22 +2896,13 @@
                     <KeyName>Samboja.UTM-50S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Batavia.UTM-48S</KeyName>
+                    <KeyName>Batavia_1.UTM-48S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21148</KeyName>
+                    <KeyName>Batavia_1.UTM-49S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Batavia.UTM-49S</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:21149</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Batavia.UTM-50S</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:21150</KeyName>
+                    <KeyName>Batavia_1.UTM-50S</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:23830</KeyName>
@@ -5738,7 +5486,7 @@
                     <KeyName>EPSG:2001</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Antigua43.BWIgrid</KeyName>
+                    <KeyName>Antigua1943.BWIgrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -5746,16 +5494,10 @@
                 <Name>Barbados</Name>
                 <Members>
                   <Member>
-                    <KeyName>Barbados38.BWIgrid</KeyName>
+                    <KeyName>Barbados1938.BWIgrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21291</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Barbados38.NtlGrid</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:21292</KeyName>
+                    <KeyName>Barbados1938.NtlGrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -6134,7 +5876,7 @@
                         <KeyName>EPSG:2190</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>AzoresOccdtl39.UTM-25N</KeyName>
+                        <KeyName>AzoresWest1939.UTM-25N</KeyName>
                       </Member>
                       <Member>
                         <KeyName>AzoresCntrl48.UTM-26N</KeyName>
@@ -6143,13 +5885,13 @@
                         <KeyName>AzoresOrntl40.UTM-26N</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>AzoresEast95.UTM-26N</KeyName>
+                        <KeyName>AzoresEast1995.UTM-26N</KeyName>
                       </Member>
                       <Member>
                         <KeyName>EPSG:3062</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>AzoresCntrl95.UTM-26N</KeyName>
+                        <KeyName>AzoresCntrl1995.UTM-26N</KeyName>
                       </Member>
                       <Member>
                         <KeyName>EPSG:3063</KeyName>
@@ -6217,22 +5959,10 @@
                     <KeyName>Belgium1972</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Belge72.Lambert72</KeyName>
+                    <KeyName>Belge72/a.Lambert72</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31300</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31300B</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Belge72.Lambert72A</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31370</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31370B</KeyName>
+                    <KeyName>Belge72/a.Lambert72A</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:103300</KeyName>
@@ -7160,8 +6890,23 @@
                 <Name>Italy</Name>
                 <Members>
                   <Member>
-                    <KeyName>Italy-Zone32</KeyName>
+                    <KeyName>RDN2008/TM32</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>RDN2008/TM33</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>RDN2008/TM34</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>RDN2008/Italy</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>RDN2008/Zone12</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Italy-Zone32</KeyName>
+                  </Member>                  
                   <Member>
                     <KeyName>Italy-Zone33</KeyName>
                   </Member>
@@ -9714,16 +9459,13 @@
                  <KeyName>LePouce7P.MauritiusGrid</KeyName>
                </Member>
                <Member>
-                 <KeyName>Combani50.UTM-38S</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>EPSG:2980</KeyName>
+                 <KeyName>Combani1950.UTM-38S</KeyName>
                </Member>
                <Member>
                  <KeyName>EPSG:4698</KeyName>
                </Member>
                <Member>
-                 <KeyName>EPSG:4474</KeyName>
+                 <KeyName>Cadastre97.UTM-38S</KeyName>
                </Member>
             </Members>
             <Groups>
@@ -22277,10 +22019,7 @@
                     <KeyName>EPSG:22197</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Castillo.Argentina-2</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2082</KeyName>
+                    <KeyName>PampaCast.Argentina-2</KeyName>
                   </Member>
                   <Member>
                     <KeyName>PGA98.Argentina-1</KeyName>
@@ -22528,22 +22267,13 @@
                     <KeyName>EPSG:22525</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Aratu.UTM-22S</KeyName>
+                    <KeyName>Aratu_1.UTM-22S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:20822</KeyName>
+                    <KeyName>Aratu_1.UTM-23S</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Aratu.UTM-23S</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:20823</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Aratu.UTM-24S</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:20824</KeyName>
+                    <KeyName>Aratu_1.UTM-24S</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4071</KeyName>
@@ -27427,6 +27157,606 @@
               <Member>
                 <KeyName>EPSG:65062</KeyName>
               </Member>
+              <Member>
+                <KeyName>Antigua43.BWIgrid</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Bissau.UTM-28N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AzoresOccdtl39.UTM-25N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.TM-109SE</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Combani50.UTM-38S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.NEIEZ</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Aratu.UTM-22S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Aratu.UTM-23S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Aratu.UTM-24S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.UTM-48S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.UTM-49S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.UTM-50S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Camacupa.UTM-32S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Camacupa.UTM-33S</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Camacupa.TM-1130SE</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Camacupa.TM-12SE</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Belge72.Lambert72</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Belge72.Lambert72A</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-13</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-14</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-15</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-16</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-17</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-18</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-19</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-20</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-21</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-22</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-23</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-75E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-81E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-87E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-93E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-99E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-105E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-111E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-117E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-123E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-129E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK/CM-135E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-13N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-14N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-15N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-16N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-17N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-18N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-19N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-20N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-21N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-22N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK-23N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-25</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-26</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-27</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-28</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-29</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-30</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-31</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-32</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-33</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-34</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-35</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-36</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-37</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-38</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-39</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-40</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-41</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-42</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-43</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-44</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d-45</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-75E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-78E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-81E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-84E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-87E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-90E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-93E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-96E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-99E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-102E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-105E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-108E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-111E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-114E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-117E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-120E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-123E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-126E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-129E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-132E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.GK3d/CM-135E</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Castillo.Argentina-2</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AzoresEast95.UTM-26N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AzoresCntrl95.UTM-26N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Barbados38.BWIgrid</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Barbados38.NtlGrid</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2095</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2308</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2980</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4165</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4208</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4220</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4632</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:20822</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:20823</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:20824</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21148</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21149</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21150</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22032</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22033</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22091</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:22092</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31300</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31300A</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31300B</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31370</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31370A</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31370B</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21473</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21474</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21475</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21476</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21477</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21478</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21479</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21480</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21481</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21482</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21483</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2082</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2401</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2402</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2403</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2404</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2405</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2406</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2407</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2408</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2409</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2410</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2411</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2412</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2413</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2414</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2415</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2416</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2417</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2418</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2419</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2420</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2421</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2422</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2423</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2424</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2425</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2426</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2427</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2428</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2429</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2430</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2431</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2432</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2433</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2434</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2435</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2436</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2437</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2438</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2439</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2440</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2441</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2442</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21291</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21292</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21413</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21414</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21415</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21416</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21417</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21418</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21419</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21420</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21421</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21422</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21423</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21453</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21454</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21455</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21456</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21457</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21458</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21459</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21460</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21461</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21462</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:21463</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4474</KeyName>
+              </Member>
             </Members>
             <Groups>
               <Group>
@@ -30061,10 +30391,7 @@
                 <Name>Angola</Name>
                 <Members>
                   <Member>
-                    <KeyName>Camacupa.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4220</KeyName>
+                    <KeyName>Camacupa_1.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30115,10 +30442,7 @@
                 <Name>Djibouti</Name>
                 <Members>
                   <Member>
-                    <KeyName>Ayabelle.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4713</KeyName>
+                    <KeyName>AyabelleLH.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30193,10 +30517,7 @@
                 <Name>Guinea-Bissau</Name>
                 <Members>
                   <Member>
-                    <KeyName>Bissau.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4165</KeyName>
+                    <KeyName>Bissau_1.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30424,10 +30745,7 @@
                 <KeyName>Antarctic1998.LL</KeyName>
               </Member>
               <Member>
-                <KeyName>CampAreaAstro.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4715</KeyName>
+                <KeyName>CampAreaAstro_1.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>DeceptionIsland.LL</KeyName>
@@ -30556,10 +30874,7 @@
                     <KeyName>EPSG:104126</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Beijing54.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4214</KeyName>
+                    <KeyName>Beijing1954.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Xian80.LL</KeyName>
@@ -30614,7 +30929,7 @@
                     <KeyName>Samboja.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Batavia.LL</KeyName>
+                    <KeyName>Batavia_1.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4211</KeyName>
@@ -30819,7 +31134,7 @@
             <Name>Central America and Caribbeans</Name>
             <Members>
               <Member>
-                <KeyName>Antigua43.LL</KeyName>
+                <KeyName>Antigua1943.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>EPSG:4601</KeyName>
@@ -30864,10 +31179,7 @@
                 <KeyName>EPSG:4640</KeyName>
               </Member>
               <Member>
-                <KeyName>Barbados38.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4212</KeyName>
+                <KeyName>Barbados1938.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>Jamaica69.LL</KeyName>
@@ -31088,7 +31400,7 @@
                         <KeyName>EPSG:4184</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>AzoresOccdtl39.LL</KeyName>
+                        <KeyName>AzoresWest1939.LL</KeyName>
                       </Member>
                       <Member>
                         <KeyName>AZORES.LL</KeyName>
@@ -31118,7 +31430,7 @@
                 <Name>Belgium</Name>
                 <Members>
                   <Member>
-                    <KeyName>Belge72.LL</KeyName>
+                    <KeyName>Belge72/a.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4313</KeyName>
@@ -31739,10 +32051,7 @@
                  <KeyName>K01949.LL</KeyName>
                </Member>
                <Member>
-                 <KeyName>Combani50.LL</KeyName>
-               </Member>
-               <Member>
-                 <KeyName>EPSG:4632</KeyName>
+                 <KeyName>Combani1950.LL</KeyName>
                </Member>
             </Members>
           </Group>
@@ -32302,10 +32611,7 @@
                     <KeyName>ASTRLA84.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Cocos1965.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4708</KeyName>
+                    <KeyName>CocosIsl1965.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4283</KeyName>
@@ -32684,10 +32990,7 @@
                     <KeyName>EPSG:4221</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Castillo.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4161</KeyName>
+                    <KeyName>PampaCastillo.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>PGA98.LL</KeyName>
@@ -32719,10 +33022,7 @@
                     <KeyName>CORR70/72-BZ/GSB.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Aratu.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4208</KeyName>
+                    <KeyName>Aratu_1.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Chua.LL</KeyName>
@@ -33475,6 +33775,66 @@
                <Member>
                  <KeyName>EPSG:4312</KeyName>
                </Member>
+              <Member>
+                <KeyName>Bissau.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>AzoresOccdtl39.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Aratu.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Batavia.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Beijing54.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Camacupa.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Belge72.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Antigua43.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Combani50.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Castillo.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Barbados38.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Cocos1965.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Ayabelle.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CampAreaAstro.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4161</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4212</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4214</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4708</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4713</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4715</KeyName>
+              </Member>
               <Member>
                 <KeyName>MGI.LL</KeyName>
               </Member>
