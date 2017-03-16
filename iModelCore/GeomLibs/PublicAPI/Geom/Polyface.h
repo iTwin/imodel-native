@@ -2011,6 +2011,10 @@ bool        reverseIndicesIfMirrored = true
 GEOMDLLIMPEXP void ReverseNormals ();
 
 //!
+//! Normalize parameters.
+GEOMDLLIMPEXP void  PolyfaceHeader::NormalizeParameters ();
+
+//!
 //! Collect indices of (1) adjacent facets and (2) points within the active facets.
 GEOMDLLIMPEXP void CollectAdjacentFacetAndPointIndices
 (

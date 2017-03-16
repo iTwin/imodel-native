@@ -1644,4 +1644,35 @@ void PolyfaceHeader::SetIlluminationName (wchar_t const *name)
         m_illuminationName = WString (name);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      04/2012
++--------------------------------------------------------------------------------------*/
+void  PolyfaceHeader::NormalizeParameters ()
+    {
+    if (m_paramIndex.size() != m_faceIndex.size() || m_paramIndex.empty())
+        {
+        BeAssert(false);
+        return;
+        }
+    BlockedVectorInt            oldParamIndices = std::move(m_paramIndex);
+    BlockedVector<DPoint2d>     oldParams = std::move (m_param);
+
+    for (size_t i=0; i<oldParamIndices.size(); i++)
+        {
+        if (0 == oldParamIndices.at(i))
+            m_paramIndex.push_back(0);
+        else
+            {
+            DPoint2d        normalizedParam;
+
+            m_faceData.at(m_faceIndex.at(i) - 1).ConvertParamToNormalized(normalizedParam, oldParams.at(oldParamIndices.at(i) - 1));
+            m_param.push_back(normalizedParam);
+            m_paramIndex.push_back((int32_t) m_param.size());
+            }
+        }
+    for (auto& faceData : m_faceData)
+        faceData.m_paramRange = DRange2d::From(0.0, 0.0, 1.0, 1.0);
+    
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE
