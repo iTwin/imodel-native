@@ -642,6 +642,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     m_UorsToStorage.Multiply(endPt);
     DVec3d newDirection = DVec3d::FromStartEndNormalize(transformedPt, endPt);
 
+
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
     if (m_type == DTMAnalysisType::Fast || m_type == DTMAnalysisType::ViewOnly) //other modes use full resolution

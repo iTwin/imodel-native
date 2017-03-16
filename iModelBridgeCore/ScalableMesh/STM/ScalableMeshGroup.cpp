@@ -792,8 +792,11 @@ bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR directio
                 double param;
                 if (ray.ProjectPointBounded(pt, param, currentPt) && param < minParam && param > -1e-8)
                     {
-                    minPt = currentPt;
-                    minParam = param;
+                    if (m_group->IsWithinRegion(scalableMesh, &currentPt, 1))
+                    {
+                        minPt = currentPt;
+                        minParam = param;
+                    }
                     }
                 }
             }
@@ -810,8 +813,20 @@ bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR directio
                 double param;
                 if (ray.ProjectPointBounded(pt, param, currentPt) && param < minParam && param > -1e-8)
                     {
-                    minPt = currentPt;
-                    minParam = param;
+                    bool isOutsideRegions = true;
+                    for (auto& scalableMeshRegion : m_group->GetMembers())
+                    {
+                        if (m_group->IsRegionRestricted(scalableMeshRegion) && m_group->IsWithinRegion(scalableMeshRegion, &currentPt, 1))
+                        {
+                            isOutsideRegions = false;
+                            break;
+                        }
+                    }
+                    if (isOutsideRegions)
+                    {
+                        minPt = currentPt;
+                        minParam = param;
+                    }
                     }
                 }
             }
