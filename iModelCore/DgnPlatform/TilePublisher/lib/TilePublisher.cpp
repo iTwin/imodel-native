@@ -324,7 +324,7 @@ auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorIndex::ComputeDimensions(uint16_t nColors)
+void TilePublish::ColorIndex::ComputeDimensions(uint16_t nColors)
     {
     // Minimum texture size in WebGL is 64x64. For 16-bit color indices, we need at least 256x256.
     // At the risk of pessimization, let's not assume more than that.
@@ -365,7 +365,7 @@ template<typename T> static void fillColorIndex(ByteStream& texture, ColorIndexM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorIndex::Build(TileMeshCR mesh, TileMaterial const& mat)
+void TilePublish::ColorIndex::Build(TileMeshCR mesh, TileMaterial const& mat)
     {
     // Possibilities:
     //  - Material does not override color or alpha. Copy colors directly from ColorIndexMap (unless only one color - then use uniform color).
@@ -1209,7 +1209,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix)
+Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, TilePublish::ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix)
     {
     Utf8String textureId("texture_"),
                imageId("image_"),
@@ -1383,13 +1383,13 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
         {
         case 0:
             BeAssert(false && "empty color map");
-            m_colorDimension = ColorIndex::Dimension::None;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::None;
             break;
         case 1:
-            m_colorDimension = ColorIndex::Dimension::Zero;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
             break;
         default:
-            m_colorDimension = map.GetNumIndices() <= ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::One : ColorIndex::Dimension::Two;
+            m_colorDimension = map.GetNumIndices() <= TilePublish::ColorIndex::GetMaxWidth() ? TilePublish::ColorIndex::Dimension::One : TilePublish::ColorIndex::Dimension::Two;
             break;
         }
 
@@ -1540,7 +1540,7 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
 
     if (m_overridesAlpha && m_overridesRgb)
         {
-        m_colorDimension = ColorIndex::Dimension::Zero;
+        m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
         }
     else
         {
@@ -1548,19 +1548,19 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
         if (0 == nColors)
             {
             BeAssert(false && "empty color map");
-            m_colorDimension = ColorIndex::Dimension::None;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::None;
             }
         else if (1 == nColors)
             {
-            m_colorDimension = ColorIndex::Dimension::Zero;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
             }
-        else if (nColors <= ColorIndex::GetMaxWidth())
+        else if (nColors <= TilePublish::ColorIndex::GetMaxWidth())
             {
-            m_colorDimension = ColorIndex::Dimension::One;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::One;
             }
         else
             {
-            m_colorDimension = ColorIndex::Dimension::Two;
+            m_colorDimension = TilePublish::ColorIndex::Dimension::Two;
             }
         }
     }
@@ -1615,7 +1615,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
     {
     auto dim = GetColorIndexDimension();
     auto& techniqueUniforms = technique["uniforms"];
-    if (ColorIndex::Dimension::Zero != dim)
+    if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
         TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
         TilePublisher::AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
@@ -1632,7 +1632,7 @@ void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json
         sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
         sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
 
-        if (ColorIndex::Dimension::Two == dim)
+        if (TilePublish::ColorIndex::Dimension::Two == dim)
             {
             TilePublisher::AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
             TilePublisher::AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
@@ -1703,9 +1703,9 @@ void MeshMaterial::AddTechniqueParameters(Json::Value& technique, Json::Value& p
 void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix)
     {
     auto dim = mat.GetColorIndexDimension();
-    if (ColorIndex::Dimension::Zero != dim)
+    if (TilePublish::ColorIndex::Dimension::Zero != dim)
         {
-        ColorIndex colorIndex(mesh, mat);
+        TilePublish::ColorIndex colorIndex(mesh, mat);
         matJson["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
         uint16_t width = colorIndex.GetWidth();
@@ -1716,7 +1716,7 @@ void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat,
         texStep.append(stepX);
         texStep.append(stepX * 0.5);    // centerX
 
-        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+        if (TilePublish::ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
             {
             texStep.append(stepY);
             texStep.append(stepY * 0.5);    // centerY
@@ -2231,7 +2231,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         }
 
     BeAssert(isTextured == mesh.Colors().empty());
-    if (!mesh.Colors().empty() && !isTextured && ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
+    if (!mesh.Colors().empty() && !isTextured && TilePublish::ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
         AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
     if (!mesh.Normals().empty() && !mesh.GetDisplayParams().GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
@@ -2358,7 +2358,7 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
     PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
     PolylineTesselation         tesselation;
-    bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+    bool                        doColors = TilePublish::ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
     double                      minLength = 0.0, maxLength = 0.0;
 
     for (auto const& polyline : mesh.Polylines())
@@ -2478,7 +2478,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     bvector<uint16_t>           attributes, colors;
     bvector<uint32_t>           indices;
     bvector<double>             distances;
-    bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+    bool                        doColors = TilePublish::ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
 
     for (auto const& polyline : mesh.Polylines())
         {
