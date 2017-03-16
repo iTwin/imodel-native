@@ -2182,6 +2182,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+
     <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
         <!-- WIP: Remove? -->
@@ -2203,5 +2204,27 @@
             <Class class="GeometricElement"/>
         </Target>
     </ECRelationshipClass>
+
+    <ECEntityClass typeName="AuxCoordSystem" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECProperty propertyName="Type" typeName="int"></ECProperty>
+        <ECProperty propertyName="Description" typeName="string"></ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="AuxCoordSystem2d" displayLabel="2d Auxiliary Coordinate System" description="A 2d coordinate system.">
+        <BaseClass>AuxCoordSystem</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="Origin" typeName="Point2d"></ECProperty>
+        <ECProperty propertyName="Angle" typeName="double"></ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="AuxCoordSystem3d" displayLabel="3d Auxiliary Coordinate System" description="A 3d coordinate system.">
+        <BaseClass>AuxCoordSystem</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+        <ECProperty propertyName="Origin" typeName="Point3d"></ECProperty>
+        <ECProperty propertyName="Yaw" typeName="double"></ECProperty>
+        <ECProperty propertyName="Pitch" typeName="double"></ECProperty>
+        <ECProperty propertyName="Roll" typeName="double"></ECProperty>
+    </ECEntityClass>
 
 </ECSchema>

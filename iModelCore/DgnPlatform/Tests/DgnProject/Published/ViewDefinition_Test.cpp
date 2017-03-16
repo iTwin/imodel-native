@@ -269,3 +269,68 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
     ASSERT_EQ(DgnDbStatus::Success, SviewDef->Delete());
     ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
     }
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                               Ridha.Malik                   3/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ViewDefinitionTests, ViewDefinition3dCRUD)
+    {
+    SetupSeedProject();
+    DgnViewId viewid;
+    GridOrientationType orientation; uint32_t gridPerRef;
+    DPoint2d spacing;
+    Json::Value clipingJson;
+    if (true) 
+        {
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model");
+        //Insert OrthographicViewDefinition
+        OrthographicViewDefinitionPtr view = InsertSpatialView(*model, "view1");
+        ASSERT_TRUE(view->IsView3d());
+        ASSERT_TRUE(view->IsSpatialView());
+        ASSERT_FALSE(view->IsSheetView());
+        CurveVectorPtr sec1 = CurveVector::CreateRectangle(1, 2, 3, 4, CurveVector::BOUNDARY_TYPE_Outer);
+        ClipVectorPtr cliping = ClipVector::CreateFromCurveVector(*sec1, 0.1, 0.5);
+        ASSERT_TRUE(cliping.IsValid());
+        view->SetViewClip(cliping);
+        clipingJson = cliping->ToJson();
+        ASSERT_EQ(view->GetViewClip()->ToJson(), clipingJson);
+        view->SetGridSettings(GridOrientationType::View, DPoint2d::From(0, 50), 5);
+        view->GetGridSettings(orientation, spacing, gridPerRef);
+        ASSERT_EQ(orientation, GridOrientationType::View);
+        ASSERT_EQ(spacing.x, 0);
+        ASSERT_EQ(spacing.y, 50);
+        ASSERT_EQ(gridPerRef, 5);
+        view->SetExtents(DVec3d::From(0, 1, 5));
+        ASSERT_EQ(view->GetExtents(), DVec3d::From(0, 1, 5));
+        view->SetEyePoint(DPoint3d::From(0, 1, 5));
+        ASSERT_EQ(view->GetEyePoint(), DPoint3d::From(0, 1, 5));
+        //Update the view element
+        ASSERT_TRUE(view->Update().IsValid());
+        viewid = view->GetViewId();
+        ASSERT_TRUE(viewid == ViewDefinition::QueryViewId(*m_db, "view1"));
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db OrthographicViewDefinition
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    //OrthographicViewDefinition
+    OrthographicViewDefinitionCPtr view = m_db->Elements().Get<OrthographicViewDefinition>(viewid);
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(view->GetViewClip()->ToJson(), clipingJson);
+    view->GetGridSettings(orientation, spacing, gridPerRef);
+    ASSERT_EQ(orientation, GridOrientationType::View);
+    ASSERT_EQ(spacing.x, 0);
+    ASSERT_EQ(spacing.y, 50);
+    ASSERT_EQ(gridPerRef, 5);
+    ASSERT_EQ(view->GetExtents(), DVec3d::From(0, 1, 5));
+    ASSERT_EQ(view->GetEyePoint(), DPoint3d::From(0, 1, 5));
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    // Delete the View
+    OrthographicViewDefinitionPtr view = m_db->Elements().GetForEdit<OrthographicViewDefinition>(viewid);
+    ASSERT_EQ(DgnDbStatus::Success, view->Delete());
+    ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
+    }

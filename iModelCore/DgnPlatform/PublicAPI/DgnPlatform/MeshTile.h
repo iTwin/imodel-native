@@ -171,7 +171,7 @@ private:
 
     TileDisplayParamsCR Get(TileDisplayParamsR params);
 public:
-    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting)
+    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false)
         {
         TileDisplayParams params(&gfParams, &geomParams, ignoreLighting);
         return Get(params);
@@ -742,7 +742,6 @@ private:
     mutable GeometrySourceMap       m_geometrySources;
     mutable BeMutex                 m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex     m_dbMutex;  // for multi-threaded access to database
-    mutable TileDisplayParamsCache  m_displayParams;
     DgnModelPtr                     m_model;
     Options                         m_options;
 
@@ -766,12 +765,6 @@ public:
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
-
-    TileDisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParams; }
-    TileDisplayParamsCR GetDefaultDisplayParams() const { return m_displayParams.GetDefault(); }
-    TileDisplayParamsCR GetDisplayParams(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false) const { return m_displayParams.Get(gfParams, geomParams, ignoreLighting); }
-    TileDisplayParamsCR GetDisplayParams(uint32_t fill, TileTextureImageP textureImage, bool ignoreLighting) const { return m_displayParams.Get(fill, textureImage, ignoreLighting); }
-    TileDisplayParamsCR GetDisplayParams(uint32_t fill, GeometryParamsCR geomParams) const { return m_displayParams.Get(fill, geomParams); }
 };
 
 //=======================================================================================
@@ -971,10 +964,9 @@ private:
         TileGenerationCachePtr  m_cache;
         DgnModelPtr             m_model;
         ITileCollector*         m_collector;
+        size_t                  m_maxPointsPerTile;
         double                  m_leafTolerance;
         bool                    m_surfacesOnly;
-        size_t                  m_maxPointsPerTile;
-
 
         ElementTileContext(TileGenerationCacheR cache, DgnModelR model, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }

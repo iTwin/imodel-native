@@ -213,14 +213,16 @@ SpatialRedlineViewController::~SpatialRedlineViewController()
 void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
     {
     // Setup a view aligned ACS that all points/snaps will be projected to...
-    if (!m_auxCoordSys.IsValid())
-        m_auxCoordSys = IACSManager::GetManager().CreateACS ();
-
-    DPoint3d    origin = DPoint3d::From(0.5, 0.5, 1.0);
+    DPoint3d origin = DPoint3d::From(0.5, 0.5, 1.0);
 
     vp.NpcToWorld(&origin, &origin, 1);
-    m_auxCoordSys->SetOrigin(origin);
-    m_auxCoordSys->SetRotation(m_definition->GetRotation());
+
+    AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(GetDgnDb());
+
+    auxCoordSys->SetOrigin(origin);
+    auxCoordSys->SetRotation(m_definition->GetRotation());
+
+    m_auxCoordSys = auxCoordSys.get();
 
     T_Super::_OnViewOpened(vp);
     }

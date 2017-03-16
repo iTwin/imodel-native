@@ -2098,6 +2098,7 @@ private:
     IFacetOptionsPtr            m_targetFacetOptions;
     DgnElementId                m_curElemId;
     TileGenerationCacheCR       m_cache;
+    TileDisplayParamsCache      m_displayParamsCache;
     DgnDbR                      m_dgndb;
     TileGeometryList&           m_geometries;
     DRange3d                    m_range;
@@ -2246,7 +2247,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
-    TileDisplayParamsCR     displayParams = m_cache.GetDisplayParams(graphicParams, geomParams);
+    TileDisplayParamsCR     displayParams = m_displayParamsCache.Get(graphicParams, geomParams);
     DRange3d                range;
     auto const&             foundPart = m_geomParts.find (geomPart.GetId());
 
@@ -2417,7 +2418,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     auto tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     tf.Multiply(range, range);
     
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, m_dgndb));
     return true;
@@ -2454,7 +2455,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     DRange3d                range, thisTileRange;
     ISolidPrimitivePtr      clone = prim.Clone();
     Transform               tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    TileDisplayParamsCR     displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR     displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     clone->GetRange(range);
     tf.Multiply(thisTileRange, range);
@@ -2508,7 +2509,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     if (m_polyfaceCache.IsNull() || !displayParams.IsStrictlyEqualTo(*m_polyfaceCacheDisplay))
         {
@@ -2551,7 +2552,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 
     localToTile.Multiply(range, range);
 
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
@@ -2576,7 +2577,7 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
 
     Transform::FromProduct (localToTile, clone->ComputeTransform()).Multiply (range, range);
                                
-    TileDisplayParamsCR displayParams = m_cache.GetDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
