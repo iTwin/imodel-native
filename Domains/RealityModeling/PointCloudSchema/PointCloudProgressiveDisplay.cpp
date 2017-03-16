@@ -94,9 +94,9 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
                 PointCloudVortex::ShaderOptioni (PtShaderOptions::PLANE_SHADER_EDGE, 0x00);
 
             float axis [] = {0,0,0};
-            if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
+            if (settings.GetUseACSAsPlaneAxis())
                 {
-                RotMatrix rot = IACSManager::GetManager().GetActive(*context.GetViewport())->GetRotation();
+                RotMatrix rot = context.GetViewport()->GetViewController().GetAuxCoordinateSystem().GetRotation();
                 DVec3d direction;
 
                 rot.GetRow(direction, 2);
@@ -138,9 +138,9 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
         PointCloudVortex::ShaderOptionf (PtShaderOptions::PLANE_SHADER_OFFSET, (float)settings.GetOffset ());
 
         float axis [] = {0,0,0};
-        if (settings.GetUseACSAsPlaneAxis () && IACSManager::GetManager().GetActive (*context.GetViewport()))
+        if (settings.GetUseACSAsPlaneAxis())
             {
-            RotMatrix rot = IACSManager::GetManager().GetActive (*context.GetViewport())->GetRotation();
+            RotMatrix rot = context.GetViewport()->GetViewController().GetAuxCoordinateSystem().GetRotation();
             DVec3d direction;
             rot.GetRow(direction, 2);
             direction.Normalize();
