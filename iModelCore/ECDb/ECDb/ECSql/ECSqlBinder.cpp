@@ -436,21 +436,20 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
+    std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
     if (binder == nullptr)
         return nullptr;
 
-    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
     m_binders.push_back(binderP);
+    BeAssert(((int) m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
 
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
-
-    BeAssert(static_cast<int> (m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     //insert name to index mapping. 
     if (parameterExp.IsNamedParameter())

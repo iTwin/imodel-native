@@ -232,14 +232,13 @@ ECSqlStatus LeafECSqlPreparedStatement::_Reset()
 //---------------------------------------------------------------------------------------
 IECSqlBinder& CompoundECSqlPreparedStatement::_GetBinder(int parameterIndex) const
     {
-    auto it = m_proxyBinderMap.find(parameterIndex);
-    if (it == m_proxyBinderMap.end())
+    if (parameterIndex <= 0 || parameterIndex > (int) m_proxyBinders.size())
         {
         LOG.errorv("Parameter index %d passed to ECSqlStatement binding API is out of bounds.", parameterIndex);
         return NoopECSqlBinder::Get();
         }
 
-    return it->second;
+    return *m_proxyBinders[(size_t) (parameterIndex - 1)];
     }
 
 //---------------------------------------------------------------------------------------
@@ -479,6 +478,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         };
 
     std::map<DbTable const*, std::vector<PropNameValueInfo>> expsByMappedTable;
+    //Holds all tables per parameter index (index into the vector + 1) which are affected by the parameter
     std::vector<std::set<DbTable const*>> parameterIndexInTables;
 
     for (size_t i = 0; i < propNameCount; i++)
@@ -508,7 +508,10 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             ParameterExp const& paramExp = exp->GetAs<ParameterExp>();
             const size_t zeroBasedParameterIndex = (size_t) (paramExp.GetParameterIndex() - 1);
             if (zeroBasedParameterIndex == parameterIndexInTables.size())
+                {
                 parameterIndexInTables.push_back(std::set<DbTable const*> {table});
+                m_proxyBinders.push_back(std::make_unique<ProxyECSqlBinder>());
+                }
             else if (zeroBasedParameterIndex < parameterIndexInTables.size())
                 parameterIndexInTables[zeroBasedParameterIndex].insert(table);
             else
@@ -522,7 +525,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
+    //for each table, a separate ECSQL is created
     bool isPrimaryTable = true;
+    bmap<DbTable const*, LeafECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
         {
         auto it = expsByMappedTable.find(table);
@@ -569,16 +574,38 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             return ECSqlStatus::InvalidECSql;
 
         m_statements.push_back(std::make_unique<LeafECSqlPreparedStatement>(m_ecdb, m_type));
-        ECSqlStatus stat = m_statements.back()->Prepare(ctx, *parseTree, ecsql.c_str());
+
+        LeafECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
 
+        perTableStatements[table] = &preparedStmt;
         isPrimaryTable = false;
         }
 
-    for (size_t zeroBasedParameterIndex = 0; zeroBasedParameterIndex < parameterIndexInTables.size(); zeroBasedParameterIndex++)
+    for (bpair<int, bpair<Utf8String, bool>> const& parameterNameMapping : ecsqlRenderCtx.GetParameterIndexNameMap())
         {
+        int paramIndex = parameterNameMapping.first;
+        BeAssert(paramIndex >= 0 && paramIndex <= (int) m_proxyBinders.size());
+        Utf8StringCR paramName = parameterNameMapping.second.first;
+        const size_t zeroBasedParamIndex = (size_t) (paramIndex - 1);
+        ProxyECSqlBinder& proxyBinder = *m_proxyBinders[zeroBasedParamIndex];
+        BeAssert(zeroBasedParamIndex < parameterIndexInTables.size());
+        std::set<DbTable const*> const& affectedTables = parameterIndexInTables[zeroBasedParamIndex];
+        for (DbTable const* affectedTable : affectedTables)
+            {
+            BeAssert(perTableStatements.find(affectedTable) != perTableStatements.end());
+            ECSqlParameterMap const& leafStatementParameterMap = perTableStatements[affectedTable]->GetParameterMap();
+            ECSqlBinder* binder = nullptr;
+            if (!leafStatementParameterMap.TryGetBinder(binder, paramName))
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
 
+            proxyBinder.AddBinder(*binder);
+            }
         }
     return ECSqlStatus::Success;
     }

@@ -331,21 +331,21 @@ struct ECSqlParameterMap : NonCopyableClass
         ECSqlParameterMap() {}
         ~ECSqlParameterMap() {}
 
-        size_t Count() const { return m_binders.size(); }
         //! @remarks only named parameters have an identity. Therefore each unnamed parameters has its own binder
-        bool TryGetBinder(ECSqlBinder*& binder, Utf8StringCR ecsqlParameterName) const;
+        bool TryGetBinder(ECSqlBinder*&, Utf8StringCR ecsqlParameterName) const;
         //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
-        ECSqlStatus TryGetBinder(ECSqlBinder*& binder, int ecsqlParameterIndex) const;
+        ECSqlStatus TryGetBinder(ECSqlBinder*&, int ecsqlParameterIndex) const;
 
         //!@param[in] internalBinderIndex Index of the internal binder as stored in the internal binder vector (0-based)
-        ECSqlStatus TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const;
+        ECSqlStatus TryGetInternalBinder(ECSqlBinder*&, size_t internalBinderIndex) const;
 
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
-        ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const& parameterExp);
+        ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
         ECSqlBinder* AddInternalECInstanceIdBinder(ECSqlPrepareContext&);
-        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8StringCR parameterName);
+        //@deprecated
+        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder&, Utf8StringCR parameterName);
 
         ECSqlStatus OnBeforeStep();
 
@@ -353,7 +353,8 @@ struct ECSqlParameterMap : NonCopyableClass
         //allows subclasses to clean-up additional resources tied to binding parameters
         void OnClearBindings();
 
-        ECSqlStatus RemapForJoinTable(ECSqlPrepareContext& ctx);
+        //@deprecated
+        ECSqlStatus RemapForJoinTable(ECSqlPrepareContext&);
 
     };
 

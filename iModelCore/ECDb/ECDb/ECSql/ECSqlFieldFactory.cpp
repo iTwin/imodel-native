@@ -22,15 +22,15 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
-    ECSqlSelectPreparedStatement_Old* selectPreparedState = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlSelectPreparedStatement_Old>();
+    ECSqlSelectPreparedStatement_Old* selectPreparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlSelectPreparedStatement_Old>();
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;
     if (valueExp->GetType() == Exp::Type::PropertyName)
-        propNameExp = static_cast<PropertyNameExp const*>(valueExp);
+        propNameExp = valueExp->GetAsCP<PropertyNameExp>();
 
     ECPropertyCP generatedProperty = nullptr;
-    ECSqlStatus stat = selectPreparedState->GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, selectPreparedState->GetECDb());
+    ECSqlStatus stat = selectPreparedStatement->GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp);
     if (!stat.IsSuccess())
         return stat;
 
@@ -69,7 +69,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
         }
 
     if (stat.IsSuccess())
-        selectPreparedState->AddField(move(field));
+        selectPreparedStatement->AddField(move(field));
 
     return stat;
     }

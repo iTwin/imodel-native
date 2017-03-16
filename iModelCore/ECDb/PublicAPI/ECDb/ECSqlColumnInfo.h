@@ -57,11 +57,11 @@ struct ECSqlPropertyPath
                     };
 
             private:
-                ECN::ECPropertyCP m_property;
-                int m_arrayIndex;
+                ECN::ECPropertyCP m_property = nullptr;
+                int m_arrayIndex = -1;
 
-                explicit Entry(ECN::ECPropertyCR ecProperty) : m_property(&ecProperty), m_arrayIndex(-1) {}
-                explicit Entry(int arrayIndex) : m_property(nullptr), m_arrayIndex(arrayIndex) {}
+                explicit Entry(ECN::ECPropertyCR ecProperty) : m_property(&ecProperty) {}
+                explicit Entry(int arrayIndex) : m_arrayIndex(arrayIndex) {}
 
             public:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -211,7 +211,6 @@ struct ECSqlColumnInfo
         static ECSqlColumnInfo CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
         static ECSqlColumnInfo CreateChild(ECSqlColumnInfo const& parent, ECN::ECPropertyCR childProperty);
         static ECSqlColumnInfo CreateForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex);
-        ECSqlPropertyPath& GetPropertyPathR();
 #endif
 
         ~ECSqlColumnInfo() {}

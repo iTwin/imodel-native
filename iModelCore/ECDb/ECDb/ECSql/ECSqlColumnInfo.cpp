@@ -28,11 +28,6 @@ ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Inf
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPropertyPath& ECSqlColumnInfo::GetPropertyPathR() { return m_propertyPath; }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
     {
