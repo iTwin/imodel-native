@@ -418,10 +418,10 @@ DgnDbStatus CascadeFromToLocationChangesAlgorithm::_Commit(ILinearElementSourceC
 
     for (auto& dgnElementPtr : _GetImpactedDgnElements())
         {
-        if (m_processingId == dgnElementPtr->GetElementId())
+        if (_IsProcessed(dgnElementPtr->GetElementId()))
             continue;
 
-        m_processingId = dgnElementPtr->GetElementId();
+        _MarkAsProcessed(dgnElementPtr->GetElementId());
         if (dgnElementPtr->Update(&status).IsNull())
             return status;
         }

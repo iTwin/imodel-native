@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/ILinearElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -107,6 +107,7 @@ private:
     CascadeLocationChangesAction m_action;
     Dgn::DgnElementCPtr m_original, m_replacement;    
     bvector<Dgn::DgnElementPtr> m_impactedLinearlyLocatedDgnElements;
+    bset<Dgn::DgnElementId> m_processedIds;
 
 protected:
     ICascadeLinearLocationChangesAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action) :
@@ -115,6 +116,8 @@ protected:
     virtual Dgn::DgnDbStatus _Prepare(ILinearElementSourceCR source) = 0;
     virtual Dgn::DgnDbStatus _Commit(ILinearElementSourceCR source) = 0;
     void _AddImpactedDgnElement(Dgn::DgnElementPtr& dgnElement) { m_impactedLinearlyLocatedDgnElements.push_back(dgnElement); }
+    void _MarkAsProcessed(Dgn::DgnElementId const& id) { m_processedIds.insert(id); }
+    bool _IsProcessed(Dgn::DgnElementId const& id) { return m_processedIds.find(id) != m_processedIds.end(); }
     bvector<Dgn::DgnElementPtr> _GetImpactedDgnElements() const { return m_impactedLinearlyLocatedDgnElements; }
 
 public:

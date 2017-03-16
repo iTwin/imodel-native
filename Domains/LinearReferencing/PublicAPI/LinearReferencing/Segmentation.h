@@ -76,9 +76,6 @@ struct CascadeFromToLocationChangesAlgorithm : ICascadeLinearLocationChangesAlgo
 {
 DEFINE_T_SUPER(ICascadeLinearLocationChangesAlgorithm)
 
-private:
-    Dgn::DgnElementId m_processingId;
-
 protected:
     CascadeFromToLocationChangesAlgorithm(ILinearlyLocatedCR original, ILinearlyLocatedCR replacement, CascadeLocationChangesAction action):
         T_Super(original, replacement, action) {}
