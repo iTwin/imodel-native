@@ -124,6 +124,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         BeFileName                              m_path;
         bool                                    m_isProgressiveDisplayOn;    
         bool                                    m_isInsertingClips;
+        int                                     m_startClipCount;
 
         bvector<ScalableMeshModel*>             m_terrainParts;
         bmap<uint64_t, bpair<ClipMode, bool>>                m_currentClips;
@@ -199,6 +200,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT void OpenFile(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
+
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
 
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 

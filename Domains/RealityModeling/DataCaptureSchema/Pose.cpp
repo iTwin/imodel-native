@@ -46,16 +46,7 @@ PosePtr Pose::Create(Dgn::SpatialModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RotMatrix Pose::GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa)
     {
-    //NEEDSWORK: Only to make it work for the time beeing, should be changed later
-    YawPitchRollAngles angles(kappa, omega, phi);
-    RotMatrix rotation = angles.ToRotMatrix();
-    rotation.Transpose();
-
-#if 0
-    RotMatrix rotation(RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity(), omega.Radians(), phi.Radians(), kappa.Radians()));
-    //Not sure we need this - it was in MS Connect mdlApps\RMUtilImage.cpp on MS Connect on vancouver stream
-    rotation.Transpose();
-#endif
+    RotMatrix rotation(ContextCaptureFacility::OmegaPhiKappa2Matrix(omega.Radians(),phi.Radians(),kappa.Radians()));
     return rotation;
     }
 
@@ -64,27 +55,13 @@ RotMatrix Pose::GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kap
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation)
     {
-    //From: http://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
-    double OmegaRadian = 0; //arbitrary
-    double KappaRadian = 0;
-    double PhiRadian   = -asin(rotation.GetComponentByRowAndColumn(2, 0));
-    phi = Angle::FromRadians(PhiRadian);
-    //Check for Gimbal Lock
-    if (phi.Degrees() == 90)
-        {
-        KappaRadian = atan2(-rotation.GetComponentByRowAndColumn(0, 1), -rotation.GetComponentByRowAndColumn(0, 2));
-        }
-    else if (phi.Degrees() == -90)
-        {
-        KappaRadian = atan2(-rotation.GetComponentByRowAndColumn(0, 1), -rotation.GetComponentByRowAndColumn(0, 2));
-        }
-    else
-        {
-        OmegaRadian = atan2(rotation.GetComponentByRowAndColumn(1, 0), rotation.GetComponentByRowAndColumn(0, 0));
-        KappaRadian = atan2(rotation.GetComponentByRowAndColumn(2, 1), rotation.GetComponentByRowAndColumn(2, 2));
-        }
-    omega =  Angle::FromRadians(OmegaRadian);
-    kappa =  Angle::FromRadians(KappaRadian);
+    double o;
+    double p;
+    double k;
+    ContextCaptureFacility::Matrix2OmegaPhiKappa(rotation,o,p,k);
+    omega.FromRadians(o);
+    phi.FromRadians(p);
+    kappa.FromRadians(k);
     return true;
     }
 
@@ -213,8 +190,12 @@ bool Pose::IsEqual(PoseCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 YawPitchRollAngles Pose::GetYawPitchRoll() const
     {
-    //NEEDSWORK: I know this is not "technically" correct. We will need to find the real conversion
-    YawPitchRollAngles angles(GetKappa(),GetOmega(),GetPhi());
+    RotMatrix rotation(ContextCaptureFacility::OmegaPhiKappa2Matrix(GetOmega().Radians(), GetPhi().Radians(), GetKappa().Radians()));
+    rotation.Transpose();
+    YawPitchRollAngles angles;
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles,rotation))
+        BeAssert(!"Cannot convert rotation matrix to angles");
+
     return angles;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -222,10 +203,15 @@ YawPitchRollAngles Pose::GetYawPitchRoll() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Pose::SetYawPitchRoll(YawPitchRollAnglesCR angles)
     {
-    //NEEDSWORK: I know this is not "technically" correct. We will need to find the real conversion
-    SetOmega(Angle::FromDegrees(angles.GetPitch().Degrees()));
-    SetPhi(Angle::FromDegrees(angles.GetRoll().Degrees()));
-    SetKappa(Angle::FromDegrees(angles.GetYaw().Degrees()));
+    RotMatrix rotationMatrix(angles.ToRotMatrix());
+    double o;
+    double p;
+    double k;
+    ContextCaptureFacility::Matrix2OmegaPhiKappa(rotationMatrix, o, p, k);
+
+    SetOmega(Angle::FromRadians(o));
+    SetPhi(Angle::FromRadians(p));
+    SetKappa(Angle::FromRadians(k));
     }
 
 
