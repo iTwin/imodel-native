@@ -482,6 +482,8 @@ namespace Json {
       /// \post if type() was nullValue, it remains nullValue
       Members getMemberNames() const;
 
+      Utf8String ToString() const;
+
       Utf8String toStyledString() const;
 
       const_iterator begin() const;

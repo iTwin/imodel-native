@@ -38,8 +38,8 @@ namespace Json {
    class JSON_API FastWriter 
    {
    public: // overridden from Writer
-        Utf8StringAlias write( const Value &root );
-        static Utf8StringAlias ToString (const Value &root ) 
+        Utf8String write( const Value &root );
+        static Utf8String ToString (const Value &root ) 
         {
         if (nullValue == root.type()) 
             return Utf8String();

@@ -648,10 +648,18 @@ Value::Members Value::getMemberNames() const
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Value::ToString() const
+    {
+    return Json::FastWriter::ToString(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Value::toStyledString() const
-{
+    {
    StyledWriter writer;
    return writer.write(*this);
 }
