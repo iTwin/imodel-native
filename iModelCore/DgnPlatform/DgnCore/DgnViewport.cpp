@@ -229,15 +229,6 @@ void DgnViewport::AlignWithRootZ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
-    {
-    BSIRect viewRect = GetViewRect();
-    viewController.GetViewDefinition().AdjustAspectRatio(viewRect.Aspect(), expandView);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Get an origin, 3 direction vectors, and a compression fraction defining a view frustum from the view
 * definition specified by camera, origin, delta, and rMatrix.
 * @bsimethod                                                    KeithBentley    06/01
@@ -449,6 +440,34 @@ struct ViewChangedCaller
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::_AdjustAspectRatio(DPoint3dR origin, DVec3dR delta)
+    {
+    double windowAspect = GetViewRect().Aspect();
+    double viewAspect = delta.x / delta.y;
+
+    auto drawingView = m_viewController->GetViewDefinition()._ToDrawingView();
+    if (nullptr != drawingView)
+        windowAspect *= drawingView->GetAspectRatioSkew();
+
+    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
+        return;
+    
+    DVec3d oldDelta = delta;
+    if (viewAspect > windowAspect)
+        delta.y = delta.x / windowAspect;
+    else
+        delta.x = delta.y * windowAspect;
+
+    DPoint3d newOrigin;
+    m_rotMatrix.Multiply(&newOrigin, &origin, 1);
+    newOrigin.x += ((oldDelta.x - delta.x) / 2.0);
+    newOrigin.y += ((oldDelta.y - delta.y) / 2.0);
+    m_rotMatrix.MultiplyTranspose(origin, newOrigin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * set up this viewport from its viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -458,13 +477,24 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
-
     auto& viewDef = m_viewController->GetViewDefinition();
     DPoint3d origin = viewDef.GetOrigin();
     DVec3d   delta  = viewDef.GetExtents();
-
     m_rotMatrix     = viewDef.GetRotation();
+
+    // first, make sure none of the deltas are negative
+    delta.x = fabs(delta.x);
+    delta.y = fabs(delta.y);
+    delta.z = fabs(delta.z);
+
+    double maxExtent, minExtent;
+    viewDef._GetExtentLimits(minExtent, maxExtent);
+
+    LIMIT_RANGE(minExtent, maxExtent, delta.x);
+    LIMIT_RANGE(minExtent, maxExtent, delta.y);
+
+    _AdjustAspectRatio(origin, delta);
+
     m_is3dView      = false;
     m_isCameraOn    = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
@@ -634,6 +664,8 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
 
         Angle lensAngle = cameraView->GetLensAngle();
         double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle.Radians() / 2.0));
+        if (focusDist < 2*ViewDefinition3d::MinimumFrontDistance())
+            focusDist = 2*ViewDefinition3d::MinimumFrontDistance();
 
         DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
         DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);

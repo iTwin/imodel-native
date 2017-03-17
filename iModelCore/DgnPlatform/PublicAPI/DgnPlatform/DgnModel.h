@@ -936,8 +936,8 @@ public:
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalRecipeCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalRecipeCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(TemplateRecipe3dCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(TemplateRecipe3dCR modeledElement);
 };
 
 //=======================================================================================
@@ -1089,21 +1089,6 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_DgnModel
-// @bsiclass                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
-protected:
-    DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
-public:
-    explicit SessionModel(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
@@ -1121,8 +1106,8 @@ public:
     //! Create a DrawingModel that breaks down the specified Drawing element
     DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
 
-    //! Create a DrawingModel that breaks down the specified GraphicalRecipe2d element
-    DGNPLATFORM_EXPORT static DrawingModelPtr Create(GraphicalRecipe2dCR drawing);
+    //! Create a DrawingModel that breaks down the specified TemplateRecipe2d element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(TemplateRecipe2dCR drawing);
 };
 
 //=======================================================================================
@@ -1264,12 +1249,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for SessionModel
-    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SessionModel, SessionModel, Session, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RepositoryModel

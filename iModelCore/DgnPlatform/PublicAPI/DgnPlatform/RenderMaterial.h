@@ -99,7 +99,7 @@ public:
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
         DgnTextureId Relocate(DgnImportContext& context);
-        double GetDouble(Utf8CP name, double defaultVal) const {return ((m_value[name].isDouble()  || m_value[name].isInt()) || m_value[name].isInt()) ? m_value[name].asDouble() : defaultVal;}
+        double GetDouble(Utf8CP name, double defaultVal) const {return m_value[name].asDouble(defaultVal);}
         bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
         Json::Value const& GetValue() const {return m_value;}
         BentleyStatus ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
@@ -108,7 +108,7 @@ public:
 
     DGNPLATFORM_EXPORT BentleyStatus Relocate(DgnImportContext& context);
 
-    double GetDouble(Utf8CP name, double defaultVal) const {return (!GetValue(name).isDouble() && !GetValue(name).isInt()) ? defaultVal : GetValue(name).asDouble();}
+    double GetDouble(Utf8CP name, double defaultVal) const {return GetValue(name).asDouble(defaultVal);}
     void SetDouble(Utf8CP name, double val) {GetValueR(name)=val;}
     bool GetBool(Utf8CP name, bool defaultVal) const {return !GetValue(name).isBool() ? defaultVal : GetValue(name).asBool();}
     void SetBool(Utf8CP name, bool val) {GetValueR(name)=val;}
@@ -119,7 +119,6 @@ public:
     bool IsValid() const {return !isNull();}
 
     DGNPLATFORM_EXPORT TextureMap GetPatternMap() const;
-    DGNPLATFORM_EXPORT static RenderingAssetCP Load(DgnMaterialId materialId, DgnDbR dgnDb);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

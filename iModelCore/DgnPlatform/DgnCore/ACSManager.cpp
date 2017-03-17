@@ -520,15 +520,15 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     else if (ACSDisplayOptions::None == (options & ACSDisplayOptions::Active))
         pixelSize *= 0.9;
 
-//    DrawingViewDefinitionCP drawingViewDef = context.GetViewport()->GetViewController().GetViewDefinition()._ToDrawingView();
+    DrawingViewDefinitionCP drawingViewDef = context.GetViewport()->GetViewController().GetViewDefinition().ToDrawingView();
 
-    double      exagg = 1.0;//(nullptr == drawingViewDef ? 1.0 : drawingViewDef->GetAspectRatioSkew()); // NEEDSWORK_VIEWDEF
+    double      exagg = (nullptr != drawingViewDef ? drawingViewDef->GetAspectRatioSkew() : 1.0);
     double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * pixelSize;
     RotMatrix   rMatrix = _GetRotation();
     Transform   transform;
 
     rMatrix.InverseOf(rMatrix);
-    rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
+    rMatrix.ScaleRows(rMatrix, scale, scale / exagg, scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), transform));

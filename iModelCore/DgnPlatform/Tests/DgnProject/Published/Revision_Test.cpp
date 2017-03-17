@@ -84,14 +84,14 @@ protected:
         return cpStyle;
         }
 
-    DgnElementCPtr InsertPhysicalElementByCode(DgnCode const& code)
+    DgnElementCPtr InsertPhysicalElementByCode(DgnCodeCR code)
         {
-        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
         GenericPhysicalObject elem(GenericPhysicalObject::CreateParams(*m_db, m_defaultModel->GetModelId(), classId, m_defaultCategoryId, Placement3d(), code, nullptr, DgnElementId()));
         return elem.Insert();
         }
 
-    DgnElementCPtr RenameElement(DgnElementCR el, DgnCode const& code)
+    DgnElementCPtr RenameElement(DgnElementCR el, DgnCodeCR code)
         {
         auto pEl = el.CopyForEdit();
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));

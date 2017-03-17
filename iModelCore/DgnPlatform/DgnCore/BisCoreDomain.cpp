@@ -36,7 +36,6 @@ HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
-HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -72,11 +71,10 @@ HANDLER_DEFINE_MEMBERS(Category);
 HANDLER_DEFINE_MEMBERS(DrawingCategory);
 HANDLER_DEFINE_MEMBERS(SpatialCategory);
 HANDLER_DEFINE_MEMBERS(SubCategory);
-HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
-HANDLER_DEFINE_MEMBERS(PhysicalRecipe)
+HANDLER_DEFINE_MEMBERS(TemplateRecipe3d)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
-HANDLER_DEFINE_MEMBERS(GraphicalRecipe2d)
+HANDLER_DEFINE_MEMBERS(TemplateRecipe2d)
 HANDLER_DEFINE_MEMBERS(SpatialLocationType)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
@@ -129,7 +127,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Session::GetHandler());
     RegisterHandler(dgn_ModelHandler::Repository::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
@@ -156,11 +153,10 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Session::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalRecipe::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
-    RegisterHandler(dgn_ElementHandler::GraphicalRecipe2d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());

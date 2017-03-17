@@ -1503,9 +1503,10 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
 
     if (!m_ignoreLighting && params.GetMaterialId().IsValid())
         {
-        auto jsonMat = RenderingAsset::Load(params.GetMaterialId(), db);
-        if (nullptr != jsonMat)
+        auto material = DgnMaterial::Get(db, params.GetMaterialId());
+        if (material.IsValid())
             {
+            auto jsonMat = &material->GetRenderingAsset();
             m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
             m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
