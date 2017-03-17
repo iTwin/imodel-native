@@ -652,7 +652,7 @@ Value::Members Value::getMemberNames() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Value::ToString() const
     {
-    return Json::FastWriter::ToString(this);
+    return FastWriter::ToString(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
