@@ -71,6 +71,8 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.Fi
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Net.Http.dll
 %include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Net.Http.WebRequest.dll
+%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.Linq.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.DataSetExtensions.dll

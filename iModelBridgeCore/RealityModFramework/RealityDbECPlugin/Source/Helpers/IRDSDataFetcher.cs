@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Bentley.EC.Persistence.Operations;
@@ -74,22 +75,36 @@ namespace IndexECPlugin.Source.Helpers
 
         private string GetHttpResponse (string url)
             {
-            using ( HttpClient client = new HttpClient() )
+            using ( var handler = new WebRequestHandler() )
                 {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_base64token);
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                using ( HttpResponseMessage response = client.GetAsync(url).Result )
-                    {
-                    if ( response.IsSuccessStatusCode )
+                handler.ServerCertificateValidationCallback = (sender, certificate, chain, errors) =>
+                {
+                    if ( certificate.GetCertHashString() == ConfigurationRoot.GetAppSetting("RECPRdsCertHashString") )
                         {
-                        using ( HttpContent content = response.Content )
-                            {
-                            return content.ReadAsStringAsync().Result;
-                            }
+                        return true;
                         }
-                    else
+
+                    return errors == SslPolicyErrors.None;
+
+                };
+
+                using ( HttpClient client = new HttpClient(handler) )
+                    {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", m_base64token);
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    using ( HttpResponseMessage response = client.GetAsync(url).Result )
                         {
-                        throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                        if ( response.IsSuccessStatusCode )
+                            {
+                            using ( HttpContent content = response.Content )
+                                {
+                                return content.ReadAsStringAsync().Result;
+                                }
+                            }
+                        else
+                            {
+                            throw new OperationFailedException("Reality Data Server returned an error : " + response.ReasonPhrase);
+                            }
                         }
                     }
                 }
