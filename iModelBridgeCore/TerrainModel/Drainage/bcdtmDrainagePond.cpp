@@ -33,7 +33,7 @@ int bcdtmDrainage_calculatePondDtmObject
     void*              userP
 )
     {
-    return bcdtmDrainage_calculatePondWithLowPointDtmObject(dtmP, x, y, falseLowDepth, loadFunctionP, drawPond, pondDeterminedP, pondElevationP, pondAreaP, pondAreaP, pondVolumeP, nullptr, userP);
+    return bcdtmDrainage_calculatePondWithLowPointDtmObject(dtmP, x, y, falseLowDepth, loadFunctionP, drawPond, pondDeterminedP, pondElevationP, pondAreaP, pondDepthP, pondVolumeP, nullptr, userP);
     }
 /*-------------------------------------------------------------------+
 |                                                                    |
