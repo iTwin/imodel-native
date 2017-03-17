@@ -26,7 +26,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 enum class ECSqlType
     {
-    Unknown, //!<In cases where we are not interested one of the following value
     Select, //!< ECSQL SELECT
     Insert, //!< ECSQL INSERT
     Update, //!< ECSQL UPDATE

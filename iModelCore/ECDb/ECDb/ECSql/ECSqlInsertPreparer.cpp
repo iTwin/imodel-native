@@ -61,7 +61,9 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap, InsertStatementExp const& exp)
     {
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
+#endif
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
@@ -93,7 +95,10 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassLinkTableMap const& relationshipClassMap)
     {
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
+#endif
+
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
@@ -240,6 +245,8 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     return ECSqlStatus::Success;
     }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -293,7 +300,6 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].Append(ecinstanceidBinder->GetMappedSqlParameterNames()[0].c_str());
         }
-
     if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))
         {
         if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Physical)
@@ -303,15 +309,16 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 
             NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
             ECClassId classId = classMap.GetClass().GetId();
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
             if (ParentOfJoinedTableECSqlStatement const* joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
                 classId = joinedTableStatement->GetClassId();
-#endif
+
             classIdSqliteSnippets[0].Append(classId);
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
             }
         }
     }
+
+#endif
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
@@ -360,21 +367,21 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
 void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap)
     {
     ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
-    if (!ecClassIdPropertyMap->IsMappedToSingleTable())
+    if (!ecClassIdPropertyMap->IsMappedToSingleTable() || !classMap.IsMappedToSingleTable())
         {
         BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
         return;
         }
 
-    DbTable const& contextTable = classMap.GetJoinedTable();
+    DbTable const& contextTable = classMap.GetPrimaryTable();
 
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
     //properties, the list will only contain one snippet, but for multi-dimensional properties (points, structs)
     //the list will contain more than one snippet. Consequently the list of ECSQL expressions is translated
     //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
     //before building the final SQLite sql string.
-    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, expIndexSkipList);
-    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
+    NativeSqlBuilder::List propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, expIndexSkipList);
+    NativeSqlBuilder::List valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
 
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
     updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
@@ -382,7 +389,7 @@ void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& update
     if (!ecClassIdPropertyMap->IsVirtual(contextTable))
         {
         //class id is persisted so determine the class id literal and append it to the SQL
-        auto vmap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
         BeAssert(vmap != nullptr);
         updateBuilder.AppendComma().Append(vmap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(ecClassIdPropertyMap->GetDefaultECClassId());
         }

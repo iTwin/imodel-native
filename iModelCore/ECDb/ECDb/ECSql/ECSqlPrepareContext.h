@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
-struct IECSqlPreparedStatement;
+struct SingleECSqlPreparedStatement;
 
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013
