@@ -1939,19 +1939,29 @@ void ECProperty::InvalidateClassLayout()
 //---------------+---------------+---------------+---------------+---------------+-------
 void ECProperty::SetOriginalName(Utf8CP originalName)
     {
-    LOG.debugv("Attempting to add PropertyRenamed custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+    LOG.debugv("Attempting to add RenamedPropertiesMapping custom attribute to ECClass '%s' for Property '%s'.", GetClass().GetFullName(), GetName().c_str());
 
-    IECInstancePtr renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("PropertyRenamed");
+    IECInstancePtr renameInstance = GetClass().GetCustomAttribute("RenamedPropertiesMapping");
+    if (!renameInstance.IsValid())
+        renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("RenamedPropertiesMapping");
     if (!renameInstance.IsValid())
         {
-        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+        LOG.warningv("Failed to create 'RenamedPropertiesMapping' custom attribute for ECClass '%s'", GetClass().GetFullName());
         return;
         }
 
-    ECValue origNameValue(originalName);
-    if (ECObjectsStatus::Success != renameInstance->SetValue("OriginalName", origNameValue))
+    ECValue v;
+    renameInstance->GetValue(v, "PropertyMapping");
+    Utf8String remapping("");
+    if (!v.IsNull())
+        remapping = Utf8String(v.GetUtf8CP()).append(";");
+
+    remapping.append(originalName).append("|").append(GetName().c_str());
+
+    v.SetUtf8CP(remapping.c_str());
+    if (ECObjectsStatus::Success != renameInstance->SetValue("PropertyMapping", v))
         {
-        LOG.warningv("Failed to create 'PropertyRenamed' custom attribute for the property '%s.%s' with 'OriginalName' set to '%s'.", GetClass().GetFullName(), GetName().c_str(), originalName);
+        LOG.warningv("Failed to create 'RenamedPropertiesMapping' custom attribute for the ECClass '%s' with 'PropertyMapping' set to '%s'.", GetClass().GetFullName(), remapping.c_str());
         return;
         }
 
@@ -1970,18 +1980,19 @@ void ECProperty::SetOriginalName(Utf8CP originalName)
         if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
             {
             LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetClass().GetSchema().GetName().c_str());
-            LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetClass().GetFullName(), GetName().c_str());
+            LOG.warningv("Failed to add 'RenamedPropertiesMapping' custom attribute to ECClass '%s'.", GetClass().GetFullName(), GetName().c_str());
             return;
             }
         }
 
-    if (ECObjectsStatus::Success != SetCustomAttribute(*renameInstance))
+    ECClassP nonConstClass = const_cast<ECClassP>(&m_class);
+    if (ECObjectsStatus::Success != nonConstClass->SetCustomAttribute(*renameInstance))
         {
-        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute, with 'OriginalName' set to '%s', to property '%s.%s'.", originalName, GetClass().GetFullName(), GetName().c_str());
+        LOG.warningv("Failed to add 'RenamedPropertiesMapping' custom attribute, with 'PropertyMapping' set to '%s', to ECClass '%s'.", remapping.c_str(), GetClass().GetFullName());
         return;
         }
 
-    LOG.debugv("Successfully added PropertyRenamed custom attribute to property '%s.%s'", GetClass().GetFullName(), GetName().c_str());
+    LOG.debugv("Successfully added RenamedPropertiesMapping custom attribute to ECClass '%s'", GetClass().GetFullName());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
