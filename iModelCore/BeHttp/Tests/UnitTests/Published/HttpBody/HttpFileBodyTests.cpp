@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpBody/HttpFileBodyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -302,7 +302,7 @@ TEST_F(HttpFileBodyTests, Read_MultipleTimes_IncrementsPosition)
     ASSERT_EQ(SUCCESS, body->GetPosition(position));
     EXPECT_EQ(2, position);
 
-    std::fill_n(buffer, 32, 0);
+    std::fill_n(buffer, 32, (char)0);
     ASSERT_EQ(1, body->Read(buffer, 2));
     EXPECT_STREQ("C", buffer);
     ASSERT_EQ(SUCCESS, body->GetPosition(position));
