@@ -649,7 +649,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     bool checkModifiedRowCount = true;
     if (m_ecInstanceKeyHelper.IsAutogenerateIdMode())
         {
-        const DbResult stat = m_ecInstanceKeyHelper.AutogenerateAndBindECInstanceId();
+        const DbResult stat = m_ecInstanceKeyHelper.AutogenerateAndBindECInstanceId(m_ecdb);
         if (BE_SQLITE_OK != stat)
             return stat;
 

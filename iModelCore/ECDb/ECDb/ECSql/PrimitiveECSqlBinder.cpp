@@ -27,7 +27,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindNull()
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindNull(GetSqlParameterIndex());
+    const DbResult sqliteStat = GetSqliteStatement().BindNull(GetSqlParameterIndex());
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull");
 
@@ -54,7 +54,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBoolean(bool value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR().BindInt(GetSqlParameterIndex(), value ? 1 : 0);
+    const auto sqliteStat = GetSqliteStatement().BindInt(GetSqlParameterIndex(), value ? 1 : 0);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBoolean");
 
@@ -81,7 +81,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindBlob(const void* value, int binarySize, I
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR().BindBlob(GetSqlParameterIndex(), value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
+    const auto sqliteStat = GetSqliteStatement().BindBlob(GetSqlParameterIndex(), value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindBlob");
 
@@ -108,7 +108,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindZeroBlob(int blobSize)
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindZeroBlob(GetSqlParameterIndex(), blobSize);
+    const DbResult sqliteStat = GetSqliteStatement().BindZeroBlob(GetSqlParameterIndex(), blobSize);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindZeroBlob");
 
@@ -157,7 +157,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindDouble(GetSqlParameterIndex(), julianDay);
+    const DbResult sqliteStat = GetSqliteStatement().BindDouble(GetSqlParameterIndex(), julianDay);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDateTime");
 
@@ -185,7 +185,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindDouble(double value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR().BindDouble(GetSqlParameterIndex(), value);
+    const auto sqliteStat = GetSqliteStatement().BindDouble(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindDouble");
 
@@ -212,7 +212,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt(int value)
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR().BindInt(GetSqlParameterIndex(), value);
+    const auto sqliteStat = GetSqliteStatement().BindInt(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt");
 
@@ -239,7 +239,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt64(int64_t value)
             }
         }
 
-    const DbResult sqliteStat = GetSqliteStatementR().BindInt64(GetSqlParameterIndex(), value);
+    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), value);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
 
@@ -266,7 +266,7 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
             }
         }
 
-    const auto sqliteStat = GetSqliteStatementR().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
+    const auto sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
 

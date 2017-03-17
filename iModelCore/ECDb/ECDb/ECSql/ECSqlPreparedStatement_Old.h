@@ -76,7 +76,7 @@ struct SingleECSqlPreparedStatement : NonCopyableClass
         ParentOfJoinedTableECSqlStatement* GetParentOfJoinedTableECSqlStatement() const;
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        BeSQLite::Statement& GetSqliteStatementR() const { return m_sqliteStatement; }
+        BeSQLite::Statement& GetSqliteStatement() const { return m_sqliteStatement; }
 
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     };

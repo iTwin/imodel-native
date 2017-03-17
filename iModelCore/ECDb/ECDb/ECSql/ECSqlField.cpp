@@ -14,14 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlField::GetSqliteStatement() const
-    {
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-    return m_preparedECSqlStatement.GetSqliteStatement();
-#else
-    return m_preparedECSqlStatement.GetSqliteStatementR();
-#endif
-    }
+Statement& ECSqlField::GetSqliteStatement() const { return m_preparedECSqlStatement.GetSqliteStatement(); }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

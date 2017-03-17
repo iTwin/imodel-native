@@ -81,7 +81,7 @@ struct ECSqlBinder : IECSqlBinder
 
         ECSqlStatus LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
-        Statement& GetSqliteStatementR() const;
+        Statement& GetSqliteStatement() const;
         ECDbCR GetECDb() const;
         static Statement::MakeCopy ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy makeCopy);
 

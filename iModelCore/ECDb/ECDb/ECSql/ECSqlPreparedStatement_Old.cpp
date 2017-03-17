@@ -79,7 +79,7 @@ ECSqlStatus SingleECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareCo
     else
         {
         //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-        DbResult nativeSqlStat = GetSqliteStatementR().TryPrepare(m_ecdb, nativeSql.c_str());
+        DbResult nativeSqlStat = GetSqliteStatement().TryPrepare(m_ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
             GetECDb().GetECDbImplR().GetIssueReporter().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", ecsql, nativeSql.c_str(),
@@ -149,7 +149,7 @@ ECSqlStatus SingleECSqlPreparedStatement::ClearBindings()
     if (auto joinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         joinedTableStmt->ClearBindings();
 
-    const DbResult nativeSqlStat = GetSqliteStatementR ().ClearBindings();
+    const DbResult nativeSqlStat = GetSqliteStatement ().ClearBindings();
     GetParameterMapR ().OnClearBindings();
 
     if (nativeSqlStat != BE_SQLITE_OK)
@@ -172,7 +172,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (!m_parameterMap.OnBeforeStep().IsSuccess())
         return BE_SQLITE_ERROR;
     
-    const DbResult nativeSqlStatus = GetSqliteStatementR ().Step();
+    const DbResult nativeSqlStatus = GetSqliteStatement ().Step();
     if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
         {
         Utf8String msg;
@@ -201,7 +201,7 @@ ECSqlStatus SingleECSqlPreparedStatement::Reset()
 //---------------------------------------------------------------------------------------
 ECSqlStatus SingleECSqlPreparedStatement::DoReset()
     {
-    const DbResult nativeSqlStat = GetSqliteStatementR ().Reset();
+    const DbResult nativeSqlStat = GetSqliteStatement ().Reset();
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 

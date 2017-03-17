@@ -54,7 +54,7 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlBinder::GetSqliteStatementR() const { return m_preparedStatement.GetSqliteStatementR(); }
+Statement& ECSqlBinder::GetSqliteStatement() const { return m_preparedStatement.GetSqliteStatement(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2015
