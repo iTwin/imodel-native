@@ -1445,7 +1445,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, S
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const& exp)
     {
-    Utf8String a = ctx.GetSqlBuilder().ToString();
     ctx.GetSqlBuilderR().Push(true);
     ECSqlStatus st = PrepareSubqueryExp(ctx, *exp.GetQuery());
     nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilderR().Pop().c_str()));

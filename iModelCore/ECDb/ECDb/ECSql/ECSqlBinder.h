@@ -129,7 +129,7 @@ struct ProxyECSqlBinder final : IECSqlBinder
     {
 private:
     std::vector<IECSqlBinder*> m_binders;
-    std::map<Utf8CP, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBinders;
+    std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBinders;
     std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
 
     ECSqlStatus _BindNull() override
@@ -277,7 +277,8 @@ private:
 
     IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override
         {
-        auto it = m_structMemberProxyBinders.find(structMemberPropertyName);
+        //WIP
+        /*auto it = m_structMemberProxyBinders.find(structMemberPropertyName);
         if (it != m_structMemberProxyBinders.end())
             return *it->second;
 
@@ -289,11 +290,27 @@ private:
             IECSqlBinder& binder = *binderP;
             memberProxyBinder.AddBinder(binder[structMemberPropertyName]);
             }
+            */
+        return *m_structMemberProxyBinders.begin()->second;
+        }
+
+    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override
+        {
+        auto it = m_structMemberProxyBinders.find(structMemberPropertyId);
+        if (it != m_structMemberProxyBinders.end())
+            return *it->second;
+
+        auto ret = m_structMemberProxyBinders.insert(std::make_pair(structMemberPropertyId, std::make_unique<ProxyECSqlBinder>()));
+        ProxyECSqlBinder& memberProxyBinder = *ret.first->second;
+
+        for (IECSqlBinder* binderP : m_binders)
+            {
+            IECSqlBinder& binder = *binderP;
+            memberProxyBinder.AddBinder(binder[structMemberPropertyId]);
+            }
 
         return memberProxyBinder;
         }
-
-    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
     IECSqlBinder& _AddArrayElement() override
         {

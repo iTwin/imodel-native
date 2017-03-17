@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
+struct IECSqlPreparedStatement;
 struct SingleECSqlPreparedStatement;
 
 //=======================================================================================
@@ -114,16 +115,10 @@ struct ECSqlPrepareContext final : NonCopyableClass
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
 
-    public:
-        explicit ECSqlPrepareContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
-        void Reset(SingleECSqlPreparedStatement& preparedStmt)
-            { 
-            m_singlePreparedStatement = &preparedStmt;
 
-            m_nativeSqlBuilder.Clear();
-            m_scopes.Clear();
-            m_selectionOptions.Clear();
-            }
+    public:
+        explicit ECSqlPrepareContext(IECSqlPreparedStatement&);
+        void Reset(SingleECSqlPreparedStatement&);
 
         ECDbCR GetECDb() const { return m_ecdb; }
 
@@ -138,7 +133,6 @@ struct ECSqlPrepareContext final : NonCopyableClass
             return static_cast<TECSqlPreparedStatement&> (GetPreparedStatement());
             }
 
-        NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
         Utf8CP GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
 

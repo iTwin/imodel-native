@@ -26,6 +26,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
     protected:
         ECDb const& m_ecdb;
         ECSqlType m_type;
+        bool m_isCompoundStatement;
         bool m_isNoopInSqlite = false;
 
     private:
@@ -40,7 +41,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
         virtual Utf8CP _GetNativeSql() const = 0;
 
     protected:
-        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : m_ecdb(ecdb), m_type(type) {}
+        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt) {}
 
         BentleyStatus AssertIsValid() const;
 
@@ -58,6 +59,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
         Utf8CP GetNativeSql() const;
 
         ECDb const& GetECDb() const { return m_ecdb; }
+        bool IsCompoundStatement() const { return m_isCompoundStatement; }
         ECSqlType GetType() const { return m_type; }
     };
 
@@ -78,7 +80,7 @@ private:
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
 protected:
-    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
+    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, false) {}
 
     ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     ECSqlStatus _Reset() override;
@@ -114,7 +116,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
         Utf8CP _GetNativeSql() const override;
 
     protected:
-        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
+        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, true) {}
 
     public:
         virtual ~CompoundECSqlPreparedStatement() {}

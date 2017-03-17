@@ -452,7 +452,7 @@ void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp const& exp) //don't use this prepare ctx as each leaf statement needs its own
+ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
@@ -532,8 +532,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
 
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
-    //for each table, a separate ECSQL is created
-    ECSqlPrepareContext currentPrepareCtx(m_ecdb);
     bool isPrimaryTable = true;
     bmap<DbTable const*, SingleECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
@@ -592,8 +590,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
         m_statements.push_back(std::make_unique<LeafPreparedStatement>(m_ecdb));
 
         SingleECSqlPreparedStatement& preparedStmt = *m_statements.back();
-        currentPrepareCtx.Reset(preparedStmt);
-        const ECSqlStatus stat = preparedStmt.Prepare(currentPrepareCtx, *parseTree, ecsql.c_str());
+        ctx.Reset(preparedStmt);
+        const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
 
