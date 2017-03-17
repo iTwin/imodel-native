@@ -11,35 +11,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-
-//****************************** ECSqlPrepareContext ********************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECCrudWriteToken const* writeToken)
-    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment)
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                    12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
-    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_joinedTableClassId(joinedTableClassId)
-    {}
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const { return m_ecsqlStatement; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECSqlPrepareContext::GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
-
-#endif
-
-
 //****************************** ECSqlPrepareContext::ExpScope ********************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
@@ -145,6 +116,30 @@ bvector<Utf8String> ECSqlPrepareContext::SelectClauseInfo::Split(Utf8StringCR ac
     }
 
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
+//****************************** ECSqlPrepareContext ********************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECCrudWriteToken const* writeToken)
+    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment)
+    {}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
+    : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_joinedTableClassId(joinedTableClassId)
+    {}
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const { return m_ecsqlStatement; }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP ECSqlPrepareContext::GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
