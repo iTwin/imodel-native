@@ -28,13 +28,6 @@
  *      BBoxHigh : point3d
  */
 
-namespace ElementStrings
-{
-    static constexpr Utf8CP str_Variables() {return "Variables";}
-};
-
-using namespace ElementStrings;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -345,79 +338,6 @@ DgnDbStatus DefinitionElement::_OnInsert()
     // DefinitionElements can reside *only* in a DefinitionModel
     DgnDbStatus status = GetModel()->IsDefinitionModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode Session::CreateCode(DgnDbR db, Utf8StringCR name)
-    {
-    return CodeSpec::CreateCode(db, BIS_CODESPEC_Session, name);
-    }
-                                                                                                                                                    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionPtr Session::Create(DgnDbR db, Utf8CP name)
-    {
-    DgnModelId modelId = db.GetSessionModel()->GetModelId();
-    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Session::GetHandler());
-    return new Session(CreateParams(db, modelId, classId, CreateCode(db, name)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionCPtr Session::GetByName(DgnDbR db, Utf8StringCR name)
-    {
-    auto& elements = db.Elements(); 
-    return elements.Get<Session>(elements.QueryElementIdByCode(CreateCode(db, name)));
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Session::_LoadFromDb() 
-    {
-    auto stat = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != stat)
-        return stat;
-
-    Json::Reader::Parse(GetPropertyValueString(str_Variables()), m_variables);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Session::_CopyFrom(DgnElementCR el) 
-    {
-    auto& other = static_cast<SessionCR>(el);
-    other.SaveVariables();
-    T_Super::_CopyFrom(el);
-
-    m_variables = other.m_variables;
-    m_dirty = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Session::SaveVariables() const
-    {
-    if (!m_dirty)
-        return;
-
-    auto& ncThis = const_cast<SessionR>(*this);
-    ncThis.SetPropertyValue(str_Variables(), Json::FastWriter::ToString(m_variables).c_str());
-    m_dirty = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementIterator Session::MakeIterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
-    {
-    return db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Session), whereClause, orderByClause);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2962,9 +2882,9 @@ DgnDbStatus GeometricElement3d::SetTypeDefinition(DgnElementId typeDefinitionId,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RecipeElementCPtr TypeDefinitionElement::GetRecipe() const
+RecipeDefinitionElementCPtr TypeDefinitionElement::GetRecipe() const
     {
-    return GetDgnDb().Elements().Get<RecipeElement>(GetRecipeId());
+    return GetDgnDb().Elements().Get<RecipeDefinitionElement>(GetRecipeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3002,17 +2922,20 @@ DgnCode SpatialLocationType::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRecipeCPtr PhysicalType::GetRecipe() const
+DgnCode TemplateRecipe3d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return GetDgnDb().Elements().Get<PhysicalRecipe>(GetRecipeId());
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe3d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode PhysicalRecipe::CreateCode(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe3dPtr TemplateRecipe3d::Create(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_PhysicalRecipe, *model.GetModeledElement(), name);
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TemplateRecipe3d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3034,17 +2957,20 @@ DgnCode GraphicalType2d::CreateCode(DefinitionModelCR model, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicalRecipe2dCPtr GraphicalType2d::GetRecipe() const
+DgnCode TemplateRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
     {
-    return GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetRecipeId());
+    return CodeSpec::CreateCode(BIS_CODESPEC_TemplateRecipe2d, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    02/17
+* @bsimethod                                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GraphicalRecipe2d::CreateCode(DefinitionModelCR model, Utf8CP name)
+TemplateRecipe2dPtr TemplateRecipe2d::Create(DefinitionModelCR model, Utf8CP name)
     {
-    return CodeSpec::CreateCode(BIS_CODESPEC_GraphicalRecipe2d, *model.GetModeledElement(), name);
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new TemplateRecipe2d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
