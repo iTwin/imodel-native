@@ -28,13 +28,6 @@ ECSqlStatus IECSqlPreparedStatement::Prepare(ECSqlPrepareContext& ctx, Exp const
         return ECSqlStatus::Error;
         }
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
-    if (!policy.IsSupported())
-        {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
     //capture current clear cache counter so that we can invalidate the statement if another clear cache call 
     //occurred in the lifetime of the statement
     m_preparationClearCacheCounter = m_ecdb.GetECDbImplR().GetClearCacheCounter();
@@ -464,6 +457,13 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
 
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
@@ -781,6 +781,16 @@ ECInstanceKey ECSqlInsertPreparedStatement::ECInstanceKeyHelper::RetrieveLastIns
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
+    UpdateStatementExp const& updateExp = exp.GetAs<UpdateStatementExp>();
+    ClassMap const& classMap = updateExp.GetClassNameExp()->GetInfo().GetMap();
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     return ECSqlStatus::Error;
     }
 
@@ -810,6 +820,25 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //***************************************************************************************
 //    ECSqlDeletePreparedStatement
 //***************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
+    {
+    DeleteStatementExp const& deleteExp = exp.GetAs<DeleteStatementExp>();
+    ClassMap const& classMap = deleteExp.GetClassNameExp()->GetInfo().GetMap();
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    //WIP this will probably not be enough
+    return SingleECSqlPreparedStatement::_Prepare(ctx, exp);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------

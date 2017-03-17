@@ -173,8 +173,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                     return ECSqlStatus::Error;
                 }
             else if (ctx.GetJoinedTableInfo() != nullptr  && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
-            if (ctx.GetJoinedTableInfo() != nullptr && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
-            {
+                {
                 auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     classIdColumn,

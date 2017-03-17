@@ -72,7 +72,6 @@ private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
 
-    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
     ECSqlStatus _ClearBindings() override;
@@ -81,6 +80,7 @@ private:
 protected:
     SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
 
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     ECSqlStatus _Reset() override;
 
 public:
@@ -218,6 +218,9 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
 //+===============+===============+===============+===============+===============+======
 struct ECSqlDeletePreparedStatement final : SingleECSqlPreparedStatement
     {
+private:
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
 public:
     explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
     DbResult Step();
