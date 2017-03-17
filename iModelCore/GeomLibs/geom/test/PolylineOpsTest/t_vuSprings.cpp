@@ -177,20 +177,27 @@ void TestGriddedSpaceManager (double meshSize, bool isoGrid, bool smoothGrid)
         baseAreas.push_back (15.0);
         spaceIds.push_back (manager.CreateSpace (DPoint3d::From (10,21,0), baseAreas.back ()));
 
+        baseAreas.push_back (20.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (5,18,0), baseAreas.back ()));
+        baseAreas.push_back (15.0);
+        spaceIds.push_back (manager.CreateSpace (DPoint3d::From (5,24,0), baseAreas.back ()));
+
+
         // successively grow each space to larger and larger multiples of the original ....
         queries.SaveWalls ();
         double dz = 0.2;
         Check::Shift (0,0,10.0 * dz);
         queries.SaveSpaceBoundaries ();
         Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
-
-        for (double spaceFactor : bvector<double>{1.0, 1.5, 2.0, 2.5, 3.0, 3.5})
+        bvector<double> spaceFactors {1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
+        for (size_t k = 0; k < spaceFactors.size (); k++)
             {
+            double spaceFactor = spaceFactors[k];
             for (size_t i = 0; i < baseAreas.size (); i++)
                 {
                 flooder.ExpandSingleSpaceIdToTargetArea (spaceIds[i], spaceFactor * baseAreas[i]);
                 }
-            queries.SaveSpaceBoundaries ();
+            queries.SaveSpaceBoundaries (k + 1 == spaceFactors.size ());
             Check::Shift (0,0,-dz);     // smallest area comes out at top for downward code effect.
             }
         }
