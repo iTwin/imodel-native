@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGeoTiffKeys.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCPGeoTiffKeys
@@ -243,7 +243,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, uint32_t pi_value)
     CurKey.KeyDataType = IGeoTiffKeysList::LONG;
     CurKey.KeyValue.LongVal = pi_value;
 
-    m_GeoKeyList.insert(GeoKeyList::value_type((TIFFGeoKey)CurKey.KeyID, CurKey));
+    m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)CurKey.KeyID, CurKey));
 
 
     if (pi_KeyID == ProjectedCSTypeLong)
@@ -260,7 +260,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, double pi_value)
     CurKey.KeyDataType = IGeoTiffKeysList::DOUBLE;
     CurKey.KeyValue.DoubleVal = pi_value;
 
-    m_GeoKeyList.insert(GeoKeyList::value_type((TIFFGeoKey)CurKey.KeyID, CurKey));
+    m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)CurKey.KeyID, CurKey));
 
     }
 
@@ -278,7 +278,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, const std::string& pi_value)
 
     CurKey.KeyValue.StringVal = pStr;
 
-    m_GeoKeyList.insert(GeoKeyList::value_type((TIFFGeoKey)CurKey.KeyID, CurKey));
+    m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)CurKey.KeyID, CurKey));
 
     }
 
@@ -287,7 +287,7 @@ void HCPGeoTiffKeys::AddKey (uint16_t pi_KeyID, const std::string& pi_value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HCPGeoTiffKeys::AddKey (const GeoKeyItem& key)
     {
-    m_GeoKeyList.insert(GeoKeyList::value_type((TIFFGeoKey)key.KeyID, key));
+    m_GeoKeyList.insert(GeoKeyList::value_type((uint16_t)key.KeyID, key));
     }
 
 //-----------------------------------------------------------------------------
