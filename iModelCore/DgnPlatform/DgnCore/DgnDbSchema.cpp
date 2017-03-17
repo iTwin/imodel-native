@@ -201,21 +201,6 @@ DbResult DgnDb::CreateDictionaryModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateSessionModel()
-    {
-    DgnElementId modeledElementId = Elements().GetSessionPartitionId();
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, BIS_SCHEMA(BIS_CLASS_SessionModel));
-    if (BE_SQLITE_DONE != result)
-        return result;
-
-    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Session::GetHandler());
-    BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, modeledElementId, classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRealityDataSourcesModel()
     {
     DgnElementId modeledElementId = Elements().GetRealityDataSourcesPartitionId();
@@ -344,7 +329,6 @@ void DgnDb::SetupNewDgnDb(CreateDgnDbParams const& params)
     CreateRootSubject(params);
     ExecuteSql("PRAGMA defer_foreign_keys = false;");
     CreateDictionaryModel();
-    CreateSessionModel();
     CreateRealityDataSourcesModel();
     }
 
@@ -540,7 +524,7 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     result = Domains().ValidateSchemas();
     if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && ((DgnDb::OpenParams const&) params).GetAllowSchemaUpgrade())
         {
-        Domains().SetReadonly(true); // Enable admin schema upgrades, but disallow any writing to the individual domains.
+        Domains().SetReadonly(DgnDomain::Readonly::Yes); // Enable admin schema upgrades, but disallow any writing to the individual domains.
         return BE_SQLITE_OK;
         }
 

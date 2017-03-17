@@ -159,7 +159,7 @@ void MissingHandlerTest::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     GenericPhysicalObject elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();
@@ -345,7 +345,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 		
 		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
@@ -386,7 +386,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain, false /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());

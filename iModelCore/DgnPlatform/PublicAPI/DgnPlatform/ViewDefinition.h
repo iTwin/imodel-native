@@ -562,6 +562,12 @@ public:
     //! Set the CategorySelector for this view.
     void SetCategorySelector(CategorySelectorR categories) {BeAssert(!IsPersistent()); m_categorySelector = &categories; m_categorySelectorId=categories.GetElementId();}
 
+    //! Get the AuxiliaryCoordinateSystem for this ViewDefinition
+    DGNPLATFORM_EXPORT DgnElementId GetAuxiliaryCoordinateSystemId() const;
+
+    //! Set the AuxiliaryCoordinateSystem for this view.
+    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId); // NEEDWORK: Make protected, ViewDefinition2d/3d should take AuxiliaryCoordinateSystem2d/3d...
+
     //! Query if the specified model is displayed in this view
     bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
 

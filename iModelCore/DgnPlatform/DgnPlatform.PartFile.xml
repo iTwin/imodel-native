@@ -602,6 +602,22 @@
             <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="TilePublisherLibNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubPart PartName="TilePublisherLib" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="NuGetPackages" Required="false">Install\Bentley.TilePublisher.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="TilePublisherLibSdkNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubPart PartName="TilePublisherLib" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="NuGetPackages" Required="false">Install\Bentley.TilePublisher.Sdk.*.nupkg</Files>
+        </Bindings>
+    </Part>
 
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherLib" />
@@ -613,6 +629,8 @@
 
     <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
+        <SubPart PartName="TilePublisherLibNuGetPackage" />
+        <SubPart PartName="TilePublisherLibSdkNuGetPackage" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 

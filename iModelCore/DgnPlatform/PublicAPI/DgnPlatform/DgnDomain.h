@@ -110,6 +110,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
 
+    //! Flag to indicate if the domain API can be used for inserts, updates or deletes. 
+    enum class Readonly { Yes = 1, No = 0 };
+
+    //! Flag to indicate if the domain is considered to be required for all DgnDb-s in the session. 
+    enum class Required { Yes = 1, No = 0 };
+
     struct Handler;
 
     //! A template used to create a proxy handler of a superclass when the handler subclass cannot be found at run-time.
@@ -269,8 +275,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     };
 
 private:
-    bool m_isReadonly;
-    bool m_isRequired;
+    Readonly m_isReadonly;
+    Required m_isRequired;
 
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
@@ -315,7 +321,7 @@ public:
     //! @param[in] name Domain name. Must match filename of ECSchema this domain handles.
     //! @param[in] descr A description of this domain. For information purposes only, not used internally.
     //! @param[in] version The version of this DgnDomain API.
-    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr), m_isRequired(false), m_isReadonly(false) {m_version=version;}
+    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr), m_isRequired(DgnDomain::Required::No), m_isReadonly(DgnDomain::Readonly::No) {m_version=version;}
 
     //! Get the name of this DgnDomain.
     Utf8CP GetDomainName() const {return m_domainName.c_str();}
@@ -326,17 +332,17 @@ public:
     //! Get the version of this DgnDomain.
     int32_t GetVersion() const {return m_version;}
 
-    //! Returns true if the domain is setup to be ReadOnly in this session. 
-    bool IsReadonly() const { return m_isReadonly; }
+    //! Returns true if the domain is setup to be Readonly in this session. 
+    bool IsReadonly() const { return m_isReadonly == Readonly::Yes; }
 
     //! Setup this domain to be read-only/read-write in this session. 
-    void SetReadonly(bool isReadonly) { m_isReadonly = isReadonly; }
+    void SetReadonly(Readonly isReadonly) { m_isReadonly = isReadonly; }
 
-    //! Returns true if the domain is setup to be required or optional in this session
-    bool IsRequired() const { return m_isRequired; }
+    //! Returns true if the domain is setup to be required in this session
+    bool IsRequired() const { return m_isRequired == Required::Yes; }
 
     //! Setup this domain to be required/optional in this session
-    void SetRequired(bool isRequired) { m_isRequired = isRequired; }
+    void SetRequired(Required isRequired) { m_isRequired = isRequired; }
 
     //! Imports the schema of this domain and it's dependencies into the supplied DgnDb. 
     //! @remarks This needs to be only called for optional (not required) domains
@@ -386,7 +392,7 @@ private:
     void OnDbClose();
     void SyncWithSchemas();
 
-    void SetReadonly(bool isReadonly);
+    void SetReadonly(DgnDomain::Readonly isReadonly);
     BeSQLite::DbResult ValidateSchemas();
     BeSQLite::DbResult ImportSchemas();
     BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
@@ -407,16 +413,16 @@ public:
     //! @param[in] isRequired Pass true to ensure/validate that all DgnDb-s that are created/opened in this 
     //! session have this domain enabled. Pass false if the domain is optional. 
     //! @param[in] isReadonly Pass true to use the domain only for reading instances, or false to allow
-    //! all CRUD operations (assuming the DgnDb itself is writeable)
+    //! all CRUD operations (assuming the DgnDb itself is writable)
     //! @remarks
     //! <ul>
-    //! <li> If isRequired=true, newly created DgnDb-s will have the ECSchema of the domain (and any dependencies)
+    //! <li> If isRequired=Required::Yes, newly created DgnDb-s will have the ECSchema of the domain (and any dependencies)
     //! imported in, and enables use of the domain's CRUD API. Opening previously created DgnDb-s will trigger 
     //! validation of the ECSchema of the domain against the corresponding version in the DgnDb. Any subsequent 
     //! validation errors will cause the open to fail, but the issue may be resolvable by call to 
     //! DgnDomains::UpgradeSchemas() - the process however requires locking of the schemas, and is typically done 
     //! by a Project Administrator. 
-    //! <li> If isRequired=false, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's 
+    //! <li> If isRequired=Required::No, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's 
     //! ECSchema into newly created DgnDbs. Like before, the call will require locking of the schemas, and 
     //! is typically done by a Project Administrator. 
     //! <li> If a domain is registered to be required, it's name is recorded in every DgnDb accessed during 
@@ -425,7 +431,7 @@ public:
     //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
     //! to access that DgnDb.
     //! </ul>
-    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, bool isRequired=false, bool isReadonly=false);
+    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No);
 
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.

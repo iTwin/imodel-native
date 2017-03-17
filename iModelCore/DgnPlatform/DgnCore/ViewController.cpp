@@ -123,6 +123,29 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
+    DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
+
+    if (acsId.IsValid())
+        m_auxCoordSys = m_dgndb.Elements().Get<AuxCoordSystem>(acsId);
+
+    if (m_auxCoordSys.IsValid())
+        return;
+
+    AuxCoordSystemPtr acs;
+
+    if (def.IsView3d())
+        {
+        acs = new AuxCoordSystem3d(def.GetDgnDb());
+
+        if (def.IsSpatialView())
+            acs->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
+        }
+    else
+        {
+        acs = new AuxCoordSystem2d(def.GetDgnDb());
+        }
+
+    m_auxCoordSys = acs.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -791,17 +814,6 @@ void ViewController::_GetGridSpacing(DPoint2dR spacing, uint32_t& gridsPerRef) c
     {
     gridsPerRef = m_gridsPerRef;
     spacing = m_gridSpacing;
-
-    // Apply ACS scale to grid if ACS Context Lock active even if grid isn't aligned to ACS...
-    if (!DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock())
-        return;
-
-    IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
-
-    if (nullptr == acs)
-        return;
-
-    spacing.Scale(spacing, acs->GetScale());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,11 +833,7 @@ void ViewController::PointToGrid(DPoint3dR point) const
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*m_vp);
-
-        if (nullptr != acs)
-            acs->PointToGrid(*m_vp, point);
-
+        GetAuxCoordinateSystem().PointToGrid(*m_vp, point);
         return;
         }
 
@@ -854,23 +862,19 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     if (GridOrientationType::ACS == orientation)
         {
-        IAuxCoordSysP   acs;
-
-        if (NULL != (acs = IACSManager::GetManager().GetActive(vp)))
-            acs->DrawGrid(context);
+        GetAuxCoordinateSystem().DrawGrid(context);
+        return;
         }
-    else
-        {
-        bool        isoGrid = false;
-        uint32_t    gridsPerRef;
-        DPoint2d    spacing;
-        DPoint3d    origin;
-        RotMatrix   rMatrix;
 
-        _GetGridSpacing(spacing, gridsPerRef);
-        getGridOrientation(vp, origin, rMatrix, orientation);
-        context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
-        }
+    bool        isoGrid = false;
+    uint32_t    gridsPerRef;
+    DPoint2d    spacing;
+    DPoint3d    origin;
+    RotMatrix   rMatrix;
+
+    _GetGridSpacing(spacing, gridsPerRef);
+    getGridOrientation(vp, origin, rMatrix, orientation);
+    context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
