@@ -735,7 +735,7 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
         }
 
-    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName, csvFilePath.GetNameUtf8().c_str());
+    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName.c_str(), csvFilePath.GetNameUtf8().c_str());
     }
 
 
@@ -1655,7 +1655,7 @@ void DebugCommand::_Run(Session& session, Utf8StringCR args) const
     for (BeFileNameCR schemaFile : diegoSchemas)
         {
         Utf8String cmdArgs;
-        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8());
+        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8().c_str());
         importCmd.Run(session, cmdArgs);
         }
     }

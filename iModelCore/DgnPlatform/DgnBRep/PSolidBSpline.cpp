@@ -1755,14 +1755,13 @@ int             adaptive
     memset (&trimData, 0, sizeof (trimData));
 
     PK_ERROR_code_t status = PK_ERROR_no_errors;
+    int         failedFlag = 0;
+    int         spCurveCnt = 0;
 
     if (PK_ERROR_no_errors != allocTrimData (&trimData, spcArraySize))
         {
         goto clean_up;
         }
-
-    int         failedFlag = 0;
-    int         spCurveCnt = 0;
 
     for (int boundIndex = 0; boundIndex < boundCount; boundIndex++)
         {
