@@ -270,7 +270,7 @@ public:
 	}
 
 	/*copy constructor*/ 
-	Pnt(const Pnt& v) 
+	Point3<T>(const Pnt& v) 
 	{ 
 		*this = v; 
 	}
@@ -282,7 +282,7 @@ public:
 		y = vx.y; 
 		z = vx.z; 
 	}
-	inline Pnt operator + (const Vector3<T>& vx)	
+	inline Point3<T> operator + (const Vector3<T>& vx)	
 	{
 		Pnt p(vx.x+x, vx.y+y, vx.z+z);
 		return p;

@@ -388,13 +388,13 @@ bool URL::isProtocolNetworked(void) const
 
 void URL::toUpper(void)
 {
-	std::transform(url.begin(), url.end(), url.begin(), ::toupper);
+	std::transform(url.begin(), url.end(), url.begin(), [](wchar_t const& c){return (wchar_t)towupper(c);});
 }
 
 
 void URL::toLower(void)
 {
-	std::transform(url.begin(), url.end(), url.begin(), ::tolower);
+	std::transform(url.begin(), url.end(), url.begin(), [](wchar_t const& c){return (wchar_t)towlower(c);});
 }
 
 
