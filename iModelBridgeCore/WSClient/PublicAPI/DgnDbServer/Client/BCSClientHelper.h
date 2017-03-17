@@ -37,6 +37,20 @@ struct BCSSignInInfo
         m_environment = WebServices::UrlProvider::Environment::Release;
 #endif
         }
+    
+    //! Set m_environment by parsing a string
+    BentleyStatus SetEnvironmentFromString(Utf8StringCR str)
+        {
+        if (str.EqualsI("qa"))
+            m_environment = WebServices::UrlProvider::Environment::Qa;
+        else if (str.EqualsI("dev"))
+            m_environment = WebServices::UrlProvider::Environment::Dev;
+        else if (str.EqualsI("release"))
+            m_environment = WebServices::UrlProvider::Environment::Release;
+        else
+            return BSIERROR;
+        return BSISUCCESS;
+        }
     };
 
 /*--------------------------------------------------------------------------------------+
