@@ -607,7 +607,7 @@ TEST_F(DataCaptureTests, ImportXMLFileFormat1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CCPhotoPlannerTests, ImportXMLFileFormat2)
+TEST_F(DataCaptureTests, ImportXMLFileFormat2)
     {
     DgnDbPtr projectPtr = CreateProject(L"ImportXMLFile.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
@@ -630,4 +630,138 @@ TEST_F(CCPhotoPlannerTests, ImportXMLFileFormat2)
     XmlReader myReader(*spatialModelPtr,*(definitonModelPtr->ToDefinitionModelP()));
     ASSERT_EQ(SUCCESS, myReader.ReadXml(xmlFileName));
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, CreateDrone)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"CreateDrone.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr spatialModelPtr = projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(spatialModelPtr.IsValid());
+    ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+    SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
+
+    // Create GimbalAngleRange
+    auto gimbalAngleRangePtr = GimbalAngleRange::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalAngleRangePtr.IsValid());
+
+    gimbalAngleRangePtr->SetMinimumAngle(Angle::FromDegrees(20));
+    gimbalAngleRangePtr->SetMaximumAngle(Angle::FromDegrees(40));
+
+    auto gimbalAngleRangeInsertedPtr = gimbalAngleRangePtr->Insert();
+    GimbalAngleRangeElementId gimbalAngleRangeElmId = gimbalAngleRangeInsertedPtr->GetId();
+
+    // Create CameraDevice Model
+    auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
+    cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
+
+    // Create Camera
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP, cameraDeviceModelPtr->GetId());
+    ASSERT_TRUE(cameraDevicePtr.IsValid());
+
+    cameraDevicePtr->SetLabel("BasicCameraDevice1");
+    cameraDevicePtr->SetFocalLength(0.00479835);
+    cameraDevicePtr->SetImageWidth(5456);
+    cameraDevicePtr->SetImageHeight(3632);
+    DPoint2d principalPoint = { 2677.8,1772 };
+    cameraDevicePtr->SetPrincipalPoint(principalPoint);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraDevicePtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
+    cameraDevicePtr->SetAspectRatio(1.0);
+    cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
+
+    auto cameraDeviceInsertedPtr = cameraDevicePtr->Insert();
+    ASSERT_TRUE(cameraDeviceInsertedPtr.IsValid());
+    CameraDeviceElementId cameraDeviceId = cameraDeviceInsertedPtr->GetId();
+    ASSERT_TRUE(cameraDeviceId.IsValid());
+
+    // Create Gimbal
+    auto gimbalPtr = Gimbal::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalPtr.IsValid());
+
+    DgnElementIdSet gimbalAngleRangeSet;
+    gimbalAngleRangeSet.insert(gimbalAngleRangeElmId);
+    gimbalPtr->SetGimbalAngleRangeElementIdSet(gimbalAngleRangeSet);
+
+    DgnElementIdSet cameraDeviceSet;
+    cameraDeviceSet.insert(cameraDeviceId);
+    gimbalPtr->SetCameraElementIdSet(cameraDeviceSet);
+
+    auto gimbalInsertedPtr = gimbalPtr->Insert();
+    GimbalElementId gimbalElmId = gimbalInsertedPtr->GetId();
+
+    // Create Drone
+    auto dronePtr = Drone::Create(*spatialModelP, gimbalElmId);
+    ASSERT_TRUE(dronePtr.IsValid());
+
+    auto droneInsertedPtr = dronePtr->Insert();
+    DroneElementId droneElmId = droneInsertedPtr->GetId();
+
+    //Save changes
+    DbResult result = projectPtr->SaveChanges("BasicDrone");
+    EXPECT_EQ(BE_SQLITE_OK, result) << "Save Drone failed";
+
+    //Close project to flush memory
+    cameraDevicePtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraDeviceModelPtr = nullptr;
+    cameraDeviceInsertedPtr = nullptr;
+    gimbalAngleRangePtr = nullptr;
+    gimbalAngleRangeInsertedPtr = nullptr;
+    gimbalPtr = nullptr;
+    gimbalInsertedPtr = nullptr;
+    dronePtr = nullptr;
+    droneInsertedPtr = nullptr;
+
+    CloseProject();
+
+    //Reopen project
+    DgnDbPtr projectReopenedPtr = OpenProject(L"CreateDrone.dgndb");
+    ASSERT_TRUE(projectReopenedPtr.IsValid());
+
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(droneElmId).IsValid());
+    DroneCPtr myDronePtr = Drone::Get(*projectReopenedPtr, droneElmId);
+    ASSERT_TRUE(myDronePtr.IsValid());
+    ASSERT_EQ(droneElmId, myDronePtr->GetId());
+
+    GimbalCPtr myGimbalPtr = Gimbal::Get(*projectReopenedPtr, myDronePtr->GetGimbalElementId());
+    ASSERT_TRUE(myGimbalPtr.IsValid());
+    ASSERT_EQ(gimbalElmId, myGimbalPtr->GetId());
+
+    DgnElementIdSet cameraElementIdSet = myGimbalPtr->GetCameraElementIdSet();
+    CameraDeviceCPtr myCameraDevicePtr = CameraDevice::Get(*projectReopenedPtr, *(cameraElementIdSet.begin()));
+    ASSERT_TRUE(myCameraDevicePtr.IsValid());
+    ASSERT_EQ(cameraDeviceId, myCameraDevicePtr->GetId());
+
+    DgnElementIdSet gimbalAngleRangeIdSet = myGimbalPtr->GetGimbalAngleRangeElementIdSet();
+    GimbalAngleRangeCPtr myGimbalAngleRangePtr = GimbalAngleRange::Get(*projectReopenedPtr, *(gimbalAngleRangeIdSet.begin()));
+    ASSERT_TRUE(myGimbalAngleRangePtr.IsValid());
+    ASSERT_EQ(gimbalAngleRangeElmId, myGimbalAngleRangePtr->GetId());
+
+    //read back cameraDevice properties and check if equal
+    ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetFocalLength(), 0.00479835);
+    ASSERT_EQ(5456, myCameraDevicePtr->GetImageWidth());
+    ASSERT_EQ(3632, myCameraDevicePtr->GetImageHeight());
+    ASSERT_TRUE(principalPoint.IsEqual(myCameraDevicePtr->GetPrincipalPoint()));
+    ASSERT_TRUE(nullptr != myCameraDevicePtr->GetRadialDistortion());
+    ASSERT_TRUE(pRadialDistortion->IsEqual(*(myCameraDevicePtr->GetRadialDistortion())));
+    ASSERT_TRUE(nullptr != myCameraDevicePtr->GetTangentialDistortion());
+    ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCameraDevicePtr->GetTangentialDistortion())));
+    ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetAspectRatio(), 1.0);
+    ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetSkew(), 1.0);
+    ASSERT_DOUBLE_EQ(myCameraDevicePtr->GetSensorSize(), 1.0);
     }

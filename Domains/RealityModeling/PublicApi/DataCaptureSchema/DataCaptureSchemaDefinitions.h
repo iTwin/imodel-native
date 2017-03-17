@@ -78,13 +78,17 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CLASS_Pose                                          "Pose"                                    
 #define BDCP_CLASS_RadialDistortion                              "RadialDistortion"
 #define BDCP_CLASS_TangentialDistortion                          "TangentialDistortion"
-
+#define BDCP_CLASS_GimbalAngleRange                              "GimbalAngleRange"                                    
+#define BDCP_CLASS_Gimbal                                        "Gimbal"                                    
+#define BDCP_CLASS_Drone                                         "Drone"                                    
 
 // Relationships
 #define BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel            "CameraDeviceIsDefinedByCameraDeviceModel"
 #define BDCP_REL_ShotIsTakenByCameraDevice                           "ShotIsTakenByCameraDevice"
 #define BDCP_REL_ShotIsTakenAtPose                                   "ShotIsTakenAtPose"
-
+#define BDCP_REL_GimbalHasGimbalAngleRanges                          "GimbalHasGimbalAngleRanges"
+#define BDCP_REL_GimbalHasCameras                                    "GimbalHasCameras"
+#define BDCP_REL_DroneHasGimbal                                      "DroneHasGimbal"
 
 //-----------------------------------------------------------------------------------------
 // Category names
@@ -92,7 +96,9 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CATEGORY_CameraDevice                                         "CameraDevice"
 #define BDCP_CATEGORY_Shot                                                 "Shot"
 #define BDCP_CATEGORY_Pose                                                 "Pose"
-
+#define BDCP_CATEGORY_GimbalAngleRange                                     "GimbalAngleRange"
+#define BDCP_CATEGORY_Gimbal                                               "Gimbal"
+#define BDCP_CATEGORY_Drone                                                "Drone"
 
 //-----------------------------------------------------------------------------------------
 // Authority names
@@ -139,7 +145,9 @@ DATACAPTURE_TYPEDEFS(RadialDistortion)
 DATACAPTURE_TYPEDEFS(TangentialDistortion)
 DATACAPTURE_TYPEDEFS(Shot)
 DATACAPTURE_TYPEDEFS(Pose)
-
+DATACAPTURE_TYPEDEFS(GimbalAngleRange)
+DATACAPTURE_TYPEDEFS(Gimbal)
+DATACAPTURE_TYPEDEFS(Drone)
 
 DATACAPTURE_REFCOUNTED_PTR(RadialDistortion)
 DATACAPTURE_REFCOUNTED_PTR(TangentialDistortion)
@@ -147,6 +155,9 @@ DATACAPTURE_REFCOUNTED_PTR(CameraDeviceModel)
 DATACAPTURE_REFCOUNTED_PTR(CameraDevice)
 DATACAPTURE_REFCOUNTED_PTR(Shot)
 DATACAPTURE_REFCOUNTED_PTR(Pose)
+DATACAPTURE_REFCOUNTED_PTR(GimbalAngleRange)
+DATACAPTURE_REFCOUNTED_PTR(Gimbal)
+DATACAPTURE_REFCOUNTED_PTR(Drone)
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
@@ -154,6 +165,9 @@ BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceModelElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(ShotElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(PoseElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(GimbalAngleRangeElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(GimbalElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(DroneElementId, Dgn::DgnElementId)
 
 /**
 @addtogroup DataCaptureGroup DataCapture

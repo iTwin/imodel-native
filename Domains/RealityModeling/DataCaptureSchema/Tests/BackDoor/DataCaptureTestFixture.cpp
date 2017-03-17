@@ -183,16 +183,26 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
 
+    DgnModelPtr definitonModelPtr = dgndb.Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
+
+    // Create CameraDevice Model
+    auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
+    cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
+
     // Create CameraDevice
-    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP);
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP, cameraDeviceModelPtr->GetId());
     cameraDevicePtr->SetLabel(cameraDeviceLable);
     cameraDevicePtr->SetFocalLength(0.00479835);
-    ImageDimensionType imgDimension(5456, 3632);
-    cameraDevicePtr->SetImageDimension(imgDimension);
     DPoint2d principalPoint = { 2677.8,1772 };
     cameraDevicePtr->SetPrincipalPoint(principalPoint);
-    CameraDeviceDistortionType distortion(1, 2, 3, 4, 5);
-    cameraDevicePtr->SetDistortion(distortion);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraDevicePtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
     cameraDevicePtr->SetSensorSize(1.0);
@@ -203,17 +213,26 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     //Insert ten photos for this cameraDevice
     for (int photoNumber = 0; photoNumber < 10; photoNumber++)
         {
+        PosePtr pPose(Pose::Create(*spatialModelP));
+        ASSERT_TRUE(pPose.IsValid());
+        DPoint3d center = { 1.0,2.0,3.0 };
+        pPose->SetCenter(center);
+        Angle omega(Angle::FromDegrees(0));
+        Angle phi(Angle::FromDegrees(0));
+        Angle kappa(Angle::FromDegrees(0));
+        pPose->SetOmega(omega);
+        pPose->SetPhi(phi);
+        pPose->SetKappa(kappa);
+        auto poseInserted = pPose->Insert();
+        ASSERT_TRUE(poseInserted.IsValid());
+        PoseElementId poseId(pPose->GetId());
+
         // Create Photo for the cameraDevice
-        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId);
+        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId, poseId);
 
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
         ShotPtr->SetLabel(photoLabel.c_str());
-        RotMatrix rotation(RotMatrix::FromIdentity());
-        DPoint3d center = { 1.0,2.0,3.0 };
-        Pose pose(center, rotation);
-        ShotPtr->SetPose(pose);
-        ShotPtr->SetPhotoId(photoNumber);
 
         //Insert Photo element
         ShotPtr->Insert();

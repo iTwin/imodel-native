@@ -16,3 +16,6 @@
 #include "Pose.h"
 #include "Shot.h"
 #include "Geodesy.h"
+#include "GimbalAngleRange.h"
+#include "Gimbal.h"
+#include "Drone.h"

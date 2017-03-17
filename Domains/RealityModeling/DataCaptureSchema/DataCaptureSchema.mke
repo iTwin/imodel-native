@@ -57,6 +57,11 @@ $(o)XmlWriter$(oext) : $(_MakeFilePath)XmlWriter.cpp ${MultiCompileDepends} $(ap
 
 $(o)XmlReader$(oext) : $(_MakeFilePath)XmlReader.cpp ${MultiCompileDepends} $(appPublicApi)XmlReader.h
 
+$(o)GimbalAngleRange$(oext) : $(_MakeFilePath)GimbalAngleRange.cpp ${MultiCompileDepends} $(appPublicApi)GimbalAngleRange.h
+
+$(o)Gimbal$(oext) : $(_MakeFilePath)Gimbal.cpp ${MultiCompileDepends} $(appPublicApi)Gimbal.h
+
+$(o)Drone$(oext) : $(_MakeFilePath)Drone.cpp ${MultiCompileDepends} $(appPublicApi)Drone.h
 
 %include MultiCppCompileGo.mki
 

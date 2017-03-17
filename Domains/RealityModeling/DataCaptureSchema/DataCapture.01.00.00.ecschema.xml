@@ -135,5 +135,58 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         </Target>
     </ECRelationshipClass>
 
+    <!-- BEGIN Drone element classes -->
+    <ECEntityClass typeName="Drone" modifier="Sealed" description="The drone.">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="GimbalId" relationshipName="DroneHasGimbal" direction="Forward"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="DroneHasGimbal" displayLabel="A Drone has a Gimbal" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,N)" polymorphic="False">
+            <Class class="Drone" />
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Target>
+    </ECRelationshipClass>
+  
+    <ECEntityClass typeName="Gimbal" modifier="Sealed" description="The Gimbal.">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="GimbalHasGimbalAngleRanges" displayLabel="A Gimbale has a list of Gimbal Angle Range" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Source>
+        <Target cardinality="(1,N)" polymorphic="False">
+          <Class class="GimbalAngleRange" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GimbalHasCameras" displayLabel="A Gimbal has a list of Camera" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Source>
+        <Target cardinality="(1,N)" polymorphic="False">
+            <Class class="CameraDevice" />
+        </Target>
+    </ECRelationshipClass>
+  
+    <ECEntityClass typeName="GimbalAngleRange" description="The Gimbal angle range in radian.">
+        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinimumAngle" typeName="double" />
+        <ECProperty propertyName="MaximumAngle" typeName="double" />
+    </ECEntityClass>
+  
+  <!-- END Drone element classes -->   
 
 </ECSchema>

@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/DataCaptureDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DataCaptureSchemaInternal.h>
@@ -20,6 +20,9 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
     RegisterHandler(CameraDeviceModelHandler::GetHandler());
     RegisterHandler(ShotHandler::GetHandler());
     RegisterHandler(PoseHandler::GetHandler());
+    RegisterHandler(GimbalAngleRangeHandler::GetHandler());
+    RegisterHandler(GimbalHandler::GetHandler());
+    RegisterHandler(DroneHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,6 +43,17 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     PoseCategory.Insert(defaultApperance);
     BeAssert(PoseCategory.GetCategoryId().IsValid());
 
+    DgnCategory gimbalCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Gimbal, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    gimbalCategory.Insert(defaultApperance);
+    BeAssert(gimbalCategory.GetCategoryId().IsValid());
+
+    DgnCategory gimbalAngleRangeCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_GimbalAngleRange, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    gimbalAngleRangeCategory.Insert(defaultApperance);
+    BeAssert(gimbalAngleRangeCategory.GetCategoryId().IsValid());
+
+    DgnCategory droneCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Drone, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    droneCategory.Insert(defaultApperance);
+    BeAssert(droneCategory.GetCategoryId().IsValid());
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
     BeAssert(authority.IsValid());
@@ -68,7 +82,10 @@ DgnCode DataCaptureDomain::CreateCode(DgnDbR dgndb, Utf8StringCR nameSpace, Utf8
     BeAssert((nameSpace == BDCP_CLASS_CameraDeviceModel) ||
              (nameSpace == BDCP_CLASS_CameraDevice) ||
              (nameSpace == BDCP_CLASS_Pose)         ||
-             (nameSpace == BDCP_CLASS_Shot));
+             (nameSpace == BDCP_CLASS_Shot)         ||
+             (nameSpace == BDCP_CLASS_GimbalAngleRange) ||
+             (nameSpace == BDCP_CLASS_Gimbal) ||
+             (nameSpace == BDCP_CLASS_Drone));
 
     return NamespaceAuthority::CreateCode(BDCP_AUTHORITY_DataCapture, value, dgndb, nameSpace);
     }
