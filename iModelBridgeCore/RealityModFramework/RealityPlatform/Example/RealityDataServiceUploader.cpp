@@ -10,6 +10,7 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/RealityDataService.h>
+#include <BeSQLite/BeSQLite.h>
 
 #include <stdio.h>
 #include <conio.h>
@@ -46,9 +47,9 @@ int main(int argc, char *argv[])
     RealityDataService::SetServerComponents("dev-realitydataservices-eus.cloudapp.net", "2.4", "S3MXECPlugin--Server", "S3MX");
 
 
-#if (0) 
+#if (1) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Barmettes");
+    properties.Insert(RealityDataField::Name, "Barmettes 2");
     properties.Insert(RealityDataField::Dataset, "Images");
     properties.Insert(RealityDataField::Group, "SPAR Demo");
     properties.Insert(RealityDataField::Description, "SPAR Demo Scenario 0");
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
 
     BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Barmettes");
 #endif
-#if (1) 
+#if (0) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, "Janesville sample");
     properties.Insert(RealityDataField::Dataset, "Generated");
@@ -91,9 +92,17 @@ int main(int argc, char *argv[])
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Utf8String("9BBC154A-B417-493A-AAE3-68B490A83CE4").ToLower(), propertyString, true);
+    BeFileName TempPath;
+    BeFileName::BeGetTempPath(TempPath);
+    BeSQLite::BeSQLiteLib::Initialize(TempPath);
+    BeSQLite::BeGuid guid(true);
+    Utf8String Id = guid.ToString();
+
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Id.ToLower(), propertyString, true);
     if (upload->IsValidUpload())
         {
+        std::cout << Utf8PrintfString("Upload file : %s \n  guid=%s\n", fName.GetNameUtf8(), Id);
+
         upload->SetProgressCallBack(progressFunc);
         upload->SetProgressStep(0.05);
         upload->OnlyReportErrors(true);

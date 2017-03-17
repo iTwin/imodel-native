@@ -34,6 +34,7 @@ EXE_OBJS     = $(o)RealityDataServiceUploader$(oext)
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                        $(ContextDeliveryDir)RealityPlatform.lib \
                        $(ContextDeliveryDir)RealityPackage.lib 
 
