@@ -37,16 +37,6 @@ ECSqlStatementBase& ECSqlPrepareContext::GetECSqlStatementR() const { return m_e
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP ECSqlPrepareContext::GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const { return m_nativeSqlSelectClauseColumnCount; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value) { m_nativeSqlSelectClauseColumnCount += (int) (value); }
 #endif
 
 

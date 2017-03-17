@@ -60,8 +60,8 @@ struct ECSqlPrepareContext final : NonCopyableClass
                 bool HasExtendedOption(ExtendedOptions option) const { return Enum::Contains(m_extendedOptions, option); }
 
                 //SELECT only
-                void IncrementNativeSqlSelectClauseColumnCount(size_t value);
-                int GetNativeSqlSelectClauseColumnCount() const;
+                void IncrementNativeSqlSelectClauseColumnCount(size_t value) { BeAssert(m_ecsqlType == ECSqlType::Select); m_nativeSqlSelectClauseColumnCount += (int) (value); }
+                int GetNativeSqlSelectClauseColumnCount() const { BeAssert(m_ecsqlType == ECSqlType::Select); return m_nativeSqlSelectClauseColumnCount; }
             };
 
         //=======================================================================================
@@ -197,8 +197,8 @@ struct ECSqlPrepareContext
                 bool HasExtendedOption(ExtendedOptions option) const { return Enum::Contains(m_extendedOptions, option); }
 
                 //SELECT only
-                void IncrementNativeSqlSelectClauseColumnCount(size_t value);
-                int GetNativeSqlSelectClauseColumnCount() const;
+                void IncrementNativeSqlSelectClauseColumnCount(size_t value) { BeAssert(m_ecsqlType == ECSqlType::Select); m_nativeSqlSelectClauseColumnCount += (int) (value); }
+                int GetNativeSqlSelectClauseColumnCount() const { BeAssert(m_ecsqlType == ECSqlType::Select); return m_nativeSqlSelectClauseColumnCount; }
             };
 
         //=======================================================================================

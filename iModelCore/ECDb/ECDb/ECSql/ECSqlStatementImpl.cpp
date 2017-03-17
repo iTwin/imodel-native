@@ -9,7 +9,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //********************************************************** 
 // ECSqlStatement::Impl
 //**********************************************************
@@ -19,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
 
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
@@ -287,20 +287,7 @@ IECSqlPreparedStatement& ECSqlStatement::Impl::CreatePreparedStatement(ECDbCR ec
 
     return *m_preparedStatement;
     }
-
 #else
-
-//********************************************************** 
-// ECSqlStatement::Impl
-//**********************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-//static
-NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
@@ -310,6 +297,8 @@ ECSqlStatus ECSqlStatement::Impl::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsq
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
     return ECSqlStatementBase::_Prepare(ctx, ecsql);
     }
+
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle      03/2014
@@ -323,9 +312,6 @@ NativeLogging::ILogger& ECSqlStatement::Impl::GetPrepareDiagnosticsLogger()
     BeAssert(s_prepareDiagnosticsLogger != nullptr);
     return *s_prepareDiagnosticsLogger;
     }
-
-#endif
-
 
 //********************************************************** 
 // ECSqlStatement::Impl::Diagnostics
