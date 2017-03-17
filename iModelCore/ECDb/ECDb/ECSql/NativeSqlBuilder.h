@@ -17,7 +17,7 @@ struct ECSqlParameter;
 //=======================================================================================
 // @bsiclass                                             Krischan.Eberle    08/2013
 //+===============+===============+===============+===============+===============+======
-struct NativeSqlBuilder
+struct NativeSqlBuilder final
     {
     public:
 
@@ -82,7 +82,7 @@ struct NativeSqlBuilder
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct SqlUpdateBuilder
+struct SqlUpdateBuilder final
     {
 private:
     Utf8String m_table;

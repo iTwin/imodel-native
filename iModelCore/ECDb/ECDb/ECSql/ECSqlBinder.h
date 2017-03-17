@@ -104,7 +104,7 @@ struct IdECSqlBinder;
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlBinderFactory
+struct ECSqlBinderFactory final
     {
     private:
         ECSqlBinderFactory();

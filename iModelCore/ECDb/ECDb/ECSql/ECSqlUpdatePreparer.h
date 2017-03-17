@@ -15,23 +15,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlUpdatePreparer
+struct ECSqlUpdatePreparer final
     {
-private:
-    struct NativeSqlSnippets
-        {
-        NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
-        NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
-        };
+    private:
+        struct NativeSqlSnippets final
+            {
+            NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
+            NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
+            };
 
-    //static class
-    ECSqlUpdatePreparer ();
-    ~ECSqlUpdatePreparer ();
-    static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
-    static ECSqlStatus PrepareAssignmentListExp (NativeSqlSnippets& snippets, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp);
-  
-public:
-    static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+        //static class
+        ECSqlUpdatePreparer();
+        ~ECSqlUpdatePreparer();
+        static ECSqlStatus CheckForReadonlyProperties(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+        static ECSqlStatus PrepareAssignmentListExp(NativeSqlSnippets& snippets, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp);
+
+    public:
+        static ECSqlStatus Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

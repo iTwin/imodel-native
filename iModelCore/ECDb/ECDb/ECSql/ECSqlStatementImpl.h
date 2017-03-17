@@ -28,10 +28,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! (PIMPL idiom)
 //! @bsiclass                                                Krischan.Eberle      10/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatement::Impl : NonCopyableClass
+struct ECSqlStatement::Impl final: NonCopyableClass
     {
     private:
-        struct Diagnostics : NonCopyableClass
+        struct Diagnostics final : NonCopyableClass
             {
             private:
                 static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
@@ -107,10 +107,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! (PIMPL idiom)
 //! @bsiclass                                                Krischan.Eberle      10/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatement::Impl : ECSqlStatementBase, NonCopyableClass
+struct ECSqlStatement::Impl final: ECSqlStatementBase, NonCopyableClass
     {
 private:
-    struct Diagnostics : NonCopyableClass
+    struct Diagnostics final : NonCopyableClass
         {
         private:
             static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;

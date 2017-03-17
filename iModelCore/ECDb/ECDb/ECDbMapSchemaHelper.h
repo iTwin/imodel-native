@@ -90,7 +90,7 @@ struct ECDbMapCustomAttributeHelper final
 //! reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbSchemaMap
+struct ECDbSchemaMap final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -114,7 +114,7 @@ struct ECDbSchemaMap
 //! reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbClassMap
+struct ECDbClassMap final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -148,7 +148,7 @@ struct ECDbClassMap
 //! ShareColumns is a convenience wrapper around the ShareColumns custom attribute in the ECDbMap ECSchema
 //! @bsiclass
 //=======================================================================================    
-struct ShareColumns
+struct ShareColumns final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -186,7 +186,7 @@ struct ShareColumns
 //! DbIndexList is a convenience wrapper around the DbIndexList custom attribute in the ECDbMap ECSchema
 //! @bsiclass
 //=======================================================================================    
-struct DbIndexList
+struct DbIndexList final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -196,7 +196,7 @@ struct DbIndexList
         //! that simplifies reading the values of that struct
         //! @bsiclass
         //=======================================================================================    
-        struct DbIndex
+        struct DbIndex final
             {
             friend struct DbIndexList;
 
@@ -247,7 +247,7 @@ struct DbIndexList
 //! reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbPropertyMap
+struct ECDbPropertyMap final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -284,7 +284,7 @@ struct ECDbPropertyMap
 //! custom attribute that simplifies reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbLinkTableRelationshipMap
+struct ECDbLinkTableRelationshipMap final
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -320,7 +320,7 @@ struct ECDbLinkTableRelationshipMap
 //! custom attribute that simplifies reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbForeignKeyConstraint
+struct ECDbForeignKeyConstraint final
     {
     friend struct ECDbMapCustomAttributeHelper;
 

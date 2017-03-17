@@ -39,10 +39,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ECPropertyFormatter : RefCounted<NonCopyableClass
     {
     private:
         //! Formats an EC property value as a string
-        virtual bool _FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR, ECN::ECPropertyCR, bool isArrayMember) const;
+        ECDB_EXPORT virtual bool _FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR, ECN::ECPropertyCR, bool isArrayMember) const;
 
         //! Gets the category corresponding to a property 
-        virtual ECN::IECInstancePtr _GetPropertyCategory(ECN::ECPropertyCR);
+        ECDB_EXPORT virtual ECN::IECInstancePtr _GetPropertyCategory(ECN::ECPropertyCR);
 
     protected:
         ECPropertyFormatter() {}

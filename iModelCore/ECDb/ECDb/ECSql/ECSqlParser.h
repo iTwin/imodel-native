@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle     04/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlParseContext
+struct ECSqlParseContext final
     {
 public:
     typedef bmap<ECN::ECClassId, ECN::ECClassCP> ClassListById;
@@ -60,14 +60,14 @@ public:
 //! so that it easy to lookup rule corresponding to the function that parsing it.
 // @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlParser
+struct ECSqlParser final
     {
 private:
     //=======================================================================================
     // Creates a context on construction and deletes the context on destruction
     // @bsiclass                                                Krischan.Eberle     09/2015
     //+===============+===============+===============+===============+===============+======
-    struct ScopedContext
+    struct ScopedContext final
         {
     private:
         ECSqlParser const& m_parser;

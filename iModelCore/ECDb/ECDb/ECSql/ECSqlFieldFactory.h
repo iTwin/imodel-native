@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlFieldFactory
+struct ECSqlFieldFactory final
     {
     private:
         //static class

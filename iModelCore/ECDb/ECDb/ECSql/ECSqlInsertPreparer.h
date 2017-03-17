@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    11/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlInsertPreparer
+struct ECSqlInsertPreparer final
     {
 private:
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
@@ -27,7 +27,7 @@ private:
         UserProvidedNull = 4
         };
 #endif
-    struct NativeSqlSnippets
+    struct NativeSqlSnippets final
         {
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         ECInstanceIdMode m_ecinstanceIdMode;
