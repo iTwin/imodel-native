@@ -428,7 +428,7 @@ NumericTriad::NumericTriad(double dval, size_t topMid, size_t midLow)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
     {
-    NumericFormatSpec fmt("FW");
+    NumericFormatSpec fmt = NumericFormatSpec();
     fmt.SetDecimalPrecision(prec);
     return fmt.FormatDouble(GetWhole());
     }
@@ -442,7 +442,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
     PresentationType presType = fract ? PresentationType::Fractional : PresentationType::Decimal;
     ShowSignOption signOpt = FormatConstant::DefaultSignOption();
     FormatTraits formatTraits = FormatConstant::DefaultFormatTraits();
-    NumericFormatSpec fmt = NumericFormatSpec("Triad", presType, signOpt, formatTraits, (size_t)prec);
+    NumericFormatSpec fmt = NumericFormatSpec(presType, signOpt, formatTraits, (size_t)prec);
 
     Utf8CP blank = FormatConstant::BlankString();
     topName = Utils::SubstituteEmptyOrNull(topName,blank);

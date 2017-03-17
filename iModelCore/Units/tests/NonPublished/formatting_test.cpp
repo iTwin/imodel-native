@@ -33,7 +33,7 @@ TEST(FormattingTest, Preliminary)
     {
     FormattingDividers fdiv = FormattingDividers(nullptr);
     const char *uni = u8"         ЯABГCDE型号sautéςερτcañón";
-    NumericFormatSpec numFmt = NumericFormatSpec("Default");
+    NumericFormatSpec numFmt = NumericFormatSpec();
     LOG.infov("================  Formatting Log ===========================");
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);
     //LOG.infov("Initial string: %s", uni);
@@ -249,7 +249,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("2.82843e+3", NumericFormatSpec::StdFormatDouble("sci", 2.0*testV, 5).c_str());
     EXPECT_STREQ ("0.28284e+4", NumericFormatSpec::StdFormatDouble("sciN", 2.0*testV, 5).c_str());
 
-    NumericFormatSpecP fmtP = StdFormatSet::FindFormat("real");
+    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
     fmtP->SetUse1000Separator(true);
 
@@ -271,7 +271,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-2828.45", fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
 
     FormatDictionary fd = FormatDictionary();
-    NumericFormatSpec numFmt = NumericFormatSpec("Default");
+    NumericFormatSpec numFmt = NumericFormatSpec();
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
     EXPECT_STREQ ("135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("135689", numFmt.FormatInteger(135689).c_str());
@@ -492,7 +492,7 @@ TEST(FormattingTest, DictionaryValidation)
 
     Utf8CP name = *vec.begin();
     Utf8String nameL = StdFormatSet::StdFormatNameList(true);
-    NumericFormatSpecP fmtP;
+    NamedFormatSpecCP fmtP;
     Utf8String serT;
     LOG.infov("Aliases:  %s", nameL.c_str());
     nameL = StdFormatSet::StdFormatNameList(false);
@@ -501,8 +501,8 @@ TEST(FormattingTest, DictionaryValidation)
     for (auto itr = vec.begin(); itr != vec.end(); ++itr)
         {
         name = *itr;
-        fmtP = StdFormatSet::FindFormat(name);
-        serT = dict.SerializeFormatDefinition(*fmtP);
+        fmtP = StdFormatSet::FindFormatSpec(name);
+        serT = dict.SerializeFormatDefinition(fmtP);
         LOG.infov("%s", serT.c_str());
         }
 

@@ -360,7 +360,7 @@ bool Utils::AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP un2)
      m_totalElapsed += m_lastInterval;
      m_lastAmount = amount;
      m_totalAmount += amount;
-     NumericFormatSpec nfmt = NumericFormatSpec("LIM", 6);
+     NumericFormatSpec nfmt = NumericFormatSpec(6);
      nfmt.SetUse1000Separator(true);
      Utf8String amTxt = nfmt.FormatInteger((int)amount);
      Utf8String duraTxt = (amount > 0) ? nfmt.FormatDouble(m_lastInterval / (double)amount) : "n/a";
@@ -466,7 +466,7 @@ bool Utils::AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP un2)
  //----------------------------------------------------------------------------------------
   void FractionalNumeric::FormTextParts(bool reduce)
      {
-     NumericFormatSpec fmt =  NumericFormatSpec("fract", PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
+     NumericFormatSpec fmt =  NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
      size_t numer = m_numerator;
      size_t denom = m_denominator;
      if (reduce && m_gcf > 1)
@@ -830,11 +830,11 @@ POP_MSVC_IGNORE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(NumericFormatSpecCP format, BEU::UnitCP unit)
+FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
     {
-    m_format = format;
+    m_formatSpec = format;
     m_unit = unit;
-    if (nullptr == m_format)
+    if (nullptr == m_formatSpec)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
     else if (nullptr == m_unit)
         m_problemCode = FormatProblemCode::UnknownUnitName;
@@ -849,8 +849,8 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
     {
     m_problemCode = FormatProblemCode::NoProblems;
     m_unit = nullptr;
-    m_format = StdFormatSet::FindFormat(formatName);
-    if (nullptr == m_format)
+    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+    if (nullptr == m_formatSpec)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
     else
         {
@@ -870,9 +870,9 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1);
     FormattingWord unit = curs.ExtractWord();
     FormattingWord fnam = curs.ExtractWord();
-    m_format = StdFormatSet::FindFormat(fnam.GetText());
+    m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(unit.GetText());
-    if (nullptr == m_format)
+    if (nullptr == m_formatSpec)
         m_problemCode = FormatProblemCode::UnknownStdFormatName;
     else
         {
@@ -889,7 +889,7 @@ Utf8String FormatUnitSet::ToText(bool useAlias)
     if (HasProblem())
         return "";
     char buf[256];
-    sprintf(buf, "%s(%s)", m_unit->GetName(), (useAlias? m_format->GetAlias().c_str() : m_format->GetName().c_str()));
+    sprintf(buf, "%s(%s)", m_unit->GetName(), (useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName()));
     return buf;
     }
 
@@ -1022,10 +1022,10 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 //
 //===================================================
 
-NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias, CompositeValueSpecCP compSpec)
+NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecP numSpec, Utf8CP alias, CompositeValueSpecP compSpec)
     {
     m_name = name;
-    m_numericSpec = &numSpec;
+    m_numericSpec = numSpec;
     m_alias = alias;
     m_compositeSpec = compSpec;
     m_problemCode = FormatProblemCode::NoProblems;

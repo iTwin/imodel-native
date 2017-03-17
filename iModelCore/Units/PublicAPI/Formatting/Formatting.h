@@ -34,6 +34,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 //===================================================
 //
 // Enumerations
@@ -263,7 +264,7 @@ enum class FormatSpecType
     {
     Undefined = 0,
     Numeric = 1,   // a pure numeric Spec
-    Combo = 2      // a composite spec is also defined (numeric spec is implied)
+    Composite = 2      // a composite spec is also defined (numeric spec is implied)
     };
 
 struct Utils
@@ -488,8 +489,8 @@ public:
 struct NumericFormatSpec
     {
 private:
-    Utf8String          m_name;                  // name or ID of the format
-    Utf8String          m_alias;                 // short alternative name (alias)
+    //Utf8String          m_name;                  // name or ID of the format
+    //Utf8String          m_alias;                 // short alternative name (alias)
     //double              m_minThreshold;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
@@ -503,18 +504,21 @@ private:
 
     double EffectiveRoundFactor(double rnd) { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
-    UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    //UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
+    //UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    
+    UNITS_EXPORT void DefaultInit(size_t precision);
+    UNITS_EXPORT void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round);
     UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index);
     UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num);
-    NumericFormatSpec() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
+    //NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
 
 public:
-    NumericFormatSpec(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
-    NumericFormatSpec(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
+    NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     //UNITS_EXPORT NumericFormat(StdFormatNameR fmtType, size_t precision, double round = -1.0);
-    UNITS_EXPORT NumericFormatSpec(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormatSpec(NumericFormatSpecCR other);
     //UNITS_EXPORT static NumericFormat StdNumericFormat(Utf8P stdName, int prec, double round);
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
@@ -543,7 +547,7 @@ public:
     bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
     bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
     UNITS_EXPORT void SetAlias(Utf8CP alias);
-    Utf8String GetAlias() const { return m_alias; }
+    //Utf8String GetAlias() const { return m_alias; }
     void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);
@@ -592,39 +596,10 @@ public:
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
-    Utf8String GetName() const { return m_name; } ;
-    Utf8String GetNameAndAlias() const { return m_name +"(" + m_alias + ")"; };
+    //Utf8String GetName() const { return m_name; } ;
+    //Utf8String GetNameAndAlias() const { return m_name +"(" + m_alias + ")"; };
     };
 
-struct FormatUnitSet
-    {
-private: 
-    NumericFormatSpecCP m_format;
-    BEU::UnitCP m_unit;
-    FormatProblemCode m_problemCode;
-
-public:
-    UNITS_EXPORT FormatUnitSet(NumericFormatSpecCP format, BEU::UnitCP unit);
-    UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
-    UNITS_EXPORT FormatUnitSet(Utf8CP description);
-    bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-    FormatProblemCode GetProblemCode() { return m_problemCode; }
-    UNITS_EXPORT Utf8String ToText(bool useAlias);
-    //UNITS_EXPORT static bvector<FormatUnitSet> VectorFUS(Utf8CP description);
-    };
-
-struct FormatUnitGroup
-    {
-private:
-    bvector<FormatUnitSet> m_group;
-    FormatProblemCode m_problemCode;
-public:
-    UNITS_EXPORT FormatUnitGroup(Utf8CP description);
-    UNITS_EXPORT Utf8String ToText(bool useAlias);
-    bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
-    FormatProblemCode GetProblemCode() { return m_problemCode; }
-    };
 
 //=======================================================================================
 // We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
@@ -726,28 +701,69 @@ struct NamedFormatSpec
     private:
         Utf8CP          m_name;                  // name or ID of the format
         Utf8CP          m_alias;                 // short alternative name (alias)
-        NumericFormatSpecCP   m_numericSpec;
-        CompositeValueSpecCP  m_compositeSpec;
+        NumericFormatSpecP   m_numericSpec;
+        CompositeValueSpecP  m_compositeSpec;
         FormatSpecType  m_specType;
         FormatProblemCode m_problemCode;
 
     public:
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecCP compSpec = nullptr);
+        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecP numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
         Utf8CP SetAlias(Utf8CP alias) { return m_alias = alias; }
-        Utf8CP GetAlias() { return m_alias; }
+        Utf8CP GetAlias() const { return m_alias; }
+        bool HasName(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_name); }
+        bool HasAlias(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_alias); }
+        Utf8CP GetName() const { return m_name; };
         FormatSpecType  GetSpecType(){return m_specType;}
-        NumericFormatSpecCP   GetNumericSpec() { return m_numericSpec; }
-        CompositeValueSpecCP  getCompositeSpec() { return  (HasComposite()? m_compositeSpec : nullptr); }
-        bool HasComposite() { return m_specType == FormatSpecType::Combo; }
+        bool HasComposite() { return FormatSpecType::Composite == m_specType; }
+        NumericFormatSpecP   GetNumericSpec() const { return m_numericSpec; }
+        CompositeValueSpecP  getCompositeSpec() { return  (HasComposite() ? m_compositeSpec : nullptr); }
         bool IsProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
+        Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
+        PresentationType GetPresentationType() { return m_numericSpec->GetPresentationType(); }
     };
+
+//=======================================================================================
+// A pair of the unit reference and the format spec 
+// @bsiclass                                                    David.Fox-Rabinovitz  03/2017
+//=======================================================================================
+struct FormatUnitSet
+    {
+    private:
+        //NumericFormatSpecCP m_format;
+        NamedFormatSpecCP m_formatSpec;
+        BEU::UnitCP m_unit;
+        FormatProblemCode m_problemCode;
+
+    public:
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit);
+        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
+        UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty);
+        UNITS_EXPORT FormatUnitSet(Utf8CP description);
+        bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+        FormatProblemCode GetProblemCode() { return m_problemCode; }
+        UNITS_EXPORT Utf8String ToText(bool useAlias);
+        //UNITS_EXPORT static bvector<FormatUnitSet> VectorFUS(Utf8CP description);
+    };
+
+struct FormatUnitGroup
+    {
+    private:
+        bvector<FormatUnitSet> m_group;
+        FormatProblemCode m_problemCode;
+    public:
+        UNITS_EXPORT FormatUnitGroup(Utf8CP description);
+        UNITS_EXPORT Utf8String ToText(bool useAlias);
+        bool HasProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
+        FormatProblemCode GetProblemCode() { return m_problemCode; }
+    };
+
 
 struct StdFormatSet
     {
 private:
-    bvector<NumericFormatSpecP> m_formatSet;
+    bvector<NamedFormatSpecP> m_formatSet;
  
-    NumericFormatSpecP AddFormat(NumericFormatSpecP fmtP);
+    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias = nullptr);
     void StdInit();
     StdFormatSet() { StdInit(); }
     static StdFormatSet& Set() { static StdFormatSet set; return set; }
@@ -756,7 +772,8 @@ public:
 
     UNITS_EXPORT static NumericFormatSpecP DefaultDecimal();
     static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
-    UNITS_EXPORT static NumericFormatSpecP FindFormat(Utf8CP name);
+    UNITS_EXPORT static NumericFormatSpecP GetNumericFormat(Utf8CP name);
+    UNITS_EXPORT static NamedFormatSpecP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
     };
@@ -897,7 +914,7 @@ public:
     UNITS_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     UNITS_EXPORT FormatParameterP GetParameterByIndex(int index);
     UNITS_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
-    UNITS_EXPORT Utf8String SerializeFormatDefinition(NumericFormatSpecCR format);
+    UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecCP format);
     };
 
 //=======================================================================================
