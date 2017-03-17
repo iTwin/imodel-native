@@ -26,7 +26,7 @@ CachingDataSourcePtr cachingDataSource,
 bvector<ObjectId>&& navigationTreesToCacheFully,
 bvector<ObjectId>&& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
-CachingDataSource::LabeledProgressCallback&& onProgress,
+CachingDataSource::ProgressCallback&& onProgress,
 ICancellationTokenPtr ct
 )
 :
@@ -55,7 +55,7 @@ void CacheNavigationTask::OnSchemaChanged()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CacheNavigationTask::_OnExecute()
     {
-    ReportProgress(0, 0, nullptr);
+    ReportProgress(CachingDataSource::Progress());
 
     m_ds->GetClient()->GetWSClient()->GetServerInfo(GetCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (WSInfoResult& infoResult)
@@ -170,7 +170,7 @@ void CacheNavigationTask::CacheNavigationTrees(const bvector<ObjectId>& navigati
         else
             {
             auto txn = m_ds->StartCacheTransaction();
-            Utf8String objectLabel = m_ds->GetObjectLabel(txn, objectId);
+            auto objectLabelPtr = std::make_shared<Utf8String>(m_ds->GetObjectLabel(txn, objectId));
 
             m_ds->CacheObject(objectId, GetCancellationToken())
                 ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::Result result)
@@ -191,7 +191,7 @@ void CacheNavigationTask::CacheNavigationTrees(const bvector<ObjectId>& navigati
                         {
                         if (forceFullRecursiveCaching)
                             {
-                            GetFailedObjects().push_back(CachingDataSource::FailedObject(objectId, objectLabel, result.GetError()));
+                            GetFailedObjects().push_back(CachingDataSource::FailedObject(objectId, *objectLabelPtr, result.GetError()));
                             }
                         }
                     else
@@ -201,7 +201,7 @@ void CacheNavigationTask::CacheNavigationTrees(const bvector<ObjectId>& navigati
                     }
                 });
 
-            ReportProgress(0, 0, objectLabel);
+            ReportProgress({{}, objectLabelPtr});
             }
         }
     }
@@ -250,23 +250,22 @@ void CacheNavigationTask::ReportProgress(ObjectIdCR objectId)
         m_lastTimeReported = currentTimeMillis;
 
         auto txn = m_ds->StartCacheTransaction();
-        auto label = m_ds->GetObjectLabel(txn, objectId);
+        auto label = std::make_shared<Utf8String>(m_ds->GetObjectLabel(txn, objectId));
         txn.Commit();
 
-        m_onProgressCallback(0, 0, label);
+        m_onProgressCallback({{}, label});
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void CacheNavigationTask::ReportProgress(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel)
+void CacheNavigationTask::ReportProgress(CachingDataSource::ProgressCR progress)
     {
     if (!m_onProgressCallback)
-        {
         return;
-        }
-    m_onProgressCallback(bytesTransfered, bytesTotal, taskLabel);
+
+    m_onProgressCallback(progress);
     }
 
 /*--------------------------------------------------------------------------------------+

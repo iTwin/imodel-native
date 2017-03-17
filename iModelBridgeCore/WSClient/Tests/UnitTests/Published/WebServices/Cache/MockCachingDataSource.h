@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/MockCachingDataSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -104,19 +104,19 @@ struct MockCachingDataSource : public ICachingDataSource
         MOCK_METHOD4(GetNavigationChildrenKeys,
             AsyncTaskPtr<KeysResult>(ObjectIdCR, DataOrigin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr));
         MOCK_METHOD4(GetFile,
-            AsyncTaskPtr<FileResult>(ObjectIdCR fileId, DataOrigin origin, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
+            AsyncTaskPtr<FileResult>(ObjectIdCR fileId, DataOrigin origin, ProgressCallback onProgress, ICancellationTokenPtr ct));
         MOCK_METHOD5(CacheFiles,
-            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
+            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, ProgressCallback onProgress, ICancellationTokenPtr ct));
         MOCK_METHOD2(DownloadAndCacheChildren,
             AsyncTaskPtr<Result>(const bvector<ObjectId>& parentIds, ICancellationTokenPtr ct));
         MOCK_METHOD3(SyncLocalChanges,
-            AsyncTaskPtr<BatchResult>(SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
+            AsyncTaskPtr<BatchResult>(ProgressCallback, ICancellationTokenPtr, SyncOptions));
         MOCK_METHOD4(SyncLocalChanges,
-            AsyncTaskPtr<BatchResult>(const bset<ECInstanceKey>&, SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
+            AsyncTaskPtr<BatchResult>(const bset<ECInstanceKey>&, ProgressCallback, ICancellationTokenPtr, SyncOptions));
         MOCK_METHOD5(SyncCachedData,
-            AsyncTaskPtr<BatchResult>(bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, SyncProgressCallback, ICancellationTokenPtr));
+            AsyncTaskPtr<BatchResult>(bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, ProgressCallback, ICancellationTokenPtr));
         MOCK_METHOD5(CacheNavigation,
-            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>&, const bvector<ObjectId>&, std::shared_ptr<const ISelectProvider>, LabeledProgressCallback, ICancellationTokenPtr));
+            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>&, const bvector<ObjectId>&, std::shared_ptr<const ISelectProvider>, ProgressCallback, ICancellationTokenPtr));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

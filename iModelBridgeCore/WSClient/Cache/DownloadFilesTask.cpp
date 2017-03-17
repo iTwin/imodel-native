@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@ CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<FileDownloadManager> fileDownloadManager,
 bset<ObjectId> filesToDownload,
 FileCache fileCacheLocation,
-CachingDataSource::LabeledProgressCallback onProgress,
+CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(cachingDataSource, ct),
@@ -37,8 +37,6 @@ m_filesToDownloadIds(std::move(filesToDownload)),
 m_fileCacheLocation(fileCacheLocation),
 m_onProgressCallback(ProgressFilter::Create(onProgress)),
 m_downloadTasksRunning(0),
-m_totalBytesToDownload(0),
-m_totalBytesDownloaded(0),
 m_nextFileToDownloadIndex(0)
     {}
 
@@ -47,10 +45,10 @@ m_nextFileToDownloadIndex(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DownloadFilesTask::ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file)
     {
-    m_totalBytesDownloaded += (uint64_t) bytesDownloaded - file.bytesDownloaded;
+    m_downloadBytesProgress.current += (uint64_t) bytesDownloaded - file.bytesDownloaded;
     file.bytesDownloaded = (uint64_t) bytesDownloaded;
 
-    m_onProgressCallback((double) m_totalBytesDownloaded, (double) m_totalBytesToDownload, file.name);
+    m_onProgressCallback({m_downloadBytesProgress, file.name});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -70,7 +68,7 @@ void DownloadFilesTask::_OnExecute()
             }
 
         DownloadFileProperties fileProperties;
-        if (SUCCESS != txn.GetCache().ReadFileProperties(fileKey, &fileProperties.name, &fileProperties.size))
+        if (SUCCESS != txn.GetCache().ReadFileProperties(fileKey, fileProperties.name.get(), &fileProperties.size))
             {
             SetError(ICachingDataSource::Status::DataNotCached);
             return;
@@ -80,7 +78,7 @@ void DownloadFilesTask::_OnExecute()
         fileProperties.bytesDownloaded = 0;
 
         m_filesToDownload.push_back(fileProperties);
-        m_totalBytesToDownload += fileProperties.size;
+        m_downloadBytesProgress.total += fileProperties.size;
         }
 
     txn.Commit();
@@ -108,7 +106,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
         m_downloadTasksRunning++;
 
         auto onProgress = std::bind(&DownloadFilesTask::ProgressCalback, this, std::placeholders::_1, std::placeholders::_2, std::ref(file));
-        m_fileDownloadManager->DownloadAndCacheFile(file.objectId, file.name, m_fileCacheLocation, onProgress, GetCancellationToken())
+        m_fileDownloadManager->DownloadAndCacheFile(file.objectId, *file.name, m_fileCacheLocation, onProgress, GetCancellationToken())
             ->Then(m_ds->GetCacheAccessThread(), [=, &file] (ICachingDataSource::Result& result)
             {
             m_downloadTasksRunning--;

@@ -26,15 +26,13 @@ SyncLocalChangesTask::SyncLocalChangesTask
 CachingDataSourcePtr cachingDataSource,
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
 SyncOptions options,
-CachingDataSource::SyncProgressCallback&& onProgress,
+CachingDataSource::ProgressCallback&& onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(cachingDataSource, ct),
 m_objectsToSyncPtr(objectsToSync),
 m_options(options),
 m_onProgressCallback(onProgress),
-m_totalBytesToUpload(0),
-m_totalBytesUploaded(0),
 m_changeGroupIndexToSyncNext(0)
     {}
 
@@ -96,7 +94,7 @@ BentleyStatus SyncLocalChangesTask::PrepareChangeGroups(IDataSourceCache& cache)
         if (IChangeManager::ChangeStatus::NoChange != changeGroup->GetFileChange().GetChangeStatus())
             {
             BeFileName filePath = cache.ReadFilePath(changeGroup->GetFileChange().GetInstanceKey());
-            m_totalBytesToUpload += FileUtil::GetFileSize(filePath);
+            m_uploadBytesProgress.total += FileUtil::GetFileSize(filePath);
             }
         }
 
@@ -404,12 +402,12 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
             {
             if (!creationResult.IsSuccess())
                 {
-                m_totalBytesToUpload -= currentFileSize;
+                m_uploadBytesProgress.total -= currentFileSize;
                 HandleSyncError(creationResult.GetError(), changeGroup, objectLabel);
                 return;
                 }
 
-            m_totalBytesUploaded += currentFileSize;
+            m_uploadBytesProgress.current += currentFileSize;
 
             auto txn = m_ds->StartCacheTransaction();
 
@@ -582,13 +580,13 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
             {
             if (!result.IsSuccess())
                 {
-                m_totalBytesToUpload -= currentFileSize;
+                m_uploadBytesProgress.total -= currentFileSize;
                 SetError(result.GetError());
                 return;
                 }
 
             auto txn = m_ds->StartCacheTransaction();
-            m_totalBytesUploaded += currentFileSize;
+            m_uploadBytesProgress.current += currentFileSize;
             revision->SetFileCacheTag(result.GetValue().GetFileETag());
             if (SUCCESS != txn.GetCache().GetChangeManager().CommitFileRevision(*revision))
                 {
@@ -828,9 +826,7 @@ RevisionMap& revisionsOut
     auto changeset = std::make_shared<WSChangeset>(WSChangeset::SingeInstance);
 
     if (nullptr == AddChangeToChangeset(cache, *changeset, changeGroup, revisionsOut, true))
-        {
         return nullptr;
-        }
 
     return changeset;
     }
@@ -861,17 +857,18 @@ WSChangeset::ChangeState SyncLocalChangesTask::ToWSChangesetChangeState(IChangeM
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const
+void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label) const
     {
     if (!m_onProgressCallback)
-        {
         return;
-        }
 
     double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
-
-    m_onProgressCallback(synced, label, (double) m_totalBytesUploaded + currentFileBytesUploaded, (double) m_totalBytesToUpload);
+    
+    m_onProgressCallback({
+        {m_uploadBytesProgress.current + currentFileBytesUploaded, m_uploadBytesProgress.total},
+        label, 
+        synced});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -880,26 +877,23 @@ void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8S
 void SyncLocalChangesTask::ReportFinalProgress() const
     {
     if (!m_onProgressCallback)
-        {
         return;
-        }
 
-    m_onProgressCallback(1, "", (double) m_totalBytesUploaded, (double) m_totalBytesToUpload);
+    m_onProgressCallback({m_uploadBytesProgress, nullptr, 1});
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLabel, bool isFileBeingUploaded) const
+ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, bool isFileBeingUploaded) const
     {
-    ReportProgress(0, objectLabel);
+    auto labelPtr = std::make_shared<const Utf8String>(label);
+    ReportProgress(0, labelPtr);
 
     HttpRequest::ProgressCallback onProgress;
 
     if (isFileBeingUploaded)
-        {
-        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, objectLabel);
-        }
+        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, labelPtr);
 
     return ResponseGuard::Create(GetCancellationToken(), onProgress);
     }

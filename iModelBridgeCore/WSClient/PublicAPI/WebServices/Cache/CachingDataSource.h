@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/CachingDataSource.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,7 +119,7 @@ struct CachingDataSource :
         AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             std::shared_ptr<bset<ECInstanceKey>> instancesToSync,
-            SyncProgressCallback onProgress,
+            ProgressCallback onProgress,
             ICancellationTokenPtr ct,
             SyncOptions options
             );
@@ -128,7 +128,7 @@ struct CachingDataSource :
             (
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
-            CachingDataSource::LabeledProgressCallback onProgress,
+            CachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
 
@@ -233,7 +233,7 @@ struct CachingDataSource :
             (
             ObjectIdCR fileId,
             DataOrigin origin,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -242,7 +242,7 @@ struct CachingDataSource :
             const bvector<ObjectId>& filesIds,
             bool skipCachedFiles = false,
             FileCache fileCacheLocation = FileCache::Auto,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -254,7 +254,7 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) override;
@@ -262,7 +262,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) override;
@@ -272,7 +272,7 @@ struct CachingDataSource :
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
@@ -281,7 +281,7 @@ struct CachingDataSource :
             const bvector<ObjectId>& persistenceNavigationTrees,
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
     };

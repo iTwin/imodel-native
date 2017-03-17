@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -29,14 +29,13 @@ struct SyncCachedDataTask : public CachingTaskBase
         bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
         std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;
 
-        ICachingDataSource::SyncProgressCallback m_onProgress;
+        ICachingDataSource::ProgressCallback m_onProgress;
 
         size_t m_syncedInitialInstances = 0;
         size_t m_syncedRejectedInstances = 0;
         size_t m_syncedQueries = 0;
         size_t m_totalQueries = 0;
-        double m_syncedBytes = 0;
-        double m_totalBytes = 0;
+        CachingDataSource::Progress::State m_downloadBytesProgress;
 
     protected:
         virtual void _OnExecute();
@@ -54,7 +53,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         void CacheFiles();
 
         void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error);
-        void ReportProgress(Utf8StringCR label = nullptr);
+        void ReportProgress(Utf8StringCPtr label = nullptr);
 
     public:
         SyncCachedDataTask
@@ -63,7 +62,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ICachingDataSource::SyncProgressCallback onProgress,
+            ICachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };
