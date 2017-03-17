@@ -79,11 +79,11 @@ private:
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
 protected:
+    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
 
     ECSqlStatus _Reset() override;
 
 public:
-    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
     virtual ~SingleECSqlPreparedStatement() {}
 
     DbResult DoStep();
@@ -154,9 +154,15 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 //+===============+===============+===============+===============+===============+======
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
-public:
+private:
+    struct LeafPreparedStatement final : SingleECSqlPreparedStatement
+        {
     public:
-        struct ECInstanceKeyHelper final : NonCopyableClass
+        LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
+        ~LeafPreparedStatement() {}
+        };
+
+    struct ECInstanceKeyHelper final : NonCopyableClass
             {
             public:
                 enum class Mode
@@ -184,7 +190,6 @@ public:
                 bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNullExp; }
             };
 
-    private:
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;

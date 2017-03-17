@@ -930,6 +930,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
     {
     BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
 
+    BeAssert(ctx.GetPreparedStatement().GetType() != ECSqlType::Insert || exp.IsNamedParameter() && "For INSERT parameters ECDb conversts all params to named ones");
+
     ECSqlParameterMap& ecsqlParameterMap = ctx.GetPreparedStatement().GetParameterMapR();
     ECSqlBinder* binder = nullptr;
     const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, exp.GetParameterName());

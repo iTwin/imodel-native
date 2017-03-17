@@ -589,7 +589,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 
-        m_statements.push_back(std::make_unique<SingleECSqlPreparedStatement>(m_ecdb, m_type));
+        m_statements.push_back(std::make_unique<LeafPreparedStatement>(m_ecdb));
 
         SingleECSqlPreparedStatement& preparedStmt = *m_statements.back();
         currentPrepareCtx.Reset(preparedStmt);

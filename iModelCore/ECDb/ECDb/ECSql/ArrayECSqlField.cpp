@@ -38,7 +38,7 @@ ECSqlStatus ArrayECSqlField::_OnAfterStep()
         }
 
     BeAssert(m_json.IsArray());
-    m_value = std::make_unique<JsonECSqlValue>(*GetECSqlStatementR().GetECDb(), m_json, GetColumnInfo());
+    m_value = std::make_unique<JsonECSqlValue>(m_preparedECSqlStatement.GetECDb(), m_json, GetColumnInfo());
     return ECSqlStatus::Success;
     }
 

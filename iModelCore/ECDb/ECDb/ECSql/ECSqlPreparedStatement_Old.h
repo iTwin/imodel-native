@@ -88,7 +88,7 @@ typedef ECSqlPreparedStatement_Old IECSqlPreparedStatement;
 //! post-prepare operations
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
+struct ECSqlSelectPreparedStatement : public ECSqlPreparedStatement_Old
     {
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
@@ -103,8 +103,8 @@ struct ECSqlSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
         ECSqlStatus OnAfterStep() const;
 
     public:
-        explicit ECSqlSelectPreparedStatement_Old(ECDbCR ecdb) : ECSqlPreparedStatement_Old(ECSqlType::Select, ecdb) {}
-        ~ECSqlSelectPreparedStatement_Old() {}
+        explicit ECSqlSelectPreparedStatement(ECDbCR ecdb) : ECSqlPreparedStatement_Old(ECSqlType::Select, ecdb) {}
+        ~ECSqlSelectPreparedStatement() {}
 
         DbResult Step();
 
@@ -116,8 +116,6 @@ struct ECSqlSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
 
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
-
-typedef ECSqlSelectPreparedStatement_Old ECSqlSelectPreparedStatement;
 
 //=======================================================================================
 //! Represents a prepared non-SELECT (INSERT, UPDATE and DELETE) ECSqlStatement with all 

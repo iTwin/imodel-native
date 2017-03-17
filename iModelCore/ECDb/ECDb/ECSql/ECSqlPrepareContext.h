@@ -131,6 +131,13 @@ struct ECSqlPrepareContext final : NonCopyableClass
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
 
         SingleECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_singlePreparedStatement != nullptr); return *m_singlePreparedStatement; }
+        template <class TECSqlPreparedStatement>
+        TECSqlPreparedStatement& GetPreparedStatement() const
+            {
+            BeAssert(dynamic_cast<TECSqlPreparedStatement*> (&GetPreparedStatement()) != nullptr);
+            return static_cast<TECSqlPreparedStatement&> (GetPreparedStatement());
+            }
+
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
         Utf8CP GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
@@ -351,6 +358,7 @@ struct ECSqlPrepareContext
         JoinedTableInfo const* GetJoinedTableInfo() const { return m_joinedTableInfo.get(); }
         JoinedTableInfo const* TrySetupJoinedTableInfo(Exp const&, Utf8CP originalECSQL);
         ECSqlStatementBase& GetECSqlStatementR() const;
+
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
         Utf8CP GetNativeSql() const;

@@ -162,6 +162,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
         if (classIdColumn.GetPersistenceType() == PersistenceType::Physical)
             {
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
             if (ctx.IsParentOfJoinedTable())
                 {
                 auto joinedTableClass = ctx.GetECDb().Schemas().GetECClass(ctx.GetJoinedTableClassId());
@@ -172,7 +173,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                     return ECSqlStatus::Error;
                 }
             else if (ctx.GetJoinedTableInfo() != nullptr  && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
-                {
+            if (ctx.GetJoinedTableInfo() != nullptr && !ctx.GetJoinedTableInfo()->HasJoinedTableECSql())
+            {
                 auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(ctx.GetJoinedTableInfo()->GetClass());
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     classIdColumn,
@@ -180,6 +182,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                     return ECSqlStatus::Error;
                 }
             else
+#endif
                 {
                 if (SUCCESS != classMap.GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     classIdColumn,

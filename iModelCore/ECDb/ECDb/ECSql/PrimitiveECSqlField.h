@@ -40,7 +40,7 @@ private:
     IECSqlValueIterable const& _GetArrayIterable() const override;
 
 public:
-    PrimitiveECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
+    PrimitiveECSqlField(ECSqlSelectPreparedStatement&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
     ~PrimitiveECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

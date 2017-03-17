@@ -241,7 +241,7 @@ Utf8CP ECSqlPreparedStatement_Old::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-DbResult ECSqlSelectPreparedStatement_Old::Step()
+DbResult ECSqlSelectPreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -259,7 +259,7 @@ DbResult ECSqlSelectPreparedStatement_Old::Step()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::_Reset()
+ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
     {
     ECSqlStatus resetStatementStat = DoReset();
     //even if statement reset failed we still try to reset the fields to clean-up things as good as possible.
@@ -277,7 +277,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::_Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-int ECSqlSelectPreparedStatement_Old::GetColumnCount() const
+int ECSqlSelectPreparedStatement::GetColumnCount() const
     {
     if (SUCCESS != AssertIsValid())
         return -1;
@@ -288,7 +288,7 @@ int ECSqlSelectPreparedStatement_Old::GetColumnCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-IECSqlValue const& ECSqlSelectPreparedStatement_Old::GetValue(int columnIndex) const
+IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
     {
     if (SUCCESS != AssertIsValid())
         return NoopECSqlValue::GetSingleton();
@@ -306,7 +306,7 @@ IECSqlValue const& ECSqlSelectPreparedStatement_Old::GetValue(int columnIndex) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::ResetFields() const
+ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
     for (ECSqlField* field : m_fieldsRequiringReset)
         {
@@ -321,7 +321,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::ResetFields() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::OnAfterStep() const
+ECSqlStatus ECSqlSelectPreparedStatement::OnAfterStep() const
     {
     for (ECSqlField* field : m_fieldsRequiringOnAfterStep)
         {
@@ -336,7 +336,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::OnAfterStep() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-void ECSqlSelectPreparedStatement_Old::AddField(std::unique_ptr<ECSqlField> field)
+void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
     {
     BeAssert(field != nullptr);
     if (field != nullptr)

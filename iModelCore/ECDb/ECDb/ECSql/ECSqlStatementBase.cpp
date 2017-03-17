@@ -186,7 +186,7 @@ int ECSqlStatementBase::GetColumnCount() const
     if (FailIfWrongType(ECSqlType::Select, "Cannot call query result API on an unprepared or non-SELECT ECSqlStatement.") != ECSqlStatus::Success)
         return -1;
 
-    return GetPreparedStatementP<ECSqlSelectPreparedStatement_Old>()->GetColumnCount();
+    return GetPreparedStatementP<ECSqlSelectPreparedStatement>()->GetColumnCount();
     }
 
 //---------------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ IECSqlValue const& ECSqlStatementBase::GetValue(int columnIndex) const
         return NoopECSqlValue::GetSingleton();
 
     //Reports errors (not prepared yet, index out of bounds) and uses no-op value in case of error
-    return GetPreparedStatementP<ECSqlSelectPreparedStatement_Old>()->GetValue(columnIndex);
+    return GetPreparedStatementP<ECSqlSelectPreparedStatement>()->GetValue(columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -278,7 +278,7 @@ IECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb
     switch (exp.GetType())
         {
             case Exp::Type::Select:
-                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlSelectPreparedStatement_Old(ecdb));
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlSelectPreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Insert:
