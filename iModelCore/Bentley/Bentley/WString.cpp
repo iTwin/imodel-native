@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/WString.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -429,7 +429,7 @@ Utf8StringR Utf8String::ToUpper()
     {
     if (IsAscii())
         {
-        std::transform(begin(), end(), begin(), [](char const& c){return toupper(c);});
+        std::transform(begin(), end(), begin(), [](char const& c){return (char)toupper(c);});
         return *this;
         }
     
