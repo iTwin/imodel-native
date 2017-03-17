@@ -89,6 +89,7 @@ public:
     DbResult DoStep();
 
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
+    ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
     };
 
@@ -161,8 +162,8 @@ public:
                 enum class Mode
                     {
                     NotUserProvided = 1,
-                    UserProvidedNull,
-                    UserProvidedNotNull
+                    UserProvidedNullExp,
+                    UserProvidedNonNullExp
                     };
 
             private:
@@ -180,7 +181,7 @@ public:
                 ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
                 Mode GetMode() const { return m_mode; }
-                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNull; }
+                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNullExp; }
             };
 
     private:

@@ -107,7 +107,7 @@ struct ECSqlPrepareContext final : NonCopyableClass
 
     private:
         ECDbCR m_ecdb;
-        IECSqlPreparedStatement* m_preparedStatement = nullptr;
+        SingleECSqlPreparedStatement* m_singlePreparedStatement = nullptr;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop = false;
         ExpScopeStack m_scopes;
@@ -116,9 +116,9 @@ struct ECSqlPrepareContext final : NonCopyableClass
 
     public:
         explicit ECSqlPrepareContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
-        void Reset(IECSqlPreparedStatement& preparedStmt) 
+        void Reset(SingleECSqlPreparedStatement& preparedStmt)
             { 
-            m_preparedStatement = &preparedStmt; 
+            m_singlePreparedStatement = &preparedStmt;
 
             m_nativeSqlBuilder.Clear();
             m_scopes.Clear();
@@ -130,7 +130,7 @@ struct ECSqlPrepareContext final : NonCopyableClass
         SelectClauseInfo const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
 
-        IECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_preparedStatement != nullptr); return *m_preparedStatement; }
+        SingleECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_singlePreparedStatement != nullptr); return *m_singlePreparedStatement; }
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
         Utf8CP GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }

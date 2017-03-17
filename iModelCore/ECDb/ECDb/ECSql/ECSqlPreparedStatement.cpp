@@ -28,6 +28,13 @@ ECSqlStatus IECSqlPreparedStatement::Prepare(ECSqlPrepareContext& ctx, Exp const
         return ECSqlStatus::Error;
         }
 
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     //capture current clear cache counter so that we can invalidate the statement if another clear cache call 
     //occurred in the lifetime of the statement
     m_preparationClearCacheCounter = m_ecdb.GetECDbImplR().GetClearCacheCounter();
@@ -113,7 +120,7 @@ BentleyStatus IECSqlPreparedStatement::AssertIsValid() const
     }
 
 //***************************************************************************************
-//    LeafECSqlPreparedStatement
+//    SingleECSqlPreparedStatement
 //***************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
@@ -457,6 +464,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
 
+    BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
 
@@ -498,7 +506,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
 
         ValueExp const* valueExp = valuesListExp->GetValueExp(i);
 
-        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, ecInstanceIdPropNameExpIx >= 0 && ecInstanceIdPropNameExpIx == (int) i);
+        const bool isIdExp = ecInstanceIdPropNameExpIx >= 0 && ecInstanceIdPropNameExpIx == (int) i;
+        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, isIdExp);
 
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
@@ -558,7 +567,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext&, Exp con
             propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
 
             propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
-            if (isPrimaryTable && propNameValueInfo.m_isECInstanceIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNull)
+            if (isPrimaryTable && propNameValueInfo.m_isECInstanceIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNullExp)
                 {
                 //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
                 //to replace the NULL by a parameter
@@ -687,9 +696,9 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &ecInstan
         BeAssert(idValueExp != nullptr);
 
         if (ECSqlExpPreparer::IsNullExp(*idValueExp))
-            m_mode = Mode::UserProvidedNull;
-
-        m_mode = Mode::UserProvidedNotNull;
+            m_mode = Mode::UserProvidedNullExp;
+        else
+            m_mode = Mode::UserProvidedNonNullExp;
         }
 
     if (IsAutogenerateIdMode())

@@ -33,7 +33,7 @@ public:
 //! of the ECInstance's ECClass. 
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceKey final
+struct ECInstanceKey
     {
 private:
     ECN::ECClassId m_ecClassId;
@@ -42,7 +42,6 @@ private:
 public:
     //! Construct an empty/invalid ECInstanceKey
     ECInstanceKey() {}
-    ~ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
