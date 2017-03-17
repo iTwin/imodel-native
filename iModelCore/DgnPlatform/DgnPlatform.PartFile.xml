@@ -603,7 +603,7 @@
         </Bindings>
     </Part>
     
-   <Part Name="TilePublisherLibNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
+    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="TilePublisherLib" />
         <Bindings>
@@ -611,7 +611,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="TilePublisherLibSdkNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke">
+    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="TilePublisherLib" />
         <Bindings>
