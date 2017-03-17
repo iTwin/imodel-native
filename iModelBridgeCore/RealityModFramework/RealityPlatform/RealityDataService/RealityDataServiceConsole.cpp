@@ -720,6 +720,12 @@ void RealityDataConsole::Details()
 
 void RealityDataConsole::FileAccess()
     {
+    if(m_currentNode == nullptr)
+        {
+        DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
+        return;
+        }
+
     AzureHandshake* handshake;
     if(m_lastInput.ContainsI("w"))
         handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), true);
@@ -731,6 +737,12 @@ void RealityDataConsole::FileAccess()
 
 void RealityDataConsole::AzureAdress()
     {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
+        return;
+        }
+
     AzureHandshake* handshake;
     if (m_lastInput.ContainsI("w"))
         handshake = new AzureHandshake(m_currentNode->node.GetRootId(), true);
@@ -768,6 +780,17 @@ void RealityDataConsole::AzureAdress()
 
 void RealityDataConsole::ChangeProps()
     {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
+        return;
+        }
+    else if (m_currentNode->node.GetRootId() != m_currentNode->node.GetInstanceId())
+        {
+        DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
+        return;
+        }
+
     Utf8String input; 
     DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
     bmap<RealityDataField, Utf8String> props = bmap<RealityDataField, Utf8String>();
@@ -801,8 +824,18 @@ void RealityDataConsole::ChangeProps()
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
             }
         }
-    //TODO : send to server
 
+    RealityDataServiceChange changeReq = RealityDataServiceChange(m_currentNode->node.GetRootId(), propertyString);
+
+    int status = RequestType::Body;
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(changeReq, status, RealityDataService::GetVerifyPeer());
+
+    Json::Value instances(Json::objectValue);
+    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+        DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
+    else 
+        Details();
     }
 
 void RealityDataConsole::InputError()

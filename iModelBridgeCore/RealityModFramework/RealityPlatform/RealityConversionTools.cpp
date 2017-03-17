@@ -321,40 +321,7 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     // Footprint
     bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
     if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
-        {
-        // Convert Utf8String to GeoPoint2d vector. 
-        // The string should look like this:
-        // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
         data->SetFootprintString(properties["Footprint"].asString().c_str());
-        /*footprintStr = properties["Footprint"].asString();
-
-        // Extract points.
-        footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
-        size_t delimiterPos = 0;
-        while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
-            footprintStr.erase(delimiterPos, 1);
-        while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
-            footprintStr.erase(delimiterPos, 1);
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
-            
-        for (size_t i = 0; i < tokens.size(); i += 2)
-            {
-            GeoPoint2d pt;
-            pt.longitude = strtod(tokens[i].c_str(), NULL);
-            pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
-
-            footprint.push_back(pt);
-            }
-
-        footprintStr = properties["Footprint"].asString();
-        // Extract coordSys.
-        footprintStr = footprintStr.substr(footprintStr.find_first_of("c"), footprintStr.find_last_of("}") - footprintStr.find_first_of("c")); // c-oordinate_system
-        footprintStr.ReplaceAll("coordinate_system\" : \"", "");
-        footprintStr.ReplaceAll("\" }", "");
-        
-        data->SetFootprint(footprint, footprintStr);*/
-        }
 
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
         data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
@@ -452,34 +419,7 @@ SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value propert
     // Footprint
     bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
     if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
-        {
-        // Convert Utf8String to GeoPoint2d vector. 
-        // The string should look like this:
-        // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
         data->SetFootprintString(properties["Footprint"].asString().c_str());
-        /*footprintStr = properties["Footprint"].asString();
-
-        // Extract points.
-        footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
-        size_t delimiterPos = 0;
-        while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
-            footprintStr.erase(delimiterPos, 1);
-        while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
-            footprintStr.erase(delimiterPos, 1);
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
-            
-        for (size_t i = 0; i < tokens.size(); i += 2)
-            {
-            GeoPoint2d pt;
-            pt.longitude = strtod(tokens[i].c_str(), NULL);
-            pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
-
-            footprint.push_back(pt);
-            }
-
-        data->SetFootprint(footprint);*/
-        }
 
     return data;
     }
