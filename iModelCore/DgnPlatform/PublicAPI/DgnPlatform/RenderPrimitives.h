@@ -236,16 +236,11 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct Feature
+struct Feature : FeatureIndex::Feature
 {
-private:
-    DgnElementId        m_elementId;
-    DgnSubCategoryId    m_subCategoryId;
-    DgnGeometryClass    m_class;
-
 public:
     Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
-    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) { Init(elementId, subCatId, geomClass); }
     Feature(DgnElementId elementId, DisplayParamsCR params) : Feature(elementId, params.GetSubCategoryId(), params.GetClass()) { }
 
     DgnElementId GetElementId() const { return m_elementId; }
@@ -290,6 +285,8 @@ public:
     const_iterator end() const { return m_map.end(); }
     size_t size() const { return m_map.size(); }
     bool empty() const { return m_map.empty(); }
+
+    void ToFeatureIndex(FeatureIndex& index, bvector<FeatureIndex::Feature>& features, bvector<uint16_t> const& indices) const;
 };
 
 //=======================================================================================
@@ -403,6 +400,8 @@ public:
     bvector<FPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<uint16_t> const& Colors() const { return m_colors; } //!< Vertex attribute array specifying an index into the color table
     ColorTableCR GetColorTable() const { return m_colorTable; }
+    bvector<uint16_t> const& Features() const { return m_features; }
+    FeatureTableCR GetFeatureTable() const { return m_featureTable; }
 
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
 
@@ -720,8 +719,9 @@ struct ToleranceRatio
 //=======================================================================================
 struct MeshArgs : TriMeshArgs
 {
-    bvector<int32_t>    m_indices;
-    bvector<uint32_t>   m_colorTable;
+    bvector<int32_t>                m_indices;
+    bvector<uint32_t>               m_colorTable;
+    bvector<FeatureIndex::Feature>  m_featureTable;
 
     template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = 0 != src.size() ? src.data() : nullptr; }
 
@@ -765,8 +765,9 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 //=======================================================================================
 struct PolylineArgs : IndexedPolylineArgs
 {
-    bvector<IndexedPolyline>    m_polylines;
-    bvector<uint32_t>           m_colorTable;
+    bvector<IndexedPolyline>        m_polylines;
+    bvector<uint32_t>               m_colorTable;
+    bvector<FeatureIndex::Feature>  m_featureTable;
 
     bool IsValid() const { return !m_polylines.empty(); }
 

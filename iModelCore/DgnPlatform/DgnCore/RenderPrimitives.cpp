@@ -1308,6 +1308,28 @@ uint16_t FeatureTable::GetIndex(FeatureCR feature)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void FeatureTable::ToFeatureIndex(FeatureIndex& index, bvector<FeatureIndex::Feature>& features, bvector<uint16_t> const& indices) const
+    {
+    index.Reset();
+    if (empty())
+        return;
+
+    features.resize(size());
+    for (auto const& kvp : *this)
+        features[kvp.second] = kvp.first;
+
+    index.m_features = features.data();
+    index.m_numFeatures = GetNumIndices();
+    if (!IsUniform())
+        {
+        BeAssert(!indices.empty());
+        index.m_indices = indices.data();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
@@ -1471,6 +1493,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
         m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
 
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    mesh.GetFeatureTable().ToFeatureIndex(m_features, m_featureTable, mesh.Features());
 
     return true;
     }
@@ -1492,6 +1515,8 @@ void MeshArgs::Clear()
 
     m_colors.Reset();
     m_colorTable.clear();
+    m_features.Reset();
+    m_featureTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1532,6 +1557,8 @@ void PolylineArgs::Reset()
 
     m_colors.Reset();
     m_colorTable.clear();
+    m_features.Reset();
+    m_featureTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1558,6 +1585,7 @@ bool PolylineArgs::Init(MeshCR mesh)
         m_lines = &m_polylines[0];
 
         mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+        mesh.GetFeatureTable().ToFeatureIndex(m_features, m_featureTable, mesh.Features());
         }
 
     return IsValid();

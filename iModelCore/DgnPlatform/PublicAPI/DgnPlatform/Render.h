@@ -1507,6 +1507,34 @@ struct ColorIndex
 };
 
 //=======================================================================================
+//! Defines a look-up table of unique combinations of elementID, subcategoryID, and class
+//! for a graphic primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureIndex
+{
+    struct Feature
+    {
+        DgnElementId        m_elementId;
+        DgnSubCategoryId    m_subCategoryId;
+        DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+
+        void Init(DgnElementId elem, DgnSubCategoryId subCat, DgnGeometryClass geomClass)
+            {
+            m_elementId = elem;
+            m_subCategoryId = subCat;
+            m_class = geomClass;
+            }
+    };
+
+    Feature const*  m_features = nullptr; // Lookup table
+    uint16_t const* m_indices = nullptr;  // indices into m_features, or NULL if m_numFeatures <= 1.
+    uint16_t        m_numFeatures = 0;    // Number of entries in m_features. If this is 1, m_indices is null and m_features[0] applies to the entire primitive.
+
+    void Reset() { *this = FeatureIndex(); }
+};
+
+//=======================================================================================
 //! Information needed to draw a triangle mesh
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
@@ -1521,6 +1549,7 @@ struct TriMeshArgs
     TexturePtr m_texture;
     int32_t m_flags = 0; // don't generate normals
     ColorIndex m_colors;
+    FeatureIndex m_features;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -1548,6 +1577,7 @@ struct IndexedPolylineArgs
     uint32_t        m_numPoints = 0;
     uint32_t        m_numLines = 0;
     ColorIndex      m_colors;
+    FeatureIndex    m_features;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
