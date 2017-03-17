@@ -629,8 +629,8 @@
 
     <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
-        <SubPart PartName="TilePublisherLibNuGetPackage" />
-        <SubPart PartName="TilePublisherLibSdkNuGetPackage" />
+        <!-- <SubPart PartName="TilePublisherLibNuGetPackage" /> -->
+        <!-- <SubPart PartName="TilePublisherLibSdkNuGetPackage" /> -->
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 
