@@ -65,6 +65,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::SetServer;
     else if (args[0].EqualsI("ChangeProps"))
         m_lastCommand = Command::ChangeProps;
+    else if (args[0].EqualsI("Delete"))
+        m_lastCommand = Command::Delete;
     else
         {
         m_lastCommand = Command::Error;
@@ -103,25 +105,26 @@ RealityDataConsole::RealityDataConsole() :
     m_machineRepos(bvector<Utf8String>()),
     m_currentNode(nullptr)
     {
-    m_functionMap.Insert(Command::Help, &RealityDataConsole::Usage);
-    m_functionMap.Insert(Command::SetServer, &RealityDataConsole::ConfigureServer);
-    m_functionMap.Insert(Command::List, &RealityDataConsole::List);
-    m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
-    m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
-    m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
-    m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
-    m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
-    m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
-    m_functionMap.Insert(Command::FileAccess, &RealityDataConsole::FileAccess);
-    m_functionMap.Insert(Command::AzureAdress, &RealityDataConsole::AzureAdress);
-    m_functionMap.Insert(Command::ChangeProps, &RealityDataConsole::ChangeProps);
+    m_functionMap.Insert(Command::Help,         &RealityDataConsole::Usage);
+    m_functionMap.Insert(Command::SetServer,    &RealityDataConsole::ConfigureServer);
+    m_functionMap.Insert(Command::List,         &RealityDataConsole::List);
+    m_functionMap.Insert(Command::ListAll,      &RealityDataConsole::ListAll);
+    m_functionMap.Insert(Command::ChangeDir,    &RealityDataConsole::ChangeDir);
+    m_functionMap.Insert(Command::Stat,         &RealityDataConsole::EnterpriseStat);
+    m_functionMap.Insert(Command::Details,      &RealityDataConsole::Details);
+    m_functionMap.Insert(Command::Download,     &RealityDataConsole::Download);
+    m_functionMap.Insert(Command::Upload,       &RealityDataConsole::Upload);
+    m_functionMap.Insert(Command::FileAccess,   &RealityDataConsole::FileAccess);
+    m_functionMap.Insert(Command::AzureAdress,  &RealityDataConsole::AzureAdress);
+    m_functionMap.Insert(Command::ChangeProps,  &RealityDataConsole::ChangeProps);
+    m_functionMap.Insert(Command::Delete,       &RealityDataConsole::Delete);
 
     //commands that should never occur, within Run()
-    m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::Retry, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::Error, &RealityDataConsole::InputError);
-    m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Retry,        &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Error,        &RealityDataConsole::InputError);
+    m_functionMap.Insert(Command::ChoiceIndex,  &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::ChoiceValue,  &RealityDataConsole::DummyFunction);
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
@@ -239,7 +242,7 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
     DisplayInfo ("  AzureAdress Prints the URL to use\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
-    
+    DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -785,7 +788,7 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
         }
-    else if (m_currentNode->node.GetRootId() != m_currentNode->node.GetInstanceId())
+    else if (m_currentNode->node.GetClassName() != "RealityData")
         {
         DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
         return;
@@ -836,6 +839,67 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else 
         Details();
+    }
+
+void RealityDataConsole::Delete()
+    {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
+        return;
+        }
+    Utf8String className = m_currentNode->node.GetClassName();
+
+    Utf8String instanceId = m_currentNode->node.GetInstanceId();
+    instanceId.ReplaceAll("/", "~2F");
+    std::string str;
+    Utf8String jsonResponse = "";
+
+    if (className == "Document")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if(str != "y")
+            return;
+
+        RealityDataDeleteDocument documentReq = RealityDataDeleteDocument(instanceId);
+        RealityDataService::RequestToJSON(&documentReq, jsonResponse);
+        }
+    else if (className == "Folder")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if (str != "y")
+            return;
+
+        RealityDataDeleteFolder folderReq = RealityDataDeleteFolder(instanceId);
+        RealityDataService::RequestToJSON(&folderReq, jsonResponse);
+        }
+    else if (className == "RealityData")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if (str != "y")
+            return;
+
+        RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
+        RealityDataService::RequestToJSON(&realityDataReq, jsonResponse);
+        }
+
+        if(jsonResponse.Contains("errorMessage"))
+            {
+            Json::Value instances(Json::objectValue);
+            if (Json::Reader::Parse(jsonResponse, instances) && instances.isMember("errorMessage"))
+                jsonResponse = instances["errorMessage"].asString();
+            DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", jsonResponse), DisplayOption::Error);
+            }
+        else
+            {
+            DisplayInfo("item deleted\n", DisplayOption::Tip);
+            m_lastInput = "..";
+            ChangeDir();
+            }
     }
 
 void RealityDataConsole::InputError()

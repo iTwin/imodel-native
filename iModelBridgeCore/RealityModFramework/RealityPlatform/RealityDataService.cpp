@@ -897,7 +897,7 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf8String properties)
-{
+    {
     m_id = realityDataId;
     m_validRequestString = false;
 
@@ -907,18 +907,45 @@ RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
     m_requestPayload.append(properties);
     m_requestPayload.append("}}}");
-}
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataServiceChange::_PrepareHttpRequestStringAndPayload() const
-{
+    {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
     m_httpRequestString.append(m_id);
     m_requestHeader.push_back("Content-Type: application/json");
-}
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RealityDataRelationshipCreate::RealityDataRelationshipCreate(Utf8String realityDataId, Utf8String projectId)
+    {
+    m_id = realityDataId;
+    m_validRequestString = false;
+
+    m_requestType = HttpRequestType::POST_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"");
+    m_requestPayload.append(projectId);
+    m_requestPayload.append("\"}}}");
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/RealityData/");
+    m_httpRequestString.append(m_id);
+    m_requestHeader.push_back("Content-Type: application/json");
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017

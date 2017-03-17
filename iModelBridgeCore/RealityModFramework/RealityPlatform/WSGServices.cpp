@@ -179,6 +179,8 @@ CURL* CurlConstructor::PrepareCurl(const WSGURL& wsgRequest, int& code, bool ver
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, wsgRequest.GetRequestPayload().c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, wsgRequest.GetRequestPayload().length());
         }
+    else if (wsgRequest.GetRequestType() == WSGURL::HttpRequestType::DELETE_Request)
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
 
     bvector<Utf8String> wsgHeaders = wsgRequest.GetRequestHeader();
     for (Utf8String header : wsgHeaders)

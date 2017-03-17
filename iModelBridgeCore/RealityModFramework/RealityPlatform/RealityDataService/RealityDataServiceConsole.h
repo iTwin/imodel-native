@@ -47,7 +47,8 @@ enum class Command
     Upload,
     FileAccess,
     AzureAdress,
-    ChangeProps
+    ChangeProps,
+    Delete
     };
 
 struct RealityDataConsole
@@ -82,6 +83,7 @@ public:
     void FileAccess();
     void AzureAdress();
     void ChangeProps();
+    void Delete();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

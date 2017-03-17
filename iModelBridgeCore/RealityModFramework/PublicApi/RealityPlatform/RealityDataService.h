@@ -495,15 +495,53 @@ protected:
     };
 
 //=====================================================================================
-//! @bsiclass                                   Spencer.Mason 02/2017
+//! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to modify an existing reality data in the reality data service.
 //=====================================================================================
 struct RealityDataServiceChange : public RealityDataUrl
-{
+    {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceChange(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
-};
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to delete an existing reality data in the reality data service.
+//=====================================================================================
+struct RealityDataDelete : public RealityDataByIdRequest
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) : RealityDataByIdRequest(realityDataId) { m_requestType = HttpRequestType::DELETE_Request; }
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to delete an existing reality data in the reality data service.
+//=====================================================================================
+struct RealityDataDeleteFolder : public RealityDataFolderByIdRequest
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataDeleteFolder(Utf8String realityDataId) : RealityDataFolderByIdRequest(realityDataId) { m_requestType = HttpRequestType::DELETE_Request; }
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to delete an existing reality data in the reality data service.
+//=====================================================================================
+struct RealityDataDeleteDocument : public RealityDataDocumentByIdRequest
+    {
+    REALITYDATAPLATFORM_EXPORT RealityDataDeleteDocument(Utf8String realityDataId) : RealityDataDocumentByIdRequest(realityDataId) { m_requestType = HttpRequestType::DELETE_Request; }
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A class used to create a relationship between an existing reality data and a project
+//=====================================================================================
+struct RealityDataRelationshipCreate : public RealityDataUrl
+    {
+        REALITYDATAPLATFORM_EXPORT RealityDataRelationshipCreate(Utf8String realityDataId, Utf8String projectId);
+    protected:
+        REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason 02/2017
