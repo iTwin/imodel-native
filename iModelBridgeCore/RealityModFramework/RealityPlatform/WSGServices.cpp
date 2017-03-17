@@ -424,13 +424,7 @@ bvector<NavNode> NodeNavigator::GetRootNodes(WSGServer server, Utf8String repoId
 //-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, NavNode& parentNode)
     {
-    Utf8String navString = parentNode.GetRootNode();
-    if(!navString.Contains(parentNode.GetInstanceId()))
-        {
-        navString.append("~2F");
-        navString.append(parentNode.GetInstanceId());
-        }
-    return GetChildNodes(server, repoId, navString);
+    return GetChildNodes(server, repoId, parentNode.GetNavString());
     }
 
 //-------------------------------------------------------------------------------------
