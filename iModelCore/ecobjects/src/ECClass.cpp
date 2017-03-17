@@ -355,51 +355,60 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2016
+// @bsimethod                                   Carole.MacDonald            03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties, Utf8String newName)
     {
+    bvector<ECClassCP> visited;
+    return RenameConflictProperty(prop, renameDerivedProperties, newName, visited);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties, Utf8String newName, bvector<ECClassCP>& visited)
+    {
+    if (std::find(visited.begin(), visited.end(), this) != visited.end())
+        return ECObjectsStatus::Success;
+
+    visited.push_back(this);
     PropertyMap::iterator iter = m_propertyMap.find(prop->GetName().c_str());
-    if (iter == m_propertyMap.end())
-        return ECObjectsStatus::PropertyNotFound;
-    ECPropertyP thisProp = iter->second; // Since the property that is passed in might come from a base class, we need the actual pointer of the property from this class in order to search the propertyList for it
-
-    ECPropertyP newProperty;
-    ECObjectsStatus status;
-    if (ECObjectsStatus::Success != (status = CopyProperty(newProperty, prop, newName.c_str(), true, false)))
+    if (iter != m_propertyMap.end())
         {
-        delete newProperty;
-        return status;
+        ECPropertyP thisProp = iter->second; // Since the property that is passed in might come from a base class, we need the actual pointer of the property from this class in order to search the propertyList for it
+
+        ECPropertyP newProperty;
+        ECObjectsStatus status;
+        if (ECObjectsStatus::Success != (status = CopyProperty(newProperty, thisProp, newName.c_str(), true, false)))
+            {
+            delete newProperty;
+            return status;
+            }
+
+        iter = m_propertyMap.find(prop->GetName().c_str());
+        m_propertyMap.erase(iter);
+        auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), thisProp);
+        if (iter2 != m_propertyList.end())
+            m_propertyList.erase(iter2);
+        InvalidateDefaultStandaloneEnabler();
+
+        status = AddProperty(newProperty, newName);
+        if (ECObjectsStatus::Success != status)
+            {
+            delete newProperty;
+            return status;
+            }
+        LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), prop->GetName().c_str(), newName.c_str());
         }
-
-    iter = m_propertyMap.find(prop->GetName().c_str());
-    m_propertyMap.erase(iter);
-    auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), thisProp);
-    if (iter2 != m_propertyList.end())
-        m_propertyList.erase(iter2);
-    InvalidateDefaultStandaloneEnabler();
-
-    status = AddProperty(newProperty, newName);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete newProperty;
-        return status;
-        }
-
     if (renameDerivedProperties)
         {
+        for (ECClassP baseClass : m_baseClasses)
+            {
+            baseClass->RenameConflictProperty(prop, renameDerivedProperties, newName, visited);
+            }
         for (ECClassP derivedClass : m_derivedClasses)
             {
-            ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
-            if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
-                derivedClass->RenameConflictProperty(fromDerived, renameDerivedProperties, newName);
-            for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
-                {
-                ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
-                if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
-                    continue;
-                derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
-                }
+            derivedClass->RenameConflictProperty(prop, renameDerivedProperties, newName, visited);
             }
         }
     return ECObjectsStatus::Success;
