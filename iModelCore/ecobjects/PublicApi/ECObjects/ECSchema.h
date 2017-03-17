@@ -636,7 +636,7 @@ private:
     ECPropertyCP            m_baseProperty;
     mutable IECTypeAdapter* m_cachedTypeAdapter;
 
-    // Adds the ECv3ConversionAttributes:PropertyRenamed Custom Attribute with the original name provided.
+    // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
     // Used for instance transformation
     void SetOriginalName(Utf8CP originalName);
 

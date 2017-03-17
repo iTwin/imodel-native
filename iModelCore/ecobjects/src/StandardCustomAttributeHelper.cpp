@@ -334,7 +334,7 @@ struct ConversionCustomAttributesSchemaHolder;
 typedef RefCountedPtr<ConversionCustomAttributesSchemaHolder> ConversionCustomAttributesSchemaHolderPtr;
 
 static Utf8CP s_convSchemaName = "ECv3ConversionAttributes";
-static Utf8CP s_renamedAccessor = "PropertyRenamed";
+static Utf8CP s_renamedAccessor = "RenamedPropertiesMapping";
 static const uint32_t s_convVersionRead = 1;
 static const uint32_t s_convVersionMinor = 0;
 
@@ -398,7 +398,7 @@ IECInstancePtr ConversionCustomAttributesSchemaHolder::_CreateCustomAttributeIns
     auto enablerIterator = m_enablers.find(attribute);
     if (enablerIterator == m_enablers.end())
         {
-        BeDataAssert(false && "Unknown custom attribute class name. Currently only PropertyRenamed is supported.");
+        BeDataAssert(false && "Unknown custom attribute class name. Currently only RenamedPropertiesMapping is supported.");
         return nullptr;
         }
 
