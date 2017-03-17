@@ -26,7 +26,7 @@ void RealityDataConsole::InterpretCommand()
     {
     std::string str;
     std::getline(std::cin, str);
-    m_lastInput = Utf8String(str.c_str());
+    m_lastInput = Utf8String(str.c_str()).Trim();
 
     bvector<Utf8String> args;
     BeStringUtilities::ParseArguments(args, m_lastInput.c_str());
@@ -261,14 +261,14 @@ void RealityDataConsole::ConfigureServer()
     Utf8String server;
     std::string input;
     std::getline(std::cin, input);
-    server = Utf8String(input.c_str());
+    server = Utf8String(input.c_str()).Trim();
     bool verifyCertificate = false;
     while(1)
         {
         DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
         Utf8String temp;
         std::getline(std::cin, input);
-        temp = Utf8String(input.c_str());
+        temp = Utf8String(input.c_str()).Trim();
         if(temp.EqualsI("y"))
             {
             verifyCertificate = true;
@@ -419,7 +419,7 @@ void RealityDataConsole::ListRoots()
         {
         if(rData->IsListable())
             {
-            nodes.push_back(rData->GetName());
+            nodes.push_back(Utf8PrintfString("%-30s %s", rData->GetName(), rData->GetIdentifier()));
             m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
             }
         }
@@ -462,7 +462,7 @@ void RealityDataConsole::ListAll()
     while (m_lastCommand != Command::Cancel && placeholder < size)
         {
         std::getline(std::cin, str);
-        if(Utf8String(str.c_str()).EqualsI("Cancel"))
+        if(Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
         else
             {
@@ -607,20 +607,20 @@ void RealityDataConsole::Upload()
     DisplayInfo("please input GUID for upload\n  ?", DisplayOption::Error);
     std::string input;
     std::getline(std::cin, input);
-    Utf8String guid = Utf8String(input.c_str());
+    Utf8String guid = Utf8String(input.c_str()).Trim();
 
     bmap<RealityDataField, Utf8String> properties;
     DisplayInfo("please input value for Name\n  ?", DisplayOption::Error);
     std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Name, Utf8String(input.c_str()));
+    properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
     DisplayInfo("please input value for Classification\n  ?", DisplayOption::Error);
     std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()));
+    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
 
     DisplayInfo("please input value for Type\n  ?", DisplayOption::Error);
     std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()));
+    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
@@ -787,7 +787,7 @@ void RealityDataConsole::ChangeProps()
             if(propertyString.length() > 0)
                 propertyString.append(",");
 
-            value = Utf8String(str.c_str());
+            value = Utf8String(str.c_str()).Trim();
             if(input == "Listable")
                 {
                 if(value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
