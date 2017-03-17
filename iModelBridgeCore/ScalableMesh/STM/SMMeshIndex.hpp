@@ -24,6 +24,7 @@
 #include "ScalableMeshMesher.h"
 #include <ctime>
 #include <fstream>
+#include <codecvt>
 #include "Edits/ClipUtilities.h"
 #include "vuPolygonClassifier.h"
 #include "LogUtils.h"
@@ -4892,11 +4893,17 @@ Publish Cesium ready format
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
     {
+    SMStreamingStore<EXTENT>::SMStreamingSettings settings;
+    settings.m_url = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(path.c_str());
+    settings.m_location = SMStreamingStore<EXTENT>::SMStreamingSettings::ServerLocation::LOCAL;
+    settings.m_dataType = SMStreamingStore<EXTENT>::SMStreamingSettings::DataType::CESIUM3DTILES;
+    settings.m_commMethod = SMStreamingStore<EXTENT>::SMStreamingSettings::CommMethod::CURL;
+    settings.m_isPublishing = true;
     ISMDataStoreTypePtr<EXTENT>     pDataStore(
 #ifndef VANCOUVER_API
-        new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles)
+        new SMStreamingStore<EXTENT>(*dataSourceManager, settings)
 #else
-        SMStreamingStore<EXTENT>::Create(*dataSourceManager, path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles)
+        SMStreamingStore<EXTENT>::Create(*dataSourceManager, settings)
 #endif
     );
 

@@ -135,6 +135,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     {
     InitializeDataSourceAccount(dataSourceManager, settings);
 
+    m_isPublishing = settings.IsPublishing();
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -183,6 +184,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
         account_prefix = DataSourceURL((L"file:///" + settings.GetURL()).c_str());
+        if (!BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
         }
     else if (settings.IsLocal())
         {
@@ -1366,7 +1368,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
         // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
         //assert(nodeGroup.IsValid());
-        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, this->m_isPublishing, nodeGroup);
         }
 
     return true;    
@@ -1416,7 +1418,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, this->m_isPublishing);
     return true;
     }
 
@@ -1460,7 +1462,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, SMNodeGroup::Ptr nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroup::Ptr nodeGroup, bool compress = true)
     : m_dataSourceAccount(dataSourceAccount),
       m_nodeHeader(nodeHeader),
       m_nodeGroup(nodeGroup),
@@ -1489,7 +1491,12 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         default:
             assert(!"Unkown data type for streaming");
         }
-
+    if (isPublishing)
+        {
+        auto dataPath = m_dataSourceAccount->getPrefixPath() + L"\\" + m_dataSourceURL;
+        dataPath = dataPath.substr(8, dataPath.size());
+        if (!BeFileName::DoesPathExist(dataPath.c_str())) BeFileName::CreateNewDirectory(dataPath.c_str());
+        }
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
 

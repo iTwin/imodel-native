@@ -47,8 +47,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                 enum DataType { CESIUM3DTILES, SMGROUPS };
 
             public:
-
+                SMStreamingSettings() {};
                 SMStreamingSettings(const Json::Value& fileName);
+
             bool IsLocal()            const   { return m_location == LOCAL; }
             bool IsPublic()           const   { return m_public; }
             bool IsUsingCURL()        const   { return m_commMethod == CURL; }
@@ -56,6 +57,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool IsDataFromLocal()    const   { return m_location == LOCAL; }
             bool IsDataFromRDS()      const   { return m_location == RDS; }
             bool IsDataFromAzure()    const   { return m_location == AZURE; }
+            bool IsPublishing()       const   { return m_isPublishing; }
 
             WString GetServerID() const
                 {
@@ -72,9 +74,6 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                 return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_url).c_str();
                 }
 
-            private:
-
-                SMStreamingSettings();
 
             public:
 
@@ -82,6 +81,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             CommMethod m_commMethod = CURL;
             DataType m_dataType = CESIUM3DTILES;
             bool m_public = false;
+            bool m_isPublishing = false;
             string m_guid;
             string m_serverID;
             string m_url;
@@ -91,6 +91,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
         bool m_use_node_header_grouping = false;
         bool m_use_virtual_grouping = false;
+        bool m_isPublishing = false;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
         WString m_rootDirectory;        
@@ -136,6 +137,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
 
         void SetDataFormatType(FormatType formatType);
+
+        void SetIsPublishing(bool isPublishing)
+            {
+            m_isPublishing = isPublishing;
+            }
 
         static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize);
 
@@ -269,7 +275,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
 
         virtual ~SMStreamingNodeDataStore();
 
