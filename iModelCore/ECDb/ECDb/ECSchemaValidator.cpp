@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -357,6 +357,7 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString() const
             if (!isFirstProp)
                 violatingPropsStr.append(", ");
 
+            violatingPropsStr.append(violatingProp->GetClass().GetFullName()).append(":");
             violatingPropsStr.append(violatingProp->GetName());
             isFirstProp = false;
             }
