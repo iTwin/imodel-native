@@ -5,7 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "..\ThreeMxSchemaInternal.h"
+#include <Bentley/Bentley.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <DgnPlatform/DgnGeoCoord.h>
+
+
+#include <ThreeMxReader/ThreeMxSchemaCommon.h>
+
+
+#include <ThreeMxReader/ThreeMxReader.h>
 
 #include "openctm/openctm.h"
 

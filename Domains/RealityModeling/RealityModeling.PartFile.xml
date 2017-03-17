@@ -92,10 +92,18 @@
         </Bindings>
     </Part>
 
+  <Part Name="ThreeMxReader" BMakeFile="ThreeMxSchema/ThreeMxReader.mke">
+    <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <Bindings>
+	<PublicAPI Domain="ThreeMxReader"/>
+      <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxReader.dll</Assemblies>
+      <Libs>delivery/$(shlibprefix)ThreeMxReader$(libext)</Libs>
+    </Bindings>
+  </Part>
     
     <Part Name="ThreeMxSchema" BMakeFile="ThreeMxSchema/ThreeMxSchema.mke">
         <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ThreeMxReader"/>
         <SubPart PartName="ThreeMxSchemaPublicAPI"/>
         <Bindings>
             <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxSchema.dll</Assemblies>
