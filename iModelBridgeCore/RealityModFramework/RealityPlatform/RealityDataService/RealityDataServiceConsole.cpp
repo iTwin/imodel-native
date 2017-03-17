@@ -937,7 +937,7 @@ void RealityDataConsole::Filter()
     std::string str;
     while (filter != "-Finish-")
         {
-        DisplayInfo("Current Filters:");
+        DisplayInfo("Current Filters:\n");
         DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
