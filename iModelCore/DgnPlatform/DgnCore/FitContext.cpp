@@ -108,9 +108,11 @@ StatusInt FitContext::_VisitGeometry(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FitContext::AcceptRangeElement(DgnElementId id)
     {
+#if defined (NEEDS_WORK_RANGE_INDEX)
     if (!m_params.m_useElementAlignedBox)
         m_fitRange.Extend(m_lastRange);
     else
+#endif
         VisitElement(id);
     }
 

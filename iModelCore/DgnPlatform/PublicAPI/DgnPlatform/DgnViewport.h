@@ -150,7 +150,7 @@ protected:
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
-    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
+    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Task::Priority);
@@ -549,7 +549,7 @@ struct OffscreenViewport : DgnViewport
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
+    void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta) override {}
 
 public:
     NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}
