@@ -721,7 +721,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
-Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -731,7 +731,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int pr
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, QuantityCR qty, UnitCP useUnit, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -749,7 +749,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, QuantityCR qty, U
 //   that the caller needs to append the unit name to the value
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
       UnitCP fromUnit = UnitRegistry::Instance().LookupUnit(fromUOM);
       Quantity qty = Quantity(dval, *fromUnit);
