@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmSideSlope.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1283,7 +1283,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 **  Test For Cut Fill Option
 */
     if( radial->cutFillOption && (radial+1)->cutFillOption &&
-        radial->cutFillTin == (radial+1)->cutFillTin &&
+        radial->cutFillTin == (radial+1)->cutFillTin && radial->cutFillTin != nullptr &&
         radial->radialStatus  &&  (radial+1)->radialStatus )
       {
 /*
