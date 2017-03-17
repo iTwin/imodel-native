@@ -690,11 +690,13 @@ ICancellationTokenPtr ct
             DataOrigin returningDataOrigin = DataOrigin::RemoteData;
             if (objectsResult.IsSuccess())
                 {
-                if (SUCCESS != txn.GetCache().UpdateInstance(objectId, objectsResult.GetValue()))
+                auto status = txn.GetCache().UpdateInstance(objectId, objectsResult.GetValue());
+                if (CacheStatus::OK != status)
                     {
-                    result->SetError(Status::InternalCacheError);
+                    result->SetError(status);
                     return;
                     }
+
                 if (!objectsResult.GetValue().IsModified())
                     {
                     returningDataOrigin = DataOrigin::CachedData;
@@ -1462,7 +1464,7 @@ ICancellationTokenPtr ct
 
             if (objectsResult.IsSuccess())
                 {
-                if (SUCCESS != txn.GetCache().UpdateInstance(objectId, objectsResult.GetValue()))
+                if (CacheStatus::OK != txn.GetCache().UpdateInstance(objectId, objectsResult.GetValue()))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;

@@ -359,7 +359,21 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndIn
     instances.Add({"TestSchema.TestClass", "Foo"});
 
     BeTest::SetFailOnAssert(false);
-    EXPECT_EQ(ERROR, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
+    }
+
+TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCacheAndResponseNotModified_ReturnsErrorAndInstanceNotCached)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, StubWSObjectsResponseNotModified()));
     BeTest::SetFailOnAssert(true);
 
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
@@ -372,7 +386,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "TestValue"}});
-    EXPECT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_EQ(CacheStatus::OK, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
 
     Json::Value updatedInstance;
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, updatedInstance));
