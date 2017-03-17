@@ -435,6 +435,17 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
+    {   
+    Utf8String filter = "Name+eq+'";
+    filter.append(name);
+    filter.append("'");
+    return filter;
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
@@ -603,6 +614,40 @@ Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     return filter;
     }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+Utf8String RealityDataFilterCreator::FilterByGroup(Utf8String group)
+    {   
+    Utf8String filter = "Group+eq+'";
+    filter.append(group);
+    filter.append("'");
+    return filter;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+Utf8String RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String realityDataId)
+    {
+    Utf8String filter = "RealityDataId+eq+'";
+    filter.append(realityDataId);
+    filter.append("'");
+
+    return filter;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+Utf8String RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
+    {
+    Utf8String filter = "ProjectId+eq+'";
+    filter.append(projectId);
+    filter.append("'");
+
+    return filter;
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -664,26 +709,14 @@ void RealityDataPagedRequest::_PrepareBaseRequestString() const
 //=====================================================================================
 void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
-    bool hasFilter = m_filter.length() > 0;
-    bool hasOrder = m_order.length() > 0;
-
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append("/RealityData?");
-    if (hasFilter)
-        {
-        m_httpRequestString.append("$filter=");
-        m_httpRequestString.append(m_filter);
-        m_httpRequestString.append("&");
-        }
-    if(hasOrder)
-        {
-        m_httpRequestString.append(m_order);
-        m_httpRequestString.append("&");
-        }
-    m_httpRequestString.append("$skip=");
-    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
-    m_httpRequestString.append("&$top=");
-    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
+    if (m_filter.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("$filter=%s&", m_filter));
+    if (m_order.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("%s&", m_order));
+
+    m_httpRequestString.append(Utf8PrintfString("'$skip=%u&$top=%u", m_startIndex, m_pageSize));
 }
 
 //=====================================================================================
@@ -796,11 +829,13 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         m_id = lines[0];
         }
 
-    m_httpRequestString.append(m_id);
-    m_httpRequestString.append("'&$skip=");
-    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
-    m_httpRequestString.append("&$top=");
-    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
+    m_httpRequestString.append(Utf8PrintfString("%s'", m_id));
+    if (m_filter.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
+    if (m_order.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order)); 
+
+    m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
 }
 
 //=====================================================================================
@@ -811,11 +846,14 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
     m_httpRequestString.append(m_id);
-    m_httpRequestString.append("'&$skip=");
-    m_httpRequestString += Utf8PrintfString("%u", m_startIndex);
-    m_httpRequestString.append("&$top=");
-    m_httpRequestString += Utf8PrintfString("%u", m_pageSize);
 
+    m_httpRequestString.append(Utf8PrintfString("%s'", m_id));
+    if (m_filter.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
+    if (m_order.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
+
+    m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
     }
 
 //=====================================================================================

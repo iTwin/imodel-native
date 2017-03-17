@@ -67,11 +67,10 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 protected:
     // Default constructor
-    GeoCoordinationService() : m_validRequestString(false) {}
+    GeoCoordinationServiceRequest() { m_validRequestString = false; }
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
-
-    }
+    };
 
 enum class GeoCoordinationField
     {
@@ -120,7 +119,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
+    REALITYDATAPLATFORM_EXPORT GeoCoordinationServicePagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter) { m_filter = filter; }
 
@@ -129,19 +128,18 @@ public:
     //! The server will decide how sorted groups are ordered.
     //! Note that some fields in the server are considered case-sensitive and others
     //!  case insensitive. The server will apply sort rules accordingly.
-    REALITYDATAPLATFORM_EXPORT void SortBy(RealityDataField, bool ascending);
+    REALITYDATAPLATFORM_EXPORT void SortBy(GeoCoordinationField, bool ascending);
 
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
     // Default constructor
-    GeoCoordinationServicePagedRequest() : m_startIndex(0), m_pageSize(25) {}
-    GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) : m_startIndex(startIndex), m_pageSize(pageSize) {BeAssert(m_pageSize >0);}
+    GeoCoordinationServicePagedRequest() { m_startIndex = 0; m_pageSize = 25; }
+    GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) { m_startIndex = startIndex; m_pageSize = pageSize; BeAssert(m_pageSize >0); }
 
     Utf8String m_order;
     Utf8String m_filter;
     Utf8String m_sort;
-    }
-
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -168,7 +166,7 @@ protected:
     bool                    m_informationSourceFilteringSet;
 private:
     SpatialEntityWithDetailsSpatialRequest() : m_informationSourceFilteringSet(false), m_requestType(GET_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -187,7 +185,7 @@ protected:
 
 private:
     SpatialEntityWithDetailsByIdRequest() : m_requestType(GET_Request) {}
-    }
+    };
     
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -206,7 +204,7 @@ protected:
 
 private:
     SpatialEntityByIdRequest(): m_requestType(GET_Request) {}
-    }
+    };
 
 
 //=====================================================================================
@@ -226,7 +224,7 @@ protected:
 
 private:
     SpatialEntityDataSourceByIdRequest(): m_requestType(GET_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -245,7 +243,7 @@ protected:
 
 private:
     SpatialEntityServerByIdRequest(): m_requestType(GET_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -264,7 +262,7 @@ protected:
 
 private:
     SpatialEntityMetadataByIdRequest(): m_requestType(GET_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -286,7 +284,7 @@ private:
     bvector<GeoPoint2D>     m_projectArea;
     bvector<Utf8String>     m_listOfSpatialEntities;
     PackagePreparationRequest(): m_requestType(POST_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -305,7 +303,7 @@ protected:
 
 private:
     PreparedPackageRequest(): m_requestType(GET_Request) {}
-    }
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -326,8 +324,7 @@ protected:
 private:
     BeFileName          m_downloadReport;
     DownloadReportUploadRequest(){}
-    }
-
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Alain.Robert              12/2016
@@ -445,7 +442,7 @@ public:
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(GeoCoordinationServiceRequest* request);
-    }
+    };
 
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

@@ -263,7 +263,10 @@ protected:
 //! The filter takes the form of a string that is provided to filtered request
 //=====================================================================================
 struct RealityDataFilterCreator
-    { 
+    {
+    //! Sets filtering upon the name. 
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByName(Utf8String name);
+
     //! Sets filtering upon the classification. The classification may contain
     //!  more than one classification by bitwise oring the classification
     //!  values.
@@ -327,6 +330,15 @@ struct RealityDataFilterCreator
     //!  note that Dataset names are case-sensitive.
     REALITYDATAPLATFORM_EXPORT static Utf8String FilterByDataset(Utf8String dataset);
 
+    //! Sets filtering upon the group. 
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByGroup(Utf8String group);
+
+    //! Filter relationship by RealityDataId. Only relationships for specified RealityDataId will be returned
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterRelationshipByRealityDataId(Utf8String realityDataId);
+
+    //! Filter relationship by ProjectId. Only relationships for specified ProjectId will be returned
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterRelationshipByProjectId(Utf8String projectId);
+    
     //! Groups all filters inside of parentheses, all criteria must be met ( && )
     REALITYDATAPLATFORM_EXPORT static Utf8String GroupFiltersAND(bvector<Utf8String> filters);
 
