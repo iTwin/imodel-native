@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -115,7 +117,7 @@ BentleyStatus IECSqlPreparedStatement::AssertIsValid() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus LeafECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
+ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
     Utf8String nativeSql;
     ECSqlStatus stat = ECSqlPreparer::Prepare(nativeSql, ctx, exp);
@@ -147,7 +149,7 @@ ECSqlStatus LeafECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     03/2017
 //---------------------------------------------------------------------------------------
-IECSqlBinder& LeafECSqlPreparedStatement::_GetBinder(int parameterIndex) const
+IECSqlBinder& SingleECSqlPreparedStatement::_GetBinder(int parameterIndex) const
     {
     ECSqlBinder* binder = nullptr;
     const ECSqlStatus stat = m_parameterMap.TryGetBinder(binder, parameterIndex);
@@ -164,7 +166,7 @@ IECSqlBinder& LeafECSqlPreparedStatement::_GetBinder(int parameterIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     03/2017
 //---------------------------------------------------------------------------------------
-int LeafECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
+int SingleECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
     {
     int index = m_parameterMap.GetIndexForName(parameterName);
     if (index <= 0)
@@ -176,7 +178,7 @@ int LeafECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-DbResult LeafECSqlPreparedStatement::DoStep()
+DbResult SingleECSqlPreparedStatement::DoStep()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -198,7 +200,7 @@ DbResult LeafECSqlPreparedStatement::DoStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     03/2017
 //---------------------------------------------------------------------------------------
-ECSqlStatus LeafECSqlPreparedStatement::_ClearBindings()
+ECSqlStatus SingleECSqlPreparedStatement::_ClearBindings()
     {
     const DbResult nativeSqlStat = m_sqliteStatement.ClearBindings();
     m_parameterMap.OnClearBindings();
@@ -215,7 +217,7 @@ ECSqlStatus LeafECSqlPreparedStatement::_ClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
-ECSqlStatus LeafECSqlPreparedStatement::_Reset()
+ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     {
     const DbResult nativeSqlStat = m_sqliteStatement.Reset();
     if (nativeSqlStat != BE_SQLITE_OK)
@@ -262,7 +264,7 @@ int CompoundECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) con
 ECSqlStatus CompoundECSqlPreparedStatement::_ClearBindings()
     {
     ECSqlStatus totalStat = ECSqlStatus::Success;
-    for (std::unique_ptr<LeafECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
         {
         const ECSqlStatus stat = stmt->ClearBindings();
         //in case of error, we continue to clear all bindings, but capture just the first error
@@ -286,7 +288,7 @@ ECSqlStatus CompoundECSqlPreparedStatement::_Reset()
         return ECSqlStatus::Success;
 
     ECSqlStatus totalStat = ECSqlStatus::Success;
-    for (std::unique_ptr<LeafECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
         {
         ECSqlStatus stat = stmt->Reset();
         //in case of error, we continue to clear all bindings, but capture just the first error
@@ -310,7 +312,7 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
         else
             {
             bool isFirstStmt = true;
-            for (std::unique_ptr<LeafECSqlPreparedStatement> const& stmt : m_statements)
+            for (std::unique_ptr<SingleECSqlPreparedStatement> const& stmt : m_statements)
                 {
                 if (!isFirstStmt)
                     m_compoundNativeSql.append(";");
@@ -351,7 +353,7 @@ DbResult ECSqlSelectPreparedStatement::Step()
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
     {
-    ECSqlStatus resetStatementStat = LeafECSqlPreparedStatement::_Reset();
+    ECSqlStatus resetStatementStat = SingleECSqlPreparedStatement::_Reset();
     
     //even if statement reset failed we still try to reset the fields to clean-up things as good as possible.
     ECSqlStatus fieldResetStat = ResetFields();
@@ -454,33 +456,27 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
 
-    if (!classMap.GetMapStrategy().IsTablePerHierarchy() || classMap.GetTables().size() == 1)
-        {
-        //FK relationships can also map to multiple tables, they are treated differently
-        m_statements.push_back(std::make_unique<LeafECSqlPreparedStatement>(m_ecdb, m_type));
-        return m_statements[0]->Prepare(ctx, exp, GetECSql());
-        }
-
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
-    
-    const int ecInstanceIdPropNameIx = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
 
-    const size_t propNameCount = propNameListExp->GetChildrenCount();
+    int ecInstanceIdPropNameExpIx = -1;
+    m_ecInstanceKeyHelper.Initialize(ecInstanceIdPropNameExpIx, classMap.GetClass().GetId(), *propNameListExp, *valuesListExp);
 
     struct PropNameValueInfo
         {
     public:
         PropertyNameExp const* m_propNameExp = nullptr;
         ValueExp const* m_valueExp = nullptr;
+        bool m_isECInstanceIdPropNameExp = false;
 
-        PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp) {}
+        PropNameValueInfo(PropertyNameExp const& propNameExp, ValueExp const& valueExp, bool isIdPropNameExp) : m_propNameExp(&propNameExp), m_valueExp(&valueExp), m_isECInstanceIdPropNameExp(isIdPropNameExp) {}
         };
 
     std::map<DbTable const*, std::vector<PropNameValueInfo>> expsByMappedTable;
     //Holds all tables per parameter index (index into the vector + 1) which are affected by the parameter
     std::vector<std::set<DbTable const*>> parameterIndexInTables;
 
+    const size_t propNameCount = propNameListExp->GetChildrenCount();
     for (size_t i = 0; i < propNameCount; i++)
         {
         PropertyNameExp const* propNameExp = propNameListExp->GetPropertyNameExp(i);
@@ -501,7 +497,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
         ValueExp const* valueExp = valuesListExp->GetValueExp(i);
 
-        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp);
+        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, ecInstanceIdPropNameExpIx >= 0 && ecInstanceIdPropNameExpIx == (int) i);
 
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
@@ -523,11 +519,12 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         expsByMappedTable[table].push_back(propNameValueInfo);
         }
 
+
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
     //for each table, a separate ECSQL is created
     bool isPrimaryTable = true;
-    bmap<DbTable const*, LeafECSqlPreparedStatement const*> perTableStatements;
+    bmap<DbTable const*, SingleECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
         {
         auto it = expsByMappedTable.find(table);
@@ -539,7 +536,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
         bool isFirstToken = true;
 
-        if (!isPrimaryTable || ecInstanceIdPropNameIx <= 0)
+        if (!isPrimaryTable || m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::NotUserProvided)
             {
             //if user didn't specify ECInstanceId in the ECSQL or if this is a secondary table ECSQL
             //we have to add the ECInstanceId ourselves to the ECSQL
@@ -559,7 +556,15 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
 
             propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
-            valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
+            if (isPrimaryTable && propNameValueInfo.m_isECInstanceIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNull)
+                {
+                //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
+                //to replace the NULL by a parameter
+                valuesECSqlClause.append(":" ECSQLSYS_PARAM_Id);
+                }
+            else
+                valuesECSqlClause.append(ecsqlRenderCtx.GetECSql());
+
             ecsqlRenderCtx.ResetECSqlBuilder();
             isFirstToken = false;
             }
@@ -573,9 +578,9 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 
-        m_statements.push_back(std::make_unique<LeafECSqlPreparedStatement>(m_ecdb, m_type));
+        m_statements.push_back(std::make_unique<SingleECSqlPreparedStatement>(m_ecdb, m_type));
 
-        LeafECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        SingleECSqlPreparedStatement& preparedStmt = *m_statements.back();
         const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
@@ -607,7 +612,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             proxyBinder.AddBinder(*binder);
             }
         }
-    return ECSqlStatus::Success;
+
+    return m_ecInstanceKeyHelper.InitializeAutogenerateBinder(m_statements);
     }
 
 //---------------------------------------------------------------------------------------
@@ -629,31 +635,18 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     //but an update, for which we need to check whether a row was updated or not to tell between
     //success and error.
     bool checkModifiedRowCount = true;
-    if (m_ecInstanceKeyInfo.HasUserProvidedECInstanceId())
-        ecinstanceidOfInsert = m_ecInstanceKeyInfo.GetUserProvidedECInstanceId();
-    else
+    if (m_ecInstanceKeyHelper.IsAutogenerateIdMode())
         {
-        //user hasn't provided an ecinstanceid (neither literally nor through binding)
-        if (GenerateECInstanceIdAndBindToInsertStatement(ecinstanceidOfInsert) != ECSqlStatus::Success)
-            return BE_SQLITE_ERROR;
+        const DbResult stat = m_ecInstanceKeyHelper.AutogenerateAndBindECInstanceId();
+        if (BE_SQLITE_OK != stat)
+            return stat;
 
         checkModifiedRowCount = false;
         }
 
-
-    //reset the ecinstanceid from key info for the next execution (if it was bound, and is no literal)
-    m_ecInstanceKeyInfo.ResetBoundECInstanceId();
-
-    BeAssert(ecinstanceidOfInsert.IsValid());
-
-    //LeafECSqlPreparedStatement& primaryTableStmt = *m_statements[0];
-    //IECSqlBinder& idBinder = primaryTableStmt.GetECInstanceIdBinder();
-    //if (ECSqlStatus::Success != idBinder.BindId(ecinstanceidOfInsert))
-    //    return BE_SQLITE_ERROR;
-
-    for (std::unique_ptr<LeafECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
         {
-        DbResult stat = stmt->DoStep();
+        const DbResult stat = stmt->DoStep();
         if (BE_SQLITE_DONE != stat)
             return stat;
         }
@@ -666,30 +659,106 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         return BE_SQLITE_CONSTRAINT_UNIQUE;
         }
 
-    instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
+    instanceKey = m_ecInstanceKeyHelper.RetrieveLastInsertedKey(GetECDb());
     return BE_SQLITE_DONE;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId)
-    {
-    ECSqlBinder* ecinstanceidBinder = m_ecInstanceKeyInfo.GetECInstanceIdBinder();
-    BeAssert(ecinstanceidBinder != nullptr);
 
-    DbResult dbStat = GetECDb().GetECDbImplR().GetSequence(IdSequences::ECInstanceId).GetNextValue(generatedECInstanceId);
-    if (dbStat != BE_SQLITE_OK)
+//***************************************************************************************
+//    ECSqlInsertPreparedStatement::ECInstanceKeyHelper
+//***************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &ecInstanceIdPropNameExpIx, ECClassId classId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp)
+    {
+    BeAssert(classId.IsValid());
+    m_ecClassId = classId;
+    ecInstanceIdPropNameExpIx = propNameListExp.GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::ECInstanceId());
+
+    if (ecInstanceIdPropNameExpIx < 0)
+        m_mode = Mode::NotUserProvided;
+    else
         {
-        ECDbLogger::LogSqliteError(GetECDb(), dbStat, "ECSqlStatement::Step failed: Could not generate an " ECDBSYS_PROP_ECInstanceId ".");
-        return ECSqlStatus(dbStat);
+        ValueExp const* idValueExp = valueListExp.GetValueExp((size_t) ecInstanceIdPropNameExpIx);
+        BeAssert(idValueExp != nullptr);
+
+        if (ECSqlExpPreparer::IsNullExp(*idValueExp))
+            m_mode = Mode::UserProvidedNull;
+
+        m_mode = Mode::UserProvidedNotNull;
         }
 
-    const ECSqlStatus stat = ecinstanceidBinder->BindId(generatedECInstanceId);
-    if (!stat.IsSuccess())
-        LOG.error("ECSqlStatement::Step failed: Could not bind the generated " ECDBSYS_PROP_ECInstanceId ".");
+    if (IsAutogenerateIdMode())
+        m_idBinder = std::make_unique<ProxyECSqlBinder>();
+    }
 
-    return stat;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlInsertPreparedStatement::ECInstanceKeyHelper::InitializeAutogenerateBinder(std::vector<std::unique_ptr<SingleECSqlPreparedStatement>>& leafStmts) const
+    {
+    if (!IsAutogenerateIdMode())
+        return ECSqlStatus::Success;
+
+    BeAssert(m_idBinder != nullptr);
+    for (std::unique_ptr<SingleECSqlPreparedStatement>& leafStmt : leafStmts)
+        { 
+        ECSqlBinder* binder = nullptr;
+        if (!leafStmt->GetParameterMap().TryGetBinder(binder, ECSQLSYS_PARAM_Id))
+            {
+            BeAssert(false);
+            return ECSqlStatus::Error;
+            }
+
+        m_idBinder->AddBinder(*binder);
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+DbResult ECSqlInsertPreparedStatement::ECInstanceKeyHelper::AutogenerateAndBindECInstanceId(ECDbCR ecdb)
+    {
+    BeAssert(m_idBinder != nullptr);
+
+    DbResult dbStat = ecdb.GetECDbImplR().GetSequence(IdSequences::ECInstanceId).GetNextValue(m_generatedECInstanceId);
+    if (dbStat != BE_SQLITE_OK)
+        {
+        ECDbLogger::LogSqliteError(ecdb, dbStat, "ECSqlStatement::Step failed: Could not generate an " ECDBSYS_PROP_ECInstanceId ".");
+        return dbStat;
+        }
+
+    const ECSqlStatus stat = m_idBinder->BindId(m_generatedECInstanceId);
+    if (!stat.IsSuccess())
+        {
+        LOG.error("ECSqlStatement::Step failed: Could not bind the generated " ECDBSYS_PROP_ECInstanceId ".");
+        return BE_SQLITE_ERROR;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+ECInstanceKey ECSqlInsertPreparedStatement::ECInstanceKeyHelper::RetrieveLastInsertedKey(ECDbCR ecdb) const
+    {
+    ECInstanceId id;
+    if (IsAutogenerateIdMode())
+        id = m_generatedECInstanceId;
+    else
+        {
+        const int64_t idRaw = ecdb.GetLastInsertRowId();
+        BeAssert(idRaw >= 0);
+        id = ECInstanceId((uint64_t) idRaw);
+        }
+
+    BeAssert(id.IsValid());
+    return ECInstanceKey(m_ecClassId, id);
     }
 
 //***************************************************************************************
@@ -714,7 +783,7 @@ DbResult ECSqlUpdatePreparedStatement::Step()
     if (m_isNoopInSqlite)
         return BE_SQLITE_DONE;
 
-    for (std::unique_ptr<LeafECSqlPreparedStatement>& stmt : m_statements)
+    for (std::unique_ptr<SingleECSqlPreparedStatement>& stmt : m_statements)
         {
         DbResult stat = stmt->DoStep();
         if (BE_SQLITE_DONE != stat)
@@ -744,3 +813,5 @@ DbResult ECSqlDeletePreparedStatement::Step()
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+#endif

@@ -17,8 +17,10 @@
 #include "ECSqlBinder.h"
 #include "DynamicSelectClauseECClass.h"
 
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 struct ParentOfJoinedTableECSqlStatement;
@@ -79,7 +81,7 @@ struct ECSqlPreparedStatement_Old : NonCopyableClass
         ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     };
 
-
+typedef ECSqlPreparedStatement_Old IECSqlPreparedStatement;
 
 //=======================================================================================
 //! Represents a prepared SELECT ECSqlStatement with all additional information needed for
@@ -114,6 +116,8 @@ struct ECSqlSelectPreparedStatement_Old : public ECSqlPreparedStatement_Old
 
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
+
+typedef ECSqlSelectPreparedStatement_Old ECSqlSelectPreparedStatement;
 
 //=======================================================================================
 //! Represents a prepared non-SELECT (INSERT, UPDATE and DELETE) ECSqlStatement with all 
@@ -187,6 +191,7 @@ struct ECSqlInsertPreparedStatement_Old : public ECSqlNonSelectPreparedStatement
         void SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo);
     };
 
+typedef ECSqlInsertPreparedStatement_Old ECSqlInsertPreparedStatement;
 
 
 //=======================================================================================
@@ -202,6 +207,7 @@ struct ECSqlUpdatePreparedStatement_Old : public ECSqlNonSelectPreparedStatement
         DbResult Step();
     };
 
+typedef ECSqlUpdatePreparedStatement_Old ECSqlUpdatePreparedStatement;
 
 //=======================================================================================
 //! Represents a prepared Delete ECSqlStatement with all additional information needed for
@@ -216,5 +222,8 @@ struct ECSqlDeletePreparedStatement_Old : public ECSqlNonSelectPreparedStatement
         DbResult Step();
     };
 
+typedef ECSqlDeletePreparedStatement_Old ECSqlDeletePreparedStatement;
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
+#endif

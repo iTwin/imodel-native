@@ -14,6 +14,8 @@
 #include "ECDbLogger.h"
 #include <type_traits>
 
+//#define ECSQLPREPAREDSTATEMENT_REFACTOR 1
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())

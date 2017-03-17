@@ -7,11 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+
 #include "Exp.h"
 #include "ECSqlPrepareContext.h"
 #include "ECSqlBinder.h"
 #include "ECSqlField.h"
 #include "DynamicSelectClauseECClass.h"
+
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -59,9 +62,11 @@ struct IECSqlPreparedStatement : NonCopyableClass
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement to 
+//! be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct LeafECSqlPreparedStatement : IECSqlPreparedStatement
+struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
     {
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
@@ -78,21 +83,23 @@ protected:
     ECSqlStatus _Reset() override;
 
 public:
-    LeafECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
-    virtual ~LeafECSqlPreparedStatement() {}
+    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
+    virtual ~SingleECSqlPreparedStatement() {}
 
     DbResult DoStep();
 
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
+    BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that requires multiple SQLite statements to be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
 struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     {
     protected:
-        std::vector<std::unique_ptr<LeafECSqlPreparedStatement>> m_statements;
+        std::vector<std::unique_ptr<SingleECSqlPreparedStatement>> m_statements;
         mutable std::vector<std::unique_ptr<ProxyECSqlBinder>> m_proxyBinders;
         mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
 
@@ -115,7 +122,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
+struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
     {
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
@@ -130,7 +137,7 @@ struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
         ECSqlStatus OnAfterStep() const;
 
     public:
-        explicit ECSqlSelectPreparedStatement(ECDb const& ecdb) : LeafECSqlPreparedStatement(ecdb, ECSqlType::Select) {}
+        explicit ECSqlSelectPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Select) {}
 
         DbResult Step();
 
@@ -138,7 +145,6 @@ struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
         IECSqlValue const& GetValue(int columnIndex) const;
 
         void AddField(std::unique_ptr<ECSqlField>);
-
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
 
@@ -149,46 +155,42 @@ struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
 public:
     public:
-        struct ECInstanceKeyInfo
+        struct ECInstanceKeyHelper final : NonCopyableClass
             {
+            public:
+                enum class Mode
+                    {
+                    NotUserProvided = 1,
+                    UserProvidedNull,
+                    UserProvidedNotNull
+                    };
+
             private:
+                Mode m_mode = Mode::NotUserProvided;
                 ECN::ECClassId m_ecClassId;
-                ECSqlBinder* m_ecInstanceIdBinder;
-                ECInstanceId m_userProvidedECInstanceId;
+                std::unique_ptr<ProxyECSqlBinder> m_idBinder = nullptr;
+                ECInstanceId m_generatedECInstanceId;
 
             public:
-                //compiler generated copy ctor and copy assignment
-                explicit ECInstanceKeyInfo() : m_ecInstanceIdBinder(nullptr) {}
-                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder) : m_ecClassId(ecClassId), m_ecInstanceIdBinder(&ecInstanceIdBinder) {}
-                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECInstanceId userProvidedLiteral) : m_ecClassId(ecClassId), m_ecInstanceIdBinder(nullptr), m_userProvidedECInstanceId(userProvidedLiteral) {}
+                ECInstanceKeyHelper() {}
 
-                ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
+                void Initialize(int &ecInstanceIdPropNameExpIx, ECN::ECClassId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
+                ECSqlStatus InitializeAutogenerateBinder(std::vector<std::unique_ptr<SingleECSqlPreparedStatement>>&) const;
+                DbResult AutogenerateAndBindECInstanceId(ECDbCR);
+                ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
-                ECSqlBinder* GetECInstanceIdBinder() const { return m_ecInstanceIdBinder; }
-                bool HasUserProvidedECInstanceId() const { return m_userProvidedECInstanceId.IsValid(); }
-                ECInstanceId GetUserProvidedECInstanceId() const { return m_userProvidedECInstanceId; }
-
-                void SetBoundECInstanceId(ECInstanceId ecinstanceId) { m_userProvidedECInstanceId = ecinstanceId; }
-                void ResetBoundECInstanceId()
-                    {
-                    if (m_ecInstanceIdBinder != nullptr)
-                        m_userProvidedECInstanceId.Invalidate();
-                    }
+                Mode GetMode() const { return m_mode; }
+                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNull; }
             };
 
     private:
-        ECInstanceKeyInfo m_ecInstanceKeyInfo;
+        ECInstanceKeyHelper m_ecInstanceKeyHelper;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
-        ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId);
-
     public:
         explicit ECSqlInsertPreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
-
         DbResult Step(ECInstanceKey&);
-        ECInstanceKeyInfo& GetECInstanceKeyInfo() { return m_ecInstanceKeyInfo; }
-        void SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo) { BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid()); m_ecInstanceKeyInfo = ecInstanceKeyInfo; }
     };
 
 //=======================================================================================
@@ -208,11 +210,13 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct ECSqlDeletePreparedStatement final : LeafECSqlPreparedStatement
+struct ECSqlDeletePreparedStatement final : SingleECSqlPreparedStatement
     {
 public:
-    explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : LeafECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
+    explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
     DbResult Step();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+#endif

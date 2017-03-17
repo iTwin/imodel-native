@@ -63,8 +63,12 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         }
 
     nativeSql = context.GetNativeSql();
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ECSqlParameterMap& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     return parameterMap.RemapForJoinTable(context);
+#else
+    return ECSqlStatus::Success;
+#endif
     }
 
 //************** ECSqlExpPreparer *******************************
@@ -483,7 +487,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     {
     const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     ClassMap const& classMap = exp.GetInfo().GetMap();
-    if (ctx.IsPrimaryStatement() && !ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+    if (!ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
         {
         ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
@@ -492,7 +498,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             return ECSqlStatus::InvalidECSql;
             }
         }
-
+#endif
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;

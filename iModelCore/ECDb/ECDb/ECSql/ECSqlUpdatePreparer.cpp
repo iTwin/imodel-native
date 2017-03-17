@@ -36,6 +36,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         }
 
     ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto info = ctx.GetJoinedTableInfo())
         {
         if (info->HasParentOfJoinedTableECSql() && info->HasJoinedTableECSql())
@@ -49,7 +50,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             }
         }
-
+#endif
     if (classMap.IsRelationshipClassMap())
         {
         if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
