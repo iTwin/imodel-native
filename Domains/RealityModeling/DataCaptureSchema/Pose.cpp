@@ -413,6 +413,7 @@ void Pose::SetRotMatrixECEF(RotMatrixCR rotation)
         return;
         }
 
+    //NEEDSWORK_WGS84 - What is not WGS84?
     //Assume we have ENU, it's a good approximation
     Ellipsoid elWGS84(Ellipsoid::WGS84());
 
@@ -422,6 +423,7 @@ void Pose::SetRotMatrixECEF(RotMatrixCR rotation)
     rotLocal.InitProduct(tECEF2ENU, m_rotation);
 
     m_rotationLocal = rotLocal;
+
     GetRotationFromRotMatrix(m_omega, m_phi, m_kappa, m_rotationLocal);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -461,7 +463,7 @@ void Pose::SetRotMatrix(RotMatrixCR rotMatrixLocal)
     //Assume we have ENU, it's a good approximation
     Ellipsoid elWGS84(Ellipsoid::WGS84());
 
-    Transform tENU2ECEF(elWGS84.ENU2ECEF(lla.latitude, lla.longitude));
+    Transform tENU2ECEF(elWGS84.ENU2ECEF(Angle::DegreesToRadians(lla.latitude), Angle::DegreesToRadians(lla.longitude)));
 
     RotMatrix rotECEF;
     rotECEF.InitProduct(tENU2ECEF, rotMatrixLocal);
