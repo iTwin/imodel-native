@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bezier/bezeval.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,7 +12,7 @@
 |                                                                       |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-
+#include <mutex>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -27,7 +27,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 static double *s_pascalRowAddress[MAX_BINOMIAL_ORDER+1];
 static double s_pascal[MAX_PASCAL_COFF];
-static int s_pascalIsInitialized = 0;
+
 /*----------------------------------------------------------------------+
 |                                                                       |
 |       local function definitions                                      |
@@ -57,7 +57,6 @@ static  void   jmdlBezier_initializePascal
             pCurr[i] = pPrev[i-1] + pPrev[i];
         pPrev = pCurr;
         }
-    s_pascalIsInitialized = 1;
     }
 
 
@@ -75,8 +74,8 @@ int row
     {
     if (row < 0 || row > MAX_BINOMIAL_ORDER)
         return NULL;
-    if (!s_pascalIsInitialized)
-        jmdlBezier_initializePascal ();
+    static std::once_flag s_ignoreListOnceFlag;
+    std::call_once(s_ignoreListOnceFlag, jmdlBezier_initializePascal);
 
     return s_pascalRowAddress[row];
     }
