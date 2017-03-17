@@ -1550,6 +1550,8 @@ public:
     //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
     DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr);
 
+    template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr) {return dynamic_cast<T const*>(Insert(stat).get());}
+
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
     DGNPLATFORM_EXPORT DgnDbStatus Delete() const;
@@ -3154,9 +3156,17 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateCode(SubjectCR parentSubject, Utf8CP name);
 
     //! Creates a new child Subject of the specified parent Subject
+    //! @param parentSubject    The parent of the new Subject
+    //! @param name             The name of the new Subject
+    //! @param description      The description of the new Subject
+    //! @return a new, non-persistent Subject element or an invalid value if any of the arguments are invalid
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
-    //! Creates a new child Subject of the specified parent Subject
+    //! Creates a new child Subject of the specified parent Subject and inserts it into the DgnDb 
+    //! @param parentSubject    The parent of the new Subject
+    //! @param name             The name of the new Subject
+    //! @param description      The description of the new Subject
+    //! @return a new persistent Subject element or an invalid value if any of the arguments are invalid or the insert fails
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 
