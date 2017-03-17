@@ -603,7 +603,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="TilePublisherLibNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
+   <Part Name="TilePublisherLibNuGetPackage" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubPart PartName="TilePublisherLib" />
         <Bindings>

@@ -120,6 +120,7 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
+    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this DisplayStyle's name
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_DisplayStyle, name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };

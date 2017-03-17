@@ -205,7 +205,7 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 Utf8String ViewDefinition::ToDetailJson()
     {
     _OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetDetails());
+    return GetDetails().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,17 +258,10 @@ void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
-    JsonValueCR valO = GetDetail(str_GridOrient());
-    orientation = valO.isNull() ? GridOrientationType::WorldXY : (GridOrientationType) valO.asUInt();
-
-    JsonValueCR valR = GetDetail(str_GridPerRef());
-    gridsPerRef = valR.isNull() ? 10 : valR.asUInt();
-
-    JsonValueCR valX = GetDetail(str_GridSpaceX());
-    spacing.x = valX.isNull() ? 1.0 : valX.asDouble();
-
-    JsonValueCR valY = GetDetail(str_GridSpaceY());
-    spacing.y = valY.isNull() ? spacing.x : valY.asDouble();
+    orientation = (GridOrientationType) GetDetail(str_GridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
+    gridsPerRef = GetDetail(str_GridPerRef()).asUInt(10);
+    spacing.x = GetDetail(str_GridSpaceX()).asDouble(1.0);
+    spacing.y = GetDetail(str_GridSpaceY()).asDouble(spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -276,9 +269,7 @@ void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
     {
-    JsonValueCR val = GetDetail(str_ACS());
-
-    return val.isNull() ? DgnElementId() : DgnElementId(val.asUInt64());
+    return DgnElementId(GetDetail(str_ACS()).asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,7 +888,7 @@ DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR sourc
     val[str_Height()] = size.y;
     val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
 
-    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), Json::FastWriter().ToString(val), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
+    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), val.ToString(), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
     return rc;
     }
 
@@ -1139,7 +1130,7 @@ void DisplayStyle::_OnLoadedJsonProperties()
 Utf8String DisplayStyle::ToJson() const
     {
     const_cast<DisplayStyleR>(*this)._OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetStyles());
+    return GetStyles().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**

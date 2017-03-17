@@ -201,7 +201,7 @@ ClipVectorPtr ViewAttachment::GetClip() const
 DgnDbStatus ViewAttachment::SetClip(ClipVectorCR clipVector)
     {
     Json::Value clipJson = clipVector.ToJson();
-    return SetPropertyValue(str_Clip(), Json::FastWriter::ToString(clipJson).c_str());
+    return SetPropertyValue(str_Clip(), clipJson.ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

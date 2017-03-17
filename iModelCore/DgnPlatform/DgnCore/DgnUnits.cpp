@@ -90,7 +90,7 @@ void DgnGeoLocation::Save()
     {
     Json::Value jsonObj;
     JsonUtils::DPoint3dToJson(jsonObj[DGNPROPERTYJSON_GlobalOrigin], m_globalOrigin);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Units(), Json::FastWriter::ToString(jsonObj));
+    m_dgndb.SavePropertyString(DgnProjectProperty::Units(), jsonObj.ToString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,7 +107,7 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     m_extent = newExtents;
     Json::Value jsonObj;
     JsonUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), Json::FastWriter::ToString(jsonObj));
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
     }
 
 /*---------------------------------------------------------------------------------**//**
