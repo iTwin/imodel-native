@@ -332,9 +332,8 @@ private:
 
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
-    void CallOnSchemaImported(DgnDbR db) const { _OnSchemaImported(db); }
-    void CallOnSchemaUpgraded(DgnDbR db) const { _OnSchemaUpgraded(db); }
-
+    void CallOnSchemaImported(DgnDbR db) { _OnSchemaImported(db); }
+        
 protected:
     int32_t         m_version;
     Utf8String      m_domainName;
@@ -347,14 +346,11 @@ protected:
 
     BeSQLite::DbResult LoadHandlers(DgnDbR) const;
 
-    //! Called after this DgnDomain's schema has been imported into the supplied DgnDb
+    //! Called after this DgnDomain's schema has been imported into the supplied DgnDb for the first time
     //! @param[in] db The DgnDb into which the schema was imported.
     //! @note Domains are expected to override this method and use it to create required domain objects (like categories, for example).
+    //! The method is only called the first time the domain schema is imported into the DgnDb.
     virtual void _OnSchemaImported(DgnDbR db) const {}
-
-    //! Called after this DgnDomain's schema has been upgraded in the supplied DgnDb
-    //! @param[in] db The DgnDb in which the schema was upgraded.
-    virtual void _OnSchemaUpgraded(DgnDbR db) const {}
 
     //! Called after a DgnDb containing this schema is opened. Domains may register SQL functions in this method, for example.
     //! @param[in] db The DgnDb that was just opened.
@@ -396,8 +392,9 @@ public:
     //! Setup this domain to be required/optional in this session
     void SetRequired(Required isRequired) { m_isRequired = isRequired; }
 
-    //! Imports the schema of this domain and it's dependencies into the supplied DgnDb. 
-    //! @remarks This needs to be only called for optional (not required) domains
+    //! Imports (or upgrades) the schema of this domain into the supplied DgnDb.
+    //! @remarks Use DgnDomains::ImportSchemas() to import or upgrade all domain schemas and
+    //! their references. 
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
 
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
@@ -444,9 +441,7 @@ private:
     void OnDbClose();
     void SyncWithSchemas();
 
-    void SetReadonly(DgnDomain::Readonly isReadonly);
     BeSQLite::DbResult ValidateSchemas();
-    BeSQLite::DbResult ImportSchemas();
     BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
     static BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
@@ -472,7 +467,7 @@ public:
     //! imported in, and enables use of the domain's CRUD API. Opening previously created DgnDb-s will trigger 
     //! validation of the ECSchema of the domain against the corresponding version in the DgnDb. Any subsequent 
     //! validation errors will cause the open to fail, but the issue may be resolvable by call to 
-    //! DgnDomains::UpgradeSchemas() - the process however requires locking of the schemas, and is typically done 
+    //! DgnDomains::ImportSchemas() - the process however requires locking of the schemas, and is typically done 
     //! by a Project Administrator. 
     //! <li> If isRequired=Required::No, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's 
     //! ECSchema into newly created DgnDbs. Like before, the call will require locking of the schemas, and 
@@ -501,11 +496,11 @@ public:
     //! @note The DgnClassId @b is a ECClassId.
     DGNPLATFORM_EXPORT DgnDomain::Handler* FindHandler(DgnClassId handlerId, DgnClassId baseClassId);
 
-    //! Upgrades EC Schemas of all registered domains by comparing the versions 
+    //! Imports (or upgrades) EC Schemas of all registered domains after comparing the versions 
     //! supplied by the domains against those in the Db.
     //! @return BE_SQLITE_OK if successful. Appropriate BE_SQLITE_ERROR_Schema* error status otherwise. 
     //! Requires a lock on the schemas and is typically done by a project administrator
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpgradeSchemas();
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchemas();
 };
 
 struct CreateDgnDbParams;
