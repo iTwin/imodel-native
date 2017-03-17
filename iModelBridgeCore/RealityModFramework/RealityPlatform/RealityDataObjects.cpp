@@ -199,7 +199,7 @@ void RealityDataBase::SetFootprintString(Utf8CP footprint) { m_footprintString =
 
 Utf8String RealityDataBase::FootprintToString(bvector<GeoPoint2d> footprint, Utf8String coordSys)
     {
-    Utf8String filter = "polygon={\"points\":[";
+    Utf8String filter = "{\"points\":[";
     for (int i = 0; i < footprint.size(); i++)
         {
         filter.append(Utf8PrintfString("[%f,%f],", footprint[i].longitude, footprint[i].latitude));

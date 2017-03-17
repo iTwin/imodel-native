@@ -297,12 +297,7 @@ void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
-    m_httpRequestString.append("/Repositories/");
-    m_httpRequestString.append(RealityDataService::GetRepoName());
-    m_httpRequestString.append("/");
-    m_httpRequestString.append(RealityDataService::GetSchemaName());
+    m_httpRequestString.append(Utf8PrintfString("/v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName()));
     }
 
 //=====================================================================================
@@ -331,9 +326,7 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
 void RealityDataProjectRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityDataProjectRelationship?$filter=ProjectId+eq+'");
-    m_httpRequestString.append(m_id);
-    m_httpRequestString.append("'");
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataProjectRelationship?$filter=ProjectId+eq+'%s'", m_id));
     }
 
 //=====================================================================================
@@ -390,11 +383,6 @@ RequestStatus RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestU
         return RequestStatus::ERROR;
     }
 
-/*void RealityDataDocumentContentByIdRequest::SetAzureRedirectionUrlToContainer(Utf8String azureContainerUrl)
-    {
-    m_AzureRedirectionURL = azureContainerUrl;
-    m_AzureRedirected = true;
-    }*/
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
@@ -439,10 +427,7 @@ void RealityDataDocumentContentByIdRequest::_PrepareHttpRequestStringAndPayload(
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
     {   
-    Utf8String filter = "Name+eq+'";
-    filter.append(name);
-    filter.append("'");
-    return filter;
+    return Utf8PrintfString("Name+eq+'%s'", name);
     }
 
 //=====================================================================================
@@ -450,10 +435,7 @@ Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
     { 
-    //$filter=
-    Utf8String filter = "Class+eq+";
-    filter += Utf8PrintfString("%lu", classification);
-    return filter;
+    return Utf8PrintfString("Class+eq+%lu", classification);;
     }
 
 //=====================================================================================
@@ -461,12 +443,7 @@ Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize)
     {
-    //$filter=
-    Utf8String filter = "Size+ge+";
-    filter += Utf8PrintfString("%f", minSize);
-    filter.append("and+Size+le+");
-    filter += Utf8PrintfString("%f", maxSize);
-    return filter;
+    return Utf8PrintfString("Size+ge+%f+and+Size+le+%f", minSize, maxSize);
     }
 
 //=====================================================================================
@@ -474,33 +451,7 @@ Utf8String RealityDataFilterCreator::FilterBySize(double minSize, double maxSize
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    //S3MX/RealityData?polygon={"points":[[10.6787109375,46.6343507029],[30.3662109375,46.6343507029],[30.3662109375,60.5761747263]
-    //,[10.6787109375,60.5761747263],[10.6787109375,46.6343507029]],"coordinate_system":"4326"} 
-    Utf8String filter = "polygon={\"points\":[";
-    char buf[32];
-    for(int i = 0; i < area.size(); i++)
-        {
-        filter.append("[");
-        sprintf(buf, "%f", area[i].longitude);
-        filter.append(buf);
-        filter.append(",");
-        sprintf(buf, "%f", area[i].latitude);
-        filter.append(buf);
-        filter.append("]");
-        filter.append(",");
-        }   
-    filter.append("["); 
-    sprintf(buf, "%f", area[0].longitude);//close the box
-    filter.append(buf);
-    filter.append(",");
-    sprintf(buf, "%f", area[0].latitude);
-    filter.append(buf);
-    filter.append("]], \"coordinate_system\":\"");
-
-    filter += Utf8PrintfString("%lu", coordSys);
-    filter.append("\"}");
-
-    return filter;
+    return Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToString(area, Utf8PrintfString("%lu", coordSys)));
     }
 
 //=====================================================================================
@@ -508,10 +459,7 @@ Utf8String RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uin
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     {
-    Utf8String filter = "OwnedBy+eq+'";
-    filter.append(owner);
-    filter.append("'");
-    return filter;
+    return Utf8PrintfString("OwnedBy+eq+'%s'", owner);
     }
 
 //=====================================================================================
@@ -519,13 +467,7 @@ Utf8String RealityDataFilterCreator::FilterByOwner(Utf8String owner)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
-    Utf8String filter = "CreatedTimestamp+ge+'";
-    filter.append(Utf8String(minDate.ToString()));
-    filter.append("'+and+CreatedTimestamp+le+'");
-    filter.append(Utf8String(maxDate.ToString()));
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("CreatedTimestamp+ge+'%s'+and+CreatedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString());
     }
 
 //=====================================================================================
@@ -533,13 +475,7 @@ Utf8String RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, Date
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
-    Utf8String filter = "ModifiedTimestamp+ge+'";
-    filter.append(Utf8String(minDate.ToString()));
-    filter.append("'+and+ModifiedTimestamp+le+'");
-    filter.append(Utf8String(maxDate.ToString()));
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("ModifiedTimestamp+ge+'%s'+and+ModifiedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString());
     }
 
 //=====================================================================================
@@ -547,14 +483,7 @@ Utf8String RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, 
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    Utf8String filter = "Visibility+eq+'";
-
-    Utf8String value = RealityDataBase::GetTagFromVisibility(visibility);
-
-    filter.append(value);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("Visibility+eq+'%s'", RealityDataBase::GetTagFromVisibility(visibility));
     }
 
 //=====================================================================================
@@ -562,16 +491,7 @@ Utf8String RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibilit
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double resMax, bool filterOutUnspecified)
     {
-    Utf8String filter = "ResolutionInMeters+ge+'";
-    char buf[32];
-    sprintf(buf, "%f", resMin);
-    filter.append(buf);
-    filter.append("'+and+ResolutionInMeters+le+'");
-    sprintf(buf, "%f", resMax);
-    filter.append(buf);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("ResolutionInMeters+ge+'%f'+and+ResolutionInMeters+le+'%f'", resMin, resMax);
     }
 
 //=====================================================================================
@@ -579,16 +499,7 @@ Utf8String RealityDataFilterCreator::FilterByResolution(double resMin, double re
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double accuracyMax, bool filterOutUnspecified)
     {
-    Utf8String filter = "AccuracyInMeters+ge+'";
-    char buf[32];
-    sprintf(buf, "%f", accuracyMin);
-    filter.append(buf);
-    filter.append("'+and+AccuracyInMeters+le+'");
-    sprintf(buf, "%f", accuracyMax);
-    filter.append(buf);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("AccuracyInMeters+ge+'%f'+and+AccuracyInMeters+le+'%f'", accuracyMin, accuracyMax);
     }
 
 //=====================================================================================
@@ -596,10 +507,7 @@ Utf8String RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
     {
-    Utf8String filter = "Type+eq+'";
-    filter.append(types);
-    filter.append("'");
-    return filter;
+    return Utf8PrintfString("Type+eq+'%s'", types);
     }
 
 //=====================================================================================
@@ -607,11 +515,7 @@ Utf8String RealityDataFilterCreator::FilterByType(Utf8String types)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     {
-    Utf8String filter = "Dataset+eq+'";
-    filter.append(dataset);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("Dataset+eq+'%s'", dataset);
     }
 
 //=====================================================================================
@@ -619,10 +523,7 @@ Utf8String RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterByGroup(Utf8String group)
     {   
-    Utf8String filter = "Group+eq+'";
-    filter.append(group);
-    filter.append("'");
-    return filter;
+    return Utf8PrintfString("Group+eq+'%s'", group);
     }
 
 //=====================================================================================
@@ -630,11 +531,7 @@ Utf8String RealityDataFilterCreator::FilterByGroup(Utf8String group)
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String realityDataId)
     {
-    Utf8String filter = "RealityDataId+eq+'";
-    filter.append(realityDataId);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("RealityDataId+eq+'%s'", realityDataId);
     }
 
 //=====================================================================================
@@ -642,11 +539,7 @@ Utf8String RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8Strin
 //=====================================================================================
 Utf8String RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
     {
-    Utf8String filter = "ProjectId+eq+'";
-    filter.append(projectId);
-    filter.append("'");
-
-    return filter;
+    return Utf8PrintfString("ProjectId+eq+'%s'", projectId);
     }
 
 //=====================================================================================

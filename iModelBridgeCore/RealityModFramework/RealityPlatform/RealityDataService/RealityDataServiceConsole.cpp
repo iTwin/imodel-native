@@ -937,11 +937,11 @@ void RealityDataConsole::Filter()
     std::string str;
     while (filter != "-Finish-")
         {
-        DisplayInfo("Current Filters:\n");
+        DisplayInfo("\nCurrent Filters:\n");
         DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
-        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
+        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n\n", m_ownerFilter));
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
         Choice(m_filterProperties, filter);
