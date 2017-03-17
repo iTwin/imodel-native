@@ -182,7 +182,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
             ) = 0;
 
         //! Updates existing instance. instanceResult.IsModified() == false will result in updating cached date
-        virtual BentleyStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) = 0;
+        virtual CacheStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) = 0;
 
         //! Updates existing instances. New instances will be placed in notFoundOut. Not modified response will result in error.
         virtual BentleyStatus UpdateInstances

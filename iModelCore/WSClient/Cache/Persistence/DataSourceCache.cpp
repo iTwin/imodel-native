@@ -701,7 +701,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response)
+CacheStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response)
     {
     LogCacheDataForMethod();
 
@@ -712,25 +712,23 @@ BentleyStatus DataSourceCache::UpdateInstance(ObjectIdCR objectId, WSObjectsResp
         InstanceCacheHelper::CachedInstances cachedInstances;
         InstanceCacheHelper::UpdateCachingState updateCachingState;
         if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, nullptr, &updateCachingState))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
+
         if (1 != cachedInstances.GetCachedInstances().size() || !updateCachingState.GetNotFoundObjectIds().empty())
-            {
-            return ERROR;
-            }
+            return CacheStatus::DataNotCached;
         }
     else
         {
         ObjectInfo info = m_state->GetObjectInfoManager().ReadInfo(objectId);
+        if (!info.IsInCache())
+            return CacheStatus::DataNotCached;
+
         info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
         if (SUCCESS != m_state->GetObjectInfoManager().UpdateInfo(info))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+
