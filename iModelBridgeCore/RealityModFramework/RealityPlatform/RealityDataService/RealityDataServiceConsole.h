@@ -47,7 +47,9 @@ enum class Command
     Upload,
     FileAccess,
     AzureAdress,
-    ChangeProps
+    ChangeProps,
+    Delete,
+    Filter
     };
 
 struct RealityDataConsole
@@ -82,6 +84,8 @@ public:
     void FileAccess();
     void AzureAdress();
     void ChangeProps();
+    void Delete();
+    void Filter();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
@@ -94,8 +98,14 @@ private:
     WSGServer            m_server;
     bvector<NavNode>     m_serverNodes;
     bvector<Utf8String>  m_machineRepos;
-    bvector<Utf8String>  m_realityDataProperties;
     NodeList*            m_currentNode;
+
+    bvector<Utf8String>  m_realityDataProperties;
+    bvector<Utf8String>  m_filterProperties;
+    Utf8String           m_nameFilter;
+    Utf8String           m_groupFilter;
+    Utf8String           m_typeFilter;
+    Utf8String           m_ownerFilter;
 
     HANDLE        m_hConsole;
     };

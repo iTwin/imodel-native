@@ -65,6 +65,10 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::SetServer;
     else if (args[0].EqualsI("ChangeProps"))
         m_lastCommand = Command::ChangeProps;
+    else if (args[0].EqualsI("Delete"))
+        m_lastCommand = Command::Delete;
+    else if (args[0].EqualsI("Filter"))
+        m_lastCommand = Command::Filter;
     else
         {
         m_lastCommand = Command::Error;
@@ -101,27 +105,33 @@ RealityDataConsole::RealityDataConsole() :
     m_server( WSGServer("", true)),
     m_serverNodes(bvector<NavNode>()),
     m_machineRepos(bvector<Utf8String>()),
-    m_currentNode(nullptr)
+    m_currentNode(nullptr),
+    m_nameFilter(""),
+    m_groupFilter(""),
+    m_typeFilter(""),
+    m_ownerFilter("")
     {
-    m_functionMap.Insert(Command::Help, &RealityDataConsole::Usage);
-    m_functionMap.Insert(Command::SetServer, &RealityDataConsole::ConfigureServer);
-    m_functionMap.Insert(Command::List, &RealityDataConsole::List);
-    m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
-    m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
-    m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
-    m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
-    m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
-    m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
-    m_functionMap.Insert(Command::FileAccess, &RealityDataConsole::FileAccess);
-    m_functionMap.Insert(Command::AzureAdress, &RealityDataConsole::AzureAdress);
-    m_functionMap.Insert(Command::ChangeProps, &RealityDataConsole::ChangeProps);
+    m_functionMap.Insert(Command::Help,         &RealityDataConsole::Usage);
+    m_functionMap.Insert(Command::SetServer,    &RealityDataConsole::ConfigureServer);
+    m_functionMap.Insert(Command::List,         &RealityDataConsole::List);
+    m_functionMap.Insert(Command::ListAll,      &RealityDataConsole::ListAll);
+    m_functionMap.Insert(Command::ChangeDir,    &RealityDataConsole::ChangeDir);
+    m_functionMap.Insert(Command::Stat,         &RealityDataConsole::EnterpriseStat);
+    m_functionMap.Insert(Command::Details,      &RealityDataConsole::Details);
+    m_functionMap.Insert(Command::Download,     &RealityDataConsole::Download);
+    m_functionMap.Insert(Command::Upload,       &RealityDataConsole::Upload);
+    m_functionMap.Insert(Command::FileAccess,   &RealityDataConsole::FileAccess);
+    m_functionMap.Insert(Command::AzureAdress,  &RealityDataConsole::AzureAdress);
+    m_functionMap.Insert(Command::ChangeProps,  &RealityDataConsole::ChangeProps);
+    m_functionMap.Insert(Command::Delete,       &RealityDataConsole::Delete);
+    m_functionMap.Insert(Command::Filter,       &RealityDataConsole::Filter);
 
     //commands that should never occur, within Run()
-    m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::Retry, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::Error, &RealityDataConsole::InputError);
-    m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
-    m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Retry,        &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Error,        &RealityDataConsole::InputError);
+    m_functionMap.Insert(Command::ChoiceIndex,  &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::ChoiceValue,  &RealityDataConsole::DummyFunction);
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
@@ -146,6 +156,13 @@ RealityDataConsole::RealityDataConsole() :
     //m_realityDataProperties.push_back("CreatedTimestamp");
     m_realityDataProperties.push_back("OwnedBy");
     m_realityDataProperties.push_back("-Finish-");
+
+    m_filterProperties = bvector<Utf8String>();
+    m_filterProperties.push_back("Name");
+    m_filterProperties.push_back("Group");
+    m_filterProperties.push_back("Type");
+    m_filterProperties.push_back("OwnedBy");
+    m_filterProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
     }
@@ -228,6 +245,7 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  SetServer   Change server settings (server url, repository and schema)\n");
     DisplayInfo ("  List        List all subfiles/folders for the given location on your server\n");
     DisplayInfo ("  Dir         same as List\n");
+    DisplayInfo ("  Filter      filters RealityDatas returned from a List/Dir command\n");
     DisplayInfo ("  cd          Change current location. Must be called in one of the following ways\n");
     DisplayInfo ("  cd [number] navigates to node at the given index, as specified in the most recent List command\n");
     DisplayInfo ("  cd ..       go up one level\n");
@@ -239,7 +257,7 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
     DisplayInfo ("  AzureAdress Prints the URL to use\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
-    
+    DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -404,6 +422,19 @@ void RealityDataConsole::List()
 void RealityDataConsole::ListRoots()
     {
     RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest();
+
+    bvector<Utf8String> properties = bvector<Utf8String>();
+    if (m_nameFilter.length() > 0)
+        properties.push_back(RealityDataFilterCreator::FilterByName(m_nameFilter));
+    if (m_groupFilter.length() > 0)
+        properties.push_back(RealityDataFilterCreator::FilterByGroup(m_groupFilter));
+    if (m_typeFilter.length() > 0)
+        properties.push_back(RealityDataFilterCreator::FilterByType(m_typeFilter));
+    if (m_ownerFilter.length() > 0)
+        properties.push_back(RealityDataFilterCreator::FilterByOwner(m_ownerFilter));
+    if(properties.size() > 0)
+        enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+
     RequestStatus status = RequestStatus::SUCCESS;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
@@ -785,7 +816,7 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo("Must select a RealityData, first\n", DisplayOption::Error);
         return;
         }
-    else if (m_currentNode->node.GetRootId() != m_currentNode->node.GetInstanceId())
+    else if (m_currentNode->node.GetClassName() != "RealityData")
         {
         DisplayInfo("can only change properties of RealityData at root, use \"cd ..\" to navigate back\n", DisplayOption::Error);
         return;
@@ -836,6 +867,100 @@ void RealityDataConsole::ChangeProps()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else 
         Details();
+    }
+
+void RealityDataConsole::Delete()
+    {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
+        return;
+        }
+    Utf8String className = m_currentNode->node.GetClassName();
+
+    Utf8String instanceId = m_currentNode->node.GetInstanceId();
+    instanceId.ReplaceAll("/", "~2F");
+    std::string str;
+    Utf8String jsonResponse = "";
+
+    if (className == "Document")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if(str != "y")
+            return;
+
+        RealityDataDeleteDocument documentReq = RealityDataDeleteDocument(instanceId);
+        RealityDataService::RequestToJSON(&documentReq, jsonResponse);
+        }
+    else if (className == "Folder")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if (str != "y")
+            return;
+
+        RealityDataDeleteFolder folderReq = RealityDataDeleteFolder(instanceId);
+        RealityDataService::RequestToJSON(&folderReq, jsonResponse);
+        }
+    else if (className == "RealityData")
+        {
+        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Tip);
+        std::getline(std::cin, str);
+        if (str != "y")
+            return;
+
+        RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
+        RealityDataService::RequestToJSON(&realityDataReq, jsonResponse);
+        }
+
+        if(jsonResponse.Contains("errorMessage"))
+            {
+            Json::Value instances(Json::objectValue);
+            if (Json::Reader::Parse(jsonResponse, instances) && instances.isMember("errorMessage"))
+                jsonResponse = instances["errorMessage"].asString();
+            DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", jsonResponse), DisplayOption::Error);
+            }
+        else
+            {
+            DisplayInfo("item deleted\n", DisplayOption::Tip);
+            m_lastInput = "..";
+            ChangeDir();
+            }
+    }
+
+void RealityDataConsole::Filter()
+    {
+    Utf8String filter = "";
+    Utf8String value;
+    std::string str;
+    while (filter != "-Finish-")
+        {
+        DisplayInfo("\nCurrent Filters:\n");
+        DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
+        DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
+        DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
+        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n\n", m_ownerFilter));
+        DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
+
+        Choice(m_filterProperties, filter);
+        if (filter == "-Finish-")
+            break;
+
+        DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
+
+        std::getline(std::cin, str);
+        value = Utf8String(str.c_str());
+        if (filter.Equals("Name"))
+            m_nameFilter = value;
+        else if (filter.Equals("Group"))
+            m_groupFilter = value;
+        else if (filter.Equals("Type"))
+            m_typeFilter = value;
+        else if (filter.Equals("OwnedBy"))
+            m_ownerFilter = value;
+        }
     }
 
 void RealityDataConsole::InputError()

@@ -104,7 +104,8 @@ public:
         {
         GET_Request,
         PUT_Request,
-        POST_Request
+        POST_Request,
+        DELETE_Request
         };
 
     //! The type of http request (GET, PUT, POST)
