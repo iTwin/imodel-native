@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsiclass                                                         Affan.Khan   03/16
 //=======================================================================================
 template<typename T>
-struct Nullable
+struct Nullable final
     {
 private:
     T m_value;

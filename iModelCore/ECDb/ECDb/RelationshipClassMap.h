@@ -150,7 +150,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 ColumnFactory& GetColumnFactory() { return m_columnFactory; }
             };
 
-        struct ForeignKeyColumnInfo : NonCopyableClass
+        struct ForeignKeyColumnInfo final: NonCopyableClass
             {
             private:
                 bool m_canImplyFromNavigationProperty;

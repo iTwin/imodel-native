@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceId.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,15 +33,16 @@ public:
 //! of the ECInstance's ECClass. 
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceKey
+struct ECInstanceKey final
     {
 private:
     ECN::ECClassId m_ecClassId;
     ECInstanceId m_ecInstanceId;
-
+   
 public:
     //! Construct an empty/invalid ECInstanceKey
     ECInstanceKey() {}
+    ~ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistenceHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,7 @@ enum class ECPropertyKind
 //! If you want to leverage caches (which can speed up performance), then use ECDbSchemaManager::GerReader()
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbSchemaPersistenceHelper
+struct ECDbSchemaPersistenceHelper final
     {
 public:
     //!This enum generalizes ECObjects' ones and is used to persist CA instances along with the container type

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
 //+===============+===============+===============+===============+===============+======
-struct ECDbProfileManager
+struct ECDbProfileManager final
     {
 private:
     //non-instantiable class

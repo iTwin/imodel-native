@@ -440,7 +440,7 @@ struct ECSqlStatementCache;
 //! being the desired lifetime of a statement in the cache.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement : ECSqlStatement
+struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement final : ECSqlStatement
     {
     friend struct ECSqlStatementCache;
 
@@ -454,7 +454,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement : ECSqlStatement
     public:
         DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            ~CachedECSqlStatement() {}
+        ~CachedECSqlStatement() {}
 
         uint32_t AddRef() const { return m_refCount.IncrementAtomicPre(); }
         uint32_t GetRefCount() const { return m_refCount.load(); }
@@ -483,7 +483,7 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final : NonCopyableClass
     {
     private:
         friend struct CachedECSqlStatement;
@@ -546,7 +546,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
 //=======================================================================================
 //! Helper that parses an ECSQL and formats the result to a string.
 //=======================================================================================
-struct ECSqlParseTreeFormatter
+struct ECSqlParseTreeFormatter final
     {
     private:
         ECSqlParseTreeFormatter();

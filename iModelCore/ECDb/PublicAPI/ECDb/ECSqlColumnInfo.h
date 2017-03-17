@@ -24,7 +24,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPropertyPath
+struct ECSqlPropertyPath final
     {
     public:
         //=======================================================================================
@@ -43,7 +43,7 @@ struct ECSqlPropertyPath
         //! Represents an entry in an ECSqlPropertyPath
         // @bsiclass                                                 Krischan.Eberle    06/2013
         //+===============+===============+===============+===============+===============+======
-        struct Entry : RefCountedBase
+        struct Entry final : RefCountedBase
             {
             public:
                 //=======================================================================================
@@ -189,7 +189,7 @@ typedef ECSqlPropertyPath const& ECSqlPropertyPathCR;
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Krischan.Eberle    10/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlColumnInfo
+struct ECSqlColumnInfo final
     {
     private:
         ECN::ECTypeDescriptor m_dataType;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDbExpressionSymbolContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,7 +29,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!     property value of the specified related instance. Returns NULL if there're no related instances.
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolContext
+struct ECDbExpressionSymbolContext final
 {
 private:
     ECN::IECSymbolProvider* m_provider;

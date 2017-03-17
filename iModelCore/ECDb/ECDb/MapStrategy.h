@@ -40,7 +40,7 @@ struct MapStrategyExtendedInfo;
 //======================================================================================
 // @bsiclass                                Krischan.Eberle                08/2016
 //+===============+===============+===============+===============+===============+=====
-struct TablePerHierarchyInfo
+struct TablePerHierarchyInfo final
     {
     public:
         enum class ShareColumnsMode
@@ -80,7 +80,7 @@ struct TablePerHierarchyInfo
 //======================================================================================
 // @bsiclass                                Krischan.Eberle                08/2016
 //+===============+===============+===============+===============+===============+=====
-struct MapStrategyExtendedInfo
+struct MapStrategyExtendedInfo final
     {
 public:
     static const MapStrategy DEFAULT = MapStrategy::OwnTable;
@@ -111,7 +111,7 @@ public:
 //======================================================================================
 // @bsiclass                                 Krischan.Eberle               08/2016
 //+===============+===============+===============+===============+===============+=====
-struct ClassMappingCACache
+struct ClassMappingCACache final
     {
 private:
     ECDbClassMap m_classMapCA;

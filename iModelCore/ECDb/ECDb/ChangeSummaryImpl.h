@@ -18,19 +18,14 @@ typedef RefCountedPtr<TableClassMap> TableClassMapPtr;
 //! Information on mappings to a column
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ColumnMap
+struct ColumnMap final
     {
     private:
         Utf8String m_columnName;
         int m_columnIndex = -1;
     public:
-        //! Constructor
         ColumnMap() {}
-
-        //! Constructor
-        ColumnMap(Utf8StringCR columnName, int columnIndex)
-            : m_columnName(columnName), m_columnIndex(columnIndex)
-            {}
+        ColumnMap(Utf8StringCR columnName, int columnIndex) : m_columnName(columnName), m_columnIndex(columnIndex) {}
 
         //! Gets the name of the column
         Utf8StringCR GetName() const { return m_columnName; }
@@ -46,7 +41,7 @@ struct ColumnMap
 //! Information on mappings to a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct TableMap : RefCounted<NonCopyableClass>
+struct TableMap final : RefCounted<NonCopyableClass>
     {
     friend struct ChangeSummary;
     private:
@@ -77,7 +72,6 @@ struct TableMap : RefCounted<NonCopyableClass>
         //! Create the table map for a table with the specified name
         static TableMapPtr Create(ECDbCR ecdb, Utf8StringCR tableName);
 
-        //! Destructor
         ~TableMap() {}
 
         //! Returns true if the table is mapped to a ECClass. false otherwise. 
@@ -128,7 +122,7 @@ struct TableMap : RefCounted<NonCopyableClass>
 //! Information on mappings to a specific class within a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct TableClassMap : RefCounted<NonCopyableClass>
+struct TableClassMap final : RefCounted<NonCopyableClass>
     {
     private:
         ECDbCR m_ecdb;
@@ -145,6 +139,8 @@ struct TableClassMap : RefCounted<NonCopyableClass>
         void FreeColumnMaps();
 
     public:
+        ~TableClassMap();
+
         //! @private
         //! Create the table map for the primary table of the specified class
         static TableClassMapPtr Create(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass);
@@ -152,8 +148,6 @@ struct TableClassMap : RefCounted<NonCopyableClass>
         //! Returns true if the class is really mapped
         bool IsMapped() const { return m_classMap != nullptr; }
 
-        //! Destructor
-        ~TableClassMap();
 
         //! Returns true if the table contains a column for the specified property (access string)
         bool ContainsColumn(Utf8CP propertyAccessString) const;
@@ -170,7 +164,7 @@ struct TableClassMap : RefCounted<NonCopyableClass>
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      07/2015
 //=======================================================================================
-struct SqlChange : NonCopyableClass
+struct SqlChange final: NonCopyableClass
     {
     private:
         Changes::Change const& m_sqlChange;
@@ -181,7 +175,7 @@ struct SqlChange : NonCopyableClass
         bset<int> m_primaryKeyColumnIndices;
 
     public:
-        SqlChange(Changes::Change const& change);
+        explicit SqlChange(Changes::Change const& change);
 
         Changes::Change const& GetChange() const { return m_sqlChange; }
         Utf8StringCR GetTableName() const { return m_tableName; }
@@ -206,7 +200,7 @@ struct SqlChange : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct InstancesTable : NonCopyableClass
+struct InstancesTable final : NonCopyableClass
     {
     private:
         ChangeSummaryCR m_changeSummary;
@@ -251,7 +245,7 @@ struct InstancesTable : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct ValuesTable : NonCopyableClass
+struct ValuesTable final: NonCopyableClass
     {
     private:
         ChangeSummaryCR m_changeSummary;
@@ -267,7 +261,7 @@ struct ValuesTable : NonCopyableClass
         void FinalizeStatements();
 
     public:
-        ValuesTable(InstancesTable const&);
+        explicit ValuesTable(InstancesTable const&);
         ~ValuesTable() { Free(); }
 
         void Initialize();
@@ -284,7 +278,7 @@ struct ValuesTable : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                              Ramanujam.Raman      10/2015
 //=======================================================================================
-struct ChangeExtractor : NonCopyableClass
+struct ChangeExtractor final : NonCopyableClass
     {
     enum class ExtractOption
         {

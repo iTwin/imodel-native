@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 enum class ECSqlType
     {
-    UnKnown, //In cases where we are not interested one of the following value
+    Unknown, //!<In cases where we are not interested one of the following value
     Select, //!< ECSQL SELECT
     Insert, //!< ECSQL INSERT
     Update, //!< ECSQL UPDATE
@@ -113,7 +113,7 @@ typedef BeInt64Id ECRelationshipConstraintId;
 //=======================================================================================
 // @bsiclass                                 Affan.Khan                10/2015
 //+===============+===============+===============+===============+===============+======
-struct Enum
+struct Enum final
     {
 private:
     Enum();

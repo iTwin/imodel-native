@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! Represents one row of the result set when running the SQLite pragma table_info
 // @bsiclass                                                 Affan.Khan         06/2016
 //======================================================================================
-struct SqliteColumnInfo
+struct SqliteColumnInfo final
     {
     private:
         Utf8String m_name;
@@ -38,7 +38,7 @@ struct SqliteColumnInfo
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbSchemaPersistenceManager : public NonCopyableClass
+struct DbSchemaPersistenceManager final : public NonCopyableClass
     {
 public:
     enum class CreateOrUpdateTableResult

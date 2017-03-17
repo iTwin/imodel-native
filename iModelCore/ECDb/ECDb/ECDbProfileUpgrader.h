@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,9 @@ struct ECDbProfileUpgrader
 private:
     virtual DbResult _Upgrade(ECDbCR) const = 0;
 
+protected:
+    ECDbProfileUpgrader() {}
+
 public:
     virtual ~ECDbProfileUpgrader() {}
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
@@ -26,7 +29,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbProfileECSchemaUpgrader
+struct ECDbProfileECSchemaUpgrader final
     {
 private:
     ECDbProfileECSchemaUpgrader();

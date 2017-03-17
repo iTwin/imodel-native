@@ -25,7 +25,7 @@ struct ECDbForeignKeyConstraint;
 //! in the ECDbMap standard ECSchema
 //! @bsiclass
 //=======================================================================================    
-struct ECDbMapCustomAttributeHelper
+struct ECDbMapCustomAttributeHelper final
     {
     private:
         ECDbMapCustomAttributeHelper();

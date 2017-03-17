@@ -94,7 +94,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceInserter : NonCopyableClass
+struct ECInstanceInserter final : NonCopyableClass
     {
 #if !defined (DOCUMENTATION_GENERATOR)
 public:
@@ -174,7 +174,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceUpdater : NonCopyableClass
+struct ECInstanceUpdater final : NonCopyableClass
     {
 #if !defined (DOCUMENTATION_GENERATOR)
 public:
@@ -261,7 +261,7 @@ public:
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      02/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceDeleter : NonCopyableClass
+struct ECInstanceDeleter final : NonCopyableClass
     {
 private:
     ECDbCR m_ecdb;

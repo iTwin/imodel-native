@@ -41,7 +41,7 @@ void ECDbExpressionSymbolContext::LeaveContext()
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionContext : ECN::SymbolExpressionContext
+struct ECDbExpressionContext final : ECN::SymbolExpressionContext
 {
 private:
     ECDbCR m_db;

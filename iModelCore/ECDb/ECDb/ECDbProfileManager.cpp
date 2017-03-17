@@ -70,7 +70,7 @@ DbResult ECDbProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, Sch
 //! constraints when altering tables.
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
-struct ProfileUpgradeContext : NonCopyableClass
+struct ProfileUpgradeContext final: NonCopyableClass
     {
     private:
         ECDbR m_ecdb;

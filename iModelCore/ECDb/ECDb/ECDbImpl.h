@@ -43,7 +43,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2017
 //+===============+===============+===============+===============+===============+======
-struct IdSequences : NonCopyableClass
+struct IdSequences final : NonCopyableClass
     {
 public:
     //the numbers are the indexes into the sequence vector of SequenceManager. So they
@@ -79,7 +79,7 @@ public:
 //! (PIMPL idiom)
 // @bsiclass                                                Krischan.Eberle      12/2014
 //+===============+===============+===============+===============+===============+======
-struct ECDb::Impl : NonCopyableClass
+struct ECDb::Impl final : NonCopyableClass
     {
 friend struct ECDb;
 
@@ -91,7 +91,7 @@ public:
     //! an error from any of its methods.
     // @bsiclass                                                Krischan.Eberle       10/2016
     //+===============+===============+===============+===============+===============+======
-    struct ClearCacheCounter
+    struct ClearCacheCounter final
         {
         private:
             uint32_t m_value;
@@ -107,7 +107,7 @@ public:
         };
 
 private:
-    struct DbFunctionKey
+    struct DbFunctionKey final
         {
         Utf8CP m_functionName;
         int m_argCount;

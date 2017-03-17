@@ -27,7 +27,7 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
             return FinalizeParseStatus::Error;
             }
 
-        const ECSqlType currentScopeECSqlType = FindParent(Exp::Type::SingleSelect) != nullptr ? ECSqlType::Select : ECSqlType::UnKnown;
+        const ECSqlType currentScopeECSqlType = FindParent(Exp::Type::SingleSelect) != nullptr ? ECSqlType::Select : ECSqlType::Unknown;
         ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(m_info->GetMap(), currentScopeECSqlType));
         if (!policy.IsSupported())
             {
