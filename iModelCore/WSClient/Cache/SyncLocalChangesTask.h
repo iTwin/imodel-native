@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -35,13 +35,12 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         std::shared_ptr<bset<ECInstanceKey>> m_objectsToSyncPtr;
 
-        const CachingDataSource::SyncProgressCallback m_onProgressCallback;
+        const CachingDataSource::ProgressCallback m_onProgressCallback;
 
         bvector<ChangeGroupPtr> m_changeGroups;
         size_t m_changeGroupIndexToSyncNext;
 
-        std::atomic<uint64_t> m_totalBytesToUpload;
-        std::atomic<uint64_t> m_totalBytesUploaded;
+        CachingDataSource::Progress::State m_uploadBytesProgress;
 
         bvector<ObjectId> m_objectsToRefreshAfterSync;
 
@@ -67,7 +66,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         void HandleSyncError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
-        void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
+        void ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label) const;
         void ReportFinalProgress() const;
         ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
@@ -106,7 +105,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             CachingDataSourcePtr cachingDataSource,
             std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
             SyncOptions options,
-            CachingDataSource::SyncProgressCallback&& onProgress,
+            CachingDataSource::ProgressCallback&& onProgress,
             ICancellationTokenPtr ct
             );
     };

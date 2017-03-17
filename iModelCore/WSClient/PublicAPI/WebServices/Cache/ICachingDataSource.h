@@ -25,6 +25,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 typedef std::shared_ptr<struct ICachingDataSource> ICachingDataSourcePtr;
+typedef std::shared_ptr<const Utf8String> Utf8StringCPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2013
@@ -55,6 +56,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             };
 
         struct SelectProvider;
+        
+        struct Progress;
 
         struct Error;
 
@@ -65,6 +68,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct FailedObject;
         struct FailedObjects;
 
+        typedef Progress& ProgressR;
+        typedef const Progress& ProgressCR;
+
         typedef Error& ErrorR;
         typedef const Error& ErrorCR;
 
@@ -72,17 +78,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef const FailedObject& FailedObjectCR;
 
         typedef FailedObjects& FailedObjectsR;
-        typedef const FailedObjects& FailedObjectsCR;
+        typedef const FailedObjects& FailedObjectsCR;             
 
-        typedef std::function<void(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel)> LabeledProgressCallback;
-
-        //! synced - percentage (0.0 -> 1.0) of total sync done based on instances count
-        //! TODO: change synced to instancesSynced & instancesTotal to give more contorl for consumers
-        //! currentLabel - label of instance being synced
-        //! fileBytesTransfered - files bytes already synced to server. 0 if no files are being synced
-        //! fileBytesTotal - total files bytes to sync. 0 if no files are being synced
-        typedef std::function<void(double synced, Utf8StringCR currentLabel, double fileBytesTransfered, double fileBytesTotal)> SyncProgressCallback;
-
+        typedef std::function<void(ProgressCR progress)> ProgressCallback;
+        
         typedef AsyncResult<void, Error>                    Result;
         typedef AsyncResult<KeysData, Error>                KeysResult;
         typedef AsyncResult<ObjectsData, Error>             ObjectsResult;
@@ -204,7 +203,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR fileId,
             DataOrigin origin,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -213,7 +212,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             const bvector<ObjectId>& filesIds,
             bool skipCachedFiles = false,
             FileCache fileCacheLocation = FileCache::Auto,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -233,7 +232,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
@@ -249,7 +248,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
@@ -271,7 +270,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            SyncProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -292,7 +291,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             const bvector<ObjectId>& persistenceNavigationTrees,
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
-            LabeledProgressCallback onProgress = nullptr,
+            ProgressCallback onProgress = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
     };
@@ -437,7 +436,6 @@ struct ICachingDataSource::FailedObject
         WSCACHE_EXPORT ErrorCR      GetError() const;
     };
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -450,6 +448,46 @@ struct ICachingDataSource::FailedObjects : public bvector<FailedObject>
                 this->insert(this->end(), failedObjects.begin(), failedObjects.end());
             return *this;
             }
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                Vilius.Kazlauskas    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ICachingDataSource::Progress
+    {
+	public:
+    	struct State
+        	{
+    		double current = 0;
+        	double total = 0;
+
+        	State() {};
+        	State(double current, double total) : current(current), total(total) {};
+        	bool operator==(const State& other) const { return current == other.current && total == other.total; };
+        	};
+		
+        typedef State& StateR;
+        typedef const State& StateCR;
+		
+    private:        
+        double m_synced = 0;
+        State m_bytes;
+        Utf8StringCPtr m_label;
+    
+    public:
+        Progress() {};
+        Progress(State bytes, Utf8StringCPtr label = nullptr, double synced = 0) :
+            m_synced(synced), m_bytes(bytes), m_label(label) {};
+
+        //! GetBytes().current - file bytes already synced. 0 if no files are being synced
+        //! GetBytes().total - total file bytes to sync. 0 if no files are being synced
+        State GetBytes() const { return m_bytes; };
+        //! Get percentage (0.0 -> 1.0) of total sync done based on instances count
+        double GetSynced() const { return m_synced; };
+        //! Get label of instance being synced
+        WSCACHE_EXPORT Utf8StringCR GetLabel() const;
+        //! Get label of instance being synced
+        Utf8StringCPtr GetLabelPtr() const { return m_label; };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

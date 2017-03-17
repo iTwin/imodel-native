@@ -389,3 +389,15 @@ ICachingDataSource::ErrorCR ICachingDataSource::FailedObject::GetError() const
     {
     return m_error;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ICachingDataSource::Progress::GetLabel() const
+    {
+    if (m_label)
+		return *m_label;
+		
+    static const Utf8String empty;
+    return empty;
+    };

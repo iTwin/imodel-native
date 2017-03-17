@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -24,13 +24,13 @@ struct DownloadFilesTask : public CachingTaskBase
         struct DownloadFileProperties
             {
             ObjectId objectId;
-            Utf8String name;
+            std::shared_ptr<Utf8String> name = std::make_shared<Utf8String>();
             uint64_t size;
             uint64_t bytesDownloaded;
             };
 
     private:
-        const CachingDataSource::LabeledProgressCallback m_onProgressCallback;
+        const CachingDataSource::ProgressCallback m_onProgressCallback;
 
         FileCache                       m_fileCacheLocation;
         bset<ObjectId>                  m_filesToDownloadIds;
@@ -39,8 +39,7 @@ struct DownloadFilesTask : public CachingTaskBase
 
         int                             m_downloadTasksRunning;
 
-        std::atomic<uint64_t>           m_totalBytesToDownload;
-        std::atomic<uint64_t>           m_totalBytesDownloaded;
+        CachingDataSource::Progress::State m_downloadBytesProgress;
 
         std::shared_ptr<FileDownloadManager> m_fileDownloadManager;
 
@@ -57,7 +56,7 @@ struct DownloadFilesTask : public CachingTaskBase
             std::shared_ptr<FileDownloadManager> fileDownloadManager,
             bset<ObjectId> filesToDownload,
             FileCache fileCacheLocation,
-            CachingDataSource::LabeledProgressCallback onProgress,
+            CachingDataSource::ProgressCallback onProgress,
             ICancellationTokenPtr ct
             );
     };

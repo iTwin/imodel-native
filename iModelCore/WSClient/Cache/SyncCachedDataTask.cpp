@@ -26,26 +26,26 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::SyncProgressCallback onProgress,
+ICachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
 m_initialInstances(initialInstances),
 m_queriesToCache(initialQueries.begin(), initialQueries.end()),
-m_onProgress(onProgress ? onProgress : [] (double, Utf8StringCR, double, double) {})
+m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::ReportProgress(Utf8StringCR label)
+void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     {
     size_t total = m_initialInstances.size() + m_instancesToRedownload.size() + m_totalQueries;
     size_t synced = m_syncedInitialInstances + m_syncedRejectedInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    m_onProgress(progress, label, m_syncedBytes, m_totalBytes);
+    m_onProgress({m_downloadBytesProgress, label, progress});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -171,11 +171,10 @@ void SyncCachedDataTask::CacheFiles()
 
     txn.Commit();
 
-    auto onProgress = [=] (double bytesTransfered, double bytesTotal, Utf8StringCR fileName)
+    auto onProgress = [=] (CachingDataSource::ProgressCR progress)
         {
-        m_syncedBytes = bytesTransfered;
-        m_totalBytes = bytesTotal;
-        ReportProgress(fileName);
+        m_downloadBytesProgress = progress.GetBytes();
+        ReportProgress(progress.GetLabelPtr());
         };
 
     m_ds->DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, GetCancellationToken())
@@ -297,7 +296,7 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
 
             uint64_t fileSize = 0;
             txn.GetCache().ReadFileProperties(instanceKey, nullptr, &fileSize);
-            m_totalBytes += fileSize;
+            m_downloadBytesProgress.total += fileSize;
             }
         }
 

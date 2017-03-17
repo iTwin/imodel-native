@@ -1143,7 +1143,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCache
 (
 bset<ObjectId> filesToDownload,
 FileCache fileCacheLocation,
-CachingDataSource::LabeledProgressCallback onProgress,
+CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {
@@ -1171,7 +1171,7 @@ AsyncTaskPtr<CachingDataSource::FileResult> CachingDataSource::GetFile
 (
 ObjectIdCR objectId,
 DataOrigin origin,
-LabeledProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {
@@ -1253,7 +1253,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::CacheFiles
 const bvector<ObjectId>& filesIds,
 bool skipCachedFiles,
 FileCache fileCacheLocation,
-LabeledProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {
@@ -1354,7 +1354,7 @@ ICancellationTokenPtr ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
-SyncProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct,
 SyncOptions options
 )
@@ -1368,7 +1368,7 @@ SyncOptions options
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 const bset<ECInstanceKey>& objectsToSync,
-SyncProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct,
 SyncOptions options
 )
@@ -1383,7 +1383,7 @@ SyncOptions options
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncLocalChanges
 (
 std::shared_ptr<bset<ECInstanceKey>> objectsToSync,
-SyncProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct,
 SyncOptions options
 )
@@ -1498,7 +1498,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncCachedData
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-SyncProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {
@@ -1528,7 +1528,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::CacheNavigation
 const bvector<ObjectId>& navigationTreesToCacheFully,
 const bvector<ObjectId>& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
-LabeledProgressCallback onProgress,
+ProgressCallback onProgress,
 ICancellationTokenPtr ct
 )
     {

@@ -671,12 +671,12 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
 
     // Act & Assert
     int onProgressCalled = 0;
-    CachingDataSource::LabeledProgressCallback onProgress =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress =
+        [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(0, bytesTransfered);
-        EXPECT_EQ(42, bytesTotal);
-        EXPECT_EQ("TestFileName", label);
+        EXPECT_EQ(0, progress.GetBytes().current);
+        EXPECT_EQ(42, progress.GetBytes().total);
+        EXPECT_EQ("TestFileName", progress.GetLabel());
         onProgressCalled++;
         };
 
@@ -730,12 +730,12 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
     bool progressReported1 = false;
     double bytesTransfered1 = 0;
     double bytesTotal1 = 0;
-    CachingDataSource::LabeledProgressCallback onProgress1 =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress1 =
+        [&] (CachingDataSource::ProgressCR progress)
         {
         progressReported1 = true;
-        bytesTransfered1 = bytesTransfered;
-        bytesTotal1 = bytesTotal;
+        bytesTransfered1 = progress.GetBytes().current;
+        bytesTotal1 = progress.GetBytes().total;
         };
 
     auto lastTask = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress1, nullptr)
@@ -746,12 +746,12 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
     bool progressReported2 = false;
     double bytesTransfered2 = 0;
     double bytesTotal2 = 0;
-    CachingDataSource::LabeledProgressCallback onProgress2 =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress2 =
+        [&] (CachingDataSource::ProgressCR progress)
         {
         progressReported2 = true;
-        bytesTransfered2 = bytesTransfered;
-        bytesTotal2 = bytesTotal;
+        bytesTransfered2 = progress.GetBytes().current;
+        bytesTotal2 = progress.GetBytes().total;
         };
     auto lastTask2 = ds->GetFile(fileId, CachingDataSource::DataOrigin::RemoteData, onProgress2, nullptr)
         ->Then([&] (CachingDataSource::FileResult result)
@@ -787,8 +787,8 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
     txn.Commit();
 
     // Act & Assert
-    CachingDataSource::LabeledProgressCallback onProgress =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress =
+        [&] (CachingDataSource::ProgressCR progress)
         {
         };
 
@@ -860,8 +860,8 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
     txn.Commit();
 
     // Act & Assert
-    CachingDataSource::LabeledProgressCallback onProgress =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress =
+        [&] (CachingDataSource::ProgressCR progress)
         {
         };
 
@@ -934,12 +934,12 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
 
     // Act & Assert
     int onProgressCalled = 0;
-    CachingDataSource::LabeledProgressCallback onProgress =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress =
+        [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(0, bytesTransfered);
-        EXPECT_EQ(0, bytesTotal);
-        EXPECT_EQ("", label);
+        EXPECT_EQ(0, progress.GetBytes().current);
+        EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ("", progress.GetLabel());
         onProgressCalled++;
         };
 
@@ -998,12 +998,12 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
 
     // Act & Assert
     int onProgressCalled = 0;
-    CachingDataSource::LabeledProgressCallback onProgress =
-        [&] (double bytesTransfered, double bytesTotal, Utf8StringCR label)
+    CachingDataSource::ProgressCallback onProgress =
+        [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(0, bytesTransfered);
-        EXPECT_EQ(0, bytesTotal);
-        EXPECT_EQ("TestLabel", label);
+        EXPECT_EQ(0, progress.GetBytes().current);
+        EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ("TestLabel", progress.GetLabel());
         onProgressCalled++;
         };
 
@@ -4195,12 +4195,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassThatHasLab
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult())));
 
     int onProgressCount = 0;
-    auto onProgress = [&] (double, Utf8StringCR taskLabel, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         onProgressCount++;
-        EXPECT_EQ(0, bytesTransfered);
-        EXPECT_EQ(0, bytesTotal);
-        EXPECT_EQ("TestLabel", taskLabel);
+        EXPECT_EQ(0, progress.GetBytes().current);
+        EXPECT_EQ(0, progress.GetBytes().total);
+        EXPECT_EQ("TestLabel", progress.GetLabel());
         };
 
     ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4224,10 +4224,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassWithoutLab
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult())));
 
     int onProgressCount = 0;
-    auto onProgress = [&] (double, Utf8StringCR taskLabel, double, double)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         onProgressCount++;
-        EXPECT_EQ("TestClass:" + objectId.remoteId, taskLabel);
+        EXPECT_EQ("TestClass:" + objectId.remoteId, progress.GetLabel());
         };
 
     ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4250,10 +4250,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithLabel_CallsPro
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult())));
 
     int onProgressCount = 0;
-    auto onProgress = [&] (double synced, Utf8StringCR taskLabel, double, double)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         onProgressCount++;
-        EXPECT_EQ("TestLabel", taskLabel);
+        EXPECT_EQ("TestLabel", progress.GetLabel());
         };
 
     ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4290,9 +4290,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
 
     int onProgressCount = 0;
     double expectedSyncedValues[4] = {0, 0.33, 0.66, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR, double, double)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[onProgressCount], synced);
+        EXPECT_EQ(expectedSyncedValues[onProgressCount], progress.GetSynced());
         onProgressCount++;
         };
 
@@ -4316,9 +4316,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
 
     int onProgressCount = 0;
     double expectedSyncedValues[2] = {0, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR, double, double)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[onProgressCount], synced);
+        EXPECT_EQ(expectedSyncedValues[onProgressCount], progress.GetSynced());
         onProgressCount++;
         };
 
@@ -4347,10 +4347,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgr
         }));
 
     int onProgressCount = 0;
-    auto onProgress = [&] (double, Utf8StringCR taskLabel, double, double)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         onProgressCount++;
-        EXPECT_EQ("TestLabel", taskLabel);
+        EXPECT_EQ("TestLabel", progress.GetLabel());
         };
 
     ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4396,11 +4396,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
         int onProgressCount = 0;
         double expectedBytesTransfered[7] = {0, 0, 2, 2, 2, 6, 6};
 
-        auto onProgress = [&] (double, Utf8StringCR, double bytesTransfered, double bytesTotal)
+        auto onProgress = [&] (CachingDataSource::ProgressCR progress)
             {
-            EXPECT_EQ(expectedBytesTransfered[onProgressCount], bytesTransfered);
+            EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
             onProgressCount++;
-            EXPECT_EQ(6, bytesTotal);
+            EXPECT_EQ(6, progress.GetBytes().total);
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -4438,11 +4438,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
         int onProgressCount = 0;
         double expectedBytesTransfered[7] = {0, 0, 2, 2, 2, 6, 6};
 
-        auto onProgress = [&] (double, Utf8StringCR, double bytesTransfered, double bytesTotal)
+        auto onProgress = [&] (CachingDataSource::ProgressCR progress)
             {
-            EXPECT_EQ(expectedBytesTransfered[onProgressCount], bytesTransfered);
+            EXPECT_EQ(expectedBytesTransfered[onProgressCount], progress.GetBytes().current);
             onProgressCount++;
-            EXPECT_EQ(6, bytesTotal);
+            EXPECT_EQ(6, progress.GetBytes().total);
             };
 
         ds->SyncLocalChanges(onProgress, nullptr)->Wait();
@@ -5116,12 +5116,12 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
 
     int progressCalled = 0;
     double expectedSyncedValues[2] = {0, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
-        EXPECT_THAT(label, IsEmpty());
-        EXPECT_THAT(bytesTransfered, 0);
-        EXPECT_THAT(bytesTotal, 0);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
+        EXPECT_THAT(progress.GetLabel(), IsEmpty());
+        EXPECT_THAT(progress.GetBytes().current, 0);
+        EXPECT_THAT(progress.GetBytes().total, 0);
         progressCalled++;
         };
 
@@ -5154,12 +5154,12 @@ TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstances_OnProgress
 
     int progressCalled = 0;
     double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
-        EXPECT_EQ("", label);
-        EXPECT_THAT(bytesTransfered, 0);
-        EXPECT_THAT(bytesTotal, 0);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
+        EXPECT_EQ("", progress.GetLabel());
+        EXPECT_THAT(progress.GetBytes().current, 0);
+        EXPECT_THAT(progress.GetBytes().total, 0);
         progressCalled++;
         };
 
@@ -5196,11 +5196,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
 
     int progressCalled = 0;
     double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
-        EXPECT_THAT(bytesTransfered, 0);
-        EXPECT_THAT(bytesTotal, 0);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
+        EXPECT_THAT(progress.GetBytes().current, 0);
+        EXPECT_THAT(progress.GetBytes().total, 0);
         progressCalled++;
         };
 
@@ -5242,11 +5242,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
 
     int progressCalled = 0;
     double expectedSyncedValues[5] = {0, 0.50, 1.00, 0.75, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
-        EXPECT_THAT(bytesTransfered, 0);
-        EXPECT_THAT(bytesTotal, 0);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
+        EXPECT_THAT(progress.GetBytes().current, 0);
+        EXPECT_THAT(progress.GetBytes().total, 0);
         progressCalled++;
         };
 
@@ -5296,14 +5296,14 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
 
     int progressCalled = 0;
     double expectedSyncedValues[3] = {0, 1, 1};
-    auto onProgress = [&] (double synced, Utf8StringCR label, double bytesTransfered, double bytesTotal)
+    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], synced);
+        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
         if (progressCalled == 2)
             {
-            EXPECT_EQ("TestFile.txt", label);
-            EXPECT_THAT(bytesTransfered, 5);
-            EXPECT_THAT(bytesTotal, 42);
+            EXPECT_EQ("TestFile.txt", progress.GetLabel());
+            EXPECT_THAT(progress.GetBytes().current, 5);
+            EXPECT_THAT(progress.GetBytes().total, 42);
             }
         progressCalled++;
         };

@@ -34,6 +34,7 @@
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceProgressTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
     <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
