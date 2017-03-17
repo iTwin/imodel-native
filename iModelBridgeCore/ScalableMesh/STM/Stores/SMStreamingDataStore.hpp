@@ -13,6 +13,7 @@
 #include "SMSQLiteStore.h"
 #include "..\Threading\LightThreadPool.h"
 #include <condition_variable>
+#include <codecvt>
 #ifndef VANCOUVER_API
 #include <TilePublisher\TilePublisher.h>
 #endif
@@ -117,6 +118,8 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
         }
 
     m_pathToHeaders.setSeparator(GetDataSourceAccount()->getPrefixPath().getSeparator());
+
+    m_transform.InitIdentity();
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
@@ -236,6 +239,46 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         assert(!"Unknown server type for streaming");
         }
 
+        //// ------------------------------------------------------------------------------------------------------------------------------
+        //{ // WSG test to extract organization ID
+        //Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
+        //assert(!tokenUtf8.empty());
+        //
+        //Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
+        //assert(!sslCertificatePath.empty());
+        //
+        //wstring server = s_use_qa_azure ? L"qa-realitydataservices-eus.cloudapp.net" : L"dev-realitydataservices-eus.cloudapp.net";
+        //
+        //DataSourceService                       *   serviceWSG;
+        //DataSourceAccount                       *   accountWSG;
+        //DataSourceAccount::AccountIdentifier        accountIdentifier(server);
+        //DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
+        //
+        //serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
+        //if (serviceWSG == nullptr)
+        //    return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+        //
+        //accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
+        //if (accountWSG == nullptr)
+        //    return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+        //
+        //// Set SSL Certificate and token callback first so that we can attempt connecting to RDS after setting URLs
+        //accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+        //
+        //accountWSG->setWSGTokenGetterCallback([]() -> std::string
+        //    {
+        //    return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
+        //    });
+        //
+        //accountWSG->setPrefixPath(DataSourceURL(directory.c_str()));
+        //
+        //auto* casted_account = static_cast<DataSourceAccountWSG*>(accountWSG);
+        //casted_account->setUseDirectAzureCalls(true);
+        //
+        //}
+        // Extract organisation ID test
+        // ------------------------------------------------------------------------------------------------------------------------------
+
     if ((service = dataSourceManager.getService(service_name)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
@@ -335,6 +378,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     if (s_stream_from_grouped_store) groupMode = SMNodeGroup::StrategyType::NORMAL;
     if (m_use_node_header_grouping && m_use_virtual_grouping) groupMode = SMNodeGroup::StrategyType::VIRTUAL;
     if (s_stream_using_cesium_3d_tiles_format) groupMode = SMNodeGroup::StrategyType::CESIUM;
+    if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMNodeGroup::StrategyType::BIMCESIUM;
     bool isGrouped = true;
     wchar_t buffer[10000];
     switch (groupMode)
@@ -358,6 +402,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         case SMNodeGroup::StrategyType::CESIUM:
             {
             swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
+            break;
+            }
+        case SMNodeGroup::StrategyType::BIMCESIUM:
+            {
+            swprintf(buffer, L"graz/graz_AppData.json");
             break;
             }
         default:
@@ -396,8 +445,35 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
     this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
+    if (s_import_from_bim_exported_cesium_3d_tiles)
+        {
+        headerSize = readSize;
+        Json::Value masterHeader;
+        Json::Reader    reader;
+        char* jsonBlob = reinterpret_cast<char *>(dest.get());
+        reader.parse(jsonBlob, jsonBlob + readSize, masterHeader);
+        assert(masterHeader.isMember("models") && masterHeader["models"].isMember("30") && masterHeader["models"]["30"].isMember("tilesetUrl"));
 
-    if (isGrouped)
+        BeFileName tilesetUrl (masterHeader["models"]["30"]["tilesetUrl"].asString());
+        auto rootNodeBlockID = 0; // start node ID at 0
+
+        indexHeader->m_SplitTreshold = 10000; // default, not used
+        indexHeader->m_balanced = true; // default, should be true
+        indexHeader->m_depth = 0; // default, unknown
+        indexHeader->m_isTerrain = false; // default, always non terrain
+        indexHeader->m_singleFile = false; // default, always multifile
+        indexHeader->m_isCesiumFormat = true; // default, alwasy cesium datasets
+        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+
+        BeFileName baseUrl(tilesetUrl.c_str());
+        auto tilesetDir = baseUrl.GetDirectoryName();
+        auto tilesetName = baseUrl.GetFileNameAndExtension();
+
+        m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
+        m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
+        m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
+        }
+    else if (isGrouped)
         {
         // initialize codec
         bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
@@ -431,6 +507,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
 
         auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
+        //auto group = this->GetGroup(HPMBlockID(rootNodeBlockID));
+        m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
+        m_CesiumGroup->SetURL(L"n_0.json");
+        m_CesiumGroup->SetDataSourcePrefix(L"data");
+
         indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
         short storedGroupMode = m_use_virtual_grouping;
@@ -438,79 +519,99 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
         position += sizeof(storedGroupMode);
 
+        //m_nodeHeaderGroups.push_back(group);
+        //for (auto childGroup : group->GetChildGroups())
+        //    {
+        //    m_nodeHeaderGroups.push_back(childGroup.second);
+        //    }
 
-        // Parse rest of file -- group information
-        while (position < headerSize)
-            {
-            uint64_t group_id;
-            uint32_t group_id_tmp;
-            memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
-            position += sizeof(group_id_tmp);
-            group_id = group_id_tmp;
+        //for (auto headerPtr : group->groupGetJsonNodeHeaders())
+        //    {
+        //    auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
+        //    assert(result.second == true);
+        //    }
+        //
+        //for (auto childGroup : group->GetChildGroups())
+        //    {
+        //    for (auto headerPtr : childGroup->groupGetJsonNodeHeaders())
+        //        {
+        //        auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
+        //        assert(result.second == true);
+        //        }
+        //    }
 
-            uint64_t group_totalSizeOfHeaders(0);
-            if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
-                {
-                memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
-                position += sizeof(group_totalSizeOfHeaders);
-                }
+        //// Parse rest of file -- group information
+        //while (position < headerSize)
+        //    {
+        //    uint64_t group_id;
+        //        uint32_t group_id_tmp;
+        //        memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
+        //        position += sizeof(group_id_tmp);
+        //        group_id = group_id_tmp;
 
-            size_t group_numNodes;
-            memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
-            position += sizeof(group_numNodes);
+        //    uint64_t group_totalSizeOfHeaders(0);
+        //    if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
+        //        {
+        //        memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
+        //        position += sizeof(group_totalSizeOfHeaders);
+        //        }
 
-            auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
-                                                             (uint32_t)group_id,
-                                                             SMNodeGroup::StrategyType(storedGroupMode),
-                                                             group_numNodes,
-                                                             group_totalSizeOfHeaders));
+        //    size_t group_numNodes;
+        //    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
+        //    position += sizeof(group_numNodes);
 
-            // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
-            switch (storedGroupMode)
-                {
-                case SMNodeGroup::StrategyType::NORMAL:
-                    {
-                    group->SetDataSourcePrefix((m_pathToHeaders + L"\\g\\g_").c_str());
-                    break;
-                    }
-                case SMNodeGroup::StrategyType::VIRTUAL:
-                    {
-                    group->SetDataSourcePrefix((m_pathToHeaders + L"\\n_").c_str());
-                    break;
-                    }
-                case SMNodeGroup::StrategyType::CESIUM:
-                    {
-                    if (s_stream_from_wsg)
-                        {
-                        group->SetDataSourcePrefix(L"n_");
-                        }
-                    else
-                        {
-                        group->SetDataSourcePrefix(L"data\\n_");
-                        //group->SetDataSourcePrefix(L"n_");
-                        }
-                    group->SetDataSourceExtension(L".json");
-                    break;
-                    }
-                default:
-                    {
-                    assert(!"Unknown grouping type");
-                    return 0;
-                    }
-                }
-            group->SetDistributor(*m_NodeHeaderFetchDistributor);
-            m_nodeHeaderGroups.push_back(group);
+        //    auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
+        //                                                     (uint32_t)group_id,
+        //                                                     SMNodeGroup::StrategyType(storedGroupMode),
+        //                                                     group_numNodes,
+        //                                                     group_totalSizeOfHeaders));
 
-            vector<uint64_t> nodeIds(group_numNodes);
-            memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
-            position += group_numNodes * sizeof(uint64_t);
+        //    // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
+        //    switch (storedGroupMode)
+        //        {
+        //        case SMNodeGroup::StrategyType::NORMAL:
+        //            {
+        //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\g\\g_").c_str());
+        //            break;
+        //            }
+        //        case SMNodeGroup::StrategyType::VIRTUAL:
+        //            {
+        //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\n_").c_str());
+        //            break;
+        //            }
+        //        case SMNodeGroup::StrategyType::CESIUM:
+        //            {
+        //            if (s_stream_from_wsg)
+        //                {
+        //                group->SetDataSourcePrefix(L"n_");
+        //                }
+        //            else
+        //                {
+        //                group->SetDataSourcePrefix(L"data\\n_");
+        //                //group->SetDataSourcePrefix(L"n_");
+        //                }
+        //            group->SetDataSourceExtension(L".json");
+        //            break;
+        //            }
+        //        default:
+        //            {
+        //            assert(!"Unknown grouping type");
+        //            return 0;
+        //            }
+        //        }
+        //    group->SetDistributor(*m_NodeHeaderFetchDistributor);
+        //    m_nodeHeaderGroups.push_back(group);
 
-            group->GetHeader()->resize(group_numNodes);
-            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
-                {
-                return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
-                });
-            }
+        //    vector<uint64_t> nodeIds(group_numNodes);
+        //    memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
+        //    position += group_numNodes * sizeof(uint64_t);
+
+        //    group->GetHeader()->resize(group_numNodes);
+        //    transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+        //        {
+        //        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
+        //        });
+        //    }
         }
     else
         {
@@ -715,10 +816,13 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     tile["geometricError"] = tolerance;
     TilePublisher::WriteBoundingVolume(tile, tileRange);
 
-    if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
+    if (header->m_nodeCount > 0)
         {
-        DRange3d contentRange = header->m_contentExtent;
-        TilePublisher::WriteBoundingVolume(tile["content"], contentRange);
+        if (header->m_contentExtentDefined)
+            {
+            DRange3d contentRange = !header->m_contentExtent.IsNull() ? header->m_contentExtent : header->m_nodeExtent;
+            TilePublisher::WriteBoundingVolume(tile["content"], contentRange);
+            }
         tile["content"]["url"] = Utf8String(("p_" + std::to_string(blockID.m_integerID) + ".b3dm").c_str());
         }
 
@@ -738,11 +842,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     {
     block["id"] = ConvertBlockID(blockID);
     block["resolution"] = (ISMStore::NodeID)header->m_level;
-    block["filtered"] = header->m_filtered;
     block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : ISMStore::GetNullNodeID();
     block["isLeaf"] = header->m_IsLeaf;
     block["isBranched"] = header->m_IsBranched;
-    block["splitThreshold"] = header->m_SplitTreshold;
 
     size_t nbChildren = header->m_IsLeaf || (!header->m_IsBranched  && !header->m_SubNodeNoSplitID.IsValid()) ? 0 : (!header->m_IsBranched ? 1 : header->m_numberOfSubNodesOnSplit);
 
@@ -809,16 +911,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     block["nodeCount"] = header->m_nodeCount;
     block["arePoints3d"] = header->m_arePoints3d;
 
-    /*
-
-    //why was this commented?
-    // assert(header->m_3dPointsDescBins.size() <= USHORT_MAX);
-    // m_indexHandler->SetNb3dPointsBins(ConvertBlockID(blockID), header->m_3dPointsDescBins.size());
-
-    */
-
     block["nbFaceIndexes"] = header->m_nbFaceIndexes;
-    block["graphID"] = header->m_graphID.IsValid() ? ConvertBlockID(header->m_graphID) : ISMStore::GetNullNodeID();
     block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
 
     auto& indiceID = block["indiceID"];
@@ -856,14 +949,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
         }
     else {
         block["areTextured"] = false;
-        }
-
-    block["numberOfMeshComponents"] = header->m_numberOfMeshComponents;
-    auto& meshComponents = block["meshComponents"];
-    for (size_t componentIdx = 0; componentIdx < header->m_numberOfMeshComponents; componentIdx++)
-        {
-        auto& component = (uint32_t)componentIdx >= meshComponents.size() ? meshComponents.append(Json::Value()) : meshComponents[(uint32_t)componentIdx];
-        component = header->m_meshComponents[componentIdx];
         }
 
     if (header->m_clipSetsID.size() > 0)
@@ -959,10 +1044,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     {
     if (s_stream_from_grouped_store)
         {
-        if (s_stream_using_cesium_3d_tiles_format)
+        if (s_stream_using_cesium_3d_tiles_format || s_import_from_bim_exported_cesium_3d_tiles)
             {
-            auto group = this->GetGroup(blockID);
-            ReadNodeHeaderFromJSON(header, group->GetJsonHeader(blockID.m_integerID));
+            //auto group = this->GetGroup(blockID);
+            //ReadNodeHeaderFromJSON(header, group->GetJsonHeader(blockID.m_integerID));
+            m_CesiumGroup->DownloadNodeHeader(blockID.m_integerID);
+            auto jsonHeader = m_nodeHeaderCache[blockID.m_integerID];
+            assert(jsonHeader != nullptr);
+            ReadNodeHeaderFromJSON(header, *jsonHeader);
             }
         else
             {
@@ -1027,7 +1116,16 @@ template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPM
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
     {
     auto group = this->FindGroup(blockID);
-    if (group == nullptr) return group;
+    if (group == nullptr) 
+        {
+        assert(m_nodeHeaderGroups.empty());
+        group = m_CesiumGroup;
+        //// create first group
+        //group = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), 0);
+        //group->SetURL(L"n_0.json");
+        //group->SetDataSourcePrefix(L"data");
+        ////group->SetDataSourceExtension(L".json");
+        }
     if (!group->IsLoaded())
         {
         group->Load(blockID.m_integerID);
@@ -1187,107 +1285,254 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     assert(dataIndex == maxCountData);
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& cesiumNodeHeader)
     {
-    header->m_level = nodeHeader["resolution"].asUInt();
-    header->m_filtered = nodeHeader["filtered"].asBool();
-    header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
-    header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
-    header->m_isTextured = nodeHeader["areTextured"].asBool();
-    header->m_IsBranched = nodeHeader["isBranched"].asBool();
-    header->m_SplitTreshold = nodeHeader["splitThreshold"].asUInt();
-    header->m_totalCount = nodeHeader["totalCount"].asUInt();
-    header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
-    header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
-    header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
-    header->m_graphID = nodeHeader["graphID"].asUInt();
-    header->m_uvID = nodeHeader["uvID"].asUInt();
-
-    uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
-    header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
-
-    auto& nodeExtent = nodeHeader["nodeExtent"];
-    assert(nodeExtent.isObject());
-    ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
-    ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
-    ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
-    ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
-    ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
-    ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
-
-    header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
-    if (header->m_contentExtentDefined)
+    const auto& nodeHeader = cesiumNodeHeader["SMHeader"];
+    if (s_import_from_bim_exported_cesium_3d_tiles)
         {
-        auto& contentExtent = nodeHeader["contentExtent"];
-        assert(contentExtent.isObject());
-        ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
-        ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
-        ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
-        ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
-        ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
-        ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
-        }
+        header->m_id = nodeHeader["id"].asUInt();
+        header->m_level = nodeHeader["level"].asUInt();
+        //assert(header->m_level == nodeHeader["resolution"].asUInt());
 
-    auto& indices = nodeHeader["indiceID"];
-    assert(indices.isArray() && indices.size() <= 1);
+        //header->m_isTextured = nodeHeader["areTextured"].asBool();
+        header->m_isTextured = true; // Assume textured, update later if it is not...
 
-    uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+        //header->m_totalCount = nodeHeader["totalCount"].asUInt();
+        header->m_totalCountDefined = false;
+        //header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+        //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
+        header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
+        //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
 
-    if (header->m_isTextured)
-        {
-        header->m_textureID = HPMBlockID();
-        header->m_ptsIndiceID.resize(2);
-        header->m_ptsIndiceID[1] = (int)idx;
-        header->m_ptsIndiceID[0] = HPMBlockID();
-        header->m_nbTextures = 1;
-        header->m_uvsIndicesID.resize(1);
-        header->m_uvsIndicesID[0] = idx;
-        }
+        //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
 
-    header->m_numberOfMeshComponents = (size_t)nodeHeader["numberOfMeshComponents"].asUInt();
-    if (header->m_numberOfMeshComponents > 0)
-        {
-        auto& meshComponents = nodeHeader["meshComponents"];
-        assert(meshComponents.isArray());
-        header->m_meshComponents = new int[header->m_numberOfMeshComponents];
-        for (size_t i = 0; i < (size_t)header->m_numberOfMeshComponents; i++)
+        //header->m_uvID = nodeHeader["uvID"].asUInt();
+        header->m_uvID = header->m_id; // Same as node ID?
+
+        uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+        header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
+
+        //auto& nodeExtent = nodeHeader["nodeExtent"];
+        //assert(nodeExtent.isObject());
+        //ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
+        //ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
+        //ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
+        //ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
+        //ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
+        //ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
+        //
+        //header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
+        //if (header->m_contentExtentDefined)
+        //    {
+        //    auto& contentExtent = nodeHeader["contentExtent"];
+        //    assert(contentExtent.isObject());
+        //    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
+        //    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
+        //    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
+        //    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
+        //    }
+
+        if (cesiumNodeHeader.isMember("transform"))
             {
-            header->m_meshComponents[i] = meshComponents[(Json::ArrayIndex)i].asInt();
+            //auto& transform = cesiumNodeHeader["transform"];
+            //m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+            //                                       transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
+            //                                       transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+            m_transform = Transform::From(533459, 5212605, 0);
+            }
+
+        auto& boundingBox = cesiumNodeHeader["boundingVolume"]["box"];
+        DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
+        DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
+        ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
+        ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
+        ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
+        ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
+        ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
+        ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
+
+        Transform inverse;
+        inverse.InverseOf(m_transform);
+        m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
+        header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
+        if (header->m_contentExtentDefined)
+            {
+            auto& boundingVolume = cesiumNodeHeader["content"]["boundingVolume"];
+            assert(boundingVolume.isMember("box")); // Only box is supported
+            auto& boundingBox = boundingVolume["box"];
+            DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
+            DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
+            ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
+            ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
+            ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
+            ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
+            ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
+            ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
+            m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
+            }
+        else if (cesiumNodeHeader.isMember("children"))
+            {
+            header->m_contentExtent = header->m_nodeExtent;
+            }
+        header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
+
+        //auto& indices = nodeHeader["indiceID"];
+        //assert(indices.isArray() && indices.size() <= 1);
+        //
+        //uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+        uint32_t idx = header->m_id.m_integerID;
+
+        if (header->m_isTextured)
+            {
+            header->m_textureID = HPMBlockID();
+            header->m_ptsIndiceID.resize(2);
+            header->m_ptsIndiceID[1] = (int)idx;
+            header->m_ptsIndiceID[0] = HPMBlockID();
+            header->m_nbTextures = 1;
+            header->m_uvsIndicesID.resize(1);
+            header->m_uvsIndicesID[0] = idx;
+            }
+
+        // NEEDS_WORK_SM_STREAMING : Are clip sets ID required?
+        //auto& clipSets = nodeHeader["clipSetsID"];
+        //assert(clipSets.isArray());
+        //if (clipSets.size() > 0)
+        //    {
+        //    header->m_clipSetsID.resize(clipSets.size());
+        //    for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
+        //    }
+
+        //auto& children = nodeHeader["children"];
+        auto& children = cesiumNodeHeader["children"];
+        assert(children.isArray());
+
+        //assert(header->m_numberOfSubNodesOnSplit == children.size());
+        header->m_numberOfSubNodesOnSplit = children.size();
+        //assert(header->m_numberOfSubNodesOnSplit == nodeHeader["nbChildren"].asUInt());
+
+        header->m_IsBranched = children.size() > 1;
+        //assert(header->m_IsBranched == nodeHeader["isBranched"].asBool());
+
+        header->m_IsLeaf = children.size() == 0;
+        //assert(nodeHeader["isLeaf"].asBool() == header->m_IsLeaf);
+
+        if (children.size() > 0)
+            {
+            //assert(header->m_numberOfSubNodesOnSplit == children.size());
+            assert((!header->m_IsBranched && children.size() == 1) || header->m_IsBranched);
+            assert(!header->m_IsLeaf);
+            header->m_apSubNodeID.resize(children.size());
+            int childInd = 0;
+            for (auto& child : children)
+                {
+                header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
+                }
+            header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
             }
         }
+    else {
+        header->m_level = nodeHeader["resolution"].asUInt();
+        header->m_filtered = nodeHeader["filtered"].asBool();
+        header->m_numberOfSubNodesOnSplit = nodeHeader["nbChildren"].asUInt();
+        header->m_IsLeaf = nodeHeader["isLeaf"].asBool();
+        header->m_isTextured = nodeHeader["areTextured"].asBool();
+        header->m_IsBranched = nodeHeader["isBranched"].asBool();
+        header->m_SplitTreshold = nodeHeader["splitThreshold"].asUInt();
+        header->m_totalCount = nodeHeader["totalCount"].asUInt();
+        header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
+        header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
+        header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
+        header->m_graphID = nodeHeader["graphID"].asUInt();
+        header->m_uvID = nodeHeader["uvID"].asUInt();
 
-    auto& clipSets = nodeHeader["clipSetsID"];
-    assert(clipSets.isArray());
-    if (clipSets.size() > 0)
-        {
-        header->m_clipSetsID.resize(clipSets.size());
-        for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
-        }
+        uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
+        header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
 
-    auto& children = nodeHeader["children"];
-    assert(children.isArray());
-    if (!header->m_IsLeaf && children.size() > 0)
-        {
-        header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
-        for (auto& child : children)
+        auto& nodeExtent = nodeHeader["nodeExtent"];
+        assert(nodeExtent.isObject());
+        ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
+        ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, nodeExtent["yMin"].asDouble());
+        ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, nodeExtent["zMin"].asDouble());
+        ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, nodeExtent["xMax"].asDouble());
+        ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, nodeExtent["yMax"].asDouble());
+        ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, nodeExtent["zMax"].asDouble());
+
+        header->m_contentExtentDefined = nodeHeader["contentExtentDefined"].asBool();
+        if (header->m_contentExtentDefined)
             {
-            auto childInd = child["index"].asUInt();
-            auto nodeId = child["id"].asUInt();
-            header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+            auto& contentExtent = nodeHeader["contentExtent"];
+            assert(contentExtent.isObject());
+            ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, contentExtent["xMin"].asDouble());
+            ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, contentExtent["yMin"].asDouble());
+            ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, contentExtent["zMin"].asDouble());
+            ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, contentExtent["xMax"].asDouble());
+            ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, contentExtent["yMax"].asDouble());
+            ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, contentExtent["zMax"].asDouble());
             }
-        header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
-        }
 
-    auto& neighbors = nodeHeader["neighbors"];
-    assert(neighbors.isArray());
-    if (neighbors.size() > 0)
-        {
-        for (auto& neighbor : neighbors)
+        auto& indices = nodeHeader["indiceID"];
+        assert(indices.isArray() && indices.size() <= 1);
+
+        uint32_t idx = indices.empty() ? SQLiteNodeHeader::NO_NODEID : indices[(Json::ArrayIndex)0].asUInt();
+
+        if (header->m_isTextured)
             {
-            assert(neighbor.isObject());
-            auto nodePos = neighbor["nodePos"].asUInt();
-            auto nodeId = neighbor["nodeId"].asUInt();
-            header->m_apNeighborNodeID[nodePos].push_back(nodeId);
+            header->m_textureID = HPMBlockID();
+            header->m_ptsIndiceID.resize(2);
+            header->m_ptsIndiceID[1] = (int)idx;
+            header->m_ptsIndiceID[0] = HPMBlockID();
+            header->m_nbTextures = 1;
+            header->m_uvsIndicesID.resize(1);
+            header->m_uvsIndicesID[0] = idx;
+            }
+
+        header->m_numberOfMeshComponents = (size_t)nodeHeader["numberOfMeshComponents"].asUInt();
+        if (header->m_numberOfMeshComponents > 0)
+            {
+            auto& meshComponents = nodeHeader["meshComponents"];
+            assert(meshComponents.isArray());
+            header->m_meshComponents = new int[header->m_numberOfMeshComponents];
+            for (size_t i = 0; i < (size_t)header->m_numberOfMeshComponents; i++)
+                {
+                header->m_meshComponents[i] = meshComponents[(Json::ArrayIndex)i].asInt();
+                }
+            }
+
+        auto& clipSets = nodeHeader["clipSetsID"];
+        assert(clipSets.isArray());
+        if (clipSets.size() > 0)
+            {
+            header->m_clipSetsID.resize(clipSets.size());
+            for (size_t i = 0; i < header->m_clipSetsID.size(); ++i) header->m_clipSetsID[i] = clipSets[(Json::ArrayIndex)i].asInt();
+            }
+
+        auto& children = nodeHeader["children"];
+        assert(children.isArray());
+        if (!header->m_IsLeaf && children.size() > 0)
+            {
+            header->m_apSubNodeID.resize(header->m_numberOfSubNodesOnSplit);
+            for (auto& child : children)
+                {
+                auto childInd = child["index"].asUInt();
+                auto nodeId = child["id"].asUInt();
+                header->m_apSubNodeID[childInd] = HPMBlockID(nodeId);
+                }
+            header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
+            }
+
+        auto& neighbors = nodeHeader["neighbors"];
+        assert(neighbors.isArray());
+        if (neighbors.size() > 0)
+            {
+            for (auto& neighbor : neighbors)
+                {
+                assert(neighbor.isObject());
+                auto nodePos = neighbor["nodePos"].asUInt();
+                auto nodeId = neighbor["nodeId"].asUInt();
+                header->m_apNeighborNodeID[nodePos].push_back(nodeId);
+                }
             }
         }
     }
@@ -1424,7 +1669,8 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileM
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader);
+    assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID]);
     return true;
     }
 
@@ -1487,6 +1733,54 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             break;
         case SMStoreDataType::Cesium3DTiles:
             m_dataSourceURL = L"data";
+            break;
+        default:
+            assert(!"Unkown data type for streaming");
+        }
+
+    m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
+
+    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    //if (s_stream_from_disk)
+    //    {
+    //    // Create base directory structure to store information if not already done
+    //    BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+    //    path.AppendToPath(m_dataSourceURL.c_str());
+    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
+    //    }
+    //else
+    //    {
+    //    // stream from azure
+    //    }
+    }
+
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, bool compress = true)
+    : m_dataSourceAccount(dataSourceAccount),
+    m_nodeHeader(nodeHeader),
+    m_jsonHeader(&header),
+    m_dataType(type)
+    {
+    switch (m_dataType)
+        {
+        case SMStoreDataType::Points:
+            m_dataSourceURL = L"points";
+            break;
+        case SMStoreDataType::TriPtIndices:
+            m_dataSourceURL = L"indices";
+            break;
+        case SMStoreDataType::UvCoords:
+            m_dataSourceURL = L"uvs";
+            break;
+        case SMStoreDataType::TriUvIndices:
+            m_dataSourceURL = L"uvindices";
+            break;
+        case SMStoreDataType::Texture:
+            m_dataSourceURL = L"textures";
+            break;
+        case SMStoreDataType::Cesium3DTiles:
+            // NEEDS_WORK_SM_STREAMING : Remove hard coded path for dgndb 3DTile imports
+            m_dataSourceURL = s_import_from_bim_exported_cesium_3d_tiles ? L"graz\\Production_Graz_3MX_1e" : L"data";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -1600,22 +1894,27 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
             {
             //count = m_nodeHeader->m_nodeCount;
             count = this->GetBlock(blockID).GetNumberOfPoints();
+            m_nodeHeader->m_nodeCount = count;
             break;
             }
         case SMStoreDataType::TriPtIndices :
             {
             //count = m_nodeHeader->m_nbFaceIndexes;
             count = this->GetBlock(blockID).GetNumberOfIndices();
+            //assert(m_nodeHeader->m_nbFaceIndexes == count);
+            m_nodeHeader->m_nbFaceIndexes = count;
             break;
             }
         case SMStoreDataType::UvCoords:
             {
             count = this->GetBlock(blockID).GetNumberOfUvs();
+            if (count == 0) this->m_nodeHeader->m_isTextured = false;
             break;
             }
         case SMStoreDataType::Texture:
             {
             count = this->GetBlock(blockID).GetTextureSize();
+            if (count == 0) this->m_nodeHeader->m_isTextured = false;
             break;
             }
         default:
@@ -1665,6 +1964,14 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         }
     else
         {
+        if (m_jsonHeader->isMember("transform"))
+            {
+            auto& transform = (*m_jsonHeader)["transform"];
+            Transform m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+                                                   transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
+                                                   transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+            }
+
         Cesium3DTilesBase* pData = (Cesium3DTilesBase*)(DataTypeArray);
         assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
         assert(!m_nodeHeader->m_isTextured || (m_nodeHeader->m_isTextured && pData->m_uvData != 0 && pData->m_textureData != 0));
@@ -1697,12 +2004,15 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     if (!block)
         {
         block.reset(new StreamingDataBlock());
-        block->SetID(blockID.m_integerID);
+        //auto dataURL = this->m_nodeGroup->GetDataURLForNode(blockID);
+        assert(!m_jsonHeader->isNull() && m_jsonHeader->isMember("content") && (*m_jsonHeader)["content"].isMember("url"));
+        auto dataURL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes((*m_jsonHeader)["content"]["url"].asCString());
+        block->SetURL(DataSourceURL(dataURL));
         block->SetDataSourceURL(m_dataSourceURL);
         block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
         }
     m_dataCacheMutex.unlock();
-    assert(block->GetID() == blockID.m_integerID);
+    //assert(block->GetID() == blockID.m_integerID);
 
     block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
     assert(block->IsLoaded() && !block->empty());
@@ -1828,6 +2138,11 @@ uint64_t StreamingDataBlock::GetID()
     return m_pID; 
     }
 
+void StreamingDataBlock::SetURL(const DataSourceURL & url)
+    {
+    m_url = url;
+    }
+
 void StreamingDataBlock::SetDataSourceURL(const DataSourceURL& pi_URL)
     {
     m_pDataSourceURL = pi_URL;
@@ -1903,9 +2218,9 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     DataSource                                *  dataSource;
     DataSource::DataSize                         readSize;
 
-    DataSourceURL    dataSourceURL(m_pDataSourceURL);
-    dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + m_extension);
-
+    DataSourceURL    dataSourceURL(m_pDataSourceURL); 
+    //dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + m_extension);
+    dataSourceURL.append(m_url);
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -2096,6 +2411,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
+        auto transform = s_import_from_bim_exported_cesium_3d_tiles ? Transform::From(533459, 5212605, 0) : Transform::FromIdentity();
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
@@ -2110,6 +2426,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
                 m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
 
             }
@@ -2119,6 +2436,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
                 m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
+                transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
             }
         }

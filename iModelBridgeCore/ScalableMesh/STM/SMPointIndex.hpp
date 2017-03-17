@@ -6740,6 +6740,9 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::PostQu
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::GetNbObjects() const
     {
+    if (!IsLoaded())
+        Load();
+
     if (m_NbObjects == -1 || IsDirty())
         {
         uint32_t NbObjects;
@@ -6922,7 +6925,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
                 disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 this->m_apSubNodes[indexNode] = nullptr;
-                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, pi_pGroup, nextGroup);
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
 
                 }
             }

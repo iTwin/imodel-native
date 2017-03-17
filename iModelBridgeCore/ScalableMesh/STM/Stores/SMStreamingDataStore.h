@@ -19,6 +19,7 @@
 
 extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
+extern bool s_import_from_bim_exported_cesium_3d_tiles;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
@@ -98,6 +99,10 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<SMNodeGroup::Ptr> m_nodeHeaderGroups;
+        map<uint32_t, Json::Value*> m_nodeHeaderCache;
+        Transform m_transform;
+
+        SMNodeGroup::Ptr m_CesiumGroup;
 
     protected : 
 
@@ -109,7 +114,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
 
-        void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const;
+        void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader);
 
     private :
 
@@ -220,6 +225,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         uint64_t GetID();
 
+        void SetURL(const DataSourceURL& url);
+
         void SetDataSourceURL(const DataSourceURL& pi_DataSource);
 
         void SetDataSourcePrefix(const std::wstring& prefix);
@@ -247,6 +254,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
         bool m_pIsLoading = false;
         bool m_pIsLoaded = false;
         uint64_t m_pID = -1;
+        DataSourceURL m_url;
         DataSourceURL m_pDataSourceURL;
         std::wstring m_pPrefix = L"p_";
         std::wstring m_extension = L".bin";
@@ -277,6 +285,8 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
 
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, bool compress = true);
+        
         virtual ~SMStreamingNodeDataStore();
 
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
@@ -296,6 +306,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     protected:
 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        const Json::Value*            m_jsonHeader;
         DataSourceAccount*            m_dataSourceAccount;
         DataSourceURL                 m_dataSourceURL;
 

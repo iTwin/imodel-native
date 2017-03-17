@@ -271,7 +271,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             NONE,
             NORMAL,
             VIRTUAL,
-            CESIUM
+            CESIUM,
+            BIMCESIUM
             };
         typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
         typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMNodeGroup> Ptr;
@@ -288,9 +289,13 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         uint64_t m_currentPosition = 0;
         uint64_t m_progress = 0;
         uint32_t m_maxGroupDepth = 0;
+        bool m_isRoot = false;
+        DataSourceURL m_url;
         bvector<uint8_t> m_rawHeaders;
         unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
-        map<uint64_t, SMNodeGroup::Ptr> m_tileTreeChildrenGroups;
+        static unordered_map<uint64_t, SMNodeGroup::Ptr> s_downloadedGroups;
+        map<uint32_t, Json::Value*>* m_nodeHeaders;
+        //map<uint64_t, SMNodeGroup::Ptr> m_tileTreeChildrenGroups;
         SMNodeGroup::Ptr m_ParentGroup;
         Json::Value m_RootTileTreeNode;
         WString m_outputDirPath;
@@ -300,15 +305,25 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_nodeDistributorPtr;
         condition_variable m_groupCV;
         mutex m_groupMutex;
+        static mutex s_mutex;
         DataSourceAccount *m_dataSourceAccount;
 
     public:
-        // Constructor for reading a group
+        // Constructors for reading a group
         SMNodeGroup(DataSourceAccount *dataSourceAccount, const uint32_t& pi_pID, StrategyType strategyType, size_t pi_pSize = 0, uint64_t pi_pTotalSizeOfHeaders = 0)
             : m_dataSourceAccount(dataSourceAccount),
               m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
               m_rawHeaders(pi_pTotalSizeOfHeaders),
               m_strategyType(strategyType)
+            {
+            };
+
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, map<uint32_t, Json::Value*>& headers, const uint32_t& pi_pID, StrategyType strategyType, size_t pi_pSize = 0, uint64_t pi_pTotalSizeOfHeaders = 0)
+            : m_dataSourceAccount(dataSourceAccount),
+            m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
+            m_rawHeaders(pi_pTotalSizeOfHeaders),
+            m_nodeHeaders(&headers),
+            m_strategyType(strategyType)
             {
             };
 
@@ -335,6 +350,14 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             }
 #endif
 
+        static SMNodeGroup::Ptr CreateCesium3DTilesGroup(DataSourceAccount *dataSourceAccount, map<uint32_t, Json::Value*>& headers, const uint32_t groupID, bool isRootGroup = false)
+            {
+            auto group = new SMNodeGroup(dataSourceAccount, headers, groupID, StrategyType::CESIUM);
+            group->m_isRoot = true;
+            //group->s_downloadedGroups[groupID] = group;
+            return group;
+            }
+
         static SMNodeGroup::Ptr CreateCesium3DTilesGroup(DataSourceAccount *dataSourceAccount, const uint32_t groupID)
             {
             return new SMNodeGroup(dataSourceAccount, groupID, StrategyType::CESIUM);
@@ -356,6 +379,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             assert(m_tileTreeMap.count(nodeID) == 0);
             m_tileTreeMap[nodeID] = &jsonHeader;
             }
+
+        void SetNodeContainer(map<uint32_t, Json::Value*>& nodes) { m_nodeHeaders = &nodes; }
 
         uint32_t GetLevel() { return m_level; }
 
@@ -379,10 +404,33 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
+        DataSourceURL GetDataURLForNode(HPMBlockID blockID);
+
+        DataSourceURL GetURL();
+
+        void SetURL(DataSourceURL url);
+
         Json::Value GetJsonHeader(const uint64_t& id) 
             {
             assert(m_tileTreeMap.count(id) == 1);
             return *m_tileTreeMap[id];
+            }
+
+        void DownloadNodeHeader(const uint64_t& id)
+            {
+            if (!this->IsLoaded()) this->Load(id);
+            assert(s_downloadedGroups.count(id) == 1);
+            auto group = s_downloadedGroups[id];
+            if (!group->IsLoaded())
+                {
+                m_nodeHeaders->erase(id);
+                group->Load(id);
+                }
+            }
+
+        unordered_map<uint64_t, Json::Value*>& GetJsonNodeHeaders()
+            {
+            return m_tileTreeMap;
             }
 
         size_t GetTotalSize() { return m_totalSize; }
@@ -463,20 +511,20 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             return m_dataSourceAccount;
             }
 
-        bool HasChildGroups()
-            {
-            return !m_tileTreeChildrenGroups.empty();
-            }
+        //bool HasChildGroups()
+        //    {
+        //    return !m_tileTreeChildrenGroups.empty();
+        //    }
 
-        map<uint64_t, SMNodeGroup::Ptr>& GetChildGroups()
-            {
-            return m_tileTreeChildrenGroups;
-            }
+        //map<uint64_t, SMNodeGroup::Ptr>& GetChildGroups()
+        //    {
+        //    return m_tileTreeChildrenGroups;
+        //    }
 
-        void ClearChildGroups()
-            {
-            m_tileTreeChildrenGroups.clear();
-            }
+        //void ClearChildGroups()
+        //    {
+        //    m_tileTreeChildrenGroups.clear();
+        //    }
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -549,21 +597,17 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                 else
                     {
                     std::unique_ptr<DataSource::Buffer[]> dest;
-                    DataSource*                           dataSource;
                     DataSource::DataSize                  readSize;
-                    DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
 
                     m_isLoading = true;
 
-                    dataSource = this->InitializeDataSource(dest, destSize);
-                    if (dataSource == nullptr)
+                    if (this->DownloadFromID(dest, readSize))
                         {
                         m_isLoading = false;
                         m_groupCV.notify_all();
                         return ERROR;
                         }
 
-                    this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
 
                     if (readSize > 0)
                         {
@@ -601,7 +645,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             return SUCCESS;
             }
 
-        StatusInt Load(const uint64_t& priorityNodeID);
+        StatusInt Load(const uint64_t& priorityNodeID, bool mustGenerateIDs = false);
 
         void LoadGroupParallel();
 
@@ -612,12 +656,14 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool ContainsNode(const uint64_t& pi_pNodeID)
             {
-            assert(!m_groupHeader->empty());
-            auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
-                {
-                return nodeId.blockid == pi_pNodeID;
-                });
-            return node != m_groupHeader->end();
+            //if (!IsLoaded()) Load(pi_pNodeID);
+            return (m_tileTreeMap.count(pi_pNodeID) == 1);
+            //assert(!m_groupHeader->empty());
+            //auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+            //    {
+            //    return nodeId.blockid == pi_pNodeID;
+            //    });
+            //return node != m_groupHeader->end();
             }
 
         void MergeChild(SMNodeGroup::Ptr child);
@@ -655,34 +701,48 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
     private:
 
-        void LoadFromDataSource(DataSource *dataSource, DataSource::Buffer *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
+        bool DownloadFromID(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize)
             {
-            if (dataSource == nullptr)
-                return;
-
             wchar_t buffer[10000];
             swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
 
-            DataSourceURL dataSourceURL(buffer);
+            return DownloadGroup(dest, readSize, DataSourceURL(buffer));
+            }
 
-            if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+        bool DownloadCesiumTileset(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url)
+            {
+            return DownloadGroup(dest, readSize, url);
+            }
+
+        bool DownloadGroup(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url)
+            {
+            DataSource*                           dataSource;
+            DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
+            dataSource = this->InitializeDataSource(dest, destSize);
+            if (dataSource == nullptr)
                 {
-                assert(!"Couldn't open data source.");
-                return;
+                assert(!"Invalid data source");
+                return false;
                 }
 
-            if (dataSource->read(dest, destSize, readSize, 0).isFailed())
+            if (dataSource->open(url, DataSourceMode_Read).isFailed())
+                {
+                assert(!"Couldn't open data source.");
+                return false;
+                }
+
+            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
                 {
                 assert(!"Couldn't read data source.");
-                return;
+                return false;
                 }
 
             if (dataSource->close().isFailed())
                 {
                 assert(!"Couldn't close data source.");
-                return;
+                return false;
                 }
-            //this->GetDataSourceAccount()->destroyDataSource(dataSource);
+            return true;
             }
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData)
@@ -731,6 +791,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
             return readSize;
             }
+
+        void SaveNode(const uint64_t& id, Json::Value* header);
 
         void WaitFor(SMNodeHeader& pi_pNode);
     };
@@ -882,7 +944,7 @@ class SMGroupingStrategy
         void             Apply                      (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         SMNodeGroup::Ptr GetNextGroup               (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         void             ApplyPostProcess           (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        void             ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        void             ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         uint32_t         AddNodeToGroup             (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         void             AddGroup                   (SMNodeGroup* pi_pNodeGroup);
         void             SetOldMasterHeader         (SMIndexMasterHeader<EXTENT>& oldMasterHeader);
@@ -895,7 +957,7 @@ class SMGroupingStrategy
         virtual void                _Apply                      (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
         virtual SMNodeGroup::Ptr    _GetNextGroup               (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup) = 0;
         virtual void                _ApplyPostProcess           (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup) = 0;
-        virtual void                _ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup) = 0;
+        virtual void                _ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup) = 0;
         virtual uint32_t            _AddNodeToGroup             (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
         virtual void                _AddGroup                   (SMNodeGroup* pi_pNodeGroup) = 0;
         virtual void                _SaveMasterHeader           (const WString pi_pOutputDirPath) const = 0;
@@ -967,9 +1029,9 @@ void SMGroupingStrategy<EXTENT>::ApplyPostProcess(const SMIndexNodeHeader<EXTENT
     }
 
 template<class EXTENT>
-void SMGroupingStrategy<EXTENT>::ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMGroupingStrategy<EXTENT>::ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
-    this->_ApplyPostChildNodeProcess(pi_NodeHeader, pi_pParentGroup, pi_pChildGroup);
+    this->_ApplyPostChildNodeProcess(pi_NodeHeader, childIndex, pi_pParentGroup, pi_pChildGroup);
     }
 
 
@@ -997,7 +1059,7 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
         virtual uint32_t            _AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
@@ -1078,7 +1140,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostProcess(const SMIndexNodeHeade
     }
 
 template<class EXTENT>
-void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
 
     }
@@ -1137,7 +1199,7 @@ class SMCesium3DTileStrategy : public SMGroupingStrategy<EXTENT>
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
         virtual uint32_t            _AddNodeToGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
-        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
+        virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
@@ -1190,7 +1252,7 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostProcess(const SMIndexNodeHeader<E
     }
 
 template<class EXTENT>
-void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
+void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
     if (pi_pChildGroup != pi_pParentGroup)
         {
@@ -1210,6 +1272,9 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNod
             pi_pChildGroup = this->GetNextGroup(pi_NodeHeader, pi_pParentGroup);
             assert(currentGroup != pi_pChildGroup);
             currentGroup->Close<EXTENT>();
+            Json::Value& parentJSON = *pi_pParentGroup->m_tileTreeMap[pi_NodeHeader.m_id.m_integerID];
+            Json::Value& correspondingChildJSON = parentJSON["children"][(Json::Value::ArrayIndex)childIndex];
+            correspondingChildJSON["SMRootID"] = pi_NodeHeader.m_apSubNodeID[childIndex].m_integerID;
             }
         }
     }
