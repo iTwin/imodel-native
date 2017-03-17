@@ -70,7 +70,7 @@ struct NativeSqlBuilder
         NativeSqlBuilder& AppendIf(bool condition, Utf8CP stringLiteral) { if (condition) Append(stringLiteral); return *this; }
         NativeSqlBuilder& AppendIIf(bool condition, Utf8CP trueStr, Utf8CP falseStr) { return condition ? Append(trueStr) : Append(falseStr); }
 
-        void Reset();
+        void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
 

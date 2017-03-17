@@ -47,7 +47,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
     public:
         virtual ~IECSqlPreparedStatement() {}
 
-        ECSqlStatus Prepare(ECSqlPrepareContext& ctx, Exp const& exp, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;
 

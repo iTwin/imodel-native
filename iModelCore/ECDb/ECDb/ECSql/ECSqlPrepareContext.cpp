@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlPrepareContext.h"
-#include "ECSqlStatementBase.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 
 //****************************** ECSqlPrepareContext ********************
 //-----------------------------------------------------------------------------------------
@@ -21,14 +21,12 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment)
     {}
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_joinedTableClassId(joinedTableClassId)
     {}
-#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -49,6 +47,7 @@ int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const {
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value) { m_nativeSqlSelectClauseColumnCount += (int) (value); }
+#endif
 
 
 //****************************** ECSqlPrepareContext::ExpScope ********************

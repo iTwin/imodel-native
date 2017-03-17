@@ -18,10 +18,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
+struct IECSqlPreparedStatement;
+
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPrepareContext final
+struct ECSqlPrepareContext final : NonCopyableClass
     {
     public:
         //=======================================================================================
@@ -79,6 +81,8 @@ struct ECSqlPrepareContext final
                 size_t Depth() const { return m_scopes.size(); }
                 ExpScope const& Current() const { BeAssert(!m_scopes.empty()); return m_scopes.back(); }
                 ExpScope& CurrentR() { BeAssert(!m_scopes.empty()); return m_scopes.back(); }
+
+                void Clear() { m_scopes.clear(); }
             };
 
         //=======================================================================================
@@ -97,29 +101,31 @@ struct ECSqlPrepareContext final
                 void AddProperty(PropertyMap const&);
                 bool IsSelected(Utf8StringCR accessString) const;
                 bool IsConstantExpression() const { return m_selectClause.empty(); }
+
+                void Clear() { m_selectClause.clear(); }
             };
 
     private:
         ECDbCR m_ecdb;
-        ECCrudWriteToken const* m_writeToken = nullptr;
         IECSqlPreparedStatement* m_preparedStatement = nullptr;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop = false;
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
-        int m_nextSystemSqlParameterNameSuffix;
-
-        ECSqlPrepareContext(ECDbCR ecdb, IECSqlPreparedStatement& preparedStmt, int nextSystemSqlParameterNameSuffix, ECCrudWriteToken const* token) : m_ecdb(ecdb), m_preparedStatement(&preparedStmt), m_nextSystemSqlParameterNameSuffix(nextSystemSqlParameterNameSuffix), m_writeToken(token) {}
+        int m_nextSystemSqlParameterNameSuffix = 0;
 
     public:
-        ECSqlPrepareContext(ECDbCR ecdb, IECSqlPreparedStatement& preparedStmt, ECCrudWriteToken const* token) : ECSqlPrepareContext(ecdb, preparedStmt, 0, token) {}
-        
-        static ECSqlPrepareContext CreateSiblingContext(ECSqlPrepareContext const& sibling, IECSqlPreparedStatement& preparedStmt) { return ECSqlPrepareContext(sibling.m_ecdb, preparedStmt, sibling.m_nextSystemSqlParameterNameSuffix, sibling.m_writeToken); }
+        explicit ECSqlPrepareContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
+        void Reset(IECSqlPreparedStatement& preparedStmt) 
+            { 
+            m_preparedStatement = &preparedStmt; 
 
-        //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
+            m_nativeSqlBuilder.Clear();
+            m_scopes.Clear();
+            m_selectionOptions.Clear();
+            }
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        ECCrudWriteToken const* GetWriteToken() const { return m_writeToken; }
 
         SelectClauseInfo const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
@@ -127,7 +133,7 @@ struct ECSqlPrepareContext final
         IECSqlPreparedStatement& GetPreparedStatement() const { BeAssert(m_preparedStatement != nullptr); return *m_preparedStatement; }
         NativeSqlBuilder const& GetSqlBuilder() const { return m_nativeSqlBuilder; }
         NativeSqlBuilder& GetSqlBuilderR() { return m_nativeSqlBuilder; }
-        Utf8CP GetNativeSql() const;
+        Utf8CP GetNativeSql() const { return m_nativeSqlBuilder.ToString(); }
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }

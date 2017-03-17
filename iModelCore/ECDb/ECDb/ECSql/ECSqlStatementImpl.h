@@ -7,6 +7,95 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+
+#include "ECSqlPrepareContext.h"
+
+
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+
+#include <ECDb/ECDb.h>
+#include <ECDb/IECSqlBinder.h>
+#include <ECDb/IECSqlValue.h>
+#include <Logging/bentleylogging.h>
+#include <Bentley/BeTimeUtilities.h>
+#include "ECSqlPreparedStatement.h"
+#include "Exp.h"
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+//! ECSqlStatement::Impl is the private implementation of ECSqlStatement hidden from the public headers
+//! (PIMPL idiom)
+//! @bsiclass                                                Krischan.Eberle      10/2013
+//+===============+===============+===============+===============+===============+======
+struct ECSqlStatement::Impl : NonCopyableClass
+    {
+    private:
+        struct Diagnostics : NonCopyableClass
+            {
+            private:
+                static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
+                NativeLogging::ILogger& m_logger;
+                std::unique_ptr<StopWatch> m_timer;
+                Utf8CP m_ecsql;
+
+                void Log();
+                bool CanLog() const;
+            public:
+                Diagnostics(Utf8CP ecsql, NativeLogging::ILogger& logger, bool startTimer);
+                ~Diagnostics() { Log(); }
+            };
+
+        static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
+
+        std::unique_ptr<IECSqlPreparedStatement> m_preparedStatement;
+
+        IECSqlPreparedStatement& CreatePreparedStatement(ECDb const&, Exp const&);
+
+        ECSqlStatus FailIfNotPrepared(Utf8CP errorMessage) const;
+        ECSqlStatus FailIfWrongType(ECSqlType expectedType, Utf8CP errorMessage) const;
+
+        static NativeLogging::ILogger& GetPrepareDiagnosticsLogger();
+
+    public:
+        Impl() {}
+        ~Impl() {}
+
+        ECSqlStatus Prepare(ECDbCR, Utf8CP ecsql, ECCrudWriteToken const*);
+
+        bool IsPrepared() const { return m_preparedStatement != nullptr; }
+
+        IECSqlBinder& GetBinder(int parameterIndex) const;
+        int GetParameterIndex(Utf8CP parameterName) const;
+        ECSqlStatus ClearBindings();
+
+        DbResult Step();
+        DbResult Step(ECInstanceKey&);
+        ECSqlStatus Reset();
+
+        int GetColumnCount() const;
+        IECSqlValue const& GetValue(int columnIndex) const;
+
+        Utf8CP GetECSql() const;
+        Utf8CP GetNativeSql() const;
+        ECDb const* GetECDb() const;
+
+        void Finalize() { m_preparedStatement = nullptr; BeAssert(!IsPrepared()); }
+
+        // Helpers
+        IECSqlPreparedStatement* GetPreparedStatementP() const { return m_preparedStatement.get(); }
+
+        template <class TECSqlPreparedStatement>
+        TECSqlPreparedStatement* GetPreparedStatementP() const
+            {
+            BeAssert(dynamic_cast<TECSqlPreparedStatement*> (GetPreparedStatementP()) != nullptr);
+            return static_cast<TECSqlPreparedStatement*> (GetPreparedStatementP());
+            }
+
+    };
+
+#else
+
 #include "ECSqlStatementBase.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
@@ -47,5 +136,8 @@ public:
     explicit Impl () : ECSqlStatementBase() {}
     ~Impl() {}
     };
+
+#endif
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

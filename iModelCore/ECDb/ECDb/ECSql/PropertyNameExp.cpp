@@ -362,7 +362,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
         m_nativeSqlSnippets = snippets;
         if (m_nativeSqlSnippets.size() == 1)
             {
-            m_nativeSqlSnippets.front().Reset();
+            m_nativeSqlSnippets.front().Clear();
             m_nativeSqlSnippets.front().AppendEscaped(alias.c_str());
             m_isConverted = true;
             }
@@ -374,7 +374,7 @@ BentleyStatus PropertyNameExp::PropertyRef::ToNativeSql(NativeSqlBuilder::List c
                 {
                 postfix.clear();
                 postfix.Sprintf("%s_%d", alias.c_str(), idx++);
-                snippet.Reset();
+                snippet.Clear();
                 snippet.AppendEscaped(postfix.c_str());
                 }
 
