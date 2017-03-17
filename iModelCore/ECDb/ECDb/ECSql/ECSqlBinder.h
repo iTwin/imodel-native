@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECSQLSYS_SQLPARAM_FORMAT "_ecdb_sqlparam_ix%d"
 #define ECSQLSYS_SQLPARAM_Id "_ecdb_sqlparam_id"
 
-struct ECSqlStatementBase;
+struct SingleECSqlPreparedStatement;
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    08/2013
@@ -49,8 +49,11 @@ struct ECSqlBinder : IECSqlBinder
                 return nextName;
                 }
             };
+    
+    protected:
+        SingleECSqlPreparedStatement& m_preparedStatement;
+
     private:
-        ECSqlStatementBase& m_ecsqlStatement;
         ECSqlTypeInfo m_typeInfo;
         std::vector<Utf8String> m_mappedSqlParameterNames;
         std::function<void(ECInstanceId bindValue)> m_onBindECInstanceIdEventHandler;
@@ -79,7 +82,6 @@ struct ECSqlBinder : IECSqlBinder
         ECSqlStatus LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
         Statement& GetSqliteStatementR() const;
-        ECSqlStatementBase& GetECSqlStatementR() const { return m_ecsqlStatement; }
         ECDbCR GetECDb() const;
         static Statement::MakeCopy ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy makeCopy);
 

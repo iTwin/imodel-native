@@ -60,7 +60,8 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
         return ECSqlStatus::Error;
         }
 
-    ECSqlStatus stat = preparedStatement.Prepare(ecdb, *exp, ecsql);
+    ECSqlPrepareContext ctx(ecdb);
+    ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (!stat.IsSuccess())
         Finalize();
 

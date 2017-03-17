@@ -287,7 +287,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             }
 
         //add binder for the ecinstanceid parameter
-        ECSqlInsertPreparedStatement_Old* preparedECSqlStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement_Old>();
+        ECSqlInsertPreparedStatement* preparedECSqlStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
         ECSqlBinder* ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR().AddInternalECInstanceIdBinder(ctx);
         if (ecinstanceidBinder == nullptr)
             {
@@ -296,7 +296,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             }
 
         BeAssert(ecinstanceidBinder->GetMappedSqlParameterNames().size() == 1);
-        preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement_Old::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
+        preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].Append(ecinstanceidBinder->GetMappedSqlParameterNames()[0].c_str());
         }
     if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))

@@ -282,15 +282,15 @@ IECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement(ECDbCR ecdb
                 break;
 
             case Exp::Type::Insert:
-                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlInsertPreparedStatement_Old(ecdb));
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlInsertPreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Update:
-                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlUpdatePreparedStatement_Old(ecdb));
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlUpdatePreparedStatement(ecdb));
                 break;
 
             case Exp::Type::Delete:
-                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlDeletePreparedStatement_Old(ecdb));
+                m_preparedStatement = std::unique_ptr<IECSqlPreparedStatement>(new ECSqlDeletePreparedStatement(ecdb));
                 break;
 
             default:
