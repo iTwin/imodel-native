@@ -123,6 +123,29 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
     {
+    DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
+
+    if (acsId.IsValid())
+        m_auxCoordSys = m_dgndb.Elements().Get<AuxCoordSystem>(acsId);
+
+    if (m_auxCoordSys.IsValid())
+        return;
+
+    AuxCoordSystemPtr acs;
+
+    if (def.IsView3d())
+        {
+        acs = new AuxCoordSystem3d(def.GetDgnDb());
+
+        if (def.IsSpatialView())
+            acs->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
+        }
+    else
+        {
+        acs = new AuxCoordSystem2d(def.GetDgnDb());
+        }
+
+    m_auxCoordSys = acs.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -810,11 +833,7 @@ void ViewController::PointToGrid(DPoint3dR point) const
 
     if (GridOrientationType::ACS == orientation)
         {
-        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
-
-        if (nullptr != acs)
-            acs->PointToGrid(*m_vp, point);
-
+        GetAuxCoordinateSystem().PointToGrid(*m_vp, point);
         return;
         }
 
@@ -843,23 +862,19 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     if (GridOrientationType::ACS == orientation)
         {
-        AuxCoordSystemCP acs = IACSManager::GetManager().GetActive(*m_vp); // NEEDSWORK: Remove method...add member to ViewController instead of SpatialViewController...
-
-        if (nullptr != acs)
-            acs->DrawGrid(context);
+        GetAuxCoordinateSystem().DrawGrid(context);
+        return;
         }
-    else
-        {
-        bool        isoGrid = false;
-        uint32_t    gridsPerRef;
-        DPoint2d    spacing;
-        DPoint3d    origin;
-        RotMatrix   rMatrix;
 
-        _GetGridSpacing(spacing, gridsPerRef);
-        getGridOrientation(vp, origin, rMatrix, orientation);
-        context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
-        }
+    bool        isoGrid = false;
+    uint32_t    gridsPerRef;
+    DPoint2d    spacing;
+    DPoint3d    origin;
+    RotMatrix   rMatrix;
+
+    _GetGridSpacing(spacing, gridsPerRef);
+    getGridOrientation(vp, origin, rMatrix, orientation);
+    context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

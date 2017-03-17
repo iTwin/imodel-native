@@ -159,7 +159,7 @@ void MissingHandlerTest::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     GenericPhysicalObject elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();

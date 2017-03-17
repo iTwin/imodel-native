@@ -422,7 +422,7 @@ struct PointFormatter : RefCountedBase
 {
 
 private:
-    AuxCoordSystemPtr               m_acs;
+    AuxCoordSystemCPtr              m_acs;
     DistanceFormatterPtr            m_distanceFormatter;
     bool                            m_is3d;
 
@@ -439,8 +439,7 @@ public:
     DGNPLATFORM_EXPORT  DistanceFormatterR  GetDistanceFormatter();
 
     //! Get the auxilliary coordinate system used by this formatter.
-    //! Changes made to this object will affect the future behavior of the PointFormatter.
-    DGNPLATFORM_EXPORT  AuxCoordSystemP   GetAuxCoordSys();
+    DGNPLATFORM_EXPORT  AuxCoordSystemCP GetAuxCoordSys();
 
     //! Get the is3d value used by this formatter.
     bool GetIs3d() const {return m_is3d;}
@@ -452,7 +451,7 @@ public:
 
     //! Set the auxilliary coordinate system used by this formatter.
     //! A copy of the supplied object will be stored by the PointFormatter.  To access the
-    //! copy, use GetACS.
+    //! copy, use GetAuxCoordSys.
     DGNPLATFORM_EXPORT void SetAuxCoordSys(AuxCoordSystemCP);
 
     //! Set the formatter's is3d flag.
