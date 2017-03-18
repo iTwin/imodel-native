@@ -107,11 +107,11 @@ void ClipRegistry::GetClip(uint64_t id, bvector<DPoint3d>& clip)
 
 void ClipRegistry::GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
     {
-    if (m_lastClipSet && m_lastClipID == id)
+    /*if (m_lastClipSet && m_lastClipID == id)
         {
         clip = m_lastClipValue;
         return;
-        }
+        }*/
     ISM3DPtDataStorePtr dataStore;
     m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
