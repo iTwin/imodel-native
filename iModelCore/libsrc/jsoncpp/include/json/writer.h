@@ -29,31 +29,6 @@ namespace Json {
 
    class Value;
 
-   /** \brief Outputs a Value in <a HREF="http://www.json.org">JSON</a> format without formatting (not human friendly).
-    *
-    * The JSON document is written in a single line. It is not intended for 'human' consumption,
-    * but may be usefull to support feature such as RPC where bandwith is limited.
-    * \sa Reader, Value
-    */
-   class JSON_API FastWriter 
-   {
-   public: // overridden from Writer
-        Utf8String write( const Value &root );
-        static Utf8String ToString (const Value &root ) 
-        {
-        if (nullValue == root.type()) 
-            return Utf8String();
-
-        FastWriter writer;
-        writer.writeValue (root);
-        return writer.document_;
-        }
-
-   private:
-      void writeValue( const Value &value );
-      Utf8StringAlias document_;
-   };
-
    /** \brief Writes a Value in <a HREF="http://www.json.org">JSON</a> format in a human friendly way.
     *
     * The rules for line break and indent are as follow:

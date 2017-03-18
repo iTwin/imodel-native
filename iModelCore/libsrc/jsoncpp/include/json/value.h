@@ -73,6 +73,23 @@ namespace Json {
       Utf8CP c_str() const {return m_str;}
    };
 
+/** \brief Outputs a Value in <a HREF="http://www.json.org">JSON</a> format without formatting (not human friendly).
+    *
+    * The JSON document is written in a single line. It is not intended for 'human' consumption,
+    * but may be usefull to support feature such as RPC where bandwith is limited.
+    * \sa Reader, Value
+    */
+class FastWriter 
+{
+private:
+    Utf8String document_;
+    void writeValue(JsonValueCR);
+
+public:
+    JSON_API Utf8String write(JsonValueCR root);
+    JSON_API static Utf8String ToString(JsonValueCR root);
+};
+
    /** \brief Represents a <a HREF="http://www.json.org">JSON</a> value.
     *
     * This class is a discriminated union wrapper that can represents a:
@@ -94,14 +111,14 @@ namespace Json {
     * The sequence of an #arrayValue will be automatically resize and initialized 
     * with #nullValue. resize() can be used to enlarge or truncate an #arrayValue.
     *
-    * The get() methods can be used to obtanis default value in the case the required element
+    * The get() methods can be used to obtain default value in the case the required element
     * does not exist.
     *
     * It is possible to iterate over the list of a #objectValue values using 
     * the getMemberNames() method.
     */
-   class JSON_API Value 
-   {
+class JSON_API Value 
+{
       friend class ValueIteratorBase;
    public:
       typedef bvector<Utf8String> Members;
@@ -231,7 +248,7 @@ namespace Json {
 #endif
       Value(Int64 value) : type_(intValue) {value_.int_ = value;}
       Value(UInt64 value) : type_(uintValue) {value_.uint_ = value;}
-      Value(double value) : type_(realValue) {if (std::isnan(value)) {BeAssert (false); type_ = nullValue; return;} value_.real_ = value;}
+      Value(double value) : type_(realValue) {if (std::isnan(value)) {BeAssert(false); type_ = nullValue; return;} value_.real_ = value;}
       Value(Utf8CP value) : type_(stringValue), allocated_(true) {value_.string_ = CZString::Duplicate(value ? value : "");}
       Value(Utf8CP beginValue, Utf8CP endValue) : type_(stringValue), allocated_(true) {value_.string_ = CZString::Duplicate(beginValue, (unsigned int)(endValue - beginValue));}
 
@@ -482,7 +499,7 @@ namespace Json {
       /// \post if type() was nullValue, it remains nullValue
       Members getMemberNames() const;
 
-      Utf8String ToString() const;
+      Utf8String ToString() const {return FastWriter::ToString(*this);}
 
       Utf8String toStyledString() const;
 
@@ -506,7 +523,8 @@ namespace Json {
       } value_;
       ValueType type_;
       bool allocated_;
-   };
+};
+
 
    /** \brief base class for Value iterators.
     *

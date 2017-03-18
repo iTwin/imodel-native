@@ -194,8 +194,7 @@ Utf8String valueToQuotedString( const char *value )
    return result;
 }
 
-Utf8String 
-FastWriter::write( const Value &root )
+Utf8String FastWriter::write(const Value &root)
 {
    document_.clear();
    writeValue( root );
@@ -203,8 +202,7 @@ FastWriter::write( const Value &root )
    return document_;
 }
 
-void 
-FastWriter::writeValue( const Value &value )
+void FastWriter::writeValue(const Value &value)
 {
    switch ( value.type() )
    {
@@ -260,6 +258,17 @@ FastWriter::writeValue( const Value &value )
    }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String FastWriter::ToString(JsonValueCR root)
+    {
+    FastWriter writer;
+    if (nullValue != root.type())
+        writer.writeValue(root);
+
+    return writer.document_;
+    }
 
 // Class StyledWriter
 // //////////////////////////////////////////////////////////////////
