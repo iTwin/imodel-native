@@ -3003,7 +3003,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
     
     for (auto& categoryId : categoryIds)
         {
-        auto const& category = SpatialCategory::Get(GetDgnDb(), categoryId);
+        auto const& category = DgnCategory::Get(GetDgnDb(), categoryId);
 
         if (category.IsValid())
             categoryJson[categoryId.ToString()] = category->GetCategoryName();
