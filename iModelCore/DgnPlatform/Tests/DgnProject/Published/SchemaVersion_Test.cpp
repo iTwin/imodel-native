@@ -462,6 +462,8 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     /* Setup baseline */
     SetupSeedProject();
     SaveDb();
+    DgnRevisionPtr revision0 = CreateRevision();
+    EXPECT_TRUE(revision0.IsValid());
     BeFileName fileName = m_db->GetFileName();
     BackupTestFile();
 
