@@ -2479,6 +2479,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     bvector<uint16_t>           attributes, colors;
     bvector<uint32_t>           indices;
     bvector<double>             distances;
+    double                      minLength = 0.0, maxLength = 0.0;
     bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
 
     for (auto const& polyline : mesh.Polylines())
@@ -2514,6 +2515,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
             distances.push_back(cumulativeLength);
             scalePoints.push_back(rangeCenter);
             }
+        maxLength = std::max(maxLength, cumulativeLength);
         }
 
     Json::Value     primitive = Json::objectValue;
@@ -2528,7 +2530,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
 
     if (mat.IsTextured())
         {
-        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &distances.front(), &distances.back());
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
         primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 
