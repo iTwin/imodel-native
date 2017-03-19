@@ -441,14 +441,15 @@ enum DbResult
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
     
-    BE_SQLITE_ERROR_SchemaReadFailed = (BE_SQLITE_IOERR | 15 << 24), //!< Error reading schemas
-    BE_SQLITE_ERROR_SchemaNotFound = (BE_SQLITE_ERROR | 16 << 24), //!< The schema was not found in the database. 
-    BE_SQLITE_ERROR_SchemaTooNew = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded. 
-    BE_SQLITE_ERROR_SchemaTooOld = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
-	BE_SQLITE_ERROR_SchemaImportRequired = (BE_SQLITE_IOERR | 18 << 24), //!< The schemas can and must be imported.
-    BE_SQLITE_ERROR_SchemaLockFailed = (BE_SQLITE_IOERR | 19 << 24), //!< Error acquiring schema lock
-    BE_SQLITE_ERROR_SchemaImportFailed = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing schemas
-	
+    BE_SQLITE_ERROR_SchemaReadFailed        = (BE_SQLITE_IOERR | 15 << 24), //!< Error reading schemas
+    BE_SQLITE_ERROR_SchemaNotFound          = (BE_SQLITE_ERROR | 16 << 24), //!< The schema was not found in the database.
+    BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded. 
+    BE_SQLITE_ERROR_SchemaTooOld            = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
+	BE_SQLITE_ERROR_SchemaImportRequired    = (BE_SQLITE_IOERR | 18 << 24), //!< The schemas can and must be imported.
+    BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 19 << 24), //!< Error acquiring schema lock
+    BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing schemas
+    BE_SQLITE_ERROR_SchemaDomainMismatch    = (BE_SQLITE_IOERR | 21 << 24), //!< The name of the schema doesn't match the name of the domain. 
+
     BE_SQLITE_LOCKED_SHAREDCACHE      = (BE_SQLITE_LOCKED   | (1<<8)),
 
     BE_SQLITE_BUSY_RECOVERY           = (BE_SQLITE_BUSY     | (1<<8)),
