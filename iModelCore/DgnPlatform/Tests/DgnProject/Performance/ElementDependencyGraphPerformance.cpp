@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnElementDependency.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -154,7 +154,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 TransactionManagerTests::TransactionManagerTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnPlatformTestDomain::Register();
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**

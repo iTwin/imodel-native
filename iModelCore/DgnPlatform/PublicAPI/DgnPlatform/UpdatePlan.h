@@ -250,15 +250,15 @@ struct SceneQueue
     struct Task : RefCounted<NonCopyableClass>
     {
         DgnViewportR m_vp;
-        ViewController& m_view;
+        ViewControllerPtr m_view;
         UpdatePlan m_plan;
         bool m_abortFlag = false;
 
     public:
-        Task(DgnViewportR vp, ViewController& view, UpdatePlan const& plan) : m_vp(vp), m_view(view), m_plan(plan) {}
+        Task(DgnViewportR vp, ViewController& view, UpdatePlan const& plan) : m_vp(vp), m_view(&view), m_plan(plan) {}
         virtual void _Go() = 0;
         uint32_t GetDelayAfter() {return m_plan.m_query.GetDelayAfter();}
-        bool IsForView(ViewController const& view) const {return &m_view == &view;}
+        bool IsForView(ViewController const& view) const {return m_view.get() == &view;}
         void RequestAbort() {m_abortFlag = true;}
         bool IsAborted() {return m_abortFlag;}
     };

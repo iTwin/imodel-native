@@ -117,7 +117,7 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",  "ec_Db")));
     ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::Units()));
     ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::LastEditor()));
-    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::SchemaVersion()));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::ProfileVersion()));
 
     // Use the model API to access model properties and check their values
     PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
@@ -132,18 +132,18 @@ TEST_F (DgnDbTest, CheckStandardProperties)
 * Schema Version can be accessed and it is correct
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnDbTest, ProjectSchemaVersions)
+TEST_F(DgnDbTest, ProjectProfileVersions)
     {
     SetupSeedProject();
     DgnDbP project = m_db.get();
     ASSERT_TRUE( project != NULL);
 
     // Get Schema version details
-    DgnVersion schemaVer = project->GetSchemaVersion();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Major, schemaVer.GetMajor()) << "The Schema Major Version is: " << schemaVer.GetMajor();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Minor, schemaVer.GetMinor()) << "The Schema Minor Version is: " << schemaVer.GetMinor();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub1, schemaVer.GetSub1()) << "The Schema Sub1 Version is: " << schemaVer.GetSub1();
-    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub2, schemaVer.GetSub2()) << "The Schema Sub2 Version is: " << schemaVer.GetSub2();
+    DgnDbProfileVersion profileVer = project->GetProfileVersion();
+    ASSERT_EQ (DGNDB_CURRENT_VERSION_Major, profileVer.GetMajor()) << "The Schema Major Version is: " << profileVer.GetMajor();
+    ASSERT_EQ (DGNDB_CURRENT_VERSION_Minor, profileVer.GetMinor()) << "The Schema Minor Version is: " << profileVer.GetMinor();
+    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub1, profileVer.GetSub1()) << "The Schema Sub1 Version is: " << profileVer.GetSub1();
+    ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub2, profileVer.GetSub2()) << "The Schema Sub2 Version is: " << profileVer.GetSub2();
     }
 
 //=======================================================================================
@@ -329,7 +329,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         void getPropertiesInTable(DgnDbPtr& project, PropertiesInTable& properties)
             {
-            project->QueryProperty(properties.version, DgnProjectProperty::SchemaVersion());
+            project->QueryProperty(properties.version, DgnProjectProperty::ProfileVersion());
             project->QueryProperty(properties.name, DgnProjectProperty::Name());
             project->QueryProperty(properties.description, DgnProjectProperty::Description());
             project->QueryProperty(properties.client, DgnProjectProperty::Client());
@@ -341,7 +341,7 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         void getPackageProperties(BeSQLite::Db& db, PropertiesInTable& properties, uint64_t embeddedFileId)
             {
-            db.QueryProperty(properties.version, DgnEmbeddedProjectProperty::SchemaVersion(), embeddedFileId);
+            db.QueryProperty(properties.version, DgnEmbeddedProjectProperty::ProfileVersion(), embeddedFileId);
             db.QueryProperty(properties.name, DgnEmbeddedProjectProperty::Name(), embeddedFileId);
             db.QueryProperty(properties.description, DgnEmbeddedProjectProperty::Description(), embeddedFileId);
             db.QueryProperty(properties.client, DgnEmbeddedProjectProperty::Client(), embeddedFileId);
@@ -437,21 +437,21 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     getPackageProperties(db, propertiesInTableV, fileId.GetValue());
     compareProperties(propertiesInTable, propertiesInTableV);
 
-    ASSERT_TRUE(DgnDbSchemaVersion::GetCurrent().IsCurrent());
-    ASSERT_FALSE(DgnDbSchemaVersion::GetCurrent().IsPast());
-    ASSERT_FALSE(DgnDbSchemaVersion::GetCurrent().IsFuture());
+    ASSERT_TRUE(DgnDbProfileVersion::GetCurrent().IsCurrent());
+    ASSERT_FALSE(DgnDbProfileVersion::GetCurrent().IsPast());
+    ASSERT_FALSE(DgnDbProfileVersion::GetCurrent().IsFuture());
 
-    DgnDbSchemaVersion fileVersion = DgnDbSchemaVersion::Extract(testFile);
+    DgnDbProfileVersion fileVersion = DgnDbProfileVersion::Extract(testFile);
     ASSERT_TRUE(fileVersion.IsValid());
     ASSERT_TRUE(fileVersion.IsCurrent());
 
-    DgnDbSchemaVersion packageVersion = DgnDbSchemaVersion::Extract(packageFile);
+    DgnDbProfileVersion packageVersion = DgnDbProfileVersion::Extract(packageFile);
     ASSERT_TRUE(packageVersion.IsValid());
     ASSERT_TRUE(packageVersion.IsCurrent());
 
 #if 0 // save for testing
     BeFileName oldBimFile(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.bim");
-    DgnDbSchemaVersion oldBimFileVersion = DgnDbSchemaVersion::Extract(oldBimFile);
+    DgnDbProfileVersion oldBimFileVersion = DgnDbProfileVersion::Extract(oldBimFile);
     ASSERT_FALSE(oldBimFileVersion.IsValid());
 
     {
@@ -461,23 +461,23 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, openStatus);
     }
 
-    DgnDbSchemaVersion oldBimPackageVersion = DgnDbSchemaVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.imodel"));
+    DgnDbProfileVersion oldBimPackageVersion = DgnDbProfileVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.imodel"));
     ASSERT_FALSE(oldBimPackageVersion.IsValid());
 
     BeFileName graphite05Package(L"d:\\data\\dgndb\\imodel-generations\\Hydrotreater Expansion_Graphite05.imodel");
-    DgnDbSchemaVersion versionGraphite05 = DgnDbSchemaVersion::Extract(graphite05Package);
+    DgnDbProfileVersion versionGraphite05 = DgnDbProfileVersion::Extract(graphite05Package);
     ASSERT_TRUE(versionGraphite05.IsValid());
     ASSERT_TRUE(versionGraphite05.IsPast());
     ASSERT_TRUE(versionGraphite05.IsVersion_1_5());
 
     BeFileName dgnDb0601Package(L"d:\\data\\dgndb\\imodel-generations\\Hydrotreater Expansion_DgnDb0601.imodel");
-    DgnDbSchemaVersion versionDgnDb0601 = DgnDbSchemaVersion::Extract(dgnDb0601Package);
+    DgnDbProfileVersion versionDgnDb0601 = DgnDbProfileVersion::Extract(dgnDb0601Package);
     ASSERT_TRUE(versionDgnDb0601.IsValid());
     ASSERT_TRUE(versionDgnDb0601.IsPast());
     ASSERT_TRUE(versionDgnDb0601.IsVersion_1_6());
 
     BeFileName dgnDb0601File(L"d:\\data\\dgndb\\imodel-generations\\04_Plant_DgnDb0601Q4.idgndb");
-    versionDgnDb0601 = DgnDbSchemaVersion::Extract(dgnDb0601File);
+    versionDgnDb0601 = DgnDbProfileVersion::Extract(dgnDb0601File);
     ASSERT_TRUE(versionDgnDb0601.IsValid());
     ASSERT_TRUE(versionDgnDb0601.IsPast());
     ASSERT_TRUE(versionDgnDb0601.IsVersion_1_6());
@@ -588,7 +588,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(ecSchema);
-    return project.Schemas().ImportECSchemas(schemaList->GetSchemas());
+    return (BE_SQLITE_OK == project.ImportSchemas(schemaList->GetSchemas())) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,7 +712,7 @@ struct ElementUriTests : ::testing::Test
     ElementUriTests()
         {
         // Must register my domain whenever I initialize a host
-        DgnPlatformTestDomain::Register();
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
         }
 
     CodeSpec& GetTestCodeSpec(DgnDbR db)
@@ -991,6 +991,6 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString(schema, testSchemaXml, *schemaContext));
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+    ASSERT_EQ(BE_SQLITE_OK, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }

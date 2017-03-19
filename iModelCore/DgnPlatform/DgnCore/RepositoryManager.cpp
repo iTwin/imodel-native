@@ -21,6 +21,7 @@ private:
     RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
     RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
     RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
+    IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
     RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
     void _OnElementInserted(DgnElementId) override { }
@@ -77,6 +78,7 @@ private:
     RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
     RepositoryStatus _QueryLockLevel(LockLevel&, LockableId) override;
     RepositoryStatus _QueryLockLevels(DgnLockSet&, LockableIdSet&) override;
+    IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override;
     RepositoryStatus _OnFinishRevision(DgnRevision const&) override;
     RepositoryStatus _RefreshFromRepository() override { return Refresh(); }
     void _OnElementInserted(DgnElementId) override;
@@ -675,6 +677,7 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
         {
         for (auto const& model : exclusivelyLockedModels)
             InsertLock(LockableId(LockableType::Model, model), LockLevel::Exclusive, tableType, true);
+        InsertLock(LockableId(GetDgnDb().Schemas()), LockLevel::Exclusive, tableType, true);
         }
 
     if (!exclusivelyLockedModels.empty())
@@ -1240,6 +1243,68 @@ RepositoryStatus BriefcaseManager::_QueryLockLevels(DgnLockSet& levels, Lockable
     return RepositoryStatus::Success;
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct OwnedLocksIterator : IOwnedLocksIterator
+{
+private:
+    static constexpr Utf8CP GetSql() { return "SELECT " LOCK_Id "," LOCK_Type "," LOCK_Level " FROM " TABLE_Locks; }
+
+    struct Iter : DbTableIterator::Entry
+    {
+        Iter() : DbTableIterator::Entry(nullptr, false) { }
+        Iter(BeSQLite::Statement& stmt) : DbTableIterator::Entry(&stmt, BE_SQLITE_ROW == stmt.Step()) { }
+
+        DgnLock GetLock() const
+            {
+            auto id = m_sql->GetValueId<BeInt64Id>(0);
+            auto type = static_cast<LockableType>(m_sql->GetValueInt(1));
+            auto level = static_cast<LockLevel>(m_sql->GetValueInt(2));
+            return DgnLock(LockableId(type, id), level);
+            }
+    };
+
+    BeSQLite::CachedStatementPtr    m_stmt;
+    Iter                            m_cur;
+    Iter                            m_end;
+    DgnLock                         m_lock;
+
+    OwnedLocksIterator(BeSQLite::Db& db) : m_stmt(db.GetCachedStatement(GetSql())), m_cur(*m_stmt)
+        {
+        InitLock();
+        }
+
+    void InitLock()
+        {
+        if (m_cur != m_end)
+            m_lock = m_cur.GetLock();
+        }
+
+    DgnLockCR _GetCurrent() const override { return m_lock; }
+    bool _IsAtEnd() const override { return m_cur == m_end; }
+    void _Reset() override { m_stmt->Reset(); m_cur = Iter(*m_stmt); InitLock(); }
+    void _MoveNext() override
+        {
+        if (m_cur != m_end)
+            {
+            ++m_cur;
+            InitLock();
+            }
+        }
+public:
+    static IOwnedLocksIteratorPtr Create(BeSQLite::Db& db) { return new OwnedLocksIterator(db); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IOwnedLocksIteratorPtr BriefcaseManager::_GetOwnedLocks(FastQuery fast)
+    {
+    bool valid = FastQuery::Yes == fast ? Validate() : RepositoryStatus::Success == RefreshFromRepository();
+    return valid ? OwnedLocksIterator::Create(GetLocalDb()).get() : nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1691,6 +1756,7 @@ bool RepositoryJson::LockableTypeFromUInt(LockableType& type, unsigned int value
         case LockableType::Db:
         case LockableType::Model:
         case LockableType::Element:
+        case LockableType::Schemas:
             type = static_cast<LockableType>(value);
             return true;
         }

@@ -78,7 +78,7 @@ struct DgnScriptContext : BeJsContext
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
@@ -603,23 +603,6 @@ void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP de
 #else
     T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, exname, details);
 #endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      08/16
-//---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDomain::ImportSchema(DgnDbR db)
-    {
-    Register(); // make sure it's registered
-
-    BeFileName domainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    domainSchemaFile.AppendToPath(SCRIPT_DOMAIN_ECSCHEMA_PATH);
-    BeAssert(domainSchemaFile.DoesPathExist());
-
-    DgnDomainR domain = ScriptDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile);
-    BeAssert(DgnDbStatus::Success == importSchemaStatus);
-    return importSchemaStatus;
     }
 
 //---------------------------------------------------------------------------------------

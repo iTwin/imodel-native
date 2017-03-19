@@ -120,12 +120,12 @@ protected:
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
     uint32_t m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
-    DPoint3d m_viewOrg;                  // view origin, potentially expanded
-    DVec3d m_viewDelta;                // view delta, potentially expanded
-    DPoint3d m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
-    DVec3d m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
-    RotMatrix m_rotMatrix;                // rotation matrix (from ViewController)
-    CameraViewDefinition::Camera m_camera;
+    DPoint3d m_viewOrg;                 // view origin, potentially expanded
+    DVec3d m_viewDelta;                 // view delta, potentially expanded
+    DPoint3d m_viewOrgUnexpanded;       // view origin (from ViewController, unexpanded)
+    DVec3d m_viewDeltaUnexpanded;       // view delta (from ViewController, unexpanded)
+    RotMatrix m_rotMatrix;              // rotation matrix (from ViewController)
+    ViewDefinition3d::Camera m_camera;
     Render::TargetPtr m_renderTarget;
     ColorDef m_hiliteColor = ColorDef::Magenta();
     DMap4d m_rootToView;
@@ -147,11 +147,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
-    virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
-    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
+    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Task::Priority);
@@ -185,10 +184,9 @@ public:
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
+    DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, ViewDefinition3d::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
-    DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
@@ -211,12 +209,12 @@ public:
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SetupFromViewController(); SaveViewUndo();}
+    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps;}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewDefinitionCR val, BeDuration animationTime);
+    DGNVIEW_EXPORT void ApplyViewState(ViewDefinitionCR val, bool saveInUndo=true, BeDuration animationTime=BeDuration::Milliseconds(250));
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
@@ -227,10 +225,7 @@ public:
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
-    CameraViewDefinition::Camera const& GetCamera() const {return m_camera;}
-
-    //! @return the camera target for this DgnViewport
-    DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
+    ViewDefinition3d::Camera const& GetCamera() const {return m_camera;}
 
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
@@ -423,6 +418,11 @@ public:
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
     DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+
+    DGNPLATFORM_EXPORT bool IsPointAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsSnapAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsContextRotationRequired() const;
+
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -458,10 +458,6 @@ public:
     SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
     SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
-    //! If this view is a camera view, get the camera physical view controller.
-    CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
-    //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
-    CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
     //! If this view is a drawing view, get the drawing view controller.
     DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
@@ -470,12 +466,6 @@ public:
     Sheet::ViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     Sheet::ViewControllerP GetSheetViewControllerP() {return (Sheet::ViewControllerP) GetSheetViewControllerCP();}
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
-    //! If this view is a query view, get the query view controller.
-    DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
-    //! If this view is a query view, get a writeable pointer to the query view controller.
-    DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
-    */
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
@@ -563,7 +553,7 @@ struct OffscreenViewport : DgnViewport
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
+    void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta) override {}
 
 public:
     NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}

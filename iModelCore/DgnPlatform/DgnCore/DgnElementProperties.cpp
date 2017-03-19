@@ -662,6 +662,195 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index)
+    {
+    IECInstancePtr p;
+    ECValue structValueIdValue(PRIMITIVETYPE_Integer);
+    int32_t structValueId = GetMaxStructValueIdentifier() + 1;
+
+    DEBUG_EXPECT(nullptr == GetAddressOfStructArrayEntry(structValueId));
+
+    if (v.IsNull())
+        {
+        p = nullptr;
+        structValueIdValue.SetInteger(0);
+        }
+    else
+        {
+        // Avoid making a copy if we have a Standalone that's not already part of somebody else's struct array
+        IECInstancePtr pFrom = v.GetStruct();
+        StandaloneECInstancePtr pTo = dynamic_cast<StandaloneECInstance*> (pFrom.get());
+        if (pTo.IsNull() || pTo->IsSupportingInstance())
+            {
+            pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+            ECObjectsStatus copyStatus = pTo->CopyValues(*pFrom);
+            if (ECObjectsStatus::Success != copyStatus)
+                return copyStatus;
+            }
+
+        // We now own it as a supporting instance
+        pTo->SetIsSupportingInstance();
+        p = pTo.get();
+        structValueIdValue.SetInteger(structValueId);
+        }
+
+    ECObjectsStatus status = SetPrimitiveValueToMemory(structValueIdValue, propertyLayout, true, index);
+    if (status != ECObjectsStatus::Success)
+        {
+        // This useless return value again....
+        if (ECObjectsStatus::PropertyValueMatchesNoChange != status)
+            return status;
+        }
+
+    if (nullptr == m_element.m_structInstances)
+        m_element.m_structInstances = new ECN::StructInstanceVector();
+
+    m_element.m_structInstances->push_back(ECN::StructArrayEntry(structValueId, p));
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::StructValueIdentifier ElementAutoHandledPropertiesECInstanceAdapter::GetMaxStructValueIdentifier () const
+    {
+    if (nullptr == m_element.m_structInstances)
+        return 0;
+
+    size_t numEntries =  m_element.m_structInstances->size();
+    StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
+
+    // we cannot simply use the size of the array because structs may have been removed at some point - so we must walk the array and find the highest ID
+    ECN::StructValueIdentifier maxId = 0;
+    for (size_t i = 0; i < numEntries; i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier > maxId)
+            maxId = entry.structValueIdentifier;
+        }
+
+    return maxId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StructArrayEntry const* ElementAutoHandledPropertiesECInstanceAdapter::GetAddressOfStructArrayEntry (StructValueIdentifier key) const
+    {
+    if (nullptr == m_element.m_structInstances)
+        return nullptr;
+
+    StructArrayEntry const* instanceArray = &(*m_element.m_structInstances)[0];
+    for (size_t i = 0; i<m_element.m_structInstances->size(); i++)
+        {
+        StructArrayEntry const& entry = instanceArray[i];
+        if (entry.structValueIdentifier != key)
+            continue;
+        return &entry;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const
+    {
+    ECValue structInstanceIdValue;
+    ECObjectsStatus status = GetPrimitiveValueFromMemory(structInstanceIdValue, propertyLayout, true, index);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    // A structValueIdx of 0 means the instance is null
+    if (structInstanceIdValue.IsNull() || 0 == structInstanceIdValue.GetInteger())
+        {
+        v.SetStruct(nullptr);
+        return ECObjectsStatus::Success;
+        }
+
+    ECN::StructValueIdentifier structInstanceId = structInstanceIdValue.GetInteger();
+    ECN::StructArrayEntry const* entry = GetAddressOfStructArrayEntry(structInstanceId);
+
+    IECInstancePtr instancePtr = entry->structInstance;
+    v.SetStruct(instancePtr.get());
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::RemoveStructArrayEntry(StructValueIdentifier structValueId)
+    {
+    if (nullptr == m_element.m_structInstances)
+        return ECObjectsStatus::Error;
+
+    ECN::StructInstanceVector::iterator iter;
+    for (iter = m_element.m_structInstances->begin(); iter != m_element.m_structInstances->end(); iter++)
+        {
+        if (structValueId == (*iter).structValueIdentifier)
+            {
+            m_element.m_structInstances->erase(iter);
+            return ECObjectsStatus::Success;
+            }
+        }
+
+    return ECObjectsStatus::Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ElementAutoHandledPropertiesECInstanceAdapter::_RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount)
+    {
+    if (nullptr == m_element.m_structInstances)
+        return ECObjectsStatus::Error;
+
+    for (uint32_t i = 0; i < removeCount; i++)
+        {
+        ECValue v;
+        ECObjectsStatus status = GetPrimitiveValueFromMemory(v, propertyLayout, true, removeIndex + i);
+        if (ECObjectsStatus::Success != status)
+            return status;
+
+        ECN::StructValueIdentifier structValueId = v.GetInteger();
+        status = RemoveStructArrayEntry(structValueId);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+
+    return RemoveArrayElementsFromMemory(propertyLayout, removeIndex, removeCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Adapted from MemoryECBaseInstance
+* @bsimethod                                    Caleb.Shafer                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementAutoHandledPropertiesECInstanceAdapter::_IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const
+    {
+    uint32_t propIdx;
+    if (ECObjectsStatus::Success == m_layout->GetPropertyLayoutIndex(propIdx, propLayout))
+        {
+        ECPropertyCP ecprop = _GetAsIECInstance()->GetEnabler().LookupECProperty(propIdx);
+        StructArrayECPropertyCP arrayProp = (nullptr != ecprop) ? ecprop->GetAsStructArrayProperty() : nullptr;
+        if (nullptr != arrayProp)
+            return structInstance.GetEnabler().GetClass().Is(&arrayProp->GetStructElementType());
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceUpdaterCache::ECInstanceUpdaterCache()
@@ -814,8 +1003,8 @@ uint32_t ElementAutoHandledPropertiesECInstanceAdapter::GetBytesUsed() const
 +---------------+---------------+---------------+---------------+---------------+------*/        
 void ElementAutoHandledPropertiesECInstanceAdapter::_ClearValues()
     {
-    //if (m_structInstances)
-    //    m_structInstances->clear ();
+    if (nullptr != m_element.m_structInstances)
+        m_element.m_structInstances->clear ();
 
     InitializeMemory(GetClassLayout(), m_element.m_ecPropertyData, m_element.m_ecPropertyDataSize);
 
@@ -914,12 +1103,12 @@ void ElementAutoHandledPropertiesECInstanceAdapter::_FreeAllocation()
 
     //    }
 
-    //if (m_structInstances)
-    //    {
-    //    m_structInstances->clear ();
-    //    delete m_structInstances;
-    //    m_structInstances = NULL;
-    //    }
+    if (nullptr != m_element.m_structInstances)
+        {
+        m_element.m_structInstances->clear();
+        delete m_element.m_structInstances;
+        m_element.m_structInstances = nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1034,7 +1223,7 @@ void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
     if (!IsValid() || (nullptr != m_accessors))
         {
@@ -1069,7 +1258,7 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
     ECObjectsStatus status = m_layout->GetPropertyLayoutByIndex(propertyLayout, m_propIdx);
     if (ECObjectsStatus::Success != status || NULL == propertyLayout)
         return toDgnDbWriteStatus(status);
-    status = ecdbuffer.SetInternalValueToMemory(*propertyLayout, value, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    status = ecdbuffer.SetInternalValueToMemory(*propertyLayout, value, arrayIndex.m_hasIndex, arrayIndex.m_index);
         
     if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
         return DgnDbStatus::Success;
@@ -1081,7 +1270,7 @@ DgnDbStatus ElementECPropertyAccessor::SetAutoHandledPropertyValue(ECValueCR val
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
+DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const
     {
     if (!IsValid() || (nullptr != m_accessors))
         {
@@ -1095,17 +1284,17 @@ DgnDbStatus ElementECPropertyAccessor::GetAutoHandledPropertyValue(ECN::ECValueR
         return DgnDbStatus::NotFound;
         }
 
-    auto status = ecdbuffer.GetValueFromMemory(value, m_propIdx, arrayIdx.m_hasIndex, arrayIdx.m_index);
+    auto status = ecdbuffer.GetValueFromMemory(value, m_propIdx, arrayIndex.m_hasIndex, arrayIndex.m_index);
     return toDgnDbWriteStatus(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime DgnElement::GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+DateTime DgnElement::GetPropertyValueDateTime(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? DateTime() : value.GetDateTime();
@@ -1113,10 +1302,10 @@ DateTime DgnElement::GetPropertyValueDateTime(Utf8CP propertyName, PropertyArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3d();
@@ -1124,10 +1313,10 @@ DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName, PropertyArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2d();
@@ -1135,10 +1324,10 @@ DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName, PropertyArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnElement::GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+bool DgnElement::GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? false : value.GetBoolean();
@@ -1147,10 +1336,10 @@ bool DgnElement::GetPropertyValueBoolean(Utf8CP propertyName, PropertyArrayIndex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnElement::GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+double DgnElement::GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? 0.0 : value.GetDouble();
@@ -1159,10 +1348,10 @@ double DgnElement::GetPropertyValueDouble(Utf8CP propertyName, PropertyArrayInde
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t DgnElement::GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+int32_t DgnElement::GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? 0 : value.GetInteger();
@@ -1171,10 +1360,10 @@ int32_t DgnElement::GetPropertyValueInt32(Utf8CP propertyName, PropertyArrayInde
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t DgnElement::GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+uint64_t DgnElement::GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.IsNull() ? 0 : static_cast<uint64_t>(value.GetLong());
@@ -1183,13 +1372,36 @@ uint64_t DgnElement::GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx) const
+Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
     {
     ECN::ECValue value;
-    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIdx);
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
     return value.GetUtf8CP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid DgnElement::GetPropertyValueGuid(Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetPropertyValue(value, propertyName, arrayIndex);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+
+    if (!value.IsBinary())
+        return BeGuid();
+
+    size_t binarySize;
+    const Byte* binary = value.GetBinary(binarySize);
+    if (!binary || (binarySize != sizeof(BeGuid)))
+        return BeGuid();
+
+    BeGuid guid; 
+    memcpy(&guid, binary, sizeof(guid)); 
+    return guid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1207,9 +1419,9 @@ DgnElement::NavigationPropertyInfo DgnElement::GetNavigationPropertyInfo(Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1217,9 +1429,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR value, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint3dCR pt, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint3dCR pt, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1227,9 +1439,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint3dCR pt, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint2dCR pt, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint2dCR pt, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1237,9 +1449,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint2dCR pt, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1247,9 +1459,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, bool value, Proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1257,9 +1469,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, double value, Prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1267,9 +1479,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1293,9 +1505,9 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeSQLite::EC::ECIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIndex)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value, false), arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value, false), arrayIndex);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -1483,10 +1695,10 @@ Utf8CP ElementECPropertyAccessor::GetAccessString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIdx) const
+DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, PropertyArrayIndex const& arrayIndex) const
     {
     if (nullptr == m_accessors)
-        return GetAutoHandledPropertyValue(value, arrayIdx);
+        return GetAutoHandledPropertyValue(value, arrayIndex);
 
     return m_accessors->first(value, m_element);
     }
@@ -1494,7 +1706,7 @@ DgnDbStatus ElementECPropertyAccessor::GetPropertyValue(ECN::ECValueR value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
     if (m_readOnly)
         {
@@ -1503,7 +1715,7 @@ DgnDbStatus ElementECPropertyAccessor::SetPropertyValue(ECN::ECValueCR value, Pr
         }
 
     if (nullptr == m_accessors)
-        return SetAutoHandledPropertyValue(value, arrayIdx);
+        return SetAutoHandledPropertyValue(value, arrayIndex);
 
     return m_accessors->second(m_element, value);
     }

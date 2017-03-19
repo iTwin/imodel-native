@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
@@ -27,7 +27,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         PerformanceElementsCRUDTestFixture()
             {
-            DgnPlatformTestDomain::Register();
+            DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
             }
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);

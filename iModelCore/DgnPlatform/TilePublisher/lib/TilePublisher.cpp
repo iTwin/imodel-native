@@ -5,13 +5,15 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "TilePublisher.h"
+#include <TilePublisher/TilePublisher.h>
 #include "Constants.h"
 #include <crunch/CrnLib.h>
+#include <Geom/OperatorOverload.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
-using namespace BentleyApi::Dgn::Render::Tile3d;
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
@@ -318,6 +320,103 @@ auto BatchTableBuilder::GetSubCategoryInfo(DgnSubCategoryId id) -> SubcatInfo
     BeAssert(iter != m_subcats.end());
     return iter->second;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorIndex::ComputeDimensions(uint16_t nColors)
+    {
+    // Minimum texture size in WebGL is 64x64. For 16-bit color indices, we need at least 256x256.
+    // At the risk of pessimization, let's not assume more than that.
+    // Let's assume non-power-of-2 textures are not a big deal (we're not mipmapping them or anything).
+    uint16_t height = 1;
+    uint16_t width = std::min(nColors, GetMaxWidth());
+    if (width < nColors)
+        {
+        height = nColors / width;
+        if (height*width < nColors)
+            ++height;
+        }
+
+    BeAssert(height*width >= nColors);
+    m_width = width;
+    m_height = height;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void fillColorIndex(ByteStream& texture, ColorIndexMapCR map, uint16_t nColors, T getColorDef)
+    {
+    constexpr size_t bytesPerColor = 4;
+    texture.Resize(bytesPerColor * nColors);
+
+    for (auto const& kvp : map)
+        {
+        ColorDef fill = getColorDef(kvp.first);
+        auto pColor = texture.GetDataP() + kvp.second * bytesPerColor;
+        pColor[0] = fill.GetRed();
+        pColor[1] = fill.GetGreen();
+        pColor[2] = fill.GetBlue();
+        pColor[3] = fill.GetAlpha();    // already inverted...
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorIndex::Build(TileMeshCR mesh, TileMaterial const& mat)
+    {
+    // Possibilities:
+    //  - Material does not override color or alpha. Copy colors directly from ColorIndexMap (unless only one color - then use uniform color).
+    //  - Material overrides both color and alpha. Every vertex has same color. Don't use indexed colors in that case.
+    //  - Material overrides RGB only. Vertices may have differing alphas. ###TODO: If alpha does not vary, don't use indexed colors.
+    //  - Material overrides alpha only. Vertices may have differing RGB values. ###TODO: Detect that case and don't use indexed colors?
+    ColorIndexMapCR map = mesh.GetColorIndexMap();
+    uint16_t nColors = map.GetNumIndices();
+    ComputeDimensions(nColors);
+    BeAssert(0 < m_width && 0 < m_height);
+
+    if (!mat.OverridesAlpha() && !mat.OverridesRgb())
+        {
+        fillColorIndex(m_texture, map, nColors, [](uint32_t color)
+            {
+            ColorDef fill(color);
+            fill.SetAlpha(255 - fill.GetAlpha());
+            return fill;
+            });
+        }
+    else if (!mat.OverridesAlpha())
+        {
+        RgbFactor fRgb = mat.GetRgbOverride();
+        ColorDef rgb(static_cast<uint8_t>(fRgb.red*255), static_cast<uint8_t>(fRgb.green*255), static_cast<uint8_t>(fRgb.blue*255));
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color)
+            {
+            ColorDef input(color);
+            ColorDef output = rgb;
+            output.SetAlpha(255 - input.GetAlpha());
+            return output;
+            });
+        }
+    else if (!mat.OverridesRgb())
+        {
+        uint8_t alpha = 255 - static_cast<uint8_t>(mat.GetAlphaOverride() * 255);
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color)
+            {
+            ColorDef def(color);
+            def.SetAlpha(alpha);
+            return def;
+            });
+        }
+    else
+        {
+        uint8_t alpha = 255 - static_cast<uint8_t>(mat.GetAlphaOverride() * 255);
+        RgbFactor fRgb = mat.GetRgbOverride();
+        ColorDef rgba(static_cast<uint8_t>(fRgb.red*255), static_cast<uint8_t>(fRgb.green*255), static_cast<uint8_t>(fRgb.blue*255), alpha);
+        fillColorIndex(m_texture, map, nColors, [=](uint32_t color) { return rgba; });
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -703,6 +802,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     DRange3d                positionRange = DRange3d::NullRange();
 
     bool validIdsPresent = false;
+    bool invalidIdsPresent = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
@@ -722,15 +822,17 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         rightFloats.push_back(right.y);
         rightFloats.push_back(right.z);
 
-
         upFloats.push_back(up.x);
         upFloats.push_back(up.y);
         upFloats.push_back(up.z);
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
-        validIdsPresent |= (0 != attributeIndices.back());
+        bool isValidId = (0 != attributeIndices.back());
+        validIdsPresent |= isValidId;
+        invalidIdsPresent |= !isValidId;
         }
+
     DVec3d              positionScale;
     bvector<uint16_t>   quantizedPosition;
     double              range = (double) (0xffff);
@@ -763,6 +865,14 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     if (validIdsPresent)
         {
+        if (!invalidIdsPresent)
+            {
+            // Cesium's instanced models require that indices range from [0, nInstances). Must remove the "undefined" entry for that to work.
+            attributesSet.RemoveUndefined();
+            for (auto& index : attributeIndices)
+                index--;
+            }
+
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
         }
@@ -1097,72 +1207,49 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds)
+Utf8String TilePublisher::AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix)
     {
-    Utf8String      s_techniqueName = "unlitTechnique";
+    Utf8String textureId("texture_"),
+               imageId("image_"),
+               bvImageId("imageBufferView");
 
-    if (tileData.m_json.isMember("techniques") &&
-        tileData.m_json["techniques"].isMember(s_techniqueName.c_str()))
-        return s_techniqueName;
+    textureId.append(suffix);
+    imageId.append(suffix);
+    bvImageId.append(suffix);
 
-    Json::Value     technique = Json::objectValue;
+    auto& texture = tileData.m_json["textures"][textureId] = Json::objectValue;
+    texture["format"] = GLTF_RGBA;
+    texture["internalFormat"] = GLTF_RGBA;
+    texture["sampler"] = "sampler_1";
+    texture["source"] = imageId;
 
-    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
-    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
-    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+    auto& bufferView = tileData.m_json["bufferViews"][bvImageId] = Json::objectValue;
+    bufferView["buffer"] = "binary_glTF";
 
-    static char const   *s_programName                    = "unlitProgram",
-                        *s_vertexShaderName               = "unlitVertexShader",
-                        *s_fragmentShaderName             = "unlitFragmentShader",
-                        *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
-                        *s_fragmentShaderBufferViewName   = "unlitFragmentShaderBufferView";
+    auto& image = tileData.m_json["images"][imageId] = Json::objectValue;
+    auto& imageExtensions = image["extensions"]["KHR_binary_glTF"] = Json::objectValue;
+    imageExtensions["bufferView"] = bvImageId;
+    imageExtensions["mimeType"] = "image/png";
+    imageExtensions["width"] = colorIndex.GetWidth();
+    imageExtensions["height"] = colorIndex.GetHeight();
 
-    technique["program"] = s_programName;
+    ImageSource imageSource(colorIndex.ExtractImage(), ImageSource::Format::Png);
+    ByteStream const& imageData = imageSource.GetByteStream();
+    bufferView["byteOffset"] = tileData.BinaryDataSize();
+    bufferView["byteLength"] = imageData.size();
+    tileData.AddBinaryData(imageData.data(), imageData.size());
 
-    auto&   techniqueStates = technique["states"];
-    techniqueStates["enable"] = Json::arrayValue;
-    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+#if defined(DEBUG_COLOR_INDEX)
+    WString name = WString(imageId.c_str(), true) + L"_" + m_tile.GetNameSuffix(), extension;
+    std::FILE* outputFile = _wfopen(BeFileName(nullptr, m_context.GetDataDirForModel(m_tile.GetModel()).c_str(), name.c_str(), L"png").c_str(), L"wb");
+    fwrite(imageData.GetData(), 1, imageData.GetSize(), outputFile);
+    fclose(outputFile);
+#endif
 
-    auto& techniqueAttributes = technique["attributes"];
-    techniqueAttributes["a_pos"] = "pos";
-    if (doBatchIds)
-        techniqueAttributes["a_batchId"] = "batch";
-
-    auto& techniqueUniforms = technique["uniforms"];
-    techniqueUniforms["u_mv"] = "mv";
-    techniqueUniforms["u_proj"] = "proj";
-
-    auto& rootProgramNode = (tileData.m_json["programs"][s_programName] = Json::objectValue);
-    rootProgramNode["attributes"] = Json::arrayValue;
-    AppendProgramAttribute(rootProgramNode, "a_pos");
-
-    if (doBatchIds)
-        AppendProgramAttribute(rootProgramNode, "a_batchId");
-
-    rootProgramNode["vertexShader"]   = s_vertexShaderName;
-    rootProgramNode["fragmentShader"] = s_fragmentShaderName;
-
-    auto& shaders = tileData.m_json["shaders"];
-    AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
-    AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
-
-    std::string vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_unlitVertexShader;
-
-    tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
-    tileData.AddBufferView(s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
-
-    AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
-    techniqueUniforms["u_color"] = "color";
-
-    tileData.m_json["techniques"][s_techniqueName.c_str()] = technique;
-
-    return s_techniqueName;
+    return textureId;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1187,38 +1274,34 @@ static void addTransparencyToTechnique (Json::Value& technique)
     techniqueFunctions["depthMask"] = "false";
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds)
+Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMaterial const& mat, bool doBatchIds)
     {
-    Utf8String  prefix = textured ? "textured" : "untextured";
+    Utf8String prefix = mat.GetTechniqueNamePrefix();
+    Utf8String techniqueName(prefix);
+    techniqueName.append("Technique");
 
-    if (transparent)
-        prefix = prefix + "Transparent";
-
-    if (ignoreLighting)
-        prefix = prefix + "Unlit";
-
-    Utf8String  techniqueName = prefix + "Technique";
-    
-    if (tileData.m_json.isMember("techniques") &&
-        tileData.m_json["techniques"].isMember(techniqueName.c_str()))
+    if (data.m_json.isMember("techniques") && data.m_json["techniques"].isMember(techniqueName.c_str()))
         return techniqueName;
 
-    Json::Value     technique = Json::objectValue;
+    Json::Value technique(Json::objectValue);
 
     AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         {
         AddTechniqueParameter(technique, "n", GLTF_INT_VEC2, "NORMAL");
         AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
         }
+
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    if (!mat.IsTextured())
+        AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -1238,264 +1321,609 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
     if (doBatchIds)
         techniqueAttributes["a_batchId"] = "batch";
 
-    if(!ignoreLighting)
+    if (!mat.IsTextured())
+        techniqueAttributes["a_colorIndex"] = "colorIndex";
+
+    if(!mat.IgnoresLighting())
         techniqueAttributes["a_n"] = "n";
 
     auto& techniqueUniforms = technique["uniforms"];
     techniqueUniforms["u_mv"] = "mv";
     techniqueUniforms["u_proj"] = "proj";
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         techniqueUniforms["u_nmx"] = "nmx";
 
-    auto& rootProgramNode = (tileData.m_json["programs"][programName.c_str()] = Json::objectValue);
+    auto& rootProgramNode = (data.m_json["programs"][programName.c_str()] = Json::objectValue);
     rootProgramNode["attributes"] = Json::arrayValue;
     AppendProgramAttribute(rootProgramNode, "a_pos");
+
     if (doBatchIds)
         AppendProgramAttribute(rootProgramNode, "a_batchId");
-    if (!ignoreLighting)
+    if (!mat.IgnoresLighting())
         AppendProgramAttribute(rootProgramNode, "a_n");
 
     rootProgramNode["vertexShader"]   = vertexShader.c_str();
     rootProgramNode["fragmentShader"] = fragmentShader.c_str();
 
-    auto& shaders = tileData.m_json["shaders"];
+    auto& shaders = data.m_json["shaders"];
     AddShader(shaders, vertexShader.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferView.c_str());
     AddShader(shaders, fragmentShader.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferView.c_str());
 
-    std::string batchIdString = doBatchIds ? s_batchIdShaderAttribute : std::string();
-    std::string vertexShaderString = s_shaderPrecision + batchIdString + (ignoreLighting ? s_unlitTextureVertexShader  : (textured ? s_texturedVertexShader : s_untexturedVertexShader));
+    bool color2d = false;
+    std::string vertexShaderString = s_shaderPrecision;
+    if (doBatchIds)
+        vertexShaderString.append(s_batchIdShaderAttribute);
 
-    tileData.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
-    tileData.AddBufferView(fragmentShaderBufferView.c_str(), ignoreLighting ? s_unlitTextureFragmentShader: (textured ? s_texturedFragShader    : s_untexturedFragShader)); 
+    vertexShaderString.append(mat.GetVertexShaderString());
 
-    // Diffuse...
-    if (textured)
-        {
-        AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
-        AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
+    data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
+    data.AddBufferView(fragmentShaderBufferView.c_str(), mat.GetFragmentShaderString());
 
-        tileData.m_json["samplers"]["sampler_0"] = Json::objectValue;
-        tileData.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
+    mat.AddTechniqueParameters(technique, rootProgramNode, data);
 
-        technique["uniforms"]["u_tex"] = "tex";
-        technique["attributes"]["a_texc"] = "texc";
-        AppendProgramAttribute(rootProgramNode, "a_texc");
-        }
-    else
-        {
-        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
-        techniqueUniforms["u_color"] = "color";
-        }
-    if (!ignoreLighting)
-       {
-        // Specular...
-        AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
-        techniqueUniforms["u_specularColor"] = "specularColor";
-
-        AddTechniqueParameter(technique, "specularExponent", GLTF_FLOAT, nullptr);
-        techniqueUniforms["u_specularExponent"] = "specularExponent";
-        }
-
-    // Transparency requires blending extensions...
-    if (transparent)
-        addTransparencyToTechnique (technique);
-
-    tileData.m_json["techniques"][techniqueName.c_str()] = technique;
+    data.m_json["techniques"][techniqueName.c_str()] = technique;
 
     return techniqueName;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
+    : TileMaterial(Utf8String("PolylineMaterial_")+suffix)
+    {
+    TileDisplayParamsCR displayParams = mesh.GetDisplayParams();
+
+    m_type = displayParams.GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+
+    ColorIndexMapCR map = mesh.GetColorIndexMap();
+    m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
+
+    switch (map.GetNumIndices())
+        {
+        case 0:
+            BeAssert(false && "empty color map");
+            m_colorDimension = ColorIndex::Dimension::None;
+            break;
+        case 1:
+            m_colorDimension = ColorIndex::Dimension::Zero;
+            break;
+        default:
+            m_colorDimension = map.GetNumIndices() <= ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::One : ColorIndex::Dimension::Two;
+            break;
+        }
+
+    m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
+
+    if (0 != displayParams.GetLinePixels())
+        {
+        static uint32_t         s_height = 2;
+        ByteStream              bytes(32 * 4 * s_height);
+        uint32_t*               dataP = (uint32_t*) bytes.GetDataP();
+
+        for (uint32_t y=0, mask = 0x0001; y < s_height; y++)
+            for (uint32_t x=0, mask = 0x0001; x < 32; x++, mask = mask << 1)
+                *dataP++ = (0 == (mask & displayParams.GetLinePixels())) ? 0 : 0xffffffff;
+
+        Render::Image   image (32, s_height, std::move(bytes), Image::Format::Rgba);
+
+        m_texture = TileTextureImage::Create (Render::ImageSource(image, Render::ImageSource::Format::Png));
+        m_textureLength = -32;          // Negated to denote cosmetic.
+        }
+
+#ifdef  TEST_IMAGE 
+    FILE*       pFile;
+    if (nullptr != (pFile = fopen("d:\\tmp\\RailRoad.png", "rb")))
+        {
+        fseek (pFile, 0, SEEK_END);
+        
+        size_t      fileSize = ftell(pFile);
+        ByteStream  bytes(fileSize);
+        fseek (pFile, 0, SEEK_SET);
+        fread (bytes.data(), 1, fileSize, pFile);
+        fclose(pFile);
+
+        ImageSource imageSource (ImageSource::Format::Png, std::move(bytes));
+        Image       image(imageSource, Image::Format::Rgba);  
+        static      uint32_t s_minDimension = 64;
+
+        Point2d     sourceImageSize = { (int) image.GetWidth(), (int) image.GetHeight() },
+                    targetImageSize =  { roundToMultipleOfTwo(std::max(image.GetWidth(), s_minDimension)), roundToMultipleOfTwo(std::max(image.GetHeight(), s_minDimension)) };
+
+        if (targetImageSize.x != image.GetWidth() || targetImageSize.y != image.GetHeight())
+            imageSource = ImageSource (Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image), ImageSource::Format::Png);
+        m_texture = TileTextureImage::Create (imageSource);
+        m_textureLength = -(double) sourceImageSize.x;
+        m_width = (double) sourceImageSize.y / 2;
+        }
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+Utf8String PolylineMaterial::GetTechniqueNamePrefix() const
     {
-    Utf8String      materialName = Utf8String ("Material_") + suffix;
+    Utf8String prefix = PolylineType::Simple == GetType() ? "Simple" : "Tesselated";
 
-    if (nullptr == displayParams)
-        return materialName;
+    prefix.append (IsTextured() ? "Textured" : "Solid");
+    prefix.append("Polyline");
+    prefix.append(std::to_string(static_cast<uint8_t>(GetColorIndexDimension())).c_str());
+    return prefix;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& PolylineMaterial::GetVertexShaderString() const
+    {
+    std::string const* list = nullptr;
 
-    RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
-    double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-    uint32_t        rgbInt  = displayParams->GetFillColor();
-    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-    Json::Value&    materialValue = tileData.m_json["materials"][materialName.c_str()] = Json::objectValue;
-    bool            isUnlit = displayParams->GetIgnoreLighting();
-    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+    if (IsTextured())
+        list = IsTesselated() ? s_tesselatedTexturedPolylineVertexShaders : s_simpleTexturedPolylineVertexShaders;
+    else
+        list = IsTesselated() ? s_tesselatedSolidPolylineVertexShaders  : s_simpleSolidPolylineVertexShaders;
 
-    if (!isUnlit && displayParams->GetMaterialId().IsValid())
+    auto index = static_cast<uint8_t>(GetColorIndexDimension());
+
+    return list[index];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& PolylineMaterial::GetFragmentShaderString() const
+    {
+    return IsTextured () ? s_texturedPolylineFragmentShader : s_solidPolylineFragmentShader;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PolylineMaterial::AddTechniqueParameters(Json::Value& tech, Json::Value& prog, PublishTileData& data) const
+    {
+    AddColorIndexTechniqueParameters(tech, prog, data);
+    if (IsTextured())
+        AddTextureTechniqueParameters(tech, prog, data);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMaterial(Utf8String("Material_")+suffix)
+    {
+    TileDisplayParamsCR params = mesh.GetDisplayParams();
+    m_ignoreLighting = params.GetIgnoreLighting();
+
+    params.ResolveTextureImage(db);
+    m_texture = params.GetTextureImage();
+
+    uint32_t rgbInt = params.GetFillColor();
+    double alpha = 1.0 - ((uint8_t*)&rgbInt)[3] / 255.0;
+
+    if (!m_ignoreLighting && params.GetMaterialId().IsValid())
         {
-        auto jsonMaterial = RenderingAsset::Load(displayParams->GetMaterialId(), m_context.GetDgnDb());
-
-        if (nullptr != jsonMaterial)
+        auto material = DgnMaterial::Get(db, params.GetMaterialId());
+        if (material.IsValid())
             {
-            static double       s_finishScale = 15.0;
+            auto jsonMat = &material->GetRenderingAsset();
+            m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
+            m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
-                specularColor = jsonMaterial->GetColor (RENDER_MATERIAL_SpecularColor);
+            if (m_overridesRgb)
+                m_rgbOverride = jsonMat->GetColor(RENDER_MATERIAL_Color);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasFinish, false))
-                specularExponent = jsonMaterial->GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+            if (m_overridesAlpha)
+                {
+                m_alphaOverride = jsonMat->GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+                alpha = m_alphaOverride;
+                }
+            else if (m_overridesRgb)
+                {
+                // Apparently overriding RGB without specifying transmit => opaque.
+                m_alphaOverride = 1.0;
+                alpha = m_alphaOverride;
+                m_overridesAlpha = true;
+                }
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
-                rgb = jsonMaterial->GetColor (RENDER_MATERIAL_Color);
+            if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasSpecularColor, false))
+                m_specularColor = jsonMat->GetColor(RENDER_MATERIAL_SpecularColor);
 
-            if (jsonMaterial->GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
-                alpha = 1.0 - jsonMaterial->GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+            constexpr double s_finishScale = 15.0;
+            if (jsonMat->GetBool(RENDER_MATERIAL_FlagHasFinish, false))
+                m_specularExponent = jsonMat->GetDouble(RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
 
-            DgnMaterialCPtr material = DgnMaterial::Get(m_context.GetDgnDb(), displayParams->GetMaterialId());
-
-            if (material.IsValid())
-                materialValue["name"] = material->GetMaterialName().c_str();
-
-            materialValue["materialId"] = displayParams->GetMaterialId().ToString();
+            m_material = DgnMaterial::Get(db, params.GetMaterialId());
             }
         }
 
-    TileTextureImageCP      textureImage = nullptr;
+    m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
 
-    displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (false != (isTextured = (nullptr != (textureImage = displayParams->GetTextureImage()))))
+    if (m_overridesAlpha && m_overridesRgb)
         {
-        materialValue["technique"] = AddMeshShaderTechnique (tileData, true, alpha < 1.0, displayParams->GetIgnoreLighting(), doBatchIds).c_str();
-        materialValue["values"]["tex"] = AddTextureImage (tileData, *textureImage, mesh, suffix);
+        m_colorDimension = ColorIndex::Dimension::Zero;
         }
     else
         {
-        auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
-
-        materialColor.append(rgb.red);
-        materialColor.append(rgb.green);
-        materialColor.append(rgb.blue);
-        materialColor.append(alpha);
-
-        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (tileData, doBatchIds).c_str() : AddMeshShaderTechnique(tileData, false, alpha < 1.0, false, doBatchIds).c_str();
+        uint16_t nColors = mesh.GetColorIndexMap().GetNumIndices();
+        if (0 == nColors)
+            {
+            BeAssert(false && "empty color map");
+            m_colorDimension = ColorIndex::Dimension::None;
+            }
+        else if (1 == nColors)
+            {
+            m_colorDimension = ColorIndex::Dimension::Zero;
+            }
+        else if (nColors <= ColorIndex::GetMaxWidth())
+            {
+            m_colorDimension = ColorIndex::Dimension::One;
+            }
+        else
+            {
+            m_colorDimension = ColorIndex::Dimension::Two;
+            }
         }
+    }
 
-    if (! isUnlit)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& MeshMaterial::GetVertexShaderString() const
+    {
+    if (IsTextured())
+        return IgnoresLighting() ? s_unlitTextureVertexShader : s_texturedVertexShader;
+
+    auto index = static_cast<uint8_t>(GetColorIndexDimension());
+    BeAssert(index < _countof(s_untexturedVertexShaders));
+
+    std::string const* list = IgnoresLighting() ? s_unlitVertexShaders : s_untexturedVertexShaders;
+    return list[index];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string const& MeshMaterial::GetFragmentShaderString() const
+    {
+    if (IsTextured())
+        return IgnoresLighting() ? s_unlitTextureFragmentShader : s_texturedFragShader;
+    else
+        return IgnoresLighting() ? s_unlitFragmentShader : s_untexturedFragShader;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String MeshMaterial::GetTechniqueNamePrefix() const
+    {
+    Utf8String prefix = IsTextured() ? "Textured" : "Untextured";
+    if (HasTransparency())
+        prefix.append("Transparent");
+
+    if (IgnoresLighting())
+        prefix.append("Unlit");
+
+    prefix.append(std::to_string(static_cast<uint8_t>(GetColorIndexDimension())).c_str());
+
+    return prefix;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMaterial::AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const
+    {
+    auto dim = GetColorIndexDimension();
+    auto& techniqueUniforms = technique["uniforms"];
+    if (ColorIndex::Dimension::Zero != dim)
         {
-        materialValue["values"]["specularExponent"] = specularExponent;
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
 
-        auto& materialSpecularColor = materialValue["values"]["specularColor"] = Json::arrayValue;
-        materialSpecularColor.append (specularColor.red);
-        materialSpecularColor.append (specularColor.green);
-        materialSpecularColor.append (specularColor.blue);
+        techniqueUniforms["u_tex"] = "tex";
+        techniqueUniforms["u_texStep"] = "texStep";
+
+        technique["attributes"]["a_colorIndex"] = "colorIndex";
+        TilePublisher::AppendProgramAttribute(program, "a_colorIndex");
+
+        auto& sampler = data.m_json["samplers"]["sampler_1"];
+        sampler["minFilter"] = GLTF_NEAREST;
+        sampler["maxFilter"] = GLTF_NEAREST;
+        sampler["wrapS"] = GLTF_CLAMP_TO_EDGE;
+        sampler["wrapT"] = GLTF_CLAMP_TO_EDGE;
+
+        if (ColorIndex::Dimension::Two == dim)
+            {
+            TilePublisher::AddTechniqueParameter(technique, "texWidth", GLTF_FLOAT, nullptr);
+            TilePublisher::AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC4, nullptr);
+
+            techniqueUniforms["u_texWidth"] = "texWidth";
+            }
+        else
+            {
+            TilePublisher::AddTechniqueParameter(technique, "texStep", GLTF_FLOAT_VEC2, nullptr);
+            }
         }
-    return materialName;
+    else
+        {
+        TilePublisher::AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        techniqueUniforms["u_color"] = "color";
+        }
+
+    if (HasTransparency())
+        addTransparencyToTechnique(technique);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const
+
+    {
+    BeAssert (IsTextured());
+    if (IsTextured())
+        {
+        TilePublisher::AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        TilePublisher::AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
+
+        data.m_json["samplers"]["sampler_0"] = Json::objectValue;
+        data.m_json["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
+
+        technique["uniforms"]["u_tex"] = "tex";
+        technique["attributes"]["a_texc"] = "texc";
+        TilePublisher::AppendProgramAttribute(program, "a_texc");
+        }
     }
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
+* @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+void MeshMaterial::AddTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const
     {
-    Utf8String      materialName = Utf8String ("PolylineMaterial_") + suffix;
+    if (IsTextured())
+        AddTextureTechniqueParameters(technique, program, data);
+    else
+        AddColorIndexTechniqueParameters(technique, program, data);
 
-    if (nullptr == displayParams)
-        return materialName;
-
-    uint32_t        rgbInt  = displayParams->GetFillColor();
-    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-    Json::Value&    materialValue = tileData.m_json["materials"][materialName.c_str()] = Json::objectValue;
-    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
-    static double   s_minLineWidth = 1.0;
-    static double   s_featherPixels = 1.0;
-
-    auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
-
-    materialColor.append(rgb.red);
-    materialColor.append(rgb.green);
-    materialColor.append(rgb.blue);
-    materialColor.append(alpha);
-
-    Utf8String      s_techniqueName = "polylineTechnique";
-
-    double          halfWidthPixels = std::max(s_minLineWidth, (double) displayParams->GetRasterWidth()) / 2.0, featherPixels;
-    halfWidthPixels += (featherPixels = std::min(halfWidthPixels/2.0, s_featherPixels));
-    materialValue["values"]["width"]   = halfWidthPixels;
-    materialValue["values"]["feather"] = featherPixels/halfWidthPixels;
-
-    if (!tileData.m_json.isMember("techniques") ||
-        !tileData.m_json["techniques"].isMember(s_techniqueName.c_str()))
+    if (!IgnoresLighting())
         {
-        Json::Value     technique = Json::objectValue;
+        // Specular...
+        TilePublisher::AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
+        technique["uniforms"]["u_specularColor"] = "specularColor";
 
-        AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
-        AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
-        AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-        AddTechniqueParameter(technique, "direction", GLTF_FLOAT_VEC3, "DIRECTION");
-        AddTechniqueParameter(technique, "vertexDelta", GLTF_FLOAT_VEC3, "VERTEXDELTA");
-        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+        TilePublisher::AddTechniqueParameter(technique, "specularExponent", GLTF_FLOAT, nullptr);
+        technique["uniforms"]["u_specularExponent"] = "specularExponent";
+        }
+    }
 
-        static char const   *s_programName                    = "polylineProgram",
-                            *s_vertexShaderName               = "polylineVertexShader",
-                            *s_fragmentShaderName             = "polylineFragmentShader",
-                            *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
-                            *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    TilePublisher::AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix)
+    {
+    auto dim = mat.GetColorIndexDimension();
+    if (ColorIndex::Dimension::Zero != dim)
+        {
+        ColorIndex colorIndex(mesh, mat);
+        matJson["values"]["tex"] = AddColorIndex(tileData, colorIndex, mesh, suffix);
 
-        technique["program"] = s_programName;
+        uint16_t width = colorIndex.GetWidth();
+        double stepX = 1.0 / width;
+        double stepY = 1.0 / colorIndex.GetHeight();
 
-        auto&   techniqueStates = technique["states"];
-        techniqueStates["enable"] = Json::arrayValue;
-        techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+        auto& texStep = matJson["values"]["texStep"] = Json::arrayValue;
+        texStep.append(stepX);
+        texStep.append(stepX * 0.5);    // centerX
 
-        auto& techniqueAttributes = technique["attributes"];
+        if (ColorIndex::Dimension::Two == mat.GetColorIndexDimension())
+            {
+            texStep.append(stepY);
+            texStep.append(stepY * 0.5);    // centerY
 
-        if (doBatchIds)
-            techniqueAttributes["a_batchId"] = "batch";
+            matJson["values"]["texWidth"] = width;
+            }
+        }
+    else
+        {
+        BeAssert(1 == mesh.GetColorIndexMap().GetNumIndices() || (mat.OverridesRgb() && mat.OverridesAlpha()));
+        ColorDef baseDef(mesh.GetColorIndexMap().begin()->first);
+        RgbFactor rgb = mat.OverridesRgb() ? mat.GetRgbOverride() : RgbFactor::FromIntColor(baseDef.GetValue());
+        double alpha = mat.OverridesAlpha() ? mat.GetAlphaOverride() : baseDef.GetAlpha()/255.0;
 
-        techniqueAttributes["a_pos"]  = "pos";
-        techniqueAttributes["a_direction"]  = "direction";
-        techniqueAttributes["a_vertexDelta"] = "vertexDelta";
+        auto& matColor = matJson["values"]["color"];
+        matColor.append(rgb.red);
+        matColor.append(rgb.green);
+        matColor.append(rgb.blue);
+        matColor.append(1.0 - alpha);
+        }
+    }
 
-        auto& techniqueUniforms = technique["uniforms"];
-        techniqueUniforms["u_mv"] = "mv";
-        techniqueUniforms["u_proj"] = "proj";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    MeshMaterial mat(mesh, suffix, m_context.GetDgnDb());
 
-        auto& rootProgramNode = (tileData.m_json["programs"][s_programName] = Json::objectValue);
-        rootProgramNode["attributes"] = Json::arrayValue;
-        AppendProgramAttribute(rootProgramNode, "a_pos");
-        AppendProgramAttribute(rootProgramNode, "a_direction");
-        AppendProgramAttribute(rootProgramNode, "a_vertexDelta");
+    Json::Value& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
 
-        if (doBatchIds)
-            AppendProgramAttribute(rootProgramNode, "a_batchId");
+    auto matId = mesh.GetDisplayParams().GetMaterialId();
+    if (matId.IsValid())
+        matJson["materialId"] = matId.ToString(); // Do we actually use this?
 
-        rootProgramNode["vertexShader"]   = s_vertexShaderName;
-        rootProgramNode["fragmentShader"] = s_fragmentShaderName;
+    if (nullptr != mat.GetDgnMaterial())
+        matJson["name"] = mat.GetDgnMaterial()->GetMaterialName().c_str();
 
-        auto& shaders = tileData.m_json["shaders"];
-        AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
-        AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
-        
-        std::string     vertexShaderString = s_shaderPrecision + (doBatchIds ? s_batchIdShaderAttribute : "") + s_polylineVertexShader;
+    if (mat.IsTextured())
+        matJson["values"]["tex"] = AddTextureImage(tileData, *mat.GetTexture(), mesh, suffix);
+    else
+        AddMaterialColor (matJson, mat, tileData, mesh, suffix);
 
-        tileData.AddBufferView(s_vertexShaderBufferViewName, vertexShaderString);
-        tileData.AddBufferView(s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+    matJson["technique"] = AddMeshShaderTechnique(tileData, mat, doBatchIds).c_str();
 
+    if (!mat.IgnoresLighting())
+        {
+        matJson["values"]["specularExponent"] = mat.GetSpecularExponent();
 
-        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
-        techniqueUniforms["u_color"] = "color";
-        AddTechniqueParameter(technique, "width", GLTF_FLOAT, nullptr);
-        techniqueUniforms["u_width"] = "width";
-        AddTechniqueParameter(technique, "feather", GLTF_FLOAT, nullptr);
-        techniqueUniforms["u_feather"] = "feather";
-
-        addTransparencyToTechnique (technique);
-        tileData.m_json["techniques"][s_techniqueName] = technique;
+        auto& specColor = matJson["values"]["specularColor"];
+        specColor.append(mat.GetSpecularColor().red);
+        specColor.append(mat.GetSpecularColor().green);
+        specColor.append(mat.GetSpecularColor().blue);
         }
 
-    materialValue["technique"] = s_techniqueName;
-    return materialName;
+    return mat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineMaterial TilePublisher::AddTesselatedPolylineMaterial (PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    PolylineMaterial mat = AddPolylineMaterial(tileData, mesh, suffix, doBatchIds);
+    BeAssert(mat.IsTesselated());
+
+    Json::Value& matValues = tileData.m_json["materials"][mat.GetName()]["values"];
+    matValues["width"] = mat.GetWidth();;
+    return mat;
     }      
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineMaterial TilePublisher::AddSimplePolylineMaterial (PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    PolylineMaterial mat = AddPolylineMaterial(tileData, mesh, suffix, doBatchIds);
+    BeAssert(mat.IsSimple());
+    return mat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds)
+    {
+    PolylineMaterial mat(mesh, suffix);
+
+    auto& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
+    matJson["technique"] = AddPolylineTechnique(tileData, mat, doBatchIds);
+
+
+    if (mat.IsTextured())
+        {
+        matJson["values"]["texLength"] = mat.GetTextureLength();
+        matJson["values"]["tex"] = AddTextureImage(tileData, *mat.GetTexture(), mesh, suffix);
+        }
+
+    AddMaterialColor (matJson, mat, tileData, mesh, suffix);
+
+    return mat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, PolylineMaterial const& mat, bool doBatchIds)
+    {
+    Utf8String prefix(mat.GetTechniqueNamePrefix());
+    Utf8String techniqueName = prefix + "Technique";
+    if (tileData.m_json.isMember("techniques") && tileData.m_json["techniques"].isMember(techniqueName.c_str()))
+        return techniqueName;
+
+    Json::Value technique(Json::objectValue);
+    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+    if (doBatchIds)
+        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    auto& enableStates = technique["states"]["enable"] = Json::arrayValue;
+    enableStates.append(GLTF_DEPTH_TEST);
+
+    auto& attributes = technique["attributes"];
+    attributes["a_pos"] = "pos";
+    if (doBatchIds)
+        attributes["a_batchId"] = "batch";
+
+    auto& uniforms = technique["uniforms"];
+    uniforms["u_mv"] = "mv";
+    uniforms["u_proj"] = "proj";
+
+    Utf8String programName = prefix + "Program",
+               vertexShaderName = prefix + "VertexShader",
+               fragmentShaderName = prefix + "FragmentShader",
+               vertexShaderBufferViewName = vertexShaderName + "BufferView",
+               fragmentShaderBufferViewName = fragmentShaderName + "BufferView";
+
+    technique["program"] = programName;
+    auto& programRoot = tileData.m_json["programs"][programName.c_str()];
+    programRoot["vertexShader"] = vertexShaderName;
+    programRoot["fragmentShader"] = fragmentShaderName;
+
+    auto& shaders = tileData.m_json["shaders"];
+    AddShader(shaders, vertexShaderName.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferViewName.c_str());
+    AddShader(shaders, fragmentShaderName.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferViewName.c_str());
+
+    std::string vertexShaderString(s_shaderPrecision);
+    if (doBatchIds)
+        vertexShaderString.append(s_batchIdShaderAttribute);
+
+    vertexShaderString.append(mat.GetVertexShaderString());
+    tileData.AddBufferView(vertexShaderBufferViewName.c_str(), vertexShaderString);
+    tileData.AddBufferView(fragmentShaderBufferViewName.c_str(), mat.GetFragmentShaderString());
+
+    programRoot["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(programRoot, "a_pos");
+    if (doBatchIds)
+        AppendProgramAttribute(programRoot, "a_batchId");
+
+    mat.AddTechniqueParameters(technique, programRoot, tileData);
+
+
+    if (mat.IsTesselated())
+        {
+        // NB: reference to "attributes" and "uniforms" declared above is potentially invalid after adding to parent node...due to use of btree instead of bmap in Json::Value...
+        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        AddTechniqueParameter(technique, "width", GLTF_FLOAT, nullptr);
+        technique["uniforms"]["u_color"] = "color";
+        technique["uniforms"]["u_width"] = "width";
+
+        AddTechniqueParameter(technique, "prev", GLTF_FLOAT_VEC3, "PREV");
+        AddTechniqueParameter(technique, "next", GLTF_FLOAT_VEC3, "NEXT");
+        AddTechniqueParameter(technique, "param", GLTF_FLOAT_VEC2, "PARAM");
+
+
+        technique["attributes"]["a_prev"] = "prev";
+        technique["attributes"]["a_next"] = "next";
+        technique["attributes"]["a_param"] = "param";
+        AppendProgramAttribute(programRoot, "a_prev");
+        AppendProgramAttribute(programRoot, "a_next");
+        AppendProgramAttribute(programRoot, "a_param");
+        }
+
+    if (mat.IsTextured())
+        {
+        AddTechniqueParameter(technique, "texLength", GLTF_FLOAT, nullptr);
+        technique["uniforms"]["u_texLength"] = "texLength";
+
+        AddTechniqueParameter(technique, "texScalePnt", GLTF_FLOAT_VEC3, "TEXSCALEPNT");
+        technique["attributes"]["a_texScalePnt"] = "texScalePnt";
+        AppendProgramAttribute(programRoot, "a_texScalePnt");
+
+        technique["attributes"]["a_distance"] = "distance";
+        AppendProgramAttribute(programRoot, "a_distance");
+        AddTechniqueParameter(technique, "distance", GLTF_FLOAT, "DISTANCE");
+        }
+
+
+    tileData.m_json["techniques"][techniqueName] = technique;
+    return techniqueName;
+    }
 
 static double   clamp(double value, double min, double max)  { return value < min ? min : (value > max ? max : value);  }
 static double   signNotZero(double value) { return value < 0.0 ? -1.0 : 1.0; }
 static uint16_t toSNorm(double value) { return static_cast <uint16_t> (.5 + (clamp(value, -1.0, 1.0) * 0.5 + 0.5) * 255.0); }
-
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -1563,11 +1991,14 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
                 }
 
             bvector <unsigned short>    quantizedValues;
+            bvector<float> testVals;
 
             for (size_t i=0; i<nValues; i++)
                 {
                 size_t  componentIndex = i % nComponents;
                 quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
+
+                testVals.push_back( min[componentIndex] + (max[componentIndex] -  min[componentIndex]) * (double) quantizedValues.back() / range);
                 }
             tileData.AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
             break;
@@ -1623,29 +2054,73 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& attributes16, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic)
+    {
+    Utf8String suffix(name);
+    suffix.append(idStr);
+
+    Utf8String bvId = Concat("bv", suffix);
+    Utf8String accId = Concat("acc", suffix);
+
+    primitive["attributes"][semantic] = accId;
+
+    // Use uint8 if possible to save space in tiles and memory in browser
+    bvector<uint8_t> attributes8;
+    auto componentType = GLTF_UNSIGNED_BYTE;
+    for (auto attribute : attributes16)
+        {
+        if (attribute > 0xff)
+            {
+            componentType = GLTF_UNSIGNED_SHORT;
+            break;
+            }
+        }
+
+    size_t nBytes = attributes16.size() * sizeof(uint16_t);
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        {
+        attributes8.reserve(attributes16.size());
+        for (auto attribute : attributes16)
+            attributes8.push_back(static_cast<uint8_t>(attribute));
+
+        nBytes /= 2;
+        }
+
+    auto& bv = tileData.m_json["bufferViews"][bvId];
+    bv["buffer"] = "binary_glTF";
+    bv["byteOffset"] = tileData.BinaryDataSize();
+    bv["byteLength"] = nBytes;
+    bv["target"] = GLTF_ARRAY_BUFFER;
+
+    if (GLTF_UNSIGNED_BYTE == componentType)
+        tileData.AddBinaryData(attributes8.data(), nBytes);
+    else
+        tileData.AddBinaryData(attributes16.data(), nBytes);
+
+    auto& acc = tileData.m_json["accessors"][accId];
+    acc["bufferView"] = bvId;
+    acc["byteOffset"] = 0;
+    acc["componentType"] = componentType;
+    acc["count"] = attributes16.size();
+    acc["type"] = "SCALAR";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
     {
-    Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
-                accBatchId       = Concat("accBatch_", idStr);
+    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "BATCHID");
+    }
 
-    primitive["attributes"]["BATCHID"] = accBatchId;
-
-    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    tileData.m_json["bufferViews"][bvBatchId] = Json::objectValue;
-    tileData.m_json["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-    tileData.m_json["bufferViews"][bvBatchId]["byteOffset"] = tileData.BinaryDataSize();
-    tileData.m_json["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-    tileData.m_json["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
-
-    tileData.AddBinaryData (batchIds.data(), nBatchIdBytes);
-    tileData.m_json["accessors"][accBatchId] = Json::objectValue;
-    tileData.m_json["accessors"][accBatchId]["bufferView"] = bvBatchId;
-    tileData.m_json["accessors"][accBatchId]["byteOffset"] = 0;
-    tileData.m_json["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-    tileData.m_json["accessors"][accBatchId]["count"] = batchIds.size();
-    tileData.m_json["accessors"][accBatchId]["type"] = "SCALAR";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddMeshColors(PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& colorIds, Utf8StringCR idStr)
+    {
+    AddMeshUInt16Attributes(tileData, primitive, colorIds, idStr, "ColorIndex_", "_COLORINDEX");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1728,10 +2203,10 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         {
         for (auto const& tri : mesh.Triangles())
             {
-           indices.push_back(tri.m_indices[0]);
-           indices.push_back(tri.m_indices[1]);
-           indices.push_back(tri.m_indices[2]);
-           }
+            indices.push_back(tri.m_indices[0]);
+            indices.push_back(tri.m_indices[1]);
+            indices.push_back(tri.m_indices[2]);
+            }
         }
 
     Json::Value         primitive = Json::objectValue;
@@ -1740,14 +2215,15 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         AddMeshBatchIds(tileData, primitive, mesh.Attributes(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
-    bool            isTextured = false;
 
-    primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), doBatchIds);
+    MeshMaterial meshMat = AddMeshMaterial(tileData, mesh, idStr.c_str(), doBatchIds);
+    primitive["material"] = meshMat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
     Utf8String      accPositionId =  AddMeshVertexAttributes (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"] = accPositionId;
 
+    bool isTextured = meshMat.IsTextured();
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
         {
@@ -1755,9 +2231,11 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttributes (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
         }
 
+    BeAssert(isTextured == mesh.Colors().empty());
+    if (!mesh.Colors().empty() && !isTextured && ColorIndex::Dimension::Zero != meshMat.GetColorIndexDimension())
+        AddMeshColors(tileData, primitive, mesh.Colors(), idStr);
 
-    if (!mesh.Normals().empty() &&
-        nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
+    if (!mesh.Normals().empty() && !mesh.GetDisplayParams().GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
         primitive["attributes"]["NORMAL"] = AddMeshVertexAttributes (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
         }
@@ -1769,6 +2247,8 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
     tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1777,97 +2257,293 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
-    Utf8String idStr(std::to_string(index).c_str());
+    if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
+        AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds && mesh.ValidIdsPresent());
+    else
+        AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds && mesh.ValidIdsPresent());
+    }    
+  
 
-    bvector<DPoint3d>           points, directions;
-    bvector<DPoint3d> const&    meshPoints = mesh.Points();
-    bvector<uint16_t>           attributes;
-    bvector<uint32_t>           indices;
-    bvector<DPoint3d>           vertexDeltas;
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     03/2017
++===============+===============+===============+===============+===============+======*/
+struct  PolylineTesselation
+    {
+    bvector<DPoint3d>           m_points;
+    bvector<DVec3d>             m_prevDirs;
+    bvector<DVec3d>             m_nextDirs;
+    bvector<double>             m_distances;
+    bvector<DPoint2d>           m_params;
+    bvector<DPoint3d>           m_scalePoints;
+    bvector<uint16_t>           m_attributes;
+    bvector<uint16_t>           m_colors;
+    bvector<uint32_t>           m_indices;
+
+    /* Delta contains the following parameters.
+        x - the distance along the curve (used for parameterization of textures (0 - length).
+        y - direction to project along perpendicular (-1 or 1).
+        z - 0.0 == start, 4.0 == end.  (1-2) z-1 == start joint param. (5-6) z-5 == end joint params).  Joint parameter is the interpolation factor between perpendicular and bisector. */
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     03/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddPoint (DPoint3dCR point, DVec3dCR prev, DVec3dCR next, double delta, DVec2dCR param, uint16_t attrib, uint16_t color, DPoint3dCR center)
+        {
+        m_points.push_back(point);
+        m_prevDirs.push_back(prev);
+        m_nextDirs.push_back(next);
+        m_distances.push_back(delta);
+        m_params.push_back(param);
+        m_attributes.push_back(attrib);
+        m_colors.push_back(color);
+        m_scalePoints.push_back(center);
+        }
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     03/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddTriangle(uint32_t baseIndex, uint32_t index0, uint32_t index1, uint32_t index2)
+        {
+        m_indices.push_back(baseIndex + index0);
+        m_indices.push_back(baseIndex + index1);
+        m_indices.push_back(baseIndex + index2);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     02/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AddJointTriangles(uint32_t index, double length, DPoint3dCR p, DVec3dCR prev, DVec3dCR next, uint16_t attribute, uint16_t color, double param, DPoint3dCR center)
+        {
+        static size_t   s_nPoints = 4;
+        double          paramDelta = 1.0 / (double) (s_nPoints - 1);
+        
+        for (size_t i=0; i < s_nPoints - 1; i++)
+            AddTriangle(0, index, m_points.size() + i + 1, m_points.size() + i);
+
+        for (size_t i=0; i < s_nPoints; i++)
+            AddPoint(p, prev, next, length, DVec2d::From(1.0, param + (double) i * paramDelta), attribute, color, center); 
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     011/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void gatherPolyline(bvector<DPoint3d>& polylinePoints,  bvector<uint16_t>&  polylineColors, bvector<uint16_t>& polylineAttributes, TilePolylineCR polyline, TileMeshCR mesh, bool doColors, bool doBatchIds)
+    {
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
+    for (auto& index : polyline.m_indices)        // Gather polyline points, omitting degneeraet segments.
+        {
+        DPoint3d    thisPoint = mesh.Points().at(index);
+
+        if (polylinePoints.empty() || thisPoint.Distance(polylinePoints.back()) > s_degenerateSegmentTolerance)
+            {
+            polylinePoints.push_back(thisPoint);
+            if (doColors)
+                polylineColors.push_back(mesh.Colors().at(index));
+
+            if (doBatchIds)
+                polylineAttributes.push_back(mesh.Attributes().at(index));
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     011/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+    {
+    Utf8String idStr(std::to_string(index).c_str());
+
+    static double               s_degenerateSegmentTolerance = 1.0E-5;
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
+
+    PolylineMaterial            mat = AddTesselatedPolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    PolylineTesselation         tesselation;
+    bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+    double                      minLength = 0.0, maxLength = 0.0;
 
     for (auto const& polyline : mesh.Polylines())
         {
-        for (size_t i=0; i<polyline.m_indices.size()-1; i++)
+        bvector<DPoint3d>       polylinePoints;
+        bvector<uint16_t>       polylineColors, polylineAttributes;
+
+        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
+
+
+        DRange3d        polylineRange = DRange3d::From(polylinePoints);
+        DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
+        double          cumulativeLength = 0.0;
+        
+        for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
-            DPoint3d        p0 = meshPoints[polyline.m_indices[i]], 
-                            p1 = meshPoints[polyline.m_indices[i+1]];
-            DVec3d          direction = DVec3d::FromStartEnd (p0, p1);
-            bool            isStart  (i == 0),
-                            isEnd    (i == polyline.m_indices.size()-2);
-            if (direction.Magnitude() < s_degenerateSegmentTolerance)
-                continue;
-
-            indices.push_back(points.size());
-            indices.push_back(points.size() + 2);
-            indices.push_back(points.size() + 1);
-
-            indices.push_back(points.size() + 1);
-            indices.push_back(points.size() + 2);
-            indices.push_back(points.size() + 3);
-
-            points.push_back(p0);
-            points.push_back(p0);
-            points.push_back(p1);
-            points.push_back(p1);
-
-            for (size_t j=0; j<4; j++)
+            DPoint3d            p0 = polylinePoints[i], p1 = polylinePoints[i+1];
+            double              thisLength = p0.Distance(p1), 
+                                length0 = cumulativeLength, 
+                                length1 = (cumulativeLength += thisLength);
+            bool                isStart  = (i == 0),
+                                isEnd    = (i == last - 1);
+            uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
+            static double       s_extendDistance = .1;
+            DVec3d              thisDir = DVec3d::FromStartEndNormalize(p0, p1), negatedThisDir = DVec3d::FromScale(thisDir, -1.0),
+                                prevDir0 = isStart ? negatedThisDir : DVec3d::FromStartEnd(p0,  polylinePoints[i-1]),
+                                nextDir0 = thisDir,
+                                prevDir1 = negatedThisDir,
+                                nextDir1 = isEnd ? thisDir : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
+            size_t              baseIndex = tesselation.m_points.size();
+                        
+            if (doColors)
                 {
-                DPoint2d    delta;
-                double      uParam;
-                
-                if (j < 2)
-                    {
-                    uParam = 0.0;
-                    delta.x = isStart ? 0.0 : -1.0;
-                    }
-                else
-                    {
-                    uParam = 1.0;
-                    delta.x = isEnd ? 0.0 : 1.0;
-                    }
-                
-                delta.y = (0 == (j & 0x0001)) ? -1.0 : 1.0;
-                vertexDeltas.push_back (DPoint3d::From(delta.x, delta.y, uParam));
-                directions.push_back(direction);
+                colors0 = polylineColors[i];
+                colors1 = polylineColors[i+1];
                 }
 
-            if (mesh.ValidIdsPresent())
+            if (doBatchIds)
                 {
-                auto&   attribute0 = mesh.Attributes().at(polyline.m_indices[i]);
-                auto&   attribute1 = mesh.Attributes().at(polyline.m_indices[i+1]);
-
-                attributes.push_back (attribute0);
-                attributes.push_back (attribute0);
-                attributes.push_back (attribute1);
-                attributes.push_back (attribute1);
+                attributes0 = polylineAttributes[i];
+                attributes1 = polylineAttributes[i+1];
                 }
+
+            tesselation.AddTriangle(baseIndex, 2, 4, 1);
+            tesselation.AddTriangle(baseIndex, 2, 1, 0);
+            tesselation.AddTriangle(baseIndex, 0, 1, 5);
+            tesselation.AddTriangle(baseIndex, 0, 5, 3);
+
+            for (size_t j=0; j<6; j++)
+                {
+                static bool     basePoints[6]  = {true, false, true, true, false, false};
+                static double   deltaYs[6] = {0.0, 0.0, -1.0, 1.0, -1.0, 1.0 };
+                bool            basePoint = basePoints[j];
+                
+                tesselation.AddPoint (basePoint ? p0 : p1,
+                                      basePoint ? prevDir0 : prevDir1,
+                                      basePoint ? nextDir0 : nextDir1,
+                                      basePoint ? length0 : length1,
+                                      DVec2d::From(deltaYs[j], basePoint ? 0.0 : 4.001),
+                                      basePoint ? attributes0 : attributes1,
+                                      basePoint ? colors0 : colors1,
+                                      rangeCenter);
+                }
+            
+            if (!isStart)
+                tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
+
+            if (!isEnd)
+                tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
             }
+        maxLength = std::max(maxLength, cumulativeLength);
         }
 
     Json::Value     primitive = Json::objectValue;
-    DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
-    DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
+    DRange3d        pointRange = DRange3d::From(tesselation.m_points), paramRange = DRange3d::From(tesselation.m_params, 0.0);
 
-    primitive["material"] = AddPolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    primitive["material"] = mat.GetName();
     primitive["mode"] = GLTF_TRIANGLES;
 
-    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &tesselation.m_points.front().x, "Position", idStr.c_str(), 3, tesselation.m_points.size(), "VEC3",  VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
-    primitive["attributes"]["DIRECTION"] = AddMeshVertexAttributes (tileData, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", VertexEncoding::StandardQuantization, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttributes (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", VertexEncoding::StandardQuantization, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
-    primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
+    primitive["attributes"]["PREV"] = AddMeshVertexAttributes (tileData, &tesselation.m_prevDirs.front().x, "Prev", idStr.c_str(), 3, tesselation.m_prevDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
+    primitive["attributes"]["NEXT"] = AddMeshVertexAttributes (tileData, &tesselation.m_nextDirs.front().x, "Next", idStr.c_str(), 3, tesselation.m_nextDirs.size(), "VEC2",  VertexEncoding::OctEncodedNormals, nullptr, nullptr);
+    primitive["attributes"]["PARAM"]  = AddMeshVertexAttributes (tileData, &tesselation.m_params.front().x, "Param", idStr.c_str(), 2, tesselation.m_params.size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
+    primitive["indices"] = AddMeshIndices (tileData, "Index", tesselation.m_indices, idStr);
+
+    if (mat.IsTextured())
+        {
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &tesselation.m_distances.front(), "Distance", idStr.c_str(), 1, tesselation.m_distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
+        primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &tesselation.m_scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, tesselation.m_scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+        }
+
 
     if (doBatchIds)
-        AddMeshBatchIds(tileData, primitive, attributes, idStr);
+        AddMeshBatchIds(tileData, primitive, tesselation.m_attributes, idStr);
+
+    if (doColors)
+        AddMeshColors(tileData, primitive, tesselation.m_colors, idStr);
 
     AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 
     primitivesNode.append(primitive);
     tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     011/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
+    {
+    if (mesh.Polylines().empty())
+        return;
+
+    Utf8String idStr(std::to_string(index).c_str());
+    PolylineMaterial            mat = AddSimplePolylineMaterial(tileData, mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    bvector<DPoint3d>           points, scalePoints;
+    bvector<uint16_t>           attributes, colors;
+    bvector<uint32_t>           indices;
+    bvector<double>             distances;
+    bool                        doColors = ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
+
+    for (auto const& polyline : mesh.Polylines())
+        {
+        bvector<DPoint3d>       polylinePoints;
+        bvector<uint16_t>       polylineColors, polylineAttributes;
+
+        gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
+
+        DRange3d        polylineRange = DRange3d::From(polylinePoints);
+        DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
+        double          cumulativeLength = 0.0;
+        size_t          baseIndex = points.size();
+
+        for (size_t i=0; i<polylinePoints.size(); i++)
+            {
+            DPoint3d            p0 = polylinePoints[i];
+
+            if (i > 0)
+                {
+                cumulativeLength += p0.Distance(polylinePoints[i-1]);
+                indices.push_back(baseIndex + i - 1);
+                indices.push_back(baseIndex + i);
+                }
+
+            points.push_back (p0);
+            if (doBatchIds)
+                attributes.push_back(polylineAttributes[i]);
+
+            if (doColors)
+                colors.push_back(polylineColors[i]);
+
+            distances.push_back(cumulativeLength);
+            scalePoints.push_back(rangeCenter);
+            }
+        }
+
+    Json::Value     primitive = Json::objectValue;
+    DRange3d        pointRange = DRange3d::From(points);
+
+    primitive["material"] = mat.GetName();
+    primitive["mode"] = GLTF_LINES;
+
+    Utf8String  accPositionId = AddMeshVertexAttributes (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+    primitive["attributes"]["POSITION"]  = accPositionId;
+    primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
+
+    if (mat.IsTextured())
+        {
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &distances.front(), &distances.back());
+        primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
+        }
+
+    if (doBatchIds)
+        AddMeshBatchIds(tileData, primitive, attributes, idStr);
+
+    if (doColors)
+        AddMeshColors(tileData, primitive, colors, idStr);
+
+    AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
+
+    primitivesNode.append(primitive);
+    tileData.m_json["buffers"]["binary_glTF"]["byteLength"] = tileData.BinaryDataSize();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
@@ -2052,7 +2728,6 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
-#ifdef LIMIT_TILESET_DEPTH                     // I believe this should not be necessary now that we are not combining models into a single tileset. 
         if (0 == --depth)
             {
             // Write children as seperate tilesets.
@@ -2062,6 +2737,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 DRange3d            childRange;
 
                 childTileset["asset"]["version"] = "0.0";
+                childTileset["asset"]["gltfUpAxis"] = "Z";
 
                 auto&       childRoot = childTileset[JSON_Root];
                 WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
@@ -2085,7 +2761,6 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
                 }
             }
         else
-#endif
             {
             // Append children to this tileset.
             for (auto& childTile : tile.GetChildren())
@@ -2139,6 +2814,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     Json::Value val;
 
     val["asset"]["version"] = "0.0";
+    val["asset"]["gltfUpAxis"] = "Z";
 
     auto&       root = val[JSON_Root];
 
@@ -2292,7 +2968,7 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
- 			modelJson["extents"] = RangeToJson(modelRange);
+            modelJson["extents"] = RangeToJson(modelRange);
 
             if (nullptr == spatialModel && !modelTransform.IsIdentity())
                 modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
@@ -2337,7 +3013,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
+void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     auto spatialView = view.ToSpatialView();
     auto drawingView = nullptr == spatialView ? view.ToDrawingView() : nullptr;
@@ -2381,7 +3057,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         for (size_t j = 0; j < 3; j++)
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
-    auto cameraView = nullptr != spatialView ? view.ToCameraView() : nullptr;
+    auto cameraView = nullptr != spatialView ? view.ToView3d() : nullptr;
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
@@ -2390,7 +3066,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         transform.Multiply(eyePoint);
         json["eyePoint"] = PointToJson(eyePoint);
 
-        json["lensAngle"] = cameraView->GetLensAngle();
+        json["lensAngle"] = cameraView->GetLensAngle().Radians();
         json["focusDistance"] = cameraView->GetFocusDistance();
         }
     else if (nullptr != spatialView)

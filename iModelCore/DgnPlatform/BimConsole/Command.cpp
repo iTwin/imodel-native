@@ -144,37 +144,62 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
 
-    DbResult bimStat;
-    Dgn::DgnDb::OpenParams params(openMode);
-    Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
-    if (BE_SQLITE_OK == bimStat)
-        {
-        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-        BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-
-    std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-    if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
-        {
-        session.SetFile(std::move(ecdbFile));
-        BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-    else
-        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
-
+    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
+    //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
-    if (BE_SQLITE_OK == sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
-        session.SetFile(std::move(sqliteFile));
-        BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'. File might not be a BIM file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
         return;
         }
-    else
-        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
 
-    BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!sqliteFile->TryRetrieveProfileInfos(profileInfos))
+        {
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not retrieve profiles from file '%s'. Closing file again.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        DbResult bimStat;
+        Dgn::DgnDb::OpenParams params(openMode);
+        Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
+        if (BE_SQLITE_OK == bimStat)
+            {
+            session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+            BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::ECDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+            {
+            session.SetFile(std::move(ecdbFile));
+            BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+
+        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    session.SetFile(std::move(sqliteFile));
+    BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
     }
 
 
@@ -384,71 +409,35 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
 
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion' ORDER BY Namespace"))
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!session.GetFile().TryRetrieveProfileInfos(profileInfos))
         {
-        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        BimConsole::WriteErrorLine("Could not retrieve profile infos for the current file");
         return;
         }
 
-    bmap<KnownProfile, Utf8String> knownProfileInfos;
-    std::vector<Utf8String> otherProfileInfos;
-    Utf8CP profileFormat = "    %s: %s";
-    while (BE_SQLITE_ROW == stmt.Step())
+    BimConsole::WriteLine("  Profiles:");
+    auto it = profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
+
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::ECDb);
+    if (it != profileInfos.end())
         {
-        SchemaVersion profileVersion(stmt.GetValueText(1));
-        Utf8CP profileName = stmt.GetValueText(0);
-
-        KnownProfile knownProfile = KnownProfile::Unknown;
-
-        Utf8String profileInfo;
-        Utf8String addendum;
-
-        //use human readable names for core profiles
-        if (BeStringUtilities::StricmpAscii(profileName, "be_Db") == 0)
-            {
-            profileName = "BeSQLite";
-            knownProfile = KnownProfile::BeSQLite;
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "ec_Db") == 0)
-            {
-            profileName = "ECDb";
-            knownProfile = KnownProfile::ECDb;
-
-            if (!initialECDbProfileVersion.IsEmpty())
-                addendum.Sprintf(" (Creation version: %s)", initialECDbProfileVersion.ToString().c_str());
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "dgn_Proj") == 0)
-            {
-            profileName = "DgnDb";
-            knownProfile = KnownProfile::DgnDb;
-            }
-
-        profileInfo.Sprintf(profileFormat, profileName, profileVersion.ToString().c_str());
-        if (!addendum.empty())
-            profileInfo.append(addendum);
-
-        if (knownProfile == KnownProfile::Unknown)
-            otherProfileInfos.push_back(profileInfo);
+        if (!initialECDbProfileVersion.IsEmpty())
+            BimConsole::WriteLine("    %s: %s (Creation version: %s)", it->second.m_name.c_str(), it->second.m_version.ToString().c_str(), initialECDbProfileVersion.ToString().c_str());
         else
-            knownProfileInfos[knownProfile] = profileInfo;
+            BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
         }
 
-    BimConsole::WriteLine("  Profiles:");
-    auto it = knownProfileInfos.find(KnownProfile::BeSQLite);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::BeSQLite);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
 
-    it = knownProfileInfos.find(KnownProfile::ECDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    it = knownProfileInfos.find(KnownProfile::DgnDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    for (Utf8StringCR otherProfileInfo : otherProfileInfos)
+    for (bpair<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> const& profileInfo : profileInfos)
         {
-        BimConsole::WriteLine(otherProfileInfo.c_str());
+        if (profileInfo.first == SessionFile::ProfileInfo::Type::Unknown)
+            BimConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
         }
 
     }
@@ -558,6 +547,7 @@ Utf8String ImportCommand::_GetUsage() const
         COMMAND_USAGE_IDENT "delimiter: token delimiter in the CSV file (default: comma)\r\n"
         COMMAND_USAGE_IDENT "nodelimiterescaping: By default, delimiters are escaped if they are enclosed by double-quotes. If this parameter\r\n"
         COMMAND_USAGE_IDENT "is set, delimiters are not escaped. Default: false\r\n";
+        COMMAND_USAGE_IDENT "If the specified table already exists, rows are inserted into the existing table\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -717,12 +707,6 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
             }
 
-        for (Utf8StringR token : tokens)
-            {
-            token.ReplaceAll("[", "(");
-            token.ReplaceAll("]", ")");
-            }
-
         if (isFirstLine)
             {
             columnCount = (int) tokens.size();
@@ -752,48 +736,83 @@ BentleyStatus ImportCommand::SetupCsvImport(Session& session, Statement& stmt, U
     if (header != nullptr && (uint32_t) header->size() != columnCount)
         return ERROR;
 
-    Utf8String createTableSql("CREATE TABLE [");
-    createTableSql.append(tableName).append("] (");
     Utf8String insertSql("INSERT INTO [");
     insertSql.append(tableName).append("](");
     Utf8String insertValuesClauseSql("VALUES(");
+
+    Utf8String createTableSql;
+    bvector<Utf8String> existingTableColNames;
+    {
+    if (session.GetFile().GetHandle().GetColumns(existingTableColNames, tableName.c_str()))
+        {
+        //table exists. Check whether col count matches with CSV file
+        if ((uint32_t) existingTableColNames.size() != columnCount)
+            {
+            BimConsole::WriteErrorLine("Table '%s' already exists but its column count differs from the column count in CSV file '%s'.",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        //table does not exists
+        createTableSql.assign("CREATE TABLE [").append(tableName).append("] (");
+        }
+    }
+    
+    const bool tableExists = createTableSql.empty();
+
     bool isFirstCol = true;
     for (uint32_t i = 0; i < columnCount; i++)
         {
         if (!isFirstCol)
             {
-            createTableSql.append(",");
+            if (!tableExists)
+                createTableSql.append(",");
+
             insertSql.append(",");
             insertValuesClauseSql.append(",");
             }
 
-        if (header == nullptr)
+        if (tableExists)
             {
-            Utf8String colName;
-            colName.Sprintf("Column%" PRIu32, i + 1);
-            createTableSql.append(colName);
-            insertSql.append(colName);
+            insertSql.append(existingTableColNames[(size_t) i]);
             }
         else
             {
-            Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
-            createTableSql.append("[").append(colName).append("]");
-            insertSql.append("[").append(colName).append("]");
+            if (header == nullptr)
+                {
+                Utf8String colName;
+                colName.Sprintf("Column%" PRIu32, i + 1);
+                createTableSql.append(colName);
+                insertSql.append(colName);
+                }
+            else
+                {
+                Utf8StringCR colName = header->operator[](static_cast<size_t>(i));
+                createTableSql.append("[").append(colName).append("]");
+                insertSql.append("[").append(colName).append("]");
+                }
             }
 
         insertValuesClauseSql.append("?");
         isFirstCol = false;
         }
 
-    createTableSql.append(")");
+    if (!tableExists)
+        createTableSql.append(")");
+
     insertValuesClauseSql.append(")");
     insertSql.append(") ").append(insertValuesClauseSql);
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+    if (!tableExists)
         {
-        BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
-                               tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
-        return ERROR;
+        if (BE_SQLITE_OK != session.GetFile().GetHandle().ExecuteSql(createTableSql.c_str()))
+            {
+            BimConsole::WriteErrorLine("Could not create table '%s' for CSV file: %s",
+                                       tableName.c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+            return ERROR;
+            }
         }
 
     if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), insertSql.c_str()))
@@ -1494,10 +1513,10 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
 //---------------------------------------------------------------------------------------
 Utf8String ValidateCommand::_GetUsage() const
     {
-    return " .validate legacyclassinheritance <output csv filepath>\r\n"
-        COMMAND_USAGE_IDENT "Checks the current file for data corrupting issues introduced\r\n"
-        COMMAND_USAGE_IDENT "by invalid legacy class inheritance. Issues are written as\r\n"
-        COMMAND_USAGE_IDENT "CSV file to the specified location.\r\n";
+    return " .validate dbmapping <output csv filepath>\r\n"
+        COMMAND_USAGE_IDENT "Checks the current file for data corrupting mapping issues\r\n"
+        COMMAND_USAGE_IDENT "They might be introduced by invalid legacy class inheritance.\r\n"
+        COMMAND_USAGE_IDENT "Issues are written as CSV file to the specified location.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1517,9 +1536,9 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8StringCR switchArg = args[0];
 
-    if (switchArg.EqualsIAscii("legacyclassinheritance"))
+    if (switchArg.EqualsIAscii("dbmapping"))
         {
-        CheckForLegacyClassInheritanceIssues(session, args);
+        ValidateDbMappings(session, args);
         return;
         }
 
@@ -1530,7 +1549,7 @@ void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     02/2017
 //---------------------------------------------------------------------------------------
-void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std::vector<Utf8String> const& args) const
+void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8String> const& args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1563,21 +1582,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
     BeAssert(csvFile != nullptr);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(),
-                                     R"sql(
-        SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, ec_Column.Name, 
-        '[' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString,'|') || ']'
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=0 AND (ec_Column.ColumnKind & 128=128)
-        GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1)sql"))
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), ECDbSchemaManager::GetValidateDbMappingSql()))
         {
         BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -1591,7 +1596,7 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         if (issueCount == 1)
             {
             //write header line
-            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Column, Mapped ECProperties", true))
+            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Issue Type, Issue Type Description, Issue", true))
                 {
                 BimConsole::WriteErrorLine("Failed to write header line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
                 return;
@@ -1599,8 +1604,8 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
             }
 
         Utf8String csvLine;
-        csvLine.Sprintf("%s,%s,%s,%s,%s,%s", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
-                        stmt.GetValueText(4), stmt.GetValueText(5));
+        csvLine.Sprintf("%s,%s,%s,%s,%d,%s,\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
+                        stmt.GetValueInt(4), stmt.GetValueText(5), stmt.GetValueText(6));
         if (TextFileWriteStatus::Success != csvFile->PutLine(WString(csvLine.c_str(), BentleyCharEncoding::Utf8).c_str(), true))
             {
             BimConsole::WriteErrorLine("Failed to write line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
@@ -1612,10 +1617,10 @@ void ValidateCommand::CheckForLegacyClassInheritanceIssues(Session& session, std
         {
         csvFile->Close();
         csvFilePath.BeDeleteFile();
-        BimConsole::WriteLine("No legacy class inheritance issues found in the current file.");
+        BimConsole::WriteLine("No DB mapping issues found in the current file.");
         }
     else
-        BimConsole::WriteLine("%d legacy class inheritance issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
+        BimConsole::WriteLine("%d DB mapping issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
     }
 
 //******************************* DebugCommand ******************

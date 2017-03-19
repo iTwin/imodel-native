@@ -48,17 +48,15 @@ private:
     IECInstanceP        _GetAsIECInstance() const;
 
     // ECDBuffer:
-    ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override { BeDataAssert(false); return ECN::ECObjectsStatus::Error; }
-    ECN::ECObjectsStatus _GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const override 
-        {
-        BeDataAssert(false);
-        v.SetStruct(nullptr);
-        v.SetToNull();
-        return ECN::ECObjectsStatus::Success;
-        }
-    ECN::PrimitiveType _GetStructArrayPrimitiveType() const override {BeDataAssert(false); return ECN::PrimitiveType::PRIMITIVETYPE_Integer; }
-    ECN::ECObjectsStatus _RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override { BeDataAssert(false); return ECN::ECObjectsStatus::Error; }
-    bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const override { BeDataAssert(false); return false; }
+    ECN::StructArrayEntry const* GetAddressOfStructArrayEntry(StructValueIdentifier key) const;
+    ECN::StructValueIdentifier GetMaxStructValueIdentifier() const;
+    ECN::ECObjectsStatus RemoveStructArrayEntry(ECN::StructValueIdentifier structValueId);
+
+    ECN::PrimitiveType _GetStructArrayPrimitiveType() const override {return ECN::PrimitiveType::PRIMITIVETYPE_Integer;}
+    ECN::ECObjectsStatus _SetStructArrayValueToMemory(ECN::ECValueCR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) override;
+    ECN::ECObjectsStatus _GetStructArrayValueFromMemory(ECN::ECValueR v, ECN::PropertyLayoutCR propertyLayout, uint32_t index) const override;
+    ECN::ECObjectsStatus _RemoveStructArrayElementsFromMemory(ECN::PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) override;
+    bool _IsStructValidForArray(ECN::IECInstanceCR structInstance, ECN::PropertyLayoutCR propLayout) const override;
     void _SetPerPropertyFlag(ECN::PropertyLayoutCR propertyLayout, bool, uint32_t, int flagIndex, bool enable) override { BeDataAssert(false); }
     ECN::ECObjectsStatus _EvaluateCalculatedProperty(ECN::ECValueR evaluatedValue, ECN::ECValueCR existingValue, ECN::PropertyLayoutCR propLayout) const override { BeDataAssert(false); return ECN::ECObjectsStatus::Error; }
     ECN::ECObjectsStatus _UpdateCalculatedPropertyDependents(ECN::ECValueCR calculatedValue, ECN::PropertyLayoutCR propLayout) override;
@@ -100,6 +98,8 @@ private:
     ECObjectsStatus _RemoveArrayElement (uint32_t propertyIndex, uint32_t index) override
         {SetDirty(); return RemoveArrayElementsAt(propertyIndex, index, 1);}
     ECObjectsStatus _ClearArray (uint32_t propIdx) override;
+    ECObjectsStatus _GetShouldSerializeProperty(bool& serialize, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override
+        {return GetShouldSerializeProperty(serialize, propertyIndex, useArrayIndex, arrayIndex);}
 
     ECEnablerCR     _GetEnabler() const override {return *(m_eclass->GetDefaultStandaloneEnabler());}
     bool            _IsReadOnly() const override {return false;}

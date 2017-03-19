@@ -18,26 +18,28 @@
 #define BIS_CODESPEC_AnnotationFrameStyle           BIS_CODESPEC(BIS_CLASS_AnnotationFrameStyle)
 #define BIS_CODESPEC_AnnotationLeaderStyle          BIS_CODESPEC(BIS_CLASS_AnnotationLeaderStyle)
 #define BIS_CODESPEC_AnnotationTextStyle            BIS_CODESPEC(BIS_CLASS_AnnotationTextStyle)
+#define BIS_CODESPEC_AuxCoordSystem2d               BIS_CODESPEC(BIS_CLASS_AuxCoordSystem2d)
+#define BIS_CODESPEC_AuxCoordSystem3d               BIS_CODESPEC(BIS_CLASS_AuxCoordSystem3d)
 #define BIS_CODESPEC_CategorySelector               BIS_CODESPEC(BIS_CLASS_CategorySelector)
 #define BIS_CODESPEC_DisplayStyle                   BIS_CODESPEC(BIS_CLASS_DisplayStyle)
 #define BIS_CODESPEC_Drawing                        BIS_CODESPEC(BIS_CLASS_Drawing)
 #define BIS_CODESPEC_DrawingCategory                BIS_CODESPEC(BIS_CLASS_DrawingCategory)
 #define BIS_CODESPEC_GeometryPart                   BIS_CODESPEC(BIS_CLASS_GeometryPart)
 #define BIS_CODESPEC_GraphicalType2d                BIS_CODESPEC(BIS_CLASS_GraphicalType2d)
-#define BIS_CODESPEC_GraphicalRecipe2d              BIS_CODESPEC(BIS_CLASS_GraphicalRecipe2d)
+#define BIS_CODESPEC_TemplateRecipe2d               BIS_CODESPEC(BIS_CLASS_TemplateRecipe2d)
 #define BIS_CODESPEC_LightDefinition                BIS_CODESPEC(BIS_CLASS_LightDefinition)
 #define BIS_CODESPEC_LineStyle                      BIS_CODESPEC(BIS_CLASS_LineStyle)
 #define BIS_CODESPEC_LinkElement                    BIS_CODESPEC(BIS_CLASS_LinkElement)
 #define BIS_CODESPEC_MaterialElement                BIS_CODESPEC(BIS_CLASS_MaterialElement)
 #define BIS_CODESPEC_ModelSelector                  BIS_CODESPEC(BIS_CLASS_ModelSelector)
 #define BIS_CODESPEC_PhysicalType                   BIS_CODESPEC(BIS_CLASS_PhysicalType)
-#define BIS_CODESPEC_PhysicalRecipe                 BIS_CODESPEC(BIS_CLASS_PhysicalRecipe)
 #define BIS_CODESPEC_InformationPartitionElement    BIS_CODESPEC(BIS_CLASS_InformationPartitionElement)
-#define BIS_CODESPEC_Session                        BIS_CODESPEC(BIS_CLASS_Session)
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
 #define BIS_CODESPEC_SpatialCategory                BIS_CODESPEC(BIS_CLASS_SpatialCategory)
+#define BIS_CODESPEC_SpatialLocationType            BIS_CODESPEC(BIS_CLASS_SpatialLocationType)
 #define BIS_CODESPEC_SubCategory                    BIS_CODESPEC(BIS_CLASS_SubCategory)
 #define BIS_CODESPEC_Subject                        BIS_CODESPEC(BIS_CLASS_Subject)
+#define BIS_CODESPEC_TemplateRecipe3d               BIS_CODESPEC(BIS_CLASS_TemplateRecipe3d)
 #define BIS_CODESPEC_TextAnnotationSeed             BIS_CODESPEC(BIS_CLASS_TextAnnotationSeed)
 #define BIS_CODESPEC_Texture                        BIS_CODESPEC(BIS_CLASS_Texture)
 #define BIS_CODESPEC_TrueColor                      BIS_CODESPEC(BIS_CLASS_TrueColor)
@@ -157,10 +159,11 @@ public:
         CodeSpecId      m_id;
         DgnClassId      m_classId;
         Utf8String      m_name;
+        Utf8String      m_registrySuffix;
         CodeScopeSpec   m_scopeSpec;
 
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec(), Utf8CP registrySuffix="") :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec), m_registrySuffix(registrySuffix) {}
     };
 
 private:
@@ -171,6 +174,7 @@ private:
     CodeSpecId      m_codeSpecId;
     DgnClassId      m_classId;
     Utf8String      m_name;
+    Utf8String      m_registrySuffix;
 
     CodeScopeSpec m_scopeSpec;
     CodeFragmentSpecList m_fragmentSpecs;
@@ -191,6 +195,7 @@ public:
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
     DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
+    Utf8StringCR GetRegistrySuffix() const {return m_registrySuffix;}
 
     //! Return the CodeSpecId of the NullCodeSpec
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}
@@ -201,7 +206,7 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
+    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope(), Utf8CP registrySuffix="");
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}

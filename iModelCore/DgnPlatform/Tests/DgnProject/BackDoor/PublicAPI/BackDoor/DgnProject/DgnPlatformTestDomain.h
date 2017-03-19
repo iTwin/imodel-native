@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnDb.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
@@ -50,9 +50,7 @@
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
-#define DPTEST_CLASS_TestPhysicalRecipe "TestPhysicalRecipe"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
-#define DPTEST_CLASS_TestGraphicalRecipe2d "TestGraphicalRecipe2d"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 #define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
@@ -67,6 +65,8 @@
 #define DPTEST_TEST_MULTI_ASPECT_CLASS_NAME              "TestMultiAspect"
 #define DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "TestMultiAspectProperty"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
+
+#define DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME  "LocationStruct"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -413,32 +413,6 @@ struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestPhysicalRecipe : Dgn::PhysicalRecipe
-{
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, Dgn::PhysicalRecipe)
-    friend struct TestPhysicalRecipeHandler;
-
-protected:
-    explicit TestPhysicalRecipe(CreateParams const& params) : T_Super(params) {}
-
-public:
-    static RefCountedPtr<TestPhysicalRecipe> Create(Dgn::DefinitionModelR, Utf8CP name);
-};
-
-typedef RefCountedPtr<TestPhysicalRecipe> TestPhysicalRecipePtr;
-typedef RefCountedCPtr<TestPhysicalRecipe> TestPhysicalRecipeCPtr;
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
-struct TestPhysicalRecipeHandler : Dgn::dgn_ElementHandler::PhysicalRecipe
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, TestPhysicalRecipe, TestPhysicalRecipeHandler, Dgn::dgn_ElementHandler::PhysicalRecipe, )
-};
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
 struct TestGraphicalType2d : Dgn::GraphicalType2d
 {
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, Dgn::GraphicalType2d)
@@ -466,32 +440,6 @@ typedef RefCountedCPtr<TestGraphicalType2d> TestGraphicalType2dCPtr;
 struct TestGraphicalType2dHandler : Dgn::dgn_ElementHandler::GraphicalType2d
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, TestGraphicalType2d, TestGraphicalType2dHandler, Dgn::dgn_ElementHandler::GraphicalType2d, )
-};
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
-struct TestGraphicalRecipe2d : Dgn::GraphicalRecipe2d
-{
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, Dgn::GraphicalRecipe2d)
-    friend struct TestGraphicalRecipe2dHandler;
-
-protected:
-    explicit TestGraphicalRecipe2d(CreateParams const& params) : T_Super(params) {}
-
-public:
-    static RefCountedPtr<TestGraphicalRecipe2d> Create(Dgn::DefinitionModelR, Utf8CP name);
-};
-
-typedef RefCountedPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dPtr;
-typedef RefCountedCPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dCPtr;
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
-struct TestGraphicalRecipe2dHandler : Dgn::dgn_ElementHandler::GraphicalRecipe2d
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, TestGraphicalRecipe2d, TestGraphicalRecipe2dHandler, Dgn::dgn_ElementHandler::GraphicalRecipe2d, )
 };
 
 //=======================================================================================
@@ -620,11 +568,7 @@ struct DgnPlatformTestDomain : Dgn::DgnDomain
 private:
     DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
     DgnPlatformTestDomain();
-
-public:
-    static Dgn::DgnDbStatus Register();
-    static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
-    static Dgn::DgnDbStatus ImportDummySchema(Dgn::DgnDbR);
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

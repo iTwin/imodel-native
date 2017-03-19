@@ -1,14 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/DgnView.cpp $
+|     $Source: DgnCore/ViewDefinition.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define PROPNAME_Descr "Descr"
-#define PROPNAME_Source "Source"
+#define PROPNAME_Description "Description"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -20,8 +19,9 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(DrawingView);
     HANDLER_DEFINE_MEMBERS(SheetView);
     HANDLER_DEFINE_MEMBERS(SpatialView);
+    HANDLER_DEFINE_MEMBERS(TemplateView2d);
+    HANDLER_DEFINE_MEMBERS(TemplateView3d);
     HANDLER_DEFINE_MEMBERS(OrthographicView);
-    HANDLER_DEFINE_MEMBERS(CameraView);
     HANDLER_DEFINE_MEMBERS(ViewModels);
     HANDLER_DEFINE_MEMBERS(ViewCategories);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle);
@@ -36,6 +36,7 @@ namespace ViewProperties
     static constexpr Utf8CP str_CategorySelector() {return "CategorySelector";}
     static constexpr Utf8CP str_DisplayStyle() {return "DisplayStyle";}
     static constexpr Utf8CP str_BackgroundColor(){return "backgroundColor";}
+    static constexpr Utf8CP str_MonochromeColor(){return "monochromeColor";}
     static constexpr Utf8CP str_ViewFlags() {return "viewflags";}
     static constexpr Utf8CP str_SubCategory() {return "SubCategory";}
     static constexpr Utf8CP str_SubCategoryOverrides() {return "SubCategoryOvr";}
@@ -57,6 +58,12 @@ namespace ViewProperties
     static constexpr Utf8CP str_Png() {return "png";}
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
+    static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
+    static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
+    static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
+    static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
+    static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
+    static constexpr Utf8CP str_ACS() {return "ACS";}
 };
 
 using namespace ViewProperties;
@@ -137,6 +144,9 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::_EqualState(ViewDefinitionR other)
     {
+    if (m_isPrivate != other.m_isPrivate)
+        return false;
+
     if (m_categorySelectorId != other.m_categorySelectorId)
         return false;
 
@@ -185,6 +195,8 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
     BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,7 +205,7 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 Utf8String ViewDefinition::ToDetailJson()
     {
     _OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetDetails());
+    return GetDetails().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,6 +225,64 @@ void ViewDefinition::SetViewClip(ClipVectorPtr clip)
 ClipVectorPtr ViewDefinition::GetViewClip() const
     {
     return ClipVector::FromJson(GetDetail(str_Clip()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
+    {
+    if (GridOrientationType::WorldXY != orientation)
+        SetDetail(str_GridOrient(), Json::Value((uint32_t) orientation));
+    else
+        RemoveDetail(str_GridOrient());
+
+    if (10 != gridsPerRef)
+        SetDetail(str_GridPerRef(), Json::Value(gridsPerRef));
+    else
+        RemoveDetail(str_GridPerRef());
+
+    if (1.0 != spacing.x)
+        SetDetail(str_GridSpaceX(), Json::Value(spacing.x));
+    else
+        RemoveDetail(str_GridSpaceX());
+
+    if (spacing.y != spacing.x)
+        SetDetail(str_GridSpaceY(), Json::Value(spacing.y));
+    else
+        RemoveDetail(str_GridSpaceY());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
+    {
+    orientation = (GridOrientationType) GetDetail(str_GridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
+    gridsPerRef = GetDetail(str_GridPerRef()).asUInt(10);
+    spacing.x = GetDetail(str_GridSpaceX()).asDouble(1.0);
+    spacing.y = GetDetail(str_GridSpaceY()).asDouble(spacing.x);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
+    {
+    return DgnElementId(GetDetail(str_ACS()).asUInt64());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
+    {
+    BeAssert(!IsPersistent());
+
+    if (acsId.IsValid())
+        SetDetail(str_ACS(), Json::Value(acsId.GetValue()));
+    else
+        RemoveDetail(str_ACS());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,6 +321,7 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success != status)
         return status;
 
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
     m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
     m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
@@ -266,10 +337,19 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     T_Super::_CopyFrom(el);
 
     auto& other = static_cast<ViewDefinitionCR>(el);
+    m_isPrivate = other.m_isPrivate;
     m_categorySelectorId = other.m_categorySelectorId;
     m_displayStyleId = other.m_displayStyleId;
     m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
     m_displayStyle = other.m_displayStyle.IsValid() ? other.m_displayStyle->MakeCopy<DisplayStyle>() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr SpatialViewDefinition::_SupplyController() const
+    {
+    return new SpatialViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -278,14 +358,6 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
     {
     return new OrthographicViewController(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr CameraViewDefinition::_SupplyController() const
-    {
-    return new CameraViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,8 +373,7 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DrawingViewDefinition::GetAspectRatioSkew() const
     {
-    auto& val = GetDetail(str_AspectSkew());
-    return val.isNull() ? 1.0 : val.asDouble();
+    return GetDetail(str_AspectSkew()).asDouble(1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -412,132 +483,42 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
+ViewDefinition::Iterator::Iterator(DgnDbR db, Utf8CP whereClause, Utf8CP orderByClause)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,CodeValue,[" PROPNAME_Source "]," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA("ViewDefinition");
+    Utf8String sql("SELECT ECInstanceId,CodeValue,IsPrivate," PROPNAME_Description ",ECClassId FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
 
-    Utf8CP ecsql = s_ecsql;
-    Utf8String customECSql;
-    if (!options.IsEmpty())
+    if (whereClause)
         {
-        customECSql = s_ecsql;
-        customECSql.append(options.ToString());
-
-        ecsql = customECSql.c_str();
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    Prepare(db, ecsql, 0);
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
+
+    Prepare(db, sql.c_str(), 0 /* Index of ECInstanceId */);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendSourceClause(Utf8StringR str, ViewDefinition::Iterator::Options::Source source)
+size_t ViewDefinition::QueryCount(DgnDbR db, Utf8CP whereClause)
     {
-#ifdef ECSQL_SUPPORTS_BITWISE_OPS // It doesn't. NEEDSWORK.
-    Utf8Char buf[0x20];
-    BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(m_source));
+    Utf8String sql("SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition));
 
-    str.append("0 != (" PROPNAME_Source " & ");
-    str.append(buf);
-    str.append(1, ')');
-#else
-    // ECSql doesn't support bitwise operators...
-    typedef ViewDefinition::Iterator::Options::Source Source;
-    bool user {0 != static_cast<uint8_t>(source & Source::User) };
-    bool gen  {0 != static_cast<uint8_t>(source & Source::Generated) };
-    bool priv {0 != static_cast<uint8_t>(source & Source::Private) };
-
-    if (!user && !gen && !priv)
-        return;
-
-    // Parens in case we're preceded by an AND...
-    str.append(1, '(');
-
-    Utf8Char buf[3];
-    if (user)
+    if (whereClause)
         {
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::User));
-        str.append(PROPNAME_Source "=").append(buf);
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    if (gen)
-        {
-        if (user)
-            str.append(" OR ");
-
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Generated));
-        str.append(PROPNAME_Source "=").append(buf);
-        }
-
-    if (priv)
-        {
-        if (user || gen)
-            str.append(" OR ");
-
-        BeStringUtilities::FormatUInt64(buf, static_cast<uint64_t>(Source::Private));
-        str.append(PROPNAME_Source "=").append(buf);
-        }
-
-    str.append(1, ')');
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ViewDefinition::Iterator::Options::ToString() const
-    {
-    Utf8String str;
-    if (IsEmpty())
-        return str;
-
-    if (!m_customECSql.empty())
-        {
-        // mutually exclusive with the other options
-        if (!m_customECSql.StartsWith(" "))
-            str.append(1, ' ');
-
-        str.append(m_customECSql);
-        return str;
-        }
-
-    // WHERE
-    if (Source::All != m_source)
-        {
-        str.append(str.empty() ? " WHERE " : " AND ");
-        appendSourceClause(str, m_source);
-        }
-
-    // ORDER BY
-    if (Order::Ascending == m_order)
-        {
-        str.append(" ORDER BY [CodeValue]");
-        }
-
-    return str;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
-    {
-    static const Utf8CP s_ecsql = "SELECT count(*) FROM " BIS_SCHEMA("ViewDefinition");
-
-    Utf8CP ecsql = s_ecsql;
-    Utf8String customECSql;
-    if (!opts.IsEmpty())
-        {
-        customECSql = s_ecsql;
-        customECSql.append(opts.ToString());
-        ecsql = customECSql.c_str();
-        }
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql);
-    return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(sql.c_str());
+    return statement.IsValid() && BE_SQLITE_ROW == statement->Step() ? statement->GetValueInt(0) : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -558,7 +539,7 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::Entry::IsOrthographicView() const {return isEntryOfClass<OrthographicViewDefinition>(*this);}
-bool ViewDefinition::Entry::IsCameraView() const {return isEntryOfClass<CameraViewDefinition>(*this);}
+bool ViewDefinition::Entry::IsView3d() const {return isEntryOfClass<ViewDefinition3d>(*this);}
 bool ViewDefinition::Entry::IsSpatialView() const {return isEntryOfClass<SpatialViewDefinition>(*this);}
 bool ViewDefinition::Entry::IsDrawingView() const {return isEntryOfClass<DrawingViewDefinition>(*this);}
 bool ViewDefinition::Entry::IsSheetView() const {return isEntryOfClass<SheetViewDefinition>(*this);}
@@ -830,6 +811,15 @@ void ViewDefinition3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     stmt.BindDouble(stmt.GetParameterIndex(str_Yaw()), angles.GetYaw().Degrees());
     stmt.BindDouble(stmt.GetParameterIndex(str_Pitch()), angles.GetPitch().Degrees());
     stmt.BindDouble(stmt.GetParameterIndex(str_Roll()), angles.GetRoll().Degrees());
+
+    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle().Radians());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
+    BeAssert(ECSqlStatus::Success == stat);
+    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
+    BeAssert(ECSqlStatus::Success == stat);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -839,6 +829,13 @@ bool ViewDefinition3d::_EqualState(ViewDefinitionR in)
     {
     auto& other = (ViewDefinition3dR) in;
     if (!m_origin.IsEqual(other.m_origin) || !m_extents.IsEqual(other.m_extents) || !m_rotation.IsEqual(other.m_rotation))
+        return false;
+
+    if (IsCameraOn() != other.IsCameraOn())
+        return false;
+    
+    // if camera is off, don't compare cameras
+    if (IsCameraOn() && !m_cameraDef.IsEqual(other.m_cameraDef))
         return false;
 
     return T_Super::_EqualState(other);
@@ -857,6 +854,12 @@ DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
            roll  = stmt.GetValueDouble(params.GetSelectIndex(str_Roll()));
 
     m_rotation = YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)).ToRotMatrix();
+
+    m_cameraDef.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
+    m_cameraDef.SetLensAngle(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle()))));
+    m_cameraDef.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
+    m_cameraOn = stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn()));
+
     return T_Super::_ReadSelectParams(stmt, params);
     }
 
@@ -871,6 +874,8 @@ void ViewDefinition3d::_CopyFrom(DgnElementCR el)
     m_origin = other.m_origin;
     m_extents = other.m_extents;
     m_rotation = other.m_rotation;
+    m_cameraDef = other.m_cameraDef;
+    m_cameraOn = other.m_cameraOn;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -883,7 +888,7 @@ DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR sourc
     val[str_Height()] = size.y;
     val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
 
-    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), Json::FastWriter().ToString(val), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
+    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), val.ToString(), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
     return rc;
     }
 
@@ -1004,66 +1009,6 @@ DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
-    {
-    T_Super::_BindWriteParams(stmt, forInsert);
-    auto stat = stmt.BindPoint3d(stmt.GetParameterIndex(str_EyePoint()), GetEyePoint());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_LensAngle()), GetLensAngle());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindDouble(stmt.GetParameterIndex(str_FocusDistance()), GetFocusDistance());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsCameraOn()), IsCameraOn());
-    BeAssert(ECSqlStatus::Success == stat);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewDefinition::_CopyFrom(DgnElementCR el)
-    {
-    T_Super::_CopyFrom(el);
-    auto other = static_cast<CameraViewDefinitionCP>(&el);
-    m_camera = other->m_camera;
-    m_isCameraOn = other->m_isCameraOn;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_camera.SetEyePoint(stmt.GetValuePoint3d(params.GetSelectIndex(str_EyePoint())));
-    m_camera.SetLensAngle(stmt.GetValueDouble(params.GetSelectIndex(str_LensAngle())));
-    m_camera.SetFocusDistance(stmt.GetValueDouble(params.GetSelectIndex(str_FocusDistance())));
-    SetCameraOn(stmt.GetValueBoolean(params.GetSelectIndex(str_IsCameraOn())));
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CameraViewDefinition::_EqualState(ViewDefinitionR in)
-    {
-    if (!T_Super::_EqualState(in))
-        return false;
-
-    auto& other = (CameraViewDefinition&) in;
-    if (IsCameraOn() != other.IsCameraOn())
-        return false;
-    
-    // if camera is off, don't compare cameras
-    return !IsCameraOn() || m_camera.IsEqual(other.m_camera);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewDefinition::SetStandardViewRotation(StandardView standardView)
@@ -1114,7 +1059,9 @@ void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Over
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     else
+        {
         BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1183,7 +1130,7 @@ void DisplayStyle::_OnLoadedJsonProperties()
 Utf8String DisplayStyle::ToJson() const
     {
     const_cast<DisplayStyleR>(*this)._OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetStyles());
+    return GetStyles().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1218,9 +1165,6 @@ void DisplayStyle::_OnSaveJsonProperties()
             }
         SetStyle(str_SubCategoryOverrides(), ovrJson);
         }
-
-    if (ColorDef::Black() == GetBackgroundColor())
-        RemoveStyle(str_BackgroundColor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1228,8 +1172,7 @@ void DisplayStyle::_OnSaveJsonProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DisplayStyle::GetBackgroundColor() const
     {
-    JsonValueCR val = GetStyle(str_BackgroundColor());
-    return val.isNull() ? ColorDef::Black() : ColorDef(val.asUInt());
+    return ColorDef(GetStyle(str_BackgroundColor()).asUInt(ColorDef::Black().GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1237,9 +1180,600 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    if (ColorDef::Black() == val)
+        RemoveStyle(str_BackgroundColor());    // black is the default
+    else
+        SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DisplayStyle::GetMonochromeColor() const
+    {
+    return ColorDef(GetStyle(str_MonochromeColor()).asUInt(ColorDef::White().GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::SetMonochromeColor(ColorDef val)
+    {
+    if (ColorDef::White() == val)
+        RemoveStyle(str_MonochromeColor());    // white is the default
+    else
+        SetStyle(str_MonochromeColor(), Json::Value(val.GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Search the (8) standard view matrices for one that is close to given matrix.
+* @bsimethod                                                    EarlinLutz      05/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool findNearbyStandardViewMatrix(RotMatrixR rMatrix)
+    {
+    static double const s_viewMatrixTolerance = 1.0e-7;
+    RotMatrix   test;
+
+    // Standard views are numbered from 1 ....
+    for (int i = 1; bsiRotMatrix_getStandardRotation(&test, i); ++i)
+        {
+        double a = test.MaxDiff(rMatrix);
+        if (a < s_viewMatrixTolerance)
+            {
+            rMatrix = test;
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    11/02
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
+    {
+    DPoint3dCP frustPts = frustum.GetPts();
+    DPoint3d viewOrg = frustPts[NPC_LeftBottomRear];
+
+    // frustumX, frustumY, frustumZ are vectors along edges of the frustum. They are NOT unit vectors.
+    // X and Y should be perpendicular, and Z should be right handed.
+    DVec3d frustumX, frustumY, frustumZ;
+    frustumX.DifferenceOf(frustPts[NPC_RightBottomRear], viewOrg);
+    frustumY.DifferenceOf(frustPts[NPC_LeftTopRear], viewOrg);
+    frustumZ.DifferenceOf(frustPts[NPC_LeftBottomFront], viewOrg);
+
+    RotMatrix   frustMatrix;
+    frustMatrix.InitFromColumnVectors(frustumX, frustumY, frustumZ);
+    if (!frustMatrix.SquareAndNormalizeColumns(frustMatrix, 0, 1))
+        return ViewportStatus::InvalidWindow;
+
+    findNearbyStandardViewMatrix(frustMatrix);
+
+    DVec3d xDir, yDir, zDir;
+    frustMatrix.GetColumns(xDir, yDir, zDir);
+
+    // set up view Rotation matrix as rows of frustum matrix.
+    RotMatrix viewRot;
+    viewRot.InverseOf(frustMatrix);
+
+    // Left handed frustum?
+    double zSize = zDir.DotProduct(frustumZ);
+    if (zSize < 0.0)
+        return ViewportStatus::InvalidWindow;
+
+    DPoint3d viewDiagRoot;
+    viewDiagRoot.SumOf(xDir, xDir.DotProduct(frustumX), yDir, yDir.DotProduct(frustumY));  // vectors on the back plane
+    viewDiagRoot.SumOf(viewDiagRoot, zDir, zSize);       // add in z vector perpendicular to x,y
+
+    // use center of frustum and view diagonal for origin. Original frustum may not have been orgthogonal
+    viewOrg.SumOf(frustum.GetCenter(), viewDiagRoot, -0.5);
+
+    // delta is in view coordinates
+    DVec3d viewDelta;
+    viewRot.Multiply(viewDelta, viewDiagRoot);
+
+    ViewportStatus validSize = ValidateViewDelta(viewDelta, false);
+    if (validSize != ViewportStatus::Success)
+        return validSize;
+
+    SetOrigin(viewOrg);
+    SetExtents(viewDelta);
+    SetRotation(viewRot);
+    return ViewportStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::_SetupFromFrustum(Frustum const& frustum)
+    {
+    auto stat = T_Super::_SetupFromFrustum(frustum);
+    if (ViewportStatus::Success != stat)
+        return stat;
+
+    TurnCameraOff();
+    DPoint3dCP frustPts = frustum.GetPts();
+
+    // use comparison of back, front plane X sizes to indicate camera or flat view ...
+    double xBack  = frustPts[NPC_LeftBottomRear].Distance(frustPts[NPC_RightBottomRear]);
+    double xFront = frustPts[NPC_LeftBottomFront].Distance(frustPts[NPC_RightBottomFront]);
+
+    static double const s_flatViewFractionTolerance = 1.0e-6;
+    if (xFront > xBack *(1.0 + s_flatViewFractionTolerance))
+        return ViewportStatus::InvalidWindow;
+
+    // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
+    double compression = xFront / xBack;
+    if (compression >= (1.0 - s_flatViewFractionTolerance))
+        return ViewportStatus::Success;
+
+    DPoint3d viewOrg = frustPts[NPC_LeftBottomRear];
+    DVec3d viewDelta = GetExtents();
+    DVec3d zDir = GetZVector();
+    DVec3d frustumZ = DVec3d::FromStartEnd(viewOrg, frustPts[NPC_LeftBottomFront]);
+    DVec3d frustOrgToEye = DVec3d::FromScale(frustumZ, 1.0 /(1.0 - compression));
+    DPoint3d eyePoint = DPoint3d::FromSumOf(viewOrg, frustOrgToEye);
+
+    double backDistance  = frustOrgToEye.DotProduct(zDir);         // distance from eye to back plane of frustum
+    double focusDistance = backDistance -(viewDelta.z / 2.0);
+    double focalFraction = focusDistance / backDistance;           // ratio of focus plane distance to back plane distance
+
+    viewOrg.SumOf(eyePoint, frustOrgToEye, -focalFraction);        // project point along org-to-eye vector onto focus plane
+    viewOrg.SumOf(viewOrg, zDir, focusDistance - backDistance);    // now project that point onto back plane
+
+    viewDelta.x *= focalFraction;                                  // adjust view delta for x and y so they are also at focus plane
+    viewDelta.y *= focalFraction;
+
+    SetEyePoint(eyePoint);
+    SetFocusDistance(focusDistance);
+    SetOrigin(viewOrg);
+    SetExtents(viewDelta);
+    SetLensAngle(CalcLensAngle());
+    _EnableCamera();
+    return ViewportStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/10
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::LookAtVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+    {
+    DPoint3d rangebox[8];
+    volume.Get8Corners(rangebox);
+    GetRotation().Multiply(rangebox, rangebox, 8);
+
+    DRange3d viewAlignedVolume;
+    viewAlignedVolume.InitFrom(rangebox, 8);
+
+    return LookAtViewAlignedVolume(viewAlignedVolume, aspect, margin, expandClippingPlanes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+    {
+    DPoint3d    oldDelta = GetExtents();
+    DPoint3d    oldOrg   = GetOrigin();
+    RotMatrix   viewRot  = GetRotation();
+
+    DPoint3d  newOrigin = volume.low;
+    DVec3d    newDelta;
+    newDelta.DifferenceOf(volume.high, volume.low);
+
+    double minimumDepth = DgnUnits::OneMillimeter();
+    if (newDelta.z < minimumDepth)
+        {
+        newOrigin.z -=(minimumDepth - newDelta.z)/2.0;
+        newDelta.z = minimumDepth;
+        }
+
+    DPoint3d origNewDelta = newDelta;
+
+    auto cameraView = ToView3dP();
+    bool isCameraOn = cameraView && cameraView->IsCameraOn();
+    if (isCameraOn)
+        {
+        // If the camera is on, the only way to guarantee we can see the entire volume is to set delta at the front plane, not focus plane.
+        // That generally causes the view to be too large (objects in it are too small), since we can't tell whether the objects are at
+        // the front or back of the view. For this reason, don't attempt to add any "margin" to camera views.
+        }
+    else if (nullptr != margin)
+        {
+        // compute how much space we'll need for both of X and Y margins in root coordinates
+        double wPercent = margin->Left() + margin->Right();
+        double hPercent = margin->Top()  + margin->Bottom();
+
+        double marginHoriz = wPercent/(1-wPercent) * newDelta.x;
+        double marginVert  = hPercent/(1-hPercent) * newDelta.y;
+
+        // compute left and bottom margins in root coordinates
+        double marginLeft   = margin->Left()/(1-wPercent) *   newDelta.x;
+        double marginBottom = margin->Bottom()/(1-hPercent) * newDelta.y;
+
+        // add the margins to the range
+        newOrigin.x -= marginLeft;
+        newOrigin.y -= marginBottom;
+        newDelta.x  += marginHoriz;
+        newDelta.y  += marginVert;
+
+        // don't fix the origin due to changes in delta here
+        origNewDelta = newDelta;
+        }
+    else
+        {
+        newDelta.Scale(1.04); // default "dilation"
+        }
+
+    if (isCameraOn)
+        {
+        // make sure that the zDelta is large enough so that entire model will be visible from any rotation
+        double diag = newDelta.MagnitudeXY();
+        if (diag > newDelta.z)
+            newDelta.z = diag;
+        }
+
+    ValidateViewDelta(newDelta, true);
+
+    SetExtents(newDelta);
+    if (aspect)
+        AdjustAspectRatio(*aspect);
+
+    newDelta = GetExtents();
+
+    newOrigin.x -=(newDelta.x - origNewDelta.x) / 2.0;
+    newOrigin.y -=(newDelta.y - origNewDelta.y) / 2.0;
+    newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
+
+    // if they don't want the clipping planes to change, set them back to where they were
+    if (nullptr != cameraView && !expandClippingPlanes)
+        {
+        viewRot.Multiply(oldOrg);
+        newOrigin.z = oldOrg.z;
+
+        DVec3d delta = GetExtents();
+        delta.z = oldDelta.z;
+        SetExtents(delta);
+        }
+
+    DPoint3d newOrgView;
+    viewRot.MultiplyTranspose(&newOrgView, &newOrigin, 1);
+    SetOrigin(newOrgView);
+
+    if (nullptr == cameraView)
+        return;
+
+    auto& cameraDef = cameraView->GetCameraR();
+    cameraDef.ValidateLens();
+    // move the camera back so the entire x,y range is visible at front plane
+    double frontDist = std::max(newDelta.x, newDelta.y) / (2.0*tan(cameraDef.GetLensAngle().Radians()/2.0));
+    double backDist = frontDist + newDelta.z;
+
+    cameraDef.SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
+    cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
+    cameraView->VerifyFocusPlane(); // changes delta/origin
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Angle ViewDefinition3d::CalcLensAngle() const
+    {
+    double maxDelta = std::max(m_extents.x, m_extents.y);
+    return Angle::FromRadians(2.0 * Angle::Atan2(maxDelta*0.5, m_cameraDef.GetFocusDistance()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition3d::CenterEyePoint(double const* backDistanceIn)
+    {
+    DVec3d delta = GetExtents();
+    DPoint3d eyePoint;
+    eyePoint.Scale(delta, 0.5);
+    eyePoint.z = backDistanceIn ? *backDistanceIn : GetBackDistance();
+
+    GetRotation().MultiplyTranspose(eyePoint);
+    eyePoint.Add(GetOrigin());
+
+    m_cameraDef.SetEyePoint(eyePoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition3d::CenterFocusDistance()
+    {
+    double backDist  = GetBackDistance();
+    double frontDist = GetFrontDistance();
+    DPoint3d eye     = GetEyePoint();
+    DPoint3d target  = DPoint3d::FromSumOf(eye, GetZVector(), frontDist-backDist);
+    LookAtUsingLensAngle(eye, target, GetYVector(), GetLensAngle(), &frontDist, &backDist);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewDefinition3d::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
+    {
+    // We are going to limit maximum depth to a value that will avoid subtractive cancellation
+    // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
+    // are very small in comparison to the X-Y values.  If the X-Y values are exactly zero then
+    // no error is possible and we'll arbitrarily limit to 1.0E8.
+    // This change made to resolve TR# 271876.   RayBentley   04/28/2009.
+
+    static double s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
+    static double s_maxTransformRowRatio  = 1.0E5;
+
+    double minXYComponent = std::min(fabs(zVec.x), fabs(zVec.y));
+    double maxDepthRatio =(0.0 == minXYComponent) ? s_depthRatioLimit : std::min((s_maxTransformRowRatio / minXYComponent), s_depthRatioLimit);
+
+    return  std::max(delta.x, delta.y) * maxDepthRatio;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Ensure the focus plane lies between the front and back planes. If not, center it.
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition3d::VerifyFocusPlane()
+    {
+    if (!IsCameraOn())
+        return;
+
+    DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_cameraDef.GetEyePoint());
+    m_rotation.Multiply(eyeOrg);
+
+    double backDist = eyeOrg.z;
+    double frontDist = backDist - m_extents.z;
+
+    if (backDist<=0.0 || frontDist<=0.0)
+        {
+        // the camera location is invalid. Set it based on the view range.
+        double tanangle = tan(m_cameraDef.GetLensAngle().Radians()/2.0);
+        backDist = m_extents.z / tanangle;
+        m_cameraDef.SetFocusDistance(backDist/2);
+        CenterEyePoint(&backDist);
+        return;
+        }
+
+    double focusDist = m_cameraDef.GetFocusDistance();
+    if (focusDist>frontDist && focusDist<backDist)
+        return;
+
+    // put it halfway between front and back planes
+    m_cameraDef.SetFocusDistance((m_extents.z / 2.0) + frontDist);
+
+    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewDefinition.h)
+    double ratio = m_cameraDef.GetFocusDistance() / focusDist;
+    m_extents.x *= ratio;
+    m_extents.y *= ratio;
+
+    DVec3d xVec, yVec, zVec;
+    m_rotation.GetRows(xVec, yVec, zVec);
+    m_origin.SumOf(m_cameraDef.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_extents.x, yVec, -0.5*m_extents.y); // this centers the camera too
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* See diagram in ViewDefinition.h
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+                                        DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
+    {
+    DVec3d yVec = upVec;
+    if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?
+        return ViewportStatus::InvalidUpVector;
+
+    DVec3d zVec; // z defined by direction from eye to target
+    zVec.DifferenceOf(eyePoint, targetPoint);
+
+    double focusDist = zVec.Normalize(); // set focus at target point
+    if (focusDist <= MinimumFrontDistance())      // eye and target are too close together
+        return ViewportStatus::InvalidTargetPoint;
+
+    DVec3d xVec; // x is the normal to the Up-Z plane
+    if (xVec.NormalizedCrossProduct(yVec, zVec) <= mgds_fc_epsilon)
+        return ViewportStatus::InvalidUpVector;    // up is parallel to z
+
+    if (yVec.NormalizedCrossProduct(zVec, xVec) <= mgds_fc_epsilon) // make sure up vector is perpendicular to z vector
+        return ViewportStatus::InvalidUpVector;
+
+    // we now have rows of the rotation matrix
+    RotMatrix rotation = RotMatrix::FromRowVectors(xVec, yVec, zVec);
+
+    double backDist  = backDistIn  ? *backDistIn  : GetBackDistance();
+    double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
+    DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
+
+    frontDist = std::max(frontDist, (.5 *DgnUnits::OneMeter())); 
+    backDist  = std::max(backDist, focusDist+(.5*DgnUnits::OneMeter()));
+
+    if (backDist < focusDist) // make sure focus distance is in front of back distance.
+        backDist = focusDist + DgnUnits::OneMillimeter();
+
+    if (frontDist > focusDist)
+        frontDist = focusDist - MinimumFrontDistance();
+
+    if (frontDist < MinimumFrontDistance())
+        frontDist = MinimumFrontDistance();
+         
+    BeAssert(backDist > frontDist);
+    delta.z =(backDist - frontDist);
+
+    DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
+    ViewportStatus stat = ValidateViewDelta(frontDelta, false); // validate window size on front (smallest) plane
+    if (ViewportStatus::Success != stat)
+        return  stat;
+
+    if (delta.z > CalculateMaxDepth(delta, zVec)) // make sure we're not zoomed out too far
+        return ViewportStatus::MaxDisplayDepth;
+
+    // The origin is defined as the lower left of the view rectangle on the focus plane, projected to the back plane.
+    // Start at eye point, and move to center of back plane, then move left half of width. and down half of height
+    DPoint3d origin = DPoint3d::FromSumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
+
+    SetEyePoint(eyePoint);
+    SetRotation(rotation);
+    SetFocusDistance(focusDist);
+    SetOrigin(origin);
+    SetExtents(delta);
+    SetLensAngle(CalcLensAngle());
+    _EnableCamera();
+
+    return ViewportStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+                                                  Angle lens, double const* frontDist, double const* backDist)
+    {
+    DVec3d zVec; // z defined by direction from eye to target
+    zVec.DifferenceOf(eyePoint, targetPoint);
+
+    double focusDist = zVec.Normalize();  // set focus at target point
+    if (focusDist <= DgnUnits::OneMillimeter())       // eye and target are too close together
+        return ViewportStatus::InvalidTargetPoint;
+
+    if (lens.Radians() < .0001 || lens > Angle::AnglePi())
+        return ViewportStatus::InvalidLens;
+
+    double extent = 2.0 * tan(lens.Radians()/2.0) * focusDist;
+
+    DVec2d delta  = DVec2d::From(GetExtents().x, GetExtents().y);
+    double longAxis = std::max(delta.x, delta.y);
+    delta.Scale(extent/longAxis);
+
+    return LookAt(eyePoint, targetPoint, upVec, &delta, frontDist, backDist);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::MoveCameraWorld(DVec3dCR distance)
+    {
+    if (!IsCameraOn())
+        {
+        m_origin.SumOf(m_origin, distance);
+        return ViewportStatus::Success;
+        }
+
+    DPoint3d newTarget, newEyePt;
+    newTarget.SumOf(GetTargetPoint(), distance);
+    newEyePt.SumOf(GetEyePoint(), distance);
+    return LookAt(newEyePt, newTarget, GetYVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::MoveCameraLocal(DVec3dCR distanceLocal)
+    {
+    DVec3d distWorld = distanceLocal;
+    GetRotation().MultiplyTranspose(distWorld);
+    return MoveCameraWorld(distWorld);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+    {
+    DPoint3d about = aboutPointIn ? *aboutPointIn : GetEyePoint();
+    RotMatrix rotation = RotMatrix::FromVectorAndRotationAngle(axis, radAngle);
+    Transform trans    = Transform::FromMatrixAndFixedPoint(rotation, about);
+
+    DPoint3d newTarget = GetTargetPoint();
+    trans.Multiply(newTarget);
+    DVec3d upVec = GetYVector();
+    rotation.Multiply(upVec);
+
+    return LookAt(GetEyePoint(), newTarget, upVec);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewportStatus ViewDefinition3d::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+    {
+    DVec3d axisWorld = axis;
+    GetRotation().MultiplyTranspose(axisWorld);
+    return RotateCameraWorld(radAngle, axisWorld, aboutPointIn);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* See diagram in ViewDefinition.h
+* @bsimethod                                    Keith.Bentley                   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewDefinition3d::GetBackDistance() const
+    {
+    // backDist is the z component of the vector from the eyePoint to the origin.
+    DPoint3d eyeOrg;
+    eyeOrg.DifferenceOf(GetEyePoint(), GetOrigin());
+    GetRotation().Multiply(eyeOrg); // orient to view
+    return eyeOrg.z;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d ViewDefinition::GetCenter() const
+    {
+    DPoint3d delta;
+    GetRotation().MultiplyTranspose(delta, GetExtents());
+
+    DPoint3d center;
+    center.SumOf(GetOrigin(), delta, 0.5);
+    return  center;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d ViewDefinition3d::_GetTargetPoint() const
+    {
+    if (!IsCameraOn())
+        return T_Super::_GetTargetPoint();
+
+    DVec3d viewZ;
+    GetRotation().GetRow(viewZ, 2);
+    DPoint3d target;
+    target.SumOf(GetEyePoint(), viewZ, -1.0 * GetFocusDistance());
+    return  target;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::AdjustAspectRatio(double windowAspect)
+    {
+    DVec3d extents = GetExtents();
+    double viewAspect = extents.x / extents.y;
+
+    auto drawingView = _ToDrawingView();
+    if (nullptr != drawingView)
+        windowAspect *= drawingView->GetAspectRatioSkew();
+
+    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
+        return;
+    
+    DVec3d oldDelta = extents;
+    if (viewAspect > windowAspect)
+        extents.y = extents.x / windowAspect;
+    else
+        extents.x = extents.y * windowAspect;
+
+    DPoint3d origin = GetOrigin();
+    DPoint3d newOrigin;
+    GetRotation().Multiply(&newOrigin, &origin, 1);
+    newOrigin.x += ((oldDelta.x - extents.x) / 2.0);
+    newOrigin.y += ((oldDelta.y - extents.y) / 2.0);
+    GetRotation().MultiplyTranspose(origin, newOrigin);
+    SetOrigin(origin);
+    SetExtents(extents);
+    }
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace ViewElementHandler
@@ -1250,6 +1784,23 @@ namespace ViewElementHandler
 void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, str_IsPrivate(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
+            value.SetBoolean(viewDef.IsPrivate());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBoolean())
+                return DgnDbStatus::BadArg;
+
+            ViewDefinitionR viewDef = (ViewDefinitionR)el;
+            viewDef.SetIsPrivate(value.GetBoolean());
+            return DgnDbStatus::Success;
+            });
 
     params.RegisterPropertyAccessors(layout, str_DisplayStyle(), 
         [](ECValueR value, DgnElementCR el)
@@ -1269,7 +1820,20 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
                 return DgnDbStatus::BadArg;
 
             ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            viewDef.SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+            auto view3d = viewDef.ToView3dP();
+            if (view3d)
+                {
+                auto style3d = style->ToDisplayStyle3d();
+                if (nullptr == style3d)
+                    return DgnDbStatus::BadArg;
+                view3d->SetDisplayStyle3d(*style3d->MakeCopy<Dgn::DisplayStyle3d>());
+                }
+            else
+                {
+                auto view2d = viewDef.ToView2dP();
+                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                }
+
             return DgnDbStatus::Success;
             });
 
@@ -1309,6 +1873,14 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
     #define SET_POINT(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; EXPR; return DgnDbStatus::Success;
     #define SET_DOUBLE(EXPR) ViewDefinition3d& viewDef = (ViewDefinition3d&)el; YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, viewDef.GetRotation()); EXPR; viewDef.SetRotation(angles.ToRotMatrix()); return DgnDbStatus::Success;
 
+    #define VALIDATE_POINT3d_VALUE(VALUE) if (VALUE.IsNull() || !VALUE.IsPoint3d()) return DgnDbStatus::BadArg;
+    #define TO_DOUBLE(VALUE,VALUEIN)                                                    \
+            if (VALUEIN.IsNull() || VALUEIN.IsBoolean() || !VALUEIN.IsPrimitive())      \
+                return DgnDbStatus::BadArg;                                             \
+            ECN::ECValue VALUE(VALUEIN);                                                \
+            if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
+                return DgnDbStatus::BadArg;
+
     params.RegisterPropertyAccessors(layout, str_Origin(), 
         [](ECValueR value, DgnElementCR el)
             {
@@ -1316,6 +1888,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT3d_VALUE(value);
             SET_POINT(viewDef.SetOrigin(value.GetPoint3d()));
             });
 
@@ -1326,6 +1899,7 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT3d_VALUE(value);
             SET_POINT(viewDef.SetExtents(DVec3d::From(value.GetPoint3d())));
             });
 
@@ -1334,8 +1908,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetYaw().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetYaw(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
@@ -1344,8 +1919,9 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetPitch().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetPitch(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
 
@@ -1354,10 +1930,71 @@ void View3d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             {
             GET_DOUBLE(angles.GetRoll().Degrees());
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
+            TO_DOUBLE(value, valueIn);
             SET_DOUBLE(angles.SetRoll(AngleInDegrees::FromDegrees(value.GetDouble())));
             });
+
+    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetPoint3d(viewDef.GetEyePoint());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            VALIDATE_POINT3d_VALUE(value);
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetEyePoint(value.GetPoint3d());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetDouble(viewDef.GetLensAngle().Radians());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR valueIn)
+            {
+            TO_DOUBLE(value, valueIn);
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetLensAngle(Angle::FromRadians(value.GetDouble()));
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetDouble(viewDef.GetFocusDistance());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR valueIn)
+            {
+            TO_DOUBLE(value, valueIn);
+            ViewDefinition3dR viewDef = (ViewDefinition3dR)el;
+            viewDef.SetFocusDistance(value.GetDouble());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            ViewDefinition3dCR viewDef = (ViewDefinition3dCR)el;
+            value.SetBoolean(viewDef.IsCameraOn());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            return DgnDbStatus::ReadOnly;
+            });
+
+#undef TO_DOUBLE
+#undef VALIDATE_POINT3d_VALUE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1369,6 +2006,14 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
 
     #define GET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; value.SetPoint2d(EXPR); return DgnDbStatus::Success;
     #define SET_POINT2d(EXPR) ViewDefinition2d& viewDef = (ViewDefinition2d&)el; EXPR; return DgnDbStatus::Success;
+
+    #define VALIDATE_POINT2d_VALUE(VALUE) if (VALUE.IsNull() || !VALUE.IsPoint2d()) return DgnDbStatus::BadArg;
+    #define TO_DOUBLE(VALUE,VALUEIN)                                                    \
+            if (VALUEIN.IsNull() || VALUEIN.IsBoolean() || !VALUEIN.IsPrimitive())      \
+                return DgnDbStatus::BadArg;                                             \
+            ECN::ECValue VALUE(VALUEIN);                                                \
+            if (!VALUE.ConvertToPrimitiveType(ECN::PRIMITIVETYPE_Double))               \
+                return DgnDbStatus::BadArg;
 
     params.RegisterPropertyAccessors(layout, str_BaseModel(), 
         [](ECValueR value, DgnElementCR el)
@@ -1391,14 +2036,12 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
         [](ECValueR value, DgnElementCR el)
             {
             ViewDefinition2dCR viewDef = (ViewDefinition2dCR)el;
-            value.SetLong(Angle::FromRadians(viewDef.GetRotAngle()).Degrees());
+            value.SetDouble(Angle::FromRadians(viewDef.GetRotAngle()).Degrees());
             return DgnDbStatus::Success;
             },
-        [](DgnElementR el, ECValueCR value)
+        [](DgnElementR el, ECValueCR valueIn)
             {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
+            TO_DOUBLE(value, valueIn);
             ViewDefinition2d& viewDef = (ViewDefinition2d&)el;
             viewDef.SetRotAngle(Angle::FromDegrees(value.GetDouble()).Radians());
             return DgnDbStatus::Success;
@@ -1411,6 +2054,7 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT2d_VALUE(value);
             SET_POINT2d(viewDef.SetOrigin2d(value.GetPoint2d()));
             });
 
@@ -1421,8 +2065,12 @@ void View2d::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR la
             },
         [](DgnElementR el, ECValueCR value)
             {
+            VALIDATE_POINT2d_VALUE(value);
             SET_POINT2d(viewDef.SetDelta2d(DVec2d::From(value.GetPoint2d())));
             });
+
+#undef TO_DOUBLE
+#undef VALIDATE_POINT2d_VALUE
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1454,86 +2102,139 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
             });
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CameraView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
+}
+
+static DgnHost::Key s_displayMetricsRecorderKey;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+IDisplayMetricsRecorder* IDisplayMetricsRecorder::GetRecorder()
     {
-    T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_EyePoint(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetPoint3d(viewDef.GetEyePoint());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsPoint3d())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetEyePoint(value.GetPoint3d());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_LensAngle(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetLong(viewDef.GetLensAngle());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetLensAngle(value.GetDouble());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_FocusDistance(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetDouble(viewDef.GetFocusDistance());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsDouble())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetFocusDistance(value.GetDouble());
-            return DgnDbStatus::Success;
-            });
-
-    params.RegisterPropertyAccessors(layout, str_IsCameraOn(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            CameraViewDefinitionCR viewDef = (CameraViewDefinitionCR)el;
-            value.SetBoolean(viewDef.IsCameraOn());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsBoolean())
-                return DgnDbStatus::BadArg;
-
-            CameraViewDefinitionR viewDef = (CameraViewDefinitionR)el;
-            viewDef.SetCameraOn(value.GetBoolean());
-            return DgnDbStatus::Success;
-            });
+    // This is normally NULL. It is only used when playing back a DisplayBenchmark
+    return static_cast<IDisplayMetricsRecorder*> (T_HOST.GetHostObject (s_displayMetricsRecorderKey));
     }
 
-}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void IDisplayMetricsRecorder::SetRecorder(IDisplayMetricsRecorder*recorder)
+    {
+    //  This should happen 0 or 1 times.
+    BeAssert(GetRecorder() == nullptr);
+
+    T_HOST.SetHostObject (s_displayMetricsRecorderKey, recorder);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+bool IDisplayMetricsRecorder::IsRecorderActive()
+    {
+    IDisplayMetricsRecorder*recorder = GetRecorder();
+    return recorder ? recorder->_IsActive() : false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsRecorder::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
+    {
+    if (!IDisplayMetricsRecorder::IsRecorderActive())
+        return;
+
+    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    Json::Value measurement(Json::objectValue);
+    measurement["seconds"] = seconds;
+    measurement["count"] = queryResults.GetCount();
+    if (queryResults.m_incomplete)
+        measurement["incomplete"] = 1;
+        
+    recorder->_RecordMeasurement("QuerySceneFinished", measurement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    01/2017
+//---------------------------------------------------------------------------------------
+void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
+    {
+    if (!IDisplayMetricsRecorder::IsRecorderActive())
+        return;
+
+    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    Json::Value measurement(Json::objectValue);
+    measurement["seconds"] = seconds;
+    if (aborted)
+        measurement["aborted"] = 1;
+    if (!complete)
+        measurement["incomplete"] = 1;
+        
+    recorder->_RecordMeasurement("CreateSceneComplete", measurement);
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr;}
-CameraViewControllerPtr CameraViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToCameraViewP() : nullptr;}
 DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr;}
 Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {auto vc = T_Super::LoadViewController(o); return vc.IsValid() ? vc->ToSheetViewP() : nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
+    {
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
+    if (!classId.IsValid())
+        return nullptr;
+
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
+    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
+
+    TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, classId, CreateCode(db, name), *categorySelector));
+    viewDef->SetDisplayStyle(*displayStyle);
+
+    if (nullptr == categorySelectorIn)
+        {
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+            viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+        }
+
+    return viewDef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TemplateViewDefinition3dPtr TemplateViewDefinition3d::Create(DgnDbR db, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle3dP displayStyleIn)
+    {
+    DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView3d::GetHandler());
+    if (!classId.IsValid())
+        return nullptr;
+
+    CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
+    DisplayStyle3dP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle3d(db, "");
+
+    TemplateViewDefinition3dPtr viewDef = new TemplateViewDefinition3d(CreateParams(db, classId, CreateCode(db, name), *categorySelector, *displayStyle));
+    if (nullptr == categorySelectorIn)
+        {
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+            viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+        }
+
+    return viewDef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr TemplateViewDefinition2d::_SupplyController() const
+    {
+    return new TemplateViewController2d(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr TemplateViewDefinition3d::_SupplyController() const
+    {
+    return new TemplateViewController3d(*this);
+    }

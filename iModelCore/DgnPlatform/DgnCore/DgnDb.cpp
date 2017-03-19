@@ -9,6 +9,10 @@
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
 
+#ifndef NDEBUG
+#define CHECK_NON_NAVIGATION_PROPERTY_API
+#endif
+
 static WCharCP s_dgndbExt   = L".bim";
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,13 +43,13 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
-                 m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
+DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
+                 m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
-    ApplyECDbSettings(false /* requireECCrudWriteToken */, false /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
+    ApplyECDbSettings(false /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
 //--------------------------------------------------------------------------------------
@@ -58,7 +62,7 @@ ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettin
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSchemaImportToken const* DgnDb::GetECSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
+ECSchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -74,7 +78,6 @@ extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_sessionManager.ClearCurrent();
     m_sceneQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
@@ -112,38 +115,11 @@ void DgnDb::_OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult checkIsConvertibleVersion(Db& db)
-    {
-    Utf8String versionString;
-    DbResult rc = db.QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
-    if (BE_SQLITE_ROW != rc)
-        return BE_SQLITE_ERROR_InvalidProfileVersion;
-
-    SchemaVersion sver(0,0,0,0);
-    sver.FromJson(versionString.c_str());
-    if (sver.GetMajor() < DGNDB_CURRENT_VERSION_Major)
-        return BE_SQLITE_ERROR_ProfileTooOld;
-
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::_OnDbOpened()
     {
-    DbResult rc = checkIsConvertibleVersion(*this);
-    if (BE_SQLITE_OK != rc)
-        {
-        // Short-circuit this function if the Db is too old or new such that we cannot continue;
-        //  The caller does the version check/upgrade after this _OnDbOpened logic finishes. 
-        //  If we have missing tables and columns, however, then we cannot even execute this _OnDbOpened logic.
-        //  *** NEEDS WORK: Do we need some kind of "pre" version upgrade?
-        //  In any case, we don't intend to upgrade from 05 to 06, so it's a moot point for now.
-        return rc;
-        }
+    DbResult rc;
 
     if (BE_SQLITE_OK != (rc = T_Super::_OnDbOpened()))
         return rc;
@@ -214,12 +190,43 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
     return m_ecsqlCache.GetPreparedStatement(*this, ecsql, writeToken);
     }
 
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      03/17
+//--------------+---------------+---------------+---------------+---------------+------
+bool isNavigationPropertyOf(ECN::ECRelationshipClassCR relClass, DgnDbR db, BeSQLite::EC::ECInstanceId instid)
+    {
+    auto el = db.Elements().GetElement(DgnElementId(instid.GetValue()));
+    if (!el.IsValid())
+        return false;
+    auto eclass = el->GetElementClass();
+    for (auto ecprop : eclass->GetProperties())
+        {
+        auto navprop = ecprop->GetAsNavigationProperty();
+        if (navprop != nullptr)
+            {
+            if (navprop->GetRelationshipClass() == &relClass)
+                return true;
+            }
+        }
+    return false;
+    }
+#endif
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
+#ifdef CHECK_NON_NAVIGATION_PROPERTY_API
+    if (isNavigationPropertyOf(relClass, *this, sourceId) || isNavigationPropertyOf(relClass, *this, targetId))
+        {
+        BeAssert(false && "this API is for non-navigation properties only");
+        return BE_SQLITE_ERROR;
+        }
+#endif
+
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, relClass, GetECCrudWriteToken());
     if (!inserter.IsValid())
@@ -231,7 +238,7 @@ DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::E
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::UpdateECRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -248,7 +255,7 @@ DbResult DgnDb::UpdateECRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IEC
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/16
 //--------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
+DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
     {
     auto eclass = Schemas().GetECClass(key.GetECClassId());
     if (nullptr == eclass)
@@ -268,7 +275,7 @@ DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
+DbResult DgnDb::DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, ECInstanceId sourceId, ECInstanceId targetId)
     {
     if (!sourceId.IsValid() && !targetId.IsValid())
         {
@@ -620,18 +627,6 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a " BIS_CLASS_DictionaryModel);
     return *dict;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionModelPtr DgnDb::GetSessionModel()
-    {
-    DefinitionPartitionCPtr partition = Elements().Get<DefinitionPartition>(Elements().GetSessionPartitionId());
-    BeAssert(partition.IsValid() && "A DgnDb always has a sessions partition");
-    SessionModelPtr model = Models().Get<SessionModel>(partition->GetSubModelId());
-    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_SessionModel);
-    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**

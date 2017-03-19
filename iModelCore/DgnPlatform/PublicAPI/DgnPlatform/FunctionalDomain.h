@@ -63,12 +63,12 @@ struct FunctionalDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(FunctionalDomain, DGNPLATFORM_EXPORT)
 
+private:
+    WCharCP _GetSchemaRelativePath() const override { return FUNCTIONAL_DOMAIN_ECSCHEMA_PATH; }
+
 public:
     FunctionalDomain();
     ~FunctionalDomain();
-    
-    //! Import the ECSchema for the FunctionalDomain into the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 };
 
 //=======================================================================================
@@ -136,10 +136,10 @@ public:
     //! Set the FunctionalType for this FunctionalElement
     //! @param[in] functionalTypeId The DgnElementId of the FunctionalType to be associated with this FunctionalElement
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of FunctionalElementIsOfType
-    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("FunctionalType", functionalTypeId, relClassId);}
+    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("TypeDefinition", functionalTypeId, relClassId);}
     //! Get the DgnElementId of the FunctionalType for this FunctionalElement
     //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
-    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("FunctionalType");}
+    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("TypeDefinition");}
     //! Get the FunctionalType for this FunctionalElement
     //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
     DGNPLATFORM_EXPORT FunctionalTypeCPtr GetFunctionalType() const;

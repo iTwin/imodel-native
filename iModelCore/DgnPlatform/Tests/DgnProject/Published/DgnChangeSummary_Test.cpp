@@ -8,7 +8,7 @@
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnChangeSummary.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -67,7 +67,7 @@ void DgnChangeSummaryTestFixture::SetUpTestCase()
     ScopedDgnHost tempHost;
 
     //  Request a root seed file.
-    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(false, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(true, true));
 
     //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
     //  Note that we must put our group seed file in a group-specific sub-directory
@@ -76,23 +76,19 @@ void DgnChangeSummaryTestFixture::SetUpTestCase()
 
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, DgnChangeSummaryTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
-    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
     TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
     ASSERT_TRUE(m_defaultCodeSpecId.IsValid());
 
+    CreateDefaultView(*db);
+    DgnDbTestUtils::UpdateProjectExtents(*db);
     db->SaveChanges();
+
     // Create a dummy revision to purge transaction table for the test
     DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
     db->Revisions().FinishCreateRevision();
-
-    db->SaveChanges();
-
-    CreateDefaultView(*db);
-    DgnDbTestUtils::UpdateProjectExtents(*db);
-    db->SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,7 +315,7 @@ void DgnChangeSummaryTestFixture::CompareSessions(DgnChangeSummaryTestFixture::C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
+TEST_F(DgnChangeSummaryTestFixture, DISABLED_CreateSampleDataSet)
     {
     SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"CreateSampleDataSet.bim");
     CreateSampleBuilding();
@@ -330,7 +326,7 @@ TEST_F(DgnChangeSummaryTestFixture, CreateSampleDataSet)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
+TEST_F(DgnChangeSummaryTestFixture, DISABLED_ValidateChangeSummaries)
     {
     SetupDgnDb(DgnChangeSummaryTestFixture::s_seedFileInfo.fileName, L"ValidateChangeSummaries.bim");
     BeFileName fullFileName = BeFileName(m_db->GetDbFileName(), true);
@@ -340,31 +336,31 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
 
     /*
     Dump of TxnTable -
-    (Session 2) 8589934592	False	False	Inserted floor 0	2015-09-09 18:33:21.923	[BLOB_DATA]
-    (Session 3) 12884901888	False	False	Inserted floor 1	2015-09-09 18:33:22.173	[BLOB_DATA]
-    (Session 4) 17179869184	False	False	Inserted floor 2	2015-09-09 18:33:22.407	[BLOB_DATA]
-    (Session 5) 21474836480	False	False	Inserted floor 3	2015-09-09 18:33:22.640	[BLOB_DATA]
-    (Session 6) 25769803776	False	False	Inserted floor 4	2015-09-09 18:33:22.859	[BLOB_DATA]
-    (Session 7) 30064771072	False	False	Updated geometry of floor 1	2015-09-09 18:33:23.078	[BLOB_DATA]
-    (Session 8) 34359738368	False	False	Deleted floor 3	2015-09-09 18:33:23.250	[BLOB_DATA]
-    (Session 9) 38654705664	False	False	Inserted floor 5	2015-09-09 18:33:23.545	[BLOB_DATA]
+    (Session 1) 4294967296	4294967296	False	False	Inserted floor 0	False	2017-03-10 14:54:33.026	[BLOB_DATA]
+    (Session 2) 8589934592	8589934592	False	False	Inserted floor 1	False	2017-03-10 14:54:33.666	[BLOB_DATA]
+    (Session 3) 12884901888	12884901888	False	False	Inserted floor 2	False	2017-03-10 14:54:34.350	[BLOB_DATA]
+    (Session 4) 17179869184	17179869184	False	False	Inserted floor 3	False	2017-03-10 14:54:34.930	[BLOB_DATA]
+    (Session 5) 21474836480	21474836480	False	False	Inserted floor 4	False	2017-03-10 14:54:35.524	[BLOB_DATA]
+    (Session 6) 25769803776	25769803776	False	False	Updated geometry of floor 1	False	2017-03-10 14:54:36.168	[BLOB_DATA]
+    (Session 7) 30064771072	30064771072	False	False	Deleted floor 3	False	2017-03-10 14:54:36.756	[BLOB_DATA]
+    (Session 8) 34359738368	34359738368	False	False	Inserted floor 5	False	2017-03-10 14:54:37.349	[BLOB_DATA]
     */
 
     DgnChangeSummaryTestFixture::ChangedElements changedElements;
     
-    CompareSessions(changedElements, 2, 6);
+    CompareSessions(changedElements, 1, 5);
     EXPECT_EQ(changedElements.m_inserts.size(), 16);
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 20);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
-    CompareSessions(changedElements, 7, 7);
+    CompareSessions(changedElements, 6, 6);
     EXPECT_EQ(changedElements.m_inserts.size(), 4);// TODO: Updates due to LastMod change. Needs a fix. 
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0); 
 
-    CompareSessions(changedElements, 8, 8);
+    CompareSessions(changedElements, 7, 7);
     EXPECT_EQ(changedElements.m_inserts.size(), 4);
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);

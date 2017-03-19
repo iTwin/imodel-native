@@ -271,12 +271,10 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
-    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain());
-    DgnDomains::RegisterDomain(GenericDomain::GetDomain());
+    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     _SupplyProductName(m_productName);
-
-    m_acsManager = new IACSManager();
 
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
@@ -296,7 +294,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
         }
 
     ON_HOST_TERMINATE(m_txnAdmin, onProgramExit);
-    ON_HOST_TERMINATE(m_acsManager, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
         ON_HOST_TERMINATE(obj.m_val, onProgramExit);
@@ -316,13 +313,13 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_notificationAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
-    BeAssert(NULL == m_acsManager);
     BeAssert(NULL == m_formatterAdmin);
     BeAssert(NULL == m_scriptingAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
     BeAssert(NULL == m_codeAdmin);
+    BeAssert(NULL == m_sessionSettingsAdmin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -368,6 +365,7 @@ DgnPlatformLib::Host::FormatterAdmin&       DgnPlatformLib::Host::_SupplyFormatt
 DgnPlatformLib::Host::ScriptAdmin&          DgnPlatformLib::Host::_SupplyScriptingAdmin()       {return *new ScriptAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
 DgnPlatformLib::Host::CodeAdmin&            DgnPlatformLib::Host::_SupplyCodeAdmin()            {return *new CodeAdmin();}
+DgnPlatformLib::Host::SessionSettingsAdmin& DgnPlatformLib::Host::_SupplySessionSettingsAdmin() {return *new SessionSettingsAdmin();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      10/2014

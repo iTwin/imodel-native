@@ -17,18 +17,20 @@ DOMAIN_DEFINE_MEMBERS(GenericDomain)
 
 namespace generic_ModelHandler
     {
-    HANDLER_DEFINE_MEMBERS(GenericGroupModelHandler)
+    HANDLER_DEFINE_MEMBERS(GroupModel)
     };
 
 namespace generic_ElementHandler
     {
-    HANDLER_DEFINE_MEMBERS(GenericGroupHandler)
-    HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
-    HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
-    HANDLER_DEFINE_MEMBERS(GenericGraphic3dHandler)
-    HANDLER_DEFINE_MEMBERS(GenericDetailingSymbolHandler)
-    HANDLER_DEFINE_MEMBERS(GenericCalloutHandler)
-    HANDLER_DEFINE_MEMBERS(GenericViewAttachmentLabelHandler)
+    HANDLER_DEFINE_MEMBERS(Group)
+    HANDLER_DEFINE_MEMBERS(SpatialLocation)
+    HANDLER_DEFINE_MEMBERS(PhysicalObject)
+    HANDLER_DEFINE_MEMBERS(PhysicalType)
+    HANDLER_DEFINE_MEMBERS(GraphicalType2d)
+    HANDLER_DEFINE_MEMBERS(Graphic3d)
+    HANDLER_DEFINE_MEMBERS(DetailingSymbol)
+    HANDLER_DEFINE_MEMBERS(Callout)
+    HANDLER_DEFINE_MEMBERS(ViewAttachmentLabel)
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -38,14 +40,16 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain", 1) 
     {
-    RegisterHandler(generic_ModelHandler::GenericGroupModelHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericGroupHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericGraphic3dHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericDetailingSymbolHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericCalloutHandler::GetHandler());
-    RegisterHandler(generic_ElementHandler::GenericViewAttachmentLabelHandler::GetHandler());
+    RegisterHandler(generic_ModelHandler::GroupModel::GetHandler());
+    RegisterHandler(generic_ElementHandler::Group::GetHandler());
+    RegisterHandler(generic_ElementHandler::SpatialLocation::GetHandler());
+    RegisterHandler(generic_ElementHandler::PhysicalObject::GetHandler());
+    RegisterHandler(generic_ElementHandler::PhysicalType::GetHandler());
+    RegisterHandler(generic_ElementHandler::GraphicalType2d::GetHandler());
+    RegisterHandler(generic_ElementHandler::Graphic3d::GetHandler());
+    RegisterHandler(generic_ElementHandler::DetailingSymbol::GetHandler());
+    RegisterHandler(generic_ElementHandler::Callout::GetHandler());
+    RegisterHandler(generic_ElementHandler::ViewAttachmentLabel::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -53,21 +57,6 @@ GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain"
 //---------------------------------------------------------------------------------------
 GenericDomain::~GenericDomain()
     {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    genericDomainSchemaFile.AppendToPath(GENERIC_DOMAIN_ECSCHEMA_PATH);
-    BeAssert(genericDomainSchemaFile.DoesPathExist());
-
-    DgnDomainR genericDomain = GenericDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = genericDomain.ImportSchema(db, genericDomainSchemaFile);
-    BeAssert(DgnDbStatus::Success == importSchemaStatus);
-    return importSchemaStatus;
     }
 
 //---------------------------------------------------------------------------------------
@@ -95,7 +84,7 @@ void GenericDomain::_OnSchemaImported(DgnDbR db) const
 //---------------------------------------------------------------------------------------
 GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
-    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
 
     if (!classId.IsValid() || !categoryId.IsValid())
         {
@@ -111,7 +100,7 @@ GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, Dgn
 //---------------------------------------------------------------------------------------
 GenericSpatialLocationPtr GenericSpatialLocation::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
-    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::SpatialLocation::GetHandler());
 
     if (!classId.IsValid() || !categoryId.IsValid())
         {
@@ -129,7 +118,7 @@ GenericGroupPtr GenericGroup::Create(GenericGroupModelR model, DgnCodeCR code)
     {
     DgnDbR db = model.GetDgnDb();
     DgnModelId modelId = model.GetModelId();
-    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericGroupHandler::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::Group::GetHandler());
 
     if (!classId.IsValid())
         return nullptr;
@@ -142,7 +131,7 @@ GenericGroupPtr GenericGroup::Create(GenericGroupModelR model, DgnCodeCR code)
 //---------------------------------------------------------------------------------------
 GenericGroupModelPtr GenericGroupModel::Create(DgnElementCR modeledElement)
     {
-    ModelHandlerR handler = generic_ModelHandler::GenericGroupModelHandler::GetHandler();
+    ModelHandlerR handler = generic_ModelHandler::GroupModel::GetHandler();
     DgnDbR db = modeledElement.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(handler);
     if (!classId.IsValid())
@@ -181,7 +170,7 @@ GenericGroupModelPtr GenericGroupModel::CreateAndInsert(DgnElementCR modeledElem
 //---------------------------------------------------------------------------------------
 DgnDbStatus GenericGroupModel::_OnInsertElement(DgnElementR element)
     {
-    if (nullptr != dynamic_cast<GenericGroupP>(&element))
+    if (nullptr != dynamic_cast<GroupInformationElementP>(&element))
         return T_Super::_OnInsertElement(element);
 
     BeAssert(false);
@@ -226,17 +215,22 @@ DgnElementId GenericViewAttachmentLabel::FindFromViewAttachment(DgnDbR db, DgnEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId GenericViewAttachmentLabel::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<DgnElementId> GenericViewAttachmentLabel::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
     auto findCallout = db.GetPreparedECSqlStatement(
         "SELECT callout.ECInstanceId FROM bis.ViewDefinition2d view2d, generic.Callout callout"
         " WHERE (callout.DrawingModel.Id = view2d.BaseModel.Id) AND (view2d.ECInstanceId = ?)");
-    findCallout->BindId(1, viewAttachment.GetAttachedViewId());
-    if (BE_SQLITE_ROW != findCallout->Step())
-        return DgnElementId();
 
-    return findCallout->GetValueId<DgnElementId>(0);
+    findCallout->BindId(1, viewAttachment.GetAttachedViewId());
+    
+    bvector<DgnElementId> callouts;
+    while (BE_SQLITE_ROW == findCallout->Step())
+        {
+        callouts.push_back(findCallout->GetValueId<DgnElementId>(0));
+        }
+
+    return callouts;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,8 +252,11 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
     // check that the reverse lookup works
     if (dest.m_viewAttachmentLabel.IsValid())
         {
-        auto loc = GenericCalloutLocation::FindCalloutFor(*dest.m_viewAttachmentLabel);
-        BeAssert(loc.GetCallout() == &callout);
+        auto locs = GenericCalloutLocation::FindCalloutsFor(*dest.m_viewAttachmentLabel);
+        bool foundThis = false;
+        for (auto const& loc : locs)
+            foundThis |= (loc.GetCallout() == &callout);
+        BeAssert(foundThis);
         }
 #endif
 
@@ -269,13 +266,41 @@ GenericCalloutDestination GenericCalloutDestination::FindDestinationOf(GenericCa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericCalloutLocation GenericCalloutLocation::FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment)
+bvector<GenericCalloutLocation> GenericCalloutLocation::FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment)
     {
     auto& db = viewAttachment.GetDgnDb();
-    GenericCalloutLocation loc;
-    loc.m_callout = db.Elements().Get<GenericCallout>(GenericViewAttachmentLabel::FindCalloutFor(viewAttachment));
-    if (!loc.m_callout.IsValid())
-        return loc;
-    loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
-    return loc;
+    bvector<GenericCalloutLocation> locs;
+    auto callouts = GenericViewAttachmentLabel::FindCalloutsFor(viewAttachment);
+    for (auto callout : callouts)
+        {
+        GenericCalloutLocation loc;
+        loc.m_callout = db.Elements().Get<GenericCallout>(callout);
+        if (!loc.m_callout.IsValid())
+            continue;
+        loc.m_sheetView = db.Elements().Get<SheetViewDefinition>(Sheet::Model::FindFirstViewOfSheet(db, loc.m_callout->GetModel()->GetModelId()));
+        locs.push_back(loc);
+        }
+    return locs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericPhysicalTypePtr GenericPhysicalType::Create(DefinitionModelR model, Utf8CP name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::PhysicalType::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new GenericPhysicalType(CreateParams(db, model.GetModelId(), classId, code));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GenericGraphicalType2dPtr GenericGraphicalType2d::Create(DefinitionModelR model, Utf8CP name)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GraphicalType2d::GetHandler());
+    DgnCode code = CreateCode(model, name);
+    return new GenericGraphicalType2d(CreateParams(db, model.GetModelId(), classId, code));
     }

@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #define RSC_STR(X) DgnCoreL10N::GetString(DgnCoreL10N::ECTYPEADAPTER_##X())
 
@@ -3132,7 +3132,7 @@ bool ECUnitsTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Colin.Kerr      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP kindOfQuantity)
+bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP& kindOfQuantity)
     {
     kindOfQuantity = ecProp->GetIsPrimitive() ? ecProp->GetAsPrimitiveProperty()->GetKindOfQuantity() : ecProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
     return nullptr != kindOfQuantity;

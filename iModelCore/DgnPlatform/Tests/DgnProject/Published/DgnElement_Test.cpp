@@ -509,7 +509,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     DgnModelId modelId = model->GetModelId();
     DgnCategoryId categoryId = GetDefaultCategoryId();
-    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     DgnElementId elementId;
 
     // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
@@ -1190,6 +1190,238 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
     EXPECT_EQ(DgnDbStatus::Success, Element->GetPropertyValue(checkValue, "ArrayOfString", PropertyArrayIndex(1)));
     EXPECT_STREQ("second", checkValue.ToString().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Caleb.Shafer      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
+    {
+    SetupSeedProject();
+    DgnElementId elementId;
+    uint32_t iArrayOfStructs;
+    ECN::ECValue checkValue;
+    ECN::IECInstancePtr checkInstance;
+    {
+    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+    TestElement el(params);
+
+    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfStructs, "ArrayOfStructs"));
+
+    // Set an array property
+    EXPECT_EQ(DgnDbStatus::Success, el.InsertPropertyArrayItems(iArrayOfStructs, 0, 4));
+
+    EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "ArrayOfStructs"));
+    EXPECT_TRUE(checkValue.IsArray());
+    EXPECT_EQ(4, checkValue.GetArrayInfo().GetCount());
+
+    for (int i = 0; i < 4; i++)
+        {
+        checkValue.Clear();
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(i)));
+        EXPECT_TRUE(checkValue.IsNull());
+        }
+
+    ECN::ECClassCP locationStruct = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
+    ASSERT_TRUE(nullptr != locationStruct);
+    ECN::StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
+    
+    ECN::IECInstancePtr extonLocInstance = locationEnabler->CreateInstance().get();
+    extonLocInstance->SetValue("Street", ECN::ECValue("690 Pennsylvania Drive"));
+    extonLocInstance->SetValue("City.Name", ECN::ECValue("Exton"));
+    extonLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    extonLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    extonLocInstance->SetValue("City.Zip", ECN::ECValue(19341));
+    
+    ECN::ECValue extonLocValue;
+    extonLocValue.SetStruct(extonLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", extonLocValue, PropertyArrayIndex(1)));
+
+    ECN::IECInstancePtr phillyLocInstance = locationEnabler->CreateInstance().get();
+    phillyLocInstance->SetValue("Street", ECN::ECValue("1601 Cherry Street"));
+    phillyLocInstance->SetValue("City.Name", ECN::ECValue("Philadelphia"));
+    phillyLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    phillyLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    phillyLocInstance->SetValue("City.Zip", ECN::ECValue(19102));
+
+    ECN::ECValue phillyLocValue;
+    phillyLocValue.SetStruct(phillyLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", phillyLocValue, PropertyArrayIndex(2)));
+
+    // Insert the element
+    DgnDbStatus stat;
+    DgnElementCPtr persistentEl = el.Insert(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    // Check that we see the stored value in memory 
+    checkValue.Clear();
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19341, checkValue.GetInteger());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_FALSE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    elementId = persistentEl->GetElementId();
+    m_db->SaveChanges();
+    }
+
+    // Before updatation of element check what stored in DB
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    TestElementPtr element = m_db->Elements().GetForEdit<TestElement>(elementId);
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Exton", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_TRUE(checkValue.IsStruct());
+    }
+    
+    {
+    // Get ready to modify the element
+    TestElementPtr editEl = m_db->Elements().GetForEdit<TestElement>(elementId);
+    ASSERT_TRUE(editEl.IsValid());
+    // initially we still see the initial/stored value
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("690 Pennsylvania Drive", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    // Remove array item from memory
+    EXPECT_EQ(DgnDbStatus::Success, editEl->RemovePropertyArrayItem(iArrayOfStructs, 1));
+    //Verfiy the array item is removed from memory by getting its value
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
+    EXPECT_TRUE(checkValue.IsNull());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
+    EXPECT_TRUE(checkValue.IsNull());
+    EXPECT_NE(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
+    
+    // Update the element
+    DgnDbStatus stat;
+    DgnElementCPtr updated_element=editEl->Update(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(updated_element.IsValid());
+    m_db->SaveChanges();
+    }
+
+    // REALLY check that the stored value was changed
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    TestElementCPtr Element = m_db->Elements().Get<TestElement>(elementId);
+    ASSERT_TRUE(Element.IsValid());
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, Element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
+    EXPECT_TRUE(checkValue.IsStruct());
+    checkInstance = nullptr;
+    checkInstance = checkValue.GetStruct();
+    checkInstance->GetValue(checkValue, "Street");
+    EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Name");
+    EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.State");
+    EXPECT_STREQ("PA", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Country");
+    EXPECT_STREQ("US", checkValue.GetUtf8CP());
+    checkInstance->GetValue(checkValue, "City.Zip");
+    EXPECT_EQ(19102, checkValue.GetInteger());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1704,6 +1936,7 @@ TEST_F(DgnElementTests, FederationGuid)
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        EXPECT_FALSE(element->GetPropertyValueGuid("FederationGuid").IsValid()) << "FederationGuid expected to be initialized as invalid";
         EXPECT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
         EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
@@ -1727,6 +1960,8 @@ TEST_F(DgnElementTests, FederationGuid)
         EXPECT_TRUE(element.IsValid());
         element->SetFederationGuid(federationGuid);
         EXPECT_TRUE(element->GetFederationGuid().IsValid()) << "FederationGuid should be valid after SetFederationGuid";
+        EXPECT_EQ(element->GetFederationGuid(), federationGuid);
+        EXPECT_EQ(element->GetPropertyValueGuid("FederationGuid"), federationGuid);
         EXPECT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
         EXPECT_EQ(elementId.GetValue(), m_db->Elements().QueryElementByFederationGuid(federationGuid)->GetElementId().GetValue()) << "Should be able to query for an element by its FederationGuid";
@@ -1836,10 +2071,10 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
         ASSERT_TRUE(element.IsValid());
-        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        element->SetPhysicalType(physicalTypeId[0], physicalTypeRelClassId);
-        ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
+        element->SetTypeDefinition(physicalTypeId[0], physicalTypeRelClassId);
+        ASSERT_TRUE(element->GetTypeDefinitionId().IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
@@ -1851,9 +2086,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
-        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), physicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1], physicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(physicalTypeId[1], physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1863,9 +2098,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
-        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), physicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId(), physicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(DgnElementId(), physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1875,7 +2110,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         }
     }
 
@@ -1941,10 +2176,10 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
         TestElement2dPtr element = TestElement2d::Create(GetDgnDb(), drawingModel->GetModelId(), categoryId, DgnCode(), 2.0);
         ASSERT_TRUE(element.IsValid());
-        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        element->SetGraphicalType(graphicalTypeId[0], graphicalTypeRelClassId);
-        ASSERT_TRUE(element->GetGraphicalTypeId().IsValid());
+        element->SetTypeDefinition(graphicalTypeId[0], graphicalTypeRelClassId);
+        ASSERT_TRUE(element->GetTypeDefinitionId().IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
         elementId = element->GetElementId();
@@ -1956,9 +2191,9 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
-        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[0].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), graphicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1], graphicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(graphicalTypeId[1], graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1968,9 +2203,9 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
-        ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[1].GetValue());
+        ASSERT_EQ(element->GetTypeDefinitionId().GetValue(), graphicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId(), graphicalTypeRelClassId));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetTypeDefinition(DgnElementId(), graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1980,7 +2215,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetTypeDefinitionId().IsValid());
         }
     }
 

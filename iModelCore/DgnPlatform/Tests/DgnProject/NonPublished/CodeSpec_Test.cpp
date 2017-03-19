@@ -73,15 +73,12 @@ static DgnDbPtr initDb(WCharCP fileName, Db::OpenMode mode = Db::OpenMode::ReadW
 * @bsimethod                                    Ridha.Malik                      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 //---------------------------------------------------------------------------------------
-static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMode::ReadWrite, bool importDummySchemaFirst = true)
+static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMode::ReadWrite)
     {
     DgnDbPtr db2;
     db2 = initDb(destName,mode,true);
     if (!db2.IsValid())
         return nullptr;
-    if (importDummySchemaFirst)
-        DgnPlatformTestDomain::ImportDummySchema(*db2);
-    DgnPlatformTestDomain::ImportSchema(*db2);
     return db2;
     }
 

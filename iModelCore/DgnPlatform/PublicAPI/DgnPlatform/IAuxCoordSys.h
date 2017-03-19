@@ -11,7 +11,6 @@
 
 #include "Render.h"
 #include "ValueFormat.h"
-#include "DgnCoreEvent.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -29,26 +28,6 @@ enum class ACSType
     Extended           = 4,
     };
 
-enum class ACSSaveOptions
-    {
-    OverwriteByElemId  = 0,        // overwrite only, preserving element ID.
-    OverwriteByName    = 1,        // overwrite only, preserving name.
-    AllowNew           = 2,        // allow to be saved as new if name doesn't match.
-    };
-
-enum class ACSEventType
-    {
-    None              = 0,
-    ParameterChanged  = (1 << 0), // An ACS nongeometry parameter changed (e.g. description).
-    GeometryChanged   = (1 << 1), // An ACS geometry parameter changed (e.g. origin).
-    ChangeWritten     = (1 << 2), // An ACS was written to the file.
-    NewACS            = (1 << 3), // The ACS written was new.
-    Delete            = (1 << 4), // the ACS was deleted from the file.
-    };
-
-ENUM_IS_FLAGS (ACSEventType)
-
-
 enum class ACSDisplayOptions
     {
     None            = 0,        // used for testing individual bits.
@@ -61,278 +40,193 @@ enum class ACSDisplayOptions
 
 ENUM_IS_FLAGS (ACSDisplayOptions)
 
-enum class ACSFlags
-    {
-    None    = 0, // Used for testing individual bits.
-    Default = 0,
-    };
-
-ENUM_IS_FLAGS (ACSFlags)
-
-typedef RefCountedPtr<IAuxCoordSys> IAuxCoordSysPtr;
-
-//! \ingroup auxCoords
-//__PUBLISH_SECTION_END__
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct     IAuxCoordSystemExtender
-{
-
-virtual uint32_t _GetExtenderId() const = 0;
-virtual IAuxCoordSysP _Deserialize(void *persistentData, uint32_t dataSize, DgnModelP modelRef) = 0;
-}; 
-
-//__PUBLISH_SECTION_START__
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct     IACSEvents
-{
-virtual void _OnACSEvent(IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef) = 0;
-
-}; // IACSEvents
+namespace ACSElementHandler {struct CoordSys2d; struct CoordSys3d;}
 
 //=======================================================================================
-//!
-//! Manager class to provide access to auxiliary coordinate systems.
-//! Auxiliary coordinate systems (ACS) are entities that can be created, edited, deleted, and
-//! activated under user control.
-//!
+// @bsiclass                                                    Brien.Bastings  02/17
 //=======================================================================================
-struct  IACSManager : DgnHost::IHostObject
+struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem : DefinitionElement
 {
-//__PUBLISH_SECTION_END__
-private:
+    DEFINE_T_SUPER(DefinitionElement);
 
-bool                                        m_inhibitCurrentACSDisplay;
-EventHandlerList<IAuxCoordSystemExtender>*  m_extenders;
-EventHandlerList<IACSEvents>*               m_listeners;
-
-public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-    IACSManager();
-    void SetInhibitCurrentACSDisplay(bool inhibit) {m_inhibitCurrentACSDisplay = inhibit;}
-    bool GetInhibitCurrentACSDisplay() {return m_inhibitCurrentACSDisplay;}
-
-DGNPLATFORM_EXPORT void AddExtender(IAuxCoordSystemExtender* extender);
-DGNPLATFORM_EXPORT void RemoveExtender(IAuxCoordSystemExtender* extender);
-DGNPLATFORM_EXPORT IAuxCoordSystemExtender* FindExtender(uint32_t extenderID);
-
-DGNPLATFORM_EXPORT void SaveSettings(SpatialViewControllerCP viewController);
-DGNPLATFORM_EXPORT void ReadSettings(SpatialViewControllerP viewController);
-
-DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, Utf8CP name, Utf8CP descr);
-
-DGNPLATFORM_EXPORT void SendEvent(IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
-DGNPLATFORM_EXPORT void DisplayCurrent(DecorateContextR, bool isCursorView);
-
-DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
-DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
-
-DGNVIEW_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
-DGNVIEW_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
-
-//__PUBLISH_SECTION_START__
-public:
-
-//! Add a listener for acs events.
-DGNPLATFORM_EXPORT void AddListener(IACSEvents* acsListener);
-
-//! Drop a listener for acs events.
-DGNPLATFORM_EXPORT void DropListener(IACSEvents* acsListener);
-
-//! Create ACS "smart pointer".
-//! @return a "smart pointer" to an object that supports the IAuxCoordSysP interface.
-DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS ();
-
-//! Gets the ACS object for the active ACS.
-//! @param[in]      vp          View to apply acs to.
-//! @return ACS if one is active, NULL otherwise.
-//! @remarks  This is not a copy and should not be freed; Use Clone uses you want
-//!           changes to directly affect the ACS attached to this view.
-DGNPLATFORM_EXPORT IAuxCoordSysP GetActive(DgnViewportR vp);
-
-//! Sets the active ACS properties.
-//! @param[in]      auxCoordSys ACS to activate.
-//! @param[in]      vp          View to apply acs to.
-//! @return status
-DGNPLATFORM_EXPORT StatusInt SetActive(IAuxCoordSysP auxCoordSys, DgnViewportR vp);
-
-//! Gets an ACS object representing  a named ACS from a model.
-//! @param[in]      name        The name of the ACS to retrieve
-//! @param[in]      modelRef    The preferred model in which to search
-//! @param[in]      options     Options to control searching
-//! @return ACS if found, NULL otherwise.
-DGNPLATFORM_EXPORT IAuxCoordSysPtr GetByName(Utf8CP name, DgnModelP modelRef, uint32_t options);
-
-//! Save and ACS persistently in a model.
-//! @param[in]      auxCoordSys ACS to save.
-//! @param[in]      modelRef    Model to contain the ACS.
-//! @param[in]      saveOption  The options for saving.
-//! @param[in]      eventType   The ACS event type to send.
-//! @return status
-DGNPLATFORM_EXPORT StatusInt Save(IAuxCoordSysP auxCoordSys, DgnModelP modelRef, ACSSaveOptions saveOption, ACSEventType eventType);
-
-//! Deletes a persistent ACS from a model.
-//! @param[in]      name        Name of the ACS to delete.
-//! @param[in]      modelRef    Model that contains the ACS to delete.
-//! @return status
-DGNPLATFORM_EXPORT StatusInt Delete(Utf8CP name, DgnModelP modelRef);
-
-DGNPLATFORM_EXPORT static IACSManagerR GetManager();
-
-}; // IACSManager
-
-//=======================================================================================
-//! An IAuxCoordSys is an object that holds the data which
-//! describes an auxiliary coordinate system
-//=======================================================================================
-struct IAuxCoordSys : RefCountedBase
-{
 protected:
-    virtual IAuxCoordSysPtr _Clone() const = 0;
-    virtual bool _Equals(IAuxCoordSysCP other) const = 0;
-    virtual Utf8String _GetName() const = 0;
-    virtual Utf8String _GetDescription() const = 0;
-    virtual ACSType _GetType() const = 0;
-    virtual Utf8String _GetTypeName() const = 0;
-    virtual double _GetScale() const = 0;
-    virtual DPoint3dR _GetOrigin(DPoint3dR pOrigin) const = 0;
-    virtual RotMatrixR _GetRotation(RotMatrixR pRot) const = 0;
-    virtual RotMatrixR _GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const = 0;
-    virtual bool _GetIsReadOnly() const = 0;
-    virtual ACSFlags _GetFlags() const = 0;
-    virtual StatusInt _SetName(Utf8CP name) = 0;
-    virtual StatusInt _SetDescription(Utf8CP descr) = 0;
-    virtual StatusInt _SetType(ACSType type) = 0;
-    virtual StatusInt _SetScale(double scale) = 0;
-    virtual StatusInt _SetOrigin(DPoint3dCR pOrigin) = 0;
-    virtual StatusInt _SetRotation(RotMatrixCR pRot) = 0;
-    virtual StatusInt _PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
-    virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
-    virtual StatusInt _SetFlags(ACSFlags flags) = 0;
-    virtual uint32_t _GetExtenderId() const = 0;
-    virtual uint32_t _GetSerializedSize() const = 0;
-    virtual StatusInt _Serialize(void *data, uint32_t maxSize) const = 0;
-    virtual StatusInt _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
-    virtual void _DrawGrid(DecorateContextR context) const = 0;
-    virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const = 0;
+    explicit AuxCoordSystem(CreateParams const& params) : T_Super(params) {}
 
-    virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return ERROR;}
-    virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return ERROR;}
+    virtual AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const = 0; // Either this method or _GetAsAuxCoordSystem3d must return non-null.
+    virtual AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const = 0; // Either this method or _GetAsAuxCoordSystem2d must return non-null.
 
-    // these methods are called only internally, so they don't have corresponding nonvirtual public wrappers.
-    DGNPLATFORM_EXPORT virtual bool _IsOriginInView(DPoint3dR drawOrigin, DgnViewportCR, bool adjustOrigin) const;
-    DGNPLATFORM_EXPORT virtual ColorDef _GetColor(DgnViewportCR, ColorDef color, uint32_t transparency, ACSDisplayOptions options) const;
-    DGNPLATFORM_EXPORT virtual uint32_t _GetTransparency(bool isFill, ACSDisplayOptions options) const;
+    virtual ACSType _GetType() const {return static_cast<ACSType>(GetPropertyValueInt32("Type"));};
+    virtual BentleyStatus _SetType(ACSType type) {SetPropertyValue("Type", static_cast<int32_t>(type)); return SUCCESS;};
+
+    virtual DPoint3d _GetOrigin() const = 0;
+    virtual BentleyStatus _SetOrigin(DPoint3dCR) = 0;
+
+    virtual RotMatrix _GetRotation() const = 0;
+    virtual BentleyStatus _SetRotation(RotMatrixCR) = 0;
+
+    // Allow sub-classes to override how ACS triad is displayed in the view...
+    DGNPLATFORM_EXPORT virtual ColorDef _GetAdjustedColor(ColorDef, bool isFill, DgnViewportCR, ACSDisplayOptions) const;
     DGNPLATFORM_EXPORT virtual Utf8String _GetAxisLabel(uint32_t axis) const;
+    DGNPLATFORM_EXPORT virtual void _AddAxisLabel(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions) const;
+    DGNPLATFORM_EXPORT virtual void _AddAxis(Render::GraphicBuilderR, uint32_t axis, ACSDisplayOptions) const;
+    DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, ACSDisplayOptions) const;
 
-    DGNPLATFORM_EXPORT virtual void _AddZAxis(Render::GraphicBuilderR, ColorDef color, ACSDisplayOptions options) const;
-    DGNPLATFORM_EXPORT virtual void _AddXYAxis(Render::GraphicBuilderR, ColorDef color, Utf8CP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
-    DGNPLATFORM_EXPORT virtual void _AddAxisText(Render::GraphicBuilderR, Utf8CP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
-    DGNPLATFORM_EXPORT virtual Render::GraphicBuilderPtr _CreateGraphic(DecorateContextR, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
-    DGNPLATFORM_EXPORT virtual void _DisplayInView(DecorateContextR, ACSDisplayOptions options, bool drawName) const;
+    DGNPLATFORM_EXPORT virtual void _Display(DecorateContextR, ACSDisplayOptions) const;
+
+    virtual StatusInt _GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return ERROR;}
+    virtual StatusInt _SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return ERROR;}
+
+    DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR context) const;
+    DGNPLATFORM_EXPORT virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const;
+
+    DGNPLATFORM_EXPORT virtual StatusInt _PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) const;
+    DGNPLATFORM_EXPORT virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) const;
 
 public:
-    // Only for ACS's of type ACS_TYPE_GeoCoordinate is the rotation matrix position dependent, don't publish this yet.
-    RotMatrixR GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const {return _GetRotation(pRot, pPosition);}
+    //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
+    static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
 
-    // Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
-    double GetGridScaleFactor(DgnViewportR vp) const;
-    StatusInt GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const;
+    AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
+    AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
 
-    StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
-    StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
-
-    //! Return a copy of the ACS object.
-    IAuxCoordSysPtr Clone() const {return _Clone();}
-
-    //! Returns true if the is the same ACS object.
-    bool Equals(IAuxCoordSysCP other) const {return _Equals(other);}
-
-    //! Return name of the ACS object.
-    Utf8String GetName() const {return _GetName();}
-
-    //! Return description of the ACS object.
-    Utf8String GetDescription() const {return _GetDescription();}
+    AuxCoordSystem2dP ToAuxCoordSystem2dP() {return const_cast<AuxCoordSystem2dP>(ToAuxCoordSystem2d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem2dP>(el)
+    AuxCoordSystem3dP ToAuxCoordSystem3dP() {return const_cast<AuxCoordSystem3dP>(ToAuxCoordSystem3d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem3dP>(el)
 
     //! Return type of the ACS object.
     ACSType GetType() const {return _GetType();}
 
-    //! Return localized name of the Type of the ACS object.
-    Utf8String GetTypeName() const {return _GetTypeName();}
-
-    //! Return the scale factor stored in the ACS object.
-    double GetScale() const {return _GetScale();}
+    //! Change the type stored in the ACS object.
+    BentleyStatus SetType(ACSType type) {return _SetType(type);}
 
     //! Return the origin point stored in the ACS object.
-    DPoint3dR GetOrigin(DPoint3dR pOrigin) const {return _GetOrigin(pOrigin);}
-
-    //! Return the rotation matrix stored in the ACS object.
-    RotMatrixR GetRotation(RotMatrixR pRot) const {return _GetRotation(pRot);}
-
-    //! Returns true if the coordinate system cannot be changed.
-    bool GetIsReadOnly() const {return _GetIsReadOnly();}
-
-    //! Change the name stored in the ACS object.
-    ACSFlags GetFlags() const {return _GetFlags();}
-
-    //! Change the name stored in the ACS object.
-    StatusInt SetName(Utf8CP name) {return _SetName(name);}
-
-
-    //! Change the description stored in the ACS object.
-    StatusInt SetDescription(Utf8CP descr) {return _SetDescription(descr);}
-
-    //! Change the type stored in the ACS object.
-    StatusInt SetType(ACSType type) {return _SetType(type);}
-
-    //! Change the scale factor stored in the ACS object.
-    StatusInt SetScale(double scale) {return _SetScale(scale);}
-
-    //! Change the flags stored in the ACS object.
-    StatusInt SetFlags(ACSFlags flags) {return _SetFlags(flags);}
+    DPoint3d GetOrigin() const {return _GetOrigin();}
 
     //! Change the origin point stored in the ACS object.
-    StatusInt SetOrigin(DPoint3dCR pOrigin) {return _SetOrigin(pOrigin);}
+    BentleyStatus SetOrigin(DPoint3dCR origin) {return _SetOrigin(origin);}
+
+    //! Return the rotation matrix stored in the ACS object.
+    RotMatrix GetRotation() const {return _GetRotation();}
 
     //! Change the rotation matrix stored in the ACS object.
-    StatusInt SetRotation(RotMatrixCR pRot) {return _SetRotation(pRot);}
+    BentleyStatus SetRotation(RotMatrixCR rMatrix) {return _SetRotation(rMatrix);}
 
-    //! Get the point (in UORs) corresponding to the input string.
-    StatusInt PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) {return _PointFromString(outPoint, errorMsg, inString, relative, lastPoint, modelRef);}
+    //! Return a string describing the ACS object.
+    Utf8String GetDescription() const {return GetPropertyValueString("Description");}
 
-    //! Get the string that represents the input point.
-    StatusInt StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFromatter, DirectionFormatterR directionFormatter)
-                                                        { return _StringFromPoint(outString, errorMsg, inPoint, delta, deltaOrigin, modelRef, distanceFromatter, directionFormatter); }
-
-    //! Get the ACS extender id.
-    StatusInt CompleteSetupFromViewController(SpatialViewControllerCP info) {return _CompleteSetupFromViewController(info);}
+    //! Set the description of the ACS object.
+    void SetDescription(Utf8CP description) {SetPropertyValue("Description", description);}
 
     //! Display a representation of the ACS in the given view.
-    void DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(context, options, drawName);}
+    void Display(DecorateContextR context, ACSDisplayOptions options) const {return _Display(context, options);}
 
-    //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
-    DGNPLATFORM_EXPORT bool Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);
-
-    //! Get the ACS extender id.
-    uint32_t GetExtenderId() const {return _GetExtenderId();}
-
-    //! Get the buffer size, in bytes, required to serialize the ACS.
-    uint32_t GetSerializedSize() const {return _GetSerializedSize();}
-
-    //! Get the buffer size, in bytes, required to serialize the ACS.
-    StatusInt Serialize(void *buffer, uint32_t maxSize) const {return _Serialize(buffer, maxSize);}
+    // NOTE: Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
+    bool GetGridSpacing(DPoint2dR spacing, uint32_t& gridPerRef, Point2dR gridReps, Point2dR gridOffset, DgnViewportR vp) const; //!< NOTE: Returns true when ACS overrides view's grid settings...
+    StatusInt GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
+    StatusInt SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, spacing, gridPerRef);}
 
     //! Draw the grid to the specified context.
     void DrawGrid(DecorateContextR context) const {return _DrawGrid(context);}
 
     //! Fix the point to the ACS's grid
     void PointToGrid(DgnViewportR viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
-};
+
+    //! Get the point (in UORs) corresponding to the input string.
+    StatusInt PointFromString(DPoint3dR outPoint, Utf8StringR errorMsg, Utf8CP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) const {return _PointFromString(outPoint, errorMsg, inString, relative, lastPoint, modelRef);}
+
+    //! Get the string that represents the input point.
+    StatusInt StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFromatter, DirectionFormatterR directionFormatter) const {return _StringFromPoint(outString, errorMsg, inPoint, delta, deltaOrigin, modelRef, distanceFromatter, directionFormatter);}
+
+}; // AuxCoordSystem
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem2d : AuxCoordSystem
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem2d, AuxCoordSystem);
+    friend struct ACSElementHandler::CoordSys2d;
+
+protected:
+    explicit AuxCoordSystem2d(CreateParams const& params) : T_Super(params) {}
+
+    AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const override final {return this;}
+    AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const override final {return nullptr;}
+
+    DPoint3d _GetOrigin() const override {return DPoint3d::From(GetOrigin2d());}
+    BentleyStatus _SetOrigin(DPoint3dCR origin) override {SetOrigin2d(DPoint2d::From(origin)); return SUCCESS;}
+
+    RotMatrix _GetRotation() const override {AngleInDegrees angle = GetAngle(); return RotMatrix::FromAxisAndRotationAngle(2, angle.Radians());}
+    BentleyStatus _SetRotation(RotMatrixCR rMatrix) override {YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix); SetAngle(angles.GetYaw()); return SUCCESS;}
+
+public:
+    //! Construct a new 2d Auxiliary Coordinate System.
+    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all 2d Auxiliary Coordinate Systems.
+    AuxCoordSystem2d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem2d, name);} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem2d));} //!< @private
+
+    DPoint2d GetOrigin2d() const {return GetPropertyValueDPoint2d("Origin");}
+    void SetOrigin2d(DPoint2dCR origin) {SetPropertyValue("Origin", origin);}
+
+    AngleInDegrees GetAngle() const {return AngleInDegrees::FromDegrees(GetPropertyValueDouble("Angle"));}
+    void SetAngle(AngleInDegrees angle) {SetPropertyValue("Angle", angle.Degrees());}
+
+}; // AuxCoordSystem2d
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem3d : AuxCoordSystem
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem3d, AuxCoordSystem);
+    friend struct ACSElementHandler::CoordSys3d;
+
+protected:
+    explicit AuxCoordSystem3d(CreateParams const& params) : T_Super(params) {}
+
+    AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const override final {return nullptr;}
+    AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const override final {return this;}
+    
+    DPoint3d _GetOrigin() const override {return GetOrigin3d();}
+    BentleyStatus _SetOrigin(DPoint3dCR origin) override {SetOrigin3d(origin); return SUCCESS;}
+
+    RotMatrix _GetRotation() const override {YawPitchRollAngles angles = GetAngles(); return angles.ToRotMatrix();}
+    BentleyStatus _SetRotation(RotMatrixCR rMatrix) override {YawPitchRollAngles angles; YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix); SetAngles(angles); return SUCCESS;}
+
+public:
+    //! Construct a new 3d Auxiliary Coordinate System.
+    //! @param[in] db The DgnDb to hold the Auxiliary Coordinate System
+    //! @param[in] name The name of the Auxiliary Coordinate System. Must be unique across all 3d Auxiliary Coordinate Systems.
+    AuxCoordSystem3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
+
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem3d, name);} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem3d));} //!< @private
+
+    DPoint3d GetOrigin3d() const {return GetPropertyValueDPoint3d("Origin");}
+    void SetOrigin3d(DPoint3dCR origin) {SetPropertyValue("Origin", origin);}
+
+    YawPitchRollAngles GetAngles() const {return YawPitchRollAngles(AngleInDegrees::FromDegrees(GetPropertyValueDouble("Yaw")), AngleInDegrees::FromDegrees(GetPropertyValueDouble("Pitch")), AngleInDegrees::FromDegrees(GetPropertyValueDouble("Roll")));}
+    void SetAngles(YawPitchRollAngles angles) {SetPropertyValue("Yaw", angles.GetYaw().Degrees()); SetPropertyValue("Pitch", angles.GetPitch().Degrees()); SetPropertyValue("Roll", angles.GetRoll().Degrees());}
+
+}; // AuxCoordSystem3d
+
+//=======================================================================================
+// @bsiclass                                                    Brien.Bastings  02/17
+//=======================================================================================
+namespace ACSElementHandler
+{
+    struct CoordSys2d : dgn_ElementHandler::Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem2d, AuxCoordSystem2d, CoordSys2d, Definition, DGNPLATFORM_EXPORT);
+    };
+
+    struct CoordSys3d : dgn_ElementHandler::Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem3d, AuxCoordSystem3d, CoordSys3d, Definition, DGNPLATFORM_EXPORT);
+    };
+ };
 
 /** @endGroup */
 

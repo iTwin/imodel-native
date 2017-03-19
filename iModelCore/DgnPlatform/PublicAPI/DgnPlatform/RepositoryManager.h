@@ -14,6 +14,25 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+//=======================================================================================
+//! An iterator over the locks held by an IBriefcaseManager.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct IOwnedLocksIterator : RefCountedBase
+{
+protected:
+    virtual DgnLockCR _GetCurrent() const = 0;
+    virtual bool _IsAtEnd() const = 0;
+    virtual void _MoveNext() = 0;
+    virtual void _Reset() = 0;
+public:
+    DgnLockCR operator*() const { return _GetCurrent(); }
+    DgnLockCP operator->() const { return &_GetCurrent(); }
+    void operator++() { _MoveNext(); }
+    bool IsValid() const { return !_IsAtEnd(); }
+    void Reset() { _Reset(); }
+};
+
 /*=====================================================================================*/
 //! Manages repository-allocated resources held by a DgnDb - namely, Locks and Codes.
 //!
@@ -170,6 +189,7 @@ protected:
     // Locks
     virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) = 0;
     virtual RepositoryStatus _QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds) = 0;
+    virtual IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) = 0;
 
     // Local state management
     virtual RepositoryStatus _OnFinishRevision(DgnRevision const& rev) = 0;
@@ -311,6 +331,15 @@ public:
 
     //! Acquire a shared or exclusive lock on the DgnDb.
     Response LockDb(LockLevel level) { Request req; req.Locks().Insert(GetDgnDb(), level); return Acquire(req); }
+
+    //! Acquire an exclusive lock on Schemas in the DgnDb. 
+    DGNPLATFORM_EXPORT Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
+
+    //! Obtain an iterator over the locks currently owned by this briefcase.
+    //! By default, iteration is provided over a local cache of held locks. Specifying FastQuery::Yes will query the server for an up-to-date list of held locks.
+    //! @param[in] fast Whether to iterate over local cache of held locks, or to query server for up-to-date information.
+    //! @return An iterator over the locks currently owned by this briefcase, or nullptr if such an iterator cannot be created.
+    IOwnedLocksIteratorPtr GetOwnedLocks(FastQuery fast=FastQuery::Yes) { return _GetOwnedLocks(fast); }
     //@}
 
     //! @name Managing Codes

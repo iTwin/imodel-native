@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/PickContext.h>
 #include <DgnPlatform/TileTree.h>
 
@@ -210,7 +210,7 @@ namespace Attachment
 
         virtual void _QueueScene(UpdatePlan const& updatePlan);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
-        void _AdjustAspectRatio(Dgn::ViewControllerR viewController, bool expandView) override {}
+        void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
 
         //! Get the transfrom from attachment view coordinates to sheet view coordinates
         DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);

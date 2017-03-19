@@ -174,7 +174,7 @@ bool ClipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip)
     if (!curves.GetRange(curveRange))
         return false;
 
-    curveRange.Extend(1.0); // UORs.   
+    curveRange.Extend(DgnUnits::OneMillimeter());
 
     bvector<IntersectLocationDetail> intersectDetails;
 

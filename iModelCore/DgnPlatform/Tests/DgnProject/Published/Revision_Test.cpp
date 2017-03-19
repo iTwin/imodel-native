@@ -16,7 +16,7 @@
 #include <windows.h>
 #endif
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -84,14 +84,14 @@ protected:
         return cpStyle;
         }
 
-    DgnElementCPtr InsertPhysicalElementByCode(DgnCode const& code)
+    DgnElementCPtr InsertPhysicalElementByCode(DgnCodeCR code)
         {
-        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
         GenericPhysicalObject elem(GenericPhysicalObject::CreateParams(*m_db, m_defaultModel->GetModelId(), classId, m_defaultCategoryId, Placement3d(), code, nullptr, DgnElementId()));
         return elem.Insert();
         }
 
-    DgnElementCPtr RenameElement(DgnElementCR el, DgnCode const& code)
+    DgnElementCPtr RenameElement(DgnElementCR el, DgnCodeCR code)
         {
         auto pEl = el.CopyForEdit();
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
@@ -116,7 +116,7 @@ void RevisionTestFixture::SetUpTestCase()
     ScopedDgnHost tempHost;
 
     //  Request a root seed file.
-    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(false, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(ChangeTestFixture::s_seedFileInfo.id, DgnPlatformSeedManager::SeedDbOptions(true, true));
 
     //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
     //  Note that we must put our group seed file in a group-specific sub-directory
@@ -125,7 +125,6 @@ void RevisionTestFixture::SetUpTestCase()
 
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, RevisionTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
-    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
     TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
@@ -1240,6 +1239,284 @@ TEST_F(RevisionTestFixture, ReverseAndReinstate)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 108));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, DbSchemaChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
+    m_db->SaveChanges("Created Initial Model");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Create Revision 1 (Schema changes - creating two tables)
+    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasChanges());
+
+    m_db->SaveChanges("Revision 1");
+    DgnRevisionPtr revision1 = CreateRevision();
+    ASSERT_TRUE(revision1.IsValid());
+    DumpRevision(*revision1, "Revision 1 with only schema changes:");
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasChanges());
+
+    // Create Revision 2 (Data changes - inserts to both tables)
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable1(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable2(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasChanges());
+
+    m_db->SaveChanges("Revision 2");
+    DgnRevisionPtr revision2 = CreateRevision();
+    ASSERT_TRUE(revision2.IsValid());
+    DumpRevision(*revision2, "Revision 2 with only data changes:");
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasChanges());
+
+    // Create Revision 3 (Schema changes to first table, and data changes to the second)
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable1", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable1_Column1", "TestTable1", false, "Column1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable2(Id, Column1) VALUES(2,2)"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasChanges());
+
+    m_db->SaveChanges("Revision 3");
+    DgnRevisionPtr revision3 = CreateRevision();
+    ASSERT_TRUE(revision3.IsValid());
+    DumpRevision(*revision3, "Revision 3 with schema and data changes:");
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasChanges());
+
+    // Create Revision 4 (Data changes to the first table, and schema changes to the other)
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable1(Id, Column1, Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable1 SET Column2=1 WHERE Id=1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable2", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable2_Column1", "TestTable2", false, "Column1"), BE_SQLITE_OK);
+
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+    ASSERT_TRUE(m_db->Txns().HasChanges());
+
+    m_db->SaveChanges("Revision 4");
+    DgnRevisionPtr revision4 = CreateRevision();
+    ASSERT_TRUE(revision4.IsValid());
+    DumpRevision(*revision4, "Revision 4 with schema and data changes:");
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    ASSERT_FALSE(m_db->Txns().HasChanges());
+
+    // Revert Db to initial state
+    RestoreTestFile();
+
+    // Merge revision 1 (Schema changes - creating two tables)
+    LOG.infov("Merging Revision 1");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision1));
+    
+    ASSERT_TRUE(m_db->TableExists("TestTable1"));
+    ASSERT_TRUE(m_db->TableExists("TestTable2"));
+
+    ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Id"));
+    ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column1"));
+    ASSERT_FALSE(m_db->ColumnExists("TestTable1", "Column2"));
+
+    ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Id"));
+    ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Column1"));
+    ASSERT_FALSE(m_db->ColumnExists("TestTable2", "Column2"));
+
+    // Merge revision 2 (Data changes - inserts to both tables)
+    LOG.infov("Merging Revision 2");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision2));
+
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable1 WHERE Id=1", 1));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=1", 1));
+
+    // Merge revision 3 (Schema changes to first table, and data changes to the second)
+    LOG.infov("Merging Revision 3");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision3));
+
+    ASSERT_TRUE(m_db->ColumnExists("TestTable1", "Column2"));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // i.e., null value
+
+    ASSERT_FALSE(m_db->ColumnExists("TestTable2", "Column2"));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable2 WHERE Id=2", 2));
+
+    // Merge revision 4 (Data changes to the first table, and schema changes to the other)
+    LOG.infov("Merging Revision 4");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision4));
+
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=2", 2));
+
+    ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Column2"));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=1", 0)); // i.e., null value
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, InvalidSchemaChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
+    m_db->SaveChanges("Created Initial Model");
+   
+    ASSERT_TRUE(BE_SQLITE_OK == m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER"));
+    m_db->SaveChanges("Created test table");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Make invalid schema changes (using the schema change API)
+    BeTest::SetFailOnAssert(false);
+    ASSERT_TRUE(BE_SQLITE_ERROR == m_db->RenameTable("TestTable", "TestTableWontHappen")); // Fails
+    ASSERT_TRUE(BE_SQLITE_ERROR == m_db->DropTable("TestTable")); // Fails
+    BeTest::SetFailOnAssert(true);
+
+    // Make invalid schema changes (outside the schema change API)
+    ASSERT_TRUE(BE_SQLITE_OK == m_db->ExecuteSql("ALTER TABLE TestTable RENAME TO TestTableWillHappen")); // Unfortunately succeeds. Need a way to monitor DDL changes. 
+
+    // Make schema changes with tracking disabled
+    m_db->Txns().EnableTracking(false);
+    ASSERT_TRUE(BE_SQLITE_OK == m_db->DropTable("TestTableWillHappen"));
+    m_db->Txns().EnableTracking(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ManySchemaChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
+    m_db->SaveChanges("Created Initial Model");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    // Create a revision with a number of new tables and columns
+    int numTables = 0;
+    while (++numTables <= 10)
+        {
+        Utf8PrintfString tableName("TestTable%d", numTables);
+        ASSERT_TRUE(BE_SQLITE_OK == m_db->CreateTable(tableName.c_str(), "Id INTEGER PRIMARY KEY, Column0 INTEGER"));
+
+        int numColumns = 0;
+        while (++numColumns <= 10)
+            {
+            Utf8PrintfString columnName("Column%d", numColumns);
+            ASSERT_EQ(m_db->AddColumnToTable(tableName.c_str(), columnName.c_str(), "INTEGER"), BE_SQLITE_OK);
+            }
+        }
+
+    m_db->SaveChanges("");
+    DgnRevisionPtr revision = CreateRevision();
+    ASSERT_TRUE(revision.IsValid());
+    DumpRevision(*revision, "Revision containing many schema changes:");
+
+    // Revert Db to initial state
+    RestoreTestFile();
+
+    // Merge revision 1
+    LOG.infov("Merging revision containing many schema changes");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revision));
+
+    ASSERT_TRUE(m_db->TableExists("TestTable10"));
+    ASSERT_TRUE(m_db->ColumnExists("TestTable10", "Column10"));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergeSchemaChanges)
+    {
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"SchemaChanges.bim");
+    m_db->CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges("Created Initial Model");
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+    BackupTestFile();
+
+    /* Create revision with schema changes */
+    ASSERT_EQ(m_db->AddColumnToTable("TestTable", "Column2", "INTEGER"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->CreateIndex("idx_TestTable_Column1", "TestTable", false, "Column1"), BE_SQLITE_OK);
+
+    ASSERT_FALSE(m_db->Txns().HasDataChanges());
+    ASSERT_TRUE(m_db->Txns().HasSchemaChanges());
+   
+    m_db->SaveChanges("Schema changes");
+    DgnRevisionPtr schemaChangesRevision = CreateRevision();
+    ASSERT_TRUE(schemaChangesRevision.IsValid());
+    DumpRevision(*schemaChangesRevision, "Revision with schema changes:");
+
+    /* Restore baseline, make data changes, and merge revision with schema changes */
+    RestoreTestFile();
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id, Column1) VALUES(1,1)"), BE_SQLITE_OK);
+    
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+    
+    m_db->SaveChanges("Data changes");
+    RevisionStatus status = m_db->Revisions().MergeRevision(*schemaChangesRevision);
+    ASSERT_TRUE(status == RevisionStatus::Success);
+
+    /* Create new revision with just the data changes */
+    DgnRevisionPtr dataChangesRevision = CreateRevision();
+    ASSERT_TRUE(dataChangesRevision.IsValid());
+    DumpRevision(*dataChangesRevision, "Revision with data changes:");
+
+    /* Create new revision with more data changes on top of the previous schema changes */
+    ASSERT_EQ(m_db->ExecuteSql("UPDATE TestTable SET Column2=1 WHERE Id=1"), BE_SQLITE_OK);
+    ASSERT_EQ(m_db->ExecuteSql("INSERT INTO TestTable(Id,Column1,Column2) VALUES(2,2,2)"), BE_SQLITE_OK);
+   
+    ASSERT_TRUE(m_db->Txns().HasDataChanges());
+    ASSERT_FALSE(m_db->Txns().HasSchemaChanges());
+
+    m_db->SaveChanges("More data changes");
+    DgnRevisionPtr moreDataChangesRevision = CreateRevision();
+    ASSERT_TRUE(moreDataChangesRevision.IsValid());
+    DumpRevision(*moreDataChangesRevision, "Revision with more data changes:");
+
+    /* Restore baseline, and merge revisions previously created */
+    RestoreTestFile();
+    status = m_db->Revisions().MergeRevision(*schemaChangesRevision);
+    ASSERT_TRUE(status == RevisionStatus::Success);
+
+    ASSERT_TRUE(m_db->ColumnExists("TestTable", "Column2"));
+
+    status = m_db->Revisions().MergeRevision(*dataChangesRevision);
+    ASSERT_TRUE(status == RevisionStatus::Success);
+
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 1));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 0)); // i.e., null value
+
+    status = m_db->Revisions().MergeRevision(*moreDataChangesRevision);
+    ASSERT_TRUE(status == RevisionStatus::Success);
+
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=1", 1));
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable WHERE Id=2", 2));
+    }
+
 #ifdef DEBUG_REVISION_TEST_MANUAL
 // Tests that are useful for one off testing and performance. These aren't included
 // as part of the build, but used whenever necessary
@@ -1247,7 +1524,7 @@ TEST_F(RevisionTestFixture, ReverseAndReinstate)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, CreateAndMergePerformance)
+TEST_F(RevisionTestFixture, DISABLED_CreateAndMergePerformance)
     {
     // Setup a model with a few elements
     SetupDgnDb();
@@ -1330,7 +1607,7 @@ uint64_t GetFileLastModifiedTime(BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, MergeFolderWithRevisions)
+TEST_F(RevisionTestFixture, DISABLED_MergeFolderWithRevisions)
     {
     BeFileName startingFile("D:\\temp\\Performance\\Failure\\RevisionTestCopy.ibim", true);
 
@@ -1377,7 +1654,7 @@ TEST_F(RevisionTestFixture, MergeFolderWithRevisions)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, MergeSpecificRevision)
+TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
     {
     BeFileName startingFile("D:\\temp\\Performance\\Failure\\RevisionTest.ibim", true);
 

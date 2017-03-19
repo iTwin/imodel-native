@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCoreDLLInlines.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,4 @@
 #else
     #define DG_INLINE
 #endif
-
-
-DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 

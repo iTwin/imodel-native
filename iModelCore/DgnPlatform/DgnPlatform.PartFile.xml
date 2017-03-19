@@ -576,10 +576,9 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherPrewire" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
-        <SubPart PartName="DgnPlatformLib" />
+    <Part Name="TilePublisherPublicAPI" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
         <Bindings>
-            <Files SubPartDirectory="TilePublisher/include/TilePublisher">Delivery/TilePublisher/TilePublisher.h</Files>
+            <PublicAPI Domain="TilePublisher" />
         </Bindings>
     </Part>
 
@@ -591,7 +590,7 @@
 
     <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
-        <SubPart PartName="TilePublisherPrewire" />
+        <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
@@ -601,6 +600,22 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubPart PartName="TilePublisherLib" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="NuGetPackages" Required="false">Install\Bentley.TilePublisher.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="TilePublisherLibSdkNuGetPackage" DeferType="BuildSamples" BMakeFile="TilePublisher/lib/TilePublisher.Sdk.NuGetPackage.mke">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubPart PartName="TilePublisherLib" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="NuGetPackages" Required="false">Install\Bentley.TilePublisher.Sdk.*.nupkg</Files>
         </Bindings>
     </Part>
 
@@ -614,6 +629,8 @@
 
     <Product Name="TilePublisher">
         <SubPart PartName="TilePublisherExe" />
+        <SubPart PartName="TilePublisherLibNuGetPackage" />
+        <SubPart PartName="TilePublisherLibSdkNuGetPackage" />
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 

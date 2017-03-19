@@ -42,6 +42,7 @@ enum class DgnDbStatus : int
     BadModel,
     BadRequest,
     BadSchema,
+    CannotUndo,
     CodeNotReserved,
     DeletionProhibited,
     DuplicateCode,
@@ -58,7 +59,7 @@ enum class DgnDbStatus : int
     InvalidId,
     InvalidName,
     InvalidParent,
-    InvalidSchemaVersion,
+    InvalidProfileVersion,
     IsCreatingRevision,
     LockNotHeld,
     Mismatch2d3d,
@@ -79,6 +80,7 @@ enum class DgnDbStatus : int
     ParentBlockedChange,
     ReadError,
     ReadOnly,
+    ReadOnlyDomain,
     RepositoryManagerError,
     SQLiteError,
     TransactionActive,
@@ -101,7 +103,7 @@ enum class DgnDbStatus : int
 //! Status Values for DgnViewport methods
 enum class ViewportStatus : int
 {
-        Success = SUCCESS,
+    Success = SUCCESS,
     ViewNotInitialized = VIEWPORT_ERROR_BASE + 1,
     AlreadyAttached,
     NotAttached,
@@ -151,7 +153,7 @@ enum class RevisionStatus : int
     Success = SUCCESS, //!< Success
     ApplyError, //!< Error applying a revision when reversing or reinstating it
     ChangeTrackingNotEnabled = REVISION_ERROR_BASE + 1, //!< Change tracking has not been enabled. The Revision API mandates this.
-    CorruptedChangeStream, //!< Contents of the change stream does not match the Revision
+    CorruptedChangeStream, //!< Contents of the change stream are corrupted and does not match the Revision
     FileNotFound, //!< File containing the changes to the revision is not found
     FileWriteError, //!< Error writing the contents of the revision to the backing change stream file
     HasLocalChanges, //!< Cannot perform the operation since the Db has local changes

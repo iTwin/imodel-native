@@ -69,6 +69,15 @@ public:
         friend class DgnPlatformLib;
 
     public:
+        struct SessionSettingsAdmin : IHostObject
+            {
+            virtual bool _GetAssemblyLock() const {return false;}       //!< Apply operation such as transform, copy or delete to all members of an assembly.
+            virtual bool _GetSnapLock() const {return false;}           //!< If Snap Lock is on, SnapModes are used to adjust data point.
+            virtual bool _GetGridLock() const {return false;}           //!< If Grid Lock is on, project data points to grid.
+            virtual bool _GetACSPlaneSnapLock() const {return false;}   //!< If ACS Snap Lock is on, project snap points to the ACS plane.
+            virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
+            };
+
         //! Provides access to scripting services.
         //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScript.
         //! You may subclass ScriptAdmin if you want to add more thread-specific contexts to it.
@@ -218,7 +227,7 @@ public:
 
         //! Provides paths to known locations
         struct IKnownLocationsAdmin : IHostObject
-            {
+        {
         protected:
             virtual ~IKnownLocationsAdmin() {}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
@@ -242,7 +251,7 @@ public:
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
-            };
+        };
 
         //=======================================================================================
         // @bsiclass                                                    Keith.Bentley   07/13
@@ -562,6 +571,7 @@ public:
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
+        SessionSettingsAdmin*   m_sessionSettingsAdmin;
         IKnownLocationsAdmin*   m_knownLocationsAdmin;
         ExceptionHandler*       m_exceptionHandler;
         DgnProgressMeterP       m_progressMeter;
@@ -572,7 +582,6 @@ public:
         NotificationAdmin*      m_notificationAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
-        IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
@@ -622,6 +631,9 @@ public:
         //! Supply the CodeAdmin.
         DGNPLATFORM_EXPORT virtual CodeAdmin& _SupplyCodeAdmin();
 
+        //! Supply the SessionSettingsAdmin.
+        DGNPLATFORM_EXPORT virtual SessionSettingsAdmin& _SupplySessionSettingsAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -631,6 +643,7 @@ public:
 
         Host()
             {
+            m_sessionSettingsAdmin = nullptr;
             m_knownLocationsAdmin = nullptr;
             m_exceptionHandler = nullptr;
             m_progressMeter = nullptr;
@@ -641,7 +654,6 @@ public:
             m_notificationAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
-            m_acsManager = nullptr;
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
@@ -650,10 +662,9 @@ public:
 
         virtual ~Host() {}
 
-        IKnownLocationsAdmin&   GetIKnownLocationsAdmin() {return *m_knownLocationsAdmin;}
-        ExceptionHandler&       GetExceptionHandler()     {return *m_exceptionHandler;}
-        void                    SetProgressMeter(DgnProgressMeterP meter) {m_progressMeter=meter;}
-        DgnProgressMeterP       GetProgressMeter()         {return m_progressMeter;}
+        SessionSettingsAdmin&   GetSessionSettingsAdmin()  {return *m_sessionSettingsAdmin;}
+        IKnownLocationsAdmin&   GetIKnownLocationsAdmin()  {return *m_knownLocationsAdmin;}
+        ExceptionHandler&       GetExceptionHandler()      {return *m_exceptionHandler;}
         FontAdmin&              GetFontAdmin()             {return *m_fontAdmin;}
         LineStyleAdmin&         GetLineStyleAdmin()        {return *m_lineStyleAdmin;}
         RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
@@ -661,12 +672,14 @@ public:
         NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
-        IACSManagerR            GetAcsManager()            {return *m_acsManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         CodeAdmin&              GetCodeAdmin()             {return *m_codeAdmin;} 
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
+
+        DgnProgressMeterP GetProgressMeter() {return m_progressMeter;}
+        void SetProgressMeter(DgnProgressMeterP meter) {m_progressMeter=meter;}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
 

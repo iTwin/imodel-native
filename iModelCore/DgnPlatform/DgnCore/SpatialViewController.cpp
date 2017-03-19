@@ -52,9 +52,6 @@ Frustum::Frustum(DRange3dCR range)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Super(def)
     {
-    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
-    m_auxCoordSys->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
-
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
     }
@@ -441,7 +438,7 @@ void SceneQueue::RemovePending(ViewControllerCR view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SceneQueue::Add(Task& task)
     {
-    if (&task.m_view.GetDgnDb() != &m_db)
+    if (&task.m_view->GetDgnDb() != &m_db)
         {
         BeAssert(false);
         return;
@@ -449,7 +446,7 @@ void SceneQueue::Add(Task& task)
 
     BeMutexHolder mux(m_cv.GetMutex());
 
-    RemovePending(task.m_view);
+    RemovePending(*task.m_view);
     m_pending.push_back(&task);
 
     mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
@@ -1197,3 +1194,4 @@ GeometricModelP SpatialViewController::_GetTargetModel() const
     DgnModelId model = *GetViewedModels().begin();
     return GetDgnDb().Models().Get<GeometricModel>(model).get();
     }
+

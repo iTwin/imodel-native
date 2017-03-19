@@ -904,6 +904,15 @@ GeometricPrimitivePtr GeometricPrimitive::Create(TextStringCR source) {TextStrin
 GeometricPrimitivePtr GeometricPrimitive::Create(ImageGraphicCR source) {ImageGraphicPtr clone = source.Clone(); return Create(clone);}
 
 /*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Shaun.Sewall    02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricPrimitivePtr GeometricPrimitive::Create(DEllipse3dCR source) {ICurvePrimitivePtr curve = ICurvePrimitive::CreateArc(source); return curve.IsValid() ? Create(curve) : nullptr;}
+GeometricPrimitivePtr GeometricPrimitive::Create(DgnBoxDetailCR source) {ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnBox(source); return solid.IsValid() ? Create(solid) : nullptr;}
+GeometricPrimitivePtr GeometricPrimitive::Create(DgnConeDetailCR source) {ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnCone(source); return solid.IsValid() ? Create(solid) : nullptr;}
+GeometricPrimitivePtr GeometricPrimitive::Create(DgnSphereDetailCR source) {ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnSphere(source); return solid.IsValid() ? Create(solid) : nullptr;}
+GeometricPrimitivePtr GeometricPrimitive::Create(DgnTorusPipeDetailCR source) {ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnTorusPipe(source); return solid.IsValid() ? Create(solid) : nullptr;}
+
+/*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometricPrimitive::GeometryType GeometricPrimitive::GetGeometryType() const {return m_type;}
@@ -1363,7 +1372,9 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
             {
             IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
-            facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
+            facetOpt->SetAngleTolerance(0.2); // NOTE: This is the value XGraphics "optimize" used...
+            facetOpt->SetNormalsRequired(true);
+            facetOpt->SetParamsRequired(true);
 
             if (nullptr != attachments)
                 {
@@ -1381,6 +1392,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
                     params[i].ToGeometryParams(faceParams, baseParamsIgnored);
                     Append(faceParams, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
+                    polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
                     Append(*polyfaces[i], OpCode::BRepPolyface);
                     }
                 }
@@ -1389,7 +1401,10 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
                 PolyfaceHeaderPtr polyface = BRepUtil::FacetEntity(entity, *facetOpt);
 
                 if (polyface.IsValid())
+                    {
+                    polyface->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
                     Append(*polyface, OpCode::BRepPolyface);
+                    }
                 }
             break;
             }

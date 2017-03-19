@@ -2,14 +2,14 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/CsvFile_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/CsvFile.h>
 #include "DgnHandlersTests.h"
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   09/16

@@ -1073,6 +1073,20 @@ public:
         }
 };
 
+//=======================================================================================
+// @bsiclass                                                 Ramanujam.Raman   02/17
+//=======================================================================================
+struct LockableSchemas
+{
+private:
+    DgnDbR m_dgndb;
+public:
+    LockableSchemas(DgnDbR dgndb) : m_dgndb(dgndb) {}
+    DgnDbR GetDgnDb() const { return m_dgndb; }
+};
+
+typedef LockableSchemas const& LockableSchemasCR;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1081,6 +1095,7 @@ struct LocksManagerTest : RepositoryManagerTest
     static LockableId MakeLockableId(DgnElementCR el) { return LockableId(el.GetElementId()); }
     static LockableId MakeLockableId(DgnModelCR model) { return LockableId(model.GetModelId()); }
     static LockableId MakeLockableId(DgnDbCR db) { return LockableId(db); }
+    static LockableId MakeLockableId(LockableSchemasCR lockableSchemas) { return LockableId(lockableSchemas.GetDgnDb().Schemas()); }
 
     static Utf8String MakeLockableName(LockableId lid)
         {
@@ -1089,6 +1104,7 @@ struct LocksManagerTest : RepositoryManagerTest
             {
             case LockableType::Db: typeName = "DgnDb"; break;
             case LockableType::Model: typeName = "Model"; break;
+            case LockableType::Schemas: typeName = "Schemas"; break;
             default: typeName = "Element"; break;
             }
 
@@ -1107,6 +1123,7 @@ struct LocksManagerTest : RepositoryManagerTest
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryLockLevel(actualLevel, id));
         EXPECT_EQ(expLevel, actualLevel) << MakeLockableName(id).c_str();
         }
+
     template<typename T> void ExpectLevel(T const& obj, LockLevel level)
         {
         ExpectLevel(MakeLockableId(obj), level, ExtractDgnDb(obj));
@@ -1209,6 +1226,15 @@ struct LocksManagerTest : RepositoryManagerTest
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
         return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, categoryId));
         }
+
+    size_t CountLocks(IOwnedLocksIteratorR iter)
+        {
+        size_t count = 0;
+        for (/*iter*/; iter.IsValid(); ++iter)
+            ++count;
+
+        return count;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1216,6 +1242,13 @@ struct LocksManagerTest : RepositoryManagerTest
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<> DgnDbR LocksManagerTest::ExtractDgnDb(DgnDb const& obj) { return const_cast<DgnDbR>(obj); }
+
+template<> RepositoryManager::Response LocksManagerTest::AcquireResponse(LockableSchemasCR const& lockableSchemas, LockLevel level)
+    {
+    LockRequest req;
+    req.InsertSchemasLock(lockableSchemas.GetDgnDb());
+    return AcquireResponse(req, lockableSchemas.GetDgnDb(), ResponseOptions::LockState);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
@@ -1263,6 +1296,13 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
 
     DgnModelCR model = *pModel;
     DgnElementCR el = *cpEl;
+    LockableSchemas lockableSchemas(db);
+
+    ExpectAcquire(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+    ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(model, LockLevel::None);
+    ExpectLevel(el, LockLevel::None);
 
     ExpectAcquire(model, LockLevel::Shared);
     ExpectLevel(model, LockLevel::Shared);
@@ -1285,12 +1325,14 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(el, LockLevel::Exclusive);  // shared lock automatically upgraded to exclusive for elements, currently
     ExpectLevel(model, LockLevel::Shared);
     ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
 
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
     
     ExpectAcquire(model, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
+    ExpectLevel(lockableSchemas, LockLevel::None);
 
     ExpectAcquire(model, LockLevel::Shared);
     ExpectLevel(model, LockLevel::Exclusive);
@@ -1308,12 +1350,13 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(el, LockLevel::None);
     ExpectLevel(db, LockLevel::None);
 
-    // An exclusive db lock results in exclusive locks on all models and elements
+    // An exclusive db lock results in exclusive locks on all models, elements and schemas
     ExpectAcquire(db, LockLevel::Exclusive);
     ExpectLevel(model, LockLevel::Exclusive);
     ExpectLevel(el, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Exclusive);
-    
+    ExpectLevel(lockableSchemas, LockLevel::Exclusive);
+
     // If we obtain an exclusive lock on a model, exclusive locks on its elements should be retained after refresh
     EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().RelinquishLocks());
     ExpectAcquire(model, LockLevel::Exclusive);
@@ -1417,6 +1460,91 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
+    {
+    SetupDb(L"IterateOwnedLocksTest.bim", m_bcId);
+    DgnDbR db = *m_db;
+    IBriefcaseManagerR bc = db.BriefcaseManager();
+
+    // We hold no locks
+    IOwnedLocksIteratorPtr pIter = bc.GetOwnedLocks();
+    ASSERT_TRUE(pIter.IsValid());
+    EXPECT_FALSE(pIter->IsValid());
+    EXPECT_EQ(0, CountLocks(*pIter));
+
+    // Create a new model
+    DgnModelPtr model = CreateModel("NewModel");
+    pIter = bc.GetOwnedLocks();
+
+    // Creating a model involves creating a partition, which involves:
+    //  - Shared lock on db
+    //  - Shared lock on model containing partition element
+    //  - Exclusive lock on partition element
+    //  - Exclusive lock on newly-created model
+    EXPECT_EQ(4, CountLocks(*pIter));
+
+    // Iteration consumes the iterator - must manually reset to restart iteration
+    EXPECT_FALSE(pIter->IsValid());
+    pIter->Reset();
+    EXPECT_TRUE(pIter->IsValid());
+
+    // Confirm the locks
+    bool haveModel = false,
+         haveDb = false,
+         havePartitionModel = false,
+         havePartitionElement = false;
+
+    for (auto& iter = *pIter; iter.IsValid(); ++iter)
+        {
+        DgnLock lock = *iter;
+        switch (iter->GetType())
+            {
+            case LockableType::Db:
+                {
+                EXPECT_FALSE(haveDb);
+                EXPECT_FALSE(lock.IsExclusive());
+                haveDb = true;
+                break;
+                }
+            case LockableType::Model:
+                {
+                if (lock.GetId() == model->GetModelId())
+                    {
+                    EXPECT_FALSE(haveModel);
+                    EXPECT_TRUE(lock.IsExclusive());
+                    haveModel = true;
+                    }
+                else
+                    {
+                    // Partition element's model
+                    EXPECT_FALSE(havePartitionModel);
+                    EXPECT_FALSE(lock.IsExclusive());
+                    havePartitionModel = true;
+                    }
+                break;
+                }
+            case LockableType::Element:
+                {
+                // Partition element
+                EXPECT_FALSE(havePartitionElement);
+                EXPECT_TRUE(lock.IsExclusive());
+                havePartitionElement = true;
+                break;
+                }
+            }
+        }
+
+    EXPECT_TRUE(haveDb);
+    EXPECT_TRUE(haveModel);
+    EXPECT_TRUE(havePartitionElement);
+    EXPECT_TRUE(havePartitionModel);
+
+    pIter = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

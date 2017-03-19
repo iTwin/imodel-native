@@ -329,9 +329,9 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
 
     ViewControllerPtr viewController = spatialView->LoadViewController();
 
-    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
-    if (nullptr != cameraViewController)
-        cameraViewController->GetCameraViewDefinition().SetCameraOn(false);
+    auto camera = viewController->GetViewDefinition().ToView3dP();
+    if (nullptr != camera)
+        camera->TurnCameraOff();
 
     return new NonVisibleViewport (nullptr, *viewController);
     }
@@ -412,16 +412,9 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
-    // Turn camera off
-    // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
-    bool wasCameraOn = false;
-    CameraViewControllerP cameraViewController = viewController->ToCameraViewP();
-    if (nullptr != cameraViewController)
-        {
-        wasCameraOn = cameraViewController->IsCameraOn();
-        cameraViewController->SetCameraOn (false); 
-        viewport.SynchWithViewController (false); 
-        }
+    auto camera = viewController->GetViewDefinition().ToView3dP();
+    if (nullptr != camera)
+        viewport.SynchWithViewController(false); 
 
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
     
@@ -453,13 +446,6 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     stmt.BindVirtualSet (8, *viewController);
 
     FindElements (elementIds, fence, stmt, dgnDb);
-
-    // Turn camera back on
-    if (wasCameraOn)
-        {
-        cameraViewController->SetCameraOn (wasCameraOn);
-        viewport.SynchWithViewController (false);
-        }
     }
 
 //--------------------------------------------------------------------------------------

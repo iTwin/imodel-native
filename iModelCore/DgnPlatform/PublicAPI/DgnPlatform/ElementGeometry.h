@@ -96,7 +96,7 @@ public:
     //! Return true if the geometry is or would be represented by a wire body. Accepted geometry includes BRep wires and CurveVectors.
     DGNPLATFORM_EXPORT bool IsWire() const;
 
-    // Return the type of solid kernel entity that would be used to represent this geometry.
+    //! Return the type of solid kernel entity that would be used to represent this geometry.
     DGNPLATFORM_EXPORT IBRepEntity::EntityType GetBRepEntityType() const;
 
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetAsICurvePrimitive() const;
@@ -117,23 +117,29 @@ public:
 
     DGNPLATFORM_EXPORT GeometricPrimitivePtr Clone() const; // Deep copy
 
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitiveCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitiveCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfaceCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(DEllipse3dCR);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(DgnBoxDetailCR);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(DgnConeDetailCR);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(DgnSphereDetailCR);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(DgnTorusPipeDetailCR);
 
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorPtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitivePtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfacePtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityPtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);
-    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitiveCR source);   //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorCR source);       //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitiveCR source);   //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfaceCR source);  //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);     //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityCR source);       //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);        //!< Create a GeometricPrimitive from a clone of source
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicCR source);      //!< Create a GeometricPrimitive from a clone of source
+
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);   //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorPtr const& source);       //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitivePtr const& source);   //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfacePtr const& source);  //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);    //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(IBRepEntityPtr const& source);       //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);        //!< Create a GeometricPrimitive using source directly
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ImageGraphicPtr const& source);      //!< Create a GeometricPrimitive using source directly
 
 }; // GeometricPrimitive
 
@@ -641,11 +647,11 @@ public:
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint3d and optional YawPitchRollAngles.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAnglesCR angles = YawPitchRollAngles());
 
     //! Append a DgnGeometryPartId with relative placement supplied as a DPoint2d and optional AngleInDegrees rotation.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.
-    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT bool Append(DgnGeometryPartId, DPoint2dCR origin, AngleInDegreesCR angle = AngleInDegrees());
 
     //! Append a GeometricPrimive to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append(GeometricPrimitiveCR, CoordSystem coord = CoordSystem::Local);

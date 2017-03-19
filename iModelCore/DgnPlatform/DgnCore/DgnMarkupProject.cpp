@@ -9,7 +9,7 @@
 #include "DgnCoreLog.h"
 #include <BeJpeg/BeJpeg.h>
 #include <DgnPlatform/DgnMarkupProject.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ViewDefinition.h>
 
 #define QV_RGBA_FORMAT   0
 #define QV_BGRA_FORMAT   1
@@ -213,14 +213,16 @@ SpatialRedlineViewController::~SpatialRedlineViewController()
 void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
     {
     // Setup a view aligned ACS that all points/snaps will be projected to...
-    if (!m_auxCoordSys.IsValid())
-        m_auxCoordSys = IACSManager::GetManager().CreateACS ();
-
-    DPoint3d    origin = DPoint3d::From(0.5, 0.5, 1.0);
+    DPoint3d origin = DPoint3d::From(0.5, 0.5, 1.0);
 
     vp.NpcToWorld(&origin, &origin, 1);
-    m_auxCoordSys->SetOrigin(origin);
-    m_auxCoordSys->SetRotation(GetRotation());
+
+    AuxCoordSystem3dPtr auxCoordSys = new AuxCoordSystem3d(GetDgnDb());
+
+    auxCoordSys->SetOrigin(origin);
+    auxCoordSys->SetRotation(m_definition->GetRotation());
+
+    m_auxCoordSys = auxCoordSys.get();
 
     T_Super::_OnViewOpened(vp);
     }
@@ -241,15 +243,6 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
-    {
-    // Redline views have their own ACS
-    return T_Super::_GetAuxCoordinateSystem();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -535,7 +528,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         auto pView = cpView.IsValid() ? cpView->MakeCopy<ViewDefinition>() : nullptr;
         if (pView.IsValid())
             {
-            pView->SetSource(DgnViewSource::Private);
+            pView->SetIsPrivate(true);
             pView->Update();
             }
         }
@@ -548,9 +541,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         stmt.Step();
         }
 
-    if (DgnDbStatus::Success != ImportMarkupSchema())
-        return BE_SQLITE_ERROR;
-
     SaveSettings();
     SaveChanges();
 
@@ -558,19 +548,6 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     BeAssert(!mpp.GetSpatialRedlining() || IsSpatialRedlineProject());
 
     return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    05/2015
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnMarkupProject::ImportMarkupSchema()
-    {
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(MARKUP_SCHEMA_PATH);
-
-    DgnDbStatus status = MarkupDomain::GetDomain().ImportSchema(*this, schemaFile);
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -745,8 +722,6 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
-    view->SetSource(DgnViewSource::User);
-
     view->SetCode(code);
 
     //  The origin of a RedlineViewDefinition is always 0,0.
@@ -837,7 +812,7 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, OrthographicViewController& subjectView)
     {
-    DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName(), NULL, DgnViewSource::Generated);
+    DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName());
 
     auto rc = model.GetDgnMarkupProject()->Views().InsertView(view);
     if (BE_SQLITE_OK != rc)

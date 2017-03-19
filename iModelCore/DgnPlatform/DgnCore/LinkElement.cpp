@@ -11,11 +11,11 @@
 
 #define URLLINK_Url "Url"
 #define URLLINK_UserLabel "UserLabel"
-#define URLLINK_Description "Descr"
+#define URLLINK_Description "Description"
 
 #define EMBEDDEDFILELINK_Name "Name"
 #define EMBEDDEDFILELINK_UserLabel "UserLabel"
-#define EMBEDDEDFILELINK_Description "Descr"
+#define EMBEDDEDFILELINK_Description "Description"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -210,7 +210,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, D
         return ERROR;
         }
 
-    return (BE_SQLITE_OK == dgndb.DeleteECRelationships(BIS_SCHEMA(BIS_REL_ElementHasLinks), sourceElementId, linkId))? BSISUCCESS: BSIERROR;
+    return (BE_SQLITE_OK == dgndb.DeleteNonNavigationRelationships(BIS_SCHEMA(BIS_REL_ElementHasLinks), sourceElementId, linkId))? BSISUCCESS: BSIERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -648,6 +648,7 @@ void dgn_ElementHandler::EmbeddedFileLinkHandler::_RegisterPropertyAccessors(ECS
             return DgnDbStatus::Success;
             });
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                             02/17
 //---------------------------------------------------------------------------------------
@@ -666,8 +667,6 @@ void dgn_ElementHandler::RepositoryLinkHandler::_RegisterPropertyAccessors(ECSql
             BeAssert(false && "TBD"); return DgnDbStatus::BadRequest;\
             });
 
-    NOT_AVAILABLE_VIA_PROPERTY_API("Url")
-    NOT_AVAILABLE_VIA_PROPERTY_API("Descr")
     NOT_AVAILABLE_VIA_PROPERTY_API("RepositoryGuid")
 
 #undef NOT_AVAILABLE_VIA_PROPERTY_API

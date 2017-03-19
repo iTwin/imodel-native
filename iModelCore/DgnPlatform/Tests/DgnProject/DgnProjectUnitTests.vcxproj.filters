@@ -283,6 +283,9 @@
     <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\CustomHandledPropertyTest.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

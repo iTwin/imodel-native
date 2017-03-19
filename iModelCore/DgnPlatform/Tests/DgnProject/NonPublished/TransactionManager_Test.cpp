@@ -1466,7 +1466,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
 static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECRelationshipClassCR relcls, DgnElementId root, DgnElementId dependent)
     {
     ECInstanceKey rkey;
-    db.InsertECRelationship(rkey, relcls, root, dependent);
+    db.InsertNonNavigationRelationship(rkey, relcls, root, dependent);
     return rkey.GetECInstanceId();
     }
 
@@ -1490,7 +1490,7 @@ static BeSQLite::DbResult modifyRelationshipProperty(DgnDbR db, ECN::ECClassCR r
     {
     auto inst = relcls.GetDefaultStandaloneEnabler()->CreateInstance();
     inst->SetValue(propName, ECN::ECValue(newValue));
-    return db.UpdateECRelationshipProperties(EC::ECInstanceKey(relcls.GetId(), relid), *inst);
+    return db.UpdateNonNavigationRelationshipProperties(EC::ECInstanceKey(relcls.GetId(), relid), *inst);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1524,7 +1524,7 @@ static BeSQLite::DbResult selectRelationshipProperty(Utf8StringR value, DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid)
     {
-    return db.DeleteECRelationship(EC::ECInstanceKey(relcls.GetId(), relid));
+    return db.DeleteNonNavigationRelationship(EC::ECInstanceKey(relcls.GetId(), relid));
     }
 
 /*---------------------------------------------------------------------------------**//**

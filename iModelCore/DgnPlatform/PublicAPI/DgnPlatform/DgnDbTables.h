@@ -11,9 +11,10 @@
 //-----------------------------------------------------------------------------------------
 // Macros associated with the BisCore ECSchema
 //-----------------------------------------------------------------------------------------
-#define BIS_ECSCHEMA_NAME   "BisCore"
-#define BIS_SCHEMA(name)    BIS_ECSCHEMA_NAME "." name
-#define BIS_TABLE(name)     "bis_" name
+#define BIS_ECSCHEMA_NAME       "BisCore"
+#define BISCORE_ECSCHEMA_PATH   L"ECSchemas/Dgn/BisCore.01.00.ecschema.xml"
+#define BIS_SCHEMA(name)        BIS_ECSCHEMA_NAME "." name
+#define BIS_TABLE(name)         "bis_" name
 
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with BIS_SCHEMA macro for use in ECSql)
@@ -22,6 +23,9 @@
 #define BIS_CLASS_AnnotationFrameStyle      "AnnotationFrameStyle"
 #define BIS_CLASS_AnnotationLeaderStyle     "AnnotationLeaderStyle"
 #define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
+#define BIS_CLASS_AuxCoordSystem            "AuxCoordSystem"
+#define BIS_CLASS_AuxCoordSystem2d          "AuxCoordSystem2d"
+#define BIS_CLASS_AuxCoordSystem3d          "AuxCoordSystem3d"
 #define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_CategorySelector          "CategorySelector"
 #define BIS_CLASS_CodeSpec                  "CodeSpec"
@@ -53,7 +57,6 @@
 #define BIS_CLASS_GraphicalElement2d        "GraphicalElement2d"
 #define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
-#define BIS_CLASS_GraphicalRecipe2d         "GraphicalRecipe2d"
 #define BIS_CLASS_GraphicalType2d           "GraphicalType2d"
 #define BIS_CLASS_GroupInformationElement   "GroupInformationElement"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
@@ -69,19 +72,15 @@
 #define BIS_CLASS_MaterialElement           "MaterialElement"
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelSelector             "ModelSelector"
-#define BIS_CLASS_NestedTypeLocation2d      "NestedTypeLocation2d"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
-#define BIS_CLASS_PhysicalRecipe            "PhysicalRecipe"
 #define BIS_CLASS_PhysicalType              "PhysicalType"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
 #define BIS_CLASS_SectionDrawing            "SectionDrawing"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
-#define BIS_CLASS_Session                   "Session"
-#define BIS_CLASS_SessionModel              "SessionModel"
 #define BIS_CLASS_Sheet                     "Sheet"
 #define BIS_CLASS_SheetModel                "SheetModel"
 #define BIS_CLASS_SpatialCategory           "SpatialCategory"
@@ -90,10 +89,15 @@
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
 #define BIS_CLASS_SpatialLocationModel      "SpatialLocationModel"
 #define BIS_CLASS_SpatialLocationPartition  "SpatialLocationPartition"
+#define BIS_CLASS_SpatialLocationType       "SpatialLocationType"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_StreetMapModel            "StreetMapModel"
 #define BIS_CLASS_SubCategory               "SubCategory"
 #define BIS_CLASS_Subject                   "Subject"
+#define BIS_CLASS_TemplateRecipe2d          "TemplateRecipe2d"
+#define BIS_CLASS_TemplateRecipe3d          "TemplateRecipe3d"
+#define BIS_CLASS_TemplateViewDefinition2d  "TemplateViewDefinition2d"
+#define BIS_CLASS_TemplateViewDefinition3d  "TemplateViewDefinition3d"
 #define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
 #define BIS_CLASS_Texture                   "Texture"
 #define BIS_CLASS_TrueColor                 "TrueColor"
@@ -117,15 +121,15 @@
 #define BIS_REL_ElementUsesGeometryParts            "ElementUsesGeometryParts"
 #define BIS_REL_GraphicDerivedFromElement           "GraphicDerivedFromElement"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
-#define BIS_REL_GraphicalType2dHasRecipe            "GraphicalType2dHasRecipe"
+#define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"
 #define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
 #define BIS_REL_ModelContainsElements               "ModelContainsElements"
 #define BIS_REL_ModelModelsElement                  "ModelModelsElement"
 #define BIS_REL_ModelSelectorRefersToModels         "ModelSelectorRefersToModels"
-#define BIS_REL_NestedTypeLocation2dRefersToType    "NestedTypeLocation2dRefersToType"
+#define BIS_REL_PartitionOriginatesFromRepository   "PartitionOriginatesFromRepository"
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
-#define BIS_REL_PhysicalTypeHasRecipe               "PhysicalTypeHasRecipe"
+#define BIS_REL_PhysicalTypeHasTemplateRecipe       "PhysicalTypeHasTemplateRecipe"
 #define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
@@ -333,7 +337,7 @@ public:
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
-        bool GetIsTemplate() const {return m_isTemplate;}
+        bool IsTemplate() const {return m_isTemplate;}
     }; // Model
 
 public:
@@ -385,7 +389,7 @@ public:
     //! Tell all models to drop any cached graphics associated with the specified viewport.
     //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
     //! no longer reflect its state.
-    //! @param[in]      viewport The viewport for which to drop graphics
+    //! @param[in] viewport The viewport for which to drop graphics
     DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 

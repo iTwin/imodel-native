@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/LinkElement.h>
-#include "DgnView.h"
+#include "ViewDefinition.h"
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines
 * A markup is a set of annotations that apply to a DgnDb or to views of that project. Markups include redlines, markups, and punch lists.
@@ -89,6 +89,9 @@ enum DgnMarkupProjectSchemaValues
 struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+
+    private:
+        WCharCP _GetSchemaRelativePath() const override { return MARKUP_SCHEMA_PATH; }
         void _OnDgnDbOpened(DgnDbR) const override;
         void _OnSchemaImported(DgnDbR) const override;
     public:
@@ -261,8 +264,8 @@ protected:
     bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
     AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
-    bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
+    bool _IsSnapAdjustmentRequired(bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
+    bool _IsContextRotationRequired(bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
     void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
@@ -378,8 +381,6 @@ private:
     DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
     BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
-
-    DgnDbStatus ImportMarkupSchema();
 
 public:
     BentleyStatus CheckIsOpen();

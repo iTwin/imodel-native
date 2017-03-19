@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ValueParse.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -210,12 +210,6 @@ public:
     //! @param[in] vp Initialize the parser from the settings in this viewport.
     static DGNPLATFORM_EXPORT  DistanceParserPtr Create(DgnViewportR vp);
 
-    //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.
-    //! The ACS provides the scale for the parser.
-    //! @param[in] model Initialize the parser from the settings in this model.
-    //! @param[in] acs   Initialize the scale from the settings in this Auxiliary Coordinate System.
-    static DGNPLATFORM_EXPORT DistanceParserPtr Create(GeometricModelCR model, IAuxCoordSysCR acs);
-
     //! Construct a parser which is a duplicate of an existing parser.
     DGNPLATFORM_EXPORT DistanceParserPtr Clone() const;
 
@@ -276,12 +270,6 @@ public:
     //! target model and the ACS from the viewport.
     //! @param[in] vp  Initialize the parser from the settings in this viewport.
     static DGNPLATFORM_EXPORT PointParserPtr Create(DgnViewportR vp);
-
-    //! Construct a parser with settings from a DgnModel and an Auxiliary Coordinate System.
-    //! The ACS provides the scale for the parser.
-    //! @param[in] model Initialize the parser from the settings in this model.
-    //! @param[in] acs   Initialize the scale from the settings in this Auxiliary Coordinate System.
-    static DGNPLATFORM_EXPORT PointParserPtr Create(GeometricModelCR model, IAuxCoordSysCR acs);
 
     //! Construct a parser which is a duplicate of an existing parser.
     DGNPLATFORM_EXPORT PointParserPtr Clone() const;

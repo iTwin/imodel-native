@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ScriptTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This test does the same thing as ScriptTest.ts. It is used to compare native and script performance.
@@ -19,7 +19,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnElementDependency.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -80,7 +80,7 @@ void ScriptTest::TearDownTestCase()
 ScriptTest::ScriptTest()
     {
     // Must register my domain whenever I initialize a host
-    DgnPlatformTestDomain::Register();
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**

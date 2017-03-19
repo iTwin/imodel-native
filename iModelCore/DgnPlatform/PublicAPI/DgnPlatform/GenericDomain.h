@@ -14,6 +14,8 @@ DGNPLATFORM_TYPEDEFS(GenericGroup)
 DGNPLATFORM_TYPEDEFS(GenericGroupModel)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
+DGNPLATFORM_TYPEDEFS(GenericPhysicalType)
+DGNPLATFORM_TYPEDEFS(GenericGraphicalType2d)
 DGNPLATFORM_TYPEDEFS(GenericCallout)
 DGNPLATFORM_TYPEDEFS(GenericDetailingSymbol)
 DGNPLATFORM_TYPEDEFS(GenericViewAttachmentLabel)
@@ -22,6 +24,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericGroupModel)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
+DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalType)
+DGNPLATFORM_REF_COUNTED_PTR(GenericGraphicalType2d)
 DGNPLATFORM_REF_COUNTED_PTR(GenericCallout)
 DGNPLATFORM_REF_COUNTED_PTR(GenericDetailingSymbol)
 DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
@@ -39,6 +43,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 #define GENERIC_CLASS_Callout               "Callout"
 #define GENERIC_CLASS_SectionCallout        "SectionCallout"
 #define GENERIC_CLASS_ElevationCallout      "ElevationCallout"
+#define GENERIC_CLASS_PhysicalType          "PhysicalType"
+#define GENERIC_CLASS_GraphicalType2d       "GraphicalType2d"
 #define GENERIC_CLASS_PlanCallout           "PlanCallout"
 #define GENERIC_CLASS_DetailCallout         "DetailCallout"
 #define GENERIC_CLASS_TitleText             "TitleText"
@@ -56,8 +62,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace generic_ModelHandler {struct GenericGroupModelHandler;};
-namespace generic_ElementHandler {struct GenericGroupHandler; struct GenericSpatialLocationHandler;};
+namespace generic_ModelHandler {struct GroupModel;};
+namespace generic_ElementHandler {struct Group; struct PhysicalType; struct GraphicalType2d; struct SpatialLocation;};
 
 //=======================================================================================
 //! The Generic DgnDomain
@@ -68,15 +74,13 @@ struct GenericDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(GenericDomain, DGNPLATFORM_EXPORT)
 
-protected:
+private:
+    WCharCP _GetSchemaRelativePath() const override { return GENERIC_DOMAIN_ECSCHEMA_PATH; }
     void _OnSchemaImported(DgnDbR) const override;
 
 public:
     GenericDomain();
     ~GenericDomain();
-    
-    //! Import the ECSchema for the GenericDomain into the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 };
 
 //=======================================================================================
@@ -134,11 +138,11 @@ public:
     //! Look up the ViewAttachmentLabel that labels the specified ViewAttachment. This is the reverse of GetViewAttachment.
     static DgnElementId FindFromViewAttachment(Sheet::ViewAttachmentCR va) {return FindFromViewAttachment(va.GetDgnDb(), va.GetElementId());}
 
-    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of this ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
-    DgnElementId FindCallout() const {auto va = GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): DgnElementId();}
+    //! Look up the Callouts that point to the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    DGNPLATFORM_EXPORT static bvector<DgnElementId> FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment);
 
-    //! Look up the Callout that is fulfilled by the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
-    DGNPLATFORM_EXPORT static DgnElementId FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+    //! Look up the Callouts that point to the DrawingModel that is the target of the specified ViewAttachment. This is the reverse of GenericCallout::FindViewAttachment.
+    bvector<DgnElementId> FindCallout() const {auto va = GetViewAttachmentElement(); return va.IsValid()? FindCalloutsFor(*va): bvector<DgnElementId>();}
 };
 
 //=======================================================================================
@@ -182,11 +186,11 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutLocation
     public:
     //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
     //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
-    DGNPLATFORM_EXPORT static GenericCalloutLocation FindCalloutFor(Sheet::ViewAttachmentCR viewAttachment);
+    DGNPLATFORM_EXPORT static bvector<GenericCalloutLocation> FindCalloutsFor(Sheet::ViewAttachmentCR viewAttachment);
 
     //! Find the callout that is related to the specified viewAttachment, and locate the first view of that sheet that contains the callout.
     //! This is the reverse of GenericCalloutDestination::FindDestinationOf.
-    static GenericCalloutLocation FindCalloutFor(GenericViewAttachmentLabelCR label) {auto va = label.GetViewAttachmentElement(); return va.IsValid()? FindCalloutFor(*va): GenericCalloutLocation();}
+    static bvector<GenericCalloutLocation> FindCalloutsFor(GenericViewAttachmentLabelCR label) {auto va = label.GetViewAttachmentElement(); return va.IsValid()? FindCalloutsFor(*va): bvector<GenericCalloutLocation>();}
 
     //! The callout. The sheet that contains the callout is the model of the returned element.
     GenericCalloutCP GetCallout() const {return m_callout.get();}
@@ -239,7 +243,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocation : SpatialLocationElement
 {
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, SpatialLocationElement);
-    friend struct generic_ElementHandler::GenericSpatialLocationHandler;
+    friend struct generic_ElementHandler::SpatialLocation;
 
 protected:
     explicit GenericSpatialLocation(CreateParams const& params) : T_Super(params) {} 
@@ -259,7 +263,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModel : GroupInformationModel
 {
     DGNMODEL_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GroupInformationModel);
-    friend struct generic_ModelHandler::GenericGroupModelHandler;
+    friend struct generic_ModelHandler::GroupModel;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -278,7 +282,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GenericGroup : GroupInformationElement, IElementGroupOf<DgnElement>
 {
     DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_Group, GroupInformationElement)
-    friend struct generic_ElementHandler::GenericGroupHandler;
+    friend struct generic_ElementHandler::Group;
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
@@ -290,6 +294,36 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    03/17
+//=======================================================================================
+struct GenericPhysicalType : PhysicalType
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalType, PhysicalType)
+    friend struct generic_ElementHandler::PhysicalType;
+
+protected:
+    explicit GenericPhysicalType(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static GenericPhysicalTypePtr Create(Dgn::DefinitionModelR, Utf8CP);
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    03/17
+//=======================================================================================
+struct GenericGraphicalType2d : GraphicalType2d
+{
+    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_GraphicalType2d, GraphicalType2d)
+    friend struct generic_ElementHandler::GraphicalType2d;
+
+protected:
+    explicit GenericGraphicalType2d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DGNPLATFORM_EXPORT static GenericGraphicalType2dPtr Create(Dgn::DefinitionModelR, Utf8CP);
+};
+
+//=======================================================================================
 //! The namespace that only contains ModelHandlers for the GenericDomain
 //! @private
 //=======================================================================================
@@ -297,9 +331,9 @@ namespace generic_ModelHandler
 {
     //! The ModelHandler for GroupModel
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupModelHandler : dgn_ModelHandler::GroupInformation
+    struct EXPORT_VTABLE_ATTRIBUTE GroupModel : dgn_ModelHandler::GroupInformation
     {
-        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GenericGroupModelHandler, dgn_ModelHandler::GroupInformation, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GroupModel, GenericGroupModel, GroupModel, dgn_ModelHandler::GroupInformation, DGNPLATFORM_EXPORT)
     };
 }
 
@@ -310,49 +344,63 @@ namespace generic_ModelHandler
 namespace generic_ElementHandler
 {
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericDetailingSymbolHandler : dgn_ElementHandler::Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE DetailingSymbol : dgn_ElementHandler::Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_DetailingSymbol, GenericDetailingSymbol, GenericDetailingSymbolHandler, dgn_ElementHandler::Geometric2d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_DetailingSymbol, GenericDetailingSymbol, DetailingSymbol, dgn_ElementHandler::Geometric2d, DGNPLATFORM_EXPORT)
     };
 
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericCalloutHandler : GenericDetailingSymbolHandler
+    struct EXPORT_VTABLE_ATTRIBUTE Callout : DetailingSymbol
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Callout, GenericCallout, GenericCalloutHandler, GenericDetailingSymbolHandler, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Callout, GenericCallout, Callout, DetailingSymbol, DGNPLATFORM_EXPORT)
     };
 
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericViewAttachmentLabelHandler : GenericDetailingSymbolHandler
+    struct EXPORT_VTABLE_ATTRIBUTE ViewAttachmentLabel : DetailingSymbol
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_ViewAttachmentLabel, GenericViewAttachmentLabel, GenericViewAttachmentLabelHandler, GenericDetailingSymbolHandler, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_ViewAttachmentLabel, GenericViewAttachmentLabel, ViewAttachmentLabel, DetailingSymbol, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericGraphic3d
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3dHandler : dgn_ElementHandler::Geometric3d
+    struct EXPORT_VTABLE_ATTRIBUTE Graphic3d : dgn_ElementHandler::Geometric3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Graphic3d, GenericGraphic3d, GenericGraphic3dHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Graphic3d, GenericGraphic3d, Graphic3d, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericPhysicalObject
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Physical
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalObject : dgn_ElementHandler::Physical
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalObject, GenericPhysicalObject, PhysicalObject, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericSpatialLocation
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::SpatialLocation
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : dgn_ElementHandler::SpatialLocation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::SpatialLocation, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_SpatialLocation, GenericSpatialLocation, SpatialLocation, dgn_ElementHandler::SpatialLocation, DGNPLATFORM_EXPORT)
     };
     
     //! The ElementHandler for GenericGroup
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGroupHandler : dgn_ElementHandler::GroupInformation
+    struct EXPORT_VTABLE_ATTRIBUTE Group : dgn_ElementHandler::GroupInformation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Group, GenericGroup, GenericGroupHandler, dgn_ElementHandler::GroupInformation, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Group, GenericGroup, Group, dgn_ElementHandler::GroupInformation, DGNPLATFORM_EXPORT)
+    };
+    
+    //! The ElementHandler for GenericPhysicalType
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : dgn_ElementHandler::PhysicalType
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_PhysicalType, GenericPhysicalType, PhysicalType, dgn_ElementHandler::PhysicalType, DGNPLATFORM_EXPORT)
+    };
+    
+    //! The ElementHandler for GenericGraphicalType2d
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE GraphicalType2d : dgn_ElementHandler::GraphicalType2d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_GraphicalType2d, GenericGraphicalType2d, GraphicalType2d, dgn_ElementHandler::GraphicalType2d, DGNPLATFORM_EXPORT)
     };
 }
 

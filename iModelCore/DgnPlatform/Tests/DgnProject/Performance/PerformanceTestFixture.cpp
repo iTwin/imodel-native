@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Performance/PerformanceTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -29,9 +29,9 @@ DgnDbR project
 )
     {
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    auto stat = project.Schemas ().ImportECSchemas (schemaContext.GetCache ().GetSchemas());
+    DbResult result = project.ImportSchemas (schemaContext.GetCache ().GetSchemas());
     stopwatch.Stop();
-    ASSERT_EQ (SUCCESS, stat);
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     PERFORMANCELOG.infov (L"PerformanceTestFixture::ImportSchema> Importing ECSchema '%ls' into DgnDb file took %.4lf ms.", 
         testSchema.GetFullSchemaName ().c_str (),

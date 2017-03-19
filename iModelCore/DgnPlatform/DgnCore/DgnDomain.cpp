@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -10,16 +10,23 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDomains::RegisterDomain(DgnDomain& domain)
+BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/)
     {
     auto& domains = T_HOST.RegisteredDomains();
     for (DgnDomainCP it : domains)
         {
         if (it->m_domainName.EqualsI(domain.m_domainName))
-            return;
+            return SUCCESS;
         }
 
+    if (!domain.ValidateSchemaPathname())
+        return ERROR;
+
+    domain.SetRequired(isRequired);
+    domain.SetReadonly(isReadonly);
+
     domains.push_back(&domain);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -34,6 +41,43 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
         }
 
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName DgnDomain::GetSchemaPathname() const
+    {
+    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPathname.AppendToPath(_GetSchemaRelativePath());
+    return schemaPathname;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDomain::ValidateSchemaPathname() const
+    {
+    BeFileName schemaPathname = GetSchemaPathname();
+    if (!schemaPathname.DoesPathExist())
+        {
+        LOG.errorv("Schema '%ls' does not exist", schemaPathname.GetName());
+        BeAssert(false && "Schema does not exist");
+        return false;
+        }
+
+    BeFileName schemaBaseNameW;
+    schemaPathname.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
+    Utf8String schemaBaseName(schemaBaseNameW);
+
+    if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName())))
+        {
+        LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
+        BeAssert(false && "Schema name and DgnDomain name must match");
+        return false;
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,6 +131,45 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
     for (auto* tblHandler : m_tableHandlers)
         dgndb.Txns().AddTxnTable(tblHandler);
 
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomain::ImportSchema(DgnDbR dgndb)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
+    BeFileName schemaPathname = GetSchemaPathname();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
+    if (SchemaReadStatus::Success != status)
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        BeAssert(false && "Error reading schema");
+        return BE_SQLITE_ERROR_SchemaReadFailed;
+        }
+
+    DbResult result = DgnDomains::ValidateSchema(*schema, IsReadonly() || dgndb.IsReadonly(), dgndb);
+
+    if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
+        {
+        BeAssert(false && "Schema cannot be imported");
+        return result;
+        }
+
+    bvector<ECSchemaCP> schemasToImport;
+    schemasToImport.push_back(schema.get());
+
+    result = DgnDomains::DoImportSchemas(dgndb, schemasToImport, false /*=isImportingFromV8*/);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    dgndb.Domains().SyncWithSchemas();
+    CallOnSchemaImported(dgndb);
     return BE_SQLITE_OK;
     }
 
@@ -236,58 +319,232 @@ void DgnDomains::OnDbClose()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    04/15
+* @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     {
-    if (!schemaFile.DoesPathExist())
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    BeFileName standardSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    standardSchemaPath.AppendToPath(L"ECSchemas/Standard");
+    context->AddSchemaPath(standardSchemaPath);
+
+    context->SetFinalSchemaLocater(GetDgnDb().GetSchemaLocater()); // Schemas must first be located in disk (i.e., domain schemas) before finding them in the Db.
+    return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
+    {
+    DgnDbR dgndb = GetDgnDb();
+    ECSchemaReadContextPtr schemaContext = PrepareSchemaReadContext();
+   
+    /* Validate the schema for all the domains */
+    DbResult result = BE_SQLITE_OK;
+    bvector<DgnDomainP> importDomains;
+    bset<ECSchemaCP> validatedSchemas;
+
+    auto& hostDomains = T_HOST.RegisteredDomains();
+    for (DgnDomainP domain : hostDomains)
         {
-        LOG.errorv("DgnDomain::ImportSchema(): Schema file '%s' does not exist", schemaFile.c_str());
-        BeAssert(false && "DgnDomain::ImportSchema(): Schema file does not exist");
-        return DgnDbStatus::FileNotFound;
+        BeFileName schemaPathname = domain->GetSchemaPathname();
+
+        ECSchemaPtr schema;
+        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+            BeAssert(false && "Error reading schema");
+            return BE_SQLITE_ERROR_SchemaReadFailed;
+            }
+
+        DbResult locResult = ValidateSchema(*schema, domain->IsReadonly() || dgndb.IsReadonly(), dgndb);
+
+        validatedSchemas.insert(schema.get());
+
+        if (locResult == BE_SQLITE_OK)
+            continue;
+
+        if (locResult == BE_SQLITE_ERROR_SchemaNotFound)
+            {
+            if (domain->IsRequired())
+                {
+                result = BE_SQLITE_ERROR_SchemaImportRequired;
+
+                if (doImport)
+                    importDomains.push_back(domain);
+                else
+                    LOG.warningv("Schema for a required domain %s is not found. Either re-create the Db, or make the domain optional, or import the domain schema after reopening the db (with schema validation disabled)", domain->GetDomainName());
+                }
+            else
+                {
+                if (doImport)
+                    {
+                    ECObjectsStatus ecStatus = schemaContext->GetCache().DropSchema(schema->GetSchemaKey()); // Note: Assume no reference schemas are part of the domain
+                    BeAssert(ecStatus == ECObjectsStatus::Success);
+                    }
+                }
+
+            continue;
+            }
+
+        if (locResult == BE_SQLITE_ERROR_SchemaImportRequired)
+            {
+            result = locResult; 
+            continue;
+            }
+
+        BeAssert(locResult == BE_SQLITE_ERROR_SchemaTooNew || locResult == BE_SQLITE_ERROR_SchemaTooOld);
+        return locResult;
         }
 
-    BeFileName schemaBaseNameW;
-    schemaFile.ParseName(NULL, NULL, &schemaBaseNameW, NULL);
-    Utf8String schemaBaseName(schemaBaseNameW);
+    BeAssert(result == BE_SQLITE_OK || result == BE_SQLITE_ERROR_SchemaImportRequired);
 
-    if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName()))) // ECSchema base name and DgnDomain name must match
+    /* Validate all reference schemas */
+    bvector<ECSchemaCP> schemasToImport = schemaContext->GetCache().GetSchemas();
+    bvector<ECSchemaCP>::iterator it = schemasToImport.begin();
+    while (it != schemasToImport.end())
         {
-        LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
-        BeAssert(false && "Schema name and DgnDomain name must match");
-        return DgnDbStatus::WrongDomain;
+        if (validatedSchemas.find(*it) != validatedSchemas.end())
+            {
+            ++it;
+            continue;
+            }
+
+        DbResult locResult = ValidateSchema(**it, true /*=isReadonly*/, dgndb);
+
+        if (locResult == BE_SQLITE_OK)
+            {
+            if (doImport)
+                it = schemasToImport.erase(it);
+            else
+                ++it;
+            continue;
+            }
+            
+        if (locResult == BE_SQLITE_ERROR_SchemaNotFound || locResult == BE_SQLITE_ERROR_SchemaImportRequired)
+            {
+            result = BE_SQLITE_ERROR_SchemaImportRequired;
+            ++it;
+            continue;
+            }
+
+        ++it;
+        BeAssert(locResult == BE_SQLITE_ERROR_SchemaTooNew || locResult == BE_SQLITE_ERROR_SchemaTooOld);
+        return locResult;
         }
 
-    BeFileName schemaDir = schemaFile.GetDirectoryName();
+    /* Import the schemas */
+    if (doImport)
+        {
+        result = DoImportSchemas(dgndb, schemasToImport, false /*=isImportingFromV8*/);
+        if (BE_SQLITE_OK != result)
+            return result;
 
-    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
-    contextPtr->AddSchemaPath(schemaDir.GetName());
+        SyncWithSchemas();
 
-    ECSchemaPtr schemaPtr;
-    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (SchemaReadStatus::Success != readSchemaStatus)
-        return DgnDbStatus::ReadError;
+        for (DgnDomainP domain : importDomains)
+            domain->CallOnSchemaImported(dgndb);
+        }
 
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()))
-        return DgnDbStatus::BadSchema;
+    return result;
+    }
 
-    db.Domains().SyncWithSchemas();
-    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
-    return DgnDbStatus::Success;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+// static
+DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& importSchemas, bool isImportingFromV8)
+    {
+    if (dgndb.IsReadonly())
+        {
+        BeAssert(false && "Cannot import schemas into a Readonly Db");
+        return BE_SQLITE_READONLY;
+        }
+
+    if (importSchemas.empty())
+        return BE_SQLITE_OK;
+
+    if (RepositoryStatus::Success != dgndb.BriefcaseManager().LockSchemas().Result())
+        {
+        BeAssert(false && "Unable to obtain the schema lock");
+        return BE_SQLITE_ERROR_SchemaLockFailed;
+        }
+
+    if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportECSchemas(importSchemas, isImportingFromV8, dgndb.GetSchemaImportToken()))
+        {
+        DbResult result = dgndb.AbandonChanges();
+        BeAssert(result == BE_SQLITE_OK);
+
+        return BE_SQLITE_ERROR_SchemaImportFailed;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+// static
+DbResult DgnDomains::ValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db)
     {
-    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache.GetSchemas()))
-        return DgnDbStatus::BadSchema;
+    SchemaKeyCR appSchemaKey = appSchema.GetSchemaKey();
+    ECSchemaCP bimSchema = db.Schemas().GetECSchema(appSchemaKey.GetName().c_str(), false);
+    if (!bimSchema)
+        {
+        LOG.warningv("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
+        return BE_SQLITE_ERROR_SchemaNotFound;
+        }
+    SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
 
-    db.Domains().SyncWithSchemas();
-    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
-    return DgnDbStatus::Success;
+    if (appSchemaKey.GetVersionRead() == bimSchemaKey.GetVersionRead() && appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
+        return BE_SQLITE_OK; // Most common case
+
+    if (appSchemaKey.GetVersionRead() < bimSchemaKey.GetVersionRead())
+        {
+        LOG.errorv("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return BE_SQLITE_ERROR_SchemaTooNew;
+        }
+
+    if (appSchemaKey.GetVersionRead() > bimSchemaKey.GetVersionRead())
+        {
+        LOG.errorv("Schema found in the BIM %s is too old compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return BE_SQLITE_ERROR_SchemaTooOld;
+        }
+
+    if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
+        {
+        LOG.warningv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return BE_SQLITE_ERROR_SchemaImportRequired;
+        }
+
+    BeAssert(appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite());
+
+    if (!isSchemaReadonly)
+        {
+        LOG.errorv("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        return BE_SQLITE_ERROR_SchemaTooNew;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+DbResult DgnDomains::ValidateSchemas()
+    {
+    return ValidateAndImportSchemas(false /*=doImport*/);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+DbResult DgnDomains::ImportSchemas()
+    {
+    return ValidateAndImportSchemas(true /*=doImport*/);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,7 +552,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::InsertDomain(DgnDomainCR domain)
     {
-    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
+    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Description,Version) VALUES(?,?,?)"));
     stmt.BindText(1, domain.GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, domain.GetDomainDescription(), Statement::MakeCopy::No);
     stmt.BindInt(3, domain.GetVersion());

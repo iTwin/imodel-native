@@ -11,7 +11,6 @@
 #include "DgnDbTables.h"
 #include "DgnModel.h"
 #include "MemoryManager.h"
-#include "SessionManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
 #include <Bentley/BeFileName.h>
@@ -21,64 +20,53 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/13
 //=======================================================================================
-enum DgnDbSchemaValues : int32_t
+enum DgnDbProfileValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
-    DGNDB_CURRENT_VERSION_Minor = 14,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 18,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
-    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the schema supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 14,
+    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the profile supported by the current api
+    DGNDB_SUPPORTED_VERSION_Minor = 18,
 };
 
 //=======================================================================================
 //! A 4-digit number that specifies a serializable version of something in a DgnDb.
 // @bsiclass
 //=======================================================================================
-struct DgnVersion : BeSQLite::SchemaVersion
+struct DgnDbProfileVersion : BeSQLite::SchemaVersion
 {
-    DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
-    DgnVersion(Utf8CP val) : SchemaVersion(val){}
-};
-
-//=======================================================================================
-//! Class designed for extracting the DgnDb schema version from a BeFileName
-//! @see DgnDbSchemaVersion::Extract
-// @bsiclass
-//=======================================================================================
-struct DgnDbSchemaVersion : DgnVersion
-{
-    DEFINE_T_SUPER(DgnVersion)
+    DEFINE_T_SUPER(BeSQLite::SchemaVersion)
     friend struct DgnDb;
 
 private:
-    DgnDbSchemaVersion() : T_Super(0, 0, 0, 0) {}
-    DgnDbSchemaVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
-    DgnDbSchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : T_Super(major, minor, sub1, sub2) {}
-    explicit DgnDbSchemaVersion(Utf8CP json) : T_Super(json) {}
-
     //! Map from legacy version range into current version range
-    static DgnDbSchemaVersion FromLegacy(Utf8CP versionJson);
-    //! Former PropertySpec values of DgnProjectProperty::SchemaVersion.  Used for inspecting legacy .dgndb, .idgndb files.
-    static BeSQLite::PropertySpec LegacyDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Proj");}
-    //! Former PropertySpec values of DgnEmbeddedProjectProperty::SchemaVersion.  Used for inspecting legacy .imodel files.
-    static BeSQLite::PropertySpec LegacyEmbeddedDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnProj");}
+    static DgnDbProfileVersion FromLegacy(Utf8CP versionJson);
+    //! Former PropertySpec values of DgnProjectProperty::ProfileVersion.  Used for inspecting legacy .dgndb, .idgndb files.
+    static BeSQLite::PropertySpec LegacyDbProfileVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Proj");}
+    //! Former PropertySpec values of DgnEmbeddedProjectProperty::ProfileVersion.  Used for inspecting legacy .imodel files.
+    static BeSQLite::PropertySpec LegacyEmbeddedDbProfileVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnProj");}
 
 public:
+    DgnDbProfileVersion() : T_Super(0, 0, 0, 0) {}
+    DgnDbProfileVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
+    DgnDbProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
+    explicit DgnDbProfileVersion(Utf8CP json) : T_Super(json) {}
+
     bool IsValid() const {return !IsEmpty();}
     bool IsCurrent() const {return *this == GetCurrent();}
     bool IsPast() const {return *this < GetCurrent();}
     bool IsFuture() const {return *this > GetCurrent();}
-    bool IsVersion_1_5() const {return *this == DgnDbSchemaVersion::Version_1_5();}
-    bool IsVersion_1_6() const {return *this == DgnDbSchemaVersion::Version_1_6();}
+    bool IsVersion_1_5() const {return *this == DgnDbProfileVersion::Version_1_5();}
+    bool IsVersion_1_6() const {return *this == DgnDbProfileVersion::Version_1_6();}
 
-    //! Extract the DgnDbSchemaVersion from the specfied file
-    DGNPLATFORM_EXPORT static DgnDbSchemaVersion Extract(BeFileNameCR fileName);
-    static DgnDbSchemaVersion GetCurrent() {return DgnDbSchemaVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
-    static DgnDbSchemaVersion Version_1_0() {return DgnDbSchemaVersion(1, 0);} // DgnV8
-    static DgnDbSchemaVersion Version_1_5() {return DgnDbSchemaVersion(1, 5);} // Graphite05
-    static DgnDbSchemaVersion Version_1_6() {return DgnDbSchemaVersion(1, 6);} // DgnDb0601
+    //! Extract the DgnDbProfileVersion from the specfied file
+    DGNPLATFORM_EXPORT static DgnDbProfileVersion Extract(BeFileNameCR fileName);
+    static DgnDbProfileVersion GetCurrent() {return DgnDbProfileVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
+    static DgnDbProfileVersion Version_1_0() {return DgnDbProfileVersion(1, 0);} // DgnV8
+    static DgnDbProfileVersion Version_1_5() {return DgnDbProfileVersion(1, 5);} // Graphite05
+    static DgnDbProfileVersion Version_1_6() {return DgnDbProfileVersion(1, 6);} // DgnDb0601
 };
 
 //=======================================================================================
@@ -147,6 +135,7 @@ public:
 //=======================================================================================
 struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
 {
+    friend struct BisCoreDomain;
     DEFINE_T_SUPER(BeSQLite::EC::ECDb)
 
     //=======================================================================================
@@ -154,15 +143,38 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
     {
-        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn=BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
-        virtual ~OpenParams() {}
+        friend struct DgnDb;
 
-        BeSQLite::DbResult UpgradeSchema(DgnDbR) const;
-        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
+        //! Flag to enable import of schemas to fix schema validation errors when opening the DgnDb
+        //! @note Only used in Project Administrator workflows to allow upgrading/importing domain schemas. 
+        enum class EnableSchemaImport : bool { Yes = 1, No = 0 };
+
+    private:
+        EnableSchemaImport m_enableSchemaImport;
+
+        bool IsSchemaImportEnabled() const { return m_enableSchemaImport == EnableSchemaImport::Yes; }
+        BeSQLite::DbResult UpgradeProfile(DgnDbR) const;
+
+    protected:
+        DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgradeProfile(DgnDbR, DgnDbProfileVersion& from) const;
+
+    public:
+        //! Constructor
+        //! @param[in] openMode The mode for opening the database
+        //! @param[in] startDefaultTxn Whether to start a default transaction on the database
+        //! @param[in] enableSchemaImport Enables opening the DgnDb if the ECSchema-s in the database fail 
+        //! to validate. This is used in Project Administrator work flows to upgrade the ECSchemas in the DgnDb
+        //! with those supplied by the various DgnDomain-s. @see DgnDb::OpenDgnDb(). 
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, EnableSchemaImport enableSchemaImport = EnableSchemaImport::No) : Db::OpenParams(openMode, startDefaultTxn), m_enableSchemaImport(enableSchemaImport) {}
+
+        void SetEnableSchemaImport(EnableSchemaImport value) { m_enableSchemaImport = value; }
+        virtual ~OpenParams() {}
     };
 
 private:
     void Destroy();
+    BeSQLite::DbResult PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
+    void SetupNewDgnDb(CreateDgnDbParams const& params);
 
 protected:
     friend struct Txns;
@@ -171,14 +183,13 @@ protected:
     Utf8String m_fileName;
     DgnElements m_elements;
     DgnModels m_models;
-    DgnVersion m_schemaVersion;
+    DgnDbProfileVersion m_profileVersion;
     DgnDomains m_domains;
     DgnFonts m_fonts;
     DgnLineStylesPtr m_lineStyles;
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
-    SessionManager m_sessionManager;
     MemoryManager m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText m_searchableText;
@@ -199,10 +210,9 @@ protected:
     BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreatePartitionElement(Utf8CP, DgnElementId, Utf8CP); //!< @private
     BeSQLite::DbResult CreateDictionaryModel(); //!< @private
-    BeSQLite::DbResult CreateSessionModel(); //!< @private
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
-    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnDbSchemaVersion::GetCurrent()); //!< @private
+    BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:
@@ -213,8 +223,8 @@ public:
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
     BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
-    //! Get the schema version of an opened DgnDb.
-    DGNPLATFORM_EXPORT DgnVersion GetSchemaVersion();
+    //! Get the profile version of an opened DgnDb.
+    DGNPLATFORM_EXPORT DgnDbProfileVersion GetProfileVersion();
 
     //! Open an existing DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully opened, error code otherwise. May be NULL.
@@ -225,6 +235,28 @@ public:
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
     //! @note A DgnDb can have an expiration date. See Db::IsExpired
+    //! @note The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
+    //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
+    //! If the error status is BE_SQLITE_ERROR_SchemaImportRequired, it may be possible to import (or upgrade) the schemas in the DgnDb. 
+    //! This is done by temporarily opening the DgnDb by setting the option to enable schema import ((@see DgnDb::OpenParams), and calling
+    //! DgnDomains::ImportSchemas() (or DgnDomain::ImportSchema() if it's a single known domain). 
+    //! <pre>
+    //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)
+    //! ----------------------------------------------------------------------------------------------
+    //! Application   |  Validation result                    | Validation result
+    //! Version       |  (Readonly)                           | (ReadWrite)
+    //! ----------------------------------------------------------------------------------------------
+    //! 2.2.2 (same)  | BE_SQLITE_OK                          | BE_SQLITE_OK
+    //! ----------------------------------------------------------------------------------------------
+    //! 1.2.2 (older) | BE_SQLITE_ERROR_SchemaTooNew          | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.1.2 (older) | BE_SQLITE_OK                          | BE_SQLITE_ERROR_SchemaTooNew
+    //! 2.2.1 (older) | BE_SQLITE_OK                          | BE_SQLITE_OK
+    //! ----------------------------------------------------------------------------------------------
+    //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld          | BE_SQLITE_ERROR_SchemaTooOld
+    //! 2.3.2 (newer) | BE_SQLITE_ERROR_SchemaImportRequired  | BE_SQLITE_ERROR_SchemaImportRequired
+    //! 2.2.3 (newer) | BE_SQLITE_ERROR_SchemaImportRequired  | BE_SQLITE_ERROR_SchemaImportRequired
+    //! ----------------------------------------------------------------------------------------------
+    //! </pre>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
@@ -249,11 +281,18 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
-    SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
     SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
-    //! Inserts a new ECRelationship
+    //! Imports EC Schemas into the DgnDb
+    //! @param[in] schemas Schemas to be imported. 
+    //! @remarks Only used for cases where the schemas are NOT paired with a domain.
+    //! It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
+    //! import. If an eror happens during the import, the new transaction is abandoned in the call. 
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
+
+    //! Inserts a new non-Navigation ECRelationship. 
+    //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
     //! @param[in] sourceId SourceECInstanceId.
@@ -262,9 +301,10 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
 
-    //! Inserts a new ECRelationship between two elements.
+    //! Inserts a new non-Navigation ECRelationship between two elements.
+    //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
     //! @param[in] sourceId The "source" element.
@@ -273,35 +313,47 @@ public:
     //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
+    BeSQLite::DbResult InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
         {
-        return InsertECRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return InsertNonNavigationRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
     
-    //! Update one or more properties of an existing ECRelationship instance. Note that you cannot change the source or target. @note this function only makes sense if the relationship instance is stored in a link table.
+    //! Update one or more properties of an existing non-Navigation ECRelationship instance. 
+    //! Note that you cannot change the source or target. 
+    //! @note This function is only for ECRelationships that are stored in a link table. 
     //! @param key Identifies the relationship instance.
     //! @param props Contains the properties to be written. Note that this functions updates props by setting its InstanceId.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateECRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateNonNavigationRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
 
-    //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
+    //! Deletes non-Navigation ECRelationships which match the specified @p sourceId and @p targetId.
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
     //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
     //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
     //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
     //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
     //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
 
-    BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
+    //! Deletes non-Navigation ECRelationships which match the specified @p sourceId and @p targetId.
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
+    //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
+    //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
+    //! @param[in] relClassECSqlName ECRelationshipClass name in ECSQL format (schema name.class name)
+    //! @param[in] sourceId SourceECInstanceId filter. If invalid, no SourceECInstanceId filter will be applied.
+    //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    BeSQLite::DbResult DeleteNonNavigationRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
         {
-        return DeleteECRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        return DeleteNonNavigationRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
 
-    //! Deletes a specific ECRelationship
+    //! Deletes a specific non-Navigation ECRelationship
+    //! @note This function is only for ECRelationships that are stored in a link table. To "delete" an ECRelationship that is implemented as a Navigation property, you must set the appropriate element property to NULL, if that is allowed.
     //! @param key Identifies the ECRelationship instance
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationship(BeSQLite::EC::ECInstanceKeyCR key);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteNonNavigationRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
@@ -322,7 +374,6 @@ public:
     DGNPLATFORM_EXPORT RepositoryModelPtr GetRepositoryModel(); //!< Return the RepositoryModel for this DgnDb.
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
     DGNPLATFORM_EXPORT LinkModelPtr GetRealityDataSourcesModel(); //!< Return the LinkModel listing the reality data sources for this DgnDb.
-    DGNPLATFORM_EXPORT SessionModelPtr GetSessionModel(); //!< Return the SessionModel for this DgnDb.
 
 /** @name DgnPlatform Threads */
 /** @{ */
@@ -350,7 +401,10 @@ public:
     //! Gets the permission token to perform a ECSchema import/update
     //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
     //! @private
-    BeSQLite::EC::ECSchemaImportToken const* GetECSchemaImportToken() const; //not inlined as it must not be called externally
+    BeSQLite::EC::ECSchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
+
+    //! @private internal use only (v8 importer)
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
 };
 
 END_BENTLEY_DGN_NAMESPACE

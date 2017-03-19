@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ECDbInstances_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -393,90 +393,6 @@ TEST(ECDbInstances, JsonValueFormatting)
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CreateEmptyProject(DgnDbPtr& project, WCharCP projectPathname)
-    {
-    if (BeFileName::DoesPathExist(projectPathname))
-        {
-        BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile(projectPathname);
-        if (fileDeleteStatus != BeFileNameStatus::Success)
-            return NULL;
-        }
-
-    return DgnDb::CreateDgnDb(NULL, BeFileName(projectPathname), CreateDgnDbParams("ECDbInstances_Test"));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname)
-    {
-    if (!BeFileName::DoesPathExist(schemaPathname))
-        return NULL;
-
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    WString schemaPath = BeFileName::GetDirectoryName(schemaPathname);
-    schemaContext->AddSchemaPath(schemaPath.c_str());
-
-    ECSchemaPtr schema;
-    ECSchema::ReadFromXmlFile(schema, schemaPathname, *schemaContext);
-    return schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ImportECSchema(ECSchemaR ecSchema, DgnDbR project)
-    {
-    ECSchemaCachePtr schemaList = ECSchemaCache::Create();
-    schemaList->AddSchema(ecSchema);
-    BentleyStatus importSchemaStatus = project.Schemas().ImportECSchemas(schemaList->GetSchemas());
-    project.SaveChanges();
-    return (SUCCESS == importSchemaStatus);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateStartupCompanyInstance(ECSchemaCR startupSchema)
-    {
-    ECClassCP anglesStructClass = startupSchema.GetClassCP("AnglesStruct");
-    if (anglesStructClass == NULL)
-        return NULL;
-    ECClassCP fooClass = startupSchema.GetClassCP("Foo");
-    if (fooClass == NULL)
-        return NULL;
-
-    ECValue doubleValue;
-    doubleValue.SetDouble(12.345);
-    ECValue intValue;
-    intValue.SetInteger(67);
-    ECValue anglesStructValue;
-    IECInstancePtr anglesStruct = anglesStructClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    anglesStruct->SetValue("Alpha", doubleValue);
-    anglesStruct->SetValue("Beta", doubleValue);
-    anglesStructValue.SetStruct(anglesStruct.get());
-
-    IECInstancePtr foo = fooClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    ECObjectsStatus status;
-    status = foo->SetValue("intFoo", intValue);
-    status = foo->SetValue("doubleFoo", doubleValue);
-    status = foo->SetValue("anglesFoo.Alpha", doubleValue);
-    status = foo->SetValue("anglesFoo.Beta", doubleValue);
-    foo->AddArrayElements("arrayOfIntsFoo", 3);
-    foo->AddArrayElements("arrayOfAnglesStructsFoo", 3);
-    for (int ii = 0; ii < 3; ii++)
-        {
-        status = foo->SetValue("arrayOfIntsFoo", intValue, ii);
-        status = foo->SetValue("arrayOfAnglesStructsFoo", anglesStructValue, ii);
-        }
-
-    return foo;
-    }
-
 #ifdef NOT_NOW
 struct DgnECInstanceTests : public testing::Test
     {
@@ -793,7 +709,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
     ECSchemaCachePtr schemaList = ECSchemaCache::Create();
     schemaList->AddSchema(*testSchema);
-    project.GetEC().Schemas().ImportECSchemas(schemaList->GetSchemas());
+    project.ImportSchemas(schemaList->GetSchemas());
 
     bvector<IECInstancePtr> orphanedWidgets;
     bvector<IECInstancePtr> orphanedBars;

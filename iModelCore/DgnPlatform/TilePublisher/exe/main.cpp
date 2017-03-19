@@ -9,7 +9,7 @@
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
-#include <DgnPlatform/TilePublisher/CesiumPublisher.h>
+#include <TilePublisher/CesiumPublisher.h>
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -17,8 +17,8 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
-using namespace BentleyApi::Dgn::Render::Tile3d;
-using namespace BentleyApi::Dgn::Render::Tile3d::Cesium;
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -71,7 +71,7 @@ static CommandParam s_paramTable[] =
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
         { L"su", L"surfaces", L"Publish only surfaces for 3D models. (no polylines, text etc.)", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
-        { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
+        { L"ip", L"imageryProvider", L"Imagery Provider {BingMapRoads, BingMapsAerial, BingMapsAerialWithLabels, MapboxSatellite, MapboxTerrain, MapboxStreets, MapboxStreetsClassic, StamenWatercolor, StamenToner, ESRIWorldImagery, ", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
@@ -372,8 +372,8 @@ int wmain(int ac, wchar_t const** av)
     Host host;
     DgnPlatformLib::Initialize(host, false);
 
-    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain());
-    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain());
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
                                                                                   
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())

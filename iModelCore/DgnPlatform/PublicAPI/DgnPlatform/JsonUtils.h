@@ -312,7 +312,7 @@ static Utf8String IdVectorToJsonString(bvector<T> const& ids)
     {
     Json::Value jsonArray;
     IdVectorToJson(jsonArray, ids);
-    return Json::FastWriter::ToString(jsonArray);
+    return jsonArray.ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,7 +336,7 @@ static Utf8String IdSetToJsonString(BeSQLite::IdSet<T> const& ids)
     {
     Json::Value jsonArray;
     IdSetToJson(jsonArray, ids);
-    return Json::FastWriter::ToString(jsonArray);
+    return jsonArray.ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**

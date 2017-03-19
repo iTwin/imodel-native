@@ -15,53 +15,181 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct GetSetCustomHandledProprty : public DgnDbTestFixture
     {
-
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, ReadOnly)
+TEST_F(GetSetCustomHandledProprty, ElementProperties)
     {
-    //test Custom Attributes when we get them
     SetupSeedProject();
-    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
-    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
-    TestElement el(params);
-
-    //Check a few CustomhandleProperties 
     ECN::ECValue checkValue1, checkValue2;
-    uint32_t LMindex , Spindex, Mindex, Gsindex ,Orgindex; 
+    uint32_t LMindex, Spindex, Mindex, Gsindex, Orgindex, fgindex, cspindex, csindex, cvindex, jsindex, uvindex;
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 456);
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(LMindex, "LastMod"));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Mindex, "Model"));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Spindex, "InSpatialIndex"));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Gsindex, "GeometryStream"));
+    DgnCode code = DgnCode::CreateEmpty();
+    BeGuid federationGuid(true);
+    Json::Value json(Json::objectValue);
+    json["dummy"] = "double";
+    DgnElementId eleid;
+    if (true)
+    {
+        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
+        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d());
+        TestElement el(params);
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(LMindex, "LastMod"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Mindex, "Model"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(Spindex, "InSpatialIndex"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(fgindex, "FederationGuid"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(csindex, "CodeSpec"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(cspindex, "CodeScope"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(cvindex, "CodeValue"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(uvindex, "UserLabel"));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(jsindex, "JsonProperties"));
 
-    // Try to set readonly property
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, "LastMod"));
-    ASSERT_EQ(DgnDbStatus::ReadOnly,el.SetPropertyValue(LMindex,ECN::ECValue(dateTime)));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, LMindex));
-    ASSERT_TRUE(checkValue1.Equals(checkValue2));
+        // Try to set readonly property
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, LMindex));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(LMindex, ECN::ECValue(dateTime)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, LMindex));
+        ASSERT_TRUE(checkValue1.Equals(checkValue2));
+        checkValue1.Clear();
+        checkValue2.Clear();
+
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Mindex));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(Mindex, ECN::ECValue(2)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, Mindex));
+        ASSERT_TRUE(checkValue1.Equals(checkValue2));
+        checkValue1.Clear();
+        checkValue2.Clear();
+
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, Spindex));
+        ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(Spindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, Spindex));
+        ASSERT_TRUE(checkValue1.Equals(checkValue2));
+        checkValue1.Clear();
+        checkValue2.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(fgindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(fgindex, ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, fgindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
+        checkValue1.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(csindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(csindex, ECN::ECValue(code.GetCodeSpecId())));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, csindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
+        checkValue1.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cspindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, cspindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+        checkValue1.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(cvindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(cvindex, ECN::ECValue("TestCode")));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, cvindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("TestCode")));
+        checkValue1.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(uvindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(uvindex, ECN::ECValue("userlabel")));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, uvindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("userlabel")));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(jsindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue(jsindex, ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+        ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, jsindex));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+        checkValue1.Clear();
+        DgnElementCPtr ele = el.Insert();
+        ASSERT_TRUE(ele.IsValid());
+        eleid = ele->GetElementId();
+    }
+    // check what stored in DB
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+     DgnElementCPtr el= m_db->Elements().GetElement(eleid);
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
+     size_t sz=sizeof(federationGuid);
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
+     checkValue1.Clear();
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
+     checkValue1.Clear();
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+     checkValue1.Clear();
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("TestCode")));
+     checkValue1.Clear();
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("userlabel")));
+     checkValue1.Clear();
+     ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, jsindex));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+     checkValue1.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DgnElementPtr el = m_db->Elements().GetForEdit<DgnElement>(eleid);
+
+    size_t sz = sizeof(federationGuid);
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(fgindex, ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
     checkValue1.Clear();
-    checkValue2.Clear();
-
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, "Model"));
-    ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(Mindex, ECN::ECValue(2)));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, Mindex));
-    ASSERT_TRUE(checkValue1.Equals(checkValue2));
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(csindex, ECN::ECValue(code.GetCodeSpecId())));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
     checkValue1.Clear();
-    checkValue2.Clear();
-
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, "InSpatialIndex"));
-    ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(Spindex, ECN::ECValue(true)));
-    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue2, Spindex));
-    ASSERT_TRUE(checkValue1.Equals(checkValue2));
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cspindex, ECN::ECValue(code.GetValue().c_str())));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
     checkValue1.Clear();
-    checkValue2.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(cvindex, ECN::ECValue("NewTestCode")));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("NewTestCode")));
+    checkValue1.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(uvindex, ECN::ECValue("label")));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("label")));
+    json["Dum"] = "12";
+    ASSERT_EQ(DgnDbStatus::Success, el->SetPropertyValue(jsindex, ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, jsindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+    checkValue1.Clear();
+    ASSERT_TRUE(el->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DgnElementCPtr el = m_db->Elements().Get<DgnElement>(eleid);
 
-    DgnElementCPtr eleid = el.Insert();
-    ASSERT_TRUE(eleid.IsValid());
+    size_t sz = sizeof(federationGuid);
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, fgindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue((Byte*)&federationGuid, sizeof(federationGuid))));
+    checkValue1.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, csindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
+    checkValue1.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cspindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+    checkValue1.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, cvindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("NewTestCode")));
+    checkValue1.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("label")));
+    ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, jsindex));
+    ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(Json::FastWriter::ToString(json).c_str())));
+    }
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
@@ -90,7 +218,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
+TEST_F(GetSetCustomHandledProprty, ElementProprties3d)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -242,7 +370,7 @@ TEST_F(GetSetCustomHandledProprty, 3dElementProprties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(GetSetCustomHandledProprty, 2dElementProprties)
+TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
@@ -383,11 +511,11 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
         DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
         DrawingCategory category(*m_db, "TestCategory");
-        ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Descr"));
+        ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Description"));
         ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(catindex, ECN::ECValue(true)));
-        ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Descr")));
+        ASSERT_EQ(DgnDbStatus::Success, category.SetPropertyValue(catindex, ECN::ECValue("Description")));
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyValue(checkValue, catindex));
-        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
 
         ASSERT_EQ(DgnDbStatus::Success, category.GetPropertyIndex(rankindex, "Rank"));
         ASSERT_EQ(DgnDbStatus::BadArg, category.SetPropertyValue(rankindex, ECN::ECValue("r")));
@@ -409,7 +537,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
      DgnCategoryCPtr category = m_db->Elements().Get<DgnCategory>(categoryId);
 
      ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, catindex));
-     ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Descr")));
+     ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
 
      ASSERT_EQ(DgnDbStatus::Success, category->GetPropertyValue(checkValue, rankindex));
      ASSERT_TRUE(checkValue.Equals(ECN::ECValue(3)));
@@ -433,7 +561,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     DgnSubCategoryPtr editsubcategory = m_db->Elements().GetForEdit<DgnSubCategory>(subcatid);
 
     //Verify Subcategory description is readonly
-    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scatindex, "Descr"));
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scatindex, "Description"));
     ASSERT_EQ(DgnDbStatus::ReadOnly, editsubcategory->SetPropertyValue(scatindex, ECN::ECValue("SubDescr")));
     subappearence.SetInvisible(false);
     subappearence.SetWeight(10);
@@ -490,7 +618,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         ASSERT_EQ(textStyle->GetName(), "MyStyle");
         const static int DataSize = 10;
         Byte DummyData[DataSize] = { 1,2,3,4,5,6,7,8,9,10 };
-        ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(Tsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(Tsdescrindex, "Description"));
         ASSERT_EQ(DgnDbStatus::Success, textStyle->GetPropertyIndex(dataindex, "Data"));
 
         ASSERT_EQ(DgnDbStatus::BadArg, textStyle->SetPropertyValue(Tsdescrindex, ECN::ECValue(1)));
@@ -507,7 +635,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         AnnotationFrameStylePtr FrameStyle = AnnotationFrameStyle::Create(*m_db);
         FrameStyle->SetName("MyFraneStyle");
         ASSERT_EQ(FrameStyle->GetName(), "MyFraneStyle");
-        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(Fsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(Fsdescrindex, "Description"));
         ASSERT_EQ(DgnDbStatus::Success, FrameStyle->GetPropertyIndex(dataindex, "Data"));
 
         ASSERT_EQ(DgnDbStatus::BadArg,  FrameStyle->SetPropertyValue(Fsdescrindex, ECN::ECValue(1)));
@@ -524,7 +652,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         AnnotationLeaderStylePtr LeaderStyle = AnnotationLeaderStyle::Create(*m_db);
         LeaderStyle->SetName("MyLeaderStyle");
         ASSERT_EQ(LeaderStyle->GetName(), "MyLeaderStyle");
-        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(Lsdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(Lsdescrindex, "Description"));
         ASSERT_EQ(DgnDbStatus::Success, LeaderStyle->GetPropertyIndex(dataindex, "Data"));
 
         ASSERT_EQ(DgnDbStatus::BadArg,  LeaderStyle->SetPropertyValue(Lsdescrindex, ECN::ECValue(1)));
@@ -542,7 +670,7 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
         TextAnnotationSeedPtr Textannoseed = TextAnnotationSeed::Create(*m_db);
         Textannoseed->SetName("TextAnnotationSeed");
         ASSERT_EQ(Textannoseed->GetName(), "TextAnnotationSeed");
-        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(tasdescrindex, "Descr"));
+        ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(tasdescrindex, "Description"));
         ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyIndex(dataindex, "Data"));
         ASSERT_EQ(DgnDbStatus::Success, Textannoseed->SetPropertyValue(tasdescrindex, ECN::ECValue("TextAnnotationSeed Descr")));
         ASSERT_EQ(DgnDbStatus::Success, Textannoseed->GetPropertyValue(checkValue, tasdescrindex));
@@ -633,4 +761,536 @@ TEST_F(GetSetCustomHandledProprty, Annotation)
     checkValue.Clear();
     }
     m_db->CloseDb();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Linkelement)
+    {
+    SetupSeedProject();
+    uint32_t ulindex, udescindex,rindex,enindex,edescindex;
+    ECN::ECValue checkValue;
+    DgnElementId linkid, emlinkid;
+
+    if (true)
+        {
+        LinkModelPtr linkModel = DgnDbTestUtils::InsertLinkModel(*m_db, "TestLinkModel");
+        //UrlLink
+        UrlLinkPtr link = UrlLink::Create(UrlLink::CreateParams(*linkModel));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyIndex(ulindex, "Url"));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyIndex(udescindex, "Description"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, link->SetPropertyValue(ulindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(ulindex, ECN::ECValue("http://www.google.com")));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("http://www.google.com")));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, link->SetPropertyValue(udescindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(udescindex, ECN::ECValue("Description")));
+        ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
+        checkValue.Clear();
+        UrlLinkCPtr linkele = link->Insert();
+        ASSERT_TRUE(linkele.IsValid());
+        linkid = linkele->GetElementId();
+        ASSERT_TRUE(linkid.IsValid());
+        //Repositorylink
+        RepositoryLinkPtr rlink = RepositoryLink::Create(*linkModel, "http://www.outlook.com", "Rlink Lable");
+        ASSERT_EQ(DgnDbStatus::Success, rlink->GetPropertyIndex(rindex, "RepositoryGuid"));
+        BeTest::SetFailOnAssert(false);
+        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->SetPropertyValue(rindex, ECN::ECValue("Description")));
+        ASSERT_EQ(DgnDbStatus::BadRequest, rlink->GetPropertyValue(checkValue, rindex));
+        ASSERT_TRUE(rlink->Insert().IsValid());
+        BeTest::SetFailOnAssert(true);
+        //EmbeddedFileLink
+        EmbeddedFileLinkPtr emlink = EmbeddedFileLink::Create(EmbeddedFileLink::CreateParams(*linkModel, ""));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(enindex, "Name"));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyIndex(edescindex, "Description"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, emlink->SetPropertyValue(enindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(enindex, ECN::ECValue("EmFile")));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile")));
+        checkValue.Clear();
+
+        ASSERT_EQ(DgnDbStatus::BadArg, emlink->SetPropertyValue(edescindex, ECN::ECValue(1)));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(edescindex, ECN::ECValue("Description")));
+        ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
+        checkValue.Clear();
+        EmbeddedFileLinkCPtr emlinkele = emlink->Insert();
+        ASSERT_TRUE(emlinkele.IsValid());
+        emlinkid = emlinkele->GetElementId();
+        ASSERT_TRUE(emlinkid.IsValid());
+        m_db->SaveChanges();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    UrlLinkCPtr link = UrlLink::Get(*m_db,linkid);
+    ASSERT_TRUE(link.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("http://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkCPtr emlink = m_db->Elements().Get<EmbeddedFileLink>(emlinkid);
+    ASSERT_TRUE(emlink.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("Description")));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    UrlLinkPtr link = UrlLink::GetForEdit(*m_db,linkid);
+
+    ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(ulindex, ECN::ECValue("https://www.google.com")));
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("https://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->SetPropertyValue(udescindex, ECN::ECValue("NDescr")));
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkPtr emlink = EmbeddedFileLink::GetForEdit(*m_db,emlinkid);
+    ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(enindex, ECN::ECValue("EmFile1")));
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile1")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->SetPropertyValue(edescindex, ECN::ECValue("NDescr")));
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();;
+
+    ASSERT_TRUE(link->Update().IsValid());
+    ASSERT_TRUE(emlink->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    UrlLinkCPtr link = m_db->Elements().Get<UrlLink>(linkid);
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, ulindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("https://www.google.com")));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, link->GetPropertyValue(checkValue, udescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+
+    EmbeddedFileLinkCPtr emlink = m_db->Elements().Get< EmbeddedFileLink>(emlinkid);
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, enindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("EmFile1")));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, emlink->GetPropertyValue(checkValue, edescindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue("NDescr")));
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, GeometryPart)
+    {
+    SetupSeedProject();
+    uint32_t gindex, blindex, bhindex;
+    ECN::ECValue checkValue;
+    DgnGeometryPartId existingPartId;
+    if (true)
+    {
+    DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, DgnGeometryPart::CreateCode(GetDgnDb(), "GeomPart", "Test"));
+    EXPECT_TRUE(geomPartPtr != NULL);
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(gindex, "GeometryStream"));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(blindex, "BBoxLow"));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(bhindex, "BBoxHigh"));
+
+    ASSERT_EQ(DgnDbStatus::BadRequest, geomPartPtr->SetPropertyValue(gindex, ECN::ECValue(1234)));
+    ASSERT_EQ(DgnDbStatus::BadRequest, geomPartPtr->GetPropertyValue(checkValue, gindex));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::BadArg, geomPartPtr->SetPropertyValue(blindex, ECN::ECValue(true)));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->SetPropertyValue(blindex, ECN::ECValue(DPoint3d::From(0,1,2))));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::BadArg, geomPartPtr->SetPropertyValue(bhindex, ECN::ECValue(true)));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->SetPropertyValue(bhindex, ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
+    existingPartId = DgnGeometryPart::QueryGeometryPartId(*m_db, geomPartPtr->GetCode());
+    EXPECT_TRUE(existingPartId.IsValid());
+    m_db->SaveChanges();
+    }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DgnGeometryPartCPtr geoele = m_db->Elements().Get<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 2, 2))));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Update Properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DgnGeometryPartPtr geoele = m_db->Elements().GetForEdit<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->SetPropertyValue(blindex, ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, geoele->SetPropertyValue(bhindex, ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(geoele->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check updated Properties
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DgnGeometryPartPtr geoele = m_db->Elements().GetForEdit<DgnGeometryPart>(existingPartId);
+    ASSERT_TRUE(geoele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, blindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, geoele->GetPropertyValue(checkValue, bhindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 2, 2))));
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
+    {
+    SetupSeedProject();
+    m_db->Schemas().CreateECClassViewsInDb();
+    uint32_t orindex,exindex,raindex;
+    ECN::ECValue checkValue;
+    DgnViewId viewId;
+    if (true)
+       {
+        auto categories = new CategorySelector(*m_db, "");
+        for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+        auto style = new DisplayStyle(*m_db, "");
+        auto flags = style->GetViewFlags();
+        flags.SetRenderMode(Render::RenderMode::SmoothShade);
+        style->SetViewFlags(flags);
+
+        DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
+        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+
+        DrawingViewDefinition view(*m_db, "Default", drawingModel->GetModelId(),*categories, *style);
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(raindex, "RotationAngle"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(orindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(orindex, ECN::ECValue(DPoint2d::From(0, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, orindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(0, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(exindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(exindex, ECN::ECValue(DPoint2d::From(1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, exindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(raindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(raindex, ECN::ECValue(2.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, raindex));
+        ASSERT_EQ(checkValue.GetDouble(),ECN::ECValue(2.5).GetDouble());
+        checkValue.Clear();
+        ASSERT_TRUE(view.Insert().IsValid());
+
+        viewId = view.GetViewId();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DrawingViewDefinitionCPtr view= m_db->Elements().Get<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(0, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.5).GetDouble());
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //upadate properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    DrawingViewDefinitionPtr view = m_db->Elements().GetForEdit<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint2d::From(1, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(exindex, ECN::ECValue(DPoint2d::From(2, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(2, 2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(raindex, ECN::ECValue(2.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.8).GetDouble());
+    checkValue.Clear();
+    ASSERT_TRUE(view->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check upadated properties stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    DrawingViewDefinitionCPtr view = m_db->Elements().Get<DrawingViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint2d::From(2,2))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, raindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(2.8).GetDouble());
+    checkValue.Clear();
+    }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
+    {
+    SetupSeedProject();
+    uint32_t orindex,exindex,yindex,pindex,rindex,caindex, laindex, fdindex,epindex;
+    ECN::ECValue checkValue;
+    DgnViewId viewId;
+    if (true)
+       {
+        auto categories = new CategorySelector(*m_db, "");
+        for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_db))
+        categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+        auto style = new DisplayStyle3d(*m_db, "");
+        auto flags = style->GetViewFlags();
+        flags.SetRenderMode(Render::RenderMode::SmoothShade);
+        style->SetViewFlags(flags);
+
+        auto models = new ModelSelector(*m_db, "");
+        ModelIterator modIter = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+        for (ModelIteratorEntryCR entry : modIter)
+            {
+            auto id = entry.GetModelId();
+            auto model = m_db->Models().GetModel(id);
+
+            if (model.IsValid())
+                models->AddModel(id);
+             }
+
+        SpatialViewDefinition view(*m_db, "Default", *categories, *style, *models);
+        view.SetStandardViewRotation(StandardView::Iso);
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(yindex, "Yaw"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(rindex, "Roll"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(pindex, "Pitch"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(caindex, "IsCameraOn"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(laindex, "LensAngle"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(epindex, "EyePoint"));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(fdindex, "FocusDistance"));
+
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(orindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(0, 1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, orindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(exindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(exindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, exindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(yindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(yindex, ECN::ECValue(2.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, yindex));
+        ASSERT_EQ(checkValue,ECN::ECValue(2.5));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(pindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(pindex, ECN::ECValue(3.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, pindex));
+        ASSERT_EQ(checkValue,ECN::ECValue(3.5));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(rindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(rindex, ECN::ECValue(4.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, rindex));
+        ASSERT_EQ(checkValue, ECN::ECValue(4.5));
+        checkValue.Clear();
+        //ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(caindex, ECN::ECValue(22))); -- We don't type-check this property. All attempts to set it result in in ReadOnly error.
+        ASSERT_EQ(DgnDbStatus::ReadOnly, view.SetPropertyValue(caindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(laindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(laindex, ECN::ECValue(5.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, laindex));
+        ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(5.5).GetDouble());
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(fdindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(fdindex, ECN::ECValue(7.5)));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, fdindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(7.5)));
+        checkValue.Clear();
+        ASSERT_EQ(DgnDbStatus::BadArg, view.SetPropertyValue(epindex, ECN::ECValue(true)));
+        ASSERT_EQ(DgnDbStatus::Success, view.SetPropertyValue(epindex, ECN::ECValue(DPoint3d::From(0,1,2))));
+        ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyValue(checkValue, epindex));
+        ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+        checkValue.Clear();
+        ASSERT_TRUE(view.Insert().IsValid());
+
+        viewId = view.GetViewId();
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    SpatialViewDefinitionCPtr view= m_db->Elements().Get<SpatialViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.5));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, caindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(false)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(5.5).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(7.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(0, 1, 2))));
+    checkValue.Clear();
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //upadate properties
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    SpatialViewDefinitionPtr view = m_db->Elements().GetForEdit<SpatialViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(orindex, ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(exindex, ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(yindex, ECN::ECValue(2.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(pindex, ECN::ECValue(3.0)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.0));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(rindex, ECN::ECValue(4.8)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(laindex, ECN::ECValue(6.0)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(fdindex, ECN::ECValue(5.5)));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(5.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->SetPropertyValue(epindex, ECN::ECValue(DPoint3d::From(2, 1, 2))));
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 1, 2))));
+    checkValue.Clear();
+    ASSERT_TRUE(view->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check upadated properties stored in Db
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    SpatialViewDefinitionCPtr view = m_db->Elements().Get<SpatialViewDefinition>(viewId);
+
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, orindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 1, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, exindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(1, 2, 1))));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, yindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(2.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, pindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(3.0));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, rindex));
+    ASSERT_EQ(checkValue, ECN::ECValue(4.8));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, laindex));
+    ASSERT_EQ(checkValue.GetDouble(), ECN::ECValue(6.0).GetDouble());
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, fdindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(5.5)));
+    checkValue.Clear();
+    ASSERT_EQ(DgnDbStatus::Success, view->GetPropertyValue(checkValue, epindex));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(DPoint3d::From(2, 1, 2))));
+    checkValue.Clear();
+    }
     }
