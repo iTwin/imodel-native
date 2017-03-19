@@ -332,6 +332,8 @@ private:
 
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
+    ECN::ECSchemaPtr ReadSchema(ECN::ECSchemaReadContextR schemaContext) const;
+    BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
     void CallOnSchemaImported(DgnDbR db) { _OnSchemaImported(db); }
         
 protected:
@@ -397,6 +399,11 @@ public:
     //! their references. 
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportSchema(DgnDbR dgndb);
 
+    //! Returns true of the schema for this domain has been imported into the supplied DgnDb. 
+    //! @remarks Only checks if the schema has been imported, and does not do any validation of 
+    //! version. @see DgnDomains::ValidateSchemas(), DgnDomain::ImportSchema().
+    DGNPLATFORM_EXPORT bool IsSchemaImported(DgnDbCR dgndb) const;
+
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
 
     //! Register a Handler for an ECClass within this DgnDomain.
@@ -430,6 +437,7 @@ private:
 
     DomainList    m_domains;
     Handlers      m_handlers;
+    bool          m_isSchemaImportEnabled;
 
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
@@ -441,13 +449,17 @@ private:
     void OnDbClose();
     void SyncWithSchemas();
 
+    void SetEnableSchemaImport(bool enable) { m_isSchemaImportEnabled = enable; }
+    bool GetEnableSchemaImport() const { return m_isSchemaImportEnabled; }
+
     BeSQLite::DbResult ValidateSchemas();
     BeSQLite::DbResult ValidateAndImportSchemas(bool doImport);
-    static BeSQLite::DbResult ValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     ECN::ECSchemaReadContextPtr PrepareSchemaReadContext() const;    
+
+    static BeSQLite::DbResult DoValidateSchema(ECN::ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db);
     static BeSQLite::DbResult DoImportSchemas(DgnDbR dgndb, bvector<ECN::ECSchemaCP> const& schemasToImport, bool isImportingFromV8);
     
-    explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnDomains(DgnDbR db) : DgnDbTable(db), m_isSchemaImportEnabled(false) {}
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.
