@@ -28,7 +28,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         {
         out->m_id = id;
         out->m_classId = stmt.GetValueId<DgnClassId>(0);
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(1));
+        out->m_isPrivate = TO_BOOL(stmt.GetValueInt(1));
         out->m_modeledElementId = stmt.GetValueId<DgnElementId>(2);
         out->m_isTemplate = TO_BOOL(stmt.GetValueInt(3));
         }
@@ -111,7 +111,7 @@ DgnModelId ModelIteratorEntry::GetModelId() const {return m_statement->GetValueI
 DgnClassId ModelIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 DgnElementId ModelIteratorEntry::GetModeledElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
 bool ModelIteratorEntry::GetIsTemplate() const {return m_statement->GetValueBoolean(3);}
-bool ModelIteratorEntry::GetInGuiList() const {return 0 != m_statement->GetValueInt(4);}
+bool ModelIteratorEntry::IsPrivate() const {return 0 != m_statement->GetValueInt(4);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -144,7 +144,7 @@ CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_inGuiList(params.m_inGuiList),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_isPrivate(params.m_isPrivate),
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     // WIP: Add m_modeledElementRelClassId to CreateParams!!!
@@ -653,7 +653,7 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     if (ForInsert::Yes == forInsert)
         statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
 
-    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
+    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
     Json::Value propJson(Json::objectValue);
@@ -1149,7 +1149,7 @@ DgnDbStatus DgnModel::Insert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_InitFrom(DgnModelCR other)
     {
-    m_inGuiList = other.m_inGuiList;
+    m_isPrivate = other.m_isPrivate;
     m_isTemplate = other.m_isTemplate;
 
     Json::Value otherProperties;
@@ -1201,7 +1201,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetInGuiList(), model.IsTemplate());
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.IsPrivate(), model.IsTemplate());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -1332,16 +1332,16 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
     ECN::ECValue v;
-    bool inGuiList = true;
+    bool isPrivate = false;
     if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_Visibility) && !v.IsNull())
-        inGuiList = v.GetInteger() == 1;
+        isPrivate = TO_BOOL(v.GetInteger());
 
     DgnElementId modeledElementId;
     if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
         modeledElementId = DgnElementId((uint64_t) v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
-    DgnModel::CreateParams params(db, classId, modeledElementId, inGuiList);
+    DgnModel::CreateParams params(db, classId, modeledElementId, isPrivate);
     return params;
     }
 

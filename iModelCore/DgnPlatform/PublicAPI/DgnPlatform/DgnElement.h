@@ -2756,8 +2756,8 @@ protected:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
-    bool IsPrivate() const {return m_isPrivate;} //!< Return true if this definition is private (should not be listed in the GUI, for example)
-    void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this definition is private or not
+    bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
+    void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
 };
 
 //=======================================================================================
