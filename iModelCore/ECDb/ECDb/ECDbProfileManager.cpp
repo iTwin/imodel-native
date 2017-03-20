@@ -53,7 +53,7 @@ DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
 // @bsimethod                                                   Krischan.Eberle  01/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
+DbResult ECDbProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
     {
     fileIsAutoUpgradable = false;
     const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
@@ -99,7 +99,7 @@ struct ProfileUpgradeContext final: NonCopyableClass
 DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
     bool runProfileUpgrade = false;
-    SchemaVersion actualProfileVersion(0, 0, 0, 0);
+    ProfileVersion actualProfileVersion(0, 0, 0, 0);
     DbResult stat = CheckProfileVersion(runProfileUpgrade, actualProfileVersion, ecdb, openParams.IsReadonly());
     if (!runProfileUpgrade)
         return stat;
@@ -107,7 +107,7 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
     PERFLOG_START("ECDb", "profile upgrade");
 
     //if ECDb file is readonly, reopen it in read-write mode
-    if (!openParams._ReopenForSchemaUpgrade(ecdb))
+    if (!openParams._ReopenForProfileUpgrade(ecdb))
         {
         LOG.errorv("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
@@ -155,7 +155,7 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
 // @bsimethod                                                   Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& currentProfileVersion)
+DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& currentProfileVersion)
     {
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
@@ -194,7 +194,7 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCrea
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
+DbResult ECDbProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
     {
     //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
     //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
@@ -211,7 +211,7 @@ DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, E
     if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
         profileVersion.FromJson(currentVersionString.c_str());
     else if (ecdb.TableExists("ec_Schema"))
-        profileVersion = SchemaVersion(1, 0, 0, 0);
+        profileVersion = ProfileVersion(1, 0, 0, 0);
     else
         //File is no ECDb file
         stat = BE_SQLITE_ERROR_InvalidProfileVersion;
