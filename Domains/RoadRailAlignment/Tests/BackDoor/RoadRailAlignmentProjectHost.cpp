@@ -199,8 +199,8 @@ RoadRailAlignmentProjectHostImpl::RoadRailAlignmentProjectHostImpl() : m_isIniti
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), true);
-    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), true);
+    DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
     m_isInitialized = true;
     }
 
