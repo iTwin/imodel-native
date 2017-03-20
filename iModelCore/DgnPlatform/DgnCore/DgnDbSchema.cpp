@@ -424,10 +424,10 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 // @bsiclass                                                    Keith.Bentley   06/13
 //=======================================================================================
 struct ProjectSchemaUpgrader
-{
+    {
     virtual DgnDbProfileVersion _GetVersion() = 0;
     virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
-};
+    };
 
 
 #if defined (WHEN_FIRST_UPGRADER)
@@ -489,7 +489,7 @@ DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
     return project.SaveChanges();
     }
 
-DgnDbProfileVersion DgnDb::GetProfileVersion() {return m_profileVersion;}
+DgnDbProfileVersion DgnDb::GetProfileVersion() { return m_profileVersion; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
@@ -521,14 +521,8 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     if (result != BE_SQLITE_OK)
         return result;
 
-    result = Domains().ValidateSchemas();
-    if (result == BE_SQLITE_ERROR_SchemaUpgradeRequired && ((DgnDb::OpenParams const&) params).GetAllowSchemaUpgrade())
-        {
-        Domains().SetReadonly(DgnDomain::Readonly::Yes); // Enable admin schema upgrades, but disallow any writing to the individual domains.
-        return BE_SQLITE_OK;
-        }
-
-    return result;
+    Domains().SetEnableSchemaImport(((DgnDb::OpenParams const&) params).IsSchemaImportEnabled());
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -572,7 +566,7 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
 
     for (ECSchemaCP appSchema : schemas)
         {
-        DbResult result = DgnDomains::ValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+        DbResult result = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
 
         if (result == BE_SQLITE_OK)
             {
@@ -587,7 +581,7 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
         if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
             return result;
 
-        BeAssert(result == BE_SQLITE_ERROR_SchemaUpgradeRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
+        BeAssert(result == BE_SQLITE_ERROR_SchemaImportRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
 
         importSchemas.push_back(appSchema);
         }

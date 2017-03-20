@@ -660,7 +660,7 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     _WriteJsonProperties(propJson);
     if (!propJson.isNull())
         {
-        Utf8String val = Json::FastWriter::ToString(propJson);
+        Utf8String val = propJson.ToString();
         statement.BindText(statement.GetParameterIndex(MODEL_PROP_Properties), val.c_str(), IECSqlBinder::MakeCopy::Yes);
         }
     else

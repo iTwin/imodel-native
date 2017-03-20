@@ -995,7 +995,7 @@ Utf8String DgnElement::ToJsonPropString() const
     {
     auto& ncThis = const_cast<DgnElement&>(*this);
     ncThis._OnSaveJsonProperties();
-    return m_jsonProperties.isNull() ? Utf8String() :  Json::FastWriter::ToString(m_jsonProperties);
+    return m_jsonProperties.ToString();
     }
 
 //---------------------------------------------------------------------------------------

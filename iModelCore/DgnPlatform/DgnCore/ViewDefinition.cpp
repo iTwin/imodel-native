@@ -205,7 +205,7 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 Utf8String ViewDefinition::ToDetailJson()
     {
     _OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetDetails());
+    return GetDetails().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,17 +258,10 @@ void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
-    JsonValueCR valO = GetDetail(str_GridOrient());
-    orientation = valO.isNull() ? GridOrientationType::WorldXY : (GridOrientationType) valO.asUInt();
-
-    JsonValueCR valR = GetDetail(str_GridPerRef());
-    gridsPerRef = valR.isNull() ? 10 : valR.asUInt();
-
-    JsonValueCR valX = GetDetail(str_GridSpaceX());
-    spacing.x = valX.isNull() ? 1.0 : valX.asDouble();
-
-    JsonValueCR valY = GetDetail(str_GridSpaceY());
-    spacing.y = valY.isNull() ? spacing.x : valY.asDouble();
+    orientation = (GridOrientationType) GetDetail(str_GridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
+    gridsPerRef = GetDetail(str_GridPerRef()).asUInt(10);
+    spacing.x = GetDetail(str_GridSpaceX()).asDouble(1.0);
+    spacing.y = GetDetail(str_GridSpaceY()).asDouble(spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -276,9 +269,7 @@ void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
     {
-    JsonValueCR val = GetDetail(str_ACS());
-
-    return val.isNull() ? DgnElementId() : DgnElementId(val.asUInt64());
+    return DgnElementId(GetDetail(str_ACS()).asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,7 +888,7 @@ DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR sourc
     val[str_Height()] = size.y;
     val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
 
-    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), Json::FastWriter().ToString(val), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
+    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), val.ToString(), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
     return rc;
     }
 
@@ -1139,7 +1130,7 @@ void DisplayStyle::_OnLoadedJsonProperties()
 Utf8String DisplayStyle::ToJson() const
     {
     const_cast<DisplayStyleR>(*this)._OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetStyles());
+    return GetStyles().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1427,7 +1418,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
 
     SetExtents(newDelta);
     if (aspect)
-        _AdjustAspectRatio(*aspect, true);
+        AdjustAspectRatio(*aspect);
 
     newDelta = GetExtents();
 
@@ -1568,7 +1559,7 @@ void ViewDefinition3d::VerifyFocusPlane()
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
-                                            DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
+                                        DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
     if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?
@@ -1754,144 +1745,34 @@ DPoint3d ViewDefinition3d::_GetTargetPoint() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/10
+* @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
+void ViewDefinition::AdjustAspectRatio(double windowAspect)
     {
-    DPoint3dR origin = m_origin;
-    DVec3dR   delta = m_extents;
-    RotMatrixR rotation = m_rotation; 
+    DVec3d extents = GetExtents();
+    double viewAspect = extents.x / extents.y;
 
-    // first, make sure none of the deltas are negative
-    delta.x = fabs(delta.x);
-    delta.y = fabs(delta.y);
-    delta.z = fabs(delta.z);
+    auto drawingView = _ToDrawingView();
+    if (nullptr != drawingView)
+        windowAspect *= drawingView->GetAspectRatioSkew();
 
-    double maxAbs = max(delta.x, delta.y);
-
-    // if all deltas are zero, set to 1m (what else can we do?)
-    if (0.0 == maxAbs)
-        delta.x = delta.y = DgnUnits::OneMeter();
-
-    // if either dimension is zero, set it to the other.
-    if (delta.x == 0)
-        delta.x = maxAbs;
-    if (delta.y == 0)
-        delta.y = maxAbs;
-
-    double viewAspect  = delta.x / delta.y;
-
-    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
+    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
         return;
-
-    DVec3d oldDelta = delta;
-
-    if (!expandView)
-        {
-        if (viewAspect > 1.0)
-            delta.y = delta.x;
-        else
-            delta.x = delta.y;
-        }
-
-    double maxExtent, minExtent;
-    _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
-        {
-        double rtmp = delta.x / windowAspect;
-        if (rtmp < maxExtent)
-            delta.y = rtmp;
-        else
-            {
-            delta.y = maxExtent;
-            delta.x = maxExtent * windowAspect;
-            }
-        }
+    
+    DVec3d oldDelta = extents;
+    if (viewAspect > windowAspect)
+        extents.y = extents.x / windowAspect;
     else
-        {
-        double rtmp = delta.y * windowAspect;
-        if (rtmp < maxExtent)
-            delta.x = rtmp;
-        else
-            {
-            delta.x = maxExtent;
-            delta.y = maxExtent / windowAspect;
-            }
-        }
+        extents.x = extents.y * windowAspect;
 
+    DPoint3d origin = GetOrigin();
     DPoint3d newOrigin;
-    rotation.Multiply(&newOrigin, &origin, 1);
-    newOrigin.x +=(oldDelta.x - delta.x) / 2.0;
-    newOrigin.y +=(oldDelta.y - delta.y) / 2.0;
-    rotation.MultiplyTranspose(origin, newOrigin);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
-    {
-    // first, make sure none of the deltas are negative
-    m_delta.x = fabs(m_delta.x);
-    m_delta.y = fabs(m_delta.y);
-
-    double maxAbs = max(m_delta.x, m_delta.y);
-
-    // if all deltas are zero, set to 1m (what else can we do?)
-    if (0.0 == maxAbs)
-        m_delta.x = m_delta.y = DgnUnits::OneMeter();
-
-    // if either dimension is zero, set it to the other.
-    if (m_delta.x == 0)
-        m_delta.x = maxAbs;
-    if (m_delta.y == 0)
-        m_delta.y = maxAbs;
-
-    double viewAspect  = m_delta.x / m_delta.y;
-    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
-        return;
-
-    DVec2d oldDelta = m_delta;
-    if (!expandView)
-        {
-        if (viewAspect > 1.0)
-            m_delta.y = m_delta.x;
-        else
-            m_delta.x = m_delta.y;
-        }
-
-    double maxExtent, minExtent;
-    _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
-        {
-        double rtmp = m_delta.x / windowAspect;
-        if (rtmp < maxExtent)
-            m_delta.y = rtmp;
-        else
-            {
-            m_delta.y = maxExtent;
-            m_delta.x = maxExtent * windowAspect;
-            }
-        }
-    else
-        {
-        double rtmp = m_delta.y * windowAspect;
-        if (rtmp < maxExtent)
-            m_delta.x = rtmp;
-        else
-            {
-            m_delta.x = maxExtent;
-            m_delta.y = maxExtent / windowAspect;
-            }
-        }
-
-    DPoint2d origin;
-    RotMatrix rMatrix = GetRotation();
-    rMatrix.Multiply(&origin, &m_origin, 1);
-    origin.x +=(oldDelta.x - m_delta.x) / 2.0;
-    origin.y +=(oldDelta.y - m_delta.y) / 2.0;
-    rMatrix.Transpose();
-    rMatrix.Multiply(&m_origin, &origin, 1);
+    GetRotation().Multiply(&newOrigin, &origin, 1);
+    newOrigin.x += ((oldDelta.x - extents.x) / 2.0);
+    newOrigin.y += ((oldDelta.y - extents.y) / 2.0);
+    GetRotation().MultiplyTranspose(origin, newOrigin);
+    SetOrigin(origin);
+    SetExtents(extents);
     }
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

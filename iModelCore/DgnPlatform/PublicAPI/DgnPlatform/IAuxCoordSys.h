@@ -83,6 +83,9 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) const;
 
 public:
+    //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
+    static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
+
     AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
     AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
 

@@ -120,6 +120,7 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
+    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this DisplayStyle's name
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_DisplayStyle, name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
@@ -401,13 +402,13 @@ protected:
     virtual void _SetExtents(DVec3dCR viewDelta) = 0;
     virtual void _SetRotation(RotMatrixCR viewRot) = 0;
     virtual DPoint3d _GetTargetPoint() const {return GetCenter();}
-    virtual void _AdjustAspectRatio(double, bool expandView) = 0;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     void SetupDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
     Utf8String ToDetailJson();
     JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
     JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
+    void AdjustAspectRatio(double windowAspect);
 
 public:
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
@@ -675,12 +676,6 @@ public:
 
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
 
-    //! Adjust the aspect ratio of this view so that it matches the aspect ratio (x/y) of the supplied rectangle.
-    //! @param[in] aspect The target aspect ratio.
-    //! @param[in] expandView When adjusting the view to correct the aspect ratio, the one axis (x or y) must either be lengthened or shortened.
-    //! if expandView is true, the shorter axis is lengthened. Otherwise the long axis is shortened.
-    void AdjustAspectRatio(double aspect, bool expandView) {_AdjustAspectRatio(aspect, expandView);}
-
     /** @name Thumbnails */
     /** @{ */
     //! Create and save a thumbnail for this ViewDefinition. Thumbnails are saved as DgnViewProperty values.
@@ -842,7 +837,6 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     DGNPLATFORM_EXPORT void SaveCamera();
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const& inFrustum) override;
     DGNPLATFORM_EXPORT DPoint3d _GetTargetPoint() const override;
@@ -1113,7 +1107,6 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
-    DGNPLATFORM_EXPORT void _AdjustAspectRatio(double windowAspect, bool expandView) override;
     ViewDefinition2dCP _ToView2d() const override final {return this;}
     DPoint3d _GetOrigin() const override {return DPoint3d::From(m_origin.x, m_origin.y);}
     void _SetExtents(DVec3dCR delta) override {m_delta.x = delta.x; m_delta.y = delta.y;}
@@ -1153,8 +1146,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingViewDefinition : ViewDefinition2d
 protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
-    DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
-    void _AdjustAspectRatio(double aspect, bool expandView) override {T_Super::_AdjustAspectRatio(aspect*GetAspectRatioSkew(), expandView);}
     DrawingViewDefinitionCP _ToDrawingView() const override {return this;}
 
     //! Construct a DrawingViewDefinition from the supplied params prior to loading
@@ -1173,6 +1164,7 @@ public:
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
+    DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
 };
 
 //=======================================================================================
