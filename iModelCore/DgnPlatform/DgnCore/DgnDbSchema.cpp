@@ -521,11 +521,8 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     if (result != BE_SQLITE_OK)
         return result;
 
-    result = Domains().ValidateSchemas();
-    if (result == BE_SQLITE_ERROR_SchemaImportRequired && ((DgnDb::OpenParams const&) params).IsSchemaImportEnabled())
-        return BE_SQLITE_OK;
-
-    return result;
+    Domains().SetEnableSchemaImport(((DgnDb::OpenParams const&) params).IsSchemaImportEnabled());
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -569,7 +566,7 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
 
     for (ECSchemaCP appSchema : schemas)
         {
-        DbResult result = DgnDomains::ValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+        DbResult result = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
 
         if (result == BE_SQLITE_OK)
             {

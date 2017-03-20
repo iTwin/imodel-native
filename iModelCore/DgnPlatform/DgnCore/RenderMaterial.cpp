@@ -7,11 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RgbFactor  RenderingAsset::GetColor(Utf8CP name) const
+RgbFactor RenderingAsset::GetColor(Utf8CP name) const
     {
     RgbFactor rgb = {0.0, 0.0, 0.0};
 
@@ -81,14 +80,7 @@ double RenderingAsset::TextureMap::GetUnitScale(Units units) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const 
     {
-    Json::Value const& value = m_value[RENDER_MATERIAL_PatternMapping];
-    if (!value.isInt())
-        {
-        BeAssert(false);
-        return Render::Material::MapMode::Parametric;
-        }
-
-    return (Render::Material::MapMode) value.asInt();
+    return (Render::Material::MapMode) m_value[RENDER_MATERIAL_PatternMapping].asInt((int)Render::Material::MapMode::Parametric);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,14 +88,7 @@ Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const 
     {
-    Json::Value const& value = m_value[RENDER_MATERIAL_PatternScaleMode];
-     if (!value.isInt())
-        {
-        BeAssert(false);
-        return Units::Relative;
-        }
- 
-    return (Units) value.asInt();
+    return (Units) m_value[RENDER_MATERIAL_PatternScaleMode].asInt((int)Units::Relative);
     }
 
 //---------------------------------------------------------------------------------------
@@ -170,8 +155,7 @@ Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureId RenderingAsset::TextureMap::GetTextureId() const
     {
-    JsonValueCR textureIdValue = m_value[RENDER_MATERIAL_TextureId];
-    return textureIdValue.isNull() ? DgnTextureId() : DgnTextureId(textureIdValue.asUInt64());
+    return DgnTextureId(m_value[RENDER_MATERIAL_TextureId].asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
