@@ -261,6 +261,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationPartition, Dgn::GroupInformationPartition, GroupInformationPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for InformationRecordPartition
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecordPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordPartition, Dgn::InformationRecordPartition, InformationRecordPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for PhysicalPartition
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalPartition : InformationPartition
     {

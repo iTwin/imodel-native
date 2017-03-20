@@ -42,7 +42,7 @@ namespace dgn_ElementHandler
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
     struct Definition; struct PhysicalType; struct GraphicalType2d; struct SpatialLocationType; struct TemplateRecipe2d; struct TemplateRecipe3d;
-    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct PhysicalPartition; struct SpatialLocationPartition;
+    struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
     struct Geometric3d; struct Physical; struct SpatialLocation; 
     struct Role;
@@ -3016,6 +3016,35 @@ public:
     //! @param[in] description Optional description for this GroupInformationPartition
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static GroupInformationPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
+//! An InformationRecordPartition provides a starting point for a InformationRecordModel hierarchy
+//! @note InformationRecordPartition elements only reside in the RepositoryModel
+// @bsiclass                                                    Shaun.Sewall    03/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationRecordPartition : InformationPartitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationRecordPartition, InformationPartitionElement);
+    friend struct dgn_ElementHandler::InformationRecordPartition;
+
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    explicit InformationRecordPartition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a new InformationRecordPartition
+    //! @param[in] parentSubject The new InformationRecordPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this InformationRecordPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static InformationRecordPartitionPtr Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
+    //! Create and insert a new InformationRecordPartition
+    //! @param[in] parentSubject The new InformationRecordPartition will be a child element of this Subject
+    //! @param[in] name The name of the new partition which will be used as the CodeValue
+    //! @param[in] description Optional description for this InformationRecordPartition
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static InformationRecordPartitionCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
