@@ -2708,7 +2708,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_CachedNewInstanceAfterModifica
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"}, {{"TestProperty", "NewA"}, {"TestProperty2", "NewB"}, {"TestProperty3", "NewC"}});
-    ASSERT_EQ(SUCCESS, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({"TestSchema.TestClass", "Foo"}, instances.ToWSObjectsResponse()));
     // Act
     Json::Value modifiedProperties;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(instance, modifiedProperties));

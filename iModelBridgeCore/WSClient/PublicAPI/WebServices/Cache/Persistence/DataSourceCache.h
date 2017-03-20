@@ -122,7 +122,7 @@ struct DataSourceCache : public IDataSourceCache
             ICancellationTokenPtr ct = nullptr
             ) override;
 
-        WSCACHE_EXPORT BentleyStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
+        WSCACHE_EXPORT CacheStatus UpdateInstance(ObjectIdCR objectId, WSObjectsResponseCR response) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateInstances
             (
