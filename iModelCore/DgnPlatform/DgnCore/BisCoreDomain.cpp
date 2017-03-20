@@ -34,6 +34,7 @@ HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
+HANDLER_DEFINE_MEMBERS(InformationRecord)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(DocumentList)
@@ -81,6 +82,7 @@ HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
 HANDLER_DEFINE_MEMBERS(DocumentPartition)
 HANDLER_DEFINE_MEMBERS(GroupInformationPartition)
+HANDLER_DEFINE_MEMBERS(InformationRecordPartition)
 HANDLER_DEFINE_MEMBERS(PhysicalPartition)
 HANDLER_DEFINE_MEMBERS(SpatialLocationPartition)
 };
@@ -122,6 +124,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Role::GetHandler());
     RegisterHandler(dgn_ModelHandler::Information::GetHandler());
+    RegisterHandler(dgn_ModelHandler::InformationRecord::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
@@ -173,6 +176,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::DefinitionPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::DocumentPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::InformationRecordPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinkPartitionHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationPartition::GetHandler());

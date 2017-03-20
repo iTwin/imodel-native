@@ -556,9 +556,9 @@ DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    CreateParams createParams = InitCreateParams(parentSubject, label, dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::GroupInformationPartition::GetHandler());
     if (!createParams.IsValid())
         return nullptr;
 
@@ -572,10 +572,44 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    GroupInformationPartitionPtr partition = Create(parentSubject, label, description);
+    GroupInformationPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // An InformationRecordPartition can only be modeled by an InformationRecordModel
+    return model.IsInformationRecordModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::InformationRecordPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    InformationRecordPartitionPtr partition = new InformationRecordPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    InformationRecordPartitionPtr partition = Create(parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationRecordPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
