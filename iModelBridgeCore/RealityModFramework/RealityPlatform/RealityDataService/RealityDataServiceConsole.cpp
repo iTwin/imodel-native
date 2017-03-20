@@ -474,11 +474,8 @@ void RealityDataConsole::ListRoots()
     Utf8String schema = RealityDataService::GetSchemaName();
     for(RealityDataPtr rData : enterpriseVec)
         {
-        if(rData->IsListable())
-            {
-            nodes.push_back(Utf8PrintfString("%-30s %s", rData->GetName(), rData->GetIdentifier()));
-            m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
-            }
+        nodes.push_back(Utf8PrintfString("%-30s (%s) %s", rData->GetName(), rData->IsListable() ? "Lst" : " - ", rData->GetIdentifier()));
+        m_serverNodes.push_back(NavNode(schema, rData->GetIdentifier(), "ECObjects", "RealityData"));
         }
 
     PrintResults(nodes);
