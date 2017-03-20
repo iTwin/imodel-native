@@ -22,6 +22,7 @@ HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
+HANDLER_DEFINE_MEMBERS(TestInformationRecordHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
@@ -347,6 +348,18 @@ TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8C
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TestInformationRecordPtr TestInformationRecord::Create(InformationRecordModelR model)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(TestInformationRecordHandler::GetHandler());
+    TestInformationRecordPtr element = new TestInformationRecord(CreateParams(db, model.GetModelId(), classId));
+    BeAssert(element.IsValid());
+    return element;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
@@ -470,6 +483,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
+    RegisterHandler(TestInformationRecordHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());

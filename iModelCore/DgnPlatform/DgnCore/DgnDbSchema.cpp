@@ -141,7 +141,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,Visibility) VALUES(?,?,?,?,0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,IsPrivate) VALUES(?,?,?,?,1)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
