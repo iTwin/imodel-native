@@ -882,9 +882,9 @@ DTMStatusInt ScalableMeshGroupDTM::_ComputeCutFillVolume(double* cut, double* fi
 
         if (memberVolume > 0)
             {
-            *cut = memberCut;
-            *fill = memberFill;
-            *volume = memberVolume;
+            if(cut != nullptr) *cut = memberCut;
+            if (fill != nullptr) *fill = memberFill;
+            if (volume != nullptr) *volume = memberVolume;
             return code;
             }
         }
@@ -902,9 +902,9 @@ DTMStatusInt ScalableMeshGroupDTM::_ComputeCutFillVolumeClosed(double* cut, doub
 
         if (memberVolume > 0)
             {
-            *cut = memberCut;
-            *fill = memberFill;
-            *volume = memberVolume;
+            if (cut != nullptr) *cut = memberCut;
+            if (fill != nullptr) *fill = memberFill;
+            if (volume != nullptr) *volume = memberVolume;
             return code;
             }
         }
