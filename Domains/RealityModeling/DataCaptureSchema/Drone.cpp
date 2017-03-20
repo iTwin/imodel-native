@@ -63,6 +63,7 @@ DgnCode Drone::_GenerateDefaultCode() const
 Drone::Drone(CreateParams const& params) :
     T_Super(params)
     {
+    m_gimbalId = GimbalElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**

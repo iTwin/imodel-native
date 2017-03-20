@@ -58,6 +58,7 @@ Gimbal::Gimbal(CreateParams const& params) :
     T_Super(params)
     {
     m_gimbalAngleRangeIdSetInit = false;
+    m_cameraIdSetInit = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
