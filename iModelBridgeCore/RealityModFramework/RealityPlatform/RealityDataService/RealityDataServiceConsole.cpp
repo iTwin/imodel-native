@@ -464,10 +464,12 @@ void RealityDataConsole::ListRoots()
     RequestStatus status = RequestStatus::SUCCESS;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
+
+    partialVec = RealityDataService::Request(enterpriseReq, status);
     while(status == RequestStatus::SUCCESS)
         {
-        partialVec = RealityDataService::Request(enterpriseReq, status);
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
+        partialVec = RealityDataService::Request(enterpriseReq, status);
         }
     bvector<Utf8String> nodes = bvector<Utf8String>();
 
