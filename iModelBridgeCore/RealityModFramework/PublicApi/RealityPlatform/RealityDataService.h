@@ -132,6 +132,25 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
+//! RealityDataProjectRelationshipByIdRequest
+//! This class represents a request for specific RealityDataProjectRelationship 
+//!  class object. Need to check if this class is necessary. We can return
+//!  all projects that have a link with a certain RealityData
+//=====================================================================================
+struct RealityDataProjectRelationshipByRealityDataIdRequest : public RealityDataUrl
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByRealityDataIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataProjectRelationshipByRealityDataIdRequest() {}
+    };
+
+//=====================================================================================
+//! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataFolderByIdRequest
 //! This class represents a request for specific RealityDataFolder class object.
 //=====================================================================================
@@ -449,6 +468,24 @@ private:
     };
 
 //=====================================================================================
+//! @bsiclass                                   Spencer.Mason 03/2017
+//! A specialisation of a RealityDataPagedRequest that only obtains reality data
+//! explicitely linked to a specific CONNECT Project through the Reality Data Service
+//! RealityData/Project registry it maintains. 
+//=====================================================================================
+struct RealityDataProjectRelationshipByRealityDataIdPagedRequest : public RealityDataPagedRequest
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationshipByRealityDataIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataProjectRelationshipByRealityDataIdPagedRequest() {}
+    };
+
+//=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A request for a list of all documents in a repository
 //=====================================================================================
@@ -480,7 +517,7 @@ private:
 //! Callback function to follow the download progression.
 //! @param[in] filename    name of the file. 
 //! @param[in] progress    Percentage uploaded.
-typedef std::function<void(Utf8String filename, double fileProgress, double repoProgress)> RealityDataServiceUpload_ProgressCallBack;
+typedef std::function<void(Utf8String filename, double fileProgress, double repoProgress)> RealityDataServiceTransfer_ProgressCallBack;
 
 // ErrorCode --> Curl error code.
 //! Callback function to follow the download progression.
@@ -488,12 +525,12 @@ typedef std::function<void(Utf8String filename, double fileProgress, double repo
 //! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
 //! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
 //! @param[out] pMsg        Curl English message.
-typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataServiceUpload_StatusCallBack;
+typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataServiceTransfer_StatusCallBack;
 
 //! Callback function to follow the download progression.
 //! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
 //! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
-typedef std::function<int()> RealityDataServiceUpload_HeartbeatCallBack;
+typedef std::function<int()> RealityDataServiceTransfer_HeartbeatCallBack;
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason 02/2017
@@ -604,7 +641,7 @@ struct RealityDataServiceTransfer : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certPath = certificatePath; }
 
     //! Set callback to follow progression of the upload.
-    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceUpload_ProgressCallBack pi_func)
+    REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceTransfer_ProgressCallBack pi_func)
         {
         m_pProgressFunc = pi_func;
         }
@@ -613,13 +650,13 @@ struct RealityDataServiceTransfer : public CurlConstructor
     REALITYDATAPLATFORM_EXPORT void SetProgressStep(double step) { m_progressThreshold = m_progressStep = step; }
 
     //! Set callback to allow the user to mass cancel all uploads
-    REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceUpload_HeartbeatCallBack pi_func)
+    REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceTransfer_HeartbeatCallBack pi_func)
         {
         m_pHeartbeatFunc = pi_func;
         }
 
     //! Set callback to know to status, upload done or error.
-    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceUpload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
+    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataServiceTransfer_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
 
     //! Start the upload progress for all links.
     REALITYDATAPLATFORM_EXPORT virtual TransferReport* Perform();
@@ -647,12 +684,12 @@ protected:
     Utf8String                  m_proxyUrl;
     Utf8String                  m_proxyCreds;
     BeFileName                  m_certPath;
-    RealityDataServiceUpload_ProgressCallBack m_pProgressFunc;
+    RealityDataServiceTransfer_ProgressCallBack m_pProgressFunc;
     double                      m_progressStep;
     double                      m_progress;
     double                      m_progressThreshold;
-    RealityDataServiceUpload_StatusCallBack m_pStatusFunc;
-    RealityDataServiceUpload_HeartbeatCallBack m_pHeartbeatFunc;
+    RealityDataServiceTransfer_StatusCallBack m_pStatusFunc;
+    RealityDataServiceTransfer_HeartbeatCallBack m_pHeartbeatFunc;
 
     Utf8String                  m_azureServer;
     Utf8String                  m_azureToken;
@@ -696,7 +733,7 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
     {
     REALITYDATAPLATFORM_EXPORT static Utf8String PackageProperties(bmap<RealityDataField, Utf8String> properties);
 
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite=false, bool listable = true, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr);
 
     //! Set the source path which, all files and folders located in this path will be uploaded
     //!  to the designated reality data
@@ -862,10 +899,18 @@ public:
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status);
 
+    //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdRequest& request, RequestStatus& status);
+
     //! Returns a list of RealityDataProjectRelation objects for a specific project.
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status);
+
+    //! Returns a list of RealityDataProjectRelation objects for a specific RealityData.
+    //! Since this request is a paged request it will advance to next page automatically
+    //! and return on last page with appropriate status.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RequestStatus& status);
 
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
@@ -876,6 +921,9 @@ public:
     REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse);
 
 private:
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestPagedRelationships(const RealityDataPagedRequest* request, RequestStatus& status);
+
     static Utf8String s_realityDataServer;
     static Utf8String s_realityDataWSGProtocol;
     static Utf8String s_realityDataRepoName;

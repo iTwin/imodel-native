@@ -23,13 +23,13 @@ static void progressFunc(Utf8String filename, double fileProgress, double repoPr
     std::cout << Utf8PrintfString("Upload percent : %3.0f%%\r", repoProgress * 100.0);
     }
 
-/*static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
+static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
     if(ErrorCode > 0)
         std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg);
     else
         std::cout << pMsg;
-    }*/
+    }
 
 int main(int argc, char *argv[])
 {
@@ -98,14 +98,14 @@ int main(int argc, char *argv[])
     BeSQLite::BeGuid guid(true);
     Utf8String Id = guid.ToString();
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Id.ToLower(), propertyString, true);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
     if (upload->IsValidUpload())
         {
         std::cout << Utf8PrintfString("Upload file : %s \n  guid=%s\n", fName.GetNameUtf8(), Id);
 
         upload->SetProgressCallBack(progressFunc);
         upload->SetProgressStep(0.05);
-        upload->OnlyReportErrors(true);
+        upload->OnlyReportErrors(false);
         time_t time = std::time(nullptr);
         TransferReport* ur = upload->Perform();
         time_t time2 = std::time(nullptr);

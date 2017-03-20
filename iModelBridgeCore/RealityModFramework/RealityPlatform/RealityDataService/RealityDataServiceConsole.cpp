@@ -69,6 +69,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Delete;
     else if (args[0].EqualsI("Filter"))
         m_lastCommand = Command::Filter;
+    else if (args[0].EqualsI("Relationships"))
+        m_lastCommand = Command::Relationships;
     else
         {
         m_lastCommand = Command::Error;
@@ -125,6 +127,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChangeProps,  &RealityDataConsole::ChangeProps);
     m_functionMap.Insert(Command::Delete,       &RealityDataConsole::Delete);
     m_functionMap.Insert(Command::Filter,       &RealityDataConsole::Filter);
+    m_functionMap.Insert(Command::Relationships,&RealityDataConsole::Relationships);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
@@ -257,6 +260,7 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
     DisplayInfo ("  AzureAdress Prints the URL to use\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
+    DisplayInfo ("  Relationships Show all projects attached to this RealityData");
     DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
     }
 
@@ -961,6 +965,39 @@ void RealityDataConsole::Filter()
         else if (filter.Equals("OwnedBy"))
             m_ownerFilter = value;
         }
+    }
+
+void RealityDataConsole::Relationships()
+    {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
+        return;
+        }
+    RequestStatus status;
+
+    Utf8String instanceId = m_currentNode->node.GetInstanceId();
+    instanceId.ReplaceAll("/", "~2F");
+
+    RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(instanceId);
+    bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, status);
+
+    if (status == RequestStatus::ERROR)
+        {
+        DisplayInfo("There was an error retrieving this information\n", DisplayOption::Error);
+        return;
+        }
+    else if (entities.size() == 0)
+        {
+        DisplayInfo("There seems to be no projects attached to this RealityData\n", DisplayOption::Error);
+        return;
+        }   
+
+
+    DisplayInfo("Projects attached to this RealityData\n\n");
+    for(RealityDataProjectRelationshipPtr entity : entities)
+        DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
+
     }
 
 void RealityDataConsole::InputError()

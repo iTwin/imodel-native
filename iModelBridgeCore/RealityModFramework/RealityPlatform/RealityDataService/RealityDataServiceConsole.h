@@ -49,7 +49,8 @@ enum class Command
     AzureAdress,
     ChangeProps,
     Delete,
-    Filter
+    Filter,
+    Relationships
     };
 
 struct RealityDataConsole
@@ -86,6 +87,7 @@ public:
     void ChangeProps();
     void Delete();
     void Filter();
+    void Relationships();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
