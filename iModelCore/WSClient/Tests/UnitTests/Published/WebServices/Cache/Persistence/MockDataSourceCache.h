@@ -82,7 +82,7 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_METHOD5 (CacheInstancesAndLinkToRoot,
             BentleyStatus (WSObjectsResponseCR, Utf8StringCR, ECInstanceKeyMultiMap*, bool, ICancellationTokenPtr));
         MOCK_METHOD2 (UpdateInstance,
-            BentleyStatus (ObjectIdCR objectId, WSObjectsResponseCR response));
+            CacheStatus (ObjectIdCR objectId, WSObjectsResponseCR response));
         MOCK_METHOD4 (UpdateInstances,
             BentleyStatus (WSObjectsResponseCR, bset<ObjectId>*, bset<ECInstanceKey>*, ICancellationTokenPtr));
         MOCK_METHOD3 (CacheFile,

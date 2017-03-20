@@ -69,12 +69,18 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
 
         if (result.IsSuccess())
             {
-            if (SUCCESS != txn.GetCache().UpdateInstance(objectId, result.GetValue()))
+            auto status = txn.GetCache().UpdateInstance(objectId, result.GetValue());
+            if (CacheStatus::OK != status &&
+                CacheStatus::DataNotCached != status)
                 {
                 SetError();
                 return;
                 }
+
+            if (CacheStatus::DataNotCached == status)
+                AddFailedObject(txn, objectId, status);
             }
+
         else if (result.GetError().GetId() == WSError::Id::InstanceNotFound ||
                  result.GetError().GetId() == WSError::Id::NotEnoughRights)
             {
