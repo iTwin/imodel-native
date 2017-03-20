@@ -147,7 +147,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Visibility" typeName="int" description="Visibility flags that control whether or not this Model is displayed in GUI lists.">
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
