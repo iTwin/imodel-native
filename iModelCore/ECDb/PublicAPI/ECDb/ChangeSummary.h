@@ -242,7 +242,7 @@ struct ChangeExtractor;
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ChangeSummary : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary : NonCopyableClass
 {
     //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
     enum class QueryDbOpcode
