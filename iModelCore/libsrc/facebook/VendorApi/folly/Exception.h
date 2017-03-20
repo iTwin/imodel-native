@@ -17,17 +17,17 @@
 #pragma once
 
 #include <errno.h>
-
 #include <cstdio>
 #include <stdexcept>
 #include <system_error>
-
 #include <folly/Conv.h>
 #include <folly/FBString.h>
 #include <folly/Likely.h>
 #include <folly/Portability.h>
 
 namespace folly {
+
+typedef ptrdiff_t ssize_t;
 
 // Various helpers to throw appropriate std::system_error exceptions from C
 // library errors (returned in errno, as positive return values (many POSIX
@@ -64,7 +64,7 @@ void checkPosixError(int err, Args&&... args) {
 // Check a Linux kernel-style return code (>= 0 on success, negative error
 // number on error), throw on error.
 template <class... Args>
-void checkKernelError(size_t ret, Args&&... args) {
+void checkKernelError(folly::ssize_t ret, Args&&... args) {
   if (UNLIKELY(ret < 0)) {
     throwSystemErrorExplicit(-ret, std::forward<Args>(args)...);
   }
@@ -73,14 +73,14 @@ void checkKernelError(size_t ret, Args&&... args) {
 // Check a traditional Unix return code (-1 and sets errno on error), throw
 // on error.
 template <class... Args>
-void checkUnixError(size_t ret, Args&&... args) {
+void checkUnixError(folly::ssize_t ret, Args&&... args) {
   if (UNLIKELY(ret == -1)) {
     throwSystemError(std::forward<Args>(args)...);
   }
 }
 
 template <class... Args>
-void checkUnixErrorExplicit(size_t ret, int savedErrno, Args&&... args) {
+void checkUnixErrorExplicit(folly::ssize_t ret, int savedErrno, Args&&... args) {
   if (UNLIKELY(ret == -1)) {
     throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
   }
