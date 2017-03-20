@@ -48,6 +48,7 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
         L"http://0.0.0.0:80",
         nullptr,
         nullptr,
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api == nullptr);
@@ -70,6 +71,7 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCre
         m_fiddlerProxyUrl.c_str (),
         L"Invalid",
         L"Invalid",
+        nullptr,
         nullptr
         );
     if (WString::IsNullOrEmpty(m_fiddlerProxyUrl.c_str()))
@@ -92,6 +94,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitializa
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -115,6 +118,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE(api == nullptr);
@@ -134,6 +138,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_
         m_fiddlerProxyUrl.c_str(),
         m_fiddlerProxyUsername.c_str(),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE(api == nullptr);
@@ -175,6 +180,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetr
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -205,6 +211,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCo
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -231,6 +238,7 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -263,6 +271,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -308,6 +317,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_Appropriate
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -354,6 +364,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -390,6 +401,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -446,6 +458,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -566,6 +579,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -685,6 +699,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -735,6 +750,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -835,6 +851,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
@@ -954,6 +971,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
         m_fiddlerProxyUrl.c_str (),
         m_fiddlerProxyUsername.c_str (),
         m_fiddlerProxyPassword.c_str(),
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);
