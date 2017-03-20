@@ -11,8 +11,8 @@
     #include <windows.h>
     //#include <wrl.h>
     #include <setjmp.h>
-    static int s_test_failure_status = 101;
     static jmp_buf s_test_failure_jmp_buf;
+    static jmp_buf* s_test_failure_jmp_buf_to_use;
 
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
@@ -77,7 +77,10 @@ struct BeTestThrowFailureHandler : BeTest::IFailureHandler
             s_disableThrows = true; // I rely on the test runner to call _OnFailureHandled to allow me clear this flag.
             }
 #ifdef BENTLEY_WINRT
-        longjmp(s_test_failure_jmp_buf, s_test_failure_status);
+        if (nullptr != s_test_failure_jmp_buf_to_use)
+            longjmp(*s_test_failure_jmp_buf_to_use, 101);
+        else
+            BeTest::IncrementErrorCountAndEnableThrows();
 #else
         throw "failure";
 #endif
@@ -953,9 +956,19 @@ void    BeTest::IncrementErrorCount()               {++s_errorCount;}
 void    BeTest::SetBreakOnFailure(bool b)           {s_breakOnFailure=b;}
 bool    BeTest::GetBreakOnFailure()                 {return s_breakOnFailure;}
 
-static void incrementErrorCountAndEnableThrows()    {BeTest::IncrementErrorCount(); s_IFailureHandler->_OnFailureHandled();}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::IncrementErrorCountAndEnableThrows()
+    {
+    IncrementErrorCount();
+    s_IFailureHandler->_OnFailureHandled();
+    }
 
-static void rethrowAssertFromOtherTreads () 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::RethrowAssertFromOtherTreads () 
     {
     BeMutexHolder holder (s_bentleyCS);
     if (s_hadAssertOnAnotherThread)
@@ -1021,29 +1034,40 @@ static LONG WINAPI ExpFilter(EXCEPTION_POINTERS* pExp, DWORD dwExpCode)
 
 #endif
 
+#ifdef BENTLEY_WINRT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetFailureJmpbuf(void* jmpbufptr)
+    {
+    s_test_failure_jmp_buf_to_use = (jmp_buf*)(jmpbufptr);
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void testing::Test::RunTest()
     {
 #ifdef BENTLEY_WINRT
+    s_test_failure_jmp_buf_to_use = &s_test_failure_jmp_buf;
     int failure_detected = setjmp(s_test_failure_jmp_buf);
-    if (s_test_failure_status == failure_detected)
+    if (0 != failure_detected)
         {
-        incrementErrorCountAndEnableThrows();
+        BeTest::IncrementErrorCountAndEnableThrows();
         return;
         }
    
     InvokeTestBody();
-    rethrowAssertFromOtherTreads ();
+    BeTest::RethrowAssertFromOtherTreads ();
 #else
     try {
         InvokeTestBody();
-        rethrowAssertFromOtherTreads ();
+        BeTest::RethrowAssertFromOtherTreads ();
         } 
     catch(...) 
         {
-        incrementErrorCountAndEnableThrows();
+        BeTest::IncrementErrorCountAndEnableThrows();
         }
 #endif
     }
@@ -1069,14 +1093,14 @@ void testing::Test::Run()
         {
         try {
             SetUp();
-            rethrowAssertFromOtherTreads ();
+            BeTest::RethrowAssertFromOtherTreads ();
             }
         catch(...)
             {
-            incrementErrorCountAndEnableThrows();
+            BeTest::IncrementErrorCountAndEnableThrows();
             }
         }
-    BE_TEST_SEH_EXCEPT( incrementErrorCountAndEnableThrows(); )
+    BE_TEST_SEH_EXCEPT( BeTest::IncrementErrorCountAndEnableThrows(); )
 
     s_IFailureHandler->_OnFailureHandled();
 
@@ -1095,14 +1119,14 @@ void testing::Test::Run()
 
         try {
             TearDown();             // always call teardown, even if the test itself failed.
-            rethrowAssertFromOtherTreads ();
+            BeTest::RethrowAssertFromOtherTreads ();
             } 
         catch(...) 
             {
-            incrementErrorCountAndEnableThrows();
+            BeTest::IncrementErrorCountAndEnableThrows();
             }
         }
-    BE_TEST_SEH_EXCEPT( incrementErrorCountAndEnableThrows(); )
+    BE_TEST_SEH_EXCEPT( BeTest::IncrementErrorCountAndEnableThrows(); )
     
     s_IFailureHandler->_OnFailureHandled();
 

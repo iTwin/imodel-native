@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/LimitingTaskQueueTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LimitingTaskQueueTests.h"
@@ -15,10 +15,8 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPush
     auto thread1 = WorkerThread::Create ("TestThread");
     auto thread2 = WorkerThread::Create ("TestThread");
     AsyncTestCheckpoint a;
-
     LimitingTaskQueue<int> queue;
     queue.SetLimit (0);
-
     int number = 0;
     auto t1 = queue.Push ([&]
         {
@@ -29,11 +27,8 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPush
             return 0;
             });
         }, nullptr);
-
     EXPECT_EQ (1, number);
-
     a.WaitUntilReached ();
-
     auto t2 = queue.Push ([&]
         {
         number = 2;
@@ -44,11 +39,9 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPush
         }, nullptr);
 
     EXPECT_EQ (2, number);
-
     a.Continue ();
-
-    t1->Wait ();
-    t2->Wait ();
+    t1->WaitFor (20);
+    t2->WaitFor (22);
     }
 
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishes)
