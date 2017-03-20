@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/DgnDbTestFixtures.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,14 +41,14 @@ public:
 public:
     explicit DgnDbTestFixture()
     {
-        DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain());
+    DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
     ~DgnDbTestFixture()
     {
     }
 
-    virtual void TearDown(){ SaveDb(); }
+    void TearDown() override { SaveDb(); }
     
     //! Initialize a seed file with the name provided
     void SetupSeedProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);

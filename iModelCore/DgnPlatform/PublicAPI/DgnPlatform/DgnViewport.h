@@ -150,7 +150,7 @@ protected:
     virtual void _SynchViewTitle() {}
     virtual void _Destroy() {DestroyViewport();}
     virtual void _Suspend() {SuspendViewport();}
-    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
+    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta);
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Task::Priority);
@@ -187,7 +187,6 @@ public:
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, ViewDefinition3d::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
-    DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
@@ -419,6 +418,11 @@ public:
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
     DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+
+    DGNPLATFORM_EXPORT bool IsPointAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsSnapAdjustmentRequired() const;
+    DGNPLATFORM_EXPORT bool IsContextRotationRequired() const;
+
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -549,7 +553,7 @@ struct OffscreenViewport : DgnViewport
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
+    void _AdjustAspectRatio(DPoint3dR origin, DVec3dR delta) override {}
 
 public:
     NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}

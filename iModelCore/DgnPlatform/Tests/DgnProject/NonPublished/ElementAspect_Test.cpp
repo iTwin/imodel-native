@@ -457,7 +457,7 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
-        ASSERT_TRUE(DgnDbStatus::Success == status);
+        ASSERT_TRUE(BE_SQLITE_OK == status);
 
         DgnImportContext importContext(*m_db, *db2);
         DgnDbStatus stat;

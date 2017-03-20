@@ -10,6 +10,7 @@
 
 #include "Render.h"
 #include "DgnTexture.h"
+#include "DgnMaterial.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <folly/futures/Future.h>
@@ -171,7 +172,7 @@ private:
 
     TileDisplayParamsCR Get(TileDisplayParamsR params);
 public:
-    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting)
+    TileDisplayParamsCR Get(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false)
         {
         TileDisplayParams params(&gfParams, &geomParams, ignoreLighting);
         return Get(params);
@@ -346,7 +347,7 @@ public:
 //! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileTriangle
+struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
@@ -530,13 +531,16 @@ private:
     double                  m_tolerance;
     double                  m_areaTolerance;
     size_t                  m_triangleIndex;
+    DgnMaterialCPtr         m_materialEl;
     RenderingAssetCP        m_material = nullptr;
     FeatureAttributesMapR   m_attributes;
+    Transform               m_transformToDgn;
 
-    TileMeshBuilder(TileDisplayParamsCR params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) {  }
+    bool GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb);
+    TileMeshBuilder(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+            m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) { m_transformToDgn.InverseOf(transformFromDgn); }
 public:
-    static TileMeshBuilderPtr Create(TileDisplayParamsCR params, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, tolerance, areaTolerance, attr); }
+    static TileMeshBuilderPtr Create(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, transformFromDgn, tolerance, areaTolerance, attr); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool duplicateTwoSidedTileTriangles, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t fillColor);
@@ -741,7 +745,6 @@ private:
     mutable GeometrySourceMap       m_geometrySources;
     mutable BeMutex                 m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex     m_dbMutex;  // for multi-threaded access to database
-    mutable TileDisplayParamsCache  m_displayParams;
     DgnModelPtr                     m_model;
     Options                         m_options;
 
@@ -765,12 +768,6 @@ public:
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
-
-    TileDisplayParamsCacheR GetDisplayParamsCache() const { return m_displayParams; }
-    TileDisplayParamsCR GetDefaultDisplayParams() const { return m_displayParams.GetDefault(); }
-    TileDisplayParamsCR GetDisplayParams(GraphicParamsCR gfParams, GeometryParamsCR geomParams, bool ignoreLighting=false) const { return m_displayParams.Get(gfParams, geomParams, ignoreLighting); }
-    TileDisplayParamsCR GetDisplayParams(uint32_t fill, TileTextureImageP textureImage, bool ignoreLighting) const { return m_displayParams.Get(fill, textureImage, ignoreLighting); }
-    TileDisplayParamsCR GetDisplayParams(uint32_t fill, GeometryParamsCR geomParams) const { return m_displayParams.Get(fill, geomParams); }
 };
 
 //=======================================================================================
@@ -970,10 +967,9 @@ private:
         TileGenerationCachePtr  m_cache;
         DgnModelPtr             m_model;
         ITileCollector*         m_collector;
+        size_t                  m_maxPointsPerTile;
         double                  m_leafTolerance;
         bool                    m_surfacesOnly;
-        size_t                  m_maxPointsPerTile;
-
 
         ElementTileContext(TileGenerationCacheR cache, DgnModelR model, ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_surfacesOnly(surfacesOnly) { }

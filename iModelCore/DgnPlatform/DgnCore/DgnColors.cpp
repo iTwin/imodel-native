@@ -303,8 +303,14 @@ ColorDef ColorUtil::FromHSV(HsvColorDef hsv)
     // Check for simple case first.
     if ((!hsv.saturation) || (hsv.hue == -1))
         {
+        // Optimized armv7 with Xcode 8.2.1 exhibits odd behavior when 'value' is 50 and 90.
+        // Accounting for the computations happening here, and the fact that value is between 0 and 100,
+        // Earlin determined that 2.84e-14 is the required fuzz to get this to always round correctly
+        // according to the floating point number system. Since we're rounding and adding fuzz, bumping to 3.0e-14 in practice.
+        static const double s_fuzz = 3.0e-14;
+
         // hue must be undefined, have no color only white
-        int white_level = (int)ceil(255.0 * hsv.value / MAXFACTOR);
+        int white_level = (int)(((255.0 * (double)hsv.value) / 100.0) + 0.5 + s_fuzz);
         color.SetAllColors(white_level & 0xff);
 
         return color;

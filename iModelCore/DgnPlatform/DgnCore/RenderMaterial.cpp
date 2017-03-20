@@ -8,18 +8,9 @@
 #include    <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-RenderingAssetCP RenderingAsset::Load(DgnMaterialId materialId, DgnDbR dgnDb)
-    {
-    DgnMaterialCPtr material = DgnMaterial::Get(dgnDb, materialId);
-    return material.IsValid() ? &material->GetRenderingAsset() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RgbFactor  RenderingAsset::GetColor(Utf8CP name) const
+RgbFactor RenderingAsset::GetColor(Utf8CP name) const
     {
     RgbFactor rgb = {0.0, 0.0, 0.0};
 
@@ -89,14 +80,7 @@ double RenderingAsset::TextureMap::GetUnitScale(Units units) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const 
     {
-    Json::Value const& value = m_value[RENDER_MATERIAL_PatternMapping];
-    if (!value.isInt())
-        {
-        BeAssert(false);
-        return Render::Material::MapMode::Parametric;
-        }
-
-    return (Render::Material::MapMode) value.asInt();
+    return (Render::Material::MapMode) m_value[RENDER_MATERIAL_PatternMapping].asInt((int)Render::Material::MapMode::Parametric);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,14 +88,7 @@ Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const 
     {
-    Json::Value const& value = m_value[RENDER_MATERIAL_PatternScaleMode];
-     if (!value.isInt())
-        {
-        BeAssert(false);
-        return Units::Relative;
-        }
- 
-    return (Units) value.asInt();
+    return (Units) m_value[RENDER_MATERIAL_PatternScaleMode].asInt((int)Units::Relative);
     }
 
 //---------------------------------------------------------------------------------------
@@ -178,8 +155,7 @@ Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureId RenderingAsset::TextureMap::GetTextureId() const
     {
-    JsonValueCR textureIdValue = m_value[RENDER_MATERIAL_TextureId];
-    return textureIdValue.isNull() ? DgnTextureId() : DgnTextureId(textureIdValue.asUInt64());
+    return DgnTextureId(m_value[RENDER_MATERIAL_TextureId].asUInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,12 +275,15 @@ static void computePlanarUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
-static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform)
+static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, TransformCP transformToDgn)
     {
     for (size_t i = 0, count = visitor.NumEdgesThisFace(); i<count; i++)
         {
         DPoint3d    point        = *(visitor.GetPointCP() + i);
         DPoint2dP   outParam    = params + i;
+
+        if (nullptr != transformToDgn)
+            transformToDgn->Multiply(point);
 
         outParam->Init (point);
         uvTransform.Multiply (*outParam, *outParam);
@@ -315,7 +294,7 @@ static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR v
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     08/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const
+BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
     {
     Transform           uvTransform = GetTransform().GetTransform();
 
@@ -344,7 +323,7 @@ BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& pa
             }
 
         case Render::Material::MapMode::ElevationDrape:
-            computeElevationDrapeUVParams (&params[0], visitor, uvTransform);
+            computeElevationDrapeUVParams (&params[0], visitor, uvTransform, transformToDgn);
             return SUCCESS;
 
 #ifdef WIP

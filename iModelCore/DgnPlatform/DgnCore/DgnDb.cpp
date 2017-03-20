@@ -44,7 +44,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
-                 m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
+                 m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
@@ -78,7 +78,6 @@ extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_sessionManager.ClearCurrent();
     m_sceneQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
@@ -173,144 +172,6 @@ RevisionManagerR DgnDb::Revisions() const
         m_revisionManager.reset(new RevisionManager(const_cast<DgnDbR>(*this)));
 
     return *m_revisionManager;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
-    {
-    return DoImportSchemas(schemas, false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
-    {
-    return DoImportSchemas(schemas, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDb::DoImportSchemas(bvector<ECSchemaCP> const& schemas, bool isImportingFromV8)
-    {
-    if (IsReadonly())
-        {
-        BeAssert(false && "Cannot import schemas into a ReadOnly Db");
-        return DgnDbStatus::ReadOnly;
-        }
-
-    bvector<ECN::ECSchemaCP> schemasToImport;
-    DbResult result = PickSchemasToImport(schemasToImport, schemas, isImportingFromV8);
-    if (result != BE_SQLITE_OK)
-        {
-        BeAssert(false && "One or more schemas are incompatible.");
-        return DgnDbStatus::InvalidProfileVersion;
-        }
-
-    if (schemasToImport.empty())
-        return DgnDbStatus::Success;
-
-    if (RepositoryStatus::Success != BriefcaseManager().LockSchemas().Result())
-        {
-        BeAssert(false && "Unable to obtain the schema lock");
-        return DgnDbStatus::LockNotHeld;
-        }
-    
-    if (BentleyStatus::SUCCESS != Schemas().ImportECSchemas(schemasToImport, isImportingFromV8, GetSchemaImportToken()))
-        {
-        DbResult result = AbandonChanges();
-        BeAssert(result == BE_SQLITE_OK);
-
-        return DgnDbStatus::BadSchema;
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Validates the application's ec schemas against those found in the BIM, 
-* and returns a status corresponding to the worst read/write violation.  
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::ValidateSchemas(bvector<ECSchemaCP> const& schemas) const
-    {
-    DbResult result = BE_SQLITE_OK;
-    for (ECSchemaCP appSchema : schemas)
-        {
-        SchemaKeyCR appSchemaKey = appSchema->GetSchemaKey();
-
-        ECSchemaCP bimSchema = Schemas().GetECSchema(appSchemaKey.GetName().c_str(), false);
-        if (!bimSchema)
-            continue;
-     
-        SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
-
-        if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead())
-            return BE_SQLITE_ERROR_SchemaIncompatible;
-
-        if (IsReadonly())
-            continue;
-
-        if (appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
-            return BE_SQLITE_ERROR_SchemaIncompatible;
-
-        if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite())
-            {
-            result = BE_SQLITE_ERROR_SchemaUpgradeRequired;
-            continue; // It could get worse!
-            }
-
-        if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
-            {
-            result = BE_SQLITE_ERROR_SchemaUpgradeRecommended;
-            continue; // It could get worse!
-            }
-        }
-
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Ramanujam.Raman                    02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
-    {
-    importSchemas.clear();
-
-    for (ECSchemaCP appSchema : schemas)
-        {
-        SchemaKeyCR appSchemaKey = appSchema->GetSchemaKey();
-
-        ECSchemaCP bimSchema = Schemas().GetECSchema(appSchemaKey.GetName().c_str(), false);
-        if (!bimSchema)
-            {
-            importSchemas.push_back(appSchema);
-            continue;
-            }
-        
-        SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
-
-        if (appSchemaKey.GetVersionRead() != bimSchemaKey.GetVersionRead() || appSchemaKey.GetVersionWrite() < bimSchemaKey.GetVersionWrite())
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR_SchemaIncompatible;
-            }
-        
-        if (appSchemaKey.GetVersionWrite() == bimSchemaKey.GetVersionWrite() && appSchemaKey.GetVersionMinor() == bimSchemaKey.GetVersionMinor())
-            {
-            if (isImportingFromV8)
-                importSchemas.push_back(appSchema);
-            continue;
-            }
-
-        if (appSchemaKey.GetVersionWrite() > bimSchemaKey.GetVersionWrite() || appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
-            importSchemas.push_back(appSchema);
-        }
-
-    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -766,18 +627,6 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a " BIS_CLASS_DictionaryModel);
     return *dict;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionModelPtr DgnDb::GetSessionModel()
-    {
-    DefinitionPartitionCPtr partition = Elements().Get<DefinitionPartition>(Elements().GetSessionPartitionId());
-    BeAssert(partition.IsValid() && "A DgnDb always has a sessions partition");
-    SessionModelPtr model = Models().Get<SessionModel>(partition->GetSubModelId());
-    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_SessionModel);
-    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**

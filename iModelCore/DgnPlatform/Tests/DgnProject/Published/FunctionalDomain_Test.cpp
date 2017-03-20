@@ -30,8 +30,7 @@ private:
     DOMAIN_DECLARE_MEMBERS(FunctionalTestDomain, )
     FunctionalTestDomain();
 
-public:
-    static Dgn::DgnDbStatus ImportSchema(DgnDbR);
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/FunctionalTest.01.00.ecschema.xml"; }
 };
 
 //=======================================================================================
@@ -169,20 +168,6 @@ TestFunctionalTypePtr TestFunctionalType::Create(DgnDbR db)
     return new TestFunctionalType(CreateParams(db, DgnModel::DictionaryId(), classId));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    08/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalTestDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName testSchemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    testSchemaFile.AppendToPath(L"ECSchemas");
-    testSchemaFile.AppendSeparator();
-    testSchemaFile.AppendToPath(L"FunctionalTest.01.00.ecschema.xml");
-
-    DgnDomainR domain = GetDomain();
-    return domain.ImportSchema(db, testSchemaFile);
-    }
-
 //=======================================================================================
 // @bsiclass                                    Shaun.Sewall                    08/2016
 //=======================================================================================
@@ -196,14 +181,14 @@ struct FunctionalDomainTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 void FunctionalDomainTests::SetupFunctionalTestDomain()
     {
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain());
-    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain());
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
-    DgnDbStatus importSchemaStatus = FunctionalDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
-
-    importSchemaStatus = FunctionalTestDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
+    DbResult result = FunctionalDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
+		
+    result = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
     }
 
 //---------------------------------------------------------------------------------------

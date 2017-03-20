@@ -63,12 +63,12 @@ struct FunctionalDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(FunctionalDomain, DGNPLATFORM_EXPORT)
 
+private:
+    WCharCP _GetSchemaRelativePath() const override { return FUNCTIONAL_DOMAIN_ECSCHEMA_PATH; }
+
 public:
     FunctionalDomain();
     ~FunctionalDomain();
-    
-    //! Import the ECSchema for the FunctionalDomain into the specified DgnDb
-    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR);
 };
 
 //=======================================================================================

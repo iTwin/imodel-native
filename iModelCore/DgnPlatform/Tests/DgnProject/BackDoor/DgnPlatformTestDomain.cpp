@@ -20,9 +20,7 @@ DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
-HANDLER_DEFINE_MEMBERS(TestPhysicalRecipeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
-HANDLER_DEFINE_MEMBERS(TestGraphicalRecipe2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
@@ -338,17 +336,6 @@ TestPhysicalTypePtr TestPhysicalType::Create(DefinitionModelR model, Utf8CP name
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestPhysicalRecipePtr TestPhysicalRecipe::Create(DefinitionModelR model, Utf8CP name)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(TestPhysicalRecipeHandler::GetHandler());
-    DgnCode code = CreateCode(model, name);
-    return new TestPhysicalRecipe(CreateParams(db, model.GetModelId(), classId, code));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8CP name)
@@ -357,17 +344,6 @@ TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8C
     DgnClassId classId = db.Domains().GetClassId(TestGraphicalType2dHandler::GetHandler());
     DgnCode code = CreateCode(model, name);
     return new TestGraphicalType2d(CreateParams(db, model.GetModelId(), classId, code));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestGraphicalRecipe2dPtr TestGraphicalRecipe2d::Create(DefinitionModelR model, Utf8CP name)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(TestGraphicalRecipe2dHandler::GetHandler());
-    DgnCode code = CreateCode(model, name);
-    return new TestGraphicalRecipe2d(CreateParams(db, model.GetModelId(), classId, code));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,9 +467,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
-    RegisterHandler(TestPhysicalRecipeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
-    RegisterHandler(TestGraphicalRecipe2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
@@ -508,43 +482,6 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(PerfElementCHSub1Handler::GetHandler());
     RegisterHandler(PerfElementCHSub2Handler::GetHandler());
     RegisterHandler(PerfElementCHSub3Handler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnPlatformTestDomain::Register()
-    {
-    DgnDomains::RegisterDomain(GetDomain()); 
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnPlatformTestDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    auto status = GetDomain().DgnDomain::ImportSchema(db, schemaFile);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    auto schema = db.Schemas().GetECSchema(DPTEST_SCHEMA_NAME, true);
-    if (nullptr == schema)
-        return DgnDbStatus::BadSchema;
-
-    if (!TestElement::QueryClassId(db).IsValid())
-        return DgnDbStatus::BadSchema;
-
-    if (nullptr == TestUniqueAspect::GetECClass(db))
-        return DgnDbStatus::BadSchema;
-    
-    if (nullptr == TestMultiAspect::GetECClass(db))
-        return DgnDbStatus::BadSchema;
-
-    return DgnDbStatus::Success;
     }
 
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;

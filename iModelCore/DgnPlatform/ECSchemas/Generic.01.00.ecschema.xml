@@ -131,4 +131,18 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="PhysicalType" displayLabel="Physical Type" modifier="Sealed">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="GraphicalType2d" displayLabel="2D Graphical Type" modifier="Sealed">
+        <BaseClass>bis:GraphicalType2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
 </ECSchema>

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HypermodelingViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -405,14 +405,6 @@ BentleyStatus HypermodelingViewController::RemoveDrawing (DgnViewId id)
 SpatialViewControllerR HypermodelingViewController::GetSpatialView() const {return *m_physical;}
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP HypermodelingViewController::_GetAuxCoordinateSystem () const
-    {
-    return m_physical->GetAuxCoordinateSystem();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/

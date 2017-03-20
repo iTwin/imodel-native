@@ -59,27 +59,11 @@ namespace ViewProperties
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
     static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
-    static constexpr Utf8CP str_Hidden() {return "hidden";}
-    static constexpr Utf8CP str_Visible() {return "visible";}
-    static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
-    static constexpr Utf8CP str_Color() {return "color";}
-    static constexpr Utf8CP str_Pattern() {return "pattern";}
-    static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
     static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
     static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
     static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
     static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
-    static constexpr Utf8CP str_Ambient() {return "ambient";}
-    static constexpr Utf8CP str_Flash() {return "flash";}
-    static constexpr Utf8CP str_PortraitLeft() {return "left";}
-    static constexpr Utf8CP str_PortraitRight() {return "right";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
-    static constexpr Utf8CP str_AvgLum() {return "avgLum";}
-    static constexpr Utf8CP str_MaxLum() {return "maxLum";}
-    static constexpr Utf8CP str_Fstop() {return "fstop";}
-    static constexpr Utf8CP str_Sun() {return "sun";}
-    static constexpr Utf8CP str_Intensity() {return "intensity";}
-    static constexpr Utf8CP str_Direction() {return "dir";}
+    static constexpr Utf8CP str_ACS() {return "ACS";}
 };
 
 using namespace ViewProperties;
@@ -221,7 +205,7 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 Utf8String ViewDefinition::ToDetailJson()
     {
     _OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetDetails());
+    return GetDetails().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -274,17 +258,31 @@ void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::GetGridSettings(GridOrientationType& orientation, DPoint2dR spacing, uint32_t& gridsPerRef) const
     {
-    JsonValueCR valO = GetDetail(str_GridOrient());
-    orientation = valO.isNull() ? GridOrientationType::WorldXY : (GridOrientationType) valO.asUInt();
+    orientation = (GridOrientationType) GetDetail(str_GridOrient()).asUInt((uint32_t) GridOrientationType::WorldXY);
+    gridsPerRef = GetDetail(str_GridPerRef()).asUInt(10);
+    spacing.x = GetDetail(str_GridSpaceX()).asDouble(1.0);
+    spacing.y = GetDetail(str_GridSpaceY()).asDouble(spacing.x);
+    }
 
-    JsonValueCR valR = GetDetail(str_GridPerRef());
-    gridsPerRef = valR.isNull() ? 10 : valR.asUInt();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId ViewDefinition::GetAuxiliaryCoordinateSystemId() const
+    {
+    return DgnElementId(GetDetail(str_ACS()).asUInt64());
+    }
 
-    JsonValueCR valX = GetDetail(str_GridSpaceX());
-    spacing.x = valX.isNull() ? 1.0 : valX.asDouble();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
+    {
+    BeAssert(!IsPersistent());
 
-    JsonValueCR valY = GetDetail(str_GridSpaceY());
-    spacing.y = valY.isNull() ? spacing.x : valY.asDouble();
+    if (acsId.IsValid())
+        SetDetail(str_ACS(), Json::Value(acsId.GetValue()));
+    else
+        RemoveDetail(str_ACS());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,7 +888,7 @@ DbResult ViewDefinition::SaveThumbnail(Point2d size, Render::ImageSourceCR sourc
     val[str_Height()] = size.y;
     val[str_Format()] = (source.GetFormat() == ImageSource::Format::Jpeg) ? str_Jpeg() : str_Png();
 
-    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), Json::FastWriter().ToString(val), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
+    DbResult rc = m_dgndb.SaveProperty(DgnViewProperty::ViewThumbnail(), val.ToString(), source.GetByteStream().GetData(), source.GetByteStream().GetSize(), GetViewId().GetValue());
     return rc;
     }
 
@@ -1043,143 +1041,6 @@ DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::HiddenLineParams::Style::ToJson() const
-    {
-    Json::Value val;
-    val[Json::StaticString(str_OvrColorFlag())] = m_ovrColor;
-    val[Json::StaticString(str_Color())] = m_color.GetValue();
-    val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
-    val[Json::StaticString(str_Width())] = (Json::UInt32) m_width;
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::HiddenLineParams::Style::FromJson(JsonValueCR val)
-    {
-    m_ovrColor = val[str_OvrColorFlag()].asBool(m_ovrColor);
-    m_color = ColorDef(val[str_Color()].asUInt(m_color.GetValue()));
-    m_pattern = (GraphicParams::LinePixels) val[str_Pattern()].asUInt((uint32_t) m_pattern);
-    m_width = val[str_Width()].asUInt(m_width);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::HiddenLineParams::ToJson() const
-    {
-    HiddenLineParams defaults;
-    Json::Value val;
-
-    if (m_visible != defaults.m_visible) val[Json::StaticString(str_Visible())] = m_visible.ToJson();
-    if (m_hidden != defaults.m_hidden) val[Json::StaticString(str_Hidden())] = m_hidden.ToJson();
-    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
-    {
-    HiddenLineParams params;
-
-    if (!val.isNull())
-        {
-        params.m_visible.FromJson(val[str_Visible()]);
-        params.m_hidden.FromJson(val[str_Hidden()]);
-        params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
-        }
-    return params;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::SceneLights::Solar::FromJson(JsonValueCR val)
-    {
-    m_enabled = false;
-    if (val.isNull())
-        return;
-
-    m_enabled = true;
-    m_intensity = val[str_Intensity()].asDouble();
-    JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::SceneLights::Solar::ToJson() const
-    {
-    Json::Value val;
-    val[Json::StaticString(str_Intensity())] = m_intensity;
-    JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
-    {
-    if (val.isNull())
-        return;
-    m_avgLum = val[str_AvgLum()].asDouble(0.0);
-    m_maxLum = val[str_MaxLum()].asDouble(0.0);
-    m_fstop = val[str_Fstop()].asDouble(0.0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::SceneLights::Brightness::ToJson() const
-    {
-    Json::Value val;
-    if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
-    if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
-    if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
-    {
-    SceneLights lights;
-
-    if (!val.isNull())
-        {
-        lights.m_ambient = val[str_Ambient()].asDouble(0.0);
-        lights.m_flash = val[str_Flash()].asDouble(0.0);
-        lights.m_portraitLeft = val[str_PortraitLeft()].asDouble(0.0);
-        lights.m_portraitRight = val[str_PortraitRight()].asDouble(0.0);
-        lights.m_brightness.FromJson(val[str_Brightness()]);
-        lights.m_sun.FromJson(val[str_Sun()]);
-        }
-    return lights;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::SceneLights::ToJson() const
-    {
-    Json::Value val;
-    if (0.0 != m_ambient) val[Json::StaticString(str_Ambient())] = m_ambient;
-    if (0.0 != m_flash) val[Json::StaticString(str_Flash())] = m_flash;
-    if (0.0 != m_portraitLeft) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft;
-    if (0.0 != m_portraitRight) val[Json::StaticString(str_PortraitRight())] = m_portraitRight;
-    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
-    if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Override const& ovr)
@@ -1269,7 +1130,7 @@ void DisplayStyle::_OnLoadedJsonProperties()
 Utf8String DisplayStyle::ToJson() const
     {
     const_cast<DisplayStyleR>(*this)._OnSaveJsonProperties();
-    return Json::FastWriter::ToString(GetStyles());
+    return GetStyles().ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1557,7 +1418,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
 
     SetExtents(newDelta);
     if (aspect)
-        _AdjustAspectRatio(*aspect, true);
+        AdjustAspectRatio(*aspect);
 
     newDelta = GetExtents();
 
@@ -1698,7 +1559,7 @@ void ViewDefinition3d::VerifyFocusPlane()
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
-                                            DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
+                                        DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
     if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?
@@ -1884,144 +1745,34 @@ DPoint3d ViewDefinition3d::_GetTargetPoint() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/10
+* @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
+void ViewDefinition::AdjustAspectRatio(double windowAspect)
     {
-    DPoint3dR origin = m_origin;
-    DVec3dR   delta = m_extents;
-    RotMatrixR rotation = m_rotation; 
+    DVec3d extents = GetExtents();
+    double viewAspect = extents.x / extents.y;
 
-    // first, make sure none of the deltas are negative
-    delta.x = fabs(delta.x);
-    delta.y = fabs(delta.y);
-    delta.z = fabs(delta.z);
+    auto drawingView = _ToDrawingView();
+    if (nullptr != drawingView)
+        windowAspect *= drawingView->GetAspectRatioSkew();
 
-    double maxAbs = max(delta.x, delta.y);
-
-    // if all deltas are zero, set to 1m (what else can we do?)
-    if (0.0 == maxAbs)
-        delta.x = delta.y = DgnUnits::OneMeter();
-
-    // if either dimension is zero, set it to the other.
-    if (delta.x == 0)
-        delta.x = maxAbs;
-    if (delta.y == 0)
-        delta.y = maxAbs;
-
-    double viewAspect  = delta.x / delta.y;
-
-    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
+    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
         return;
-
-    DVec3d oldDelta = delta;
-
-    if (!expandView)
-        {
-        if (viewAspect > 1.0)
-            delta.y = delta.x;
-        else
-            delta.x = delta.y;
-        }
-
-    double maxExtent, minExtent;
-    _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
-        {
-        double rtmp = delta.x / windowAspect;
-        if (rtmp < maxExtent)
-            delta.y = rtmp;
-        else
-            {
-            delta.y = maxExtent;
-            delta.x = maxExtent * windowAspect;
-            }
-        }
+    
+    DVec3d oldDelta = extents;
+    if (viewAspect > windowAspect)
+        extents.y = extents.x / windowAspect;
     else
-        {
-        double rtmp = delta.y * windowAspect;
-        if (rtmp < maxExtent)
-            delta.x = rtmp;
-        else
-            {
-            delta.x = maxExtent;
-            delta.y = maxExtent / windowAspect;
-            }
-        }
+        extents.x = extents.y * windowAspect;
 
+    DPoint3d origin = GetOrigin();
     DPoint3d newOrigin;
-    rotation.Multiply(&newOrigin, &origin, 1);
-    newOrigin.x +=(oldDelta.x - delta.x) / 2.0;
-    newOrigin.y +=(oldDelta.y - delta.y) / 2.0;
-    rotation.MultiplyTranspose(origin, newOrigin);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
-    {
-    // first, make sure none of the deltas are negative
-    m_delta.x = fabs(m_delta.x);
-    m_delta.y = fabs(m_delta.y);
-
-    double maxAbs = max(m_delta.x, m_delta.y);
-
-    // if all deltas are zero, set to 1m (what else can we do?)
-    if (0.0 == maxAbs)
-        m_delta.x = m_delta.y = DgnUnits::OneMeter();
-
-    // if either dimension is zero, set it to the other.
-    if (m_delta.x == 0)
-        m_delta.x = maxAbs;
-    if (m_delta.y == 0)
-        m_delta.y = maxAbs;
-
-    double viewAspect  = m_delta.x / m_delta.y;
-    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
-        return;
-
-    DVec2d oldDelta = m_delta;
-    if (!expandView)
-        {
-        if (viewAspect > 1.0)
-            m_delta.y = m_delta.x;
-        else
-            m_delta.x = m_delta.y;
-        }
-
-    double maxExtent, minExtent;
-    _GetExtentLimits(minExtent, maxExtent);
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
-        {
-        double rtmp = m_delta.x / windowAspect;
-        if (rtmp < maxExtent)
-            m_delta.y = rtmp;
-        else
-            {
-            m_delta.y = maxExtent;
-            m_delta.x = maxExtent * windowAspect;
-            }
-        }
-    else
-        {
-        double rtmp = m_delta.y * windowAspect;
-        if (rtmp < maxExtent)
-            m_delta.x = rtmp;
-        else
-            {
-            m_delta.x = maxExtent;
-            m_delta.y = maxExtent / windowAspect;
-            }
-        }
-
-    DPoint2d origin;
-    RotMatrix rMatrix = GetRotation();
-    rMatrix.Multiply(&origin, &m_origin, 1);
-    origin.x +=(oldDelta.x - m_delta.x) / 2.0;
-    origin.y +=(oldDelta.y - m_delta.y) / 2.0;
-    rMatrix.Transpose();
-    rMatrix.Multiply(&m_origin, &origin, 1);
+    GetRotation().Multiply(&newOrigin, &origin, 1);
+    newOrigin.x += ((oldDelta.x - extents.x) / 2.0);
+    newOrigin.y += ((oldDelta.y - extents.y) / 2.0);
+    GetRotation().MultiplyTranspose(origin, newOrigin);
+    SetOrigin(origin);
+    SetExtents(extents);
     }
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
