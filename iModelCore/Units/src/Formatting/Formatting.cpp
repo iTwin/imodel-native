@@ -54,9 +54,10 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
+//void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
+void NumericFormatSpec::DefaultInit(size_t precision)
     {
-    m_name = name;
+    //m_name = name;
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     //m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = FormatConstant::DefaultPresentaitonType();
@@ -70,9 +71,10 @@ void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+//void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
-    m_name = name;
+    //m_name = name;
     m_presentationType = presType;
     m_signOption = signOpt;
     m_formatTraits = formatTraits;
@@ -94,10 +96,10 @@ void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOpt
     m_roundFactor = 0.0;
     }
 
-void NumericFormatSpec::SetAlias(Utf8CP alias)
-    { 
-    m_alias = alias;
-    }
+//void NumericFormatSpec::SetAlias(Utf8CP alias)
+//    { 
+//    m_alias = alias;
+//    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -126,8 +128,8 @@ bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double 
 //----------------------------------------------------------------------------------------
 NumericFormatSpec::NumericFormatSpec(NumericFormatSpecCR other)
     {
-    m_name = other.m_name;
-    m_alias = other.m_alias;
+    //m_name = other.m_name;
+    //m_alias = other.m_alias;
     m_decPrecision = other.m_decPrecision;
     //m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = other.m_presentationType;
@@ -141,9 +143,9 @@ NumericFormatSpec::NumericFormatSpec(NumericFormatSpecCR other)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
+NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
     {
-    Init(name, presType, signOpt, formatTraits, precision);   
+    Init(presType, signOpt, formatTraits, precision);   
     }
 
 
@@ -696,12 +698,12 @@ Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
     return Utf8String(buf);
     }
 
-Utf8String NumericFormatSpec::FormatQuantity(QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
     {
     if (!qty.IsNullQuantity())
         return Utf8String();
-    UnitCP unitQ = qty.GetUnit();
-    Quantity temp = qty.ConvertTo(unitQ);
+    BEU::UnitCP unitQ = qty.GetUnit();
+    BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
     FormatDouble(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     return Utf8String(buf);
@@ -723,7 +725,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 
 Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
+    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -731,16 +733,16 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int p
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, QuantityCR qty, UnitCP useUnit, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
+    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
         return "";
     //UnitCP unitQ = qty.GetUnit();   
    // Utf8CP useUOM = (nullptr == useUnit) ? unitQ->GetName() : useUnit->GetName();
-    Quantity temp = qty.ConvertTo(useUnit);
+    BEU::Quantity temp = qty.ConvertTo(useUnit);
     return fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
     }
 
@@ -751,37 +753,37 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, QuantityCR qty, 
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
-      UnitCP fromUnit = UnitRegistry::Instance().LookupUnit(fromUOM);
-      Quantity qty = Quantity(dval, *fromUnit);
-      UnitCP toUnit = UnitRegistry::Instance().LookupUnit(toUOM);
+    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
+    BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);
+    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnit(toUOM);
      // UnitCP fromUnit = qty.GetUnit();
-      PhenomenonCP phTo = toUnit->GetPhenomenon();
-      PhenomenonCP phFrom = fromUnit->GetPhenomenon();
-      if (phTo != phFrom)
-          {
-          Utf8String txt = "Impossible conversion from ";
-          txt += fromUnit->GetName();
-          txt += " to ";
-          txt +=toUnit->GetName();
-          return txt;
-          }
-      Utf8String str = StdFormatQuantity(stdName, qty, toUnit, prec, round);
-      if (nullptr != space)
-          {
-          str += space;
-          if (nullptr == toLabel)
-              str += toUnit->GetName();
-          }
-      if (nullptr != toLabel)
-          str += toLabel;
-      return str;
+    BEU::PhenomenonCP phTo = toUnit->GetPhenomenon();
+    BEU::PhenomenonCP phFrom = fromUnit->GetPhenomenon();
+    if (phTo != phFrom)
+        {
+        Utf8String txt = "Impossible conversion from ";
+        txt += fromUnit->GetName();
+        txt += " to ";
+        txt +=toUnit->GetName();
+        return txt;
+        }
+    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, prec, round);
+    if (nullptr != space)
+        {
+        str += space;
+        if (nullptr == toLabel)
+            str += toUnit->GetName();
+        }
+    if (nullptr != toLabel)
+        str += toLabel;
+    return str;
     }
 
 
 
 Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::FindFormat(stdName);
+    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
         fmtP = StdFormatSet::DefaultDecimal();
     if (nullptr == fmtP)
@@ -1056,43 +1058,44 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8String FormatDictionary::SerializeFormatDefinition(NumericFormatSpecCR format)
+Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFormat)
     {
     Utf8String str;
 
-    //str.append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetNameAndAlias(), '\"', ""));
+    //str.append(*ParameterValuePair(FormatConstant::FPN_FormatName(), namedFormat.GetNameAndAlias(), '\"', ""));
     // Names section
-    str.append(*ParameterValuePair(FormatConstant::FPN_Name(), format.GetName(), '\"', ""));
-    str.append(" " + *ParameterValuePair(FormatConstant::FPN_Alias(), format.GetAlias(), '\"', ""));
+    str.append(*ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', ""));
+    str.append(" " + *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', ""));
+    NumericFormatSpecCP format = namedFormat->GetNumericSpec();
     // formating type/mode
-    str.append(" " + Utils::PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
+    str.append(" " + Utils::PresentationTypeName(format->GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
     // precision
-    if (format.IsFractional())
+    if (format->IsFractional())
         {
-        str.append(" " + Utils::FractionallPrecisionName(format.GetFractionalPrecision()));
-        if (FractionBarType::None != format.GetFractionalBarType())
-            str.append(" " + Utils::FractionBarName(format.GetFractionalBarType()));
+        str.append(" " + Utils::FractionallPrecisionName(format->GetFractionalPrecision()));
+        if (FractionBarType::None != format->GetFractionalBarType())
+            str.append(" " + Utils::FractionBarName(format->GetFractionalBarType()));
         }
     else
-        str.append(" " + Utils::DecimalPrecisionName(format.GetDecimalPrecision()));
+        str.append(" " + Utils::DecimalPrecisionName(format->GetDecimalPrecision()));
     // sign options
-    str.append(" " + Utils::SignOptionName(format.GetSignOption()));  // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    str.append(" " + Utils::SignOptionName(format->GetSignOption()));  // NoSign, OnlyNegative, SignAlways, NegativeParenths
     // zero options
-    if (format.IsKeepTrailingZeroes()) str.append(" " + FormatConstant::FPN_TrailingZeroes());
-    if (format.IsUseLeadingZeroes()) str.append(" " + FormatConstant::FPN_LeadingZeroes());
-    if (format.IsKeepSingleZero()) str.append(" " + FormatConstant::FPN_KeepSingleZero());
-    if (format.IsKeepDecimalPoint()) str.append(" " + FormatConstant::FPN_KeepDecimalPoint());
-    if (format.IsZeroEmpty()) str.append(" " + FormatConstant::FPN_ZeroEmpty());
-    if (format.IsScientific())
+    if (format->IsKeepTrailingZeroes()) str.append(" " + FormatConstant::FPN_TrailingZeroes());
+    if (format->IsUseLeadingZeroes()) str.append(" " + FormatConstant::FPN_LeadingZeroes());
+    if (format->IsKeepSingleZero()) str.append(" " + FormatConstant::FPN_KeepSingleZero());
+    if (format->IsKeepDecimalPoint()) str.append(" " + FormatConstant::FPN_KeepDecimalPoint());
+    if (format->IsZeroEmpty()) str.append(" " + FormatConstant::FPN_ZeroEmpty());
+    if (format->IsScientific())
         {
-        if (format.IsExponentZero()) str.append(" " + FormatConstant::FPN_ExponentZero());
+        if (format->IsExponentZero()) str.append(" " + FormatConstant::FPN_ExponentZero());
         }
     //  separators section
-    if(format.IsUse1000Separator()) str.append(" " + FormatConstant::FPN_Use1000Separ());
-    Utf8Char symb = format.GetThousandSeparator();
+    if(format->IsUse1000Separator()) str.append(" " + FormatConstant::FPN_Use1000Separ());
+    Utf8Char symb = format->GetThousandSeparator();
     if(symb != FormatConstant::FPV_ThousandSeparator()) 
         str.append(*ParameterValuePair(FormatConstant::FPN_ThousandsSepar(), Utf8String(symb, 1), '\'', ""));
-    symb = format.GetDecimalSeparator();
+    symb = format->GetDecimalSeparator();
     if (symb != FormatConstant::FPV_DecimalSeparator())
         str.append(*ParameterValuePair(FormatConstant::FPN_DecimalSepar(), Utf8String(symb, 1), '\'', ""));
     return str;
@@ -1106,9 +1109,10 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NumericFormatSpecCR forma
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::AddFormat(NumericFormatSpecP fmtP)
+NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias)
     {
-    m_formatSet.push_back(fmtP);
+    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias, nullptr);
+    m_formatSet.push_back(nfs);
     return fmtP;
     }
 
@@ -1118,30 +1122,23 @@ NumericFormatSpecP StdFormatSet::AddFormat(NumericFormatSpecP fmtP)
 void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    AddFormat(new NumericFormatSpec("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
-    AddFormat(new NumericFormatSpec("Real2", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2))->SetAlias("real2");
-    AddFormat(new NumericFormatSpec("Real3", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3))->SetAlias("real3");
-    AddFormat(new NumericFormatSpec("Real4", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4))->SetAlias("real4");
-    AddFormat(new NumericFormatSpec("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
-    AddFormat(new NumericFormatSpec("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
-    AddFormat(new NumericFormatSpec("DefaultFractional", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fract");
-    AddFormat(new NumericFormatSpec("SignedFractional", PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()))->SetAlias("fractSign");
-    AddFormat(new NumericFormatSpec("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
-    AddFormat(new NumericFormatSpec("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
-    AddFormat(new NumericFormatSpec("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
-    AddFormat(new NumericFormatSpec("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
-    NumericFormatSpecP tmp = new NumericFormatSpec("Fractional16", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
-    tmp->SetAlias("fract16");
-    tmp->SetFractionaPrecision(FractionalPrecision::Sixteenth);
-    AddFormat(tmp);
-    tmp = new NumericFormatSpec("Fractional8", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
-    tmp->SetAlias("fract8");
-    tmp->SetFractionaPrecision(FractionalPrecision::Eighth);
-    AddFormat(tmp);
-    tmp = new NumericFormatSpec("Fractional32", PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator());
-    tmp->SetAlias("fract32");
-    tmp->SetFractionaPrecision(FractionalPrecision::Over_32);
-    AddFormat(tmp);
+    AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
+    AddFormat("Real2",       new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2),"real2");
+    AddFormat("Real3",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3),"real3");
+    AddFormat("Real4",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 4),"real4");
+    AddFormat("SignedReal",  new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realSign");
+    AddFormat("ParenthsReal", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realPth");
+    AddFormat("DefaultFractional", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()),"fract");
+    AddFormat("SignedFractional", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()),"fractSign");
+    AddFormat("DefaultExp", new NumericFormatSpec(PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"sci");
+    AddFormat("SignedExp", new NumericFormatSpec(PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"sciSign");
+    AddFormat("NormalizedExp", new NumericFormatSpec(PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"sciN");
+    AddFormat("DefaultInt", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"int");
+    AddFormat("Fractional4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), "fract4");
+    AddFormat("Fractional8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "fract8");
+    AddFormat("Fractional16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
+    AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
+    AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1149,13 +1146,13 @@ void StdFormatSet::StdInit()
 //---------------------------------------------------------------------------------------
 NumericFormatSpecP StdFormatSet::DefaultDecimal()
     {
-    NumericFormatSpecP fmtP;
+    NamedFormatSpecP fmtP;
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (PresentationType::Decimal == fmtP->GetPresentationType())
-            return fmtP;
+            return fmtP->GetNumericSpec();
         }
     return nullptr;
     }
@@ -1163,32 +1160,49 @@ NumericFormatSpecP StdFormatSet::DefaultDecimal()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::FindFormat(Utf8CP name)
+NumericFormatSpecP StdFormatSet::GetNumericFormat(Utf8CP name)
     {
-    NumericFormatSpecP fmtP = *Set().m_formatSet.begin();
-
+    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
-        if (fmtP->GetName() == name || fmtP->GetAlias() == name)
-            return fmtP;
+        if (fmtP->HasName(name) || fmtP->HasAlias(name))
+            {
+            return fmtP->GetNumericSpec();
+            }
         }
     return nullptr;
     }
 
+NamedFormatSpecP StdFormatSet::FindFormatSpec(Utf8CP name)
+    {
+    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+
+    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+        {
+        fmtP = *itr;
+        if (fmtP->HasName(name) || fmtP->HasAlias(name))
+            {
+            return fmtP;
+            }
+        }
+    return nullptr;
+    }
+
+
 bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
     {
     bvector<Utf8CP> vec;
-    NumericFormatSpecP fmtP = *Set().m_formatSet.begin();
+    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
     Utf8CP name;
 
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (useAlias)
-            name = fmtP->GetName().c_str(); 
+            name = fmtP->GetName(); 
         else
-            name = fmtP->GetAlias().c_str();
+            name = fmtP->GetAlias();
         vec.push_back(name);
         }
     return vec;
@@ -1197,8 +1211,8 @@ bvector<Utf8CP> StdFormatSet::StdFormatNames(bool useAlias)
 Utf8String StdFormatSet::StdFormatNameList(bool useAlias)
     {
     Utf8String  txt;
-    NumericFormatSpecP fmtP = *Set().m_formatSet.begin();
-    Utf8String name;
+    NamedFormatSpecP fmtP = *Set().m_formatSet.begin();
+    Utf8CP name;
     int i = 0;
     for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
         {

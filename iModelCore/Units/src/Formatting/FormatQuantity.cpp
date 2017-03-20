@@ -36,7 +36,7 @@ void CompositeValueSpec::Init()
 //    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-size_t CompositeValueSpec::UnitRatio(UnitCP unit, UnitCP subunit)
+size_t CompositeValueSpec::UnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
     {
     if (nullptr == subunit) // subunit is not defined - which is OK regardless of whether the unit is defined
         return 0;
@@ -126,17 +126,16 @@ void CompositeValueSpec::SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab, Utf8CP
 // returns the smallest partial unit or null if no units were defined
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-UnitCP CompositeValueSpec::GetSmallestUnit()
+BEU::UnitCP CompositeValueSpec::GetSmallestUnit()
     {
-    if (CompositeSpecType::Undefined != m_type)
+    switch (m_type)
         {
-        for (int i = indxSub; i >= 0; --i)
-            {
-            if (nullptr != m_units[i])
-                return m_units[i];
-            }
+        case CompositeSpecType::Single: return m_units[indxMajor];
+        case CompositeSpecType::Double: return  m_units[indxMiddle];
+        case CompositeSpecType::Triple: return  m_units[indxMinor];
+        case CompositeSpecType::Quatro: return  m_units[indxSub];
+        default: return nullptr;
         }
-    return nullptr;
     }
 //---------------------------------------------------------------------------------------
 // returns true if error is detected. Otherwise - false - same as IsError()
@@ -144,20 +143,20 @@ UnitCP CompositeValueSpec::GetSmallestUnit()
 //---------------------------------------------------------------------------------------
 bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit)
     {
-    UnitCP un = UnitRegistry::Instance().LookupUnit(MajorUnit);
+    BEU::UnitCP un = BEU::UnitRegistry::Instance().LookupUnit(MajorUnit);
     if (nullptr == un)
         return UpdateProblemCode(FormatProblemCode::CNS_InvalidMajorUnit);
 
     m_units[indxMajor] = un;
-    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MiddleUnit)))
+    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MiddleUnit)))
         return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
 
     m_units[indxMiddle] = un;
-    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(MinorUnit)))
+    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MinorUnit)))
         return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
 
     m_units[indxMinor] = un;
-    if (nullptr == (un = UnitRegistry::Instance().LookupUnit(SubUnit)))
+    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(SubUnit)))
         return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
     m_units[indxSub] = un;
     return false;
@@ -182,7 +181,7 @@ bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8C
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-CompositeValueSpec::CompositeValueSpec(UnitCP MajorUnit, UnitCP MiddleUnit, UnitCP MinorUnit, UnitCP SubUnit)
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit, BEU::UnitCP MinorUnit, BEU::UnitCP SubUnit)
     {
     Init();
     m_units[indxMajor] = MajorUnit;
@@ -226,24 +225,74 @@ bool CompositeValueSpec::UpdateProblemCode(FormatProblemCode code)
 //   in the current spec. 
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-//CompositeValue CompositeValueSpec::DecomposeValue(double dval, UnitCP uom)
-//    {
-//    CompositeValue cv = CompositeValue();
-//    UnitCP smallest = GetSmallestUnit();
-//    if (!Utils::AreUnitsComparable(uom, smallest))
-//        {
-//        UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
-//        }
-//    else
-//        {
-//        if (nullptr != uom) // we need to convert the given value to the smallest units
-//            {
-//            QuantityPtr qty = Quantity::Create(dval, uom);
-//
-//            }
-//        }
-//    }
+CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
+    {
+    CompositeValue cv = CompositeValue();
+    BEU::UnitCP smallest = GetSmallestUnit();
+    double majorMinor = 0.0;
+    double rem = 0.0;;
+    double majorSub = 0.0;
+    double middleSub = 0.0;
 
+    if (NoProblem())  // don't try to decompose if the spec is not valid
+        {
+        if (!Utils::AreUnitsComparable(uom, smallest))
+            {
+            UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
+            }
+        else
+            {
+            BEU::Quantity smallQ;
+            if (nullptr != uom) // we need to convert the given value to the smallest units
+                {
+                BEU::Quantity qty = BEU::Quantity(dval, *uom);
+                smallQ = qty.ConvertTo(smallest);
+                }
+            else
+                smallQ = BEU::Quantity(dval, *smallest);
+
+            switch (m_type)
+                {
+                case CompositeSpecType::Single: // smallQ already has the converted value
+                    cv.SetMajor(smallQ.GetMagnitude());
+                    break;
+                case CompositeSpecType::Double:
+                    cv.SetMajor(floor(smallQ.GetMagnitude()/ (double)m_ratio[indxMajor]));
+                    cv.SetMiddle(smallQ.GetMagnitude() - cv.GetMajor() * (double)m_ratio[indxMajor]);
+                    break;
+                case CompositeSpecType::Triple:
+                    majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
+                    cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorMinor));
+                    rem = smallQ.GetMagnitude() - cv.GetMajor() * majorMinor;
+                    cv.SetMiddle(floor((rem + +FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
+                    cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
+                    break;
+                case CompositeSpecType::Quatro:
+                    majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
+                    middleSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
+                    cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorSub));
+                    rem = smallQ.GetMagnitude() - cv.GetMajor() * majorSub;
+                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
+                    rem -= cv.GetMiddle() * middleSub;
+                    cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMiddle]));
+                    cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMiddle]);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    return cv;
+    }
+
+Utf8String CompositeValueSpec::DecomposeValue(double dval, Utf8CP uomName)
+    {
+    Utf8String txt;
+
+    //BEU::UnitCP uom = Utils::IsNameNullOrEmpty(uomName)? nullptr : BEU::UnitRegistry::Instance().LookupUnit(uomName);
+
+    return txt;
+    }
 //===================================================
 //
 // CompositeValue Methods
@@ -379,7 +428,7 @@ NumericTriad::NumericTriad(double dval, size_t topMid, size_t midLow)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
     {
-    NumericFormatSpec fmt("FW");
+    NumericFormatSpec fmt = NumericFormatSpec();
     fmt.SetDecimalPrecision(prec);
     return fmt.FormatDouble(GetWhole());
     }
@@ -393,7 +442,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
     PresentationType presType = fract ? PresentationType::Fractional : PresentationType::Decimal;
     ShowSignOption signOpt = FormatConstant::DefaultSignOption();
     FormatTraits formatTraits = FormatConstant::DefaultFormatTraits();
-    NumericFormatSpec fmt = NumericFormatSpec("Triad", presType, signOpt, formatTraits, (size_t)prec);
+    NumericFormatSpec fmt = NumericFormatSpec(presType, signOpt, formatTraits, (size_t)prec);
 
     Utf8CP blank = FormatConstant::BlankString();
     topName = Utils::SubstituteEmptyOrNull(topName,blank);
@@ -484,7 +533,7 @@ QuantityTriadSpec::QuantityTriadSpec()
 //    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-size_t QuantityTriadSpec::UnitRatio(UnitCP major, UnitCP minor)
+size_t QuantityTriadSpec::UnitRatio(BEU::UnitCP major, BEU::UnitCP minor)
     {
     if (nullptr != major && nullptr != minor && (major->GetPhenomenon() == minor->GetPhenomenon()))
         {
@@ -506,7 +555,7 @@ size_t QuantityTriadSpec::UnitRatio(UnitCP major, UnitCP minor)
 //    the phenomenon of the source quantity
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-bool QuantityTriadSpec::ValidatePhenomenaPair(PhenomenonCP srcPhen, PhenomenonCP targPhen)
+bool QuantityTriadSpec::ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::PhenomenonCP targPhen)
     {
     if (nullptr == srcPhen || nullptr == targPhen)
         return UpdateProblemCode(FormatProblemCode::QT_PhenomenonNotDefined);
@@ -531,16 +580,16 @@ bool QuantityTriadSpec::UpdateProblemCode(FormatProblemCode code)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midUnit, UnitCP lowUnit, bool incl0)
+QuantityTriadSpec::QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit, BEU::UnitCP lowUnit, bool incl0)
     {
     Init(incl0);
     int caseBits = 0;
     // before populating the structure - check validity of arguments combination  
-    UnitCP unitQ = qty.GetUnit();
-    PhenomenonCP phQ = nullptr;
-    PhenomenonCP phTop = nullptr;
-    PhenomenonCP phMid = nullptr;
-    PhenomenonCP phLow = lowUnit->GetPhenomenon();
+    BEU::UnitCP unitQ = qty.GetUnit();
+    BEU::PhenomenonCP phQ = nullptr;
+    BEU::PhenomenonCP phTop = nullptr;
+    BEU::PhenomenonCP phMid = nullptr;
+    BEU::PhenomenonCP phLow = lowUnit->GetPhenomenon();
 
     if (nullptr != unitQ)
         {
@@ -575,7 +624,7 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
             if (!IsProblem())
                 {
                 m_topUnit = topUnit;
-                Quantity temp = qty.ConvertTo(GetTopUnit());
+                BEU::Quantity temp = qty.ConvertTo(GetTopUnit());
                 SetValue(temp.GetMagnitude());
                 }
             break;
@@ -590,7 +639,7 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
                     SetTopToMid(topToMid);
                     m_topUnit = topUnit;
                     m_midUnit = midUnit;
-                    Quantity temp = qty.ConvertTo(GetMidUnit());
+                    BEU::Quantity temp = qty.ConvertTo(GetMidUnit());
                     SetValue(temp.GetMagnitude());
                     }
                 else
@@ -618,7 +667,7 @@ QuantityTriadSpec::QuantityTriadSpec(QuantityCR qty, UnitCP topUnit, UnitCP midU
                 m_topUnit = topUnit;
                 m_midUnit = midUnit;
                 m_lowUnit = lowUnit;
-                Quantity temp = qty.ConvertTo(GetLowUnit());
+                BEU::Quantity temp = qty.ConvertTo(GetLowUnit());
                 SetValue(temp.GetMagnitude());
                 }
             break;
