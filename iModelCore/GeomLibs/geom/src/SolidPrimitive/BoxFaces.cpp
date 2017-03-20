@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/BoxFaces.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -293,7 +293,7 @@ DSegment3dR segment
     {
     DBilinearPatch3d patch = GetFace (faceIndex);
     segment.point[0] = patch.Evaluate (0.0, v);
-    segment.point[0] = patch.Evaluate (1.0, v);
+    segment.point[1] = patch.Evaluate (1.0, v);
     }
 
 
@@ -309,7 +309,7 @@ DSegment3dR segment
     {
     DBilinearPatch3d patch = GetFace (faceIndex);
     segment.point[0] = patch.Evaluate (u, 0.0);
-    segment.point[0] = patch.Evaluate (u, 1.0);
+    segment.point[1] = patch.Evaluate (u, 1.0);
     }
 
 

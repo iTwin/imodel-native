@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspmisc.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -2716,7 +2716,46 @@ double                  tolerance
     return SUCCESS;
     }
 
+#ifdef CompileUpdated_getNumBoundPointsCurve
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bspsurf_getNumBoundPointsCurve                          |
+|                                                                       |
+| author        NikolayShulga                           6/95            |
+|               Cut Ray's code out of igesin.mc and modified            |
+|               as needed (trivial changes mostly)                      |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int bspsurf_getNumBoundPointsCurve
+(
+int                 *numPointsP,
+MSBsplineCurve      *curveP,
+MSBsplineSurface    *surfaceP,
+DRange2d           *surfUVRange,
+double              tolerance
+)
+    {
+    double surfaceUVPerimeter = surfUVRange->XLength () + surfUVRange->YLength ();
+    DRange3d curveRange = curveP->GetPoleRange ();
+    double curveUVPerimeter = curveRange.XLength () + curveRange.YLength ();
+    DRange3d surfaceRange = surfaceP->GetPoleRange ();
+    double surfaceDiagonal = surfaceRange.low.Distance (surfaceRange.high);
+    /* perimeter ratio is the APPROX ratio of bound curve to surface */
+    perimeterRatio = curveUVPerimeter / surfaceUVPerimeter;
 
+    /*
+        NumPoints is calculated based on the linear distance around
+        the bounding curve divided by a user specified value. The
+        linear distance value is approximated by appling the ratio
+        of bound curveuv to surface uv to the linear distance of the
+        surface edges. This is attempting to get a resonable number
+        of points to evaluate the bound curve at.
+    */
+    *numPointsP = (int)((perimeterRatio * surfaceDiagonal) / (tolerance * fc_100));
+
+    return  (SUCCESS);
+    }
+#else
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_getNumBoundPointsCurve                          |
@@ -2755,7 +2794,7 @@ double              tolerance
         tmpSurfPolesP = (DPoint3d *)malloc (numSurfPoles * sizeof (DPoint3d));
         if (NULL == tmpSurfPolesP)
             {
-            free (tmpSurfPolesP);
+            free (tmpCurvPolesP);
             return ERROR;
             }
         }
@@ -2824,6 +2863,7 @@ double              tolerance
     free (tmpSurfPolesP);
     return  (SUCCESS);
     }
+#endif
 
 Public GEOMDLLIMPEXP int      bspsurf_imposeBoundary
 (
