@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         Utf8String report;
         ur->ToXml(report);
         std::cout << report << std::endl;
-        std::cout << time2 << "Sec" << std::endl;
+        std::cout << time2 << " Sec" << std::endl;
         }
 
     std::cout << "Press a key to continue...";

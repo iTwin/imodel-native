@@ -1082,7 +1082,7 @@ void TransferReport::ToXml(Utf8StringR report)
                 {
                 TransferResult* tr = results[i];
                 writer->WriteAttribute("FileName", tr->name.c_str());
-                writer->WriteAttribute("timeSpent", Utf8PrintfString("%l", tr->timeSpent).c_str());
+                writer->WriteAttribute("timeSpent", Utf8PrintfString("%lu", tr->timeSpent).c_str());
                 writer->WriteAttribute("CURLcode",  Utf8PrintfString("%u", tr->errorCode).c_str());
                 writer->WriteAttribute("progress", Utf8PrintfString("%u", tr->progress).c_str());
                 }
