@@ -886,6 +886,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
     {
     TilePolyline    newPolyline;
 
+    // Temporary white => black color inversion.  Remove when we have uniform background and can handle correctly in shaders.
+    if (0xffffff  == fillColor)
+        fillColor = 0;
+
     for (auto& point : points)
         {
         VertexKey vertex(point, nullptr, nullptr, attributes, fillColor);
