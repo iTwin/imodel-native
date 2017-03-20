@@ -358,7 +358,6 @@ public:
     };
 
 protected:
-    bool m_isPrivate = false;
     DgnElementId m_categorySelectorId;
     DgnElementId m_displayStyleId;
     mutable CategorySelectorPtr m_categorySelector;
@@ -418,8 +417,6 @@ public:
     
     Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
-    bool IsPrivate() const {return m_isPrivate;} //!< Return true if this ViewDefinition is private (should not be listed in the GUI, for example)
-    void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this ViewDefinition is private or not
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition

@@ -508,6 +508,11 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If true, this definition should not be displayed in the GUI.">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="TypeDefinitionElement" modifier="Abstract" displayLabel="Type Definition" description="Defines a set of properties (the 'type') that can be associated with an element.">
