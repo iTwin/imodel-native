@@ -329,7 +329,111 @@ TEST(Vu,SpineContext)
     //   1 simple quad bisector (B, from J to C)
     //   3 fan edges in the joint (mid J A, mid J to D, midJ to B)
     Check::Size (10, edges.size ());
+    Check::SaveTransformed (xyz);
+    Check::SaveTransformed (edges);
+    Check::ClearGeometry("Vu.SpineContext");
     }
+
+TEST(Vu,SpineContextB)
+    {
+    VuSpineContext sc;
+    bvector<DPoint3d> xyz;
+    xyz.push_back (DPoint3d::From (0,0,0));
+    xyz.push_back (DPoint3d::From (10,0,0));
+    xyz.push_back (DPoint3d::From (20,0,0));
+    xyz.push_back (DPoint3d::From (20,2,0));
+    xyz.push_back (DPoint3d::From (10,2,0));
+    xyz.push_back (DPoint3d::From (5,2,0));
+    xyz.push_back (DPoint3d::From (5,5,0));
+    xyz.push_back (DPoint3d::From (4,5,0));
+    xyz.push_back (DPoint3d::From (4,2,0));
+    xyz.push_back (DPoint3d::From (0,2,0));
+    xyz.push_back (DPoint3d::From (0,0,0));
+
+    auto cv0 = CurveVector::CreateLinear (xyz, CurveVector::BOUNDARY_TYPE_Outer);
+
+    auto cv1 = CurveVector::CreateLinear (
+        bvector<DPoint3d>
+            {
+            DPoint3d::From (15,-5,0),
+            DPoint3d::From (18,-5,0),
+            DPoint3d::From (18,12,0),
+            DPoint3d::From (10,20,0),
+            DPoint3d::From ( 9,19,0),
+            DPoint3d::From (17,11,0),
+            DPoint3d::From (15,-5,0)
+            },
+        CurveVector::BOUNDARY_TYPE_Outer);
+
+    auto cv2 = CurveVector::AreaUnion (*cv0, *cv1);
+    bvector<bvector<DPoint3d>>strokes;
+    cv2->CollectLinearGeometry (strokes);
+    for (auto &loop : strokes)
+        sc.InsertEdges (loop, true);
+    bool useParity = true;
+    double minSplitRadians = 0.3;
+    double minDiagonalAngle = 1.0;
+    sc.TriangulateForSpine (useParity, minSplitRadians);
+    sc.MarkBoxes (true, minDiagonalAngle);
+    bvector<bvector<DPoint3d>> edges;
+    sc.GetSpineEdges (edges);
+
+    Check::SaveTransformed (*cv2);
+    Check::SaveTransformed (edges);
+    Check::ClearGeometry("Vu.SpineContextB");
+    }
+
+TEST(Vu,SpineContextC)
+    {
+    for (double f0 : bvector<double> {1.0, 0.8, 0.2})
+        {
+        SaveAndRestoreCheckTransform shifter (0,-90,0);
+        for (size_t n = 3; n < 12; n += 2)
+            {
+            auto centralPolygon = CurveVector::CreateRegularPolygonXY (DPoint3d::From (0,0,0), 10.0, (int)n, true);
+            bvector<bvector<DPoint3d>> centralStrokes;
+            centralPolygon->CollectLinearGeometry (centralStrokes);
+            bvector<DPoint3d> xyz;
+            if (centralStrokes.size () == 1)
+                {
+                auto &loop = centralStrokes.front ();
+                double a = 4.0;
+                for (size_t i = 0; i + 1 < loop.size (); i++)
+                    {
+                    auto xyz0 = loop[i];
+                    auto xyz1 = loop[i+1];
+                    auto delta = xyz1 - xyz0;
+                    DVec3d perp;
+                    perp.UnitPerpendicularXY (delta);
+                    perp.Negate ();
+                    auto xyz0a = xyz0 + f0 * a * perp;
+                    auto xyz1a = xyz1 + a * perp;
+                    xyz.push_back (xyz0);
+                    xyz.push_back (xyz0a);
+                    xyz.push_back (xyz1a);
+                    xyz.push_back (xyz1);
+                    a += 3.0;
+                    }
+                }
+            VuSpineContext sc;
+            sc.InsertEdges (xyz, true);
+            bool useParity = true;
+            double minSplitRadians = 0.3;
+            double minDiagonalAngle = 1.0;
+            sc.TriangulateForSpine (useParity, minSplitRadians);
+            sc.MarkBoxes (true, minDiagonalAngle);
+            bvector<bvector<DPoint3d>> edges;
+            sc.GetSpineEdges (edges);
+            Check::SaveTransformed (xyz);
+            Check::SaveTransformed (edges);
+            Check::Shift (80,0,0);
+            }
+        }
+    Check::ClearGeometry("Vu.SpineContextC");
+    }
+
+
+
 
 TEST(PolylineOps,GreedyTriangulation1)
     {
