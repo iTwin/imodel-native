@@ -4114,6 +4114,8 @@ bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
     params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
         [](ECValueR value, DgnElementCR el)
             {
