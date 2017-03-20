@@ -2742,10 +2742,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationContentElement);
     friend struct dgn_ElementHandler::Definition;
 
+    static Utf8CP str_IsPrivate() {return "IsPrivate";}
+
+    bool m_isPrivate = false;
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    bool IsPrivate() const {return m_isPrivate;} //!< Return true if this definition is private (should not be listed in the GUI, for example)
+    void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this definition is private or not
 };
 
 //=======================================================================================

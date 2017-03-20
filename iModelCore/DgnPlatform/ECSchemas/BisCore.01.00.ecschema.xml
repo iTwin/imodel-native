@@ -502,6 +502,11 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If true, this definition should not be displayed in the GUI.">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="TypeDefinitionElement" modifier="Abstract" displayLabel="Type Definition" description="Defines a set of properties (the 'type') that can be associated with an element.">
@@ -2011,9 +2016,6 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
-        <ECProperty propertyName="IsPrivate" typeName="boolean">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>
