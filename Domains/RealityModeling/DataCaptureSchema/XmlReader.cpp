@@ -266,7 +266,7 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
         {
         //Insert into the database
         Dgn::DgnDbStatus dbStatus;
-        PosePtr pPose = Pose::Create(m_spatialModel);
+        PosePtr pPose = Pose::Create(m_spatialModel,false);
         pPose->Insert(&dbStatus);
         ShotPtr pShot(Shot::Create(m_spatialModel, pCameraDeviceInfo->GetId(), pPose->GetId()));
         pShot->Insert(&dbStatus);

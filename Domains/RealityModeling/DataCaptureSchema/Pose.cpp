@@ -11,10 +11,17 @@ BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(PoseHandler)
 
-#define POSE_PROPNAME_Center            "Center"
-#define POSE_PROPNAME_Omega             "Omega"
-#define POSE_PROPNAME_Phi               "Phi"
-#define POSE_PROPNAME_Kappa             "Kappa"
+#define POSE_PROPNAME_IsECEF            "IsECEF"
+#define POSE_PROPNAME_CenterECEF        "CenterECEF"
+#define POSE_PROPNAME_M_00              "M_00"
+#define POSE_PROPNAME_M_01              "M_01"
+#define POSE_PROPNAME_M_02              "M_02"
+#define POSE_PROPNAME_M_10              "M_10"
+#define POSE_PROPNAME_M_11              "M_11"
+#define POSE_PROPNAME_M_12              "M_12"
+#define POSE_PROPNAME_M_20              "M_20"
+#define POSE_PROPNAME_M_21              "M_21"
+#define POSE_PROPNAME_M_22              "M_22"
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -23,32 +30,42 @@ HANDLER_DEFINE_MEMBERS(PoseHandler)
 void PoseHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
-    params.Add(POSE_PROPNAME_Center);
-    params.Add(POSE_PROPNAME_Omega);
-    params.Add(POSE_PROPNAME_Phi);
-    params.Add(POSE_PROPNAME_Kappa);
-    }
+    params.Add(POSE_PROPNAME_IsECEF);
+    params.Add(POSE_PROPNAME_CenterECEF);
+    params.Add(POSE_PROPNAME_M_00);
+    params.Add(POSE_PROPNAME_M_01);
+    params.Add(POSE_PROPNAME_M_02);
+    params.Add(POSE_PROPNAME_M_10);
+    params.Add(POSE_PROPNAME_M_11);
+    params.Add(POSE_PROPNAME_M_12);
+    params.Add(POSE_PROPNAME_M_20);
+    params.Add(POSE_PROPNAME_M_21);
+    params.Add(POSE_PROPNAME_M_22);
+   }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PosePtr Pose::Create(Dgn::SpatialModelR model)
+PosePtr Pose::Create(Dgn::SpatialModelR model, bool IsECEFSupported)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
     DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Pose, model.GetDgnDb());
 
     PosePtr cp = new Pose(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    cp->SetIsECEF(IsECEFSupported);
+
     return cp;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RotMatrix Pose::GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa)
+Pose::Pose(CreateParams const& params): T_Super(params)
     {
-    RotMatrix rotation(ContextCaptureFacility::OmegaPhiKappa2Matrix(omega.Radians(),phi.Radians(),kappa.Radians()));
-    return rotation;
+    DgnGCSCPtr pGCS = params.m_dgndb.Units().GetDgnGCS();
+    m_isECEFSupported = pGCS.IsValid();
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -59,9 +76,9 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
     double p;
     double k;
     ContextCaptureFacility::Matrix2OmegaPhiKappa(rotation,o,p,k);
-    omega.FromRadians(o);
-    phi.FromRadians(p);
-    kappa.FromRadians(k);
+    omega = Angle::FromRadians(o);
+    phi = Angle::FromRadians(p);
+    kappa = Angle::FromRadians(k);
     return true;
     }
 
@@ -70,7 +87,7 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target)
     {
-    RotMatrix rotMatrix = pose.GetRotMatrixFromRotation(pose.GetOmega(), pose.GetPhi(), pose.GetKappa());
+    RotMatrix rotMatrix = pose.GetRotMatrix();
     DPoint3d center = pose.GetCenter();
 
     double zOff = 1.10 * center.Distance(target);
@@ -107,10 +124,9 @@ void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dC
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoPoint Pose::GetCenterAsLatLongValue() const
     {
-    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
-
     GeoPoint geopoint;
     geopoint.Init(0, 0, 0);
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
 
     if (!gcs.IsValid()) //gcs is not valid return an empty GeoPoint
         {
@@ -118,7 +134,7 @@ GeoPoint Pose::GetCenterAsLatLongValue() const
         return geopoint;;
         }
 
-    if (SUCCESS != gcs->LatLongFromUors(geopoint, GetCenter()))
+    if (SUCCESS != gcs->LatLongFromXYZ(geopoint, GetCenterECEF()))
         BeAssert(!L"Does not support latlong");
 
     return geopoint;
@@ -137,12 +153,12 @@ void Pose::SetCenterFromLatLongValue(GeoPointCR geoPoint)
         return;
         }
 
-    DPoint3d point = {0,0,0};
+    DPoint3d ecef = { 0,0,0 };
 
-    if (SUCCESS != gcs->UorsFromLatLong(point, geoPoint))
+    if (SUCCESS != gcs->XYZFromLatLong(ecef, geoPoint))
         BeAssert(!L"Does not support latlong");
 
-    SetCenter(point);
+    SetCenterECEF(ecef);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -165,23 +181,46 @@ DgnCode Pose::_GenerateDefaultCode() const
     }
 
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
+* @bsimethod                                    Marc.Bedard                     03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Pose::Pose(CreateParams const& params): T_Super(params)
+bool Pose::IsECEF() const
     {
+    return m_isECEFSupported;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetIsECEF(bool isECEF)
+    {
+    DgnGCSCPtr pGcs = GetDgnDb().Units().GetDgnGCS();
+    BeAssert((isECEF && pGcs.IsValid()) || !isECEF);
+
+    m_isECEFSupported =  isECEF && pGcs.IsValid();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Pose::IsEqual(PoseCR rhs) const
     {
-    if ((GetCenter()   == rhs.GetCenter())                        &&
-        (GetOmega().Radians()    == rhs.GetOmega().Radians())     && 
-        (GetPhi().Radians()      == rhs.GetPhi().Radians())       &&
-        (GetKappa().Radians()    == rhs.GetKappa().Radians())       )
+    if ((GetCenterECEF() == rhs.GetCenterECEF()) &&
+        (IsECEF() == rhs.IsECEF()) &&
+        (GetRotMatrixECEF().IsEqual(rhs.GetRotMatrixECEF()))
+        )
+        {
+        //We don't take into account computed value, but the should be equal since they are 
+        //computed from value checked.
+        BeAssert(m_centerLocal == rhs.m_centerLocal);
+        BeAssert(m_rotationLocal.IsEqual(rhs.m_rotationLocal));
+        BeAssert(Angle::NearlyEqual(m_omega.Radians(), rhs.m_omega.Radians()));
+        BeAssert(Angle::NearlyEqual(m_phi.Radians(), rhs.m_phi.Radians()));
+        BeAssert(Angle::NearlyEqual(m_kappa.Radians(), rhs.m_kappa.Radians()));
         return true;
+        }
     return false;
     }
 
@@ -190,12 +229,12 @@ bool Pose::IsEqual(PoseCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 YawPitchRollAngles Pose::GetYawPitchRoll() const
     {
-    RotMatrix rotation(ContextCaptureFacility::OmegaPhiKappa2Matrix(GetOmega().Radians(), GetPhi().Radians(), GetKappa().Radians()));
+    RotMatrix rotation(GetRotMatrix());
     rotation.Transpose();
-    YawPitchRollAngles angles;
-    if (!YawPitchRollAngles::TryFromRotMatrix(angles,rotation))
-        BeAssert(!"Cannot convert rotation matrix to angles");
 
+    YawPitchRollAngles angles;
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rotation))
+        BeAssert(!"Cannot convert rotation matrix to angles");
     return angles;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -203,15 +242,8 @@ YawPitchRollAngles Pose::GetYawPitchRoll() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Pose::SetYawPitchRoll(YawPitchRollAnglesCR angles)
     {
-    RotMatrix rotationMatrix(angles.ToRotMatrix());
-    double o;
-    double p;
-    double k;
-    ContextCaptureFacility::Matrix2OmegaPhiKappa(rotationMatrix, o, p, k);
-
-    SetOmega(Angle::FromRadians(o));
-    SetPhi(Angle::FromRadians(p));
-    SetKappa(Angle::FromRadians(k));
+    RotMatrix rotMatrixLocal(angles.ToRotMatrix());
+    SetRotMatrix(rotMatrixLocal);
     }
 
 
@@ -227,14 +259,36 @@ PoseElementId Pose::GetId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3dCR Pose::GetCenter() const 
     {
-    return m_center;
+    return m_centerLocal;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Pose::SetCenter(DPoint3dCR val) 
     {
-    m_center = val;
+    m_centerLocal = val;
+    //Also set centerECEF
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
+
+    if (!m_isECEFSupported || !gcs.IsValid()) //gcs is not valid return an empty GeoPoint
+        {
+        m_center=val;
+        return;
+        }
+
+    GeoPoint geopoint;
+    if (SUCCESS != gcs->LatLongFromUors(geopoint, m_centerLocal))
+        {
+        BeAssert(!L"Does not support latlong");
+        m_center = val;
+        return;
+        }
+    DPoint3d ecef = { 0,0,0 };
+
+    if (SUCCESS != gcs->XYZFromLatLong(ecef, geopoint))
+        BeAssert(!L"Does not support latlong");
+
+    SetCenterECEF(ecef);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -263,6 +317,10 @@ AngleCR Pose::GetKappa() const
 void Pose::SetOmega(AngleCR omega) 
     {
     m_omega = omega;
+    RotMatrix rotationLocal(ContextCaptureFacility::OmegaPhiKappa2Matrix(GetOmega().Radians(), GetPhi().Radians(), GetKappa().Radians()));
+    //NEEDSWORK_OPK; Not sure about transpose here!
+    //rotationLocal.Transpose();
+    SetRotMatrix(rotationLocal);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -270,6 +328,10 @@ void Pose::SetOmega(AngleCR omega)
 void Pose::SetPhi(AngleCR phi) 
     {
     m_phi = phi;
+    RotMatrix rotationLocal(ContextCaptureFacility::OmegaPhiKappa2Matrix(GetOmega().Radians(), GetPhi().Radians(), GetKappa().Radians()));
+    //NEEDSWORK_OPK; Not sure about transpose here!
+    //rotationLocal.Transpose();
+    SetRotMatrix(rotationLocal);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
@@ -277,17 +339,156 @@ void Pose::SetPhi(AngleCR phi)
 void Pose::SetKappa(AngleCR kappa) 
     {
     m_kappa = kappa;
+    RotMatrix rotationLocal(ContextCaptureFacility::OmegaPhiKappa2Matrix(GetOmega().Radians(), GetPhi().Radians(), GetKappa().Radians()));
+    //NEEDSWORK_OPK; Not sure about transpose here!
+    //rotationLocal.Transpose();
+    SetRotMatrix(rotationLocal);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3dCR Pose::GetCenterECEF() const 
+    {
+    return m_center;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetCenterECEF(DPoint3dCR val) 
+    {
+    m_center = val;
+    //Also set center in local GCS
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
+
+    if (!m_isECEFSupported || !gcs.IsValid()) //gcs is not valid return an empty GeoPoint
+        {
+        m_centerLocal = val;
+        return;
+        }
+
+    GeoPoint geopoint;
+    if (SUCCESS != gcs->LatLongFromXYZ(geopoint, m_center))
+        {
+        BeAssert(!L"Does not support latlong");
+        m_centerLocal = val;
+        return;
+        }
+    DPoint3d point = { 0,0,0 };
+
+    if (SUCCESS != gcs->UorsFromLatLong(point, geopoint))
+        BeAssert(!L"Does not support latlong");
+
+    m_centerLocal=point;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+RotMatrix Pose::GetRotMatrixECEF() const
+    {
+    return m_rotation;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetRotMatrixECEF(RotMatrixCR rotation)
+    {
+    m_rotation=rotation;
+
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
+
+    if (!m_isECEFSupported || !gcs.IsValid()) //gcs is not valid use current rotation as if it is local.
+        {
+        m_rotationLocal = m_rotation;
+        GetRotationFromRotMatrix(m_omega, m_phi, m_kappa, m_rotationLocal);
+        return;
+        }
+
+    GeoPoint lla;
+    if (SUCCESS != gcs->LatLongFromXYZ(lla, m_center))
+        {
+        BeAssert(!L"Does not support latlong");
+        m_rotationLocal = m_rotation;
+        GetRotationFromRotMatrix(m_omega, m_phi, m_kappa, m_rotationLocal);
+        return;
+        }
+
+    //NEEDSWORK_WGS84 - What is not WGS84?
+    //Assume we have ENU, it's a good approximation
+    Ellipsoid elWGS84(Ellipsoid::WGS84());
+
+    Transform tECEF2ENU(elWGS84.ECEF2ENU(lla.latitude,lla.longitude));
+
+    RotMatrix rotLocal;
+    rotLocal.InitProduct(tECEF2ENU, m_rotation);
+
+    m_rotationLocal = rotLocal;
+
+    GetRotationFromRotMatrix(m_omega, m_phi, m_kappa, m_rotationLocal);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RotMatrix Pose::GetRotMatrix() const
+    {
+    return m_rotationLocal;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetRotMatrix(RotMatrixCR rotMatrixLocal)
+    {
+    m_rotationLocal = rotMatrixLocal;
+
+    GetRotationFromRotMatrix(m_omega, m_phi, m_kappa, m_rotationLocal);
+
+    DgnGCSCPtr gcs = GetDgnDb().Units().GetDgnGCS();// : customGcs;
+
+    //Convert to rotation in ECEF coordinate system
+    if (!m_isECEFSupported || !gcs.IsValid()) //gcs is not valid return , store in local GCS
+        {
+        m_rotation = rotMatrixLocal;
+        return;
+        }
+
+    GeoPoint lla;
+    if (SUCCESS != gcs->LatLongFromUors(lla, m_centerLocal))
+        {
+        BeAssert(!L"Does not support latlong");
+        m_rotation = rotMatrixLocal;
+        return;
+        }
+
+    //NEEDSWORK_WGS84 - What is not WGS84?
+    //Assume we have ENU, it's a good approximation
+    Ellipsoid elWGS84(Ellipsoid::WGS84());
+
+    Transform tENU2ECEF(elWGS84.ENU2ECEF(Angle::DegreesToRadians(lla.latitude), Angle::DegreesToRadians(lla.longitude)));
+
+    RotMatrix rotECEF;
+    rotECEF.InitProduct(tENU2ECEF, rotMatrixLocal);
+
+    m_rotation = rotECEF;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Pose::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
-    if (ECSqlStatus::Success != statement.BindPoint3D(statement.GetParameterIndex(POSE_PROPNAME_Center), GetCenter()) ||
-        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Omega), GetOmega().Radians()) ||
-        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Phi),   GetPhi().Radians()) ||
-        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Kappa), GetKappa().Radians()))
+    if (ECSqlStatus::Success != statement.BindBoolean(statement.GetParameterIndex(POSE_PROPNAME_IsECEF), IsECEF())            ||
+        ECSqlStatus::Success != statement.BindPoint3D(statement.GetParameterIndex(POSE_PROPNAME_CenterECEF), GetCenterECEF()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_00), GetRotMatrixECEF().GetComponentByRowAndColumn(0, 0)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_01), GetRotMatrixECEF().GetComponentByRowAndColumn(0, 1)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_02), GetRotMatrixECEF().GetComponentByRowAndColumn(0, 2)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_10), GetRotMatrixECEF().GetComponentByRowAndColumn(1, 0)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_11), GetRotMatrixECEF().GetComponentByRowAndColumn(1, 1)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_12), GetRotMatrixECEF().GetComponentByRowAndColumn(1, 2)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_20), GetRotMatrixECEF().GetComponentByRowAndColumn(2, 0)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_21), GetRotMatrixECEF().GetComponentByRowAndColumn(2, 1)) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_M_22), GetRotMatrixECEF().GetComponentByRowAndColumn(2, 2)) 
+        )
         {
         return DgnDbStatus::BadArg;
         }
@@ -324,11 +525,19 @@ DgnDbStatus Pose::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        //read cameraDevice properties
-        SetCenter(stmt.GetValuePoint3D(params.GetSelectIndex(POSE_PROPNAME_Center)));
-        SetOmega(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Omega))));
-        SetPhi(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Phi))));
-        SetKappa(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Kappa))));
+        SetIsECEF(stmt.GetValueBoolean(params.GetSelectIndex(POSE_PROPNAME_IsECEF)));
+        SetCenterECEF(stmt.GetValuePoint3D(params.GetSelectIndex(POSE_PROPNAME_CenterECEF)));
+        RotMatrix rotationECEF(RotMatrix::FromIdentity());
+        rotationECEF.SetComponentByRowAndColumn(0, 0, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_00)));
+        rotationECEF.SetComponentByRowAndColumn(0, 1, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_01)));
+        rotationECEF.SetComponentByRowAndColumn(0, 2, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_02)));
+        rotationECEF.SetComponentByRowAndColumn(1, 0, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_10)));
+        rotationECEF.SetComponentByRowAndColumn(1, 1, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_11)));
+        rotationECEF.SetComponentByRowAndColumn(1, 2, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_12)));
+        rotationECEF.SetComponentByRowAndColumn(2, 0, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_20)));
+        rotationECEF.SetComponentByRowAndColumn(2, 1, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_21)));
+        rotationECEF.SetComponentByRowAndColumn(2, 2, stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_M_22)));
+        SetRotMatrixECEF(rotationECEF);
         }
 
     return status;
@@ -374,10 +583,9 @@ void Pose::_CopyFrom(DgnElementCR el)
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
-    SetCenter(other->GetCenter());
-    SetOmega(other->GetOmega());
-    SetPhi(other->GetPhi());
-    SetKappa(other->GetKappa());
+    SetIsECEF(other->IsECEF());
+    SetCenterECEF(other->GetCenterECEF());
+    SetRotMatrixECEF(other->GetRotMatrixECEF());
     }
 
 

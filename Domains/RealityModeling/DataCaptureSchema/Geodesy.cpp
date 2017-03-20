@@ -40,7 +40,7 @@ Ellipsoid::Ellipsoid(double _a, double _invf) : a(_a), invf(_invf)
     }
 
 
-// Convert latitude,longitude,altitude (in radians) in the WGS84 system to/from cartesian coordinates in the Earth-centered Earth-fixed cartesian referential
+// Convert latitude,longitude,altitude (in degree) in the WGS84 system to/from cartesian coordinates in the Earth-centered Earth-fixed cartesian referential
 DPoint3d Ellipsoid::LLH2ECEF(GeoPointCR llh) const
     {
     const double
@@ -78,13 +78,13 @@ GeoPoint Ellipsoid::ECEF2LLH(DPoint3dCR XYZ) const
     }
 
 
-// From ECEF to local ENU referential and inverse
+// From ECEF to local ENU referential and inverse (in degree)
 Transform Ellipsoid::ECEF2ENU(double latitude, double longitude) const
     {
-    RotMatrix rot = ContextCaptureFacility::EastNorthUp(latitude, longitude);
+    RotMatrix rot = ContextCaptureFacility::EastNorthUp(Angle::DegreesToRadians(latitude), Angle::DegreesToRadians(longitude));
     rot.Transpose();
     GeoPoint llh;
-    llh.Init(Angle::RadiansToDegrees(longitude), Angle::RadiansToDegrees(latitude), 0.0);
+    llh.Init(longitude, latitude, 0.0);
     DPoint3d center = LLH2ECEF(llh);
     return Transform::From(rot, center);
     }

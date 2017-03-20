@@ -27,10 +27,16 @@ private:
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
-    DPoint3d m_center;
-    Angle m_omega;
-    Angle m_phi;
-    Angle m_kappa;
+    DPoint3d            m_center;
+    RotMatrix           m_rotation;
+    bool                m_isECEFSupported;
+
+    //Values below are computed from value above
+    DPoint3d            m_centerLocal;
+    RotMatrix           m_rotationLocal;
+    Angle               m_omega;
+    Angle               m_phi;
+    Angle               m_kappa;
 
     explicit Pose(CreateParams const& params);
 
@@ -80,7 +86,9 @@ public:
     DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Pose)
 
     //! Create a new Shot 
-    DATACAPTURE_EXPORT static PosePtr Create(Dgn::SpatialModelR model);
+    //! @param[in] IsECEFSupported Set to true if you have a GCS and want to support storing data in 
+    //                             geocentric (Earth Centered Earth Fixed) coordinate system. 
+    DATACAPTURE_EXPORT static PosePtr Create(Dgn::SpatialModelR model, bool IsECEFSupported);
 
     DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
@@ -88,27 +96,34 @@ public:
     DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
 
 
-    //Rotation can be express in omega/phi/kappa or by a rotation matrix 
-    //Use utility methods below to do your convertion 
-    DATACAPTURE_EXPORT static RotMatrix     GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
     DATACAPTURE_EXPORT static bool          GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
     DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target);
 
+    //Position and orientation in ECEF system OR local if ECEF is not supported (IsECEF is false)
+    DATACAPTURE_EXPORT bool                 IsECEF() const;
+    DATACAPTURE_EXPORT void                 SetIsECEF(bool isECEF);
+    DATACAPTURE_EXPORT DPoint3dCR           GetCenterECEF() const;
+    DATACAPTURE_EXPORT void                 SetCenterECEF(DPoint3dCR val);
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrixECEF() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrixECEF(RotMatrixCR rotation);
 
+    //Position and orientation in current GCS system
     DATACAPTURE_EXPORT DPoint3dCR           GetCenter() const;
     DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val);
     DATACAPTURE_EXPORT AngleCR              GetOmega() const;
     DATACAPTURE_EXPORT AngleCR              GetPhi() const;
     DATACAPTURE_EXPORT AngleCR              GetKappa() const;
-    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega);
+    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega); 
     DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi);
     DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
-
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrix() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrix(RotMatrixCR rotation);
     DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
     DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles);
-
     DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
     DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
+
+
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;
     };

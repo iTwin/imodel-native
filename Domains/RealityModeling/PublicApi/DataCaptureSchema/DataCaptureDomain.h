@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/DataCaptureDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,20 @@
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
+
+//=======================================================================================
+//! Domain concrete class for data-stores
+//=======================================================================================
+struct SchemaUpdateDataCaptureDgnDbParams
+    {
+    public:
+        BeFileName    m_assetsRootDir;
+        Dgn::DgnDbPtr m_dgnDb;
+
+        SchemaUpdateDataCaptureDgnDbParams(Dgn::DgnDbR dgnDb, BeFileNameCR assetsRootDir) : m_assetsRootDir(assetsRootDir), m_dgnDb(&dgnDb) {}
+
+    }; // SchemaUpdateDataCaptureDgnDbParams
+
 
 //=======================================================================================
 //! The DgnDomain for the DataCapture schema.
@@ -35,7 +49,11 @@ public:
     //! Build a default name from the specified prefix and BeBriefcaseBasedId
     DATACAPTURE_EXPORT static Utf8String BuildDefaultName(Utf8CP prefix, BeSQLite::BeBriefcaseBasedId id);
 
+    DATACAPTURE_EXPORT Dgn::DgnDbStatus UpdateSchema(SchemaUpdateDataCaptureDgnDbParams& params) const;
 
+    static uint32_t GetExpectedSchemaVersionDigit1() { return 1; }
+    static uint32_t GetExpectedSchemaVersionDigit2() { return 0; }
+    static uint32_t GetExpectedSchemaVersionDigit3() { return 0; } // "01.00"
     }; // DataCaptureDomain
 
 END_BENTLEY_DATACAPTURE_NAMESPACE
