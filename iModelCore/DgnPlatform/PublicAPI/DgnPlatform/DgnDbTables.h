@@ -67,6 +67,8 @@
 #define BIS_CLASS_InformationModel          "InformationModel"
 #define BIS_CLASS_InformationPartitionElement "InformationPartitionElement"
 #define BIS_CLASS_InformationRecordElement  "InformationRecordElement"
+#define BIS_CLASS_InformationRecordModel    "InformationRecordModel"
+#define BIS_CLASS_InformationRecordPartition "InformationRecordPartition"
 #define BIS_CLASS_LightDefinition           "LightDefinition"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_MaterialElement           "MaterialElement"

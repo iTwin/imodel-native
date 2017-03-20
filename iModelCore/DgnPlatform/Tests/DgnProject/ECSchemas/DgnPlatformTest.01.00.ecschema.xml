@@ -131,6 +131,12 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="TestInformationRecord">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestUniqueAspect">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>

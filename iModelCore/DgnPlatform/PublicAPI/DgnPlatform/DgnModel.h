@@ -22,7 +22,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -377,6 +377,7 @@ protected:
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
     virtual RoleModelCP _ToRoleModel() const {return nullptr;}
     virtual InformationModelCP _ToInformationModel() const {return nullptr;}
+    virtual InformationRecordModelCP _ToInformationRecordModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
@@ -505,6 +506,7 @@ public:
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
     RoleModelCP ToRoleModel() const {return _ToRoleModel();} //!< more efficient substitute for dynamic_cast<RoleModelCP>(model)
     InformationModelCP ToInformationModel() const {return _ToInformationModel();} //!< more efficient substitute for dynamic_cast<InformationModelCP>(model)
+    InformationRecordModelCP ToInformationRecordModel() const {return _ToInformationRecordModel();} //!< more efficient substitute for dynamic_cast<InformationRecordModelCP>(model)
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
@@ -517,6 +519,7 @@ public:
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     RoleModelP ToRoleModelP() {return const_cast<RoleModelP>(_ToRoleModel());} //!< more efficient substitute for dynamic_cast<RoleModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
+    InformationRecordModelP ToInformationRecordModelP() {return const_cast<InformationRecordModelP>(_ToInformationRecordModel());} //!< more efficient substitute for dynamic_cast<InformationRecordModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
@@ -535,6 +538,7 @@ public:
     bool Is3dModel() const {return nullptr != ToGeometricModel3d();}
     bool IsRoleModel() const {return nullptr != ToRoleModel();}
     bool IsInformationModel() const {return nullptr != ToInformationModel();}
+    bool IsInformationRecordModel() const {return nullptr != ToInformationRecordModel();}
     bool IsDefinitionModel() const {return nullptr != ToDefinitionModel();}
     bool IsSheetModel() const {return nullptr != ToSheetModel();}
     bool IsDrawingModel() const {return nullptr != ToDrawingModel();}
@@ -1051,6 +1055,27 @@ protected:
 };
 
 //=======================================================================================
+//! A model which contains only information records.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    03/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationRecordModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_InformationRecordModel, InformationModel);
+    friend struct dgn_ModelHandler::InformationRecord;
+
+protected:
+    InformationRecordModelCP _ToInformationRecordModel() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+
+    explicit InformationRecordModel(CreateParams const& params) : T_Super(params) {}
+    static InformationRecordModelPtr Create(CreateParams const& params) { return new InformationRecordModel(params); }
+public:
+    DGNPLATFORM_EXPORT static InformationRecordModelPtr Create(InformationRecordPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static InformationRecordModelPtr CreateAndInsert(InformationRecordPartitionCR modeledElement);
+};
+
+//=======================================================================================
 //! A model which contains information about this repository.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    08/16
@@ -1243,6 +1268,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE GroupInformation : Information
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, GroupInformationModel, GroupInformation, Information, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for InformationRecordModel
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecord : Information
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordModel, InformationRecordModel, InformationRecord, Information, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
