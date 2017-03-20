@@ -338,7 +338,7 @@ void RealityDataConsole::ConfigureServer()
     m_lastCommand = Command::Error;
     if(repoNames.size() == 0)
         {
-        DisplayInfo("There was an error contacting the server. No repositories found\n", DisplayOption::Error);
+        DisplayInfo("There was an error contacting the server. No repositories found\n --> Is your ConnectClient configured correctly?\n", DisplayOption::Error);
         while(m_lastCommand != Command::Retry && m_lastCommand != Command::Quit)
             {
             DisplayInfo("\"Retry\" to try with a different server; \"Quit\" to exit\n", DisplayOption::Error);

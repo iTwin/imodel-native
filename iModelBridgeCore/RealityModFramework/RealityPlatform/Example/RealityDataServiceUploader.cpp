@@ -27,8 +27,8 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
     {
     if(ErrorCode > 0)
         std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg);
-    else
-        std::cout << pMsg;
+//    else
+//        std::cout << pMsg;
     }
 
 int main(int argc, char *argv[])
@@ -49,11 +49,11 @@ int main(int argc, char *argv[])
 
 #if (1) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, "Barmettes 2");
-    properties.Insert(RealityDataField::Dataset, "Images");
+    properties.Insert(RealityDataField::Name, "Donald Test2");
+    properties.Insert(RealityDataField::Dataset, "Model");
     properties.Insert(RealityDataField::Group, "SPAR Demo");
     properties.Insert(RealityDataField::Description, "SPAR Demo Scenario 0");
-    properties.Insert(RealityDataField::RootDocument, "Barmettes.json");
+    properties.Insert(RealityDataField::RootDocument, "Production_8.json");
     properties.Insert(RealityDataField::Classification, "Model");
     properties.Insert(RealityDataField::Type, "3DTiles");
 //    properties.Insert(RealityDataField::Footprint, "{ \\\"points\\\" : [[24.7828757,59.9224887],[25.2544848,59.9224887],[25.2544848,60.2978389],[24.7828757,60.2978389],[24.7828757,59.9224887]], \\\"coordinate_system\\\" : \\\"4326\\\" }");
@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
 //    properties.Insert(RealityDataField::MetadataURL, "metadata.html");
 //    properties.Insert(RealityDataField::AccuracyInMeters, "1.0");
 //    properties.Insert(RealityDataField::ResolutionInMeters, "1.0x1.0");
-    properties.Insert(RealityDataField::OwnedBy, "Donald.Morissette@bentley.com");
+    properties.Insert(RealityDataField::OwnedBy, "Jean-Philippe.Pons@bentley.com");
 
     properties.Insert(RealityDataField::Visibility, "PUBLIC");
 
-    BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Barmettes");
+    BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Mascaron");
 #endif
 #if (0) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
