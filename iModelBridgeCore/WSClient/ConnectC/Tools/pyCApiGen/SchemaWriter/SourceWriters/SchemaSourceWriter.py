@@ -14,7 +14,7 @@ class SchemaSourceWriter(SchemaWriter):
 
     def _write_string_to_wstring_function(self):
         self._file.write(self._COMMENT_BsiMethod)
-        self._file.write('WString stringToWString(const Utf8String &str)\n')
+        self._file.write('WString {0}_stringToWString(const Utf8String &str)\n'.format(self._ecschema.get_name()))
         self._file.write('    {\n')
         self._file.write('    Utf16Buffer _16buf;\n')
         self._file.write('    BeStringUtilities::Utf8ToUtf16(_16buf, str.c_str());\n')
