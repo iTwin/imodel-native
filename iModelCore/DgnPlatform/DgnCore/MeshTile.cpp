@@ -416,7 +416,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
     if (m_fillColor != rhs.m_fillColor)
         {
-        if (compareFillColor)
+        if (compareFillColor || 0 != m_linePixels || 0 != rhs.m_linePixels)     // textured polylines already use texture so can't be batched.
             return m_fillColor < rhs.m_fillColor;
 
         // cannot batch translucent and opaque meshes
@@ -426,6 +426,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
         if (lhsHasAlpha != rhsHasAlpha)
             return lhsHasAlpha;
+
         }
 
     if (m_rasterWidth != rhs.m_rasterWidth)

@@ -65,7 +65,7 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
         return info;
 
     if (info.options.testDomain)
-        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true, true);
@@ -74,6 +74,9 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
     
     if (info.options.cameraView)
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
+
+    if (info.options.testDomain)
+        EXPECT_EQ(BE_SQLITE_OK, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
 
     db->SaveSettings();
     db->SaveChanges();
