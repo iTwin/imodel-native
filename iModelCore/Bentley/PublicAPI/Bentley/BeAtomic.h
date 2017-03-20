@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeAtomic.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,6 +15,10 @@
 #undef BeAtomic
 #endif
 
+// This BEATOMIC_TEMPLATED construct is to avoid problems in the case where both the DgnV8 and BIM header files are included.
+#if ! defined (BEATOMIC_TEMPLATED)
+#define BEATOMIC_TEMPLATED
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
@@ -24,4 +28,6 @@ template<class T> struct BeAtomic : std::atomic<T>
     T IncrementAtomicPre(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_add(1, order)+1;}
     T DecrementAtomicPost(std::memory_order order=std::memory_order_seq_cst) {return this->fetch_sub(1, order);}
 };
+
+#endif // BEATOMIC_TEMPLATED
 
