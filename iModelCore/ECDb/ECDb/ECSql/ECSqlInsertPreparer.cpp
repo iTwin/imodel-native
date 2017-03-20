@@ -60,7 +60,9 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap, InsertStatementExp const& exp)
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    PrepareClassId(ctx, nativeSqlSnippets, classMap);
+#else
     PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
 #endif
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
@@ -94,7 +96,9 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassLinkTableMap const& relationshipClassMap)
     {
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    PrepareClassId(ctx, nativeSqlSnippets, relationshipClassMap);
+#else
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
 #endif
 
@@ -244,8 +248,25 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     return ECSqlStatus::Success;
     }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    12/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+void ECSqlInsertPreparer::PrepareClassId(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap)
+    {
+    SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
+    if (classIdPropMap == nullptr || classIdPropMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+        return;
 
+    NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdPropMap->GetColumn().GetName().c_str())};
+    nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
+
+    NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+    classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+    nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
+    }
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------

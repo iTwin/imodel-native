@@ -51,14 +51,13 @@ private:
     static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, InsertStatementExp const&, RelationshipClassEndTableMap const&);
 
     static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
-    static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
-#endif
+    static void PrepareClassId(ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
 
     static void BuildNativeSqlInsertStatement (NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, InsertStatementExp const& exp);
     static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap);
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     static ECInstanceIdMode ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
+    static void PreparePrimaryKey(ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
 #endif
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext&, InsertStatementExp const&);

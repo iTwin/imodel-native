@@ -101,9 +101,95 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     {
+    public:
+        struct IProxyECSqlBinder : IECSqlBinder
+            {
+        private:
+            virtual void _AddBinder(IECSqlBinder&) = 0;
+
+        protected:
+            IProxyECSqlBinder() : IECSqlBinder() {}
+
+        public:
+            virtual ~IProxyECSqlBinder() {}
+            void AddBinder(IECSqlBinder& binder) { _AddBinder(binder); }
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct ProxyECInstanceIdECSqlBinder final : IProxyECSqlBinder
+            {
+            private:
+                IECSqlBinder* m_idBinder = nullptr;
+                bool m_boundValueIsNull = true;
+
+                ECSqlStatus _BindNull() override { m_boundValueIsNull = true; return GetBinder().BindNull(); }
+                ECSqlStatus _BindInt64(int64_t value) override { m_boundValueIsNull = false; return GetBinder().BindInt64(value); }
+                ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { m_boundValueIsNull = false; return GetBinder().BindText(value, makeCopy, byteCount); }
+
+                ECSqlStatus _BindBoolean(bool value) override;
+                ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
+                ECSqlStatus _BindZeroBlob(int blobSize) override;
+                ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDouble(double value) override;
+                ECSqlStatus _BindInt(int value) override;
+                ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+                ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+
+                IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+                IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+                IECSqlBinder& _AddArrayElement() override;
+
+                void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
+            
+            public:
+                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder() {}
+
+                IECSqlBinder& GetBinder() { BeAssert(m_idBinder != nullptr); return *m_idBinder; }
+
+                void ClearState() { m_boundValueIsNull = true; }
+                bool IsBoundValueNull() const { return m_boundValueIsNull; }
+            };
+
     protected:
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct ProxyECSqlBinder final : IProxyECSqlBinder
+            {
+            private:
+                std::vector<IECSqlBinder*> m_binders;
+                std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBindersById;
+                std::map<Utf8CP, std::unique_ptr<ProxyECSqlBinder>, CompareIUtf8Ascii> m_structMemberProxyBindersByName;
+                std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
+
+                ECSqlStatus _BindNull() override;
+                ECSqlStatus _BindBoolean(bool value) override;
+                ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
+                ECSqlStatus _BindZeroBlob(int blobSize) override;
+                ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDouble(double value) override;
+                ECSqlStatus _BindInt(int value) override;
+                ECSqlStatus _BindInt64(int64_t value) override;
+                ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+                ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+                ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+                IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+                IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+                IECSqlBinder& _AddArrayElement() override;
+
+                void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
+
+            public:
+                ProxyECSqlBinder() : IProxyECSqlBinder() {}
+            };
+
+
         std::vector<std::unique_ptr<SingleECSqlPreparedStatement>> m_statements;
-        mutable std::vector<std::unique_ptr<ProxyECSqlBinder>> m_proxyBinders;
+        mutable std::vector<std::unique_ptr<IProxyECSqlBinder>> m_proxyBinders;
         mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
 
     private:
@@ -120,6 +206,8 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
 
     public:
         virtual ~CompoundECSqlPreparedStatement() {}
+
+        SingleECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
     };
 
 //=======================================================================================
@@ -160,7 +248,7 @@ private:
     struct LeafPreparedStatement final : SingleECSqlPreparedStatement
         {
     public:
-        LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
+        explicit LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
         ~LeafPreparedStatement() {}
         };
 
@@ -171,28 +259,37 @@ private:
                     {
                     NotUserProvided = 1,
                     UserProvidedNullExp,
-                    UserProvidedNonNullExp
+                    UserProvidedParameterExp,
+                    UserProvidedOtherExp
                     };
 
             private:
                 Mode m_mode = Mode::NotUserProvided;
                 ECN::ECClassId m_ecClassId;
-                std::unique_ptr<ProxyECSqlBinder> m_idBinder = nullptr;
-                ECInstanceId m_generatedECInstanceId;
+                IECSqlBinder* m_primaryTableECSqlECInstanceIdBinder = nullptr;
+                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr;
+                mutable ECInstanceId m_generatedECInstanceId;
 
             public:
                 ECInstanceKeyHelper() {}
 
                 void Initialize(int &ecInstanceIdPropNameExpIx, ECN::ECClassId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
-                ECSqlStatus InitializeAutogenerateBinder(std::vector<std::unique_ptr<SingleECSqlPreparedStatement>>&) const;
-                DbResult AutogenerateAndBindECInstanceId(ECDbCR);
+
+                void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
+                    { 
+                    BeAssert(m_mode == Mode::UserProvidedParameterExp && "Must only be used with mode Mode::UserProvidedParameterExp");
+                    BeAssert(m_idProxyBinder == nullptr && "Must not be called twice"); 
+                    m_idProxyBinder = &idBinder; 
+                    }
+                ECSqlStatus InitializeIdPrimaryTableECInstanceIdBinder(SingleECSqlPreparedStatement&);
+                DbResult BindPrimaryTableECInstanceId(ECDbCR);
                 ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
                 Mode GetMode() const { return m_mode; }
-                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNullExp; }
             };
 
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
+        bool m_checkModifiedRowCountAfterStep = false;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 

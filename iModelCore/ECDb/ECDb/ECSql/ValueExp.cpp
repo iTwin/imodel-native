@@ -714,7 +714,11 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         const PrimitiveType primType = typeInfo.GetPrimitiveType();
         if (primType == PRIMITIVETYPE_String)
             {
-            ctx.AppendToECSql("'").AppendToECSql(m_value).AppendToECSql("'");
+            //escape single quotes again
+            Utf8String escapedLiteral(m_value);
+            escapedLiteral.ReplaceAll("'", "''");
+
+            ctx.AppendToECSql("'").AppendToECSql(escapedLiteral).AppendToECSql("'");
 
             if (HasParentheses())
                 ctx.AppendToECSql(")");

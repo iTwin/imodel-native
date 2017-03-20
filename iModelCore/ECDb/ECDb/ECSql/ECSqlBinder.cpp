@@ -35,7 +35,6 @@ ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo
         m_mappedSqlParameterNames.push_back(nameGen.GetNextName());
         }
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      08/2013
@@ -50,7 +49,7 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
     m_onBindEventHandlers->push_back(&binder);
     return ECSqlStatus::Success;
     }
-
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -268,19 +267,6 @@ ECSqlStatus ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, int ecsqlParam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const
-    {
-    if (internalBinderIndex >= m_internalSqlParameterBinders.size())
-        return ECSqlStatus::Error;
-
-    binder = m_internalSqlParameterBinders[internalBinderIndex];
-    return ECSqlStatus::Success;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
 int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
     {
     auto it = m_nameToIndexMapping.find(ecsqlParameterName);
@@ -452,6 +438,7 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
     ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
     m_binders.push_back(binderP);
+
     BeAssert(((int) m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     if (binderP->HasToCallOnBeforeStep())
@@ -482,7 +469,7 @@ ECSqlBinder* ECSqlParameterMap::AddInternalECInstanceIdBinder(ECSqlPrepareContex
 
     ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
-    m_internalSqlParameterBinders.push_back(binderP);
+    m_internalECInstanceIdBinder = binderP;
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);

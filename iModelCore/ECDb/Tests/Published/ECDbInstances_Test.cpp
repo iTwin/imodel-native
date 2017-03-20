@@ -76,22 +76,28 @@ TEST(ECInstanceIdTests, Conversion)
     BeTest::SetFailOnAssert(true);
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                          04/12
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbInstances, QuoteTest)
     {
-    ECDb& ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
-    ECSqlStatement stmt1;
-    ASSERT_TRUE(stmt1.Prepare(ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')") == ECSqlStatus::Success);
-    ASSERT_TRUE(stmt1.Step() == BE_SQLITE_DONE);
-    ECSqlStatement stmt2;
-    ASSERT_TRUE(stmt2.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''") == ECSqlStatus::Success);
-    ASSERT_TRUE(stmt2.Step() == BE_SQLITE_ROW);
-    ECSqlStatement stmt3;
-    ASSERT_TRUE(stmt3.Prepare(ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE(stmt3.Step() == BE_SQLITE_DONE);
-    ECSqlStatement stmt4;
-    ASSERT_TRUE(stmt4.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''") == ECSqlStatus::Success);
-    ASSERT_TRUE(stmt4.Step() == BE_SQLITE_ROW);
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -512,11 +518,12 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
 
     bvector<IECInstancePtr> instances;
     ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Foo"));
-
+    ASSERT_EQ(3, (int) instances.size());
     IECInstancePtr sourceInstance = instances[0];
 
+    instances.clear();
     ASSERT_EQ(SUCCESS, GetInstances(instances, "StartupCompany", "Bar"));
-
+    ASSERT_EQ(3, (int) instances.size());
     IECInstancePtr targetInstance = instances[0];
 
     ECRelationshipClassCP relClass = ecdb.Schemas().GetECClass("StartupCompany", "Foo_has_Bars")->GetRelationshipClassCP();
