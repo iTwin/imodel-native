@@ -1153,18 +1153,31 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
-        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
+        if (m_id.length() != 0 && RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
             {
-            ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters");
+            ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
             return BentleyStatus::ERROR;
             }
         else
             {
             Json::Value instances(Json::objectValue);
             Json::Reader::Parse(response, instances);
-            if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
+            if(instances["instances"].size() > 1)
+                {
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("RealityData creation failed for GUID %s\n", m_id).c_str());
+                return BentleyStatus::ERROR;
+                }
+            else if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
+                {
                 m_id = instances["instances"][0]["instanceId"].asString();
-            ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s", m_id).c_str());
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id).c_str());
+                }
+            else
+                {
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("RealityData creation failed for GUID %s\n", m_id).c_str());
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", response).c_str());
+                return BentleyStatus::ERROR;
+                }
             }
         }
     else if (!m_overwrite)
@@ -1263,7 +1276,7 @@ TransferReport* RealityDataServiceTransfer::Perform()
 
         if (mc != CURLM_OK)
             {
-            ReportStatus(-1, NULL, mc, "curl_multi_wait() failed");
+            ReportStatus(-1, NULL, mc, "curl_multi_wait() failed\n");
             break;
             }
 
@@ -1346,7 +1359,7 @@ TransferReport* RealityDataServiceTransfer::Perform()
                 }
             else
                 {
-                ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
+                ReportStatus(-1, NULL, msg->msg, "CurlMsg failed\n");
                 }
 
             if (m_curEntry < (int)m_filesToTransfer.size() && still_running < MAX_NB_CONNECTIONS)
@@ -1501,7 +1514,7 @@ Utf8String RealityDataServiceTransfer::GetAzureToken()
         {
         RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
         if(m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) != BentleyStatus::SUCCESS)
-            ReportStatus(0, nullptr, -1, "Failure retrieving Azure token");
+            ReportStatus(0, nullptr, -1, "Failure retrieving Azure token\n");
         }
     return m_azureToken;
     }

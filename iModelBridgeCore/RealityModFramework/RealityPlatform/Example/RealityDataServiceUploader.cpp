@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     BeSQLite::BeGuid guid(true);
     Utf8String Id = guid.ToString();
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Id.ToLower(), propertyString, false, true, statusFunc);
     if (upload->IsValidUpload())
         {
         std::cout << Utf8PrintfString("Upload file : %s \n  guid=%s\n", fName.GetNameUtf8(), Id);

@@ -50,7 +50,8 @@ enum class Command
     ChangeProps,
     Delete,
     Filter,
-    Relationships
+    Relationships,
+    CreateRD
     };
 
 struct RealityDataConsole
@@ -88,6 +89,7 @@ public:
     void Delete();
     void Filter();
     void Relationships();
+    void CreateRD();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

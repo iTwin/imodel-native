@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <curl/curl.h>
+#include <iostream>
 
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -96,23 +97,38 @@ void CurlConstructor::RefreshToken()
     bool installed;
     status = CCApi_IsInstalled(api, &installed);
     if (!installed)
+        {
+        std::cout << "Connection client does not seem to be installed" << std::endl;
         return;
+        }
     bool running = false;
     status = CCApi_IsRunning(api, &running);
     if (status != APIERR_SUCCESS || !running)
+        {
+        std::cout << "Connection client does not seem to be running" << std::endl;
         return;
+        }
     bool loggedIn = false;
     status = CCApi_IsLoggedIn(api, &loggedIn);
     if (status != APIERR_SUCCESS || !loggedIn)
+        {
+        std::cout << "Connection client does not seem to be logged in" << std::endl;
         return;
+        }
     bool acceptedEula = false;
     status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
     if (status != APIERR_SUCCESS || !acceptedEula)
+        {
+        std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
         return;
+        }
     bool sessionActive = false;
     status = CCApi_IsUserSessionActive(api, &sessionActive);
     if (status != APIERR_SUCCESS || !sessionActive)
+        {
+        std::cout << "Connection client does not seem to have an active session" << std::endl;
         return;
+        }
 
     LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
     UINT32 maxTokenLength = 16384;

@@ -85,6 +85,8 @@ void RealityDataConsole::InterpretCommand()
             m_lastCommand = Command::FileAccess;
         else if (args[0].EqualsI("AzureAdress"))
             m_lastCommand = Command::AzureAdress;
+        else if (args[0].EqualsI("CreateRD"))
+            m_lastCommand = Command::CreateRD;
         if(m_lastCommand != Command::Error)
             {
             if (args.size() > 1)
@@ -128,6 +130,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Delete,       &RealityDataConsole::Delete);
     m_functionMap.Insert(Command::Filter,       &RealityDataConsole::Filter);
     m_functionMap.Insert(Command::Relationships,&RealityDataConsole::Relationships);
+    m_functionMap.Insert(Command::CreateRD,     &RealityDataConsole::CreateRD);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
@@ -260,7 +263,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
     DisplayInfo ("  AzureAdress Prints the URL to use\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
-    DisplayInfo ("  Relationships Show all projects attached to this RealityData");
+    DisplayInfo ("  Relationships Show all projects attached to this RealityData\n");
+    DisplayInfo ("  CreateRD    Create a new RealityData (must provide a name)\n");
     DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
     }
 
@@ -309,6 +313,24 @@ void RealityDataConsole::ConfigureServer()
 
     m_server = WSGServer(server, verifyCertificate);
     Utf8String version = m_server.GetVersion();
+
+    if(version.length() == 0)
+        {
+        DisplayInfo("There was an error contacting the server\n Please check that the URL was entered correctly and that the Connection Client is running and properly configured\n", DisplayOption::Error);
+        while (m_lastCommand != Command::Retry && m_lastCommand != Command::Quit)
+            {
+            DisplayInfo("\"Retry\" to try with a different server; \"Quit\" to exit\n", DisplayOption::Error);
+            InterpretCommand();
+            if (m_lastCommand == Command::Retry)
+                return ConfigureServer();
+            else if (m_lastCommand == Command::Quit)
+                {
+                DisplayInfo("Quitting...\n", DisplayOption::Error);
+                return;
+                }
+            }
+        }
+
     Utf8String repo;
     Utf8String schema;
     
@@ -997,7 +1019,28 @@ void RealityDataConsole::Relationships()
     DisplayInfo("Projects attached to this RealityData\n\n");
     for(RealityDataProjectRelationshipPtr entity : entities)
         DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
+    }
 
+void RealityDataConsole::CreateRD()
+    {
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, m_lastInput);
+
+    RealityDataServiceCreate createRequest = RealityDataServiceCreate("", RealityDataServiceUpload::PackageProperties(properties));
+    int status;
+    Utf8String response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
+    if (status != CURLE_OK)
+        {
+        DisplayInfo(Utf8PrintfString("There was an error creating a new RealityData. Curl failed with error code %d\n", status), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", response), DisplayOption::Error);
+        }
+    else
+        {
+        Json::Value instances(Json::objectValue);
+        Json::Reader::Parse(response, instances);
+        if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
+            DisplayInfo(Utf8PrintfString("New RealityData created with GUID %s", instances["instances"][0]["instanceId"].asString()), DisplayOption::Info);
+        }
     }
 
 void RealityDataConsole::InputError()
