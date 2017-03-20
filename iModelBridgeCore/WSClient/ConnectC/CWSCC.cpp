@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
-
+#include "DgnClientFx/Device.h"
 
 /*---------------------------------------------------------------------------------**//**
 * Initializer.
@@ -23,7 +23,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     BeFileName temporaryDirectory(wTemporaryDirectory);
@@ -63,7 +64,8 @@ IHTTPHANDLERPTR customHandler
         &proxyUrl,
         &proxyUsername,
         &proxyPassword,
-        customHandlerPtr
+        customHandlerPtr,
+        securityStoreInitializer
         );
     }
 
@@ -83,7 +85,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     Utf8String authenticatedToken;
@@ -100,7 +103,8 @@ IHTTPHANDLERPTR customHandler
         wproxyUrl,
         wproxyUsername,
         wproxyPassword,
-        customHandler
+        customHandler,
+        securityStoreInitializer
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
@@ -131,7 +135,8 @@ WCharCP wApplicationProductId,
 WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 )
     {
     Utf8String username;
@@ -151,7 +156,8 @@ IHTTPHANDLERPTR customHandler
         wproxyUrl,
         wproxyUsername,
         wproxyPassword,
-        customHandler
+        customHandler,
+        securityStoreInitializer
         );
 
     if (api->AttemptLoginUsingCredentials(Credentials(username, password)))
@@ -373,7 +379,8 @@ Utf8String applicationProductId,
 Utf8StringP proxyUrl,
 Utf8StringP proxyUsername,
 Utf8StringP proxyPassword,
-IHttpHandlerPtr customHandler
+IHttpHandlerPtr customHandler,
+void*   secureStoreInitializer
 )
 : m_pathProvider(temporaryDirectory, assetsRootDirectory)
     {
@@ -392,7 +399,8 @@ IHttpHandlerPtr customHandler
         applicationName,
         applicationVersion,
         applicationGUID,
-        applicationProductId
+        applicationProductId,
+        secureStoreInitializer
         );
     }
 
@@ -406,7 +414,8 @@ BeFileName assetsRootDirectory,
 Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
-Utf8String applicationProductId
+Utf8String applicationProductId,
+void* securityStoreInitializer
 )
     {
     m_lastStatusMessage = Utf8String("");
@@ -415,19 +424,40 @@ Utf8String applicationProductId
 
     BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
-    
+    BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
+
     BeFileName dgnClientFxSqlangFile = m_pathProvider.GetAssetsRootDirectory();
     dgnClientFxSqlangFile.AppendToPath(L"sqlang");
     dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
     BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile);
-
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
+
+    HttpClient::Initialize(m_pathProvider.GetAssetsRootDirectory());
+
     auto bclient = make_shared<BuddiClient>(m_customHandler);
 #if !defined (NDEBUG)
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &s_localState, bclient);
 #else
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &s_localState, bclient);
 #endif
+
+    if (securityStoreInitializer != nullptr)
+        SecureStore::Initialize(securityStoreInitializer);
+
+#if defined (__ANDROID__)
+    // Ideally, DgnClientFx::Device::GetDeviceId() would return a proper id (MEID, most likely) for android.
+    // However, it doesn't right now and most people are setting it using this
+    // "CacheAndroidDeviceId()" everywhere (not sure why we can't just set the string (deviceId = "TEST_DEVICE_ID"),
+    //  we will follow suit here. We need to supply something on connect calls.
+    // NOTE: there looks like there is code on the interwebs to retrieve the IMEI\MEID from an android phone.
+    // That should replace this dummy value at some point.
+    if (DgnClientFx::Device::GetDeviceId().empty())
+    {
+        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+    }
+#endif
+
+
     m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
     m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, &s_localState);
     }

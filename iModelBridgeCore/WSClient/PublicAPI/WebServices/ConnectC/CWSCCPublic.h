@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/ConnectC/CWSCCPublic.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,7 @@
 * \param[in] proxyUsername [optional] The username used to configure the Web Proxy
 * \param[in] proxyPassword [optional] The password used to configure the Web Proxy
 * \param[in] customHandler [forbidden] Custom HttpHandler used for testing purposes ONLY
+* \param[in] securityStoreInitializer  The value used to initialize Security Store (see SecurityStore::Initialize)
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithToken
@@ -42,7 +43,8 @@ WCharCP applicationProductId,
 WCharCP proxyUrl,
 WCharCP proxyUsername,
 WCharCP proxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 );
 
 /************************************************************************************//**
@@ -59,6 +61,7 @@ IHTTPHANDLERPTR customHandler
 * \param[in] proxyUsername [optional] The username used to configure the Web Proxy
 * \param[in] proxyPassword [optional] The password used to configure the Web Proxy
 * \param[in] customHandler [forbidden] Custom HttpHandler used for testing purposes ONLY
+* \param[in] securityStoreInitializer  The value used to initialize Security Store (see SecurityStore::Initialize)
 * \return WSAPIHANDLE API object
 ****************************************************************************************/
 CWSCC_EXPORT CWSCCHANDLE ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -74,7 +77,8 @@ WCharCP applicationProductId,
 WCharCP proxyUrl,
 WCharCP proxyUsername,
 WCharCP proxyPassword,
-IHTTPHANDLERPTR customHandler
+IHTTPHANDLERPTR customHandler,
+void* securityStoreInitializer
 );
 
 /************************************************************************************//**
