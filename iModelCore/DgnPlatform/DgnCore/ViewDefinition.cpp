@@ -58,7 +58,6 @@ namespace ViewProperties
     static constexpr Utf8CP str_Png() {return "png";}
     static constexpr Utf8CP str_Clip() {return "clip";}
     static constexpr Utf8CP str_IsCameraOn() {return "IsCameraOn";}
-    static constexpr Utf8CP str_IsPrivate() {return "IsPrivate";}
     static constexpr Utf8CP str_GridOrient() {return "gridOrient";}
     static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
     static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
@@ -144,7 +143,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition::_EqualState(ViewDefinitionR other)
     {
-    if (m_isPrivate != other.m_isPrivate)
+    if (IsPrivate()!= other.IsPrivate())
         return false;
 
     if (m_categorySelectorId != other.m_categorySelectorId)
@@ -194,8 +193,6 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
-    BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -321,7 +318,6 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
     m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
     m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
@@ -337,7 +333,6 @@ void ViewDefinition::_CopyFrom(DgnElementCR el)
     T_Super::_CopyFrom(el);
 
     auto& other = static_cast<ViewDefinitionCR>(el);
-    m_isPrivate = other.m_isPrivate;
     m_categorySelectorId = other.m_categorySelectorId;
     m_displayStyleId = other.m_displayStyleId;
     m_categorySelector = other.m_categorySelector.IsValid() ? other.m_categorySelector->MakeCopy<CategorySelector>() : nullptr;
@@ -1784,23 +1779,6 @@ namespace ViewElementHandler
 void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layout)
     {
     T_Super::_RegisterPropertyAccessors(params, layout);
-
-    params.RegisterPropertyAccessors(layout, str_IsPrivate(), 
-        [](ECValueR value, DgnElementCR el)
-            {
-            ViewDefinitionCR viewDef = (ViewDefinitionCR)el;
-            value.SetBoolean(viewDef.IsPrivate());
-            return DgnDbStatus::Success;
-            },
-        [](DgnElementR el, ECValueCR value)
-            {
-            if (!value.IsBoolean())
-                return DgnDbStatus::BadArg;
-
-            ViewDefinitionR viewDef = (ViewDefinitionR)el;
-            viewDef.SetIsPrivate(value.GetBoolean());
-            return DgnDbStatus::Success;
-            });
 
     params.RegisterPropertyAccessors(layout, str_DisplayStyle(), 
         [](ECValueR value, DgnElementCR el)

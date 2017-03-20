@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnProgressMeter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,6 +67,48 @@ public:
 
     //! Turn on the aborted flag. This will cause the process being monitored to abort at the next opportunity.
     void SetAborted() {m_aborted = ABORT_Yes;}
+    };
+
+//=======================================================================================
+// A progress meter for command-line applications.
+// @bsiclass                                                    Sam.Wilson  07/14
+//=======================================================================================
+struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
+{
+    DEFINE_T_SUPER(DgnProgressMeter)
+
+protected:
+    Utf8String m_stepName;
+    Utf8String m_taskName;
+    Utf8String m_lastMessage;
+    double m_timeOfLastUpdate;
+    double m_timeOfLastSpinnerUpdate;
+    uint32_t m_spinCount;
+
+    void UpdateDisplay0 (Utf8StringCR msg);
+    void UpdateDisplay();
+    void PopDescription();
+    bool HasDescription() const;
+    Utf8String FmtMessage() const;
+    void ForceNextUpdateToDisplay() {m_timeOfLastUpdate=m_timeOfLastSpinnerUpdate=0;}
+    DGNPLATFORM_EXPORT virtual void _Hide() override;
+    DGNPLATFORM_EXPORT virtual Abort _ShowProgress() override;
+    DGNPLATFORM_EXPORT virtual void _SetCurrentStepName (Utf8CP stepName) override;
+    DGNPLATFORM_EXPORT virtual void _SetCurrentTaskName (Utf8CP taskName) override;
+
+public:
+    PrintfProgressMeter() : BentleyApi::Dgn::DgnProgressMeter(), m_timeOfLastUpdate(0), m_timeOfLastSpinnerUpdate(0), m_spinCount(0) {}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson      03/17
++===============+===============+===============+===============+===============+======*/
+struct NopProgressMeter : DgnProgressMeter
+    {
+    virtual void _Hide() override {}
+    virtual Abort _ShowProgress() override { return Abort::ABORT_No; }
+    virtual void _SetCurrentStepName(Utf8CP stepName) override {}
+    virtual void _SetCurrentTaskName(Utf8CP taskName) override {}
     };
 
 END_BENTLEY_DGN_NAMESPACE

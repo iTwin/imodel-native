@@ -432,7 +432,7 @@ TEST_F(DgnModelTests, ModelIterator)
         ASSERT_EQ(physicalModel1->GetModelId(), entry.GetModelId());
         ASSERT_EQ(physicalModel1->GetModeledElementId(), entry.GetModeledElementId());
         ASSERT_EQ(physicalModelClassId, entry.GetClassId());
-        ASSERT_TRUE(entry.GetInGuiList());
+        ASSERT_TRUE(!entry.IsPrivate());
         ASSERT_FALSE(entry.GetIsTemplate());
         ++count;
         }
