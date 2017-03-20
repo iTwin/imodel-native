@@ -805,6 +805,9 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
     {
+    if (!materialId.IsValid())
+        return false;
+
     m_materialEl = DgnMaterial::Get(dgnDb, materialId);
     BeAssert(m_materialEl.IsValid());
     m_material = &m_materialEl->GetRenderingAsset();
