@@ -147,7 +147,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Visibility" typeName="int" description="Visibility flags that control whether or not this Model is displayed in GUI lists.">
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
@@ -508,6 +508,11 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If true, this definition should not be displayed in the GUI.">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="TypeDefinitionElement" modifier="Abstract" displayLabel="Type Definition" description="Defines a set of properties (the 'type') that can be associated with an element.">

@@ -331,6 +331,41 @@ Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    BeAssert(ECSqlStatus::Success == stat);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+
+    auto& other = static_cast<DefinitionElementCR>(el);
+    m_isPrivate = other.m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionElement::_OnInsert()
@@ -4107,3 +4142,28 @@ bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
         return false;
     return parent->IsDescendantOf(ancestorId); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            DefinitionElementCR def = (DefinitionElementCR)el;
+            value.SetBoolean(def.IsPrivate());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBoolean())
+                return DgnDbStatus::BadArg;
+            DefinitionElementR def = (DefinitionElementR)el;
+            def.SetIsPrivate(value.GetBoolean());
+            return DgnDbStatus::Success;
+            });
+    }
+
