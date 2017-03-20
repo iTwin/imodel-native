@@ -38,6 +38,11 @@ public:
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DocumentListModelPtr InsertDocumentListModel(DgnDbR, Utf8CP partitionName);
 
+    //! Insert an InformationRecordModel
+    //! @note Also creates an InformationRecordPartition element for the InformationRecordModel to model
+    //! @note No need for caller to assert a valid return (asserts within implementation)
+    static InformationRecordModelPtr InsertInformationRecordModel(DgnDbR, Utf8CP partitionName);
+
     //! Insert a Drawing element
     //! @note No need for caller to assert a valid return (asserts within implementation)
     static DrawingPtr InsertDrawing(DocumentListModelCR model, Utf8CP name);
