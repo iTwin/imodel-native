@@ -269,20 +269,55 @@ DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordModel::_OnInsertElement(DgnElementR element)
+    {
+    if (nullptr == dynamic_cast<InformationRecordElementCP>(&element))
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    return T_Super::_OnInsertElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordModelPtr InformationRecordModel::Create(InformationRecordPartitionCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::InformationRecord::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!classId.IsValid() || !model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return model->ToInformationRecordModelP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordModelPtr InformationRecordModel::CreateAndInsert(InformationRecordPartitionCR modeledElement)
+    {
+    InformationRecordModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -325,10 +360,7 @@ PhysicalModelPtr PhysicalModel::Create(TemplateRecipe3dCR modeledElement)
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,10 +369,7 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -349,12 +378,8 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement
 PhysicalModelPtr PhysicalModel::CreateAndInsert(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jonas.Valiunas  03/17
@@ -363,14 +388,8 @@ SpatialLocationModelPtr SpatialLocationModel::Create(DgnDbR db, DgnElementId mod
     {
     ModelHandlerR handler = dgn_ModelHandler::SpatialLocation::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -393,10 +412,7 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPortionCR mo
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPortionCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,10 +429,7 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR 
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPartitionCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -443,15 +456,8 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
     DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -466,10 +472,7 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
 DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modeledElement)
     {
     DefinitionModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -511,15 +514,8 @@ DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElemen
     DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::DocumentList::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -534,10 +530,7 @@ DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElemen
 DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR modeledElement)
     {
     DocumentListModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,9 +555,8 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     DgnDbR db = drawing.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, drawing.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         return nullptr;
 
     return dynamic_cast<DrawingModelP>(model.get());
@@ -578,9 +570,8 @@ DrawingModelPtr DrawingModel::Create(TemplateRecipe2dCR recipe)
     DgnDbR db = recipe.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, recipe.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         return nullptr;
 
     model->SetIsTemplate(true);

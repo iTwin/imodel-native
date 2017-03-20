@@ -192,6 +192,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for GroupInformationElement
@@ -258,6 +259,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GroupInformationPartition : InformationPartition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationPartition, Dgn::GroupInformationPartition, GroupInformationPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationRecordPartition
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecordPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordPartition, Dgn::InformationRecordPartition, InformationRecordPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for PhysicalPartition

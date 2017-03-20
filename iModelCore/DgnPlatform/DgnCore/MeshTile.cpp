@@ -416,7 +416,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
     if (m_fillColor != rhs.m_fillColor)
         {
-        if (compareFillColor)
+        if (compareFillColor || 0 != m_linePixels || 0 != rhs.m_linePixels)     // textured polylines already use texture so can't be batched.
             return m_fillColor < rhs.m_fillColor;
 
         // cannot batch translucent and opaque meshes
@@ -426,6 +426,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
         if (lhsHasAlpha != rhsHasAlpha)
             return lhsHasAlpha;
+
         }
 
     if (m_rasterWidth != rhs.m_rasterWidth)
@@ -884,6 +885,10 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster, uint32_t fillColor)
     {
     TilePolyline    newPolyline;
+
+    // Temporary white => black color inversion.  Remove when we have uniform background and can handle correctly in shaders.
+    if (0xffffff  == fillColor)
+        fillColor = 0;
 
     for (auto& point : points)
         {

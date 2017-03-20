@@ -187,7 +187,6 @@ public:
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, ViewDefinition3d::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
-    DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
