@@ -83,7 +83,9 @@
 
     <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
+      <!--  Dependency was moved to DgnClientFx:DgnClientFxJar
         <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
+      -->
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
