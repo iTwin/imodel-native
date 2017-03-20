@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -204,7 +204,7 @@ std::ostream& operator << (std::ostream &o, DbResult value)
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_NoPropertyTable),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_FileNotFound),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_NoTxnActive),
-        TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_BadDbSchema),
+        TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_BadDbProfile),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_InvalidProfileVersion),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileUpgradeFailed),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite),
