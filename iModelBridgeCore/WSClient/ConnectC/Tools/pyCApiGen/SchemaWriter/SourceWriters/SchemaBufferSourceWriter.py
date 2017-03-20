@@ -57,7 +57,7 @@ class SchemaBufferSourceWriter(SchemaSourceWriter):
             self._write_spacing()
 
     def __write_schema_buffer_accessor(self, property_type):
-        if self._ecschema.has_ecclass_with_property_type(property_type):
+        if self._ecschema.has_included_ecclass_with_property_type(property_type):
             self._file.write(self._COMMENT_BsiMethod)
             self._file.write(self._ecschema.get_buffer_accessor_function_implementation(property_type))
             return True

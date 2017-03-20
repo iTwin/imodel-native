@@ -1,0 +1,17 @@
+
+#
+#     $Source: mki/Android/nativeCodeTools.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+
+%include mdl.mki
+
+$(BuildContext)AndroidTools/gradleBuild.mki : $(_MakeFilePath)gradleBuild.mki
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)AndroidTools/CreateAssetsManifest.py : $(SrcRoot)bsicommon/build/CreateAssetsManifest.py
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)AndroidTools/Gradle : $(_MakeFilePath)Gradle
+    $(LinkFirstDepToFirstTargetAsDirectory)

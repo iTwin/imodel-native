@@ -73,28 +73,28 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
     def __write_schema_accessor_functions(self):
         self._file.write(self.__COMMENT_Function
                          .format('Schema-level accessor'))
-        if self._ecschema.has_ecclass_with_property_type('string'):
+        if self._ecschema.has_included_ecclass_with_property_type('string'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('string'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('StringLength'):
+        if self._ecschema.has_included_ecclass_with_property_type('StringLength'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('StringLength'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('dateTime'):
+        if self._ecschema.has_included_ecclass_with_property_type('dateTime'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('dateTime'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('guid'):
+        if self._ecschema.has_included_ecclass_with_property_type('guid'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('guid'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('int'):
+        if self._ecschema.has_included_ecclass_with_property_type('int'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('int'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('double'):
+        if self._ecschema.has_included_ecclass_with_property_type('double'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('double'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('long'):
+        if self._ecschema.has_included_ecclass_with_property_type('long'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('long'))
             self._write_spacing()
-        if self._ecschema.has_ecclass_with_property_type('boolean'):
+        if self._ecschema.has_included_ecclass_with_property_type('boolean'):
             self._file.write(self._ecschema.get_buffer_accessor_function_definition('boolean'))
             self._write_spacing()
 
