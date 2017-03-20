@@ -900,8 +900,8 @@ TEST_F(SchemaDeserializationConversionTest, TestPropertyRenamingCustomAttribute)
     ECPropertyP childProp = child->GetPropertyP("IntegerProperty");
     ASSERT_TRUE(nullptr != childProp) << "Failed to find the property 'IntegerProperty' on the class '" << child->GetFullName() << "', even though it should not have been renamed.";
 
-    IECInstancePtr childRename = childProp->GetCustomAttributeLocal("PropertyRenamed");
-    EXPECT_FALSE(childRename.IsValid()) << "The property '" << childProp->GetClass().GetFullName() << "." << childProp->GetName().c_str() << "' contains the custom attribute 'PropertyRenamed', even though the property was not renamed.";
+    IECInstancePtr childRename = child->GetCustomAttributeLocal("RenamedPropertiesMapping");
+    EXPECT_FALSE(childRename.IsValid()) << "The class'" << child->GetFullName() << "' contains the custom attribute 'RenamedPropertiesMapping', even though no property was renamed.";
     }
 
     // Check that if properties differ by DateType the property is renamed
@@ -912,15 +912,15 @@ TEST_F(SchemaDeserializationConversionTest, TestPropertyRenamingCustomAttribute)
     ECPropertyP childProp = child->GetPropertyP("TestSchema_IntegerProperty_");
     ASSERT_TRUE(nullptr != childProp) << "Failed to find the renamed property 'TestSchema_IntegerProperty_' on the class '" << child->GetFullName() << "'.";
 
-    IECInstancePtr childRename = childProp->GetCustomAttributeLocal("PropertyRenamed");
-    EXPECT_TRUE(childRename.IsValid()) << "The property '" << childProp->GetClass().GetFullName() << "." << childProp->GetName().c_str() << "' does not contain the custom attribute 'PropertyRenamed', even though the property was renamed.";
+    IECInstancePtr childRename = child->GetCustomAttributeLocal("RenamedPropertiesMapping");
+    EXPECT_TRUE(childRename.IsValid()) << "The class '" << child->GetFullName() << "' does not contain the custom attribute 'RenamedPropertiesMapping', even though a property was renamed.";
 
-    ECValue childPropOriginalName;
-    EXPECT_EQ(ECObjectsStatus::Success, childRename->GetValue(childPropOriginalName, "OriginalName"));
-    EXPECT_TRUE(!childPropOriginalName.IsNull()) << "The property 'OriginalName' in the PropertyRenamed custom attribute on property '" << childProp->GetClass().GetFullName() << "." << childProp->GetName().c_str() << "' is null when it should not be.";
+    ECValue remapping;
+    EXPECT_EQ(ECObjectsStatus::Success, childRename->GetValue(remapping, "PropertyMapping"));
+    EXPECT_TRUE(!remapping.IsNull()) << "The property 'PropertyMapping' in the RenamedPropertiesMapping custom attribute on ECClass '" << child->GetFullName() << "' is null when it should not be.";
 
-    Utf8String origName("IntegerProperty");
-    EXPECT_TRUE(origName.EqualsI(childPropOriginalName.GetUtf8CP())) << "The supplied original name in the CustomAttribute of the property 'TestSchema_IntegerProperty_' is not correct, it should be 'IntegerProperty'";
+    Utf8String expected("IntegerProperty|TestSchema_IntegerProperty_");
+    EXPECT_TRUE(expected.EqualsI(remapping.GetUtf8CP())) << "The supplied mapping in the CustomAttribute of the 'child2' ECClass is not correct";
     }
     }
 
