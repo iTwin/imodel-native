@@ -242,6 +242,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
+    EXPECT_FALSE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
     CloseDb();
 
     /*
@@ -258,11 +259,13 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, DgnDb::OpenParams::EnableSchemaImport::Yes));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_FALSE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
-    
+    EXPECT_FALSE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
+
     // Import domain schema
     SchemaVersionTestDomain::GetDomain().ImportSchema(*m_db);
     EXPECT_TRUE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
-    
+    EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
+
     // Validate that _OnSchemaImport was called
     DgnCode code = SchemaVersionTestDomain::CreateCode(*m_db, "OnSchemaImportedElement");
     DgnElementId elId = m_db->Elements().QueryElementIdByCode(code);
@@ -278,6 +281,7 @@ TEST_F(SchemaVersionTestFixture, ImportDomainSchemas)
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(result == BE_SQLITE_OK);
     EXPECT_TRUE(m_db->Schemas().ContainsECSchema(SCHEMA_VERSION_TEST_SCHEMA_NAME));
+    EXPECT_TRUE(SchemaVersionTestDomain::GetDomain().IsSchemaImported(*m_db));
 
     SchemaVersionTestElementPtr el = CreateElement();
     el->SetProperty("IntegerProperty1", 1);
@@ -458,6 +462,8 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     /* Setup baseline */
     SetupSeedProject();
     SaveDb();
+    DgnRevisionPtr revision0 = CreateRevision();
+    EXPECT_TRUE(revision0.IsValid());
     BeFileName fileName = m_db->GetFileName();
     BackupTestFile();
 

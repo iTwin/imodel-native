@@ -141,7 +141,7 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,Visibility) VALUES(?,?,?,?,0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,IsPrivate) VALUES(?,?,?,?,1)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
@@ -521,11 +521,8 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     if (result != BE_SQLITE_OK)
         return result;
 
-    result = Domains().ValidateSchemas();
-    if (result == BE_SQLITE_ERROR_SchemaImportRequired && ((DgnDb::OpenParams const&) params).IsSchemaImportEnabled())
-        return BE_SQLITE_OK;
-
-    return result;
+    Domains().SetEnableSchemaImport(((DgnDb::OpenParams const&) params).IsSchemaImportEnabled());
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -569,7 +566,7 @@ DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<
 
     for (ECSchemaCP appSchema : schemas)
         {
-        DbResult result = DgnDomains::ValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+        DbResult result = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
 
         if (result == BE_SQLITE_OK)
             {
