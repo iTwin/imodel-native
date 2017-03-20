@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/IModelDb.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,7 +54,7 @@ struct PackageProperty
         Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Package, Mode::Normal) {}
         };
 
-    static Spec SchemaVersion()   {return Spec("SchemaVersion");}
+    static Spec ProfileVersion()  {return Spec("SchemaVersion");}
     static Spec Name()            {return Spec("Name");}
     static Spec Description()     {return Spec("Description");}
     static Spec Client()          {return Spec("Client");}

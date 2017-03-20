@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteProfileManager.h"
@@ -31,7 +31,7 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    SchemaVersion actualProfileVersion(0, 0, 0, 0);
+    ProfileVersion actualProfileVersion(0, 0, 0, 0);
     auto stat = ReadProfileVersion(actualProfileVersion, db);
     if (stat != BE_SQLITE_OK)
         {
@@ -39,7 +39,7 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
         return stat;
         }
 
-    const SchemaVersion expectedVersion = GetExpectedVersion();
+    const ProfileVersion expectedVersion = GetExpectedVersion();
 
     bool profileNeedsUpgrade = false;
     stat = Db::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), false, PROFILENAME);
@@ -89,17 +89,17 @@ DbResult BeSQLiteProfileManager::AssignProfileVersion(DbR db)
     {
     //Save the profile version as string (JSON format)
     Utf8String profileVersionStr = GetExpectedVersion().ToJson();
-    return db.SavePropertyString(Properties::SchemaVersion(), profileVersionStr);
+    return db.SavePropertyString(Properties::ProfileVersion(), profileVersionStr);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, DbR db)
+DbResult BeSQLiteProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, DbR db)
     {
     Utf8String currentVersionString;
-    auto stat = db.QueryProperty(currentVersionString, Properties::SchemaVersion());
+    auto stat = db.QueryProperty(currentVersionString, Properties::ProfileVersion());
     if (stat == BE_SQLITE_ROW)
         {
         profileVersion.FromJson(currentVersionString.c_str());
@@ -114,7 +114,7 @@ DbResult BeSQLiteProfileManager::ReadProfileVersion(SchemaVersion& profileVersio
 // @bsimethod                                                    Krischan.Eberle    04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void BeSQLiteProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>>& upgraders, SchemaVersion const& currentProfileVersion)
+void BeSQLiteProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>>& upgraders, ProfileVersion const& currentProfileVersion)
     {
     upgraders.clear();
     }

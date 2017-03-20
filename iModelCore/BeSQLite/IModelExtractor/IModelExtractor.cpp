@@ -2,7 +2,7 @@
 |
 |     $Source: IModelExtractor/IModelExtractor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Logging/bentleylogging.h>
@@ -276,23 +276,23 @@ static DbResult checkPackageVersion (BeSQLite::Db& db, Db::OpenParams const& ope
     {
     EXTRACTOR_V ("Querying package schema version...");
     Utf8String versionString;
-    if (BE_SQLITE_ROW != db.QueryProperty (versionString, PackageProperty::SchemaVersion ()))
+    if (BE_SQLITE_ROW != db.QueryProperty (versionString, PackageProperty::ProfileVersion ()))
         {
         EXTRACTOR_E ("Could not find package schema version property");
         return BE_SQLITE_ERROR_NoPropertyTable;
         }
     EXTRACTOR_V ("Actual package schema version: %s", versionString.c_str ());
 
-    SchemaVersion actualPackageSchemaVersion (0,0,0,0);
-    actualPackageSchemaVersion.FromJson (versionString.c_str ());
-    SchemaVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    SchemaVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    ProfileVersion actualPackageProfileVersion (0,0,0,0);
+    actualPackageProfileVersion.FromJson (versionString.c_str ());
+    ProfileVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    ProfileVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     EXTRACTOR_V ("Expected package schema version: %s", expectedPackageVersion.ToJson ().c_str ());
     EXTRACTOR_V ("Minimum auto-upgradable package schema version: %s", minimumAutoUpgradablePackageVersion.ToJson ().c_str ());
 
     bool needsUpgrade = false; //unused as this app does not implement any auto-upgrade
-    const auto stat = BeSQLite::Db::CheckProfileVersion (needsUpgrade, expectedPackageVersion, actualPackageSchemaVersion, minimumAutoUpgradablePackageVersion, openParams.IsReadonly(), "Package");
+    const auto stat = BeSQLite::Db::CheckProfileVersion (needsUpgrade, expectedPackageVersion, actualPackageProfileVersion, minimumAutoUpgradablePackageVersion, openParams.IsReadonly(), "Package");
     switch (stat) 
         {
         case BE_SQLITE_ERROR_ProfileTooOld:

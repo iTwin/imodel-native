@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
@@ -39,7 +39,7 @@ DbResult SetupDb(Db& db, WCharCP dbName)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(BeSQLiteDb, CheckProfileVersionWithEmptyProfileName)
     {
-    SchemaVersion dummy(2, 4, 5, 3);
+    ProfileVersion dummy(2, 4, 5, 3);
 
     bool fileIsAutoUpgradable = false;
 
@@ -84,45 +84,45 @@ TEST(BeSQLiteDb, CheckProfileVersion)
             {}
         };
 
-    SchemaVersion expectedProfileVersion(2, 4, 5, 3);
-    SchemaVersion minimumAutoUpgradeProfileVersion(1, 9, 0, 0);
+    ProfileVersion expectedProfileVersion(2, 4, 5, 3);
+    ProfileVersion minimumAutoUpgradeProfileVersion(1, 9, 0, 0);
 
-    std::map<SchemaVersion, ExpectedResult> testDataset;
-    testDataset[SchemaVersion(0, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[SchemaVersion(1, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[SchemaVersion(1, 8, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[SchemaVersion(1, 9, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(1, 9, 2, 3)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    std::map<ProfileVersion, ExpectedResult> testDataset;
+    testDataset[ProfileVersion(0, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
+    testDataset[ProfileVersion(1, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
+    testDataset[ProfileVersion(1, 8, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
+    testDataset[ProfileVersion(1, 9, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(1, 9, 2, 3)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
 
-    testDataset[SchemaVersion(1, 9, 2, 4)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(1, 9, 2, 5)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(1, 9, 3, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(1, 9, 9, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(2, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(2, 1, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[SchemaVersion(2, 4, 0, 0)] = ExpectedResult(BE_SQLITE_OK, true);
-    testDataset[SchemaVersion(2, 4, 5, 0)] = ExpectedResult(BE_SQLITE_OK, true);
-    testDataset[SchemaVersion(2, 4, 5, 2)] = ExpectedResult(BE_SQLITE_OK, true);
+    testDataset[ProfileVersion(1, 9, 2, 4)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(1, 9, 2, 5)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(1, 9, 3, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(1, 9, 9, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(2, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(2, 1, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    testDataset[ProfileVersion(2, 4, 0, 0)] = ExpectedResult(BE_SQLITE_OK, true);
+    testDataset[ProfileVersion(2, 4, 5, 0)] = ExpectedResult(BE_SQLITE_OK, true);
+    testDataset[ProfileVersion(2, 4, 5, 2)] = ExpectedResult(BE_SQLITE_OK, true);
 
-    testDataset[SchemaVersion(2, 4, 5, 3)] = ExpectedResult(BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 5, 3)] = ExpectedResult(BE_SQLITE_OK, false);
 
-    testDataset[SchemaVersion(2, 4, 5, 4)] = ExpectedResult(BE_SQLITE_OK, false);
-    testDataset[SchemaVersion(2, 4, 5, 33)] = ExpectedResult(BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 5, 4)] = ExpectedResult(BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 5, 33)] = ExpectedResult(BE_SQLITE_OK, false);
 
-    testDataset[SchemaVersion(2, 4, 6, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[SchemaVersion(2, 4, 6, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[SchemaVersion(2, 4, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[SchemaVersion(2, 4, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 6, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 6, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
+    testDataset[ProfileVersion(2, 4, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
 
-    testDataset[SchemaVersion(2, 5, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[SchemaVersion(2, 5, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[SchemaVersion(2, 99, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[SchemaVersion(3, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[SchemaVersion(99, 99, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
+    testDataset[ProfileVersion(2, 5, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
+    testDataset[ProfileVersion(2, 5, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
+    testDataset[ProfileVersion(2, 99, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
+    testDataset[ProfileVersion(3, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
+    testDataset[ProfileVersion(99, 99, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
 
     for (auto const& testItem : testDataset)
         {
-        SchemaVersion const& actualProfileVersion = testItem.first;
+        ProfileVersion const& actualProfileVersion = testItem.first;
         ExpectedResult const& expectedResult = testItem.second;
 
         bool actualfileIsAutoUpgradable = false;

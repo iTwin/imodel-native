@@ -337,10 +337,10 @@ enum DbConstants
 };
 
 //=======================================================================================
-// The Schema version for BeSQLite database files created by this version of the BeSQLite library
+// The profile version for BeSQLite database files created by this version of the BeSQLite library
 // @bsiclass                                                    Keith.Bentley   11/12
 //=======================================================================================
-enum DbSchemaValues
+enum DbProfileValues
     {
     BEDB_CURRENT_VERSION_Major = 3,
     BEDB_CURRENT_VERSION_Minor = 1,
@@ -355,14 +355,14 @@ enum DbSchemaValues
 
 
 //=======================================================================================
-//! A 4-digit number that specifies the version of the "schema" of a Db
+//! A 4-digit number that specifies the version of the "profile" (schema) of a Db
 // @bsiclass                                                    Keith.Bentley   02/12
 //=======================================================================================
-struct SchemaVersion : BeVersion
+struct ProfileVersion : BeVersion
 {
 public:
-    SchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
-    explicit SchemaVersion(Utf8CP json) {FromJson(json);}
+    ProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : BeVersion(major, minor, sub1, sub2) {}
+    explicit ProfileVersion(Utf8CP json) {FromJson(json);}
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
 };
@@ -431,7 +431,7 @@ enum DbResult
     BE_SQLITE_ERROR_NoPropertyTable   = (BE_SQLITE_IOERR | (3<<24)),  //!< attempt to open a BeSQLite::Db that doesn't have a property table.
     BE_SQLITE_ERROR_FileNotFound      = (BE_SQLITE_IOERR | (4<<24)),  //!< the database name is not a file.
     BE_SQLITE_ERROR_NoTxnActive       = (BE_SQLITE_IOERR | (5<<24)),  //!< there is no transaction active and the database was opened with AllowImplicitTransactions=false
-    BE_SQLITE_ERROR_BadDbSchema       = (BE_SQLITE_IOERR | (6<<24)), //!< wrong BeSQLite schema version
+    BE_SQLITE_ERROR_BadDbProfile      = (BE_SQLITE_IOERR | (6 << 24)), //!< wrong BeSQLite profile version
     BE_SQLITE_ERROR_InvalidProfileVersion = (BE_SQLITE_IOERR | (7<<24)),  //!< Profile (aka application level BeSQLite schema) of file could not be determined.
     BE_SQLITE_ERROR_ProfileUpgradeFailed = (BE_SQLITE_IOERR | (8<<24)),  //!< Upgrade of profile (aka application level BeSQLite schema) of file failed.
     BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite = (BE_SQLITE_IOERR | (9<<24)),  //!< Upgrade of profile (aka application level SQLite schema) of file failed because the file could not be reopened in read-write mode.
@@ -2053,7 +2053,7 @@ public:
         bool          m_rawSQLite;
         BusyRetry*    m_busyRetry;
 
-        BE_SQLITE_EXPORT virtual bool _ReopenForSchemaUpgrade(Db&) const;
+        BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database.
@@ -2157,12 +2157,12 @@ protected:
 
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
-    //! @note this function is invoked before _VerifySchemaVersion() and therefore should not attempt to access data which depends on the schema version
+    //! @note this function is invoked before _VerifyProfileVersion() and therefore should not attempt to access data which depends on the schema version
     virtual DbResult _OnDbOpening() {return QueryDbIds();}
 
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
-    //! @note this function is invoked after _VerifySchemaVersion() and can therefore access data which depends on the schema version
+    //! @note this function is invoked after _VerifyProfileVersion() and can therefore access data which depends on the schema version
     virtual DbResult _OnDbOpened() {return BE_SQLITE_OK;}
 
     //! override to perform processing when Db is closed
@@ -2193,11 +2193,11 @@ protected:
     //! 1. the profile version needs to be incremented according to the
     //! <b>backwards compatibility rules</b> mentioned above. This means concretely:
     //!     - If older versions of the software can still work with the file without any restrictions:
-    //!       @b increment the @ref SchemaVersion::GetSub2 "Sub2" version digit.
+    //!       @b increment the @ref ProfileVersion::GetSub2 "Sub2" version digit.
     //!     - If older versions of the software can only open the file in read-only mode:
-    //!       @b increment the @ref SchemaVersion::GetSub1 "Sub1" version digit.
+    //!       @b increment the @ref ProfileVersion::GetSub1 "Sub1" version digit.
     //!     - If older versions of the software can no longer work with the file:
-    //!       @b increment either the @ref SchemaVersion::GetMajor "Major" or the @ref SchemaVersion::GetMinor "Minor"
+    //!       @b increment either the @ref ProfileVersion::GetMajor "Major" or the @ref ProfileVersion::GetMinor "Minor"
     //!       version digit.
     //! 2. a new auto-upgrade step needs to be implemented. It auto-upgrades a file from the version prior to your change to
     //!    the new one.
@@ -2206,7 +2206,7 @@ protected:
     //!
     //! @param[in] params Open parameters
     //! @return Code indicating success or error.
-    virtual DbResult _VerifySchemaVersion(OpenParams const& params) {return BE_SQLITE_OK;}
+    virtual DbResult _VerifyProfileVersion(OpenParams const& params) {return BE_SQLITE_OK;}
 
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
@@ -2295,18 +2295,18 @@ public:
     //! expected by the software</b>, the software attempts to <b>auto-upgrade</b> the file's profile.<br>
     //! ::BE_SQLITE_OK is returned if the auto-upgrade succeeded, ::BE_SQLITE_ERROR_ProfileUpgradeFailed is returned
     //! if the auto-upgrade failed.<br>
-    //! If no auto-upgrade exists for the profile and the profile's @ref SchemaVersion::GetMajor "Major" and
-    //! @ref SchemaVersion::GetMinor "Minor" version digits are
+    //! If no auto-upgrade exists for the profile and the profile's @ref ProfileVersion::GetMajor "Major" and
+    //! @ref ProfileVersion::GetMinor "Minor" version digits are
     //!     - equal to the expected profile version, the profile is compatible without restriction
     //!     - less than the expected profile version, the file cannot be opened and ::BE_SQLITE_ERROR_ProfileTooOld is returned.
     //! - @b equal to the version expected by the software, the profile is obviously compatible.
     //! - @b newer than the version expected by the software and
-    //!     - if file profile's @ref SchemaVersion::GetSub2 "Sub2" version digit is @b newer than expected, the profile is compatible
+    //!     - if file profile's @ref ProfileVersion::GetSub2 "Sub2" version digit is @b newer than expected, the profile is compatible
     //!     without restriction
-    //!     - if file profile's @ref SchemaVersion::GetSub1 "Sub1" version digit is @b newer than expected, file can only be
+    //!     - if file profile's @ref ProfileVersion::GetSub1 "Sub1" version digit is @b newer than expected, file can only be
     //!     opened read-only. Therefore ::BE_SQLITE_OK is returned if client requested file to be opened read-only.
     //!     ::BE_SQLITE_ERROR_ProfileTooNewForReadWrite is returned otherwise.
-    //!     - if file profile's @ref SchemaVersion::GetMajor "Major" or @ref SchemaVersion::GetMinor "Minor" version digit are
+    //!     - if file profile's @ref ProfileVersion::GetMajor "Major" or @ref ProfileVersion::GetMinor "Minor" version digit are
     //!     @b newer, the file cannot be opened and ::BE_SQLITE_ERROR_ProfileTooNew is returned.
     //!
     //! @note A Db can have an expiration date and time. See #IsExpired
@@ -2657,7 +2657,7 @@ public:
     //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
     //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
-    BE_SQLITE_EXPORT static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const& expectedProfileVersion, SchemaVersion const& actualProfileVersion, SchemaVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly, Utf8CP profileName);
+    BE_SQLITE_EXPORT static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly, Utf8CP profileName);
 
     //! Upgrades this file's BeSQLite profile.
     //! @remarks Unlike the other profiles a BeSQLite profile is never upgraded implicitly. ECDb calls this as it needs
@@ -2864,7 +2864,7 @@ struct PropSpec : PropertySpec
 struct Properties
 {
     static PropSpec DbGuid()            {return PropSpec("DbGuid");}
-    static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
+    static PropSpec ProfileVersion()    {return PropSpec("SchemaVersion");}
     static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
