@@ -83,7 +83,9 @@
 
     <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
+      <!--  Dependency was moved to DgnClientFx:DgnClientFxJar
         <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
+      -->
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesClient.so</Libs>
@@ -667,5 +669,47 @@
             </Files>
         </Bindings>
     </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // ConnectWebServicesClientC Samples                                      // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Product Name="CWSCC-Samples" >
+        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
+        <SubPart PartName="CWCC-Android-Sample-GetProjects"/>
+    </Product>
+
+    <ProductDirectoryList ListName="CWSCCSamplesDirectoryList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
+
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
+    <Part Name="CWCC-Android-Samples" OnlyPlatforms="Android*">
+        <SubPart PartName="CWCC-Android-Sample-GetProjects"/>
+    </Part>
+
+
+<Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
+    <Bindings>
+        <Directory Required="False" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
+    </Bindings>
+</Part>
+
+
+    <Part Name="CWCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
+        <SubPart PartName="Tools-AndroidShared" />
+    </Part>
+
 
 </BuildContext>

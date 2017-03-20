@@ -1,0 +1,76 @@
+apply plugin: 'com.android.application'
+apply from: "$GradleScriptsDir/defaultToolVersions.gradle"
+
+android {
+   compileSdkVersion project.ext.compileSdkVersion
+   buildToolsVersion project.ext.buildToolsVersion
+    defaultConfig {
+        applicationId "com.bentley.loadprojects"
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion        
+        versionCode 1
+        versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-fexceptions"
+                arguments "-DANDROID_STL=c++_static"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        armv7a {
+            ndk {
+                abiFilter "armeabi-v7a"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(":BeSecurity-1.0.0")
+    compile 'com.android.support:appcompat-v7:25.1.1'
+}
+
+    File jniLibs =  file("$projectDir/src/main/jniLibs")
+
+    task dump {
+        doLast {
+            println "path=$path"
+            println "gradle=$gradle"
+            println "rootDir=$rootDir"
+            println "libsDir=$libsDir"
+            println "projectDir = $projectDir"
+            println "buildFile = $buildFile"
+            File test = file('libs')
+            println "libs (in dependencies) directory path = $test.absolutePath"
+            //println "properties=$properties"
+            println "jniLibs Directory path = $jniLibs.absolutePath"
+            FileTree tree = fileTree(dir: "$jniLibs", include: '**/*.so')
+            println "BEGIN: Contents of jniLibs..."
+            tree.each {File file ->
+                println file
+            }
+            println "END: Contents of jniLibs..."
+            println "buildDir = $buildDir\n"
+
+        }
+     }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn(dump)
+    }
