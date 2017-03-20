@@ -332,14 +332,12 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 DbResult DgnDomains::OnDbOpened()
     {
     DbResult result = ValidateSchemas();
-    
-    if (result != BE_SQLITE_OK)
-        {
-        if (result == BE_SQLITE_ERROR_SchemaImportRequired && GetEnableSchemaImport())
-            result = BE_SQLITE_OK;
 
+    if (result == BE_SQLITE_ERROR_SchemaImportRequired && GetEnableSchemaImport())
+        result = BE_SQLITE_OK;
+
+    if (result != BE_SQLITE_OK)
         return result;
-        }
         
     SyncWithSchemas();
 
@@ -406,6 +404,9 @@ DbResult DgnDomains::ValidateAndImportSchemas(bool doImport)
             result = BE_SQLITE_ERROR_SchemaImportRequired; // It could get worse!
             if (doImport)
                 importDomains.push_back(domain);
+            else
+                LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
+
             continue;
             }
 
@@ -666,7 +667,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
     DgnClassId classId = m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    BeAssert(classId.IsValid() && "ECClass associated with handler not found. Was its schema imported?");
+    BeAssert((classId.IsValid() || GetEnableSchemaImport()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?");
     return classId;
     }
 

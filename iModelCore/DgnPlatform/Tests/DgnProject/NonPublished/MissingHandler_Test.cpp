@@ -151,7 +151,13 @@ DgnPlatformSeedManager::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
 void MissingHandlerTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    MissingHandlerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
+
+    MissingHandlerTest::s_seedFileInfo = rootSeedInfo;
+    MissingHandlerTest::s_seedFileInfo.fileName.SetName(L"MissingHandlerTest/Test.bim");
+
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, MissingHandlerTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
