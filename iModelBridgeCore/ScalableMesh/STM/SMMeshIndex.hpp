@@ -3839,12 +3839,17 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
 // @bsimethod                                                   Elenie.Godzaridis 02/16
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
-    {
+{
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid()) return false;
+    bool isUpToDate = true;
     for (const auto& diffSet : *diffsetPtr)
-        {
-        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
+    {
+        if (diffSet.clientID == (uint64_t)-1 && !diffSet.upToDate) isUpToDate= false;
+    }
+    for (const auto& diffSet : *diffsetPtr)
+    {
+        if (diffSet.clientID == clipId && (!isUpToDate || !diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
         }
     return false;
     }
