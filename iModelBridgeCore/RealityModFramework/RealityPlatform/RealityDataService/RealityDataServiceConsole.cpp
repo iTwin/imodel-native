@@ -447,7 +447,7 @@ void RealityDataConsole::List()
 
 void RealityDataConsole::ListRoots()
     {
-    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest();
+    RealityDataListByEnterprisePagedRequest enterpriseReq = RealityDataListByEnterprisePagedRequest("", 0, 2500);
 
     bvector<Utf8String> properties = bvector<Utf8String>();
     if (m_nameFilter.length() > 0)
@@ -466,7 +466,7 @@ void RealityDataConsole::ListRoots()
     bvector<RealityDataPtr> partialVec;
 
     partialVec = RealityDataService::Request(enterpriseReq, status);
-    while(status == RequestStatus::SUCCESS)
+    while(partialVec.size() > 0)
         {
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
         partialVec = RealityDataService::Request(enterpriseReq, status);

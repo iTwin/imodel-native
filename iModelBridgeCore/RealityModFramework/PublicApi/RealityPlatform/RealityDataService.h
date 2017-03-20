@@ -443,7 +443,7 @@ protected:
 struct RealityDataListByEnterprisePagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint8_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
+    REALITYDATAPLATFORM_EXPORT RealityDataListByEnterprisePagedRequest(Utf8StringCR identifier = "", uint16_t startIndex = 0, uint16_t pageSize = 25) { m_validRequestString = false; m_id = identifier; m_startIndex = startIndex; m_pageSize = pageSize; }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
