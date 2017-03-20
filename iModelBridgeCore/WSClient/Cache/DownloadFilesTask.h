@@ -24,9 +24,10 @@ struct DownloadFilesTask : public CachingTaskBase
         struct DownloadFileProperties
             {
             ObjectId objectId;
-            std::shared_ptr<Utf8String> name = std::make_shared<Utf8String>();
+            std::shared_ptr<Utf8String> name;
             uint64_t size;
             uint64_t bytesDownloaded;
+            DownloadFileProperties() : name(std::make_shared<Utf8String>()) {}
             };
 
     private:
