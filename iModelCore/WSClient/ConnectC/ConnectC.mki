@@ -2,7 +2,7 @@
 #
 #     $Source: ConnectC/ConnectC.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -14,7 +14,9 @@ ConnectCMkiSourceDir = $(CWSClientCSourceDirectory)ConnectC/
 #--------------------------------------------------------------------------------------
 ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h   \
                      $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaGenPublic.h         \
-                     $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchPublic.h                      \
+                     $(ConnectCMkiPublicApiDir)ConnectWsgProjectShare/ProjectShareBufferGenPublic.h   \
+                     $(ConnectCMkiPublicApiDir)ConnectWsgProjectShare/ProjectShareGenPublic.h         \
+					 $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchPublic.h                      \
                      $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchBufferPublic.h                \
                      $(ConnectCMkiPublicApiDir)CWSCC.h                                          \
                      $(ConnectCMkiPublicApiDir)CWSCCBufferPublic.h                              \
@@ -67,3 +69,8 @@ $(o)GlobalSchemaGen$(oext)                          : $(ConnectCMkiSourceDir)Con
 $(o)IMSSearch$(oext)                                : $(ConnectCMkiSourceDir)IMSSearch/IMSSearch.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
 $(o)IMSSearchBuffer$(oext)                          : $(ConnectCMkiSourceDir)IMSSearch/IMSSearchBuffer.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)ProjectShareBufferGen$(oext)                    : $(ConnectCMkiSourceDir)ConnectWsgProjectShare/ProjectShareBufferGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)ProjectShareGen$(oext)                          : $(ConnectCMkiSourceDir)ConnectWsgProjectShare/ProjectShareGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+

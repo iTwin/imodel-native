@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ProjectShare" nameSpacePrefix="db" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>ProjectShare.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+        <IdentificationOfStandardClasses xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <DocumentBaseClass>File</DocumentBaseClass>
+            <FolderBaseClass>Folder</FolderBaseClass>
+        </IdentificationOfStandardClasses>
+    </ECCustomAttributes>
+    <ECClass typeName="AutomationType" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ID" typeName="int" />
+        <ECProperty propertyName="Description" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DeletePropertyMap" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="IsSoftDeleteAllowed" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="DeletePropertyTimeStampMap" isDomainClass="True" isCustomAttributeClass="True">
+        <ECProperty propertyName="IsDeleteTimeStampProperty" typeName="boolean" />
+    </ECClass>
+    <ECClass typeName="File" isDomainClass="True">
+        <ECCustomAttributes>
+            <DeletePropertyMap xmlns="ProjectShare.01.00">
+                <IsSoftDeleteAllowed>True</IsSoftDeleteAllowed>
+            </DeletePropertyMap>
+            <ClassPriority xmlns="EditorCustomAttributes.01.02">
+                <Priority>900</Priority>
+            </ClassPriority>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>FileName</PropertyName>
+            </InstanceLabelSpecification>
+            <FileDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <FileName>FileName</FileName>
+                <FileSize>Size</FileSize>
+                <DateModified>ModifiedTimeStamp</DateModified>
+            </FileDependentProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Alias" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContainerName" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="AccessUrl" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContentType" typeName="string" displayLabel="Content Type" />
+        <ECProperty propertyName="ModifiedBy" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CreatedBy" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Path" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ModifiedTimeStamp" typeName="dateTime" displayLabel="Last Modified">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>80</Priority>
+                </PropertyPriority>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CreatedTimeStamp" typeName="dateTime" displayLabel="Date Created">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>90</Priority>
+                </PropertyPriority>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FileExists" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Size" typeName="long">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>98</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FileName" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>100</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RootFile" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DeletedTimeStamp" typeName="dateTime">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+                <DeletePropertyTimeStampMap xmlns="ProjectShare.01.00">
+                    <IsDeleteTimeStampProperty>True</IsDeleteTimeStampProperty>
+                </DeletePropertyTimeStampMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DownloadAccess" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Folder" isDomainClass="True">
+        <ECCustomAttributes>
+            <DeletePropertyMap xmlns="ProjectShare.01.00">
+                <IsSoftDeleteAllowed>True</IsSoftDeleteAllowed>
+            </DeletePropertyMap>
+            <ClassPriority xmlns="EditorCustomAttributes.01.02">
+                <Priority>1000</Priority>
+            </ClassPriority>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>FolderName</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
+        <ECProperty propertyName="FolderName" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>100</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContentType" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CreatedBy" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Path" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="CreatedTimeStamp" typeName="dateTime" displayLabel="Date Created">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>90</Priority>
+                </PropertyPriority>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ModifiedBy" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ModifiedTimeStamp" typeName="dateTime" displayLabel="Last Modified">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>80</Priority>
+                </PropertyPriority>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RootFolder" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Size" typeName="long">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Description" typeName="string">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="IsAutomatedPublishingFolder" typeName="boolean">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DeletedTimeStamp" typeName="dateTime">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.02">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+                <DeletePropertyTimeStampMap xmlns="ProjectShare.01.00">
+                    <IsDeleteTimeStampProperty>True</IsDeleteTimeStampProperty>
+                </DeletePropertyTimeStampMap>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECRelationshipClass typeName="FolderHasContent" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Folder" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="File" />
+            <Class class="Folder" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="PublishSettings" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="JobType" typeName="int" description="Maps to the AutomationType ID property" />
+        <ECProperty propertyName="DeleteInputFiles" typeName="boolean" />
+    </ECClass>
+    <ECRelationshipClass typeName="FolderHasPublishSettings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Folder" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="PublishSettings" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="ProjectPermission" isDomainClass="True">
+        <ECProperty propertyName="Result" typeName="string" />
+    </ECClass>
+    <ECClass typeName="PublishFile" isDomainClass="True">
+        <ECProperty propertyName="InputFiles" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="PublishSettingsContainsAutomationType" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="PublishSettings" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="AutomationType" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RecycleBinHasContent" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="DeletedBy" typeName="string" displayLabel="Deleted By" />
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Folder" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="File" />
+            <Class class="Folder" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="User" isDomainClass="True" />
+    <ECRelationshipClass typeName="UserHasMRUFile" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="ProjectId" typeName="string" />
+        <ECProperty propertyName="ModifiedTimeStamp" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="User" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="File" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

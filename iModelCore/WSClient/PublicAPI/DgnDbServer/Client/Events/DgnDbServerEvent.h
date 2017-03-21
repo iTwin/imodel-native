@@ -36,13 +36,11 @@ namespace DgnDbServerEvent
         }
     namespace CodeEventProperties
         {
-        static Utf8CP CodeAuthorityId = "CodeAuthorityId";
-        static Utf8CP Namespace = "Namespace";
+        static Utf8CP CodeSpecId = "CodeSpecId";
+        static Utf8CP CodeScope = "CodeScope";
         static Utf8CP Values = "Values";
-        static Utf8CP Reserved = "Reserved";
-        static Utf8CP Used = "Used";
+        static Utf8CP State = "State";
         static Utf8CP BriefcaseId = "BriefcaseId";
-        static Utf8CP UsedWithRevision = "UsedWithRevision";
         }
     namespace DeletedEventProperties
         {
