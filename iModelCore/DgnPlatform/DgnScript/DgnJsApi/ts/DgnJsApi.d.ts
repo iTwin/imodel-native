@@ -954,6 +954,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
 
     type GeometryCollectionP = cxx_pointer<GeometryCollection>;
 
+    /** Projection of BentleyApi::Dgn::GeometryBuilder::CoordSys */
+    enum BuilderCoordSystem { }
+
     /**
      * GeometryBuilder - Projection of BentleyApi::Dgn::GeometryBuilder
      */
@@ -999,6 +1002,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          */
         static CreateFor2dModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint2dP, angle: AngleP): GeometryBuilderP;
 
+        //! Create builder from DgnModel and DgnCategoryId. A placement will be computed from the first appended GeometricPrimitive.
+        //! @note Only CoordSystem::World is supported for append and it's not possible to append a DgnGeometryPartId as it need to be positioned relative to a known coordinate system.
+        //!       Generally it's best if the application specifies a more meaningful placement than just using the GeometricPrimitive's local coordinate frame, ex. line mid point vs. start point.
+        static CreateWithAutoPlacement (model: DgnModelP, catid: DgnObjectIdP): GeometryBuilderP;
+
         /**
          * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
          * @param db    The DgnDb that will hold the DgnGeometryPart
@@ -1032,15 +1040,17 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /**
          * Append a geometry of some kind
          * @param geometry  The geometry
+         * @param coordSystem The coordinate system used by the geometry, either BuilderCoordSystem.Local or BuilderCoordSystem.World
          */
-        AppendGeometry(geometry: GeometryP): void;
+        AppendGeometry(geometry: GeometryP, coordSystem: cxx_enum_class_uint32_t<BuilderCoordSystem>): void;
 
         /**
          * Append the geometry from a GeometryNode.
          * @remark All leaf geometry is transformed to the node's root coordinates and saved as separate geometry items.
          * @param node the root of the geometry.
+         * @param coordSystem The coordinate system used by the geometry, either BuilderCoordSystem.Local or BuilderCoordSystem.World
          */
-        AppendGeometryNode(node: GeometryNodeP): void;
+        AppendGeometryNode(node: GeometryNodeP, coordSystem: cxx_enum_class_uint32_t<BuilderCoordSystem>): void;
 
         /**
          * Append an instance of a DgnGeometryPart
