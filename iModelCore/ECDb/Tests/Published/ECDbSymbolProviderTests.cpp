@@ -99,17 +99,17 @@ TEST_F(ECDbSymbolProviderTests, Name)
 //---------------------------------------------------------------------------------------
 // @bsitest                                       Grigas.Petraitis              07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSymbolProviderTests, GetClassId)
+TEST_F(ECDbSymbolProviderTests, GetECClassId)
     {
     Utf8CP schemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.13\" prefix=\"bcs\" />"
-        "    <ECEntityClass typeName=\"TestClass\" displayLabel=\"Class With Calculated Property\" isDomainClass=\"True\">"
+        "    <ECEntityClass typeName=\"TestClass\" displayLabel=\"Class With Calculated Property\">"
         "        <ECProperty propertyName=\"my_class_id\" typeName=\"string\">"
         "            <ECCustomAttributes>"
         "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
-        "                    <ECExpression>GetClassId(\"TestClass\", \"TestSchema\")</ECExpression>"
+        "                    <ECExpression>GetECClassId(\"TestClass\", \"TestSchema\")</ECExpression>"
         "                    <FailureValue>Unknown</FailureValue>"
         "                </CalculatedECPropertySpecification>"
         "            </ECCustomAttributes>"

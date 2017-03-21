@@ -881,16 +881,20 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
                             </ECEntityClass>
                             <ECEntityClass typeName="Child">
                               <ECProperty propertyName="Name" typeName="string" />
+                              <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward"/>
                             </ECEntityClass>
                             <ECEntityClass typeName="SpecialChild">
                               <BaseClass>Child</BaseClass>
                               <ECProperty propertyName="SpecialName" typeName="string" />
                             </ECEntityClass>
-                            <ECRelationshipClass typeName="Rel" strength="Referencing">
-                                <Source multiplicity="(0..1)" polymorphic="False">
+                            <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+                                <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                                </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="False" roleLabel="Parent">
                                    <Class class ="Parent" />
                                 </Source>
-                                <Target multiplicity="(0..*)" polymorphic="True">
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Children">
                                    <Class class ="Child" />
                                 </Target>
                             </ECRelationshipClass>
@@ -908,14 +912,12 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SpecialChild(Name,SpecialName) VALUES('Child2','I am special')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(specialChildKey)) << stmt.GetECSql();
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Child SET MyParent.Id=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, childKey.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    stmt.Reset();
-    stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, specialChildKey.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
