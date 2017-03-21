@@ -19,7 +19,7 @@ class Writer(object):
                          "|\n"                                                                                         \
                          "|     $Source: ConnectC/Tools/pyCApiGen/Writer.py $\n"                                       \
                          "|\n"                                                                                         \
-                         "|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $\n"              \
+                         "|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $\n"              \
                          "|\n"                                                                                         \
                          "+--------------------------------------------------------------------------------------*/\n" \
 
@@ -69,11 +69,22 @@ class Writer(object):
 
     def ecschemas_have_ecclass_with_property_type(self, property_type):
         for ecschema in self._ecschemas:
-            for ecclass in ecschema.get_classes():
-                if ecclass.does_contain_property_type(property_type):
-                    return True
+            if self.ecschema_has_ecclass_with_property_type(ecschema, property_type):
+                return True
         return False
-
+    
+    def ecschema_has_ecclass_with_property_type(self, ecschema, property_type):
+        for ecclass in ecschema.get_classes():
+            if ecclass.does_contain_property_type(property_type):
+                return True
+        return False
+    
+    def ecschema_has_included_ecclass_with_property_type(self, ecschema, property_type):
+        for ecclass in ecschema.get_classes():
+            if not ecclass.should_exclude_entire_class() and ecclass.does_contain_property_type(property_type):
+                return True
+        return False
+    
     def _write_header_comments(self, is_header=False, should_include_in_api=None):
         self._file.write(self._COMMENT_Copyright)
         if is_header:
@@ -133,35 +144,36 @@ class Writer(object):
         accessor_str += "    switch (buf->lSchemaType)\n"
         accessor_str += "        {\n"
         for schema in self._ecschemas:
-            accessor_str += '        case SCHEMA_TYPE_{0}:\n'.format(schema.get_upper_name())
-            accessor_str += '            {\n'
-            if property_type is 'StringLength':
+            if self.ecschema_has_included_ecclass_with_property_type(schema, property_type):
+                accessor_str += '        case SCHEMA_TYPE_{0}:\n'.format(schema.get_upper_name())
+                accessor_str += '            {\n'
+                if property_type is 'StringLength':
                     accessor_str += "            return {0}_GetStringLength".format(schema.get_name())
-            else:
-                accessor_str += "            return {0}_Get{1}Property".format(schema.get_name(), property_type.title())
-            if property_type == "string":
-                accessor_str += "(api, buf, bufferProperty, index, strLength, str);\n"
-            elif property_type == "StringLength":
-                accessor_str += "(api, buf, bufferProperty, index, outStringSize);\n"
-            elif property_type == "dateTime":
-                accessor_str += "(api, buf, bufferProperty, index, strLength, dateTime);\n"
-            elif property_type == "guid":
-                accessor_str += "(api, buf, bufferProperty, index, strLength, guid);\n"
-            elif property_type == "boolean":
-                accessor_str += "(api, buf, bufferProperty, index, boolean);\n"
-            elif property_type == "int":
-                accessor_str += "(api, buf, bufferProperty, index, integer);\n"
-            elif property_type == "double":
-                accessor_str += "(api, buf, bufferProperty, index, pDouble);\n"
-            elif property_type == "long":
-                accessor_str += "(api, buf, bufferProperty, index, pLong);\n"
-            else:
-                raise PropertyTypeError("Property type {0} not accepted".format(property_type))
-            accessor_str += '            }\n'
+                else:
+                    accessor_str += "            return {0}_Get{1}Property".format(schema.get_name(), property_type.title())
+                if property_type == "string":
+                    accessor_str += "(api, buf, bufferProperty, index, strLength, str);\n"
+                elif property_type == "StringLength":
+                    accessor_str += "(api, buf, bufferProperty, index, outStringSize);\n"
+                elif property_type == "dateTime":
+                    accessor_str += "(api, buf, bufferProperty, index, strLength, dateTime);\n"
+                elif property_type == "guid":
+                    accessor_str += "(api, buf, bufferProperty, index, strLength, guid);\n"
+                elif property_type == "boolean":
+                    accessor_str += "(api, buf, bufferProperty, index, boolean);\n"
+                elif property_type == "int":
+                    accessor_str += "(api, buf, bufferProperty, index, integer);\n"
+                elif property_type == "double":
+                    accessor_str += "(api, buf, bufferProperty, index, pDouble);\n"
+                elif property_type == "long":
+                    accessor_str += "(api, buf, bufferProperty, index, pLong);\n"
+                else:
+                    raise PropertyTypeError("Property type {0} not accepted".format(property_type))
+                accessor_str += '            }\n'
         accessor_str += "        default:\n"
         accessor_str += '            api->SetStatusMessage("{1}");\n            api->SetStatusDescription("{2}");\n' \
                         '            return {0};\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
-                                                           "The buffer type passed in is invalid.")
+                                                            "The buffer type passed in is invalid.")
         accessor_str += "        }\n"
         accessor_str += "    }\n"
         return accessor_str
