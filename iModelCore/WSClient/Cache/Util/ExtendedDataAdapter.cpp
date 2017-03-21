@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/ExtendedDataAdapter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,8 +51,8 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
 
     ECInstanceKey holderKey = m_delegate.GetHolderKey(ownerKey);
 
-    statement->BindId(1, holderKey.GetECClassId());
-    statement->BindId(2, holderKey.GetECInstanceId());
+    statement->BindId(1, holderKey.GetClassId());
+    statement->BindId(2, holderKey.GetInstanceId());
 
     ECInstanceId extendedDataId;
     Utf8String content;
@@ -97,7 +97,7 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
             });
 
         statement->BindText(1, content.c_str(), IECSqlBinder::MakeCopy::No);
-        statement->BindId(2, data.m_extendedDataKey.GetECInstanceId());
+        statement->BindId(2, data.m_extendedDataKey.GetInstanceId());
 
         DbResult status;
         if (BE_SQLITE_DONE != (status = statement->Step()))

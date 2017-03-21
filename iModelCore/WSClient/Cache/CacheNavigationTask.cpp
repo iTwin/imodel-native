@@ -456,7 +456,7 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
         m_statementCache = std::make_shared <ECSqlStatementCache>(txn.GetCache().GetAdapter().GetECDb());
         }
 
-    ECClassCP objectClass = txn.GetCache().GetAdapter().GetECClass(instance.GetECClassId());
+    ECClassCP objectClass = txn.GetCache().GetAdapter().GetECClass(instance.GetClassId());
 
     if (!instance.IsValid() || nullptr == objectClass)
         {
@@ -470,7 +470,7 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
         return false;
         }
 
-    Utf8PrintfString key("IsObjectFileBacked:%s", instance.GetECClassId().ToString().c_str());
+    Utf8PrintfString key("IsObjectFileBacked:%s", instance.GetClassId().ToString().c_str());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]
         {
         return
@@ -481,7 +481,7 @@ bool CacheNavigationTask::IsObjectFileBacked(CacheTransactionCR txn, ECInstanceK
             "  AND file.[" + fileNameProperty + "] != ''";
         });
 
-    statement->BindId(1, instance.GetECInstanceId());
+    statement->BindId(1, instance.GetInstanceId());
 
     return BE_SQLITE_ROW == statement->Step();
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Hierarchy/CacheNodeKey.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ struct CacheNodeKey : public ECInstanceKey
     {
     CacheNodeKey() : ECInstanceKey() {}
     CacheNodeKey(ECClassId ecClassId, ECInstanceId const& ecInstanceId) : ECInstanceKey(ecClassId, ecInstanceId) {}
-    explicit CacheNodeKey(ECInstanceKeyCR key) : CacheNodeKey(key.GetECClassId(), key.GetECInstanceId()) {}
+    explicit CacheNodeKey(ECInstanceKeyCR key) : CacheNodeKey(key.GetClassId(), key.GetInstanceId()) {}
     };
 
 typedef const CacheNodeKey& CacheNodeKeyCR;

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/ObjectInfoManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -166,7 +166,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
         });
 
     statement->BindId(1, objectClass->GetId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindId(2, instanceKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -255,7 +255,7 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
         });
 
     statement->BindId(1, objectClass->GetId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindId(2, instanceKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -290,8 +290,8 @@ CachedObjectInfoKey ObjectInfoManager::ReadInfoKey(ECInstanceKeyCR instanceKey)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindId(1, instanceKey.GetClassId());
+    statement->BindId(2, instanceKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -366,7 +366,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR infoKe
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->BindId(1, infoKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -403,7 +403,7 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR relate
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, relatedKey.GetECInstanceId());
+    statement->BindId(1, relatedKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -473,7 +473,7 @@ ECInstanceKeyMultiMap& instanceKeysOut
             "WHERE related.ECInstanceId = ? ";
         });
 
-    statement->BindId(1, relatedKey.GetECInstanceId());
+    statement->BindId(1, relatedKey.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -517,7 +517,7 @@ bset<CachedInstanceKey>& instanceKeysOut
             "WHERE related.ECInstanceId = ? ";
         });
 
-    statement->BindId(1, relatedKey.GetECInstanceId());
+    statement->BindId(1, relatedKey.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -556,7 +556,7 @@ BentleyStatus ObjectInfoManager::ReadCachedInstanceIds(CacheNodeKeyCR relatedKey
             "WHERE related.ECInstanceId = ? ";
         });
 
-    statement->BindId(1, relatedKey.GetECInstanceId());
+    statement->BindId(1, relatedKey.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -603,7 +603,7 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey ObjectInfoManager::ConvertToInstanceKey(ECInstanceKeyCR instanceKey)
     {
-    if (m_infoClass->GetId() != instanceKey.GetECClassId())
+    if (m_infoClass->GetId() != instanceKey.GetClassId())
         return instanceKey;
 
     CacheNodeKey infoKey (instanceKey);

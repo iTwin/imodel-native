@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,7 +47,7 @@ ECInstanceKeyCR RelationshipInfo::GetInstanceKey() const
 +--------------------------------------------------------------------------------------*/
 void RelationshipInfo::SetInstanceId(ECInstanceId instanceId)
     {
-    m_instanceKey = ECInstanceKey(m_instanceKey.GetECClassId(), instanceId);
+    m_instanceKey = ECInstanceKey(m_instanceKey.GetClassId(), instanceId);
     m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_InstanceId] = ECDbHelper::StringFromECInstanceId(instanceId);
     }
 
