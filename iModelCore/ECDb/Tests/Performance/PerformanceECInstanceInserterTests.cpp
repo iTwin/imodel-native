@@ -298,13 +298,13 @@ struct PerformanceECSQLVersusECInstanceInserterTests : ECDbTestFixture
             std::vector<ECClassCP> testClasses;
             if (!Utf8String::IsNullOrEmpty(testClassName))
                 {
-                ECClassCP testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
+                ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
                 ASSERT_TRUE(testClass != nullptr);
                 testClasses.push_back(testClass);
                 }
             else
                 {
-                ECSchemaCP schema = ecdb.Schemas().GetECSchema(testSchemaName);
+                ECSchemaCP schema = ecdb.Schemas().GetSchema(testSchemaName);
                 ASSERT_TRUE(schema != nullptr);
                 for (auto ecClass : schema->GetClasses())
                     {

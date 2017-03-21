@@ -90,7 +90,7 @@ struct TableMap final : RefCounted<NonCopyableClass>
          ColumnMap const& GetECClassIdColumn() const { return m_classIdColumnMap; }
 
         //! Gets the primary ECClassId if the table stores a single class
-        ECN::ECClassId GetECClassId() const;
+        ECN::ECClassId GetClassId() const;
 
         //! Gets the primary Id column
         ColumnMap const& GetIdColumn() const { return m_instanceIdColumnMap; }

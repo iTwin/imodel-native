@@ -532,7 +532,7 @@ ClassMap const* ClassMapColumnFactory::UsedColumnFinder::ResolveMixin(ECN::ECCla
         return currentClassMap;
         }
 
-    for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass))
+    for (ECClassCP derivedClass : m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedClasses(currentClass))
         {
         if (currentClassMap = ResolveMixin(*derivedClass))
             return currentClassMap;
@@ -575,7 +575,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::TraverseClassHierarchy(EC
     if (currentClass.GetId() != m_classMap.GetClass().GetId() && IsMappedIntoContextClassMapTables(*currentClassMap))
         parentClassMap = currentClassMap;
 
-    ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedECClasses(currentClass);
+    ECDerivedClassesList const& derivedClasses = m_classMap.GetDbMap().GetECDb().Schemas().GetDerivedClasses(currentClass);
     if (derivedClasses.empty())
         {
         if (parentClassMap != nullptr)
@@ -599,7 +599,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::FindRelationshipEndTableM
     for (bpair<ECN::ECClassId, LightweightCache::RelationshipEnd> const& relKey : m_classMap.GetDbMap().GetLightweightCache().GetRelationshipClasssForConstraintClass(m_classMap.GetClass().GetId()))
         {
         //!We are interested in relationship that are end table and are persisted in m_classMap.GetJoinedTable()
-        ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetECClass(relKey.first);
+        ECClassCP relClass = m_classMap.GetDbMap().GetECDb().Schemas().GetClass(relKey.first);
         BeAssert(relClass != nullptr);
         ClassMap const* relMap = m_classMap.GetDbMap().GetClassMap(*relClass);
         if (relMap == nullptr || relMap->GetTables().empty())
@@ -649,7 +649,7 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::QueryRelevantMixIns()
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId mixinId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP classCP = ecdb.Schemas().GetECClass(mixinId);
+        ECClassCP classCP = ecdb.Schemas().GetClass(mixinId);
         if (!classCP->IsEntityClass() || !classCP->GetEntityClassCP()->IsMixin())
             {
             BeAssert(false && "SQL query has issue. Something changed about Mixin CA");

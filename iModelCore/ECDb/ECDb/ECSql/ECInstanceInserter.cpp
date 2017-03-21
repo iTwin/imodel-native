@@ -395,7 +395,7 @@ DbResult ECInstanceInserter::Impl::Insert(ECN::IECInstanceR instance, bool autog
     if (!autogenerateECInstanceId)
         return BE_SQLITE_OK;
 
-    return SUCCESS == ECInstanceAdapterHelper::SetECInstanceId(instance, newInstanceKey.GetECInstanceId()) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    return SUCCESS == ECInstanceAdapterHelper::SetECInstanceId(instance, newInstanceKey.GetInstanceId()) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

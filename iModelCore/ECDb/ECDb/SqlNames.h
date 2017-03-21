@@ -8,7 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "DbSchema.h"
-#include "ECDbSchemaPersistenceHelper.h"
+#include "SchemaPersistenceHelper.h"
 #include "ECDbSystemSchemaHelper.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -157,11 +157,11 @@ static_assert((int) ECN::ECClassType::CustomAttribute == 3 &&
 (int) ECN::ECClassType::Struct == 2, "Persisted Enum has changed: ECN::ECClassType.");
 
 
-static_assert((int) ECPropertyKind::Navigation == 4 &&
-(int) ECPropertyKind::Primitive == 0 &&
-(int) ECPropertyKind::PrimitiveArray == 2 &&
-(int) ECPropertyKind::Struct == 1 &&
-(int) ECPropertyKind::StructArray == 3, "Persisted Enum has changed: ECPropertyKind.");
+static_assert((int) PropertyKind::Navigation == 4 &&
+(int) PropertyKind::Primitive == 0 &&
+(int) PropertyKind::PrimitiveArray == 2 &&
+(int) PropertyKind::Struct == 1 &&
+(int) PropertyKind::StructArray == 3, "Persisted Enum has changed: PropertyKind.");
 
 static_assert((int) ECN::StrengthType::Embedding == 2 &&
 (int) ECN::StrengthType::Holding == 1 &&
@@ -180,11 +180,11 @@ static_assert((int) ForeignKeyDbConstraint::ActionType::Cascade == 1 &&
 (int) ForeignKeyDbConstraint::ActionType::SetDefault == 4 &&
 (int) ForeignKeyDbConstraint::ActionType::SetNull == 3, "Persisted Enum has changed: ForeignKeyDbConstraint::ActionType.");
 
-static_assert((int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 30 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 992 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema == 1 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
+static_assert((int) SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 30 &&
+(int) SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 992 &&
+(int) SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema == 1 &&
+(int) SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+(int) SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
 
 static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Boolean == 0x201 &&

@@ -216,7 +216,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
             //"<Rootclass name><Rootclass ECInstanceId column name>"
             ECClassId rootClassId = baseClassMap.GetTphHelper()->DetermineTphRootClassId();
             BeAssert(rootClassId.IsValid());
-            ECClassCP rootClass = m_ecdb.Schemas().GetECClass(rootClassId);
+            ECClassCP rootClass = m_ecdb.Schemas().GetClass(rootClassId);
             if (rootClass == nullptr)
                 {
                 BeAssert(false && "There should always be a root class map which defines the TablePerHierarchy strategy");

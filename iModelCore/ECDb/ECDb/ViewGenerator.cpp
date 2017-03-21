@@ -32,7 +32,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     {
     if (ecdb.IsReadonly())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -44,11 +44,11 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
-    ECDbMap const& map = ecdb.Schemas().GetDbMap();
+    DbMap const& map = ecdb.Schemas().GetDbMap();
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
+        ECClassCP ecClass = ecdb.Schemas().GetClass(classId);
         if (ecClass == nullptr)
             return ERROR;
 
@@ -99,7 +99,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     {
     if (ecdb.IsReadonly())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateECClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -136,7 +136,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
         if (!classId.IsValid())
             return ERROR;
 
-        ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
+        ECClassCP ecClass = ecdb.Schemas().GetClass(classId);
         if (ecClass == nullptr)
             {
             BeAssert(ecClass != nullptr);
@@ -306,7 +306,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 
         if (updateTables.find(&partition.GetTable()) != updateTables.end())
             {//<----------UPDATE trigger----------
-            ECClassCP rootClass = ecdb.Schemas().GetECClass(partition.GetRootClassId());
+            ECClassCP rootClass = ecdb.Schemas().GetClass(partition.GetRootClassId());
             if (rootClass == nullptr)
                 {
                 BeAssert(false);
@@ -480,7 +480,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
             }
 
         NativeSqlBuilder view;
-        ECClass const* tableRootClass = ctx.GetECDb().Schemas().GetECClass(partition->GetRootClassId());
+        ECClass const* tableRootClass = ctx.GetECDb().Schemas().GetClass(partition->GetRootClassId());
         if (tableRootClass == nullptr || tableRootClass->GetClassType() != ECClassType::Entity)
             {
             BeAssert(false);
@@ -614,7 +614,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             continue;
 
         NativeSqlBuilder view;
-        ECClass const* relationshipECClass = ctx.GetECDb().Schemas().GetECClass(partition.GetRootClassId());
+        ECClass const* relationshipECClass = ctx.GetECDb().Schemas().GetClass(partition.GetRootClassId());
         if (relationshipECClass == nullptr || !relationshipECClass->IsRelationshipClass())
             {
             BeAssert(false);

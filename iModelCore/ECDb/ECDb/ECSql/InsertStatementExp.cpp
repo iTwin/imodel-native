@@ -6,9 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "InsertStatementExp.h"
-
-using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -16,18 +13,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp(unique_ptr<ClassNameExp>& classNameExp, unique_ptr<PropertyNameListExp>& propertyNameListExp, unique_ptr<ValueExpListExp>& valuesExp)
+InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp, std::unique_ptr<ValueExpListExp>& valuesExp)
     : Exp(Type::Insert), m_isOriginalPropertyNameListUnset(propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
     {
-    m_classNameExpIndex = AddChild(move(classNameExp));
+    m_classNameExpIndex = AddChild(std::move(classNameExp));
 
     if (propertyNameListExp == nullptr)
-        {
-        propertyNameListExp = unique_ptr<PropertyNameListExp>(new PropertyNameListExp());
-        }
+        propertyNameListExp = std::make_unique<PropertyNameListExp>();
 
-    m_propertyNameListExpIndex = AddChild(move(propertyNameListExp));
-    m_valuesExpIndex = AddChild(move(valuesExp));
+    m_propertyNameListExpIndex = AddChild(std::move(propertyNameListExp));
+    m_valuesExpIndex = AddChild(std::move(valuesExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -49,7 +44,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             auto propNameListExp = GetPropertyNameListExpP();
             if (IsOriginalPropertyNameListUnset())
                 {
-                auto addDelegate = [&propNameListExp] (unique_ptr<PropertyNameExp>& propNameExp)
+                auto addDelegate = [&propNameListExp] (std::unique_ptr<PropertyNameExp>& propNameExp)
                     {
                     //ECInstanceId is treated separately
                     const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
@@ -93,7 +88,7 @@ bool InsertStatementExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, P
         if (&parameterExp == valueExp)
             {
             BeAssert(valueExp->IsParameterExp());
-            auto propNameExp = propNameListExp->GetPropertyNameExp(i);
+            PropertyNameExp const* propNameExp = propNameListExp->GetPropertyNameExp(i);
             BeAssert(propNameExp != nullptr);
             parameterExp.SetTargetExpInfo(*propNameExp);
             return true;

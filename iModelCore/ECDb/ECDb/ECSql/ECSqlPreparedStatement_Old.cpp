@@ -412,7 +412,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
             return BE_SQLITE_CONSTRAINT_UNIQUE;
             }
 
-        instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetECClassId(), ecinstanceidOfInsert);
+        instanceKey = ECInstanceKey(m_ecInstanceKeyInfo.GetClassId(), ecinstanceidOfInsert);
         return BE_SQLITE_DONE;
         }
 
@@ -447,7 +447,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
 //---------------------------------------------------------------------------------------
 void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
-    BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid());
+    BeAssert(ecInstanceKeyInfo.GetClassId().IsValid());
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
     }
 

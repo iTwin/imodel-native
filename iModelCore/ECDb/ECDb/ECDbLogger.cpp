@@ -34,7 +34,7 @@ BentleyApi::NativeLogging::ILogger& ECDbLogger::Get()
 //static
 void ECDbLogger::LogSqliteError(BeSQLite::Db const& db, BeSQLite::DbResult sqliteStat, Utf8CP errorMessageHeader)
     {
-    if (BE_SQLITE_OK == sqliteStat || Get().isSeverityEnabled(NativeLogging::LOG_ERROR))
+    if (BE_SQLITE_OK == sqliteStat || !Get().isSeverityEnabled(NativeLogging::LOG_ERROR))
         return;
 
     if (errorMessageHeader == nullptr)

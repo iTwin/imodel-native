@@ -165,7 +165,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
             if (ctx.IsParentOfJoinedTable())
                 {
-                auto joinedTableClass = ctx.GetECDb().Schemas().GetECClass(ctx.GetJoinedTableClassId());
+                auto joinedTableClass = ctx.GetECDb().Schemas().GetClass(ctx.GetJoinedTableClassId());
                 auto joinedTableMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*joinedTableClass);
                 if (SUCCESS != joinedTableMap->GetStorageDescription().GenerateECClassIdFilter(systemWhereClause, *table,
                     classIdColumn,

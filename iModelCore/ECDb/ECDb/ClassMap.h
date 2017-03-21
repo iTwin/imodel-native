@@ -15,7 +15,7 @@
 #include "ClassMapColumnFactory.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbMap;
+struct DbMap;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
@@ -40,7 +40,7 @@ public:
         m_navPropMaps.push_back(&propMap); 
         }
 
-    BentleyStatus Postprocess(ECDbMap const&);
+    BentleyStatus Postprocess(DbMap const&);
     };
 
 struct NativeSqlBuilder;
@@ -174,7 +174,7 @@ struct ClassMap : RefCountedBase
 
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-        ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
+        DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         Utf8String GetUpdatableViewName() const;
         DbTable const* ExpectingSingleTable() const;
 

@@ -154,7 +154,7 @@ void SystemPropertyExpIndexMap::AddIfSystemProperty(PropertyNameExp const& exp, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       12/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
-void SystemPropertyExpIndexMap::AddIfSystemProperty(ECDbSchemaManager const& schemaManager, ECN::ECPropertyCR prop, size_t index)
+void SystemPropertyExpIndexMap::AddIfSystemProperty(SchemaManager const& schemaManager, ECN::ECPropertyCR prop, size_t index)
     {
     ECSqlSystemPropertyInfo const& sysPropInfo = schemaManager.GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(prop);
     if (sysPropInfo.IsSystemProperty())

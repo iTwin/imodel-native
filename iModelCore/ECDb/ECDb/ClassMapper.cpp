@@ -530,7 +530,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         return ERROR;
         }
 
-    ECDbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
+    DbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
     ECN::NavigationECPropertyCP navigationProperty = propertyMap.GetProperty().GetAsNavigationProperty();
     ClassMap const* relClassMap = ecdbMap.GetClassMap(*navigationProperty->GetRelationshipClass());
     if (relClassMap == nullptr)

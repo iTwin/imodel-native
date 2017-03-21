@@ -15,7 +15,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbMap;
+struct DbMap;
 struct ClassMap;
 struct ClassMappingInfo;
 struct SchemaImportContext;
@@ -92,8 +92,8 @@ public:
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
-    ECDbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
-    ECN::ECClassCR GetECClass() const {return m_ecClass;}
+    DbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
+    ECN::ECClassCR GetClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}

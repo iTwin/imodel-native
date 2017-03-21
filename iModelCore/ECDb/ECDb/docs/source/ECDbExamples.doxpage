@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECDbExamples.doxpage $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@
 
     @section ECDbCodeSampleImportECSchema Import an ECSchema into an ECDb file
 
-    ECSchema(s) are imported into the @ref ECDbFile "ECDb file" using the ECDbSchemaManager.
+    ECSchema(s) are imported into the @ref ECDbFile "ECDb file" using the SchemaManager.
     The following shows a code snippet that imports an ECSchema from an ECSchema XML file on disk.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ImportSchema,Example]
@@ -382,7 +382,7 @@
     $SAMPLECODE_END
 
     ### 3) Import ECSchema into an %ECDb file
-    The ECSchema(s) you created in step 1) are imported into the @ref ECDbFile "ECDb file" using the ECDbSchemaManager.
+    The ECSchema(s) you created in step 1) are imported into the @ref ECDbFile "ECDb file" using the SchemaManager.
     The following shows a code snippet that imports an ECSchema from an ECSchema XML file on disk.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_ImportSchema,Example]

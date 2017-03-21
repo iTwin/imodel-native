@@ -6,26 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "DeleteStatementExp.h"
-#include "Exp.h"
-using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-DeleteStatementExp::DeleteStatementExp(unique_ptr<ClassRefExp> classNameExp, unique_ptr<WhereExp> whereClauseExp, unique_ptr<OptionsExp> optionsClauseExp)
+DeleteStatementExp::DeleteStatementExp(std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsClauseExp)
     : Exp(Type::Delete), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
     BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
-    m_classNameExpIndex = AddChild(move(classNameExp));
+    m_classNameExpIndex = AddChild(std::move(classNameExp));
 
     if (whereClauseExp != nullptr)
-        m_whereClauseIndex = (int) AddChild(move(whereClauseExp));
+        m_whereClauseIndex = (int) AddChild(std::move(whereClauseExp));
 
     if (optionsClauseExp != nullptr)
-        m_optionsClauseIndex = (int) AddChild(move(optionsClauseExp));
+        m_optionsClauseIndex = (int) AddChild(std::move(optionsClauseExp));
     }
 
 //-----------------------------------------------------------------------------------------

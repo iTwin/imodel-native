@@ -25,7 +25,7 @@ protected:
                 ApplyECDbSettings(true, false, true);
                 }
 
-            ECCrudWriteToken const* GetToken() const { return GetECDbSettings().GetECCrudWriteToken(); }
+            ECCrudWriteToken const* GetToken() const { return GetECDbSettings().GetCrudWriteToken(); }
         };
     };
 
@@ -137,7 +137,7 @@ TEST_F(ECCrudWriteTokenTestFixture, Test)
 
     auto runAdapters = [] (ECDbCR ecdb, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
-        ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+        ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
         ASSERT_TRUE(testClass != nullptr);
         Utf8CP writeTokenStr = writeToken != nullptr ? "yes" : "no";
 
@@ -186,13 +186,13 @@ TEST_F(ECCrudWriteTokenTestFixture, Test)
         };
     auto openBlobIO = [] (ECDbCR ecdb, ECInstanceKey const& key, BlobIoOpenMode openMode, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
-        ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+        ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
         ASSERT_TRUE(testClass != nullptr);
         Utf8CP writeTokenStr = writeToken != nullptr ? "yes" : "no";
         Utf8CP openModeStr = openMode == BlobIoOpenMode::Readonly ? "readonly" : "readwrite";
 
         BlobIO io;
-        ASSERT_EQ(expected == ExpectedResult::Success, SUCCESS == ecdb.OpenBlobIO(io, *testClass, "Bi", key.GetECInstanceId(), openMode == BlobIoOpenMode::ReadWrite, writeToken)) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
+        ASSERT_EQ(expected == ExpectedResult::Success, SUCCESS == ecdb.OpenBlobIO(io, *testClass, "Bi", key.GetInstanceId(), openMode == BlobIoOpenMode::ReadWrite, writeToken)) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
         ASSERT_EQ(expected == ExpectedResult::Success, io.IsValid()) << "ECDb: " << ecdb.GetDbFileName() << " openMode: " << openModeStr << " WriteToken: " << writeTokenStr;
         };
 

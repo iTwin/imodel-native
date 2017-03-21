@@ -59,7 +59,7 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
         }
 
     Savepoint sp(const_cast<ECDbR>(ecdb), "ECSchema Import");
-    BentleyStatus schemaImportStatus = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
+    BentleyStatus schemaImportStatus = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
     if (schemaImportStatus == SUCCESS)
         sp.Commit();
     else
@@ -85,7 +85,7 @@ bool SchemaImportTestFixture::HasDataCorruptingMappingIssues(ECDbCR ecdb)
         return true;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb,ECDbSchemaManager::GetValidateDbMappingSql()))
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SchemaManager::GetValidateDbMappingSql()))
         {
         EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
         return true;
@@ -219,7 +219,7 @@ void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName,
 //---------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
+bool DbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, ShareColumnsMode, SharedColumnCount, SharedColumnCountPerOverflowTable, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
@@ -247,7 +247,7 @@ bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, E
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                 03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, ECN::ECPropertyCR prop) const
+bool DbMappingTestFixture::TryGetColumnInfo(std::vector<ColumnInfo>& colInfos, ECDbCR ecdb, ECN::ECPropertyCR prop) const
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement(
         //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT

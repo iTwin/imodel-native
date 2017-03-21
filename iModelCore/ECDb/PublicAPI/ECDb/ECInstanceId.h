@@ -36,18 +36,18 @@ public:
 struct ECInstanceKey
     {
 private:
-    ECN::ECClassId m_ecClassId;
-    ECInstanceId m_ecInstanceId;
+    ECN::ECClassId m_classId;
+    ECInstanceId m_instanceId;
    
 public:
     //! Construct an empty/invalid ECInstanceKey
     ECInstanceKey() {}
 
     //! Construct an ECInstanceKey
-    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
+    ECInstanceKey(ECN::ECClassId classId, ECInstanceId instanceId) : m_classId(classId), m_instanceId(instanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
-    bool operator==(ECInstanceKey const& other) const { return m_ecClassId == other.m_ecClassId && m_ecInstanceId == other.m_ecInstanceId; }
+    bool operator==(ECInstanceKey const& other) const { return m_classId == other.m_classId && m_instanceId == other.m_instanceId; }
     
     //! Compare this ECInstanceKey with another key for inequality
     bool operator!=(ECInstanceKey const& other) const { return !(*this == other); }
@@ -55,22 +55,22 @@ public:
     //! Compare this ECInstanceKey with another key for ordering
     bool operator<(ECInstanceKey const& other) const
         {
-        if (m_ecClassId < other.m_ecClassId)
+        if (m_classId < other.m_classId)
             return true;
 
-        if (m_ecClassId > other.m_ecClassId)
+        if (m_classId > other.m_classId)
             return false;
 
-        return m_ecInstanceId < other.m_ecInstanceId;
+        return m_instanceId < other.m_instanceId;
         }
 
     //! Get the ECClassId of this key
-    ECN::ECClassId GetECClassId() const { return m_ecClassId; }
+    ECN::ECClassId GetClassId() const { return m_classId; }
     //! Get the ECInstanceId of this key
-    ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
+    ECInstanceId GetInstanceId() const { return m_instanceId; }
     
     //! Test if this key is valid
-    bool IsValid() const { return (m_ecClassId.IsValid() && m_ecInstanceId.IsValid()); }
+    bool IsValid() const { return (m_classId.IsValid() && m_instanceId.IsValid()); }
     };
 
 typedef ECInstanceKey const& ECInstanceKeyCR;

@@ -26,10 +26,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 enum class ECSqlType
     {
-    Select, //!< ECSQL SELECT
-    Insert, //!< ECSQL INSERT
-    Update, //!< ECSQL UPDATE
-    Delete //!< ECSQL DELETE
+    Select,
+    Insert,
+    Update,
+    Delete
     };
 
 //*** ECSQL / SQL Operators ***

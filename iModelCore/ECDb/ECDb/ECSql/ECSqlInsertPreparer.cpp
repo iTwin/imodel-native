@@ -63,6 +63,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
 #endif
+    PrepareClassId(ctx, nativeSqlSnippets, classMap);
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
@@ -97,7 +98,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
 #ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
 #endif
-
+    PrepareClassId(ctx, nativeSqlSnippets, relationshipClassMap);
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR(), nativeSqlSnippets, exp);
     return ECSqlStatus::Success;
     }
@@ -244,8 +245,35 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
     return ECSqlStatus::Success;
     }
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    12/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+void ECSqlInsertPreparer::PrepareClassId(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap)
+    {
+    SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
+    if (classIdPropMap == nullptr || classIdPropMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
+        return;
 
+    nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder(classIdPropMap->GetColumn().GetName().c_str())});
+
+
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+    NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+    classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+#else
+    NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+    ECClassId classId = classMap.GetClass().GetId();
+    if (ParentOfJoinedTableECSqlStatement const* joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
+        classId = joinedTableStatement->GetClassId();
+
+    classIdSqliteSnippets[0].Append(classId);
+#endif
+
+    nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(classIdSqliteSnippets);
+    }
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -298,22 +326,6 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         BeAssert(ecinstanceidBinder->GetMappedSqlParameterNames().size() == 1);
         preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].Append(ecinstanceidBinder->GetMappedSqlParameterNames()[0].c_str());
-        }
-    if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))
-        {
-        if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Physical)
-            {
-            NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdMap->GetColumn().GetName().c_str())};
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
-
-            NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
-            ECClassId classId = classMap.GetClass().GetId();
-            if (ParentOfJoinedTableECSqlStatement const* joinedTableStatement = dynamic_cast<ParentOfJoinedTableECSqlStatement const*>(&ctx.GetECSqlStatementR()))
-                classId = joinedTableStatement->GetClassId();
-
-            classIdSqliteSnippets[0].Append(classId);
-            nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
-            }
         }
     }
 

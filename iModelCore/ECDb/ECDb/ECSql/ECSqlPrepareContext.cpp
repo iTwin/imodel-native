@@ -91,7 +91,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         return nullptr;
         }
 
-    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetECClass(parentOfJoinedTableClassId);
+    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetClass(parentOfJoinedTableClassId);
     if (parentOfJoinedTableClass == nullptr)
         {
         BeAssert(false && "Root class for joined table must exist.");
@@ -223,7 +223,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         return nullptr;
         }
 
-    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetECClass(parentOfJoinedTableClassId);
+    ECClassCP parentOfJoinedTableClass = ctx.GetECDb().Schemas().GetClass(parentOfJoinedTableClassId);
     if (parentOfJoinedTableClass == nullptr)
         {
         BeAssert(false && "Root class for joined table must exist.");

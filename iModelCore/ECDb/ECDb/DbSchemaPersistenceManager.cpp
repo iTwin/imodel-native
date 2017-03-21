@@ -434,7 +434,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
 
     BeAssert(index.HasClassId());
 
-    ECClassCP ecclass = ecdb.Schemas().GetECClass(index.GetClassId());
+    ECClassCP ecclass = ecdb.Schemas().GetClass(index.GetClassId());
     if (ecclass == nullptr)
         {
         BeAssert(false);

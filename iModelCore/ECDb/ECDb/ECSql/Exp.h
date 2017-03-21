@@ -56,13 +56,13 @@ struct PropertyPath final
 
     private:
         std::vector<Location> m_path;
-        ClassMap const* m_classMap;
+        ClassMap const* m_classMap = nullptr;
 
         void Reset();
         void Clear();
 
     public:
-        PropertyPath() : m_classMap(nullptr) {}
+        PropertyPath() {}
         ~PropertyPath() {}
 
         PropertyPath(PropertyPath const& rhs) : m_path(rhs.m_path), m_classMap(rhs.m_classMap) {}
@@ -243,9 +243,18 @@ struct Exp : NonCopyableClass
                     GenerateNameForUnnamedParameter = 1
                     };
 
+                struct ParameterNameInfo final
+                    {
+                    Utf8String m_name;
+                    bool m_isSystemGeneratedName = false;
+
+                    ParameterNameInfo() {}
+                    ParameterNameInfo(Utf8StringCR name, bool isSystemGeneratedName) : m_name(name), m_isSystemGeneratedName(isSystemGeneratedName) {}
+                    };
+
             private:
                 Mode m_mode;
-                bmap<int, bpair<Utf8String, bool>> m_parameterIndexNameMap;
+                bmap<int, ParameterNameInfo> m_parameterIndexNameMap;
 
                 Utf8String m_ecsqlBuilder;
 
@@ -253,7 +262,7 @@ struct Exp : NonCopyableClass
                 explicit ECSqlRenderContext(Mode mode = Mode::Default) : m_mode(mode) {}
 
                 Mode GetMode() const { return m_mode; }
-                bmap<int, bpair<Utf8String, bool>>& GetParameterIndexNameMap() { BeAssert(m_mode == Mode::GenerateNameForUnnamedParameter); return m_parameterIndexNameMap; }
+                bmap<int, ParameterNameInfo> const& GetParameterIndexNameMap() const { BeAssert(m_mode == Mode::GenerateNameForUnnamedParameter); return m_parameterIndexNameMap; }
                 ECSqlRenderContext& AppendToECSql(Utf8StringCR str) { m_ecsqlBuilder.append(str); return *this; }
                 ECSqlRenderContext& AppendToECSql(Utf8CP str) { m_ecsqlBuilder.append(str);  return *this; }
                 ECSqlRenderContext& AppendToECSql(Exp const& exp) { exp.ToECSql(*this);  return *this; }
@@ -261,10 +270,10 @@ struct Exp : NonCopyableClass
                 void AddParameterIndexNameMapping(int index, Utf8StringCR name, bool isSystemName)
                     {
                     auto it = m_parameterIndexNameMap.find(index);
-                    BeAssert(it == m_parameterIndexNameMap.end() || (it->second.first.Equals(name) && it->second.second == isSystemName));
+                    BeAssert(it == m_parameterIndexNameMap.end() || (it->second.m_name.Equals(name) && it->second.m_isSystemGeneratedName == isSystemName));
 
                     if (it == m_parameterIndexNameMap.end())
-                        m_parameterIndexNameMap[index] = bpair<Utf8String, bool>(name, isSystemName);
+                        m_parameterIndexNameMap.insert(bpair<int, ParameterNameInfo>(index, ParameterNameInfo(name, isSystemName)));
                     }
 
                 Utf8StringCR GetECSql() const { return m_ecsqlBuilder; }

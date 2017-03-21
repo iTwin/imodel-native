@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDb.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Overview_ECDb_Include.sampleCode
@@ -98,7 +98,7 @@ BentleyStatus ECDbImportSchemaFromECSchemaXml()
     // 2) Import ECSchema (and its references) into ECDb file. The schema and its references are available in the cache
     //    of the schema context from the XML deserialization step.
     bvector<ECSchemaCP> schemasToImport = schemaContext->GetCache().GetSchemas();
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemasToImport))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(schemasToImport))
         {
         // Schema(s) could not be imported into the ECDb file. Do error handling here
         ecdb.AbandonChanges();
@@ -122,7 +122,7 @@ BentleyStatus ECDbSchemaManagerGetSchema()
     // Retrieve a schema
     // (Passing false as third parameter indicates that classes of the schema should not be loaded along with the schema, 
     // but be loaded on demand)
-    ECSchemaCP fooSchema = ecdb.Schemas().GetECSchema("fooschema", false);
+    ECSchemaCP fooSchema = ecdb.Schemas().GetSchema("fooschema", false);
     if (fooSchema == nullptr)
         {
         // schema not found. do error handling here...
@@ -146,7 +146,7 @@ BentleyStatus ECDbSchemaManagerGetClass()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_SchemaManagerGetClass.sampleCode
 
     // Retrieve an ECClass
-    ECClassCP addressClass = ecdb.Schemas().GetECClass("fooschema", "Address");
+    ECClassCP addressClass = ecdb.Schemas().GetClass("fooschema", "Address");
     if (addressClass == nullptr)
         {
         // class not found. do error handling here...

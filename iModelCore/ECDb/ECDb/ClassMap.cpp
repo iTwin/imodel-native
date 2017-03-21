@@ -82,7 +82,7 @@ ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         const bool isExclusiveRootClassOfTable = DetermineIsExclusiveRootClassOfTable(ctx.GetClassMappingInfo());
         DbTable* table = TableMapper::FindOrCreateTable(GetDbMap().GetDbSchemaR(), ctx.GetClassMappingInfo().GetTableName(), tableType,
                                                         ctx.GetClassMappingInfo().MapsToVirtualTable(), ctx.GetClassMappingInfo().GetECInstanceIdColumnName(),
-                                                        isExclusiveRootClassOfTable ? ctx.GetClassMappingInfo().GetECClass().GetId() : ECClassId(),
+                                                        isExclusiveRootClassOfTable ? ctx.GetClassMappingInfo().GetClass().GetId() : ECClassId(),
                                                         primaryTable);
         if (table == nullptr)
             return ClassMappingStatus::Error;
@@ -673,7 +673,7 @@ StorageDescription const& ClassMap::GetStorageDescription() const
 //---------------------------------------------------------------------------------------
 std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
     {
-    ECDerivedClassesList const& derivedClasses = m_ecdb.Schemas().GetDerivedECClasses(GetClass());
+    ECDerivedClassesList const& derivedClasses = m_ecdb.Schemas().GetDerivedClasses(GetClass());
     std::vector<ClassMap const*> derivedClassMaps;
     for (ECClassCP derivedClass : derivedClasses)
         {
@@ -903,7 +903,7 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    01/2016
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
+BentleyStatus ClassMapLoadContext::Postprocess(DbMap const& ecdbMap)
     {
     for (ECN::ECClassCP constraintClass : m_constraintClasses)
         {

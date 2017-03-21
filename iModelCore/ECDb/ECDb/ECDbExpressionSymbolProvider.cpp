@@ -65,7 +65,7 @@ public:
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
-    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetECClassId, nullptr, const_cast<ECDb*>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetClassId, nullptr, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDb*>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDb*>(&m_db)));
@@ -74,7 +74,7 @@ void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::GetECClassId(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
+ExpressionStatus ECDbExpressionSymbolProvider::GetClassId(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
     {
     if (2 != args.size())
         return ExpressionStatus::WrongNumberOfArguments;
@@ -86,7 +86,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetECClassId(EvaluationResult& ev
     Utf8CP className = args[0].GetECValue()->GetUtf8CP();
     Utf8CP schemaName = args[1].GetECValue()->GetUtf8CP();
     ECDbCR db = *reinterpret_cast<ECDb const*>(context);
-    ECClassId classId = db.Schemas().GetECClassId(schemaName, className);
+    ECClassId classId = db.Schemas().GetClassId(schemaName, className);
     evalResult.InitECValue().SetLong(classId.GetValueUnchecked());
     return ExpressionStatus::Success;
     }
@@ -431,7 +431,7 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
         return SUCCESS;
     
     // search in all schemas
-    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetECSchemas();
+    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
     if (schemas.empty())
         return ERROR;
 

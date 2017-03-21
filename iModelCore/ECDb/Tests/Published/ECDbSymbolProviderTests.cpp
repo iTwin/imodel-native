@@ -47,9 +47,9 @@ TEST_F(ECDbSymbolProviderTests, Path)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
+    ECClassCP testClass = GetECDb().Schemas().GetClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value;
@@ -83,9 +83,9 @@ TEST_F(ECDbSymbolProviderTests, Name)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
+    ECClassCP testClass = GetECDb().Schemas().GetClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     BeFileName fullPath(GetECDb().GetDbFileName(), true);
@@ -105,7 +105,7 @@ TEST_F(ECDbSymbolProviderTests, GetECClassId)
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.13\" prefix=\"bcs\" />"
-        "    <ECEntityClass typeName=\"TestClass\" displayLabel=\"Class With Calculated Property\" isDomainClass=\"True\">"
+        "    <ECEntityClass typeName=\"TestClass\" displayLabel=\"Class With Calculated Property\">"
         "        <ECProperty propertyName=\"my_class_id\" typeName=\"string\">"
         "            <ECCustomAttributes>"
         "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
@@ -121,9 +121,9 @@ TEST_F(ECDbSymbolProviderTests, GetECClassId)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
+    ECClassCP testClass = GetECDb().Schemas().GetClass("TestSchema", "TestClass");
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value;
@@ -173,7 +173,7 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
         ECSchemaPtr schema;
         ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
         ECSchema::ReadFromXmlString(schema, GetTestSchemaXMLString().c_str(), *context);
-        GetECDb().Schemas().ImportECSchemas(context->GetCache().GetSchemas());
+        GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
         }
     
     /*---------------------------------------------------------------------------------**//**
@@ -211,7 +211,7 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsFalseWhenDoesntHaveAnyRelatedInstances)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
     
@@ -229,11 +229,11 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsFalseWhenDoes
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOneRelatedInstance)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
     
@@ -259,11 +259,11 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasOn
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMultipleRelatedInstances)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB1);
     IECInstancePtr instanceB2 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -298,11 +298,11 @@ TEST_F(ECDbExpressionSymbolContextTests, HasRelatedInstance_ReturnsTrueWhenHasMu
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelationshipWithSingleInstance)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB->SetValue("label", ECValue("B"));
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
@@ -329,12 +329,12 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelationshipWithSingleInstance)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("A"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
@@ -360,11 +360,11 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelationshipWithMultipleInstances)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB1 = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB1->SetValue("label", ECValue("B1"));
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB1);
@@ -394,7 +394,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsForwardRelati
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelationshipWithMultipleInstances)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA1 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA1->SetValue("label", ECValue("A1"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA1);
@@ -402,7 +402,7 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsBackwardRelat
     instanceA2->SetValue("label", ECValue("A2"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA2);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
@@ -449,14 +449,14 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlString(schema, differentSchemaXml, *ctx);
     ASSERT_TRUE(schema.IsValid());
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("A"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("DifferentSchema", "DifferentClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("DifferentSchema", "DifferentClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);
 
@@ -511,9 +511,9 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenImportingSchemas)
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(differentSchema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("ClassA Label"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
@@ -569,14 +569,14 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
     ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
-    GetECDb().Schemas().ImportECSchemas(ctx->GetCache().GetSchemas());
+    GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
 
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceA->SetValue("label", ECValue("ClassA Label"));
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classC = GetECDb().Schemas().GetECClass("DifferentSchema", "ClassC");
+    ECClassCP classC = GetECDb().Schemas().GetClass("DifferentSchema", "ClassC");
     IECInstancePtr instanceC = classC->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classC, nullptr).Insert(*instanceC);
 
@@ -614,7 +614,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAreNoRelatedInstances)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
     
@@ -631,11 +631,11 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsNullWhenThereAre
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbExpressionSymbolContextTests, GetRelatedValue_ReturnsRelatedInstanceValue)
     {
-    ECClassCP classA = GetECDb().Schemas().GetECClass("TestSchema", "ClassA");
+    ECClassCP classA = GetECDb().Schemas().GetClass("TestSchema", "ClassA");
     IECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
     ECInstanceInserter(GetECDb(), *classA, nullptr).Insert(*instanceA);
 
-    ECClassCP classB = GetECDb().Schemas().GetECClass("TestSchema", "ClassB");
+    ECClassCP classB = GetECDb().Schemas().GetClass("TestSchema", "ClassB");
     IECInstancePtr instanceB = classB->GetDefaultStandaloneEnabler()->CreateInstance();
     instanceB->SetValue("label", ECValue("test label"));
     ECInstanceInserter(GetECDb(), *classB, nullptr).Insert(*instanceB);

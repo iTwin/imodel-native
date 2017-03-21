@@ -29,7 +29,7 @@ struct SystemPropertyExpIndexMap : NonCopyableClass
         int GetIndex(ECSqlSystemPropertyInfo const& info) const { auto it = m_sysPropIndexMap.find(&info); return it == m_sysPropIndexMap.end() ? -1 : (int) it->second; }
 
         void AddIfSystemProperty(PropertyNameExp const&, size_t index);
-        void AddIfSystemProperty(ECDbSchemaManager const&, ECN::ECPropertyCR, size_t index);
+        void AddIfSystemProperty(SchemaManager const&, ECN::ECPropertyCR, size_t index);
     };
 
 //************************ AssignmentListExp ******************************

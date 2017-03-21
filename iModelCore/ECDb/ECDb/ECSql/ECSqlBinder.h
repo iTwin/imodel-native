@@ -56,8 +56,10 @@ struct ECSqlBinder : IECSqlBinder
     private:
         ECSqlTypeInfo m_typeInfo;
         std::vector<Utf8String> m_mappedSqlParameterNames;
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         std::function<void(ECInstanceId bindValue)> m_onBindECInstanceIdEventHandler;
         std::unique_ptr<std::vector<IECSqlBinder*>> m_onBindEventHandlers = nullptr;
+#endif
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
 
@@ -75,9 +77,10 @@ struct ECSqlBinder : IECSqlBinder
             m_mappedSqlParameterNames.insert(m_mappedSqlParameterNames.end(), memberBinderMappedParameterNames.begin(), memberBinderMappedParameterNames.end());
             }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         std::function<void(ECInstanceId bindValue)> GetOnBindECInstanceIdEventHandler() const { return m_onBindECInstanceIdEventHandler; }
         std::vector<IECSqlBinder*>* GetOnBindEventHandlers() { return m_onBindEventHandlers.get(); }
-
+#endif
 
         ECSqlStatus LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
 
@@ -97,8 +100,10 @@ struct ECSqlBinder : IECSqlBinder
 
         ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
         void OnClearBindings() { return _OnClearBindings(); }
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
         void SetOnBindECInstanceIdEventHandler(std::function<void(ECInstanceId bindValue)> eventHandler) { BeAssert(m_onBindECInstanceIdEventHandler == nullptr); m_onBindECInstanceIdEventHandler = eventHandler; }
+#endif
     };
 
 struct IdECSqlBinder;
@@ -123,214 +128,6 @@ struct ECSqlBinderFactory final
     };
 
 //=======================================================================================
-// @bsiclass                                                 Krischan.Eberle    03/2017
-//+===============+===============+===============+===============+===============+======
-struct ProxyECSqlBinder final : IECSqlBinder
-    {
-private:
-    std::vector<IECSqlBinder*> m_binders;
-    std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBinders;
-    std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
-
-    ECSqlStatus _BindNull() override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindNull();
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindBoolean(bool value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindBoolean(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindBlob(value, blobSize, makeCopy);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindZeroBlob(int blobSize) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindZeroBlob(blobSize);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindDateTime(julianDay, dtInfo);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindDateTime(julianDayMsec, dtInfo);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindDouble(double value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindDouble(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindInt(int value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindInt(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindInt64(int64_t value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindInt64(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindPoint2d(DPoint2dCR value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindPoint2d(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-    ECSqlStatus _BindPoint3d(DPoint3dCR value) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindPoint3d(value);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override
-        {
-        for (IECSqlBinder* binder : m_binders)
-            {
-            ECSqlStatus stat = binder->BindText(value, makeCopy, byteCount);
-            if (!stat.IsSuccess())
-                return stat;
-            }
-
-        return ECSqlStatus::Success;
-        }
-
-    IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override
-        {
-        //WIP
-        /*auto it = m_structMemberProxyBinders.find(structMemberPropertyName);
-        if (it != m_structMemberProxyBinders.end())
-            return *it->second;
-
-        auto ret = m_structMemberProxyBinders.insert(std::make_pair(structMemberPropertyName, std::make_unique<ProxyECSqlBinder>()));
-        ProxyECSqlBinder& memberProxyBinder = *ret.first->second;
-
-        for (IECSqlBinder* binderP : m_binders)
-            {
-            IECSqlBinder& binder = *binderP;
-            memberProxyBinder.AddBinder(binder[structMemberPropertyName]);
-            }
-            */
-        return *m_structMemberProxyBinders.begin()->second;
-        }
-
-    IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override
-        {
-        auto it = m_structMemberProxyBinders.find(structMemberPropertyId);
-        if (it != m_structMemberProxyBinders.end())
-            return *it->second;
-
-        auto ret = m_structMemberProxyBinders.insert(std::make_pair(structMemberPropertyId, std::make_unique<ProxyECSqlBinder>()));
-        ProxyECSqlBinder& memberProxyBinder = *ret.first->second;
-
-        for (IECSqlBinder* binderP : m_binders)
-            {
-            IECSqlBinder& binder = *binderP;
-            memberProxyBinder.AddBinder(binder[structMemberPropertyId]);
-            }
-
-        return memberProxyBinder;
-        }
-
-    IECSqlBinder& _AddArrayElement() override
-        {
-        m_arrayElementProxyBinder = std::make_unique<ProxyECSqlBinder>();
-        
-        for (IECSqlBinder* binderP : m_binders)
-            {
-            IECSqlBinder& binder = *binderP;
-            m_arrayElementProxyBinder->AddBinder(binder.AddArrayElement());
-            }
-
-        return *m_arrayElementProxyBinder;
-        }
-
- public:
-    ProxyECSqlBinder() {}
-    void AddBinder(IECSqlBinder& binder) { m_binders.push_back(&binder); }
-    };
-
-//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    08/2013
 //+===============+===============+===============+===============+===============+======
 struct ECSqlParameterMap : NonCopyableClass
@@ -338,7 +135,7 @@ struct ECSqlParameterMap : NonCopyableClass
     private:
         std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
         std::vector<ECSqlBinder*> m_binders;
-        std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
+        ECSqlBinder* m_internalECInstanceIdBinder = nullptr;
         bmap<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
         std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
@@ -355,9 +152,7 @@ struct ECSqlParameterMap : NonCopyableClass
         //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
         ECSqlStatus TryGetBinder(ECSqlBinder*&, int ecsqlParameterIndex) const;
 
-        //!@param[in] internalBinderIndex Index of the internal binder as stored in the internal binder vector (0-based)
-        ECSqlStatus TryGetInternalBinder(ECSqlBinder*&, size_t internalBinderIndex) const;
-
+        ECSqlBinder* GetInternalECInstanceIdBinder() const { return m_internalECInstanceIdBinder; }
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 

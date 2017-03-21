@@ -708,7 +708,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
                 Utf8String provenanceStr;
                 if (index.HasClassId())
                     {
-                    ECClassCP provenanceClass = m_ecdb.Schemas().GetECClass(index.GetClassId());
+                    ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(index.GetClassId());
                     if (provenanceClass == nullptr)
                         {
                         BeAssert(false);
@@ -721,7 +721,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
                 Utf8String existingIndexProvenanceStr;
                 if (existingIndex->HasClassId())
                     {
-                    ECClassCP provenanceClass = m_ecdb.Schemas().GetECClass(existingIndex->GetClassId());
+                    ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(existingIndex->GetClassId());
                     if (provenanceClass == nullptr)
                         {
                         BeAssert(false);

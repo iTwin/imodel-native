@@ -825,10 +825,12 @@ void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8StringCR alias, bool isPolymorphic)
+SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, bool isPolymorphic)
     : RangeClassRefExp(Type::SubqueryRef, isPolymorphic)
     {
-    SetAlias(alias);
+    if (!Utf8String::IsNullOrEmpty(alias))
+        SetAlias(alias);
+
     AddChild(std::move(subquery));
     }
 

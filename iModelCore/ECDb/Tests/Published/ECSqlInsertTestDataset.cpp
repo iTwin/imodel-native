@@ -874,10 +874,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR ecdb)
     {
-    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    ECClassId pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
-    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
-    ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
+    ECClassId psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
+    ECClassId pClassId = ecdb.Schemas().GetClassId("ECSqlTest", "P");
+    ECClassId thBaseClassId = ecdb.Schemas().GetClassId("ECSqlTest", "THBase");
+    ECClassId th3ClassId = ecdb.Schemas().GetClassId("ECSqlTest", "TH3");
 
     ECSqlTestDataset dataset;
 
@@ -1115,9 +1115,9 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests(ECDbR 
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests(ECDbR ecdb)
     {
-    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
-    ECClassId th3ClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "TH3");
+    ECClassId psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
+    ECClassId thBaseClassId = ecdb.Schemas().GetClassId("ECSqlTest", "THBase");
+    ECClassId th3ClassId = ecdb.Schemas().GetClassId("ECSqlTest", "TH3");
 
     ECSqlTestDataset dataset;
 
@@ -1398,8 +1398,8 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests(ECDbR
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests(ECDbR ecdb)
     {
-    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    ECClassId pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
+    ECClassId psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
+    ECClassId pClassId = ecdb.Schemas().GetClassId("ECSqlTest", "P");
 
     ECSqlTestDataset dataset;
 
@@ -1457,8 +1457,8 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests(EC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithParametersTests(ECDbR ecdb)
     {
-    ECClassId psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    ECClassId thBaseClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "THBase");
+    ECClassId psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
+    ECClassId thBaseClassId = ecdb.Schemas().GetClassId("ECSqlTest", "THBase");
 
     ECSqlTestDataset dataset;
 

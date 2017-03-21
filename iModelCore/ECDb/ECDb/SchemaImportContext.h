@@ -6,39 +6,39 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <ECDb/ECDbSchemaManager.h>
+#include <ECDb/SchemaManager.h>
 #include "ClassMap.h"
 #include "DbSchemaPersistenceManager.h"
-#include "ECSchemaComparer.h"
+#include "SchemaComparer.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaCompareContext final
+struct SchemaCompareContext final
     {
 private:
     bvector<ECN::ECSchemaCP> m_existingSchemaList;
     bvector<ECN::ECSchemaCP> m_importedSchemaList;
-    ECSchemaChanges m_changes;
+    SchemaChanges m_changes;
     bool m_prepared;
 
     bool AssertIfNotPrepared() const;
 
 public:
-    ECSchemaCompareContext() : m_prepared(false) {}
-    ~ECSchemaCompareContext() {}
+    SchemaCompareContext() : m_prepared(false) {}
+    ~SchemaCompareContext() {}
 
-    BentleyStatus Prepare(ECDbSchemaManager const& schemaManager, bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
+    BentleyStatus Prepare(SchemaManager const& schemaManager, bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
     bvector<ECN::ECSchemaCP>  const& GetImportingSchemas() const { return m_importedSchemaList; }
     ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
     bool IsPrepared() const { return m_prepared; }
-    ECSchemaChanges& GetChanges() { return m_changes; }
+    SchemaChanges& GetChanges() { return m_changes; }
     bool HasNoSchemasToImport() const { return m_importedSchemaList.empty(); }
     bool RequiresUpdate() const;
 
-    BentleyStatus ReloadContextECSchemas(ECDbSchemaManager const&);
+    BentleyStatus ReloadContextECSchemas(SchemaManager const&);
     };
 
 //=======================================================================================
@@ -67,7 +67,7 @@ private:
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
     ClassMapSaveContext m_saveContext;
-    ECSchemaCompareContext m_compareContext;
+    SchemaCompareContext m_compareContext;
 
     bool m_doNotFailSchemaValidationForLegacyIssues = false;
 
@@ -84,7 +84,7 @@ public:
     bool IsRelationshipClassWithSingleNavigationProperty(ECN::ECRelationshipClassCR relClass) const { return m_relationshipClassesWithSingleNavigationProperty.find(&relClass) != m_relationshipClassesWithSingleNavigationProperty.end(); }
     ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
     ClassMapSaveContext& GetClassMapSaveContext() { return m_saveContext; }
-    ECSchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
+    SchemaCompareContext& GetECSchemaCompareContext() { return m_compareContext; }
 
     bool DoNotFailSchemaValidationForLegacyIssues() const { return m_doNotFailSchemaValidationForLegacyIssues; }
     };

@@ -585,7 +585,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
 
         ECDbR ecdb = SetupECDb(seedFileName.c_str());
 
-        EXPECT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(schemas));
+        EXPECT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportSchemas(schemas));
         EXPECT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
 
         GenerateECSqlCRUDTestStatements(*testSchema, true);

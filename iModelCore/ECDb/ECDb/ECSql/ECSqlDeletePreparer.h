@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlPreparer.h"
-#include "../ECDbPolicyManager.h"
+#include "../PolicyManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
