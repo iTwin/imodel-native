@@ -26,17 +26,17 @@ private:
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion(SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
+    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
     //! @param onProfileCreation true if this method is called during profile creation. false if 
     //! called during profile upgrade
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 106, 0, 0); }
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(3, 106, 0, 0); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
-    static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 106, 0, 0); }
+    static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(3, 106, 0, 0); }
 
-    static DbResult RunUpgraders(ECDbCR, SchemaVersion const& currentProfileVersion);
+    static DbResult RunUpgraders(ECDbCR, ProfileVersion const& currentProfileVersion);
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", "ec_Db"); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", "ec_Db"); }
@@ -75,7 +75,7 @@ public:
     //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
     //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
-    static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
+    static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

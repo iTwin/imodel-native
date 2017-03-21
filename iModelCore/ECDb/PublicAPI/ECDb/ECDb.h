@@ -112,7 +112,7 @@ protected:
     ECDB_EXPORT DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
-    ECDB_EXPORT DbResult _VerifySchemaVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT DbResult _VerifyProfileVersion(Db::OpenParams const&) override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
