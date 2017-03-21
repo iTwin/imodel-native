@@ -5244,7 +5244,7 @@ TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlStatementTestFixture, ECinstanceIdConversion)
+TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
     {
     //ToString
     ECInstanceId ecInstanceId(UINT64_C(123456789));
