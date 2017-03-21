@@ -144,8 +144,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(__name__) \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_CLASS_##__name__)); } \
-    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(BRRP_SCHEMA_NAME, BRRP_CLASS_##__name__)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_CLASS_##__name__)); } \
+    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_CLASS_##__name__)); }
 
 
 //-----------------------------------------------------------------------------------------

@@ -39,7 +39,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeTest)
     ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
-        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
+        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
@@ -150,7 +150,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadRangeWithBridgeTest)
     ASSERT_TRUE(roadCrossSectionPtr->Insert(breakDownModelPtr).IsValid());
 
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
-        DgnClassId(projectPtr->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
+        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
 
     // Create RoadRange
