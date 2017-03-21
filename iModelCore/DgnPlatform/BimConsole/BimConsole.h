@@ -38,9 +38,9 @@ struct SessionFile
 
             Type m_type = Type::Unknown;
             Utf8String m_name;
-            BeSQLite::SchemaVersion m_version;
+            BeSQLite::ProfileVersion m_version;
 
-            ProfileInfo() : m_version(BeSQLite::SchemaVersion(0,0,0,0)) {}
+            ProfileInfo() : m_version(BeSQLite::ProfileVersion(0, 0, 0, 0)) {}
             };
 
     private:

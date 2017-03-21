@@ -459,7 +459,7 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
     Utf8String typeProperty;
     if (markupProject->QueryProperty(typeProperty, DgnProjectProperty::ProjectType()) != BE_SQLITE_ROW  ||  typeProperty != s_projectType)
         {
-        status = BE_SQLITE_ERROR_BadDbSchema;
+        status = BE_SQLITE_ERROR_BadDbProfile;
         return nullptr;
         }
 
@@ -536,8 +536,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     if (true)
         {
         Statement stmt;
-        // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
+        stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET IsPrivate=0");
         stmt.Step();
         }
 

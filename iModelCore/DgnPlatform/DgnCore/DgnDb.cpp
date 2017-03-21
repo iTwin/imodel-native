@@ -355,7 +355,7 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
     if (status != BE_SQLITE_OK)
         return nullptr;
 
-    // SchemaUpgrade logic may call OpenParams::_ReopenForSchemaUpgrade changing the file
+    // SchemaUpgrade logic may call OpenParams::_ReopenForProfileUpgrade changing the file
     // from Readonly to ReadWrite.  This changes it back to what the caller requested.
     if (!wantReadonly || openParams.IsReadonly())
         return dgnDb;

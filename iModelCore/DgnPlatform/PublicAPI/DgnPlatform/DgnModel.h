@@ -71,7 +71,7 @@ public:
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
     DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
     DGNPLATFORM_EXPORT bool GetIsTemplate() const;
-    DGNPLATFORM_EXPORT bool GetInGuiList() const;
+    DGNPLATFORM_EXPORT bool IsPrivate() const;
 };
 
 //=======================================================================================
@@ -163,22 +163,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR m_dgndb;
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
-        bool m_inGuiList;
+        bool m_isPrivate;
         bool m_isTemplate = false;
 
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] inGuiList Optional parameter that controls the visibility of the new DgnModel in model lists shown to the user
+        //! @param[in] isPrivate Optional parameter specifying that this model should @em not appear in lists shown to the user
         //! @param[in] isTemplate Optional parameter that indicates whether the new DgnModel is a template or not
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList=true, bool isTemplate=false) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList), m_isTemplate(isTemplate)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool isPrivate=false, bool isTemplate=false) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_isPrivate(isPrivate), m_isTemplate(isTemplate)
             {
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
-        void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;} //!< Set the visibility of models created with this CreateParams in model lists shown to the user
+        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
@@ -218,7 +218,7 @@ protected:
     DgnClassId m_classId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
-    bool m_inGuiList;
+    bool m_isPrivate;
     bool m_isTemplate;
     BeMutex m_mutex;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
@@ -489,11 +489,11 @@ public:
     //! Get the ECClassId of the ECRelationship that specifies how this DgnModel relates to the modeled element.
     DgnClassId GetModeledElementRelClassId() const {return m_modeledElementRelClassId;}
 
-    //! Get the visibility in model lists shown to the user
-    bool GetInGuiList() const {return m_inGuiList;}
+    //! Test if this model should @em not appear in lists shown to the user
+    bool IsPrivate() const {return m_isPrivate;}
 
-    //! Set the visibility in model lists shown to the user
-    void SetInGuiList(bool val) {m_inGuiList = val;}
+    //!< Specify that this model should @em not appear in lists shown to the user
+    void SetIsPrivate(bool val) {m_isPrivate = val;}
 
     //! Test whether this DgnModel is a template used to create instances
     bool IsTemplate() const {return m_isTemplate;}
@@ -790,9 +790,9 @@ public:
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
-        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, inGuiList), m_displayInfo(displayInfo)
+        //! @param[in] isPrivate Optional parameter specifying that this model should @em not appear in lists shown to the user
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool isPrivate = false)
+            : T_Super(dgndb, classId, modeledElementId, isPrivate), m_displayInfo(displayInfo)
             {}
 
         //! @private

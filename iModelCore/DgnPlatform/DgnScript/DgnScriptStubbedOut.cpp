@@ -22,8 +22,6 @@ DgnDbStatus DgnScript::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
-    m_jsenv = nullptr;
-    m_jsContext = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,7 +37,7 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
 BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeAssert(false);
-    return *m_jsenv;
+        return *(BeJsEnvironmentP)(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -48,7 +46,7 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
 BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
     BeAssert(false);
-    return *m_jsContext;
+    return *(BeJsContextP)(nullptr);
     }
 
 //---------------------------------------------------------------------------------------

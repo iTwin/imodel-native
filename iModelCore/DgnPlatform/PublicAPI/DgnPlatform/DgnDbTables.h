@@ -321,21 +321,21 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnElementId m_modeledElementId;
-        bool m_inGuiList = true;
+        bool m_isPrivate = false;
         bool m_isTemplate = false;
 
     public:
         Model() {}
         Model(DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid) {}
 
-        void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
+        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;}
 
-        bool GetInGuiList() const {return m_inGuiList;}
+        bool IsPrivate() const {return m_isPrivate;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
         DgnElementId GetModeledElementId() const {return m_modeledElementId;}
