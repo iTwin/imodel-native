@@ -174,7 +174,7 @@
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
-
+	
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeomLibsTest -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="GeomLibs-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -183,15 +183,20 @@
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeomLibsTest/Assets" />
         </Bindings>
     </Part>
-
+	
+	<Part Name="RunMemoryLeakAnalysis" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}GeomLibs/MemoryLeak.mke" BentleyBuildMakeOptions="-dTEST_EXE_PATH=$(OutputRootDir)/Product/GeomLibs-Gtest -dEXE_NAME=GeomLibsTest.exe"  OnlyPlatforms="x86,x64">
+	 <!-- BentleyBuildMakeOptions="-dGTEST_OUTPUT_DIR=$(OutputRootDir)Product/Gtest-DgnClientFx-TestCollection-Performance"-->
+	</Part>
+	
     <Product Name="GeomLibs-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-
+	
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeomLibs-Gtest/GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeomLibs-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+		<!--<SubPart PartName="RunMemoryLeakAnalysis" Repository="GeomLibs" PartFile="GeomLibs" />-->
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeomLibsTest.log</Files>
         </Bindings>
@@ -311,6 +316,6 @@
         <ProductDirectory Name="BentleyDll"                         Path=""/>
         <ProductDirectory Name="PublishedApi_Doc"                   Path="doc" />
     </ProductDirectoryList>
-
-
+	
+	
 </BuildContext>
