@@ -45,7 +45,7 @@ LinearlyReferencedLocationType GetLinearlyReferencedLocationTypesToUse(DgnDbR dg
     LinearlyReferencedLocationType locationType = static_cast<LinearlyReferencedLocationType>(0);
     for (auto const& classId : iLinearlyLocatedClassIds)
         {
-        auto ecClassCP = dgnDb.Schemas().GetECClass(classId);
+        auto ecClassCP = dgnDb.Schemas().GetClass(classId);
         if (!ecClassCP)
             {
             locationType = LinearlyReferencedLocationType::AtLocation | LinearlyReferencedLocationType::FromToLocation;

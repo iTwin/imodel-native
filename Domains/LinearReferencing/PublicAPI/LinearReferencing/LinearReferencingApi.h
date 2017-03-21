@@ -101,8 +101,8 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(__name__) \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); } \
-    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); } \
+    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(BLR_SCHEMA_NAME, BLR_CLASS_##__name__)); }
 
 
 //-----------------------------------------------------------------------------------------
