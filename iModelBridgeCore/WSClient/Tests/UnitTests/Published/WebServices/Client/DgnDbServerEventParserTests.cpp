@@ -362,9 +362,9 @@ TEST_F(DgnDbServerEventParserTests, CodeEventTests)
     EXPECT_TRUE(dynamic_cast<DgnDbServerEvent::GenericEvent*>(&codeEvent1)); //DgnDbServerCodeEvent is a subclass of DgnDbServerEvent
     std::shared_ptr<struct DgnDbServerCodeEvent> codeEvent2 = DgnDbServerEventParser::GetCodeEvent(validPtr);
     EXPECT_NE(nullptr, codeEvent2);
-    EXPECT_EQ(codeEvent1.GetCodeAuthorityId(), codeEvent2->GetCodeAuthorityId());
-	bvector<Utf8String> values = { "SomeValue1", "SomeValue2", "SomeValue3" };
-	EXPECT_EQ(values, codeEvent1.GetValues());
+    EXPECT_STREQ(codeEvent1.GetCodeSpecId().c_str(), codeEvent2->GetCodeSpecId().c_str());
+    bvector<Utf8String> values = { "SomeValue1", "SomeValue2", "SomeValue3" };
+    EXPECT_EQ(values, codeEvent1.GetValues());
     }
 
 //---------------------------------------------------------------------------------------
