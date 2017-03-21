@@ -202,7 +202,7 @@ TEST_F(EcutilsTests, ToJsonPropertiesFromECProperties)
     {
     SetupSeedProject();
     Json::Value obj(Json::objectValue);
-    ECN::ECClassCP ecClass(m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
+    ECN::ECClassCP ecClass(m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
     ASSERT_TRUE(nullptr != ecClass);
     ECN::IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ECN::IECInstanceCR ecInstance1 = *ecInstance;

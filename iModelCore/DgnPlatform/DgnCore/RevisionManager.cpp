@@ -707,7 +707,7 @@ static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotI
 //---------------------------------------------------------------------------------------
 void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const
     {
-    ECClassCP elemClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
 
     RevisionChangesFileReader revisionReader(m_revChangesFile, dgndb);
@@ -748,9 +748,9 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     {
     LockRequest lockRequest;
 
-    ECClassCP elemClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
-    ECClassCP modelClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
+    ECClassCP modelClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
     BeAssert(modelClass != nullptr);
 
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);

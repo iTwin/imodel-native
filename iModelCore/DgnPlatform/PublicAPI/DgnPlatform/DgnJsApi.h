@@ -1136,20 +1136,20 @@ struct JsECSchema : RefCountedBaseWithCreate
 //=======================================================================================
 struct JsECDbSchemaManager : RefCountedBaseWithCreate
 {
-    BeSQLite::EC::ECDbSchemaManager const& m_schemas;
+    BeSQLite::EC::SchemaManager const& m_schemas;
 
-    JsECDbSchemaManager(BeSQLite::EC::ECDbSchemaManager const& schemas) : m_schemas(schemas) {;}
+    JsECDbSchemaManager(BeSQLite::EC::SchemaManager const& schemas) : m_schemas(schemas) {;}
 
     JsECClassP GetECClass(Utf8StringCR ns, Utf8StringCR cls) 
         {
-        auto eccls = m_schemas.GetECClass(ns.c_str(), cls.c_str());
+        auto eccls = m_schemas.GetClass(ns.c_str(), cls.c_str());
         return eccls? new JsECClass(*eccls): nullptr;
         }
 
     JsECClassP GetECClassById(JsDgnObjectIdP clsid)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(clsid));
-        auto eccls = m_schemas.GetECClass(ECN::ECClassId(clsid->m_id));
+        auto eccls = m_schemas.GetClass(ECN::ECClassId(clsid->m_id));
         return eccls ? new JsECClass(*eccls) : nullptr;
         }
     };

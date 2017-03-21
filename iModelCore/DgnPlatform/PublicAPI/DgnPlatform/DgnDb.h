@@ -201,7 +201,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    void _OnAfterECSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
+    void _OnAfterSchemaImport() const override {m_ecsqlCache.Empty(); Elements().ClearUpdaterCache();}
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
@@ -399,9 +399,9 @@ public:
     BeSQLite::EC::ECCrudWriteToken const* GetECCrudWriteToken() const; //not inlined as it must not be called externally
 
     //! Gets the permission token to perform a ECSchema import/update
-    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportECSchemas. 
+    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportSchemas. 
     //! @private
-    BeSQLite::EC::ECSchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
+    BeSQLite::EC::SchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
 
     //! @private internal use only (v8 importer)
     DGNPLATFORM_EXPORT BeSQLite::DbResult ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
