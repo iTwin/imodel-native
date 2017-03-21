@@ -72,6 +72,7 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
     url.append(this->wsgVersion);
     url.append(this->wsgAPIID);
     url.append(this->wsgRepository);
+    this->wsgOrganizationID = this->getOrganizationID(url);
     url.append(this->wsgSchema);
     url.append(this->wsgClassName);
     url.append(this->wsgOrganizationID);
@@ -315,8 +316,9 @@ bool DataSourceAccountWSG::needsUpdateToken(const WSGToken & token)
 void DataSourceAccountWSG::updateToken(const WSGToken & newToken, DataSourceURL url)
     {
     m_wsgToken = newToken;
+    // TODO: must be called separately...
     if (!m_useDirectAzureCalls) return;
-
+    
     url += L"/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true";
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     
@@ -339,6 +341,32 @@ void DataSourceAccountWSG::updateToken(const WSGToken & newToken, DataSourceURL 
     auto delimiterPosition = azure_direct_link_url.find("?");
     m_AzureDirectPrefix = azure_direct_link_url.substr(0, delimiterPosition).c_str();
     m_AzureDirectSuffix = azure_direct_link_url.substr(delimiterPosition + 1).c_str();
+    }
+
+WSGServer::organizationID DataSourceAccountWSG::getOrganizationID(const DataSourceURL& url)
+    {
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+
+    CURL* curl = curl_handle->get();
+
+    DataSourceURL navNodesURL = url + L"/Navigation/NavNode/";
+    curl_handle->add_item_to_header(this->getWSGToken(navNodesURL).c_str());
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
+    curl_easy_setopt(curl, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
+    
+    DataSourceBuffer::BufferData* dest = new DataSourceBuffer::BufferData[10000];
+    DataSourceBuffer::BufferSize readSize = 0;
+    DataSourceBuffer::BufferSize size = 10000;
+    DataSourceStatus result = Super::downloadBlobSync(navNodesURL, dest, readSize, size);
+    assert(result.isOK());
+    Json::Reader    reader;
+    Json::Value     result_json;
+    reader.parse(reinterpret_cast<char *>(dest), reinterpret_cast<char *>(dest + readSize), result_json);
+    std::string utf8OrgID = result_json["instances"][2]["properties"]["Key_InstanceId"].asString().c_str();
+    std::wstring utf16OrgID = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(utf8OrgID);
+
+    return WSGServer::organizationID(utf16OrgID);
     }
 
 bool DataSourceAccountWSG::isValid(void)

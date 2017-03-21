@@ -160,7 +160,7 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     AppendPoint(box, center);
     AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x)/2.0, 0.0, 0.0));
     AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y)/2.0, 0.0));
-    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z/2.0)));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)/2.0));
     }
 
 /*---------------------------------------------------------------------------------**//**

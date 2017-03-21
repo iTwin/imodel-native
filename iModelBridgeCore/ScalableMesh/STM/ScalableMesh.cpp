@@ -64,7 +64,6 @@ extern bool   GET_HIGHEST_RES;
 
 //DataSourceManager s_dataSourceManager;
 
-extern bool s_stream_from_disk;
 extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
@@ -867,10 +866,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
     try 
         {
+        bool isSingleFile = m_smSQLitePtr->IsSingleFile();
+
         //m_smSQLitePtr->Open(m_path);
         // If there are no masterHeader => file empty ?
         bool notEmpty = m_smSQLitePtr->HasMasterHeader();
-        if (!notEmpty && m_smSQLitePtr->IsSingleFile())
+        if (!notEmpty && isSingleFile)
             return BSISUCCESS; // File is empty.
 
         if (!LoadGCSFrom())
@@ -878,10 +879,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
        // bool hasPoints = m_smSQLitePtr->HasPoints();                 
         
-        bool isSingleFile = true;
-                
-        isSingleFile = m_smSQLitePtr->IsSingleFile();
-
         //if (hasPoints || !isSingleFile)
             {    
 
@@ -894,71 +891,38 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                 if (!isSingleFile)
                     {
-                    bool isVirtualGroups = false; // Streaming without node grouping by default
-                    isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
-
-                    // NEEDS_WORK_STREAMING - Check existence of the following directories
-                    // NEEDS_WORK_STREAMING - Path should not depend on the existence of an stm file
-                    WString streamingSourcePath;
-                    WString cloudIndicator(L"_cloud");
-                    auto cloud_separator = s_stream_from_wsg ? L"~2F" : L"/";
-
-                    WString datasetName = BEFILENAME(GetFileNameWithoutExtension, BeFileName(m_path.c_str()));
-
-                    if (datasetName.Contains(cloudIndicator))
+                    Json::Value     config;
                         {
-                        datasetName.resize(datasetName.length() - cloudIndicator.length());
+                        // NEEDS_WORK_SM_STREAMING - replace json config file with 3sm data when available 
+                        BeFileName config_file_name = BEFILENAME(GetDirectoryName, BeFileName(m_path.c_str())).AppendToPath(L"3sm_config.json");
+                        BeFile config_file;
+                        if (BeFileStatus::Success != OPEN_FILE(config_file, config_file_name.c_str(), BeFileAccess::Read))
+                            {
+                            assert(!"Error reading config file for streaming");
+                            return BSIERROR;
+                            }
+
+                        bvector<Byte> config_file_buffer;
+                        config_file.ReadEntireFile(config_file_buffer);
+
+                        Json::Reader    config_reader;
+                        config_reader.parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);
                         }
+                    typedef SMStreamingStore<Extent3dType>::SMStreamingSettings streaming_settings;
+                    streaming_settings stream_settings(config);
 
-                    if (s_stream_from_disk)
-                        {
+                    if (stream_settings.IsLocal() && stream_settings.GetURL().empty())
+                        { // Provide default cloud data directory for streaming from local disk when url is not specified
                         BeFileName localDataFilesPath(m_baseExtraFilesPath.c_str());
                         localDataFilesPath.PopDir();
-                        localDataFilesPath.AppendToPath(s_stream_using_cesium_3d_tiles_format ? L"cloud_cesium" : L"cloud");
-                        streamingSourcePath = localDataFilesPath;
-                        }
-                    else
-                        {
-                        if (datasetName == L"marseille")
-                            {
-                            //s_stream_from_wsg = true; // Marseille uploaded to RDS only
-                            //s_use_azure_sandbox = false;
-                            //s_use_qa_azure = true;
-                            //streamingSourcePath = L"MarseilleCesium";
-
-                            s_stream_from_wsg = false; // It is now uploaded in a public azure storage account
-                            s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
-                            s_is_legacy_master_header = false; // groups are compressed in the master header
-                            streamingSourcePath = L"5ffc6e51-edc3-4fb3-8b4f-a4becbc045dd"; // NEEDS_WORK_STREAMING: this is the org ID which should be saved in the stub file?
-                            //streamingSourcePath += L"/";
-                            //streamingSourcePath += L"Marseille";
-                            }
-                        else if (datasetName == L"salt_lake_city")
-                            {
-                            s_stream_from_wsg = false; // Salt Lake City uploaded to sandbox Azure only 
-                            s_use_azure_sandbox = true;
-                            s_use_qa_azure = false;
-                            s_stream_using_curl = true;
-                            s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
-                            s_is_legacy_master_header = false; // groups are compressed in the master header
-
-                            streamingSourcePath = L"05610e4c-79d4-43ef-a9e5-e02e6328d843"; // NEEDS_WORK_STREAMING: this is the org ID which should be saved in the stub file?
-                            streamingSourcePath += L"/";
-                            streamingSourcePath += L"SaltLakeCityCesium";
-                            }
-                        else
-                            {
-                            s_stream_from_wsg = false;
-                            s_stream_using_cesium_3d_tiles_format = true;
-                            s_is_legacy_master_header = true; // groups are NOT compressed in the master header
-                            streamingSourcePath = L"scalablemeshtest" + (cloud_separator + datasetName);
-                            }
+                        localDataFilesPath.AppendToPath(L"cloud");
+                        stream_settings.m_url = localDataFilesPath.GetNameUtf8().c_str();
                         }
 
 #ifndef VANCOUVER_API                                       
-                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
+                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), stream_settings);
 #else
-                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);
+                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), stream_settings);
 #endif
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
@@ -2383,7 +2347,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     if (server == SMCloudServerType::Azure)
         {
         // Setup streaming stores to use Azure
-        s_stream_from_disk = false; 
+        //s_stream_from_disk = false; 
         s_stream_from_wsg = false;
 
         path += outContainerName + L"/" + outDatasetName;
@@ -2391,7 +2355,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     else if (server == SMCloudServerType::WSG)
         {
         // Setup streaming stores to use WSG
-        s_stream_from_disk = false;
+        //s_stream_from_disk = false;
         s_stream_from_wsg = true;
 
         path += outContainerName + L"~2F" + outDatasetName;
@@ -2399,7 +2363,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     else if (server == SMCloudServerType::LocalDiskCURL)
         {
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
-        s_stream_from_disk = true;
+        //s_stream_from_disk = true;
         s_stream_using_curl = true;
 
         const auto smFileName = BeFileName(this->GetPath());
@@ -2412,7 +2376,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         assert(server == SMCloudServerType::LocalDisk);
 
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
-        s_stream_from_disk = true;
+        //s_stream_from_disk = true;
         path = outContainerName;
         }
     
@@ -2560,7 +2524,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
     if (server == SMCloudServerType::Azure)
         {
         // Setup streaming stores to use Azure
-        s_stream_from_disk = false;
+        //s_stream_from_disk = false;
         s_stream_from_wsg = false;
 
         path += outContainerName + L"/" + outDatasetName;
@@ -2568,7 +2532,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
     else if (server == SMCloudServerType::WSG)
         {
         // Setup streaming stores to use WSG
-        s_stream_from_disk = false;
+        //s_stream_from_disk = false;
         s_stream_from_wsg = true;
 
         path += outContainerName + L"~2F" + outDatasetName;
@@ -2576,7 +2540,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
     else if (server == SMCloudServerType::LocalDiskCURL)
         {
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
-        s_stream_from_disk = true;
+        //s_stream_from_disk = true;
         s_stream_using_curl = true;
 
         const auto smFileName = BeFileName(this->GetPath());
@@ -2589,7 +2553,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
         assert(server == SMCloudServerType::LocalDisk);
 
         // Setup streaming stores to use local disk (relative to attached 3sm file location)
-        s_stream_from_disk = true;
+        //s_stream_from_disk = true;
         path = outContainerName;
         }
 
@@ -2624,7 +2588,7 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     if (m_scmIndexPtr == nullptr) return ERROR;
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
-    s_stream_from_disk = true;
+    //s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
     s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
 

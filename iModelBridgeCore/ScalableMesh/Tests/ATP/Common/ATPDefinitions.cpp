@@ -4740,10 +4740,11 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     printf("Time to convert: %0.5f\n", (double)t / CLOCKS_PER_SEC);
-    fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
+    fwprintf(pResultFile, L"%s,%s,%s,%s,%0.5f\n",
              smFileName.c_str(),
              cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
+             result.c_str(),
              (double)t / CLOCKS_PER_SEC
              );
 
