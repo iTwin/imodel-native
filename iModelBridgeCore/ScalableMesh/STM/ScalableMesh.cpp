@@ -558,11 +558,26 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     StatusInt&              status)
 {
     status = BSISUCCESS;
-    if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") != 0)
-    {
+    SMSQLiteFilePtr smSQLiteFile;
+    if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") == 0)
+        { // Open 3sm file
+        StatusInt openStatus;
+        smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+        if (smSQLiteFile == nullptr)
+            {
+            status = BSIERROR;
+
+            return 0; // Error opening file
+            }
+        }
+    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
+        { // Open json streaming format
+        }
+    else
+        {
         status = BSIERROR;
         return 0;
-    }
+        }
 
     if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
     if(0 != _waccess(filePath, 04))
@@ -571,15 +586,8 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         return 0; // File not found
     }
 
-    StatusInt openStatus;
-    SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(filePath, openReadOnly, openStatus));
-    if(smSQLiteFile == nullptr)
-    {
-            status = BSIERROR;
-
-        return 0; // Error opening file
-    }
     return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, baseEditsFilePath, needsNeighbors, status);
+
 }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
@@ -648,7 +656,8 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 {
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
 
-    HPRECONDITION(smSQliteFile != 0);
+    // NEEDS_WORK_SM_STREAMING : if sqlite file is null, check for streaming parameters
+    //HPRECONDITION(smSQliteFile != 0);
 
     SetDataSourceAccount(nullptr);
 }
@@ -690,7 +699,8 @@ const WChar* ScalableMeshBase::GetPath () const
 bool ScalableMeshBase::LoadGCSFrom()
 {
     WString wktStr;
-    if (m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
+    // NEEDS_WORK_SM_STREAMING : Wkt for streaming?
+    if (m_smSQLitePtr == nullptr || m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
         return true;
 
     ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
@@ -866,11 +876,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
     try 
         {
-        bool isSingleFile = m_smSQLitePtr->IsSingleFile();
+        bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
 
         //m_smSQLitePtr->Open(m_path);
         // If there are no masterHeader => file empty ?
-        bool notEmpty = m_smSQLitePtr->HasMasterHeader();
+        bool notEmpty = m_smSQLitePtr != nullptr ? m_smSQLitePtr->HasMasterHeader() : true;
         if (!notEmpty && isSingleFile)
             return BSISUCCESS; // File is empty.
 
@@ -897,26 +907,33 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     BeFileName config_file_name(BEFILENAME(GetDirectoryName, BeFileName(m_path.c_str())).c_str());
                     config_file_name.AppendToPath(L"3sm_config.json");
                         BeFile config_file;
-                        if (BeFileStatus::Success != OPEN_FILE(config_file, config_file_name.c_str(), BeFileAccess::Read))
+                        if (BeFileStatus::Success == OPEN_FILE(config_file, config_file_name.c_str(), BeFileAccess::Read))
                             {
-                            assert(!"Error reading config file for streaming");
-                            return BSIERROR;
-                            }
-
-                        bvector<Byte> config_file_buffer;
+                            bvector<Byte> config_file_buffer;
 #ifndef VANCOUVER_API
-                        config_file.ReadEntireFile(config_file_buffer);
+                            config_file.ReadEntireFile(config_file_buffer);
 #else
-                        uint32_t maxConfigFileBytes = 100000;
-                        uint32_t bytesRead = 0;
-                        config_file_buffer.resize(maxConfigFileBytes);
-                        config_file.Read(config_file_buffer.data(), &bytesRead, maxConfigFileBytes);
-                        assert(bytesRead > 0 && bytesRead < maxConfigFileBytes);
-                        config_file_buffer.resize(bytesRead);
+                            uint32_t maxConfigFileBytes = 100000;
+                            uint32_t bytesRead = 0;
+                            config_file_buffer.resize(maxConfigFileBytes);
+                            config_file.Read(config_file_buffer.data(), &bytesRead, maxConfigFileBytes);
+                            assert(bytesRead > 0 && bytesRead < maxConfigFileBytes);
+                            config_file_buffer.resize(bytesRead);
 #endif
 
-                        Json::Reader    config_reader;
-                        config_reader.parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);
+                            Json::Reader    config_reader;
+                            config_reader.parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);
+                            }
+                        else
+                            {
+                            config["data_type"] = "3DTiles";
+                            auto& config_server = config["server"];
+                            config_server["type"] = "local";
+                            auto& config_server_settings = config_server["settings"];
+                            auto utf8Path = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(m_path.c_str());
+                            config_server_settings["url"] = Json::Value(utf8Path.c_str());
+                            }
+
                         }
                     typedef SMStreamingStore<Extent3dType>::SMStreamingSettings streaming_settings;
                     streaming_settings stream_settings(config);
