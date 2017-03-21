@@ -34,7 +34,7 @@
 #include <DgnPlatform/DgnCoreEvent.h>
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/DgnIModel.h>
-#include <DgnPlatform/DgnLight.h>
+#include <DgnPlatform/Lighting.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnProgressMeter.h>
