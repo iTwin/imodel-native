@@ -8,6 +8,7 @@
 
 #include <ScalableMeshPCH.h>
 #include "SMNodeGroup.h"
+#include <codecvt>
 
 //#ifndef NDEBUG
 std::mutex s_consoleMutex;
@@ -22,7 +23,7 @@ uint32_t s_max_group_common_ancestor = 2;
 unordered_map<uint64_t, SMNodeGroup::Ptr> SMNodeGroup::s_downloadedGroups;
 mutex SMNodeGroup::s_mutex;
 
-StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID, bool mustGenerateIDs)
+StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
     unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
     //auto nodeHeader = this->GetNodeHeader(priorityNodeID);
@@ -57,20 +58,24 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID, bool mustGenerateIDs
 
             if (readSize > 0)
             {
-                if (mustGenerateIDs)
+                char* jsonBlob = reinterpret_cast<char *>(dest.get());
+                Json::Reader    reader;
+                Json::Value tileset;
+                reader.parse(jsonBlob, jsonBlob + readSize, tileset);
+                
+                if (!(tileset.isMember("root")))
+                    {
+                    assert(!"error reading Cesium 3D tileset");
+                    return 0;
+                    }
+                //bool mustGenerateIDs = !tileset["root"].isMember("SMHeader");
+                if (true/*mustGenerateIDs*/)
                 {
                     uint32_t currentNodeID = m_RootTileTreeNode["SMHeader"].isMember("id") ? m_RootTileTreeNode["SMHeader"]["id"].asUInt() : uint32_t(-1);
                     uint32_t parentID = m_RootTileTreeNode["SMHeader"].isMember("parentID") ? m_RootTileTreeNode["SMHeader"]["parentID"].asUInt() : uint32_t(-1);
                     uint32_t rootLevel = m_RootTileTreeNode["SMHeader"].isMember("level") ? m_RootTileTreeNode["SMHeader"]["level"].asUInt() : 0;
-                    Json::Reader    reader;
-                    char* jsonBlob = reinterpret_cast<char *>(dest.get());
-                    reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
 
-                    if (!(m_RootTileTreeNode.isMember("root") /*&& m_RootTileTreeNode["root"].isMember("SMHeader")*/))
-                    {
-                        assert(!"error reading Cesium 3D tiles header");
-                        return 0;
-                    }
+                    m_RootTileTreeNode = tileset;
 
                     // Generate tile tree map
                     std::function<void(Json::Value&, uint32_t, bool, uint32_t)> tileTreeMapGenerator = [this, &tileTreeMapGenerator, &currentNodeID](Json::Value& jsonNode, uint32_t parentID, bool isRootNode, uint32_t level)
@@ -86,34 +91,48 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID, bool mustGenerateIDs
                         jsonNode["SMHeader"]["id"] = nodeID;
                         assert((jsonNode["SMHeader"].isMember("resolution") && jsonNode["SMHeader"]["resolution"].asUInt() == level) || !jsonNode["SMHeader"].isMember("resolution"));
                         jsonNode["SMHeader"]["level"] = level;
-                        if (!jsonNode.isMember("children"))
-                        {
-                            if (jsonNode.isMember("content") && jsonNode["content"].isMember("url"))
+                        if (jsonNode.isMember("content"))
                             {
+                            if (jsonNode["content"].isMember("url"))
+                                {
                                 BeFileName contentURL(jsonNode["content"]["url"].asString());
                                 if (L"json" == BEFILENAME(GetExtension, contentURL))
-                                {
+                                    {
+                                    assert(!jsonNode.isMember("children"));
                                     // the tile references a new tileset (group)
                                     static std::atomic<uint32_t> s_currentGroupID = 0;
-                                    //assert(this->m_tileTreeChildrenGroups.count(++s_currentGroupID) == 0);
 
+                                    auto newPrefix = this->m_dataSourcePrefix;
+                                    newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
+                                    auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
                                     SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), *this->m_nodeHeaders, s_currentGroupID);
-                                    newGroup->SetURL(DataSourceURL(contentURL.c_str()));
-                                    newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                                    newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
+                                    newGroup->SetDataSourcePrefix(newPrefix);
                                     //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
                                     newGroup->m_RootTileTreeNode = jsonNode;
                                     newGroup->SaveNode(nodeID, &newGroup->m_RootTileTreeNode);
 
                                     // we are done processing this part of the tileset
                                     return;
+                                    }
+                                else 
+                                    {
+                                    assert(L"b3dm" == BEFILENAME(GetExtension, contentURL)); // only b3dm supported at the moment
+                                    auto newURLUtf16 = this->m_dataSourcePrefix;
+                                    newURLUtf16.append(contentURL.c_str());
+                                    auto newURLUtf8 = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(newURLUtf16.c_str());
+                                    jsonNode["content"]["url"] = Json::Value(newURLUtf8.c_str());
+                                    }
                                 }
                             }
+                        if (!jsonNode.isMember("children"))
+                            {
                             jsonNode["isLeafNode"] = true;
                             this->SaveNode(nodeID, &jsonNode);
 
                             // we are done processing this part of the tileset
                             return;
-                        }
+                            }
 
                         this->SaveNode(nodeID, &jsonNode);
                         for (auto& child : jsonNode["children"])
@@ -124,15 +143,8 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID, bool mustGenerateIDs
                     tileTreeMapGenerator(m_RootTileTreeNode["root"], parentID, true, rootLevel);
                 }
                 else {
-                    Json::Reader    reader;
-                    char* jsonBlob = reinterpret_cast<char *>(dest.get());
-                    reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
-
-                    if (!(m_RootTileTreeNode.isMember("root") && m_RootTileTreeNode["root"].isMember("SMHeader")))
-                    {
-                        assert(!"error reading Cesium 3D tiles header");
-                        return 0;
-                    }
+                    m_RootTileTreeNode = tileset;
+                    assert(m_RootTileTreeNode["root"].isMember("SMHeader"));
                     bool checkResult = false;
                     auto nodeIDChecker = [priorityNodeID, &checkResult](uint64_t id = 0) -> bool
                         {

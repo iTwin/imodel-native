@@ -645,7 +645,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             return SUCCESS;
             }
 
-        StatusInt Load(const uint64_t& priorityNodeID, bool mustGenerateIDs = false);
+        StatusInt Load(const uint64_t& priorityNodeID);
 
         void LoadGroupParallel();
 

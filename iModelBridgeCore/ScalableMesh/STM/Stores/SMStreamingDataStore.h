@@ -45,11 +45,21 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
                 enum ServerLocation { LOCAL, RDS, AZURE };
                 enum CommMethod { FILE, CURL, WASTORAGE };
-                enum DataType { CESIUM3DTILES, SMGROUPS };
+                enum DataType { CESIUM3DTILES, SMCESIUM3DTILES, SMGROUPS };
 
             public:
                 SMStreamingSettings() {};
                 SMStreamingSettings(const Json::Value& fileName);
+                SMStreamingSettings(const SMStreamingSettings& settings)
+                    : m_location(settings.m_location),
+                      m_commMethod(settings.m_commMethod),
+                      m_dataType(settings.m_dataType),
+                      m_public(settings.m_public),
+                      m_isPublishing(settings.m_isPublishing),
+                      m_guid(settings.m_guid),
+                      m_serverID(settings.m_serverID),
+                      m_url(settings.m_url)
+                    {}
 
             bool IsLocal()            const   { return m_location == LOCAL; }
             bool IsPublic()           const   { return m_public; }
@@ -59,6 +69,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool IsDataFromRDS()      const   { return m_location == RDS; }
             bool IsDataFromAzure()    const   { return m_location == AZURE; }
             bool IsPublishing()       const   { return m_isPublishing; }
+            bool IsCesium3DTiles()    const   { return m_dataType == CESIUM3DTILES; }
+            bool IsSMCesium3DTiles()  const   { return m_dataType == SMCESIUM3DTILES; }
 
             WString GetServerID() const
                 {
@@ -92,10 +104,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
         bool m_use_node_header_grouping = false;
         bool m_use_virtual_grouping = false;
-        bool m_isPublishing = false;
+        SMStreamingSettings m_settings;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
-        WString m_rootDirectory;        
+        WString m_rootDirectory;
+        WString m_masterFileName;
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<SMNodeGroup::Ptr> m_nodeHeaderGroups;
@@ -145,7 +158,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SetIsPublishing(bool isPublishing)
             {
-            m_isPublishing = isPublishing;
+            m_settings.m_isPublishing = isPublishing;
             }
 
         static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize);
@@ -204,6 +217,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
     {
 
     public:
+
+        void ApplyTransformOnPoints(const Transform& transform);
 
         bool IsLoading();
 
@@ -285,7 +300,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 
@@ -309,6 +324,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         const Json::Value*            m_jsonHeader;
         DataSourceAccount*            m_dataSourceAccount;
         DataSourceURL                 m_dataSourceURL;
+        Transform                     m_transform;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         typedef std::map<ISMStore::NodeID, std::unique_ptr<StreamingDataBlock>> DataCache;

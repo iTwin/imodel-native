@@ -1097,7 +1097,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         {                                       
         assert(node->GetFilter()->IsProgressiveFilter() == false);
                     
-        if (node->m_nodeHeader.m_nodeCount > 0)
+        if (!node->IsEmpty()/*node->m_nodeHeader.m_nodeCount > 0*/)
             {         
             //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
             static bool s_clipMesh = true;                                

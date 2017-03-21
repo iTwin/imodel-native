@@ -37,6 +37,7 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
         {
         auto const& data_type = config["data_type"].asString();
         if (data_type == "3DTiles") m_dataType = DataType::CESIUM3DTILES;
+        else if (data_type == "SM3DTiles") m_dataType = DataType::SMCESIUM3DTILES;
         else if (data_type == "SMGroups") m_dataType = DataType::SMGROUPS;
         else
             {
@@ -134,11 +135,13 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     }
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
-    : SMSQLiteSisterFile(nullptr)
+    : SMSQLiteSisterFile(nullptr),
+      m_settings(settings)
     {
     InitializeDataSourceAccount(dataSourceManager, settings);
 
-    m_isPublishing = settings.IsPublishing();
+    m_transform.InitIdentity();
+
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -186,8 +189,10 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        account_prefix = DataSourceURL((L"file:///" + settings.GetURL()).c_str());
-        if (!BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
+        BeFileName masterFileName(settings.GetURL().c_str());
+        m_masterFileName = masterFileName.GetFileNameAndExtension();
+        account_prefix = DataSourceURL((L"file:///" + masterFileName.GetDirectoryName()).c_str());
+        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
         }
     else if (settings.IsLocal())
         {
@@ -381,80 +386,53 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMNodeGroup::StrategyType::BIMCESIUM;
     bool isGrouped = true;
     wchar_t buffer[10000];
+    swprintf(buffer, m_masterFileName.c_str());
     switch (groupMode)
         {
         case SMNodeGroup::StrategyType::NONE:
-            {
-            swprintf(buffer, L"MasterHeader.sscm");
-            isGrouped = false;
-            break;
-            }
+        {
+        swprintf(buffer, L"MasterHeader.sscm");
+        isGrouped = false;
+        break;
+        }
         case SMNodeGroup::StrategyType::NORMAL:
-            {
-            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
-            break;
-            }
+        {
+        swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
+        break;
+        }
         case SMNodeGroup::StrategyType::VIRTUAL:
-            {
-            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
-            break;
-            }
+        {
+        swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
+        break;
+        }
         case SMNodeGroup::StrategyType::CESIUM:
-            {
-            swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
-            break;
-            }
+        {
+        swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", L"-compressed");
+        break;
+        }
         case SMNodeGroup::StrategyType::BIMCESIUM:
-            {
-            swprintf(buffer, L"graz/graz_AppData.json");
-            break;
-            }
+        {
+        swprintf(buffer, L"graz/graz_AppData.json");
+        break;
+        }
         default:
-            {
-            assert(!"Unknown grouping type");
-            return 0;
-            }
-        }
-
-    std::unique_ptr<DataSource::Buffer[]>            dest;
-    DataSource                                *      dataSource;
-    DataSource::DataSize                             readSize;
-    DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
-    DataSourceURL dataSourceURL(buffer);
-
-    dataSource = this->InitializeDataSource(dest, destSize);
-    if (dataSource == nullptr)
         {
-        assert(false); // problem initializing a datasource
+        assert(!"Unknown grouping type");
         return 0;
         }
-
-    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-        {
-        assert(false); // problem opening a datasource
-        return 0;
         }
 
-    if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+
+    if (m_settings.IsCesium3DTiles())
         {
-        assert(false); // problem reading a datasource
-        return 0;
-        }
-
-    dataSource->close();
-
-    this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
-    if (s_import_from_bim_exported_cesium_3d_tiles)
-        {
-        headerSize = readSize;
-        Json::Value masterHeader;
-        Json::Reader    reader;
-        char* jsonBlob = reinterpret_cast<char *>(dest.get());
-        reader.parse(jsonBlob, jsonBlob + readSize, masterHeader);
-        assert(masterHeader.isMember("models") && masterHeader["models"].isMember("30") && masterHeader["models"]["30"].isMember("tilesetUrl"));
-
-        BeFileName tilesetUrl (masterHeader["models"]["30"]["tilesetUrl"].asString());
+        //headerSize = readSize;
+        //Json::Value masterHeader;
+        //Json::Reader    reader;
+        //char* jsonBlob = reinterpret_cast<char *>(dest.get());
+        //reader.parse(jsonBlob, jsonBlob + readSize, masterHeader);
+        //assert(masterHeader.isMember("models") && masterHeader["models"].isMember("30") && masterHeader["models"]["30"].isMember("tilesetUrl"));
+        //
+        //BeFileName tilesetUrl (masterHeader["models"]["30"]["tilesetUrl"].asString());
         auto rootNodeBlockID = 0; // start node ID at 0
 
         indexHeader->m_SplitTreshold = 10000; // default, not used
@@ -462,10 +440,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_depth = 0; // default, unknown
         indexHeader->m_isTerrain = false; // default, always non terrain
         indexHeader->m_singleFile = false; // default, always multifile
-        indexHeader->m_isCesiumFormat = true; // default, alwasy cesium datasets
+        indexHeader->m_isCesiumFormat = true; // default, always cesium datasets
         indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-        BeFileName baseUrl(tilesetUrl.c_str());
+        BeFileName baseUrl(m_masterFileName.c_str());
         auto tilesetDir = baseUrl.GetDirectoryName();
         auto tilesetName = baseUrl.GetFileNameAndExtension();
 
@@ -473,176 +451,207 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
         }
-    else if (isGrouped)
-        {
-        // initialize codec
-        bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
-        HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
-        const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
-            readSize - sizeof(readSize),
-            masterHeader.data(),
-            masterHeader.size());
-        assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
-
-        dest.reset(new uint8_t[masterHeader.size()]);
-        memcpy(dest.get(), masterHeader.data(), masterHeader.size());
-        headerSize = masterHeader.size();
-
-        size_t position = 0;
-
-        uint32_t sizeOfOldMasterHeaderPart;
-        memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
-        position += sizeof(sizeOfOldMasterHeaderPart);
-        assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
-
-        SQLiteIndexHeader oldMasterHeader;
-        memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
-        position += sizeof(SQLiteIndexHeader);
-        indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
-        indexHeader->m_balanced = oldMasterHeader.m_balanced;
-        indexHeader->m_depth = oldMasterHeader.m_depth;
-        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
-        indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
-        assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-        indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
-
-        auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
-        //auto group = this->GetGroup(HPMBlockID(rootNodeBlockID));
-        m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
-        m_CesiumGroup->SetURL(L"n_0.json");
-        m_CesiumGroup->SetDataSourcePrefix(L"data");
-
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-
-        short storedGroupMode = m_use_virtual_grouping;
-        memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
-        assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
-        position += sizeof(storedGroupMode);
-
-        //m_nodeHeaderGroups.push_back(group);
-        //for (auto childGroup : group->GetChildGroups())
-        //    {
-        //    m_nodeHeaderGroups.push_back(childGroup.second);
-        //    }
-
-        //for (auto headerPtr : group->groupGetJsonNodeHeaders())
-        //    {
-        //    auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
-        //    assert(result.second == true);
-        //    }
-        //
-        //for (auto childGroup : group->GetChildGroups())
-        //    {
-        //    for (auto headerPtr : childGroup->groupGetJsonNodeHeaders())
-        //        {
-        //        auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
-        //        assert(result.second == true);
-        //        }
-        //    }
-
-        //// Parse rest of file -- group information
-        //while (position < headerSize)
-        //    {
-        //    uint64_t group_id;
-        //        uint32_t group_id_tmp;
-        //        memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
-        //        position += sizeof(group_id_tmp);
-        //        group_id = group_id_tmp;
-
-        //    uint64_t group_totalSizeOfHeaders(0);
-        //    if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
-        //        {
-        //        memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
-        //        position += sizeof(group_totalSizeOfHeaders);
-        //        }
-
-        //    size_t group_numNodes;
-        //    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
-        //    position += sizeof(group_numNodes);
-
-        //    auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
-        //                                                     (uint32_t)group_id,
-        //                                                     SMNodeGroup::StrategyType(storedGroupMode),
-        //                                                     group_numNodes,
-        //                                                     group_totalSizeOfHeaders));
-
-        //    // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
-        //    switch (storedGroupMode)
-        //        {
-        //        case SMNodeGroup::StrategyType::NORMAL:
-        //            {
-        //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\g\\g_").c_str());
-        //            break;
-        //            }
-        //        case SMNodeGroup::StrategyType::VIRTUAL:
-        //            {
-        //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\n_").c_str());
-        //            break;
-        //            }
-        //        case SMNodeGroup::StrategyType::CESIUM:
-        //            {
-        //            if (s_stream_from_wsg)
-        //                {
-        //                group->SetDataSourcePrefix(L"n_");
-        //                }
-        //            else
-        //                {
-        //                group->SetDataSourcePrefix(L"data\\n_");
-        //                //group->SetDataSourcePrefix(L"n_");
-        //                }
-        //            group->SetDataSourceExtension(L".json");
-        //            break;
-        //            }
-        //        default:
-        //            {
-        //            assert(!"Unknown grouping type");
-        //            return 0;
-        //            }
-        //        }
-        //    group->SetDistributor(*m_NodeHeaderFetchDistributor);
-        //    m_nodeHeaderGroups.push_back(group);
-
-        //    vector<uint64_t> nodeIds(group_numNodes);
-        //    memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
-        //    position += group_numNodes * sizeof(uint64_t);
-
-        //    group->GetHeader()->resize(group_numNodes);
-        //    transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
-        //        {
-        //        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
-        //        });
-        //    }
-        }
     else
         {
-        Json::Reader    reader;
-        Json::Value     masterHeader;
+        std::unique_ptr<DataSource::Buffer[]>            dest;
+        DataSource                                *      dataSource;
+        DataSource::DataSize                             readSize;
+        DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
+        DataSourceURL dataSourceURL(buffer);
 
-        headerSize = readSize;
-
-        reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
-
-        if (!masterHeader.isMember("rootNodeBlockID"))
+        dataSource = this->InitializeDataSource(dest, destSize);
+        if (dataSource == nullptr)
             {
-            assert(false); // error reading Master Header
+            assert(false); // problem initializing a datasource
             return 0;
             }
-        indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
-        indexHeader->m_balanced = masterHeader["balanced"].asBool();
-        indexHeader->m_depth = masterHeader["depth"].asUInt();
-        // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
-        indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
 
-        auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-        indexHeader->m_isCesiumFormat = masterHeader.isMember("fileFormat") && masterHeader["fileFormat"].asString() == "Cesium3DTiles";
-        /* Needed?
-                    if (masterHeader.isMember("singleFile"))
-                        {
-                        indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
-                        HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-                        }
-        */
+        if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+            {
+            assert(false); // problem opening a datasource
+            return 0;
+            }
+
+        if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+            {
+            assert(false); // problem reading a datasource
+            return 0;
+            }
+
+        dataSource->close();
+
+        this->GetDataSourceAccount()->destroyDataSource(dataSource);
+        if (isGrouped)
+            {
+            // initialize codec
+            bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
+            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
+            const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
+                readSize - sizeof(readSize),
+                masterHeader.data(),
+                masterHeader.size());
+            assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
+
+            dest.reset(new uint8_t[masterHeader.size()]);
+            memcpy(dest.get(), masterHeader.data(), masterHeader.size());
+            headerSize = masterHeader.size();
+
+            size_t position = 0;
+
+            uint32_t sizeOfOldMasterHeaderPart;
+            memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
+            position += sizeof(sizeOfOldMasterHeaderPart);
+            assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
+
+            SQLiteIndexHeader oldMasterHeader;
+            memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
+            position += sizeof(SQLiteIndexHeader);
+            indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+            indexHeader->m_balanced = oldMasterHeader.m_balanced;
+            indexHeader->m_depth = oldMasterHeader.m_depth;
+            indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
+            indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
+            assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+            indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
+
+            auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
+            //auto group = this->GetGroup(HPMBlockID(rootNodeBlockID));
+            m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
+            m_CesiumGroup->SetURL(L"n_0.json");
+            m_CesiumGroup->SetDataSourcePrefix(L"data");
+
+            indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+
+            short storedGroupMode = m_use_virtual_grouping;
+            memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
+            assert((storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+            position += sizeof(storedGroupMode);
+
+            //m_nodeHeaderGroups.push_back(group);
+            //for (auto childGroup : group->GetChildGroups())
+            //    {
+            //    m_nodeHeaderGroups.push_back(childGroup.second);
+            //    }
+
+            //for (auto headerPtr : group->groupGetJsonNodeHeaders())
+            //    {
+            //    auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
+            //    assert(result.second == true);
+            //    }
+            //
+            //for (auto childGroup : group->GetChildGroups())
+            //    {
+            //    for (auto headerPtr : childGroup->groupGetJsonNodeHeaders())
+            //        {
+            //        auto result = m_nodeHeaderCache.insert(std::pair<uint32_t, Json::Value>(headerPtr.first, *headerPtr.second));
+            //        assert(result.second == true);
+            //        }
+            //    }
+
+            //// Parse rest of file -- group information
+            //while (position < headerSize)
+            //    {
+            //    uint64_t group_id;
+            //        uint32_t group_id_tmp;
+            //        memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
+            //        position += sizeof(group_id_tmp);
+            //        group_id = group_id_tmp;
+
+            //    uint64_t group_totalSizeOfHeaders(0);
+            //    if (storedGroupMode == SMNodeGroup::StrategyType::VIRTUAL)
+            //        {
+            //        memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
+            //        position += sizeof(group_totalSizeOfHeaders);
+            //        }
+
+            //    size_t group_numNodes;
+            //    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
+            //    position += sizeof(group_numNodes);
+
+            //    auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
+            //                                                     (uint32_t)group_id,
+            //                                                     SMNodeGroup::StrategyType(storedGroupMode),
+            //                                                     group_numNodes,
+            //                                                     group_totalSizeOfHeaders));
+
+            //    // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
+            //    switch (storedGroupMode)
+            //        {
+            //        case SMNodeGroup::StrategyType::NORMAL:
+            //            {
+            //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\g\\g_").c_str());
+            //            break;
+            //            }
+            //        case SMNodeGroup::StrategyType::VIRTUAL:
+            //            {
+            //            group->SetDataSourcePrefix((m_pathToHeaders + L"\\n_").c_str());
+            //            break;
+            //            }
+            //        case SMNodeGroup::StrategyType::CESIUM:
+            //            {
+            //            if (s_stream_from_wsg)
+            //                {
+            //                group->SetDataSourcePrefix(L"n_");
+            //                }
+            //            else
+            //                {
+            //                group->SetDataSourcePrefix(L"data\\n_");
+            //                //group->SetDataSourcePrefix(L"n_");
+            //                }
+            //            group->SetDataSourceExtension(L".json");
+            //            break;
+            //            }
+            //        default:
+            //            {
+            //            assert(!"Unknown grouping type");
+            //            return 0;
+            //            }
+            //        }
+            //    group->SetDistributor(*m_NodeHeaderFetchDistributor);
+            //    m_nodeHeaderGroups.push_back(group);
+
+            //    vector<uint64_t> nodeIds(group_numNodes);
+            //    memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
+            //    position += group_numNodes * sizeof(uint64_t);
+
+            //    group->GetHeader()->resize(group_numNodes);
+            //    transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+            //        {
+            //        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
+            //        });
+            //    }
+            }
+        else
+            {
+            Json::Reader    reader;
+            Json::Value     masterHeader;
+
+            headerSize = readSize;
+
+            reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
+
+            if (!masterHeader.isMember("rootNodeBlockID"))
+                {
+                assert(false); // error reading Master Header
+                return 0;
+                }
+            indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
+            indexHeader->m_balanced = masterHeader["balanced"].asBool();
+            indexHeader->m_depth = masterHeader["depth"].asUInt();
+            // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
+            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+
+            auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+            indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+            indexHeader->m_isCesiumFormat = masterHeader.isMember("fileFormat") && masterHeader["fileFormat"].asString() == "Cesium3DTiles";
+            /* Needed?
+                        if (masterHeader.isMember("singleFile"))
+                            {
+                            indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+                            HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+                            }
+            */
+            }
         }
 
     return headerSize;
@@ -1288,7 +1297,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
 template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& cesiumNodeHeader)
     {
     const auto& nodeHeader = cesiumNodeHeader["SMHeader"];
-    if (s_import_from_bim_exported_cesium_3d_tiles)
+    if (true/*s_import_from_bim_exported_cesium_3d_tiles*/)
         {
         header->m_id = nodeHeader["id"].asUInt();
         header->m_level = nodeHeader["level"].asUInt();
@@ -1343,41 +1352,74 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             m_transform = Transform::From(533459, 5212605, 0);
             }
 
-        auto& boundingBox = cesiumNodeHeader["boundingVolume"]["box"];
-        DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
-        DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-        ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
-        ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
-        ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
-        ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
-        ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
-        ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
-
-        Transform inverse;
-        inverse.InverseOf(m_transform);
-        m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
-        header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
-        if (header->m_contentExtentDefined)
+        if (cesiumNodeHeader.isMember("boundingVolume"))
             {
-            auto& boundingVolume = cesiumNodeHeader["content"]["boundingVolume"];
-            assert(boundingVolume.isMember("box")); // Only box is supported
-            auto& boundingBox = boundingVolume["box"];
-            DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
-            DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-            ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
-            ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
-            ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
-            ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
-            ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
-            ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
-            m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
-            }
-        else if (cesiumNodeHeader.isMember("children"))
-            {
-            header->m_contentExtent = header->m_nodeExtent;
-            }
-        header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
+            auto const& bv = cesiumNodeHeader["boundingVolume"];
+            if (bv.isMember("box"))
+                {
+                auto const& boundingBox = bv["box"];
+                DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
+                DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
+                ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
+                ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
+                ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
+                ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
+                ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
+                ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
+                }
+            else
+                {
+                assert(bv.isMember("sphere")); // must be sphere if not a box
+                auto const& boundingSphere = bv["sphere"];
+                DPoint3d center = DPoint3d::From(boundingSphere[0].asDouble(), boundingSphere[1].asDouble(), boundingSphere[2].asDouble());
+                double radius = boundingSphere[3].asDouble();
+                ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - radius);
+                ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - radius);
+                ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - radius);
+                ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + radius);
+                ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + radius);
+                ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + radius);
+                }
 
+            m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
+            header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
+            if (header->m_contentExtentDefined)
+                {
+                auto const& bv = cesiumNodeHeader["content"]["boundingVolume"];
+                if (bv.isMember("box"))
+                    {
+                    auto& boundingBox = bv["box"];
+                    DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
+                    DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
+                    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
+                    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
+                    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
+                    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
+                    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
+                    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
+                    }
+                else
+                    {
+                    assert(bv.isMember("sphere")); // must be sphere if not a box
+                    auto const& boundingSphere = bv["sphere"];
+                    DPoint3d center = DPoint3d::From(boundingSphere[0].asDouble(), boundingSphere[1].asDouble(), boundingSphere[2].asDouble());
+                    double radius = boundingSphere[3].asDouble();
+                    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - radius);
+                    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - radius);
+                    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - radius);
+                    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + radius);
+                    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + radius);
+                    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + radius);
+                    }
+                m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
+                }
+            else
+            //else if (cesiumNodeHeader.isMember("children"))
+                {
+                header->m_contentExtent = header->m_nodeExtent;
+                }
+            //header->m_nodeCount = header->m_contentExtentDefined ? 1 : 0;
+            }
         //auto& indices = nodeHeader["indiceID"];
         //assert(indices.isArray() && indices.size() <= 1);
         //
@@ -1613,7 +1655,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
         // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
         //assert(nodeGroup.IsValid());
-        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, this->m_isPublishing, nodeGroup);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, m_settings.IsPublishing(), nodeGroup);
         }
 
     return true;    
@@ -1663,14 +1705,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, this->m_isPublishing);
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings.IsPublishing());
     return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID]);
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings.IsPublishing());
     return true;
     }
 
@@ -1732,7 +1774,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             m_dataSourceURL = L"textures";
             break;
         case SMStoreDataType::Cesium3DTiles:
-            m_dataSourceURL = L"data";
+            //m_dataSourceURL = L"data";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -1754,12 +1796,12 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     //    // stream from azure
     //    }
     }
-
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing, bool compress)
     : m_dataSourceAccount(dataSourceAccount),
     m_nodeHeader(nodeHeader),
     m_jsonHeader(&header),
-    m_dataType(type)
+    m_dataType(type),
+    m_transform(transform)
     {
     switch (m_dataType)
         {
@@ -1780,7 +1822,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             break;
         case SMStoreDataType::Cesium3DTiles:
             // NEEDS_WORK_SM_STREAMING : Remove hard coded path for dgndb 3DTile imports
-            m_dataSourceURL = s_import_from_bim_exported_cesium_3d_tiles ? L"graz\\Production_Graz_3MX_1e" : L"data";
+            m_dataSourceURL = s_import_from_bim_exported_cesium_3d_tiles ? L"graz\\Production_Graz_3MX_1e" : L"";
             break;
         default:
             assert(!"Unkown data type for streaming");
@@ -2001,25 +2043,39 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     // std::map [] operator is not thread safe while inserting new elements
     m_dataCacheMutex.lock();
     auto& block = m_dataCache[blockID.m_integerID];
+    m_dataCacheMutex.unlock();
     if (!block)
         {
         block.reset(new StreamingDataBlock());
         //auto dataURL = this->m_nodeGroup->GetDataURLForNode(blockID);
-        assert(!m_jsonHeader->isNull() && m_jsonHeader->isMember("content") && (*m_jsonHeader)["content"].isMember("url"));
-        auto dataURL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes((*m_jsonHeader)["content"]["url"].asCString());
-        block->SetURL(DataSourceURL(dataURL));
-        block->SetDataSourceURL(m_dataSourceURL);
-        block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
+        assert(!m_jsonHeader->isNull());
+        if (m_jsonHeader->isMember("content"))
+            {
+            assert((*m_jsonHeader)["content"].isMember("url"));
+            auto dataURL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes((*m_jsonHeader)["content"]["url"].asCString());
+            block->SetURL(DataSourceURL(dataURL));
+            block->SetDataSourceURL(m_dataSourceURL);
+            block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
+            block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
+
+            // Apply transform on result
+            block->ApplyTransformOnPoints(m_transform);
+            }
         }
-    m_dataCacheMutex.unlock();
     //assert(block->GetID() == blockID.m_integerID);
 
-    block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
-    assert(block->IsLoaded() && !block->empty());
+    //assert(block->IsLoaded() && !block->empty());
 
     return *block;
     }
 
+void StreamingDataBlock::ApplyTransformOnPoints(const Transform& transform)
+    {
+    for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+        {
+        transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+        }
+    }
 
 
 bool StreamingDataBlock::IsLoading() 
@@ -2252,9 +2308,18 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     //bvector<uint8_t> batchFile(*this);
     //this->clear();
     auto batchTable = cesiumData;
+    uint32_t version = *(uint32_t*)(batchTable + sizeof(uint32_t));
+    assert(version == 1);
+    uint32_t byteLength = *(uint32_t*)(batchTable + 2 * sizeof(uint32_t));
+    assert(byteLength == cesiumDataSize);
     uint32_t batchTableHeaderSize = *(uint32_t*)(batchTable + 3 * sizeof(uint32_t));
     uint32_t batchTableBinarySize = *(uint32_t*)(batchTable + 4 * sizeof(uint32_t));
-    uint32_t batchHeaderLength = 24;
+
+    // NEEDS_WORK_SM_STREAMING: in the future, legacy b3dm headers must not be supported/generated
+    uint32_t batchLength = *(uint32_t*)(batchTable + 5 * sizeof(uint32_t));
+    assert(batchLength == 0 || batchLength > 10000000); // Support b3dm-legacy-header
+    uint32_t batchHeaderLength = batchLength > 10000000 ? 20 : 24;
+
     uint32_t gltfHeaderLength = 20;
     uint32_t gltfOffset = batchHeaderLength + batchTableHeaderSize + batchTableBinarySize;
     uint32_t gltfJsonStartOffset = gltfOffset + gltfHeaderLength;
@@ -2290,6 +2355,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     auto& pointAccessor = accessors[pointAccName];
     auto indiceBufferName = indiceAccessor["bufferView"].asString();
     auto pointBufferName = pointAccessor["bufferView"].asString();
+    auto extensions = cesiumBatchTableHeader.isMember("extensions") ? cesiumBatchTableHeader["extensions"] : Json::Value();
+    auto RTCExtension = extensions.isMember("CESIUM_RTC") ? extensions["CESIUM_RTC"] : Json::Value();
     auto points_are_quantized = pointAccessor.isMember("extensions") && pointAccessor["extensions"].isMember("WEB3D_quantized_attributes");
 
     struct buffer_object_pointer
@@ -2412,6 +2479,13 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
         auto transform = s_import_from_bim_exported_cesium_3d_tiles ? Transform::From(533459, 5212605, 0) : Transform::FromIdentity();
+        transform = Transform::From(333011, 4728426, 0);
+        if (false && !RTCExtension.isNull() && RTCExtension.isMember("center"))
+            {
+            auto center = RTCExtension["center"];
+            Transform rtcTransform = Transform::From(center[0].asDouble(), center[1].asDouble(), center[2].asDouble());
+            transform = Transform::FromProduct(rtcTransform, transform);
+            }
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
