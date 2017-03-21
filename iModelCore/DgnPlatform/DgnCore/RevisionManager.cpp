@@ -1110,6 +1110,13 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     if (revision.IsNull())
         return revision;
 
+    BeFileNameCR revisionPathname = revision->GetRevisionChangesFile();
+    if (revisionPathname.DoesPathExist() && BeFileNameStatus::Success != revisionPathname.BeDeleteFile()) // Note: Need to delete since BeMoveFile doesn't overwrite
+        {
+        BeAssert(false && "Could not setup file containing revision changes");
+        return nullptr;
+        }
+
     if (BeFileNameStatus::Success != BeFileName::BeMoveFile(tempRevisionPathname.c_str(), revision->GetRevisionChangesFile().c_str(), 2))
         {
         BeAssert(false && "Could not setup file containing revision changes");
