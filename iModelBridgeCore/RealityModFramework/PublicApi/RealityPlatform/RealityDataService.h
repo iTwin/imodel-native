@@ -39,6 +39,8 @@ struct RealityDataUrl : public WSGURL
     {
 public:
 
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataUrl() {};
+
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
@@ -103,6 +105,7 @@ struct RealityDataByIdRequest : public RealityDataUrl
 public:
 	// Only identifier is required to retreive RealityData
     REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataByIdRequest(){}
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -158,6 +161,7 @@ struct RealityDataFolderByIdRequest : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataFolderByIdRequest(){}
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -175,6 +179,7 @@ struct RealityDataDocumentByIdRequest : public RealityDataUrl
     {
 public:
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDocumentByIdRequest(){}
 	
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -234,6 +239,8 @@ public:
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
+
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDocumentContentByIdRequest(){}
 	
     //! This call modify the indentifier of the object. Since we want a 
 	//!  different ressource. This can be a folder, document or anything
@@ -402,6 +409,7 @@ enum class RealityDataField
 struct RealityDataPagedRequest : public WSGPagedRequest
     {
 public:
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataPagedRequest() {}
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerName() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetVersion() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
@@ -632,7 +640,7 @@ struct RealityDataServiceTransfer : public CurlConstructor
     {
     REALITYDATAPLATFORM_EXPORT RealityDataServiceTransfer(){}
 
-    REALITYDATAPLATFORM_EXPORT ~RealityDataServiceTransfer();
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataServiceTransfer();
 
     //! Set proxy informations
     //REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };

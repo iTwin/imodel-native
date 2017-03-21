@@ -468,7 +468,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
         return nullptr;
     }
     else if ((uint8_t)entities.size() < request.GetPageSize())
-        status = RequestStatus::NOMOREPAGES;
+        status = RequestStatus::LASTPAGE;
 
     RealityConversionTools::JsonToSpatialEntity(jsonString.c_str(), &entities);
     return entities;

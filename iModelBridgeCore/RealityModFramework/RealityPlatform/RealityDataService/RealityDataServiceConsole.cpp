@@ -24,6 +24,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 void RealityDataConsole::InterpretCommand()
     {
+    m_lastCommand = Command::Dummy;
     std::string str;
     std::getline(std::cin, str);
     m_lastInput = Utf8String(str.c_str()).Trim();
@@ -75,11 +76,7 @@ void RealityDataConsole::InterpretCommand()
         {
         m_lastCommand = Command::Error;
 
-        if (args[0].EqualsI("index"))
-            m_lastCommand = Command::ChoiceIndex;
-        else if (args[0].EqualsI("value"))
-            m_lastCommand = Command::ChoiceValue;
-        else if (args[0].EqualsI("cd"))
+        if (args[0].EqualsI("cd") || args[0].EqualsI("cd.."))
             m_lastCommand = Command::ChangeDir;
         else if (args[0].EqualsI("FileAccess"))
             m_lastCommand = Command::FileAccess;
@@ -138,6 +135,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Error,        &RealityDataConsole::InputError);
     m_functionMap.Insert(Command::ChoiceIndex,  &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::ChoiceValue,  &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Dummy,        &RealityDataConsole::DummyFunction);
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
@@ -176,48 +174,47 @@ RealityDataConsole::RealityDataConsole() :
 void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
-    DisplayInfo ("an option can be selected by its Index or by its Value\n", DisplayOption::Question);
-    DisplayInfo (" by using either \"Index #\" or \"Value NameOfValue\" \n  ?", DisplayOption::Question);
+    DisplayInfo ("an option can be selected by its Index\n", DisplayOption::Question);
+    DisplayInfo ("please input your choice", DisplayOption::Question);
     
     uint64_t choice;
-    InterpretCommand();
-    switch(m_lastCommand)
+
+    //InterpretCommand();
+    std::string str;
+    std::getline(std::cin, str);
+    input = Utf8String(str.c_str()).Trim();
+    if(input.EqualsI("Quit"))
         {
-        case Command::Quit:
-            break;
-        case Command::ChoiceIndex:
-            {
-            if (BeStringUtilities::ParseUInt64(choice, m_lastInput.c_str()) == BentleyStatus::SUCCESS)
+        m_lastCommand = Command::Quit;
+        return;
+        }
+    else if (input.EqualsI("Retry"))
+        return Choice(options, input);
+    else
+        {
+        if ((BeStringUtilities::ParseUInt64(choice, input.c_str()) == BentleyStatus::SUCCESS) && (choice > 0))
+            { //sometimes ParseUInt64 will return SUCCESS, even if the input wasn't a number, and set the int to 0
+            choice -= 1;
+            if (choice >= options.size())
                 {
-                if(choice >= options.size())
-                    {
-                    DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 0 and %lu \n", (options.size() - 1)), DisplayOption::Error);
-                    m_lastCommand = Command::Retry;
-                    }
-                else
-                    input = options[choice];
-                }
-            else
-                {
-                DisplayInfo("Could not extract integer from provided input...\n", DisplayOption::Error);
+                DisplayInfo(Utf8PrintfString("Invalid Selection; selected index not between 1 and %lu \n", options.size()), DisplayOption::Error);
                 m_lastCommand = Command::Retry;
                 }
-            break;
+            else
+                input = options[choice];
             }
-        case Command::ChoiceValue:
+        else
             {
-            input = m_lastInput;
-            break;
-            }
-        case Command::Error:
-            {
-            DisplayInfo("input error, please enter your choice in one of the following formats\n", DisplayOption::Error);
-            DisplayInfo(" Index #  or Value NameOfValue\n", DisplayOption::Error);
-            m_lastCommand = Command::Retry;
+            DisplayInfo("Could not extract a number from provided input. Use input as was provided? [ y / n ]\n", DisplayOption::Question);
+            std::getline(std::cin, str);
+            Utf8String use(str.c_str());
+            if (!use.EqualsI("y"))
+                {
+                DisplayInfo("Retrying\n", DisplayOption::Tip);
+                return Choice(options, input);
+                }
             }
         }
-    if (m_lastCommand == Command::Retry)
-        return Choice(options, input);
     }
 
 int main(int argc, char* argv[])
@@ -260,8 +257,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  Stat        show enterprise statistics\n");
     DisplayInfo ("  Download    Download files from the current location on the server\n");
     DisplayInfo ("  Upload      Upload files to the server\n");
-    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access\n");
-    DisplayInfo ("  AzureAdress Prints the URL to use\n");
+    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access (option \"w\" for write access)\n");
+    DisplayInfo ("  AzureAdress Prints the URL to use (pass \"read\" or \"write\")\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
     DisplayInfo ("  Relationships Show all projects attached to this RealityData\n");
     DisplayInfo ("  CreateRD    Create a new RealityData (must provide a name)\n");
@@ -276,7 +273,7 @@ void RealityDataConsole::PrintResults(bvector<Utf8String> results)
     std::string str;
     for (int i = 0; i < results.size(); ++i)
         {
-        DisplayInfo(Utf8PrintfString("%5d \t %s\n", i, results[i]));
+        DisplayInfo(Utf8PrintfString("%5d \t %s\n", (i + 1), results[i]));
         }
     }
 
@@ -288,6 +285,8 @@ void RealityDataConsole::ConfigureServer()
     std::string input;
     std::getline(std::cin, input);
     server = Utf8String(input.c_str()).Trim();
+    if(server.length() == 0)
+        server = "dev-realitydataservices-eus.cloudapp.net";
     bool verifyCertificate = false;
     while(1)
         {
@@ -465,11 +464,10 @@ void RealityDataConsole::ListRoots()
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    partialVec = RealityDataService::Request(enterpriseReq, status);
-    while(partialVec.size() > 0)
-        {
+    while(status == RequestStatus::SUCCESS)
+        {//When LASTPAGE has been added, loop will exit
+        partialVec = RealityDataService::Request(enterpriseReq, status); 
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
-        partialVec = RealityDataService::Request(enterpriseReq, status);
         }
     bvector<Utf8String> nodes = bvector<Utf8String>();
 
@@ -523,6 +521,7 @@ void RealityDataConsole::ListAll()
         else
             {
             step = (size < (placeholder + 20)) ? size : placeholder + 20;
+            DisplayInfo("Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
             for (; placeholder < step; ++placeholder)
                 {
                 DisplayInfo(Utf8String(WPrintfString(L"%s %lu bytes \n", filesInRepo[placeholder].first.c_str(), filesInRepo[placeholder].second)));
@@ -537,7 +536,10 @@ void RealityDataConsole::ChangeDir()
     if (m_lastInput == "..")
         {
         if (m_currentNode == nullptr)
+            {
             DisplayInfo("Already at root\n", DisplayOption::Tip);
+            return;
+            }
         if (m_currentNode->parentNode != nullptr)
             {
             m_currentNode = m_currentNode->parentNode;
@@ -564,6 +566,8 @@ void RealityDataConsole::ChangeDir()
         DisplayInfo("Need to use \"List\" or \"Dir\" before using this command\n", DisplayOption::Tip);
         DisplayInfo("If you have already done this, there may be no listable locations to navigate to\n", DisplayOption::Tip);
         }
+
+    choice -= 1; //Adjusted for how navnodes are displayed
 
     if(choice < (uint64_t)m_serverNodes.size())
         {
@@ -656,29 +660,38 @@ void RealityDataConsole::Upload()
     BeFileName fileName = BeFileName(m_lastInput);
     if (!fileName.DoesPathExist())
         {
-        DisplayInfo("Could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Error);
+        DisplayInfo("Could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Question);
         return;
         }
 
-    DisplayInfo("please input GUID for upload\n  ?", DisplayOption::Error);
-    std::string input;
-    std::getline(std::cin, input);
-    Utf8String guid = Utf8String(input.c_str()).Trim();
+    Utf8String guid = "";
+    Utf8String propertyString = "";
+    if(m_currentNode == nullptr)
+        {
+        std::string input;
+        bmap<RealityDataField, Utf8String> properties;
+        DisplayInfo("please input value for Name\n  ?", DisplayOption::Question);
+        std::getline(std::cin, input);
+        properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
-    bmap<RealityDataField, Utf8String> properties;
-    DisplayInfo("please input value for Name\n  ?", DisplayOption::Error);
-    std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
+        DisplayInfo("please input value for Classification\n  ?", DisplayOption::Question);
+        std::getline(std::cin, input);
+        properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
 
-    DisplayInfo("please input value for Classification\n  ?", DisplayOption::Error);
-    std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
+        DisplayInfo("please input value for Type\n  ?", DisplayOption::Question);
+        std::getline(std::cin, input);
+        properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
-    DisplayInfo("please input value for Type\n  ?", DisplayOption::Error);
-    std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
+        DisplayInfo("please input value for Visibility\n  ?", DisplayOption::Question);
+        std::getline(std::cin, input);
+        properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
 
-    Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
+        Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
+        }
+    else
+        {
+        guid = m_currentNode->node.GetInstanceId();
+        }
 
     RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true);
     upload.SetProgressCallBack(uploadProgressFunc);
@@ -962,11 +975,13 @@ void RealityDataConsole::Filter()
     std::string str;
     while (filter != "-Finish-")
         {
-        DisplayInfo("\nCurrent Filters:\n");
+        DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
+        DisplayInfo("Current Filters:\n");
         DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
-        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n\n", m_ownerFilter));
+        DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
+        DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
         Choice(m_filterProperties, filter);
@@ -1022,12 +1037,15 @@ void RealityDataConsole::Relationships()
 
 void RealityDataConsole::CreateRD()
     {
-    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    DisplayInfo("Currently unsupported");
+    return;
+    /*bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, m_lastInput);
 
     RealityDataServiceCreate createRequest = RealityDataServiceCreate("", RealityDataServiceUpload::PackageProperties(properties));
     int status;
     Utf8String response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
+
     if (status != CURLE_OK)
         {
         DisplayInfo(Utf8PrintfString("There was an error creating a new RealityData. Curl failed with error code %d\n", status), DisplayOption::Error);
@@ -1039,7 +1057,7 @@ void RealityDataConsole::CreateRD()
         Json::Reader::Parse(response, instances);
         if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
             DisplayInfo(Utf8PrintfString("New RealityData created with GUID %s", instances["instances"][0]["instanceId"].asString()), DisplayOption::Info);
-        }
+        }*/
     }
 
 void RealityDataConsole::InputError()

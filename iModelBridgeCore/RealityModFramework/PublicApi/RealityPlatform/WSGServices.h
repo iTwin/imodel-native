@@ -63,6 +63,8 @@ public:
     //! Creates a WSG URL from the various provided components
     REALITYDATAPLATFORM_EXPORT WSGURL(Utf8String server, Utf8String version, Utf8String repoId, Utf8String schema, WSGInterface _interface, Utf8String className, Utf8String id, bool objectContent);
 
+    REALITYDATAPLATFORM_EXPORT virtual ~WSGURL() {}
+
     //! Get the server name. The string provided or returned only contains
     //! the server name without trailling or leading slashes and without the communication version
     //! for example the server name could be 'dev-contextservices.connect.com'
@@ -120,6 +122,8 @@ public:
         BeAssert(m_validRequestString);
         BeAssert(m_httpRequestString.size() != 0);
 
+        m_httpRequestString.ReplaceAll(" ","%20");
+
         return m_httpRequestString;
         };
 
@@ -146,7 +150,6 @@ public:
         }
 
     WSGURL() : m_validRequestString(false), m_requestType(HttpRequestType::GET_Request), m_interface(WSGInterface::Repositories), m_objectContent(false) {}
-    ~WSGURL() {}
     WSGURL(WSGURL const& object);
     WSGURL& operator=(WSGURL const & object);
 
@@ -192,7 +195,7 @@ enum RequestStatus
     {
     SUCCESS = 0,
     ERROR = 1,
-    NOMOREPAGES = 2
+    LASTPAGE = 2
     };
 
 struct NavNode
@@ -315,7 +318,7 @@ public:
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest() : m_startIndex(0), m_pageSize(25) {}
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(uint32_t startIndex, uint16_t pageSize) : m_startIndex(startIndex), m_pageSize(pageSize) {BeAssert(m_pageSize >0);}
 
-    REALITYDATAPLATFORM_EXPORT ~WSGPagedRequest() {}
+    REALITYDATAPLATFORM_EXPORT virtual ~WSGPagedRequest() {}
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(WSGPagedRequest const& object);
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object);
 
@@ -407,6 +410,7 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(Utf8String certificatePath) { m_certificatePath = BeFileName(certificatePath); }
 
     REALITYDATAPLATFORM_EXPORT CurlConstructor();
+    REALITYDATAPLATFORM_EXPORT virtual ~CurlConstructor(){}
 protected:
     REALITYDATAPLATFORM_EXPORT CURL* PrepareCurl(const WSGURL& wsgRequest, int& code, bool verifyPeer, FILE* file) const;
 

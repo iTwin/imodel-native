@@ -27,8 +27,8 @@ static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg
     {
     if(ErrorCode > 0)
         std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg);
-//    else
-//        std::cout << pMsg;
+    else if(ErrorCode < 0)
+        std::cout << pMsg;
     }
 
 int main(int argc, char *argv[])
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     properties.Insert(RealityDataField::Visibility, "PUBLIC");
 
-    BeFileName fName = BeFileName("J:/_Data_Tests/_SPAR_Demo/Mascaron");
+    BeFileName fName = BeFileName("D:/RealityModFrameworkFolder/prod");
 #endif
 #if (0) 
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
@@ -94,18 +94,18 @@ int main(int argc, char *argv[])
 
     BeFileName TempPath;
     BeFileName::BeGetTempPath(TempPath);
-    BeSQLite::BeSQLiteLib::Initialize(TempPath);
+    /*BeSQLite::BeSQLiteLib::Initialize(TempPath);
     BeSQLite::BeGuid guid(true);
-    Utf8String Id = guid.ToString();
+    Utf8String Id = guid.ToString();*/
 
-    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, Id.ToLower(), propertyString, false, true, statusFunc);
+    RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
     if (upload->IsValidUpload())
         {
-        std::cout << Utf8PrintfString("Upload file : %s \n  guid=%s\n", fName.GetNameUtf8(), Id);
+        std::cout << Utf8PrintfString("Upload file : %s \n", fName.GetNameUtf8());
 
         upload->SetProgressCallBack(progressFunc);
         upload->SetProgressStep(0.05);
-        upload->OnlyReportErrors(false);
+        upload->OnlyReportErrors(true);
         time_t time = std::time(nullptr);
         TransferReport* ur = upload->Perform();
         time_t time2 = std::time(nullptr);

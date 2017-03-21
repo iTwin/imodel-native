@@ -30,6 +30,7 @@ struct NodeList
 
 enum class Command
     {
+    Dummy,
     Quit,
     Retry,
     Error,
