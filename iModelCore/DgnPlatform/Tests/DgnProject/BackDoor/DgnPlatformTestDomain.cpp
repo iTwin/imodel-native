@@ -552,36 +552,36 @@ TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_ca
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-PerfElementPtr PerfElement::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+PerfElementPtr PerfElement::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId, Dgn::DgnClassId parentRelClassId)
     {
-    PerfElementPtr element = new PerfElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    PerfElementPtr element = new PerfElement(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), DgnCode(), nullptr, parentId, parentRelClassId));
     return element;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-PerfElementSub1Ptr PerfElementSub1::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+PerfElementSub1Ptr PerfElementSub1::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId, Dgn::DgnClassId parentRelClassId)
     {
-    PerfElementSub1Ptr element = new PerfElementSub1(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    PerfElementSub1Ptr element = new PerfElementSub1(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), DgnCode(), nullptr, parentId, parentRelClassId));
     return element;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-PerfElementSub2Ptr PerfElementSub2::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+PerfElementSub2Ptr PerfElementSub2::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId, Dgn::DgnClassId parentRelClassId)
     {
-    PerfElementSub2Ptr element = new PerfElementSub2(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    PerfElementSub2Ptr element = new PerfElementSub2(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), DgnCode(), nullptr, parentId, parentRelClassId));
     return element;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-PerfElementSub3Ptr PerfElementSub3::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId)
+PerfElementSub3Ptr PerfElementSub3::Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId, Dgn::DgnClassId parentRelClassId)
     {
-    PerfElementSub3Ptr element = new PerfElementSub3(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d()));
+    PerfElementSub3Ptr element = new PerfElementSub3(CreateParams(db, mid, QueryClassId(db), categoryId, Placement3d(), DgnCode(), nullptr, parentId, parentRelClassId));
     return element;
     }
 
