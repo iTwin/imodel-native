@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static const SchemaVersion EXPECTED_PROFILEVERSION (3, 106, 0, 0);
+static const ProfileVersion EXPECTED_PROFILEVERSION (3, 106, 0, 0);
 
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
@@ -56,7 +56,7 @@ TEST_F(ECDbTestFixture, ECDbProfile)
 
     Utf8String actualProfileVersionStr;
     EXPECT_EQ(BE_SQLITE_ROW, ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
-    SchemaVersion actualProfileVersion(actualProfileVersionStr.c_str());
+    ProfileVersion actualProfileVersion(actualProfileVersionStr.c_str());
     EXPECT_TRUE(EXPECTED_PROFILEVERSION == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
 
     size_t sequenceIndex = 0;
@@ -125,40 +125,40 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
     {
     ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
 
-    std::vector<std::tuple<SchemaVersion, Db::OpenMode, DbResult, bool>> testVersions {
-            {SchemaVersion(3,6,99,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,6,99,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,2), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,2), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,3,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,4,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,7,4,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,100,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
-            {SchemaVersion(3,106,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,106,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {SchemaVersion(3,106,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,106,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
-            {SchemaVersion(3,106,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {SchemaVersion(3,106,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
-            {SchemaVersion(3,107,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {SchemaVersion(3,107,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {SchemaVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
-            {SchemaVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
+    std::vector<std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool>> testVersions {
+            {ProfileVersion(3,6,99,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,6,99,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,2), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,2), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,3,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,4,3), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,7,4,3), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,100,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,100,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,100,0,1), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,100,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
+            {ProfileVersion(3,106,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,106,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(3,106,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,106,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(3,106,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(3,106,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
+            {ProfileVersion(3,107,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(3,107,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},
+            {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNew, false}
         };
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "UPDATE be_Prop SET StrData=? WHERE Namespace='ec_Db' AND Name='SchemaVersion'"));
-    for (std::tuple<SchemaVersion, Db::OpenMode, DbResult, bool> const& testVersion : testVersions)
+    for (std::tuple<ProfileVersion, Db::OpenMode, DbResult, bool> const& testVersion : testVersions)
         {
         Utf8String schemaVersionJson = std::get<0>(testVersion).ToJson();
         ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, schemaVersionJson, Statement::MakeCopy::Yes));

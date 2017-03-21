@@ -21,14 +21,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlPreparedStatement_Old::ECSqlPreparedStatement_Old(ECSqlType type, ECDbCR ecdb)
+SingleECSqlPreparedStatement::SingleECSqlPreparedStatement(ECSqlType type, ECDbCR ecdb)
 : m_type(type), m_ecdb(ecdb), m_isNoopInSqlite(false), m_parentOfJoinedTableECSqlStatement(nullptr) {}
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        01/16
 //---------------------------------------------------------------------------------------
-ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement_Old::CreateParentOfJoinedTableECSqlStatement(ECClassId joinedTableClassId)
+ParentOfJoinedTableECSqlStatement* SingleECSqlPreparedStatement::CreateParentOfJoinedTableECSqlStatement(ECClassId joinedTableClassId)
     {
     BeAssert(m_parentOfJoinedTableECSqlStatement == nullptr && "CreateParentOfJoinedTableECSqlStatement expects the statement to not exist prior to this call.");
     m_parentOfJoinedTableECSqlStatement = std::unique_ptr<ParentOfJoinedTableECSqlStatement>(new ParentOfJoinedTableECSqlStatement(joinedTableClassId));
@@ -38,7 +38,7 @@ ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement_Old::CreateParentOfJoi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        01/16
 //---------------------------------------------------------------------------------------
-ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement_Old::GetParentOfJoinedTableECSqlStatement() const
+ParentOfJoinedTableECSqlStatement* SingleECSqlPreparedStatement::GetParentOfJoinedTableECSqlStatement() const
     {
     return m_parentOfJoinedTableECSqlStatement.get();
     }
@@ -46,7 +46,7 @@ ParentOfJoinedTableECSqlStatement* ECSqlPreparedStatement_Old::GetParentOfJoined
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPreparedStatement_Old::Prepare(ECSqlPrepareContext& prepareContext, Exp const& exp, Utf8CP ecsql)
+ECSqlStatus SingleECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareContext, Exp const& exp, Utf8CP ecsql)
     {
     BeAssert(m_nativeSql.empty());
 
@@ -79,7 +79,7 @@ ECSqlStatus ECSqlPreparedStatement_Old::Prepare(ECSqlPrepareContext& prepareCont
     else
         {
         //don't let BeSQLite log and assert on error (therefore use TryPrepare instead of Prepare)
-        DbResult nativeSqlStat = GetSqliteStatementR().TryPrepare(m_ecdb, nativeSql.c_str());
+        DbResult nativeSqlStat = GetSqliteStatement().TryPrepare(m_ecdb, nativeSql.c_str());
         if (nativeSqlStat != BE_SQLITE_OK)
             {
             GetECDb().GetECDbImplR().GetIssueReporter().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", ecsql, nativeSql.c_str(),
@@ -103,7 +103,7 @@ ECSqlStatus ECSqlPreparedStatement_Old::Prepare(ECSqlPrepareContext& prepareCont
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& ECSqlPreparedStatement_Old::GetBinder(int parameterIndex)
+IECSqlBinder& SingleECSqlPreparedStatement::GetBinder(int parameterIndex)
     {
     if (SUCCESS != AssertIsValid())
         return NoopECSqlBinder::Get();
@@ -123,7 +123,7 @@ IECSqlBinder& ECSqlPreparedStatement_Old::GetBinder(int parameterIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
-int ECSqlPreparedStatement_Old::GetParameterIndex(Utf8CP parameterName) const
+int SingleECSqlPreparedStatement::GetParameterIndex(Utf8CP parameterName) const
     {
     if (SUCCESS != AssertIsValid())
         return -1;
@@ -138,7 +138,7 @@ int ECSqlPreparedStatement_Old::GetParameterIndex(Utf8CP parameterName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPreparedStatement_Old::ClearBindings()
+ECSqlStatus SingleECSqlPreparedStatement::ClearBindings()
     {
     if (SUCCESS != AssertIsValid())
         return ECSqlStatus::Error;
@@ -149,7 +149,7 @@ ECSqlStatus ECSqlPreparedStatement_Old::ClearBindings()
     if (auto joinedTableStmt = GetParentOfJoinedTableECSqlStatement())
         joinedTableStmt->ClearBindings();
 
-    const DbResult nativeSqlStat = GetSqliteStatementR ().ClearBindings();
+    const DbResult nativeSqlStat = GetSqliteStatement ().ClearBindings();
     GetParameterMapR ().OnClearBindings();
 
     if (nativeSqlStat != BE_SQLITE_OK)
@@ -164,7 +164,7 @@ ECSqlStatus ECSqlPreparedStatement_Old::ClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-DbResult ECSqlPreparedStatement_Old::DoStep()
+DbResult SingleECSqlPreparedStatement::DoStep()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -172,7 +172,7 @@ DbResult ECSqlPreparedStatement_Old::DoStep()
     if (!m_parameterMap.OnBeforeStep().IsSuccess())
         return BE_SQLITE_ERROR;
     
-    const DbResult nativeSqlStatus = GetSqliteStatementR ().Step();
+    const DbResult nativeSqlStatus = GetSqliteStatement ().Step();
     if (BE_SQLITE_ROW != nativeSqlStatus && BE_SQLITE_DONE != nativeSqlStatus)
         {
         Utf8String msg;
@@ -185,7 +185,7 @@ DbResult ECSqlPreparedStatement_Old::DoStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPreparedStatement_Old::Reset()
+ECSqlStatus SingleECSqlPreparedStatement::Reset()
     {
     if (SUCCESS != AssertIsValid())
         return ECSqlStatus::Error;
@@ -199,9 +199,9 @@ ECSqlStatus ECSqlPreparedStatement_Old::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlPreparedStatement_Old::DoReset()
+ECSqlStatus SingleECSqlPreparedStatement::DoReset()
     {
-    const DbResult nativeSqlStat = GetSqliteStatementR ().Reset();
+    const DbResult nativeSqlStat = GetSqliteStatement ().Reset();
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
@@ -211,7 +211,7 @@ ECSqlStatus ECSqlPreparedStatement_Old::DoReset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-BentleyStatus ECSqlPreparedStatement_Old::AssertIsValid() const
+BentleyStatus SingleECSqlPreparedStatement::AssertIsValid() const
     {
     if (m_preparationClearCacheCounter != m_ecdb.GetECDbImplR().GetClearCacheCounter())
         {
@@ -226,7 +226,7 @@ BentleyStatus ECSqlPreparedStatement_Old::AssertIsValid() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-Utf8CP ECSqlPreparedStatement_Old::GetNativeSql() const
+Utf8CP SingleECSqlPreparedStatement::GetNativeSql() const
     {
     if (m_isNoopInSqlite)
         LOG.warning("ECSqlStatement::GetNativeSql> No native SQL available. ECSQL translates to a no-op in native SQL.");
@@ -241,7 +241,7 @@ Utf8CP ECSqlPreparedStatement_Old::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-DbResult ECSqlSelectPreparedStatement_Old::Step()
+DbResult ECSqlSelectPreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -259,7 +259,7 @@ DbResult ECSqlSelectPreparedStatement_Old::Step()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::_Reset()
+ECSqlStatus ECSqlSelectPreparedStatement::_Reset()
     {
     ECSqlStatus resetStatementStat = DoReset();
     //even if statement reset failed we still try to reset the fields to clean-up things as good as possible.
@@ -277,7 +277,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::_Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-int ECSqlSelectPreparedStatement_Old::GetColumnCount() const
+int ECSqlSelectPreparedStatement::GetColumnCount() const
     {
     if (SUCCESS != AssertIsValid())
         return -1;
@@ -288,7 +288,7 @@ int ECSqlSelectPreparedStatement_Old::GetColumnCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-IECSqlValue const& ECSqlSelectPreparedStatement_Old::GetValue(int columnIndex) const
+IECSqlValue const& ECSqlSelectPreparedStatement::GetValue(int columnIndex) const
     {
     if (SUCCESS != AssertIsValid())
         return NoopECSqlValue::GetSingleton();
@@ -306,7 +306,7 @@ IECSqlValue const& ECSqlSelectPreparedStatement_Old::GetValue(int columnIndex) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::ResetFields() const
+ECSqlStatus ECSqlSelectPreparedStatement::ResetFields() const
     {
     for (ECSqlField* field : m_fieldsRequiringReset)
         {
@@ -321,7 +321,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::ResetFields() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlSelectPreparedStatement_Old::OnAfterStep() const
+ECSqlStatus ECSqlSelectPreparedStatement::OnAfterStep() const
     {
     for (ECSqlField* field : m_fieldsRequiringOnAfterStep)
         {
@@ -336,7 +336,7 @@ ECSqlStatus ECSqlSelectPreparedStatement_Old::OnAfterStep() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-void ECSqlSelectPreparedStatement_Old::AddField(std::unique_ptr<ECSqlField> field)
+void ECSqlSelectPreparedStatement::AddField(std::unique_ptr<ECSqlField> field)
     {
     BeAssert(field != nullptr);
     if (field != nullptr)
@@ -358,7 +358,7 @@ void ECSqlSelectPreparedStatement_Old::AddField(std::unique_ptr<ECSqlField> fiel
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-DbResult ECSqlInsertPreparedStatement_Old::Step(ECInstanceKey& instanceKey)
+DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -423,7 +423,7 @@ DbResult ECSqlInsertPreparedStatement_Old::Step(ECInstanceKey& instanceKey)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlInsertPreparedStatement_Old::GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId)
+ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId)
     {
     ECSqlBinder* ecinstanceidBinder = m_ecInstanceKeyInfo.GetECInstanceIdBinder();
     BeAssert(ecinstanceidBinder != nullptr);
@@ -445,7 +445,7 @@ ECSqlStatus ECSqlInsertPreparedStatement_Old::GenerateECInstanceIdAndBindToInser
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        07/14
 //---------------------------------------------------------------------------------------
-void ECSqlInsertPreparedStatement_Old::SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo)
+void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
     BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid());
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
@@ -457,7 +457,7 @@ void ECSqlInsertPreparedStatement_Old::SetECInstanceKeyInfo(ECInstanceKeyInfo co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-DbResult ECSqlUpdatePreparedStatement_Old::Step()
+DbResult ECSqlUpdatePreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
@@ -482,7 +482,7 @@ DbResult ECSqlUpdatePreparedStatement_Old::Step()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-DbResult ECSqlDeletePreparedStatement_Old::Step()
+DbResult ECSqlDeletePreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;

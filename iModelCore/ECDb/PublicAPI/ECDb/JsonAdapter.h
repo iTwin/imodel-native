@@ -37,34 +37,22 @@ typedef RefCountedPtr<ECPropertyFormatter> ECPropertyFormatterPtr;
 //+===============+===============+===============+===============+===============+======
 struct EXPORT_VTABLE_ATTRIBUTE ECPropertyFormatter : RefCounted<NonCopyableClass>
     {
-    protected:
-        ECPropertyFormatter() {}
-        virtual ~ECPropertyFormatter() {}
-
+    private:
         //! Formats an EC property value as a string
-        ECDB_EXPORT virtual bool _FormattedStringFromECValue
-        (
-            Utf8StringR strVal,
-            ECN::ECValueCR ecValue,
-            ECN::ECPropertyCR ecProperty,
-            bool isArrayMember
-        ) const;
+        ECDB_EXPORT virtual bool _FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR, ECN::ECPropertyCR, bool isArrayMember) const;
 
         //! Gets the category corresponding to a property 
-        ECDB_EXPORT virtual ECN::IECInstancePtr _GetPropertyCategory(ECN::ECPropertyCR ecProperty);
+        ECDB_EXPORT virtual ECN::IECInstancePtr _GetPropertyCategory(ECN::ECPropertyCR);
+
+    protected:
+        ECPropertyFormatter() {}
 
     public:
+        virtual ~ECPropertyFormatter() {}
         static ECPropertyFormatterPtr Create() { return new ECPropertyFormatter(); }
 
-        bool FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const
-            {
-            return _FormattedStringFromECValue(strVal, ecValue, ecProperty, isArrayMember);
-            }
-
-        ECN::IECInstancePtr GetPropertyCategory(ECN::ECPropertyCR ecProperty)
-            {
-            return _GetPropertyCategory(ecProperty);
-            }
+        bool FormattedStringFromECValue(Utf8StringR strVal, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const { return _FormattedStringFromECValue(strVal, ecValue, ecProperty, isArrayMember); }
+        ECN::IECInstancePtr GetPropertyCategory(ECN::ECPropertyCR ecProperty) { return _GetPropertyCategory(ecProperty); }
     };
 
 //=======================================================================================
@@ -73,43 +61,24 @@ struct EXPORT_VTABLE_ATTRIBUTE ECPropertyFormatter : RefCounted<NonCopyableClass
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      08/2012
 //+===============+===============+===============+===============+===============+======
-struct JsonECSqlSelectAdapter : NonCopyableClass
+struct JsonECSqlSelectAdapter final: NonCopyableClass
     {
 #if !defined (DOCUMENTATION_GENERATOR)
-    public:
-        struct PropertyTreeNode;
-        typedef PropertyTreeNode* PropertyTreeNodeP;
-        typedef const PropertyTreeNode* PropertyTreeNodeCP;
-        typedef PropertyTreeNode& PropertyTreeNodeR;
-        typedef const PropertyTreeNode& PropertyTreeNodeCR;
-
-        typedef bmap<Utf8String, PropertyTreeNodeP > PropertyTreeNodeByName;
-        typedef bmap<Utf8String, bvector<PropertyTreeNodeCP > > PropertyTreeNodesByCategory;
-
-        struct PropertyTree;
-        typedef const PropertyTree& PropertyTreeCR;
-
     public:
         //========================================================================================
         //* @bsiclass                                                 Ramanujam.Raman      12/2012
         //+===============+===============+===============+===============+===============+=======
-        struct PropertyTreeNode
+        struct PropertyTreeNode final : NonCopyableClass
             {
             friend struct PropertyTree;
             friend struct JsonECSqlSelectAdapter;
             private:
-                ECN::ECPropertyCP           m_property;
-                ECN::ECClassCP              m_class;
-                int                         m_instanceIndex;
-                PropertyTreeNodeByName      m_childNodes;
+                ECN::ECPropertyCP m_property = nullptr;
+                ECN::ECClassCP m_class = nullptr;
+                int m_instanceIndex = -1;
+                bmap<Utf8String, PropertyTreeNode const*>  m_childNodes;
 
-                // Disable copy
-                PropertyTreeNode(PropertyTreeNodeCR other);
-                PropertyTreeNode& operator= (PropertyTreeNodeCR other);
-
-                PropertyTreeNode()
-                    : m_property(nullptr), m_class(nullptr), m_instanceIndex(-1)
-                    {}
+                PropertyTreeNode() {}
                 PropertyTreeNode(ECN::ECPropertyCP ecProperty, ECN::ECClassCP ecClass, int instanceIndex)
                     : m_property(ecProperty), m_class(ecClass), m_instanceIndex(instanceIndex)
                     {}
@@ -124,15 +93,15 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
         //========================================================================================
         //* @bsiclass                                                 Ramanujam.Raman      12/2012
         //+===============+===============+===============+===============+===============+=======
-        struct PropertyTree
+        struct PropertyTree final
             {
             friend struct JsonECSqlSelectAdapter;
             private:
                 PropertyTreeNode m_rootNode;
 
                 PropertyTree() {}
-                void AddInlinedStructNodes(PropertyTreeNodeR parentNode, IECSqlValue const& ecSqlValue, int instanceIndex);
-                void AddChildNodes(PropertyTreeNodeR parentNode, bvector<ECN::ECClassCP>& rootClasses, IECSqlValue const& ecSqlValue);
+                void AddInlinedStructNodes(PropertyTreeNode& parentNode, IECSqlValue const& ecSqlValue, int instanceIndex);
+                void AddChildNodes(PropertyTreeNode& parentNode, bvector<ECN::ECClassCP>& rootClasses, IECSqlValue const& ecSqlValue);
             };
 
 #endif
@@ -142,7 +111,7 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
         //! @see JsonECSqlSelectAdapter
         // @bsiclass                                                Ramanujam.Raman      10/2012
         //+===============+===============+===============+===============+===============+======
-        struct FormatOptions
+        struct FormatOptions final
             {
 #if !defined (DOCUMENTATION_GENERATOR)
             friend struct JsonECSqlSelectAdapter;
@@ -166,53 +135,53 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
         bool m_structArrayAsString;
 
         static bool PrioritySortPredicate(const ECN::IECInstancePtr& priorityCA1, const ECN::IECInstancePtr& priorityCA2);
-        static bool PropertySortPredicate(PropertyTreeNodeCP propertyNode1, PropertyTreeNodeCP propertyNode2);
+        static bool PropertySortPredicate(PropertyTreeNode const* propertyNode1, PropertyTreeNode const* propertyNode2);
 
-        void CategorizeProperties(bvector<ECN::IECInstancePtr>& categories, PropertyTreeNodesByCategory& nodesByCategory, const PropertyTreeNodeByName& nodes) const;
-        void SortProperties(bvector<ECN::IECInstancePtr>& categories, PropertyTreeNodesByCategory& nodesByCategory) const;
+        void CategorizeProperties(bvector<ECN::IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory, bmap<Utf8String, PropertyTreeNode const*> const& nodes) const;
+        void SortProperties(bvector<ECN::IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory) const;
 
-        void JsonFromPropertyTree(JsonValueR jsonValue, PropertyTreeCR propertyTree) const;
+        void JsonFromPropertyTree(JsonValueR, PropertyTree const&) const;
 
-        void JsonFromPropertyRecursive(JsonValueR jsonValue, PropertyTreeNodeCR propertyTreeNode) const;
-        void JsonFromProperty(JsonValueR propertyJson, ECN::ECPropertyCR ecProperty, ECN::ECClassCR ecClass, int instanceIndex) const;
-        void JsonFromCategory(JsonValueR jsonValue, ECN::IECInstancePtr& IECSqlBinderCustomAttribute, const PropertyTreeNodesByCategory& nodesByCategory) const;
+        void JsonFromPropertyRecursive(JsonValueR, PropertyTreeNode const&) const;
+        void JsonFromProperty(JsonValueR propertyJson, ECN::ECPropertyCR, ECN::ECClassCR, int instanceIndex) const;
+        void JsonFromCategory(JsonValueR, ECN::IECInstancePtr& IECSqlBinderCustomAttribute, bmap<Utf8String, bvector<PropertyTreeNode const*>> const& nodesByCategory) const;
 
-        void JsonFromClassesRecursive(JsonValueR jsonValue, bset<ECN::ECClassCP>& classes, PropertyTreeNodeCR propertyTreeNode) const;
-        static Utf8String GetClassKey(ECN::ECClassCR ecClass);
-        void JsonFromClass(JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
+        void JsonFromClassesRecursive(JsonValueR, bset<ECN::ECClassCP>&, PropertyTreeNode const&) const;
+        static Utf8String GetClassKey(ECN::ECClassCR);
+        void JsonFromClass(JsonValueR, ECN::ECClassCR) const;
 
-        static bool GetIntegerValue(int& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
-        static bool GetStringValue(Utf8String& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
-        static bool GetBooleanValue(bool& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
+        static bool GetIntegerValue(int& value, ECN::IECInstanceCR, Utf8CP propertyName);
+        static bool GetStringValue(Utf8String& value, ECN::IECInstanceCR, Utf8CP propertyName);
+        static bool GetBooleanValue(bool& value, ECN::IECInstanceCR, Utf8CP propertyName);
         static bool GetPriorityFromCustomAttribute(int& priority, ECN::IECInstancePtr priorityCA);
-        static ECN::ECClassCP GetClassFromStructOrStructArray(ECN::ECPropertyCR ecProperty);
-        static bool GetPriorityFromProperty(int& priority, ECN::ECPropertyCR ecProperty);
+        static ECN::ECClassCP GetClassFromStructOrStructArray(ECN::ECPropertyCR);
+        static bool GetPriorityFromProperty(int& priority, ECN::ECPropertyCR);
 
-        bool JsonFromPropertyValue(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-        bool JsonFromCell(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
+        bool JsonFromPropertyValue(JsonValueR, IECSqlValue const&) const;
+        bool JsonFromCell(JsonValueR, IECSqlValue const&) const;
 
-        bool JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromStruct(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-        bool JsonFromArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR) const;
-        bool JsonFromStructArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
-        bool JsonFromPrimitiveArray(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty) const;
-        bool JsonFromBinary(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromBoolean(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromDateTime(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromDouble(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromInt(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromInt64(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromPoint2d(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromPoint3d(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromString(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
-        bool JsonFromCG(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
+        bool JsonFromPrimitive(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromStruct(JsonValueR, IECSqlValue const&) const;
+        bool JsonFromArray(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR) const;
+        bool JsonFromStructArray(JsonValueR, IECSqlValue const&) const;
+        bool JsonFromPrimitiveArray(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR) const;
+        bool JsonFromBinary(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromBoolean(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromDateTime(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromDouble(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromInt(JsonValueR, IECSqlValue const& ecsqlValue, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromInt64(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromPoint2d(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromPoint3d(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromString(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromCG(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
 
-        bool FormattedJsonFromECValue(JsonValueR jsonValue, ECN::ECValueCR ecValue, ECN::ECPropertyCR ecProperty, bool isArrayMember) const;
+        bool FormattedJsonFromECValue(JsonValueR, ECN::ECValueCR, ECN::ECPropertyCR, bool isArrayMember) const;
 
-        void JsonFromClassKey(JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
-        void JsonFromClassLabel(JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
-        void JsonFromInstanceLabel(JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
-        bool JsonFromInstanceId(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const;
+        void JsonFromClassKey(JsonValueR, ECN::ECClassCR) const;
+        void JsonFromClassLabel(JsonValueR, ECN::ECClassCR) const;
+        void JsonFromInstanceLabel(JsonValueR, ECN::ECClassCR) const;
+        bool JsonFromInstanceId(JsonValueR, IECSqlValue const&) const;
 
     public:
 
@@ -221,7 +190,7 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
         //! @param[in] formatOptions Options to control the output. 
         //! @see ECSqlStatement
         ECDB_EXPORT JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, JsonECSqlSelectAdapter::FormatOptions formatOptions = JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::FormattedStrings));
-        virtual ~JsonECSqlSelectAdapter() {}
+        ~JsonECSqlSelectAdapter() {}
 
         //! Gets the presentation meta-data for displaying the individual rows read in. 
         //! @param [out] rowDisplayInfo Includes information to display the various property columns in the correct order. 
@@ -386,9 +355,9 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Ramanujam.Raman      09/2013
 //+===============+===============+===============+===============+===============+======
-struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
+struct RelatedItemsDisplaySpecificationsCache final : public BeSQLite::Db::AppData
     {
-    struct RelationshipPathInfo
+    struct RelationshipPathInfo final
         {
         Utf8String m_path;
         ECN::ECSchemaCR m_defaultSchema;
@@ -396,22 +365,20 @@ struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
 
         RelationshipPathInfo(Utf8CP path, ECN::ECSchemaCR defaultSchema) : m_path(path), m_defaultSchema(defaultSchema) {}
 
-        RelationshipPathInfo(RelationshipPathInfo const& other) : m_defaultSchema(other.m_defaultSchema)
-            {
-            *this = other;
-            }
+        RelationshipPathInfo(RelationshipPathInfo const& other) : m_defaultSchema(other.m_defaultSchema) { *this = other; }
 
-        RelationshipPathInfo& operator= (RelationshipPathInfo const& other)
+        RelationshipPathInfo& operator=(RelationshipPathInfo const& other)
             {
-            m_path = other.m_path;
-            m_derivedClasses = other.m_derivedClasses;
+            if (this != &other)
+                {
+                m_path = other.m_path;
+                m_derivedClasses = other.m_derivedClasses;
+                }
+
             return *this;
             }
 
-        void InsertDerivedClass(ECN::ECClassCR derivedClass)
-            {
-            m_derivedClasses.insert(&derivedClass);
-            }
+        void InsertDerivedClass(ECN::ECClassCR derivedClass) { m_derivedClasses.insert(&derivedClass); }
         };
 
     typedef bmap<ECN::ECClassId, bvector<ECN::ECRelationshipPath>> RelationshipPathsByClassId;
@@ -462,7 +429,7 @@ struct RelatedItemsDisplaySpecificationsCache : public BeSQLite::Db::AppData
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Ramanujam.Raman      09/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonReader : NonCopyableClass
+struct JsonReader final : NonCopyableClass
     {
     private:
         ECDbCR m_ecDb;
@@ -530,7 +497,7 @@ struct JsonReader : NonCopyableClass
 //! Insert JSON instances into ECDb file.
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonInserter : NonCopyableClass
+struct JsonInserter final : NonCopyableClass
     {
     private:
         ECN::ECClassCR m_ecClass;
@@ -574,7 +541,7 @@ struct JsonInserter : NonCopyableClass
 //! Update EC content in the ECDb file through JSON values
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonUpdater : NonCopyableClass
+struct JsonUpdater final : NonCopyableClass
     {
     private:
         ECDbCR m_ecdb;
@@ -640,7 +607,7 @@ struct JsonUpdater : NonCopyableClass
 //! Delete EC content in the ECDb file
 //@bsiclass                                                 Ramanujam.Raman      02/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonDeleter : NonCopyableClass
+struct JsonDeleter final : NonCopyableClass
     {
     private:
         ECInstanceDeleter m_ecinstanceDeleter;

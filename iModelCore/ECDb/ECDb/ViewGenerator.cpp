@@ -372,7 +372,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap)
     {
-    sql.Reset();
+    sql.Clear();
     std::vector<Utf8String> values;
     SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data);
     baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);

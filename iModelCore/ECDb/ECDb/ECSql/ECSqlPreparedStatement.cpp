@@ -16,6 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //***************************************************************************************
 //    IECSqlPreparedStatement
 //***************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ BentleyStatus IECSqlPreparedStatement::AssertIsValid() const
     }
 
 //***************************************************************************************
-//    LeafECSqlPreparedStatement
+//    SingleECSqlPreparedStatement
 //***************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
@@ -456,6 +457,14 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
 
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    BeAssert(classMap.GetType() != ClassMap::Type::RelationshipEndTable || classMap.IsMappedToSingleTable() && "FK relationship mappings with multiple tables should have been caught before. They are not insertable");
     PropertyNameListExp const* propNameListExp = insertExp.GetPropertyNameListExp();
     ValueExpListExp const* valuesListExp = insertExp.GetValuesExp();
 
@@ -497,7 +506,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
         ValueExp const* valueExp = valuesListExp->GetValueExp(i);
 
-        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, ecInstanceIdPropNameExpIx >= 0 && ecInstanceIdPropNameExpIx == (int) i);
+        const bool isIdExp = ecInstanceIdPropNameExpIx >= 0 && ecInstanceIdPropNameExpIx == (int) i;
+        PropNameValueInfo propNameValueInfo(*propNameExp, *valueExp, isIdExp);
 
         for (Exp const* exp : valueExp->Find(Exp::Type::Parameter, true /* recursive*/))
             {
@@ -522,7 +532,6 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     Exp::ECSqlRenderContext ecsqlRenderCtx(Exp::ECSqlRenderContext::Mode::GenerateNameForUnnamedParameter);
 
-    //for each table, a separate ECSQL is created
     bool isPrimaryTable = true;
     bmap<DbTable const*, SingleECSqlPreparedStatement const*> perTableStatements;
     for (DbTable const* table : classMap.GetTables())
@@ -556,7 +565,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             propNameECSqlClause.append(propNameValueInfo.m_propNameExp->ToECSql());
 
             propNameValueInfo.m_valueExp->ToECSql(ecsqlRenderCtx);
-            if (isPrimaryTable && propNameValueInfo.m_isECInstanceIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNull)
+            if (isPrimaryTable && propNameValueInfo.m_isECInstanceIdPropNameExp && m_ecInstanceKeyHelper.GetMode() == ECInstanceKeyHelper::Mode::UserProvidedNullExp)
                 {
                 //if user specified NULL for ECInstanceId ECDb auto-generates the id. Therefore we have
                 //to replace the NULL by a parameter
@@ -578,9 +587,10 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (parseTree == nullptr)
             return ECSqlStatus::InvalidECSql;
 
-        m_statements.push_back(std::make_unique<SingleECSqlPreparedStatement>(m_ecdb, m_type));
+        m_statements.push_back(std::make_unique<LeafPreparedStatement>(m_ecdb));
 
         SingleECSqlPreparedStatement& preparedStmt = *m_statements.back();
+        ctx.Reset(preparedStmt);
         const ECSqlStatus stat = preparedStmt.Prepare(ctx, *parseTree, ecsql.c_str());
         if (!stat.IsSuccess())
             return stat;
@@ -637,7 +647,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     bool checkModifiedRowCount = true;
     if (m_ecInstanceKeyHelper.IsAutogenerateIdMode())
         {
-        const DbResult stat = m_ecInstanceKeyHelper.AutogenerateAndBindECInstanceId();
+        const DbResult stat = m_ecInstanceKeyHelper.AutogenerateAndBindECInstanceId(m_ecdb);
         if (BE_SQLITE_OK != stat)
             return stat;
 
@@ -684,9 +694,9 @@ void ECSqlInsertPreparedStatement::ECInstanceKeyHelper::Initialize(int &ecInstan
         BeAssert(idValueExp != nullptr);
 
         if (ECSqlExpPreparer::IsNullExp(*idValueExp))
-            m_mode = Mode::UserProvidedNull;
-
-        m_mode = Mode::UserProvidedNotNull;
+            m_mode = Mode::UserProvidedNullExp;
+        else
+            m_mode = Mode::UserProvidedNonNullExp;
         }
 
     if (IsAutogenerateIdMode())
@@ -769,6 +779,16 @@ ECInstanceKey ECSqlInsertPreparedStatement::ECInstanceKeyHelper::RetrieveLastIns
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
     {
+    UpdateStatementExp const& updateExp = exp.GetAs<UpdateStatementExp>();
+    ClassMap const& classMap = updateExp.GetClassNameExp()->GetInfo().GetMap();
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     return ECSqlStatus::Error;
     }
 
@@ -798,6 +818,25 @@ DbResult ECSqlUpdatePreparedStatement::Step()
 //***************************************************************************************
 //    ECSqlDeletePreparedStatement
 //***************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        03/17
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp)
+    {
+    DeleteStatementExp const& deleteExp = exp.GetAs<DeleteStatementExp>();
+    ClassMap const& classMap = deleteExp.GetClassNameExp()->GetInfo().GetMap();
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    if (!policy.IsSupported())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    //WIP this will probably not be enough
+    return SingleECSqlPreparedStatement::_Prepare(ctx, exp);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------

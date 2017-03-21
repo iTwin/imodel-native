@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SystemPropertyMap : PropertyMap
     {
     public:
-        struct PerTablePrimitivePropertyMap : SingleColumnDataPropertyMap
+        struct PerTablePrimitivePropertyMap final: SingleColumnDataPropertyMap
             {
         private:
             PerTablePrimitivePropertyMap(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
@@ -26,7 +26,7 @@ struct SystemPropertyMap : PropertyMap
             DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }
 
         public:
-            virtual ~PerTablePrimitivePropertyMap() {}
+            ~PerTablePrimitivePropertyMap() {}
 
             static RefCountedPtr<PerTablePrimitivePropertyMap> CreateInstance(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
             };
@@ -75,7 +75,7 @@ struct ECInstanceIdPropertyMap final : SystemPropertyMap
             {}
 
     public:
-        virtual ~ECInstanceIdPropertyMap() {}
+        ~ECInstanceIdPropertyMap() {}
         static RefCountedPtr<ECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
     };
 
@@ -92,7 +92,7 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
             {}
 
     public:
-        virtual ~ECClassIdPropertyMap() {}
+        ~ECClassIdPropertyMap() {}
         bool IsVirtual(DbTable const& table) const;
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
         static RefCountedPtr<ECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
@@ -112,7 +112,7 @@ struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
             {}
 
     public:
-        virtual ~ConstraintECClassIdPropertyMap() {}
+        ~ConstraintECClassIdPropertyMap() {}
 
         bool IsVirtual(DbTable const& table) const;
         ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
@@ -134,7 +134,7 @@ struct ConstraintECInstanceIdPropertyMap final : SystemPropertyMap
             {}
 
     public:
-        virtual ~ConstraintECInstanceIdPropertyMap() {}
+        ~ConstraintECInstanceIdPropertyMap() {}
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
 
         static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);

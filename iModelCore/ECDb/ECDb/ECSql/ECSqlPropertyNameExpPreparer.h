@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPropertyNameExpPreparer
+struct ECSqlPropertyNameExpPreparer final
     {
     private:
         //static class

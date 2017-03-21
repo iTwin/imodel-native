@@ -72,7 +72,7 @@ enum class ResolveSchema
 //! @ingroup ECDbGroup
 // @bsimethod                                                  Affan.Khan        05/2012
 //+===============+===============+===============+===============+===============+======
-struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
+struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
     private:
         ECDb const& m_ecdb;

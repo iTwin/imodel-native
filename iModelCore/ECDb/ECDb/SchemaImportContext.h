@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaCompareContext
+struct ECSchemaCompareContext final
     {
 private:
     bvector<ECN::ECSchemaCP> m_existingSchemaList;
@@ -44,10 +44,10 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
-struct SchemaImportContext
+struct SchemaImportContext final
     {
 public:
-    struct ClassMapSaveContext : NonCopyableClass
+    struct ClassMapSaveContext final: NonCopyableClass
         {
         private:
             std::set<ClassMap const*> m_alreadySavedClassMaps;

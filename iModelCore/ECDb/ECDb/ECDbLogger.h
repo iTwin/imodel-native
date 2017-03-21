@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // in performance since the logger was looked up with a naked wchar_t pointer. 
 // @bsiclass                                                Krischan.Eberle      03/2014
 //+===============+===============+===============+===============+===============+======
-struct ECDbLogger
+struct ECDbLogger final
     {
 private:
     static BentleyApi::NativeLogging::ILogger* s_logger;

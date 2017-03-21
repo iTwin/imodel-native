@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlSelectPreparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,12 +15,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparer
+struct ECSqlSelectPreparer final
     {
 private:
     //static class
-    ECSqlSelectPreparer ();
-    ~ECSqlSelectPreparer ();
+    ECSqlSelectPreparer();
+    ~ECSqlSelectPreparer();
 
     static ECSqlStatus Prepare(ECSqlPrepareContext&, SelectStatementExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);
     static ECSqlStatus Prepare (ECSqlPrepareContext&, NativeSqlBuilder::ListOfLists& selectClauseSqlSnippetList, SingleSelectStatementExp const&, std::vector<size_t> const* referenceSelectClauseSqlSnippetCounts);

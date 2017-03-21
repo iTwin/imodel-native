@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECSqlStatementBase;
+struct ECSqlSelectPreparedStatement;
 
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
@@ -19,12 +19,12 @@ struct ECSqlStatementBase;
 struct ECSqlField : public IECSqlValue
     {
 protected:
+    ECSqlSelectPreparedStatement& m_preparedECSqlStatement;
     ECSqlColumnInfo m_ecsqlColumnInfo;
     bool m_requiresOnAfterStep = false;
     bool m_requiresOnAfterReset = false;
 
 private:
-    ECSqlStatementBase& m_ecsqlStatement;
 
     ECSqlColumnInfoCR _GetColumnInfo() const override { return m_ecsqlColumnInfo; }
 
@@ -32,11 +32,10 @@ private:
     virtual ECSqlStatus _OnAfterStep() { return ECSqlStatus::Success; }
 
 protected:
-    ECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
-        : m_ecsqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
+    ECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, bool needsOnAfterStep, bool needsOnAfterReset)
+        : m_preparedECSqlStatement(ecsqlStatement), m_ecsqlColumnInfo(ecsqlColumnInfo), m_requiresOnAfterStep(needsOnAfterStep), m_requiresOnAfterReset(needsOnAfterReset)
         {}
 
-    ECSqlStatementBase& GetECSqlStatementR() const;
     Statement& GetSqliteStatement() const;
 
 public:

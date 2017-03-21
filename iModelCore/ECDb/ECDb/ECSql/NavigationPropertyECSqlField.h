@@ -46,7 +46,7 @@ struct NavigationPropertyECSqlField final : public ECSqlField, IECSqlValueIterab
         std::unique_ptr<ECSqlField> m_idField;
         std::unique_ptr<ECSqlField> m_relClassIdField;
 
-        NavigationPropertyECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+        NavigationPropertyECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
 
         //!For a Navigation Property the main information is the Id. So we consider a nav prop value NULL if
         //!the id is NULL (regardless of what the value of the RelECClassId is)

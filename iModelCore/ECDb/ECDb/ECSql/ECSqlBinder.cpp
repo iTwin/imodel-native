@@ -10,11 +10,12 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** ECSqlBinder **************************
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-    : m_ecsqlStatement(ctx.GetECSqlStatementR()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+    : m_preparedStatement(ctx.GetPreparedStatement()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
     {
     for (int i = 0; i < mappedSqlParameterCount; i++)
         {
@@ -22,6 +23,19 @@ ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo
         }
     }
 
+#else
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
+    : m_preparedStatement(*ctx.GetECSqlStatementR().GetPreparedStatementP()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+    {
+    for (int i = 0; i < mappedSqlParameterCount; i++)
+        {
+        m_mappedSqlParameterNames.push_back(nameGen.GetNextName());
+        }
+    }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      08/2013
@@ -40,27 +54,18 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlBinder::GetSqliteStatementR() const
-    {
-    BeAssert(m_ecsqlStatement.GetPreparedStatementP() != nullptr);
-    return m_ecsqlStatement.GetPreparedStatementP()->GetSqliteStatementR();
-    }
+Statement& ECSqlBinder::GetSqliteStatement() const { return m_preparedStatement.GetSqliteStatement(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2015
 //---------------------------------------------------------------------------------------
-ECDbCR ECSqlBinder::GetECDb() const
-    {
-    BeAssert(m_ecsqlStatement.GetECDb() != nullptr);
-    return *m_ecsqlStatement.GetECDb();
-    }
+ECDbCR ECSqlBinder::GetECDb() const { return m_preparedStatement.GetECDb(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlBinder::LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
-    BeAssert(m_ecsqlStatement.IsPrepared());
     ECDbLogger::LogSqliteError(GetECDb(), sqliteStat, errorMessageHeader);
     return ECSqlStatus(sqliteStat);
     }
@@ -546,18 +551,6 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
         }
 
     return ECSqlStatus::Success;
-    }
-
-//***************************************************************************************
-//    ProxyECSqlBinder
-//***************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2017
-//---------------------------------------------------------------------------------------
-IECSqlBinder& ProxyECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
-    {
-    BeAssert(false && "Should not be called");
-    return NoopECSqlBinder::Get();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

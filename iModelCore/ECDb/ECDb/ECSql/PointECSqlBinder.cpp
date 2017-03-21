@@ -24,7 +24,7 @@ ECSqlStatus PointECSqlBinder::_BindNull()
             }
         }
 
-    Statement& sqliteStmt = GetSqliteStatementR();
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::X));
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull against Point2d or Point3d property.");
@@ -64,7 +64,7 @@ ECSqlStatus PointECSqlBinder::_BindPoint2d(DPoint2dCR value)
             }
         }
 
-    Statement& sqliteStmt = GetSqliteStatementR();
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint2d.");
@@ -97,7 +97,7 @@ ECSqlStatus PointECSqlBinder::_BindPoint3d(DPoint3dCR value)
             }
         }
 
-    Statement& sqliteStmt = GetSqliteStatementR();
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint3d.");

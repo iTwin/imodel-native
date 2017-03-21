@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceId.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,7 +38,7 @@ struct ECInstanceKey
 private:
     ECN::ECClassId m_ecClassId;
     ECInstanceId m_ecInstanceId;
-
+   
 public:
     //! Construct an empty/invalid ECInstanceKey
     ECInstanceKey() {}

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     Casey.Mullen      11/2011
 +===============+===============+===============+===============+===============+======*/
-struct ECDbMap :NonCopyableClass
+struct ECDbMap final : NonCopyableClass
     {
     public:
         typedef bmap<DbTable*, bset<ClassMap*>> ClassMapsByTable;

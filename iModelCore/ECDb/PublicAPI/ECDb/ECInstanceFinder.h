@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceFinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ typedef ECInstanceKeyMultiMap::const_iterator    ECInstanceKeyMultiMapConstItera
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Ramanujam.Raman      03/2013
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceFinder
+struct ECInstanceFinder final
 {
     /*=================================================================================**//**
     * @bsiclass                                                 Ramanujam.Raman      09/2013
@@ -47,7 +47,7 @@ struct ECInstanceFinder
     //! Options to gather instances and related instances.  
     //! @bsiclass                                              Ramanujam.Raman      09/2013
     +===============+===============+===============+===============+===============+======*/
-    struct FindOptions 
+    struct FindOptions final
         {
         friend ECInstanceFinder;
         private:
@@ -78,7 +78,7 @@ struct ECInstanceFinder
     //======================================================================================
     // @bsiclass                                                 Ramanujam.Raman      03/2013
     //+===============+===============+===============+===============+===============+======
-    struct QueryableRelationship
+    struct QueryableRelationship final
         {
         private:
             ECN::ECRelationshipClassCP m_relationshipClass;

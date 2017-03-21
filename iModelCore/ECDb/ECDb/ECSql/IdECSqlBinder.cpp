@@ -35,7 +35,7 @@ ECSqlStatus IdECSqlBinder::_BindNull()
 
     if (!m_isNoop)
         {
-        const DbResult sqliteStat = GetSqliteStatementR().BindNull(GetSqlParamIndex());
+        const DbResult sqliteStat = GetSqliteStatement().BindNull(GetSqlParamIndex());
         if (sqliteStat != BE_SQLITE_OK)
             return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull against id property.");
         }
@@ -142,7 +142,7 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
 
     if (!m_isNoop)
         {
-        const DbResult sqliteStat = GetSqliteStatementR().BindInt64(GetSqlParamIndex(), value);
+        const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParamIndex(), value);
         if (sqliteStat != BE_SQLITE_OK)
             return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
         }
@@ -172,7 +172,7 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 
     if (!m_isNoop)
         {
-        const auto sqliteStat = GetSqliteStatementR().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
+        const auto sqliteStat = GetSqliteStatement().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
         if (sqliteStat != BE_SQLITE_OK)
             return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
         }

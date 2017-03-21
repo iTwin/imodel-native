@@ -42,7 +42,7 @@ struct StructECSqlField final : public ECSqlField, IECSqlValueIterable
 
         std::map<Utf8CP, std::unique_ptr<ECSqlField>, CompareIUtf8Ascii> m_structMemberFields;
 
-        StructECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+        StructECSqlField(ECSqlSelectPreparedStatement& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
         //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
         //Otherwise the flags m_needsInit and m_needsReset might become wrong
         void AppendField(std::unique_ptr<ECSqlField> field);

@@ -28,7 +28,7 @@ bool IsIdProperty(Utf8StringCR propertyName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::PropertyTree::AddInlinedStructNodes(PropertyTreeNodeR parentNode, IECSqlValue const& ecSqlValue, int instanceIndex)
+void JsonECSqlSelectAdapter::PropertyTree::AddInlinedStructNodes(PropertyTreeNode& parentNode, IECSqlValue const& ecSqlValue, int instanceIndex)
     {
     BeAssert(&parentNode == &m_rootNode); // Inlined structs should only be specified at the root (or top level of a ECSQL query). 
     ECSqlColumnInfoCR columnInfo = ecSqlValue.GetColumnInfo();
@@ -38,20 +38,20 @@ void JsonECSqlSelectAdapter::PropertyTree::AddInlinedStructNodes(PropertyTreeNod
     // Visit all the property path entries from the root struct property to the leaf primitive property
     size_t pathLength = propertyPath.Size();
     BeAssert(pathLength > 1 && "The method should only be called for inlined structs");
-    PropertyTreeNodeP currentNode = &parentNode;
+    PropertyTreeNode* currentNode = &parentNode;
     for (size_t ii = 0; ii < pathLength; ii++)
         {
         ECPropertyCP ecProperty = propertyPath.At(ii).GetProperty();
         BeAssert(ecProperty != nullptr && "With the current ECSQL implementation, an in-lined struct member cannot have array entries (with NULL properties) in it's path!!!");
-        PropertyTreeNodeByName& childNodes = currentNode->m_childNodes;
-        PropertyTreeNodeByName::iterator it = childNodes.find(ecProperty->GetName());
+        bmap<Utf8String, PropertyTreeNode const*>& childNodes = currentNode->m_childNodes;
+        auto it = childNodes.find(ecProperty->GetName());
         if (it != childNodes.end())
-            currentNode = it->second;
+            currentNode = const_cast<PropertyTreeNode*>(it->second);
         else
             {
             ECClassCR ecClass = (ii == 0) ? rootClass : ecProperty->GetClass();
-            childNodes[ecProperty->GetName()] = new PropertyTreeNode(ecProperty, &ecClass, instanceIndex);
-            currentNode = childNodes[ecProperty->GetName()];
+            currentNode = new PropertyTreeNode(ecProperty, &ecClass, instanceIndex);
+            childNodes[ecProperty->GetName()] = currentNode;
             }
         }
     }
@@ -81,7 +81,7 @@ ECClassCP JsonECSqlSelectAdapter::GetClassFromStructOrStructArray(ECPropertyCR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR parentNode, bvector<ECClassCP>& rootClasses, IECSqlValue const& ecsqlValue)
+void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNode& parentNode, bvector<ECClassCP>& rootClasses, IECSqlValue const& ecsqlValue)
     {
     bool isRootReader = (&parentNode == &m_rootNode);
 
@@ -122,7 +122,7 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
         }
 
     // Add node for the property
-    PropertyTreeNodeByName& childNodes = parentNode.m_childNodes;
+    bmap<Utf8String, PropertyTreeNode const*>& childNodes = parentNode.m_childNodes;
     if (childNodes.find(ecProperty->GetName()) == childNodes.end())
         {
         ECPropertyCP ecProperty = columnInfo.GetProperty();
@@ -155,7 +155,10 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes(PropertyTreeNodeR paren
         //TODO: root class handling should not be necessary for struct members, right? Krischan.
         bvector<ECClassCP> structRootClasses;
         for (IECSqlValue const& memberVal : structValue->GetStructIterable())
-            AddChildNodes(*childNodes[ecProperty->GetName()], structRootClasses, memberVal);
+            {
+            PropertyTreeNode& childNode = *const_cast<PropertyTreeNode*> (childNodes[ecProperty->GetName()]);
+            AddChildNodes(childNode, structRootClasses, memberVal);
+            }
         }
     }
 
@@ -253,7 +256,7 @@ bool JsonECSqlSelectAdapter::PrioritySortPredicate(const IECInstancePtr& priorit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::PropertySortPredicate(PropertyTreeNodeCP propertyNode1, PropertyTreeNodeCP propertyNode2)
+bool JsonECSqlSelectAdapter::PropertySortPredicate(PropertyTreeNode const* propertyNode1, PropertyTreeNode const* propertyNode2)
     {
     /* Return true if property1 is before property2. False otherwise */
 
@@ -290,7 +293,7 @@ void JsonECSqlSelectAdapter::GetRowDisplayInfo(JsonValueR rowDisplayInfo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromPropertyTree(JsonValueR jsonValue, PropertyTreeCR propertyTree) const
+void JsonECSqlSelectAdapter::JsonFromPropertyTree(JsonValueR jsonValue, PropertyTree const& propertyTree) const
     {
     // TODO: Need a hierarchical visitor pattern on the tree
     JsonFromPropertyRecursive(jsonValue, propertyTree.m_rootNode);
@@ -303,7 +306,7 @@ void JsonECSqlSelectAdapter::JsonFromPropertyTree(JsonValueR jsonValue, Property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromClassesRecursive(JsonValueR jsonValue, bset<ECClassCP>& classes, PropertyTreeNodeCR propertyTreeNode) const
+void JsonECSqlSelectAdapter::JsonFromClassesRecursive(JsonValueR jsonValue, bset<ECClassCP>& classes, PropertyTreeNode const& propertyTreeNode) const
     {
     ECClassCP ecClass = propertyTreeNode.m_class;
     if (ecClass != nullptr && classes.end() == std::find(classes.begin(), classes.end(), ecClass))
@@ -312,9 +315,9 @@ void JsonECSqlSelectAdapter::JsonFromClassesRecursive(JsonValueR jsonValue, bset
         JsonFromClass(jsonValue, *ecClass);
         }
 
-    for (PropertyTreeNodeByName::const_iterator nodeIter = propertyTreeNode.m_childNodes.begin(); nodeIter != propertyTreeNode.m_childNodes.end(); nodeIter++)
+    for (auto nodeIter = propertyTreeNode.m_childNodes.begin(); nodeIter != propertyTreeNode.m_childNodes.end(); nodeIter++)
         {
-        PropertyTreeNodeCP childNode = nodeIter->second;
+        PropertyTreeNode const* childNode = nodeIter->second;
         JsonFromClassesRecursive(jsonValue, classes, *childNode);
         }
     }
@@ -347,7 +350,7 @@ void JsonECSqlSelectAdapter::JsonFromClass(JsonValueR jsonValue, ECClassCR ecCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromPropertyRecursive(JsonValueR jsonValue, PropertyTreeNodeCR propertyTreeNode) const
+void JsonECSqlSelectAdapter::JsonFromPropertyRecursive(JsonValueR jsonValue, PropertyTreeNode const& propertyTreeNode) const
     {
     // TODO: Consider implementing a hierarchical visitor pattern here. 
     ECPropertyCP ecProperty = propertyTreeNode.m_property;
@@ -363,7 +366,7 @@ void JsonECSqlSelectAdapter::JsonFromPropertyRecursive(JsonValueR jsonValue, Pro
         {
         // Categorize, filter and sort child nodes
         bvector<IECInstancePtr> categories;
-        PropertyTreeNodesByCategory childNodesByCategory;
+        bmap<Utf8String, bvector<PropertyTreeNode const*>> childNodesByCategory;
         CategorizeProperties(categories, childNodesByCategory, propertyTreeNode.m_childNodes);
         SortProperties(categories, childNodesByCategory);
 
@@ -380,12 +383,12 @@ void JsonECSqlSelectAdapter::JsonFromPropertyRecursive(JsonValueR jsonValue, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::CategorizeProperties(bvector<IECInstancePtr>& categories, PropertyTreeNodesByCategory& nodesByCategory, const PropertyTreeNodeByName& nodes) const
+void JsonECSqlSelectAdapter::CategorizeProperties(bvector<IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory, bmap<Utf8String, PropertyTreeNode const*> const& nodes) const
     {
     // Process all children of node - filter/hide and organize by category
-    for (PropertyTreeNodeByName::const_iterator nodeIter = nodes.begin(); nodeIter != nodes.end(); nodeIter++)
+    for (auto nodeIter = nodes.begin(); nodeIter != nodes.end(); nodeIter++)
         {
-        PropertyTreeNodeCP node = nodeIter->second;
+        PropertyTreeNode const* node = nodeIter->second;
         ECPropertyCP ecProperty = node->m_property;
 
         // Skip property if hidden
@@ -400,14 +403,14 @@ void JsonECSqlSelectAdapter::CategorizeProperties(bvector<IECInstancePtr>& categ
             categoryName = "Miscellaneous";
 
         // Organize by category
-        bvector<PropertyTreeNodeCP>* categoryProperties = nullptr;
-        PropertyTreeNodesByCategory::iterator categoryIter = nodesByCategory.find(categoryName);
+        bvector<PropertyTreeNode const*>* categoryProperties = nullptr;
+        auto categoryIter = nodesByCategory.find(categoryName);
         if (categoryIter != nodesByCategory.end())
             categoryProperties = &(categoryIter->second);
         else
             {
             categories.push_back(category);
-            nodesByCategory[categoryName] = bvector<PropertyTreeNodeCP>();
+            nodesByCategory[categoryName] = bvector<PropertyTreeNode const*>();
             categoryProperties = &nodesByCategory[categoryName];
             }
         categoryProperties->push_back(node);
@@ -417,15 +420,15 @@ void JsonECSqlSelectAdapter::CategorizeProperties(bvector<IECInstancePtr>& categ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::SortProperties(bvector<IECInstancePtr>& categories, PropertyTreeNodesByCategory& nodesByCategory) const
+void JsonECSqlSelectAdapter::SortProperties(bvector<IECInstancePtr>& categories, bmap<Utf8String, bvector<PropertyTreeNode const*>>& nodesByCategory) const
     {
     // Sort categories
     std::sort(categories.begin(), categories.end(), JsonECSqlSelectAdapter::PrioritySortPredicate);
 
     // Sort properties within each category
-    for (PropertyTreeNodesByCategory::iterator it = nodesByCategory.begin(); it != nodesByCategory.end(); ++it)
+    for (auto it = nodesByCategory.begin(); it != nodesByCategory.end(); ++it)
         {
-        bvector<PropertyTreeNodeCP>& categoryProperties = it->second;
+        bvector<PropertyTreeNode const*>& categoryProperties = it->second;
         std::sort(categoryProperties.begin(), categoryProperties.end(), JsonECSqlSelectAdapter::PropertySortPredicate);
         }
     }
@@ -467,7 +470,7 @@ void JsonECSqlSelectAdapter::JsonFromProperty(JsonValueR propertyJson, ECPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonECSqlSelectAdapter::JsonFromCategory(JsonValueR jsonValue, IECInstancePtr& categoryCustomAttribute, const PropertyTreeNodesByCategory& nodesByCategory) const
+void JsonECSqlSelectAdapter::JsonFromCategory(JsonValueR jsonValue, IECInstancePtr& categoryCustomAttribute, bmap<Utf8String, bvector<PropertyTreeNode const*>> const& nodesByCategory) const
     {
     // CategoryJson = ObjectValue (CategoryName, CategoryStandard, CategoryDisplayLabel, CategoryDescription, CategoryExpand, CategoryPriority, Properties)
     jsonValue = Json::Value(Json::objectValue);
@@ -512,11 +515,11 @@ void JsonECSqlSelectAdapter::JsonFromCategory(JsonValueR jsonValue, IECInstanceP
 
     // Construct the JSON for the properties within the category
     jsonValue["Properties"] = Json::Value(Json::arrayValue);
-    PropertyTreeNodesByCategory::const_iterator categoryIter = nodesByCategory.find(categoryName);
+    auto categoryIter = nodesByCategory.find(categoryName);
     BeAssert(categoryIter != nodesByCategory.end());
-    const bvector<PropertyTreeNodeCP>& categoryProperties = categoryIter->second;
+    const bvector<PropertyTreeNode const*>& categoryProperties = categoryIter->second;
     JsonValueR categoryPropertiesJson = jsonValue["Properties"];
-    for (PropertyTreeNodeCP propertyTreeNode : categoryProperties)
+    for (PropertyTreeNode const* propertyTreeNode : categoryProperties)
         {
         // Create property JSON (at the end of the array)
         JsonFromPropertyRecursive(categoryPropertiesJson[categoryPropertiesJson.size()], *propertyTreeNode);

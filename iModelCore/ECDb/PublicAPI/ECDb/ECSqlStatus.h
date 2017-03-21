@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatus.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsienum                                                      Krischan.Eberle   07/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlStatus
+struct ECSqlStatus final
     {
 public:
     enum class Status : uint8_t

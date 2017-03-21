@@ -59,7 +59,7 @@ struct SqlChange;
 //! @ingroup ECDbGroup
 //! @bsiclass                                               Ramanujam.Raman      12/2016
 //=======================================================================================
-struct ChangeIterator
+struct ChangeIterator final
 {
     struct ColumnIterator;
 
@@ -133,7 +133,7 @@ struct ChangeIterator
     };
 
     //! An entry in the ColumnInterator
-    struct ColumnEntry
+    struct ColumnEntry final
     {
     friend ColumnIterator;
 
@@ -169,7 +169,7 @@ struct ChangeIterator
     };
 
     //! Iterator to go over changed columns
-    struct ColumnIterator
+    struct ColumnIterator final
     {
     friend RowEntry;
 
@@ -242,7 +242,7 @@ struct ChangeExtractor;
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ChangeSummary : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary : NonCopyableClass
 {
     //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
     enum class QueryDbOpcode
@@ -258,7 +258,7 @@ struct ChangeSummary : NonCopyableClass
     };
 
     //! Options to control extraction of the change summary
-    struct Options
+    struct Options final
     {
     private:
         bool m_includeRelationshipInstances;
@@ -287,18 +287,14 @@ struct ChangeSummary : NonCopyableClass
         void SetupValuesTableSelectStatement(Utf8CP accessString) const;
 
     public:
-        //! Empty constructor
         Instance() {}
 
-        //! Constructor
         Instance(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName) :
             m_changeSummary(&changeSummary), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect), m_tableName(tableName)
             {}
 
-        //! Copy constructor
         Instance(Instance const& other) {*this = other;}
 
-        //! Assignment operator
         ECDB_EXPORT Instance& operator=(Instance const& other);
 
         //! Get the class id of the changed instance
@@ -335,7 +331,7 @@ struct ChangeSummary : NonCopyableClass
     typedef Instance const& InstanceCR;
 
     //! An iterator over changed instances in a ChangeSummary
-    struct InstanceIterator : BeSQLite::DbTableIterator
+    struct InstanceIterator final : BeSQLite::DbTableIterator
     {
     public:
         struct Options
@@ -405,7 +401,7 @@ struct ChangeSummary : NonCopyableClass
     }; // InstanceIterator
 
     //! An iterator over values in a changed instance
-    struct ValueIterator : BeSQLite::DbTableIterator
+    struct ValueIterator final : BeSQLite::DbTableIterator
     {
     private:
         ChangeSummary const& m_changeSummary;
@@ -418,7 +414,7 @@ struct ChangeSummary : NonCopyableClass
             {}
 
         //! An entry in the table of values in a changed instance.
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        struct Entry final : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct ValueIterator;
@@ -465,7 +461,7 @@ public:
     ECDB_EXPORT explicit ChangeSummary(ECDbCR);
 
     //! Destructor
-    ECDB_EXPORT ~ChangeSummary();
+    ECDB_EXPORT virtual ~ChangeSummary();
 
     //! Populate the ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 

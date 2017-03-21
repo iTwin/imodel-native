@@ -51,7 +51,7 @@ struct PointECSqlBinder final : public ECSqlBinder
             BeAssert(!GetMappedSqlParameterNames()[(size_t) Enum::ToInt(coord)].empty());
 
             Utf8StringCR paramName = GetMappedSqlParameterNames()[(size_t) Enum::ToInt(coord)];
-            return GetSqliteStatementR().GetParameterIndex(paramName.c_str());
+            return GetSqliteStatement().GetParameterIndex(paramName.c_str());
             }
 
     public:

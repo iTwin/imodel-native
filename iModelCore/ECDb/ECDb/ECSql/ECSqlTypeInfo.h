@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlTypeInfo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlTypeInfo
+struct ECSqlTypeInfo final
     {
     public:
         enum class Kind

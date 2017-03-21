@@ -25,10 +25,10 @@ typedef bvector<bpair<Utf8String, int>> PropertyNamePath;
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
-struct PropertyPath
+struct PropertyPath final
     {
     public:
-        struct Location
+        struct Location final
             {
             friend struct PropertyPath;
 
@@ -152,13 +152,13 @@ struct Exp : NonCopyableClass
             SingleSelect,
             };
 
-        struct Collection : NonCopyableClass
+        struct Collection final : NonCopyableClass
             {
             friend struct Exp;
 
             public:
                 template <typename TExp>
-                struct const_iterator : std::iterator<std::forward_iterator_tag, TExp>
+                struct const_iterator final : std::iterator<std::forward_iterator_tag, TExp>
                     {
                     private:
                         std::vector<std::unique_ptr<Exp>>::const_iterator m_iterator;
@@ -355,10 +355,8 @@ struct Exp : NonCopyableClass
 typedef Exp const* ExpCP;
 typedef Exp const& ExpCR;
 
-
-
 struct RangeClassRefExp;
-struct RangeClassInfo
+struct RangeClassInfo final
     {
     typedef std::vector<RangeClassInfo> List;
     enum Scope

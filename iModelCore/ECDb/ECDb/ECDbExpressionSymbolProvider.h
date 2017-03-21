@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
-struct ECDbExpressionSymbolProvider : ECN::IECSymbolProvider
+struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider
 {
 private:
     ECDbCR m_db;

@@ -26,6 +26,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
     protected:
         ECDb const& m_ecdb;
         ECSqlType m_type;
+        bool m_isCompoundStatement;
         bool m_isNoopInSqlite = false;
 
     private:
@@ -40,14 +41,14 @@ struct IECSqlPreparedStatement : NonCopyableClass
         virtual Utf8CP _GetNativeSql() const = 0;
 
     protected:
-        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : m_ecdb(ecdb), m_type(type) {}
+        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt) {}
 
         BentleyStatus AssertIsValid() const;
 
     public:
         virtual ~IECSqlPreparedStatement() {}
 
-        ECSqlStatus Prepare(ECSqlPrepareContext& ctx, Exp const& exp, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;
 
@@ -58,6 +59,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
         Utf8CP GetNativeSql() const;
 
         ECDb const& GetECDb() const { return m_ecdb; }
+        bool IsCompoundStatement() const { return m_isCompoundStatement; }
         ECSqlType GetType() const { return m_type; }
     };
 
@@ -72,23 +74,24 @@ private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
 
-    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
     ECSqlStatus _ClearBindings() override;
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
 protected:
+    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, false) {}
 
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     ECSqlStatus _Reset() override;
 
 public:
-    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
     virtual ~SingleECSqlPreparedStatement() {}
 
     DbResult DoStep();
 
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
+    ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
     };
 
@@ -113,7 +116,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
         Utf8CP _GetNativeSql() const override;
 
     protected:
-        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
+        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, true) {}
 
     public:
         virtual ~CompoundECSqlPreparedStatement() {}
@@ -153,16 +156,22 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 //+===============+===============+===============+===============+===============+======
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
-public:
+private:
+    struct LeafPreparedStatement final : SingleECSqlPreparedStatement
+        {
     public:
-        struct ECInstanceKeyHelper final : NonCopyableClass
+        LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
+        ~LeafPreparedStatement() {}
+        };
+
+    struct ECInstanceKeyHelper final : NonCopyableClass
             {
             public:
                 enum class Mode
                     {
                     NotUserProvided = 1,
-                    UserProvidedNull,
-                    UserProvidedNotNull
+                    UserProvidedNullExp,
+                    UserProvidedNonNullExp
                     };
 
             private:
@@ -180,10 +189,9 @@ public:
                 ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
 
                 Mode GetMode() const { return m_mode; }
-                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNull; }
+                bool IsAutogenerateIdMode() const { return m_mode == Mode::NotUserProvided || m_mode == Mode::UserProvidedNullExp; }
             };
 
-    private:
         ECInstanceKeyHelper m_ecInstanceKeyHelper;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
@@ -212,6 +220,9 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
 //+===============+===============+===============+===============+===============+======
 struct ECSqlDeletePreparedStatement final : SingleECSqlPreparedStatement
     {
+private:
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
 public:
     explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
     DbResult Step();

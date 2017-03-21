@@ -99,7 +99,7 @@ struct Partition final
 //! Represents storage description for a given class map and its derived classes for polymorphic queries
 // @bsiclass                                               Affan.Khan           05/2015
 //+===============+===============+===============+===============+===============+======
-struct StorageDescription  final: NonCopyableClass
+struct StorageDescription final: NonCopyableClass
     {
     private:
         ECN::ECClassId m_classId;

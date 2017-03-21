@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapPersistenceManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,11 +12,10 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbClassMapLoadContext : public NonCopyableClass
+struct DbClassMapLoadContext final : public NonCopyableClass
     {
     private:
         bool m_isValid;
@@ -41,7 +40,7 @@ struct DbClassMapLoadContext : public NonCopyableClass
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbMapSaveContext : public NonCopyableClass
+struct DbMapSaveContext final: public NonCopyableClass
     {
     private:
         ECDbCR m_ecdb;
@@ -65,7 +64,7 @@ struct DbMapSaveContext : public NonCopyableClass
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbClassMapSaveContext : public NonCopyableClass
+struct DbClassMapSaveContext final : public NonCopyableClass
     {
     private:
         DbMapSaveContext& m_classMapContext;

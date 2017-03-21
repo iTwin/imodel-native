@@ -12,13 +12,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PointECSqlField::PointECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
-    : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 bool PointECSqlField::_IsNull() const
     {
     //To be consistent with the ECSQL parser which translates "MyPoint IS NULL" to "MyPoint.X IS NULL *AND* MyPoint.Y IS NULL"

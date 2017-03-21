@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+#include "ECSqlPrepareContext.h"
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+
 #include <ECDb/IECSqlBinder.h>
 #include <ECDb/IECSqlValue.h>
 
-#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
-    #include "ECSqlPreparedStatement.h"
-#else
-    #include "ECSqlPreparedStatement_Old.h"
-#endif
+#include "ECSqlPreparedStatement_Old.h"
 
 #include "ECSqlParser.h"
 #include "ECSqlPrepareContext.h"
@@ -78,7 +78,6 @@ struct ECSqlStatementBase
 
     };
 
-#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      12/2015
 //+===============+===============+===============+===============+===============+======
@@ -98,5 +97,6 @@ struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
         void SetECInstanceIdBinder(int ecsqlParameterIndex) { m_ecInstanceIdBinder = &GetBinder(ecsqlParameterIndex); }
         IECSqlBinder* GetECInstanceIdBinder() { return m_ecInstanceIdBinder; }
     };
-#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+#endif

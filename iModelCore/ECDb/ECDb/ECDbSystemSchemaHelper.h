@@ -33,14 +33,12 @@
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
 
-
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSystemPropertyInfo
+struct ECSqlSystemPropertyInfo final
     {
 public:
     enum class Type

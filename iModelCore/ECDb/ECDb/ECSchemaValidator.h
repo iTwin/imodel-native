@@ -17,7 +17,7 @@ struct ECSchemaValidationRules;
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      04/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaValidator
+struct ECSchemaValidator final
     {
     private:
 

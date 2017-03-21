@@ -76,7 +76,7 @@ struct ClassMap : RefCountedBase
             Clone //! inherited property maps are cloned from the base class property map
             };
 
-        struct TablePerHierarchyHelper
+        struct TablePerHierarchyHelper final
             {
         private:
             ClassMap const& m_classMap;
@@ -94,7 +94,7 @@ struct ClassMap : RefCountedBase
             };
 
     protected:
-        struct ClassMappingContext : NonCopyableClass
+        struct ClassMappingContext final : NonCopyableClass
             {
             private:
                 SchemaImportContext& m_importCtx;
@@ -145,6 +145,8 @@ struct ClassMap : RefCountedBase
         BentleyStatus MapSystemColumns();
 
     public:
+        virtual ~ClassMap() {}
+
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
 
         template<typename TClassMap>
@@ -199,7 +201,7 @@ struct ClassMap : RefCountedBase
 //! A class map indicating that the respective ECClass was @b not mapped to a DbTable
 // @bsiclass                                                Krischan.Eberle      02/2014
 //+===============+===============+===============+===============+===============+======
-struct NotMappedClassMap : public ClassMap
+struct NotMappedClassMap final : public ClassMap
     {
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}

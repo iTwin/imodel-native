@@ -110,13 +110,13 @@ void ECDb::_OnDbChangedByOtherConnection()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_VerifySchemaVersion(Db::OpenParams const& params)
+DbResult ECDb::_VerifyProfileVersion(Db::OpenParams const& params)
     {
-    DbResult stat = Db::_VerifySchemaVersion(params);
+    DbResult stat = Db::_VerifyProfileVersion(params);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->VerifySchemaVersion(params);
+    return m_pimpl->VerifyProfileVersion(params);
     }
 
 //--------------------------------------------------------------------------------------

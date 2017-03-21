@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECSchemaEntry
+struct DbECSchemaEntry final
     {
     public:
         ECN::ECSchemaPtr m_cachedECSchema;    //Contain ECSchema which might be not complete
@@ -33,7 +33,7 @@ struct DbECSchemaEntry
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECClassEntry
+struct DbECClassEntry final
     {
     public:
         ECN::ECClassId m_ecClassId;
@@ -48,7 +48,7 @@ struct DbECClassEntry
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2015
 //+===============+===============+===============+===============+===============+======
-struct DbECEnumEntry
+struct DbECEnumEntry final
     {
 public:
     ECN::ECEnumerationId m_enumId;
@@ -63,7 +63,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2016
 //+===============+===============+===============+===============+===============+======
-struct DbKindOfQuantityEntry
+struct DbKindOfQuantityEntry final
     {
 public:
     ECN::KindOfQuantityId m_koqId;
@@ -78,10 +78,10 @@ public:
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDbSchemaReader
+struct ECDbSchemaReader final
     {
     private:
-        struct Context : NonCopyableClass
+        struct Context final: NonCopyableClass
             {
             private:
                 std::vector<ECN::NavigationECProperty*> m_navProps;
