@@ -167,7 +167,7 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
     if (DbResult::BE_SQLITE_OK != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr)))
         return nullptr;
 
-    projectPtr->Schemas().CreateECClassViewsInDb();
+    projectPtr->Schemas().CreateClassViewsInDb();
 
     if (DgnDbStatus::Success != RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr))
         return nullptr;

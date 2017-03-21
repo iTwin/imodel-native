@@ -241,7 +241,7 @@ AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveV
         return nullptr;
 
     CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
-    createParams.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetECClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsHorizontal)));
+    createParams.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsHorizontal)));
 
     return new AlignmentHorizontal(createParams, horizontalGeometry);
     }
@@ -284,7 +284,7 @@ AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVecto
         return nullptr;
 
     CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
-    createParams.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetECClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsVerticals)));
+    createParams.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsVerticals)));
 
     return new AlignmentVertical(createParams, verticalGeometry);
     }
