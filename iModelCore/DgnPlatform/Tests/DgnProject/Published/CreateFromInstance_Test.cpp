@@ -24,7 +24,7 @@ struct CreateFromInstanceTests : public DgnDbTestFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf8CP json, Utf8CP schemaName, Utf8CP className)
     {
-    ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(schemaName, className);
+    ECN::ECClassCP ecClass = m_db->Schemas().GetClass(schemaName, className);
     ASSERT_TRUE(nullptr != ecClass);
     ECN::IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(ecInstance.IsValid());
@@ -36,7 +36,7 @@ void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf
     element = m_db->Elements().CreateElement(*ecInstance);
     DgnElementCPtr inserted = element->Insert();
     ASSERT_TRUE(inserted != nullptr);
-    m_db->Schemas().CreateECClassViewsInDb();
+    m_db->Schemas().CreateClassViewsInDb();
     m_db->SaveChanges();
     }
 
@@ -112,7 +112,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "}",
         static_cast<int>(m_db->CodeSpecs().QueryCodeSpecId(BIS_CODESPEC_ViewDefinition).GetValue())); // value for CodeSpec.Id
 
-    ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition);
+    ECN::ECClassCP viewDefClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);
     ECN::IECInstancePtr ecInstance = viewDefClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(ecInstance.IsValid());

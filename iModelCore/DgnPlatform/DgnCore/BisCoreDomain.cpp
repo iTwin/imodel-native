@@ -163,7 +163,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
-    RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
+    RegisterHandler(Lighting::Handlers::LightLoc::GetHandler());
     RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingCategory::GetHandler());

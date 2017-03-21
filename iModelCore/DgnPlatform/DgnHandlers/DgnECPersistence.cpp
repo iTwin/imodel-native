@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECStandardCategoryHelper::Initialize (ECDbCR ecDb) 
     {
-    m_categoryClass = ecDb.Schemas().GetECClass("EditorCustomAttributes", "Category");
+    m_categoryClass = ecDb.Schemas().GetClass("EditorCustomAttributes", "Category");
     BeAssert (m_categoryClass != NULL);
     }
 

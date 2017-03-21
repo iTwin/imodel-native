@@ -55,8 +55,8 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData); }
-    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData); }
+    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotationDataCP GetCP(DgnElementCR el) { return UniqueAspect::Get<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
     static TextAnnotationDataP GetP(DgnElementR el) { return UniqueAspect::GetP<TextAnnotationData>(el, *QueryECClass(el.GetDgnDb())); }
@@ -100,8 +100,8 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d); }
-    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d); }
+    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation2dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation2d>(id); }
     static TextAnnotation2dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation2d>(id); }
@@ -146,8 +146,8 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation3d); }
-    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation3d); }
+    static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     static TextAnnotation3dCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<TextAnnotation3d>(id); }
     static TextAnnotation3dPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<TextAnnotation3d>(id); }

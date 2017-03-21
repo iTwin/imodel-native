@@ -1810,8 +1810,8 @@ struct BRepRollbackMark : RefCountedBase
 {
 PK_MARK_t m_markTag = PK_ENTITY_null;
 
-BRepRollbackMark::BRepRollbackMark() {PK_MARK_create(&m_markTag);}
-BRepRollbackMark::~BRepRollbackMark() {PK_MARK_goto(m_markTag); PK_MARK_delete(m_markTag);}
+BRepRollbackMark() {PK_MARK_create(&m_markTag);}
+~BRepRollbackMark() {PK_MARK_goto(m_markTag); PK_MARK_delete(m_markTag);}
 
 }; // BRepRollbackMark
 #endif

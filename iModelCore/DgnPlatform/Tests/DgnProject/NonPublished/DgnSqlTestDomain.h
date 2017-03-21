@@ -37,7 +37,7 @@ public:
         {return new RobotElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_ROBOT_CLASS));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_ROBOT_CLASS));}
 
     void Translate(DVec3dCR offset);
 };
@@ -61,7 +61,7 @@ public:
         {return new ObstacleElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Obstacle ECClass in the specified DgnDb.
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_OBSTACLE_CLASS));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_OBSTACLE_CLASS));}
 
     //! Set the value of the "SomeProperty" property
     void SetSomeProperty(Utf8CP value);

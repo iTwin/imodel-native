@@ -193,7 +193,7 @@ TEST_F(TransactionManagerTests, CRUD)
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
     SetupSeedProject();
-    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
 
@@ -1467,7 +1467,7 @@ static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECRelations
     {
     ECInstanceKey rkey;
     db.InsertNonNavigationRelationship(rkey, relcls, root, dependent);
-    return rkey.GetECInstanceId();
+    return rkey.GetInstanceId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1560,7 +1560,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     // Verify that my relationship monitor is NOT called when I just change elements.
     ASSERT_FALSE(monitor.HasChanges());
 
-    auto relcls = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement"));
+    auto relcls = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetClass("DgnPlatformTest", "TestElementIsRelatedToElement"));
     ASSERT_FALSE(nullptr == relcls);
 
     //  Insert a relationship.
@@ -1637,7 +1637,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
         }
 
     //  Start tracking a different relationship class, and insert an instance of that class
-    auto relcls2 = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement2"));
+    auto relcls2 = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetClass("DgnPlatformTest", "TestElementIsRelatedToElement2"));
     ASSERT_FALSE(nullptr == relcls2);
     m_db->Txns().BeginTrackingRelationship(*relcls2);
 

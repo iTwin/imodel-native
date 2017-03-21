@@ -343,7 +343,6 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_CategorySelector, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_DisplayStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GeometryPart, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LightDefinition, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LineStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_MaterialElement, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ModelSelector, CodeScopeSpec::CreateRepositoryScope())) ||
