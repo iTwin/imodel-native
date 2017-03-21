@@ -3063,7 +3063,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
     if (nullptr != cameraView && cameraView->IsCameraOn())
         {
         json["type"] = "camera";
-
+        json["isCameraOn"] = cameraView->IsCameraOn();
         DPoint3d eyePoint = cameraView->GetEyePoint();
         transform.Multiply(eyePoint);
         json["eyePoint"] = PointToJson(eyePoint);
