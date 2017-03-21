@@ -1212,7 +1212,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
 TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest(ecdb, false, false, true);
+    ExecuteRelationshipInsertionIntegrityTest(ecdb, false, true, true);
     ASSERT_TRUE(ecdb.TableExists("ts_Foo"));
     ASSERT_TRUE(ecdb.TableExists("ts_Goo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
@@ -1226,7 +1226,7 @@ TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
 TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest(ecdb, true, false, true);
+    ExecuteRelationshipInsertionIntegrityTest(ecdb, true, true, true);
     ASSERT_TRUE(ecdb.TableExists("ts_Foo"));
     ASSERT_TRUE(ecdb.TableExists("ts_Goo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
@@ -1297,6 +1297,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ECEntityClassP foo = nullptr, goo = nullptr;
     ECRelationshipClassP oneFooHasOneGoo = nullptr, oneFooHasManyGoo = nullptr, manyFooHasManyGoo = nullptr;
     PrimitiveECPropertyP prim;
+
     auto readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     auto ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
