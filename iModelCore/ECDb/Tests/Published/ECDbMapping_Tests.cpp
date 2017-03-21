@@ -1316,6 +1316,53 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
     AssertSchemaImport(testItems, "joinedtablecatests.ecdb");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiMethod                              Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ECPropertyCATests)
+    {
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double'>"
+        "        <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "                <ColumnName>bla</ColumnName>"
+        "            </PropertyMap>"
+        "        </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ColumnName can only be set for ExistingTable map strategy."));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double'>"
+        "        <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "                <Collation>bla</Collation>"
+        "            </PropertyMap>"
+        "        </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ECProperty has invalid value for Collation."));
+
+
+    AssertSchemaImport(testSchemas, "ECPropertyCATests.ecdb");
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle             03/17
