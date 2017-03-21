@@ -633,7 +633,7 @@ bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoi
 
 
 bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
-    {
+    {    
     DPoint3d transformedPt = testPoint;
     m_UorsToStorage.Multiply(transformedPt);
     DPoint3d startPt = transformedPt;

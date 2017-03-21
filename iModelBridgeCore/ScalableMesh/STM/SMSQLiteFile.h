@@ -98,7 +98,7 @@ class SMSQLiteFile : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 {
 public:
     SMSQLiteFile();
-    ~SMSQLiteFile();
+    virtual ~SMSQLiteFile();
 
     bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
@@ -216,7 +216,8 @@ public:
     virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
     virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
     
-    bool m_autocommit = true;
+    bool m_autocommit = true;    
+
     static const SchemaVersion CURRENT_VERSION;
 protected:
     ScalableMeshDb* m_database;

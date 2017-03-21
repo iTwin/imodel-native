@@ -33,7 +33,12 @@ SMSQLiteFile::SMSQLiteFile()
 SMSQLiteFile::~SMSQLiteFile()
     {
     if (m_database != nullptr)
-        {    
+        {            
+        if (m_database->IsDbOpen())
+            {
+            Close();
+            }
+
         delete m_database;
         }
 
