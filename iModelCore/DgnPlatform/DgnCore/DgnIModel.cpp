@@ -19,10 +19,10 @@ static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& d
     if (BE_SQLITE_ROW != dbResult)
         return DgnDbStatus::VersionTooOld;
 
-    SchemaVersion actualDgnVersion(0, 0, 0, 0);
+    ProfileVersion actualDgnVersion(0, 0, 0, 0);
     actualDgnVersion.FromJson(versionString.c_str());
-    SchemaVersion expectedDgnVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    SchemaVersion minimumAutoUpgradableDgnVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    ProfileVersion expectedDgnVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
+    ProfileVersion minimumAutoUpgradableDgnVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
     dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedDgnVersion, actualDgnVersion, minimumAutoUpgradableDgnVersion, db.IsReadonly(), "DgnDb");
@@ -44,14 +44,14 @@ static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& d
 static DgnDbStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
     {
     Utf8String versionString;
-    dbResult = db.QueryProperty(versionString, PackageProperty::SchemaVersion());
+    dbResult = db.QueryProperty(versionString, PackageProperty::ProfileVersion());
     if (BE_SQLITE_ROW != dbResult)
         return DgnDbStatus::VersionTooOld;
 
-    SchemaVersion actualPackageVersion(0,0,0,0);
+    ProfileVersion actualPackageVersion(0,0,0,0);
     actualPackageVersion.FromJson(versionString.c_str());
-    SchemaVersion expectedPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    SchemaVersion minimumAutoUpgradablePackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    ProfileVersion expectedPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    ProfileVersion minimumAutoUpgradablePackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
     dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedPackageVersion, actualPackageVersion, minimumAutoUpgradablePackageVersion, db.IsReadonly(), "Package");
@@ -172,19 +172,19 @@ DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirect
         return DgnDbStatus::SQLiteError;
 
     Utf8String versionString;
-    dbResult = db.QueryProperty(versionString, PackageProperty::SchemaVersion());
+    dbResult = db.QueryProperty(versionString, PackageProperty::ProfileVersion());
     if (BE_SQLITE_ROW != dbResult)
         return DgnDbStatus::InvalidProfileVersion;
 
-    SchemaVersion packageVersion(0,0,0,0);
+    ProfileVersion packageVersion(0,0,0,0);
     packageVersion.FromJson(versionString.c_str());
-    SchemaVersion currentPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    SchemaVersion supportedPackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    ProfileVersion currentPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    ProfileVersion supportedPackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
-    if (packageVersion.CompareTo(supportedPackageVersion, SchemaVersion::VERSION_MajorMinor) < 0)
+    if (packageVersion.CompareTo(supportedPackageVersion, ProfileVersion::VERSION_MajorMinor) < 0)
         return DgnDbStatus::VersionTooOld;
 
-    if (packageVersion.CompareTo(currentPackageVersion, SchemaVersion::VERSION_MajorMinor) > 0)
+    if (packageVersion.CompareTo(currentPackageVersion, ProfileVersion::VERSION_MajorMinor) > 0)
         return DgnDbStatus::VersionTooNew;
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
@@ -200,15 +200,15 @@ DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirect
     if (BE_SQLITE_ROW != dbResult)
         return DgnDbStatus::InvalidProfileVersion;
 
-    SchemaVersion profileVersion(0, 0, 0, 0);
+    ProfileVersion profileVersion(0, 0, 0, 0);
     profileVersion.FromJson(versionString.c_str());
-    SchemaVersion currentVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    SchemaVersion supportedVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    ProfileVersion currentVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
+    ProfileVersion supportedVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
-    if (profileVersion.CompareTo(supportedVersion, SchemaVersion::VERSION_MajorMinor) < 0)
+    if (profileVersion.CompareTo(supportedVersion, ProfileVersion::VERSION_MajorMinor) < 0)
         return DgnDbStatus::VersionTooOld;
 
-    if (profileVersion.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) > 0)
+    if (profileVersion.CompareTo(currentVersion, ProfileVersion::VERSION_MajorMinor) > 0)
         return DgnDbStatus::VersionTooNew;
 
     WString wcOutputDirectory;
@@ -336,8 +336,8 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
             }
         }
 
-    SchemaVersion schemaVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    db.SavePropertyString(PackageProperty::SchemaVersion(), schemaVersion.ToJson());
+    ProfileVersion schemaVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    db.SavePropertyString(PackageProperty::ProfileVersion(), schemaVersion.ToJson());
     db.SaveCreationDate();
 
     copyProjectPropertyToIModel(db, *sourceProject, DgnProjectProperty::ProfileVersion(), DgnEmbeddedProjectProperty::ProfileVersion(), id);

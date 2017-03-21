@@ -271,12 +271,10 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
-    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain());
-    DgnDomains::RegisterDomain(GenericDomain::GetDomain());
+    DgnDomains::RegisterDomain(BisCoreDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     _SupplyProductName(m_productName);
-
-    m_acsManager = new IACSManager();
 
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
@@ -296,7 +294,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
         }
 
     ON_HOST_TERMINATE(m_txnAdmin, onProgramExit);
-    ON_HOST_TERMINATE(m_acsManager, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
         ON_HOST_TERMINATE(obj.m_val, onProgramExit);
@@ -316,7 +313,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_notificationAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
-    BeAssert(NULL == m_acsManager);
     BeAssert(NULL == m_formatterAdmin);
     BeAssert(NULL == m_scriptingAdmin);
     BeAssert(NULL == m_exceptionHandler);
@@ -394,6 +390,144 @@ void DgnProgressMeter::SetCurrentStepName(Utf8CP newName) {_SetCurrentStepName(n
 void DgnProgressMeter::SetCurrentTaskName(Utf8CP newName) {_SetCurrentTaskName(newName);}
 DgnProgressMeter::Abort DgnProgressMeter::ShowProgress() {return _ShowProgress();}
 void DgnProgressMeter::Hide() {_Hide();}
+
+static const wchar_t s_spinner[] = L" /-\\|";
+static const size_t s_spinnerSize = _countof(s_spinner)-1;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrintfProgressMeter::HasDescription() const
+    {
+    return m_taskName.find(':') != Utf8String::npos;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnProgressMeter::Abort PrintfProgressMeter::_ShowProgress()
+    {
+    if (m_aborted)
+        return ABORT_Yes;
+
+    auto now = BeTimeUtilities::QuerySecondsCounter();
+
+    if ((now - m_timeOfLastSpinnerUpdate) < 0.25) // don't do printf's more than a few times per second -- too slow and not useful
+        return ABORT_No;
+
+    m_timeOfLastSpinnerUpdate = now;
+
+    m_spinCount++;
+
+    bool justShowSpinner = false;
+
+    if ((now - m_timeOfLastUpdate) < 0.5)
+        justShowSpinner = true;         // don't push out full messages more than a couple times per second -- too slow and not useful
+    else
+        justShowSpinner = (FmtMessage() == m_lastMessage);
+
+    if (justShowSpinner)
+        {
+        printf("[%c]\r", s_spinner[m_spinCount%s_spinnerSize]);
+        return ABORT_No;
+        }
+    
+    ForceNextUpdateToDisplay();
+    UpdateDisplay();
+    return ABORT_No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrintfProgressMeter::_Hide()
+    {
+    Utf8PrintfString msg("    %-123.123s %-16.16s", "", "");
+    printf("%s\r", msg.c_str());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrintfProgressMeter::UpdateDisplay0(Utf8StringCR msgLeft)
+    {
+    m_lastMessage = msgLeft;
+
+    // Display the number of tasks remaining. Not all major tasks have a task count.
+    Utf8String tbd;
+    if (m_stepsRemaining || m_tasksRemaining)
+        tbd = Utf8PrintfString(":%d/%d", m_stepsRemaining, m_tasksRemaining);
+
+    // Display the spinner and the task.
+    Utf8PrintfString msg("[%c] %-123.123s %-16.16s", s_spinner[m_spinCount%s_spinnerSize], msgLeft.c_str(), tbd.c_str());
+    printf("%s\r", msg.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PrintfProgressMeter::FmtMessage() const
+    {
+    Utf8String msg(m_stepName);
+    msg.append(": ");
+    msg.append(m_taskName);
+    return msg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrintfProgressMeter::UpdateDisplay()
+    {
+    auto now = BeTimeUtilities::QuerySecondsCounter();
+
+    if ((now - m_timeOfLastUpdate) < 1.0)
+        return;
+
+    m_timeOfLastUpdate = now;
+
+    UpdateDisplay0(FmtMessage());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Sets the current task name, within the current step. Also indicates that the previous task was complete.
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrintfProgressMeter::_SetCurrentTaskName(Utf8CP newName)
+    {
+    T_Super::_SetCurrentTaskName(newName); // decrements task count
+
+    if (newName && m_taskName == newName)
+        return;
+
+    m_taskName = newName? newName: "";
+    m_spinCount=0;
+    ForceNextUpdateToDisplay();
+    UpdateDisplay();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Sets the current task name, within the current step. Also indicates that the previous task was complete.
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrintfProgressMeter::_SetCurrentStepName(Utf8CP stepName)
+    {
+    T_Super::_SetCurrentStepName(stepName); // decrements step count
+
+    if (NULL == stepName)
+        {
+        m_stepName.clear();
+        return;
+        }
+    if (m_stepName.Equals(stepName))
+        return;
+
+    m_stepName = stepName;
+    m_taskName.clear();
+    m_spinCount=0;
+    ForceNextUpdateToDisplay();
+    UpdateDisplay();
+    }
 
 DEFINE_KEY_METHOD(DgnMarkupProject)
 

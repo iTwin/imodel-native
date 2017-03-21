@@ -42,6 +42,21 @@ DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           03/2017
+//---------------------------------------------------------------------------------------
+InformationRecordModelPtr DgnDbTestUtils::InsertInformationRecordModel(DgnDbR db, Utf8CP partitionName)
+    {
+    MUST_HAVE_HOST(nullptr);
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    InformationRecordPartitionCPtr partition = InformationRecordPartition::CreateAndInsert(*rootSubject, partitionName);
+    EXPECT_TRUE(partition.IsValid());
+    InformationRecordModelPtr model = InformationRecordModel::CreateAndInsert(*partition);
+    EXPECT_TRUE(model.IsValid());
+    EXPECT_EQ(partition->GetSubModelId(), model->GetModelId());
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                           Shaun.Sewall           09/2016
 //---------------------------------------------------------------------------------------
 DocumentListModelPtr DgnDbTestUtils::InsertDocumentListModel(DgnDbR db, Utf8CP partitionName)

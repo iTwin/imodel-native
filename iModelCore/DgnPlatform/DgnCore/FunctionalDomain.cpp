@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FunctionalDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -52,21 +52,6 @@ FunctionalDomain::FunctionalDomain() : DgnDomain(FUNCTIONAL_DOMAIN_NAME, "Functi
 //---------------------------------------------------------------------------------------
 FunctionalDomain::~FunctionalDomain()
     {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    06/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName domainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    domainSchemaFile.AppendToPath(FUNCTIONAL_DOMAIN_ECSCHEMA_PATH);
-    BeAssert(domainSchemaFile.DoesPathExist());
-
-    DgnDomainR domain = FunctionalDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile);
-    BeAssert(DgnDbStatus::Success == importSchemaStatus);
-    return importSchemaStatus;
     }
 
 //---------------------------------------------------------------------------------------

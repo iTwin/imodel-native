@@ -24,7 +24,7 @@ void ChangeTestFixture::SetUpTestCase()
     ScopedDgnHost tempHost;
 
     //  Request a root seed file.
-    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
 
     //  The group's seed file is essentially the same as the root seed file, but with a different relative path.
     //  Note that we must put our group seed file in a group-specific sub-directory
@@ -34,7 +34,7 @@ void ChangeTestFixture::SetUpTestCase()
     DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, ChangeTestFixture::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
     ASSERT_TRUE(db.IsValid());
 
-    ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*db));
+    ASSERT_EQ(BE_SQLITE_OK, DgnPlatformTestDomain::GetDomain().ImportSchema(*db));
     TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
 
     m_defaultCodeSpecId = DgnDbTestUtils::InsertCodeSpec(*db, "TestCodeSpec");
@@ -45,8 +45,6 @@ void ChangeTestFixture::SetUpTestCase()
     DgnRevisionPtr rev = db->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
     db->Revisions().FinishCreateRevision();
-
-    db->SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**

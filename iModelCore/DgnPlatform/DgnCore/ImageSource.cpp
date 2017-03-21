@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -94,7 +94,7 @@ struct PngReader
     int GetPixelDepth() const {return m_info->pixel_depth;}
     bool IsValid() const{return nullptr != m_png;}
     int GetWidth() const {return m_info->width;}
-    int GetHeight()const {return m_info->height;}
+    int GetHeight() const {return m_info->height;}
 };
 
 /*---------------------------------------------------------------------------------**//**

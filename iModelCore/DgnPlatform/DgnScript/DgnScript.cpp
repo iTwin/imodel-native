@@ -608,23 +608,6 @@ void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP de
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDomain::ImportSchema(DgnDbR db)
-    {
-    Register(); // make sure it's registered
-
-    BeFileName domainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    domainSchemaFile.AppendToPath(SCRIPT_DOMAIN_ECSCHEMA_PATH);
-    BeAssert(domainSchemaFile.DoesPathExist());
-
-    DgnDomainR domain = ScriptDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile);
-    BeAssert(DgnDbStatus::Success == importSchemaStatus);
-    return importSchemaStatus;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      08/16
-//---------------------------------------------------------------------------------------
 ScriptDefinitionElement::ScriptDefinitionElement(CreateParams const& params) : T_Super(params) {}
 
 //---------------------------------------------------------------------------------------

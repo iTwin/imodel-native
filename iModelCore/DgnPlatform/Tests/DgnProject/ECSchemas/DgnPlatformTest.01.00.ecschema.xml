@@ -131,6 +131,12 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECEntityClass typeName="TestInformationRecord">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestUniqueAspect">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
@@ -264,12 +270,6 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
-    <ECEntityClass typeName="TestPhysicalRecipe">
-        <BaseClass>bis:PhysicalRecipe</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="TestGraphicalType2d">
         <BaseClass>bis:GraphicalType2d</BaseClass>
         <ECCustomAttributes>
@@ -277,12 +277,6 @@
         </ECCustomAttributes>
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="TestGraphicalRecipe2d">
-        <BaseClass>bis:GraphicalRecipe2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
     </ECEntityClass>
     <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
     <ECEntityClass typeName="PerfElement">

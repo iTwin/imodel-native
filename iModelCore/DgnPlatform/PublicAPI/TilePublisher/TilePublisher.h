@@ -34,6 +34,7 @@ typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
 
 struct MeshMaterial;
 struct PolylineMaterial;
+struct TileMaterial;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -53,14 +54,12 @@ private:
     uint16_t        m_height = 0;
 
     void ComputeDimensions(uint16_t nColors);
-    void Build(TileMeshCR mesh, MeshMaterial const& mat);
+    void Build(TileMeshCR mesh, TileMaterial const& mat);
 public:
-    ColorIndex(TileMeshCR mesh, MeshMaterial const& mat)
+    ColorIndex(TileMeshCR mesh, TileMaterial const& mat)
         {
         Build(mesh, mat);
         }
-
-    ColorIndex(TileMeshCR mesh, PolylineMaterial const& mat);
 
     static constexpr uint16_t GetMaxWidth() { return 256; }
 
@@ -106,14 +105,29 @@ protected:
     Utf8String              m_name;
     ColorIndex::Dimension   m_colorDimension;
     bool                    m_hasAlpha;
+    TileTextureImageCPtr    m_texture;
+    bool                    m_overridesAlpha = false;
+    bool                    m_overridesRgb = false;
+    RgbFactor               m_rgbOverride;
+    double                  m_alphaOverride;
 
     TileMaterial(Utf8StringCR name) : m_name(name) { }
 
-    void AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& programRoot, PublishTileData& tileData) const;
+    void AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
+    void AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
+
 public:
     Utf8StringCR GetName() const { return m_name; }
     ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
     bool HasTransparency() const { return m_hasAlpha; }
+    bool IsTextured() const { return m_texture.IsValid(); }
+    TileTextureImageCPtr GetTexture() const { return m_texture.get(); }
+
+    bool OverridesAlpha() const { return m_overridesAlpha; }
+    bool OverridesRgb() const { return m_overridesRgb; }
+    double GetAlphaOverride() const { return m_alphaOverride; }
+    RgbFactor const& GetRgbOverride() const { return m_rgbOverride; }
+
 };
 
 //=======================================================================================
@@ -132,6 +146,8 @@ struct PolylineMaterial : TileMaterial
 {
 private:
     PolylineType            m_type;
+    double                  m_width;
+    double                  m_textureLength;       // If positive, meters, if negative, pixels (Cosmetic).
 public:
     PolylineMaterial(TileMeshCR mesh, Utf8CP suffix);
 
@@ -139,12 +155,14 @@ public:
 
     std::string const& GetVertexShaderString() const;
     std::string const& GetFragmentShaderString() const;
-    Utf8String GetTechniqueNamePrefix() const;
-
     bool IsSimple() const { return PolylineType::Simple == GetType(); }
     bool IsTesselated() const { return PolylineType::Tesselated == GetType(); }
-
+    Utf8String GetTechniqueNamePrefix();
     void AddTechniqueParameters(Json::Value& technique, Json::Value& programRoot, PublishTileData& tileData) const;
+    Utf8String GetTechniqueNamePrefix() const;
+    double GetWidth() const { return m_width; }
+    double GetTextureLength() const { return m_textureLength; }
+
 };
 
 //=======================================================================================
@@ -155,29 +173,17 @@ struct MeshMaterial : TileMaterial
     static constexpr double GetSpecularFinish() { return 0.9; }
     static constexpr double GetSpecularExponentMult() { return 48.0; }
 private:
-    TileTextureImageCPtr    m_texture;
     DgnMaterialCPtr         m_material;
-    RgbFactor               m_rgbOverride;
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
-    double                  m_alphaOverride;
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
-    bool                    m_overridesAlpha = false;
-    bool                    m_overridesRgb = false;
     bool                    m_ignoreLighting;
 public:
     MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db);
 
-    bool IsTextured() const { return m_texture.IsValid(); }
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
     ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
     DgnMaterialCP GetDgnMaterial() const { return m_material.get(); }
-    TileTextureImageCPtr GetTexture() const { return m_texture.get(); }
-
-    bool OverridesAlpha() const { return m_overridesAlpha; }
-    bool OverridesRgb() const { return m_overridesRgb; }
-    double GetAlphaOverride() const { return m_alphaOverride; }
-    RgbFactor const& GetRgbOverride() const { return m_rgbOverride; }
     double GetSpecularExponent() const { return m_specularExponent; }
     RgbFactor const& GetSpecularColor() const { return m_specularColor; }
 
@@ -368,10 +374,9 @@ private:
     void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddSimplePolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
     void AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
-    void TesselatePolylineSegment (TileMeshR mesh, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR point2, uint16_t attribute, uint32_t color);
-
+    void TesselatePolylineSegment(bvector<DPoint3d>& origins, bvector<DVec3d>& directions, bvector<DPoint2d>& params, bvector<uint16_t>& colors, bvector<uint16_t>& attributes, bvector<uint32_t>& indices, DPoint3dCR p0, DPoint3dCR p1, DPoint3dCR p2, double& currLength, TileMeshR mesh, size_t meshIndex, bool doBatchIds);
     MeshMaterial AddMeshMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
-
+    void  AddMaterialColor(Json::Value& matJson, TileMaterial& mat, PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix);
     PolylineMaterial AddSimplePolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     PolylineMaterial AddTesselatedPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     PolylineMaterial AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
@@ -381,7 +386,7 @@ private:
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
-    TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
+    TILEPUBLISHER_EXPORT PublisherContext::Status Publish();                                         
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }

@@ -9,7 +9,7 @@
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_ModeledElement "ModeledElement"
-#define MODEL_PROP_Visibility "Visibility"
+#define MODEL_PROP_IsPrivate "IsPrivate"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
 
@@ -18,7 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT ECClassId,Visibility,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT ECClassId,IsPrivate,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -28,7 +28,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         {
         out->m_id = id;
         out->m_classId = stmt.GetValueId<DgnClassId>(0);
-        out->m_inGuiList = TO_BOOL(stmt.GetValueInt(1));
+        out->m_isPrivate = stmt.GetValueBoolean(1);
         out->m_modeledElementId = stmt.GetValueId<DgnElementId>(2);
         out->m_isTemplate = TO_BOOL(stmt.GetValueInt(3));
         }
@@ -87,7 +87,7 @@ void DgnModels::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,Visibility FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,IsPrivate FROM ");
     sql.append(className);
 
     if (whereClause)
@@ -111,7 +111,7 @@ DgnModelId ModelIteratorEntry::GetModelId() const {return m_statement->GetValueI
 DgnClassId ModelIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 DgnElementId ModelIteratorEntry::GetModeledElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
 bool ModelIteratorEntry::GetIsTemplate() const {return m_statement->GetValueBoolean(3);}
-bool ModelIteratorEntry::GetInGuiList() const {return 0 != m_statement->GetValueInt(4);}
+bool ModelIteratorEntry::IsPrivate() const {return m_statement->GetValueBoolean(4);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -144,7 +144,7 @@ CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_inGuiList(params.m_inGuiList),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_isPrivate(params.m_isPrivate),
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     // WIP: Add m_modeledElementRelClassId to CreateParams!!!
@@ -269,20 +269,55 @@ DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordModel::_OnInsertElement(DgnElementR element)
+    {
+    if (nullptr == dynamic_cast<InformationRecordElementCP>(&element))
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongModel;
+        }
+
+    return T_Super::_OnInsertElement(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordModelPtr InformationRecordModel::Create(InformationRecordPartitionCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::InformationRecord::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!classId.IsValid() || !model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return model->ToInformationRecordModelP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordModelPtr InformationRecordModel::CreateAndInsert(InformationRecordPartitionCR modeledElement)
+    {
+    InformationRecordModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -310,7 +345,7 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalElementCR modeledElement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::Create(PhysicalRecipeCR modeledElement)
+PhysicalModelPtr PhysicalModel::Create(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     if (model.IsValid())
@@ -325,10 +360,7 @@ PhysicalModelPtr PhysicalModel::Create(PhysicalRecipeCR modeledElement)
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,40 +369,27 @@ PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalPartitionCR modeledEleme
 PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalElementCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModel::CreateAndInsert(PhysicalRecipeCR modeledElement)
+PhysicalModelPtr PhysicalModel::CreateAndInsert(TemplateRecipe3dCR modeledElement)
     {
     PhysicalModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
+* @bsimethod                                                    Jonas.Valiunas  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR modeledElement)
+SpatialLocationModelPtr SpatialLocationModel::Create(DgnDbR db, DgnElementId modeledElementId)
     {
-    DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::SpatialLocation::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -380,15 +399,37 @@ SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPortionCR modeledElement)
+    {
+    return SpatialLocationModel::Create (modeledElement.GetDgnDb (), modeledElement.GetElementId ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPortionCR modeledElement)
+    {
+    SpatialLocationModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SpatialLocationModelPtr SpatialLocationModel::Create(SpatialLocationPartitionCR modeledElement)
+    {
+    return SpatialLocationModel::Create (modeledElement.GetDgnDb (), modeledElement.GetElementId ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPartitionCR modeledElement)
     {
     SpatialLocationModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success == model->Insert()) ? model : nullptr;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -415,15 +456,8 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
     DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -438,10 +472,7 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
 DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modeledElement)
     {
     DefinitionModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -467,16 +498,6 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SessionModel::_OnInsertElement(DgnElementR element)
-    {
-    // SessionModel can contain *only* Session elements
-    // WIP: waiting for Session element to be introduced!
-    return T_Super::_OnInsertElement(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DocumentListModel::_OnInsertElement(DgnElementR element)
@@ -493,15 +514,8 @@ DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElemen
     DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::DocumentList::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
-    if (!classId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -516,10 +530,7 @@ DocumentListModelPtr DocumentListModel::Create(DocumentPartitionCR modeledElemen
 DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR modeledElement)
     {
     DocumentListModelPtr model = Create(modeledElement);
-    if (!model.IsValid())
-        return nullptr;
-
-    return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,9 +538,9 @@ DocumentListModelPtr DocumentListModel::CreateAndInsert(DocumentPartitionCR mode
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DrawingModel::_OnInsert()
     {
-    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<GraphicalRecipe2d>(GetModeledElementId()).IsValid())
+    if (!GetDgnDb().Elements().Get<Drawing>(GetModeledElementId()).IsValid() && !GetDgnDb().Elements().Get<TemplateRecipe2d>(GetModeledElementId()).IsValid())
         {
-        BeAssert(false && "A DrawingModel should be modeling a Drawing or GraphicalRecipe2d element");
+        BeAssert(false && "A DrawingModel should be modeling a Drawing or TemplateRecipe2d element");
         return DgnDbStatus::BadElement;
         }
 
@@ -544,9 +555,8 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
     DgnDbR db = drawing.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, drawing.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         return nullptr;
 
     return dynamic_cast<DrawingModelP>(model.get());
@@ -555,14 +565,13 @@ DrawingModelPtr DrawingModel::Create(DrawingCR drawing)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingModelPtr DrawingModel::Create(GraphicalRecipe2dCR recipe)
+DrawingModelPtr DrawingModel::Create(TemplateRecipe2dCR recipe)
     {
     DgnDbR db = recipe.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Drawing::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, recipe.GetElementId()));
-    if (!model.IsValid())
+    if (!classId.IsValid() || !model.IsValid())
         return nullptr;
 
     model->SetIsTemplate(true);
@@ -644,14 +653,14 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     if (ForInsert::Yes == forInsert)
         statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
 
-    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
+    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsPrivate), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
     Json::Value propJson(Json::objectValue);
     _WriteJsonProperties(propJson);
     if (!propJson.isNull())
         {
-        Utf8String val = Json::FastWriter::ToString(propJson);
+        Utf8String val = propJson.ToString();
         statement.BindText(statement.GetParameterIndex(MODEL_PROP_Properties), val.c_str(), IECSqlBinder::MakeCopy::Yes);
         }
     else
@@ -697,8 +706,12 @@ void DgnModel::_OnUpdated()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdate()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Update))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Update))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
@@ -871,8 +884,12 @@ DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR origi
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     DgnDbStatus stat = GetDgnDb().BriefcaseManager().OnModelDelete(*this);
     if (DgnDbStatus::Success != stat)
@@ -1013,8 +1030,12 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-    if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Insert))
+    ModelHandlerR modelHandler = GetModelHandler();
+    if (modelHandler._IsRestrictedAction(RestrictedAction::Insert))
         return DgnDbStatus::MissingHandler;
+
+    if (modelHandler.GetDomain().IsReadonly())
+        return DgnDbStatus::ReadOnlyDomain;
 
     // Ensure db is not exclusively locked and code reserved
     return GetDgnDb().BriefcaseManager().OnModelInsert(*this);
@@ -1128,7 +1149,7 @@ DgnDbStatus DgnModel::Insert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_InitFrom(DgnModelCR other)
     {
-    m_inGuiList = other.m_inGuiList;
+    m_isPrivate = other.m_isPrivate;
     m_isTemplate = other.m_isTemplate;
 
     Json::Value otherProperties;
@@ -1180,7 +1201,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetInGuiList());
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.IsPrivate(), model.IsTemplate());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -1297,7 +1318,7 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {   
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }
@@ -1311,16 +1332,16 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
     ECN::ECValue v;
-    bool inGuiList = true;
-    if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_Visibility) && !v.IsNull())
-        inGuiList = v.GetInteger() == 1;
+    bool isPrivate = false;
+    if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_IsPrivate) && !v.IsNull())
+        isPrivate = TO_BOOL(v.GetInteger());
 
     DgnElementId modeledElementId;
     if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
         modeledElementId = DgnElementId((uint64_t) v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
-    DgnModel::CreateParams params(db, classId, modeledElementId, inGuiList);
+    DgnModel::CreateParams params(db, classId, modeledElementId, isPrivate);
     return params;
     }
 
@@ -1358,6 +1379,13 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         return DgnDbStatus::Success;
         }
 
+    if (0 == strcmp(MODEL_PROP_IsTemplate, name))
+        {
+        if (!value.IsBoolean())
+            return DgnDbStatus::BadArg;
+        m_isTemplate = value.GetBoolean();
+        return DgnDbStatus::Success;
+        }
     return DgnDbStatus::NotFound;
     }
 
@@ -1371,7 +1399,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_Visibility))
+        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
             continue;
 
         ECN::ECValue value;
@@ -1631,94 +1659,81 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendToColsLists(Utf8StringR colsList, Utf8StringR placeholderList, Utf8CP colname)
+static BentleyStatus getECRelColIds(int& sourceInstanceIdCol, int& targetInstanceIdCol, ECSqlStatementCR sstmt)
     {
-    if (nullptr == colname)
-        return;
-
-    if (!colsList.empty())
+    sourceInstanceIdCol = 0;
+    targetInstanceIdCol = 0;
+    bool haveSource=false;
+    bool haveTarget=false;
+    for (int i=0, count=sstmt.GetColumnCount(); i<count; ++i)
         {
-        colsList.append(",");
-        placeholderList.append(",");
+        ECN::ECPropertyCP ecprop = sstmt.GetColumnInfo(i).GetProperty();
+        if (ecprop->GetName().Equals("SourceECInstanceId"))
+            {
+            sourceInstanceIdCol = i;
+            haveSource = true;
+            }
+        else if (ecprop->GetName().Equals("TargetECInstanceId"))
+            {
+            targetInstanceIdCol = i;
+            haveTarget = true;
+            }
+
+        if (haveSource && haveTarget)
+            return BSISUCCESS;
         }
 
-    colsList.append("[").append(colname).append("]");
-    placeholderList.append("?");
+    BeAssert(false && "This does not seem to be a statement that queries the SourceECInstanceId and TargetECInstanceId columns of an ECRelationship");
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, Utf8CP sourcecol, Utf8CP targetcol, Utf8CP classcol = nullptr, bvector<Utf8CP> const& othercols = bvector<Utf8CP>())
+DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relschema, Utf8CP relname)
     {
-    Utf8String colsList, placeholderList;
-    appendToColsLists(colsList, placeholderList, sourcecol);        // [0] sourcecol
-    appendToColsLists(colsList, placeholderList, targetcol);        // [1] targetcolo
-    appendToColsLists(colsList, placeholderList, classcol);         // [2] classcol  (optional)
-    for (auto othercolname : othercols)
-        appendToColsLists(colsList, placeholderList, othercolname);
+    auto sstmt = sourceModel.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString(
+        "SELECT rel.* FROM %s.%s rel, " BIS_SCHEMA(BIS_CLASS_Element) " source, " BIS_SCHEMA(BIS_CLASS_Element) " target"
+        " WHERE rel.SourceECInstanceId=source.ECInstanceId AND rel.TargetECInstanceId=target.ECInstanceId AND source.Model.Id=? AND target.Model.Id=?",
+        relschema, relname).c_str());
 
-    Utf8String selectList;
-    bvector<Utf8String> cols;
-    BeStringUtilities::Split(colsList.c_str(), ",", cols);
-    for (Utf8String col : cols)
+    if (!sstmt.IsValid())   // the statement will fail to prepare if the ecclass is not found, and that can only be because the necessary domain/schema was not imported
+        return DgnDbStatus::MissingDomain;
+
+    sstmt->BindId(1, sourceModel.GetModelId());
+    sstmt->BindId(2, sourceModel.GetModelId());
+
+    int sourceInstanceIdCol, targetInstanceIdCol;
+    getECRelColIds(sourceInstanceIdCol, targetInstanceIdCol, *sstmt);
+
+    ECInstanceECSqlSelectAdapter sourceReader(*sstmt);
+    while (BE_SQLITE_ROW == sstmt->Step())
         {
-        if (!selectList.empty())
-            selectList.append(", ");
-        selectList.append("rel.").append(col);
-        }
-    Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
-        "SELECT %s FROM %s rel, " BIS_TABLE(BIS_CLASS_Element) " source, " BIS_TABLE(BIS_CLASS_Element) " target WHERE rel.%s=source.Id AND rel.%s=target.Id AND source.ModelId=? AND target.ModelId=?",
-        selectList.c_str(), relname, sourcecol, targetcol).c_str());
-
-    sstmt.BindId(1, sourceModel.GetModelId());
-    sstmt.BindId(2, sourceModel.GetModelId());
-
-    Statement istmt(destDb, Utf8PrintfString(
-        "INSERT INTO %s (%s) VALUES(%s)", relname, colsList.c_str(), placeholderList.c_str()).c_str());
-
-    StopWatch timer(true);
-    DbResult stepResult = sstmt.Step();
-    logPerformance(timer, "Statement.Step for %s (ModelId=%d)", sstmt.GetSql(), sourceModel.GetModelId().GetValue());
-    while (BE_SQLITE_ROW == stepResult)
-        {
-        istmt.Reset();
-        istmt.ClearBindings();
-
-        DgnElementId remappedSrcId;
-        DgnElementId remappedDstId;
-
-        int icol = 0;
-        istmt.BindId(icol+1, (remappedSrcId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [0] sourcecol
-        ++icol;
-        istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] targetcol
-        ++icol;
-
-        if (remappedSrcId.IsValid() && remappedDstId.IsValid())
+        DgnElementId remappedSrcId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(sourceInstanceIdCol));
+        DgnElementId remappedDstId = importer.FindElementId(sstmt->GetValueId<DgnElementId>(targetInstanceIdCol));
+        if (remappedSrcId.IsValid() && remappedDstId.IsValid()) // import rel ONLY if both source or target element were previously imported by the caller.
             {
-            if (nullptr != classcol)
+            ECN::IECRelationshipInstancePtr relinst(dynamic_cast<ECN::IECRelationshipInstanceP>(sourceReader.GetInstance().get()));
+
+            ECN::ECClassCR srcClass = relinst->GetClass();
+            ECClassCP actualDstClass = destDb.Schemas().GetECClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
+            if (nullptr == actualDstClass)
                 {
-                istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol))); // [2] classcol (optional)
-                ++icol;
+                // the lookup will fail to only if the ecclass is not found, and that can only be because the necessary domain/schema was not imported
+                return DgnDbStatus::MissingDomain;
+                }
+            ECN::ECRelationshipClassCP actualDstRelClass = actualDstClass->GetRelationshipClassCP();
+            if (nullptr == actualDstRelClass)
+                {
+                BeAssert(false);
+                return DgnDbStatus::MissingDomain;
                 }
 
-            for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
-                {
-                istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
-                ++icol;
-                }
-
-            if (BE_SQLITE_DONE != istmt.Step())
-                {
-                // *** TBD: Report error somehow
-                }
+            EC::ECInstanceKey ekey;
+            destDb.InsertNonNavigationRelationship(ekey, *actualDstRelClass, remappedSrcId, remappedDstId, relinst.get());
             }
-
-        timer.Start();
-        stepResult = sstmt.Step();
-        logPerformance(timer, "Statement.Step for %s", sstmt.GetSql());
         }
 
     return DgnDbStatus::Success;
@@ -1727,7 +1742,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+DgnDbStatus DgnModel::_ImportNonNavigationECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
@@ -1735,10 +1750,10 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     StopWatch timer(true);
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementGroupsMembers), "GroupId", "MemberId", nullptr, {"MemberPriority"});
+    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementGroupsMembers);
     timer.Start();
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceId", "TargetId", "ECClassId", {"Status", "Priority"});
+    ImportNonNavigationECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementDrivesElement);
     logPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
 #ifdef WIP_VIEW_DEFINITION
@@ -1772,7 +1787,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     logPerformance(timer, "Import element aspects time");
 
     timer.Start();
-    if (DgnDbStatus::Success != (status = _ImportECRelationshipsFrom(sourceModel, importer)))
+    if (DgnDbStatus::Success != (status = _ImportNonNavigationECRelationshipsFrom(sourceModel, importer)))
         return status;
     logPerformance(timer, "Import ECRelationships time");
 
@@ -1837,18 +1852,6 @@ DgnModelPtr DictionaryModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext
         *stat = DgnDbStatus::WrongModel;
 
     BeAssert(false && "The dictionary model cannot be cloned");
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr SessionModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const
-    {
-    if (nullptr != stat)
-        *stat = DgnDbStatus::WrongModel;
-
-    BeAssert(false && "The SessionModel cannot be cloned");
     return nullptr;
     }
 

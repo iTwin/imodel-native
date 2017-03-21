@@ -1701,13 +1701,3 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
         });
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionR SessionManager::GetCurrent() const
-    {
-    if (!m_current.IsValid())
-        m_current = Session::Create(m_dgndb, "");
-
-    return *m_current;
-    }

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTestDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnSqlTestDomain.h"
@@ -21,18 +21,6 @@ DgnSqlTestDomain::DgnSqlTestDomain() : DgnDomain(DGN_SQL_TEST_SCHEMA_NAME, "Sql 
     {
     RegisterHandler(RobotElementHandler::GetHandler());
     RegisterHandler(ObstacleElementHandler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSqlTestDomain::ImportSchemaFromPath(DgnDbR db, BeFileNameCR schemasDir)
-    {
-    BeFileName schemaFile = schemasDir;
-    schemaFile.AppendToPath(L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    auto status = DgnSqlTestDomain::GetDomain().ImportSchema(db, schemaFile);
-    ASSERT_TRUE(DgnDbStatus::Success == status);
     }
 
 /*---------------------------------------------------------------------------------**//**

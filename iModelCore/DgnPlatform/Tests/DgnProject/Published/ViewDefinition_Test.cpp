@@ -162,3 +162,175 @@ TEST_F(ViewDefinitionTests, MakeIterator)
     ASSERT_TRUE(view3B->GetPropertyValueBoolean("IsPrivate"));
     ASSERT_EQ(2, ViewDefinition::QueryCount(*m_db, "WHERE IsPrivate=TRUE"));
     }
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                               Ridha.Malik                   3/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
+    {
+    SetupSeedProject();
+    DgnViewId DviewDefid, SviewDefid,RviewDefid;
+    if (true)
+        {
+        DocumentListModelPtr DocListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
+        DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*DocListModel, "TestDrawingModel");
+        DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+
+        CategorySelectorPtr categories = new CategorySelector(*m_db, "");
+        for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
+            categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+        DisplayStylePtr style = new DisplayStyle(*m_db, "");
+        ASSERT_TRUE(style.IsValid());
+        Render::ViewFlags flags = style->GetViewFlags();
+        flags.SetRenderMode(Render::RenderMode::SmoothShade);
+        style->SetViewFlags(flags);
+        //Create a  DrawingView
+        DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(*m_db, "DrawingView", drawingModel->GetModelId(), *categories, *style);
+        ASSERT_TRUE(viewDef.IsValid());
+        ASSERT_EQ(viewDef->GetName(), "DrawingView");
+        viewDef->SetDescription("DrawingView Descr");
+        ASSERT_EQ(viewDef->GetDescription(), "DrawingView Descr");
+        ASSERT_TRUE(viewDef->IsDrawingView());
+        viewDef->SetIsPrivate(false);
+        ASSERT_FALSE(viewDef->IsPrivate());
+        //Insert DrawingView
+        ViewDefinitionCPtr viewDefele = viewDef->Insert();
+        ASSERT_TRUE(viewDefele.IsValid());
+        DviewDefid = viewDefele->GetViewId();
+        ASSERT_TRUE(DviewDefid == ViewDefinition::QueryViewId(*m_db,"DrawingView"));
+        //Create SheetView
+        Sheet::ElementPtr sheet = DgnDbTestUtils::InsertSheet(*DocListModel, 1.0, 1.0, 1.0, "MySheet");
+        Sheet::ModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
+        SheetViewDefinitionPtr sheetView=new SheetViewDefinition(*m_db, "MySheetView", sheetModel->GetModelId(), *categories, *style);
+        ASSERT_TRUE(sheetView.IsValid());
+        ASSERT_EQ(sheetView->GetName(), "MySheetView");
+        sheetView->SetDescription("SheetView Descr");
+        ASSERT_EQ(sheetView->GetDescription(), "SheetView Descr");
+        ASSERT_TRUE(sheetView->IsSheetView());
+        sheetView->SetIsPrivate(false);
+        ASSERT_FALSE(sheetView->IsPrivate());
+        //Insert SheetView
+        ViewDefinitionCPtr sheetviewele=sheetView->Insert();
+        SviewDefid = sheetviewele->GetViewId();
+        ASSERT_TRUE(SviewDefid == ViewDefinition::QueryViewId(*m_db, "MySheetView"));
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db and then Update DrawingViewDefinition
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    {
+    //DrawingViewDefinition
+    DrawingViewDefinitionPtr viewDef = m_db->Elements().GetForEdit<DrawingViewDefinition>(DviewDefid);
+    ASSERT_TRUE(viewDef.IsValid());
+    DisplayStyleR style = viewDef->GetDisplayStyle();
+    ASSERT_EQ(style.GetViewFlags().GetRenderMode(), Render::RenderMode::SmoothShade);
+    Render::ViewFlags flags = style.GetViewFlags();
+    flags.SetRenderMode(Render::RenderMode::SolidFill);
+    style.SetViewFlags(flags);    
+    ASSERT_EQ(style.GetViewFlags().GetRenderMode(), Render::RenderMode::SolidFill);
+    style.SetBackgroundColor(ColorDef::Red());
+    ASSERT_EQ(style.GetBackgroundColor(), ColorDef::Red());
+    ASSERT_EQ(viewDef->GetDescription(), "DrawingView Descr");
+    viewDef->SetDescription("Descr");
+    ASSERT_EQ(viewDef->GetDescription(), "Descr");
+    ASSERT_TRUE(viewDef->Update().IsValid());
+    ASSERT_TRUE(style.Update().IsValid());
+    //SheetViewDefinition
+    SheetViewDefinitionPtr SviewDef = m_db->Elements().GetForEdit<SheetViewDefinition>(SviewDefid);
+    ASSERT_TRUE(SviewDef.IsValid());
+    DisplayStyleR Sstyle = SviewDef->GetDisplayStyle();
+    ASSERT_EQ(Sstyle.GetViewFlags().GetRenderMode(), Render::RenderMode::SolidFill);
+    ASSERT_EQ(Sstyle.GetBackgroundColor(), ColorDef::Red());
+    ASSERT_EQ(SviewDef->GetDescription(), "SheetView Descr");
+    SviewDef->SetDescription("Descr");
+    ASSERT_EQ(SviewDef->GetDescription(), "Descr");
+    ASSERT_TRUE(SviewDef->Update().IsValid());
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check update values are saved in Db 
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    // DrawingViewDefinition
+    DrawingViewDefinitionPtr viewDef = m_db->Elements().GetForEdit<DrawingViewDefinition>(DviewDefid);
+    ASSERT_TRUE(viewDef.IsValid());
+    DisplayStyleR style = viewDef->GetDisplayStyle();
+    ASSERT_EQ(style.GetViewFlags().GetRenderMode(), Render::RenderMode::SolidFill);
+    ASSERT_EQ(style.GetBackgroundColor(), ColorDef::Red());
+    ASSERT_EQ(viewDef->GetDescription(), "Descr");
+    // SheetViewDefinition
+    SheetViewDefinitionPtr SviewDef = m_db->Elements().GetForEdit<SheetViewDefinition>(SviewDefid);
+    ASSERT_TRUE(SviewDef.IsValid());
+    ASSERT_EQ(SviewDef->GetDescription(), "Descr");
+    ASSERT_TRUE(SviewDef->Update().IsValid());
+
+    // Delete the Views
+    ASSERT_EQ(DgnDbStatus::Success, viewDef->Delete());
+    ASSERT_EQ(DgnDbStatus::Success, SviewDef->Delete());
+    ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
+    }
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                               Ridha.Malik                   3/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ViewDefinitionTests, ViewDefinition3dCRUD)
+    {
+    SetupSeedProject();
+    DgnViewId viewid;
+    GridOrientationType orientation; uint32_t gridPerRef;
+    DPoint2d spacing;
+    Json::Value clipingJson;
+    if (true) 
+        {
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model");
+        //Insert OrthographicViewDefinition
+        OrthographicViewDefinitionPtr view = InsertSpatialView(*model, "view1");
+        ASSERT_TRUE(view->IsView3d());
+        ASSERT_TRUE(view->IsSpatialView());
+        ASSERT_FALSE(view->IsSheetView());
+        CurveVectorPtr sec1 = CurveVector::CreateRectangle(1, 2, 3, 4, CurveVector::BOUNDARY_TYPE_Outer);
+        ClipVectorPtr cliping = ClipVector::CreateFromCurveVector(*sec1, 0.1, 0.5);
+        ASSERT_TRUE(cliping.IsValid());
+        view->SetViewClip(cliping);
+        clipingJson = cliping->ToJson();
+        ASSERT_EQ(view->GetViewClip()->ToJson(), clipingJson);
+        view->SetGridSettings(GridOrientationType::View, DPoint2d::From(0, 50), 5);
+        view->GetGridSettings(orientation, spacing, gridPerRef);
+        ASSERT_EQ(orientation, GridOrientationType::View);
+        ASSERT_EQ(spacing.x, 0);
+        ASSERT_EQ(spacing.y, 50);
+        ASSERT_EQ(gridPerRef, 5);
+        view->SetExtents(DVec3d::From(0, 1, 5));
+        ASSERT_EQ(view->GetExtents(), DVec3d::From(0, 1, 5));
+        view->SetEyePoint(DPoint3d::From(0, 1, 5));
+        ASSERT_EQ(view->GetEyePoint(), DPoint3d::From(0, 1, 5));
+        //Update the view element
+        ASSERT_TRUE(view->Update().IsValid());
+        viewid = view->GetViewId();
+        ASSERT_TRUE(viewid == ViewDefinition::QueryViewId(*m_db, "view1"));
+        }
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    //Check what stored in Db OrthographicViewDefinition
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    {
+    //OrthographicViewDefinition
+    OrthographicViewDefinitionCPtr view = m_db->Elements().Get<OrthographicViewDefinition>(viewid);
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(view->GetViewClip()->ToJson(), clipingJson);
+    view->GetGridSettings(orientation, spacing, gridPerRef);
+    ASSERT_EQ(orientation, GridOrientationType::View);
+    ASSERT_EQ(spacing.x, 0);
+    ASSERT_EQ(spacing.y, 50);
+    ASSERT_EQ(gridPerRef, 5);
+    ASSERT_EQ(view->GetExtents(), DVec3d::From(0, 1, 5));
+    ASSERT_EQ(view->GetEyePoint(), DPoint3d::From(0, 1, 5));
+    }
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::ReadWrite, true);
+    // Delete the View
+    OrthographicViewDefinitionPtr view = m_db->Elements().GetForEdit<OrthographicViewDefinition>(viewid);
+    ASSERT_EQ(DgnDbStatus::Success, view->Delete());
+    ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
+    }

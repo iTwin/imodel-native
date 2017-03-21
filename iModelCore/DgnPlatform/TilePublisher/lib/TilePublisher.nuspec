@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Bentley.TilePublisher</id>
+        <version>$version$</version>
+        <title>3D Tile Publisher</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Used to publish 3D tiles from BIM file.</description>
+        <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+    </metadata>
+    <files>
+        <file src="BaseGeoCoordB02.dll"                target="lib\native\BaseGeoCoordB02.dll" />
+        <file src="BeCurlB02.dll"                      target="lib\native\BeCurlB02.dll" />
+        <file src="BeFollyB02.dll"                     target="lib\native\BeFollyB02.dll" />
+        <file src="BeHttpB02.dll"                      target="lib\native\BeHttpB02.dll" />
+        <file src="BeIcu4cB02.dll"                     target="lib\native\BeIcu4cB02.dll" />
+        <file src="BeLibxml2B02.dll"                   target="lib\native\BeLibxml2B02.dll" />
+        <file src="BentleyB02.dll"                     target="lib\native\BentleyB02.dll" />
+        <file src="BentleyGeomB02.dll"                 target="lib\native\BentleyGeomB02.dll" />
+        <file src="BentleyGeomSerializationB02.dll"    target="lib\native\BentleyGeomSerializationB02.dll" />
+        <file src="bentleylog4cxxB02.dll"              target="lib\native\bentleylog4cxxB02.dll" />
+        <file src="BeOpenSSLB02.dll"                   target="lib\native\BeOpenSSLB02.dll" />
+        <file src="BePointCloudB02.dll"                target="lib\native\BePointCloudB02.dll" />
+        <file src="BeSQLiteB02.dll"                    target="lib\native\BeSQLiteB02.dll" />
+        <file src="BeSQLiteECB02.dll"                  target="lib\native\BeSQLiteECB02.dll" />
+        <file src="BeXmlB02.dll"                       target="lib\native\BeXmlB02.dll" />
+        <file src="crunchB02.dll"                      target="lib\native\crunchB02.dll" />
+        <file src="DgnPlatformB02.dll"                 target="lib\native\DgnPlatformB02.dll" />
+        <file src="ECObjectsB02.dll"                   target="lib\native\ECObjectsB02.dll" />
+        <file src="freetype2B02.dll"                   target="lib\native\freetype2B02.dll" />
+        <file src="libv8.dll"                          target="lib\native\libv8.dll" />
+        <file src="PointCloudB02.dll"                  target="lib\native\PointCloudB02.dll" />
+        <file src="PointoolsVortexAPIB02.dll"          target="lib\native\PointoolsVortexAPIB02.dll" />
+        <file src="pskernel.dll"                       target="lib\native\pskernel.dll" />
+        <file src="ThreeMxB02.dll"                     target="lib\native\ThreeMxB02.dll" />
+        <file src="TilePublisher.dll"                  target="lib\native\TilePublisher.dll" />
+        <file src="UnitsB02.dll"                       target="lib\native\UnitsB02.dll" />
+        <file src="VortexFeatureExtract.dll"           target="lib\native\VortexFeatureExtract.dll" />        
+        <file src="Assets\**\*.*"                      target="Assets\" />
+    </files>
+</package>

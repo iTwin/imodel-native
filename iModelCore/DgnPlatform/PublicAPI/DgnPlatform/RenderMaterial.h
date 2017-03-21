@@ -99,18 +99,18 @@ public:
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
         DgnTextureId Relocate(DgnImportContext& context);
-        double GetDouble(Utf8CP name, double defaultVal) const {return (m_value[name].isDouble() || m_value[name].isInt()) ? m_value[name].asDouble() : defaultVal;}
-        bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}
-        Json::Value const& GetValue() const {return m_value;}
-        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const;
-        TextureMap(Json::Value const& val, Type type) : m_value(val), m_type(type) {}
+        double GetDouble(Utf8CP name, double defaultVal) const {return m_value[name].asDouble(defaultVal);}
+        bool GetBool(Utf8CP name, bool defaultVal) const {return m_value[name].asBool(defaultVal);}
+        JsonValueCR GetValue() const {return m_value;}
+        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+        TextureMap(JsonValueCR val, Type type) : m_value(val), m_type(type) {}
     }; // TextureMap
 
     DGNPLATFORM_EXPORT BentleyStatus Relocate(DgnImportContext& context);
 
-    double GetDouble(Utf8CP name, double defaultVal) const {return !GetValue(name).isDouble() ? defaultVal : GetValue(name).asDouble();}
+    double GetDouble(Utf8CP name, double defaultVal) const {return GetValue(name).asDouble(defaultVal);}
     void SetDouble(Utf8CP name, double val) {GetValueR(name)=val;}
-    bool GetBool(Utf8CP name, bool defaultVal) const {return !GetValue(name).isBool() ? defaultVal : GetValue(name).asBool();}
+    bool GetBool(Utf8CP name, bool defaultVal) const {return GetValue(name).asBool(defaultVal);}
     void SetBool(Utf8CP name, bool val) {GetValueR(name)=val;}
     DGNPLATFORM_EXPORT RgbFactor GetColor(Utf8CP name) const;
     DGNPLATFORM_EXPORT void SetColor(Utf8CP name, RgbFactor);
@@ -119,7 +119,6 @@ public:
     bool IsValid() const {return !isNull();}
 
     DGNPLATFORM_EXPORT TextureMap GetPatternMap() const;
-    DGNPLATFORM_EXPORT static RenderingAssetCP Load(DgnMaterialId materialId, DgnDbR dgnDb);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

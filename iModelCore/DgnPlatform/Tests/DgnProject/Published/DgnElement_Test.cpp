@@ -509,7 +509,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     DgnModelId modelId = model->GetModelId();
     DgnCategoryId categoryId = GetDefaultCategoryId();
-    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     DgnElementId elementId;
 
     // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
@@ -2294,20 +2294,25 @@ TEST_F(DgnElementTests, ElementIterator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, TestSpatialLocation)
+TEST_F(DgnElementTests, SimpleInsert)
     {
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
     PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    InformationRecordModelPtr informationRecordModel = DgnDbTestUtils::InsertInformationRecordModel(*m_db, "TestInformationRecordModel");
 
-    TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
-    ASSERT_TRUE(element1.IsValid());
-    ASSERT_TRUE(element1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
+    TestSpatialLocationPtr spatialLocation1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
+    ASSERT_TRUE(spatialLocation1.IsValid());
+    ASSERT_TRUE(spatialLocation1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
 
-    TestSpatialLocationPtr element2 = TestSpatialLocation::Create(*physicalModel, categoryId);
-    ASSERT_TRUE(element2.IsValid());
-    ASSERT_TRUE(element2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
+    TestSpatialLocationPtr spatialLocation2 = TestSpatialLocation::Create(*physicalModel, categoryId);
+    ASSERT_TRUE(spatialLocation2.IsValid());
+    ASSERT_TRUE(spatialLocation2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
+
+    TestInformationRecordPtr informationRecord = TestInformationRecord::Create(*informationRecordModel);
+    ASSERT_TRUE(informationRecord.IsValid());
+    ASSERT_TRUE(informationRecord->Insert().IsValid()) << "InformationRecordElements should be able to be inserted into an InformationRecordModel";
     }
 
 /*---------------------------------------------------------------------------------**//**

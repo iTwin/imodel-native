@@ -29,9 +29,9 @@ DgnDbR project
 )
     {
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    auto stat = project.ImportSchemas (schemaContext.GetCache ().GetSchemas());
+    DbResult result = project.ImportSchemas (schemaContext.GetCache ().GetSchemas());
     stopwatch.Stop();
-    ASSERT_EQ (DgnDbStatus::Success, stat);
+    ASSERT_EQ(BE_SQLITE_OK, result);
 
     PERFORMANCELOG.infov (L"PerformanceTestFixture::ImportSchema> Importing ECSchema '%ls' into DgnDb file took %.4lf ms.", 
         testSchema.GetFullSchemaName ().c_str (),

@@ -25,8 +25,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
     struct Material;
-    
 }
+
 //=======================================================================================
 //! Defines a material. Material elements are stored in the dictionary model and identified
 //! by a palette name and material name. Each material's name must be unique within its
@@ -49,10 +49,10 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for creating a material.
-        //! @param[in]      db               The DgnDb in which the material will reside
-        //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's DgnCode.
-        //! @param[in]      materialName     The name of the material. This becomes the value of the material's DgnCode.
-        //! @param[in]      parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
+        //! @param[in] db The DgnDb in which the material will reside
+        //! @param[in] paletteName The name of the material's palette. This becomes the namespace of the material's DgnCode.
+        //! @param[in] materialName The name of the material. This becomes the value of the material's DgnCode.
+        //! @param[in] parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
         //! @note The combination of palette and material name must be unique within the DgnDb.
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId=DgnMaterialId());
 

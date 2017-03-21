@@ -144,37 +144,62 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
 
-    DbResult bimStat;
-    Dgn::DgnDb::OpenParams params(openMode);
-    Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
-    if (BE_SQLITE_OK == bimStat)
-        {
-        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-        BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-
-    std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-    if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
-        {
-        session.SetFile(std::move(ecdbFile));
-        BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-    else
-        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
-
+    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
+    //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
-    if (BE_SQLITE_OK == sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
-        session.SetFile(std::move(sqliteFile));
-        BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'. File might not be a BIM file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
         return;
         }
-    else
-        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
 
-    BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!sqliteFile->TryRetrieveProfileInfos(profileInfos))
+        {
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not retrieve profiles from file '%s'. Closing file again.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        DbResult bimStat;
+        Dgn::DgnDb::OpenParams params(openMode);
+        Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
+        if (BE_SQLITE_OK == bimStat)
+            {
+            session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+            BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::ECDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+            {
+            session.SetFile(std::move(ecdbFile));
+            BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+
+        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    session.SetFile(std::move(sqliteFile));
+    BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
     }
 
 
@@ -349,7 +374,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine("Current file: ");
     BimConsole::WriteLine("  %s", session.GetFile().GetPath());
 
-    SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
+    ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
         {
         BimConsole::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
@@ -368,7 +393,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             }
 
         if (BE_SQLITE_ROW == stmt.Step())
-            initialECDbProfileVersion = SchemaVersion(stmt.GetValueText(0));
+            initialECDbProfileVersion = ProfileVersion(stmt.GetValueText(0));
         }
 
 
@@ -384,71 +409,35 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
 
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion' ORDER BY Namespace"))
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!session.GetFile().TryRetrieveProfileInfos(profileInfos))
         {
-        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        BimConsole::WriteErrorLine("Could not retrieve profile infos for the current file");
         return;
         }
 
-    bmap<KnownProfile, Utf8String> knownProfileInfos;
-    std::vector<Utf8String> otherProfileInfos;
-    Utf8CP profileFormat = "    %s: %s";
-    while (BE_SQLITE_ROW == stmt.Step())
+    BimConsole::WriteLine("  Profiles:");
+    auto it = profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
+
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::ECDb);
+    if (it != profileInfos.end())
         {
-        SchemaVersion profileVersion(stmt.GetValueText(1));
-        Utf8CP profileName = stmt.GetValueText(0);
-
-        KnownProfile knownProfile = KnownProfile::Unknown;
-
-        Utf8String profileInfo;
-        Utf8String addendum;
-
-        //use human readable names for core profiles
-        if (BeStringUtilities::StricmpAscii(profileName, "be_Db") == 0)
-            {
-            profileName = "BeSQLite";
-            knownProfile = KnownProfile::BeSQLite;
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "ec_Db") == 0)
-            {
-            profileName = "ECDb";
-            knownProfile = KnownProfile::ECDb;
-
-            if (!initialECDbProfileVersion.IsEmpty())
-                addendum.Sprintf(" (Creation version: %s)", initialECDbProfileVersion.ToString().c_str());
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "dgn_Proj") == 0)
-            {
-            profileName = "DgnDb";
-            knownProfile = KnownProfile::DgnDb;
-            }
-
-        profileInfo.Sprintf(profileFormat, profileName, profileVersion.ToString().c_str());
-        if (!addendum.empty())
-            profileInfo.append(addendum);
-
-        if (knownProfile == KnownProfile::Unknown)
-            otherProfileInfos.push_back(profileInfo);
+        if (!initialECDbProfileVersion.IsEmpty())
+            BimConsole::WriteLine("    %s: %s (Creation version: %s)", it->second.m_name.c_str(), it->second.m_version.ToString().c_str(), initialECDbProfileVersion.ToString().c_str());
         else
-            knownProfileInfos[knownProfile] = profileInfo;
+            BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
         }
 
-    BimConsole::WriteLine("  Profiles:");
-    auto it = knownProfileInfos.find(KnownProfile::BeSQLite);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::BeSQLite);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
 
-    it = knownProfileInfos.find(KnownProfile::ECDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    it = knownProfileInfos.find(KnownProfile::DgnDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    for (Utf8StringCR otherProfileInfo : otherProfileInfos)
+    for (bpair<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> const& profileInfo : profileInfos)
         {
-        BimConsole::WriteLine(otherProfileInfo.c_str());
+        if (profileInfo.first == SessionFile::ProfileInfo::Type::Unknown)
+            BimConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
         }
 
     }

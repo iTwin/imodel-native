@@ -1226,6 +1226,15 @@ struct LocksManagerTest : RepositoryManagerTest
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
         return AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, model.GetModelId(), classId, categoryId));
         }
+
+    size_t CountLocks(IOwnedLocksIteratorR iter)
+        {
+        size_t count = 0;
+        for (/*iter*/; iter.IsValid(); ++iter)
+            ++count;
+
+        return count;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1451,6 +1460,91 @@ TEST_F(SingleBriefcaseLocksTest, LocallyCreatedObjects)
     ExpectLevel(*newModel, LockLevel::Exclusive);
     ExpectLevel(*newElem, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, IterateOwnedLocks)
+    {
+    SetupDb(L"IterateOwnedLocksTest.bim", m_bcId);
+    DgnDbR db = *m_db;
+    IBriefcaseManagerR bc = db.BriefcaseManager();
+
+    // We hold no locks
+    IOwnedLocksIteratorPtr pIter = bc.GetOwnedLocks();
+    ASSERT_TRUE(pIter.IsValid());
+    EXPECT_FALSE(pIter->IsValid());
+    EXPECT_EQ(0, CountLocks(*pIter));
+
+    // Create a new model
+    DgnModelPtr model = CreateModel("NewModel");
+    pIter = bc.GetOwnedLocks();
+
+    // Creating a model involves creating a partition, which involves:
+    //  - Shared lock on db
+    //  - Shared lock on model containing partition element
+    //  - Exclusive lock on partition element
+    //  - Exclusive lock on newly-created model
+    EXPECT_EQ(4, CountLocks(*pIter));
+
+    // Iteration consumes the iterator - must manually reset to restart iteration
+    EXPECT_FALSE(pIter->IsValid());
+    pIter->Reset();
+    EXPECT_TRUE(pIter->IsValid());
+
+    // Confirm the locks
+    bool haveModel = false,
+         haveDb = false,
+         havePartitionModel = false,
+         havePartitionElement = false;
+
+    for (auto& iter = *pIter; iter.IsValid(); ++iter)
+        {
+        DgnLock lock = *iter;
+        switch (iter->GetType())
+            {
+            case LockableType::Db:
+                {
+                EXPECT_FALSE(haveDb);
+                EXPECT_FALSE(lock.IsExclusive());
+                haveDb = true;
+                break;
+                }
+            case LockableType::Model:
+                {
+                if (lock.GetId() == model->GetModelId())
+                    {
+                    EXPECT_FALSE(haveModel);
+                    EXPECT_TRUE(lock.IsExclusive());
+                    haveModel = true;
+                    }
+                else
+                    {
+                    // Partition element's model
+                    EXPECT_FALSE(havePartitionModel);
+                    EXPECT_FALSE(lock.IsExclusive());
+                    havePartitionModel = true;
+                    }
+                break;
+                }
+            case LockableType::Element:
+                {
+                // Partition element
+                EXPECT_FALSE(havePartitionElement);
+                EXPECT_TRUE(lock.IsExclusive());
+                havePartitionElement = true;
+                break;
+                }
+            }
+        }
+
+    EXPECT_TRUE(haveDb);
+    EXPECT_TRUE(haveModel);
+    EXPECT_TRUE(havePartitionElement);
+    EXPECT_TRUE(havePartitionModel);
+
+    pIter = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
