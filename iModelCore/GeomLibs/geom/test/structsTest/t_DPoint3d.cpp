@@ -1364,3 +1364,75 @@ TEST(DPoint3d, OperatorOverload)
     pointCpy.Subtract(vec);
     Check::True(point == pointCpy);
     }
+
+TEST(DPoint3d, CopyArrayOf3dPoints) 
+    {
+    bvector<DPoint3d> source = { DPoint3d::From(3,2,2),
+                                 DPoint3d::From(3,0,1),
+                                 DPoint3d::From(9,2,11) };
+    bvector<DPoint3d> dest;
+    DPoint3dOps::Copy(&dest, &source);
+    Check::Near( dest[0], DPoint3d::From(3,2,2));
+    Check::Near( dest[1], DPoint3d::From(3,0,1));
+    Check::Near( dest[2], DPoint3d::From(9,2,11));
+
+    }
+TEST(DPoint3d, LengthOfPolyline)
+    {
+    bvector<DPoint3d> source = { DPoint3d::From(0,0,0),
+                                 DPoint3d::From(0,0,5),
+                                 DPoint3d::From(0,6,5), };
+    double length = PolylineOps::Length(source);
+    printf("%f\n", length);
+    Check::ExactDouble(length, 11);
+
+    bvector<DPoint3d> sourceClosed = { DPoint3d::From(0,0,0),
+                                       DPoint3d::From(4,0,0),
+                                       DPoint3d::From(4,4,0),
+                                       DPoint3d::From(0,4,0)}; //box
+    
+    length = PolylineOps::Length(sourceClosed, true);
+    printf("%f\n", length);
+    Check::ExactDouble(length, 16);
+    bvector<DPoint3d> sourceClosed2 = { DPoint3d::From(0,0,0),
+                                        DPoint3d::From(4,0,4),
+                                        DPoint3d::From(4,4,4),
+                                        DPoint3d::From(0,0,4)};
+    length = PolylineOps::Length(sourceClosed2, false);
+    printf("%0.18f    %0.18f\n", length, 4+2*sqrt(32));
+    Check::Near(length, 4+2*sqrt(32));
+    }
+TEST(DPoint3d, ConvexPolygon)
+    {
+    bvector<DPoint3d> pointsPolygon = { DPoint3d::From(5,1),
+                                        DPoint3d::From(7,1),
+                                        DPoint3d::From(8,3),
+                                        DPoint3d::From(6.8,9),
+                                        DPoint3d::From(3,3) };
+    Check::True(PolygonOps::IsConvex(pointsPolygon));
+    pointsPolygon[2] = DPoint3d::From(6.9, 3);
+    Check::False(PolygonOps::IsConvex(pointsPolygon));
+    }
+TEST(DPoint3d, NormalArea)
+    {
+    //planar polygon
+    bvector<DPoint3d> pointsPolygon = { DPoint3d::From(2,1),
+                                        DPoint3d::From(8,1),
+                                        DPoint3d::From(8,8) };
+    DVec3d areaNormal = PolygonOps::AreaNormal(pointsPolygon);
+    Check::Parallel(areaNormal, DVec3d::From(0, 0, 1));
+    Check::Near(21, areaNormal.Magnitude());
+
+    }
+TEST(DPoint3d, CentroidOfPolygon)
+    {
+    bvector<DPoint2d> pointsPolygon = { DPoint2d::From(0,0),
+                                        DPoint2d::From(0,4),
+                                        DPoint2d::From(4,4),
+                                        DPoint2d::From(4,0) };
+    DPoint2d centroid;
+    double area;
+    PolygonOps::CentroidAndArea(pointsPolygon, centroid, area);
+    Check::Near(centroid, DPoint2d::From(2, 2));
+    Check::Near(area, PolygonOps::Area(pointsPolygon));
+    }
