@@ -18,25 +18,21 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
     private:
         Utf8String m_eventTopic;
         Utf8String m_fromEventSubscriptionId;
-        Utf8String m_codeAuthorityId;
-        Utf8String m_codeNamespace;
+        Utf8String m_codeSpecId;
+        Utf8String m_codeScope;
         bvector<Utf8String> m_values;
-        Utf8String m_reserved;
-        Utf8String m_used;
+        int        m_state;
         int        m_briefcaseId;
-        Utf8String m_usedWithRevision;
 
         DgnDbServerCodeEvent
             (
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
-            Utf8String codeAuthorityId,
-            Utf8String codeNamespace,
+            Utf8String codeSpecId,
+            Utf8String codeScope,
             bvector<Utf8String> values,
-            Utf8String reserved,
-            Utf8String used,
-            int        briefcaseId,
-            Utf8String usedWithRevision
+            int        state,
+            int        briefcaseId
             );
 
     public:
@@ -44,24 +40,20 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbServerCodeEvent : public DgnDbServerEvent::G
             (
             Utf8String eventTopic,
             Utf8String fromEventSubscriptionId,
-            Utf8String codeAuthorityId,
-            Utf8String codeNamespace,
+            Utf8String codeSpecId,
+            Utf8String codeScope,
             bvector<Utf8String> values,
-            Utf8String reserved,
-            Utf8String used,
-            int        briefcaseId,
-            Utf8String usedWithRevision
+            int        state,
+            int        briefcaseId
             );
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
-        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetCodeAuthorityId();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetNamespace();
-        DGNDBSERVERCLIENT_EXPORT bvector<Utf8String> GetValues();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetReserved();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetUsed();
-        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId();
-        DGNDBSERVERCLIENT_EXPORT Utf8String GetUsedWithRevision();
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return m_eventTopic; }
+        DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return m_fromEventSubscriptionId; }
+        DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType() { return DgnDbServerEvent::DgnDbServerEventType::CodeEvent; }
+        DGNDBSERVERCLIENT_EXPORT Utf8String GetCodeSpecId() { return m_codeSpecId; }
+        DGNDBSERVERCLIENT_EXPORT Utf8String GetCodeScope() { return m_codeScope;  }
+        DGNDBSERVERCLIENT_EXPORT bvector<Utf8String> GetValues() { return m_values; }
+        DGNDBSERVERCLIENT_EXPORT int        GetState() { return m_state; }
+        DGNDBSERVERCLIENT_EXPORT int        GetBriefcaseId() { return m_briefcaseId; }
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

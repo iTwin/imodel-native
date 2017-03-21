@@ -40,12 +40,11 @@ void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManag
             DgnCode                  code;
             DgnCodeState             codeState;
             BeSQLite::BeBriefcaseId  briefcaseId;
-            Utf8String               revisionId;
             auto rapidJson = ToRapidJson(codeJson);
-            if (!GetCodeFromServerJson(rapidJson, code, codeState, briefcaseId, revisionId))
+            if (!GetCodeFromServerJson(rapidJson, code, codeState, briefcaseId))
                 continue;//NEEDSWORK: log an error
 
-            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId, revisionId);
+            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId);
             }
         }
     }
