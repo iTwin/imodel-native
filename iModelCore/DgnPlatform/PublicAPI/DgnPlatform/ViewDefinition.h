@@ -13,6 +13,7 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
+#include "Lighting.h"
 #include "Render.h"
 
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
@@ -49,7 +50,7 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static constexpr Utf8CP str_Styles() {return "Styles";}
+    static constexpr Utf8CP str_Styles() {return "styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -175,7 +176,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
     static constexpr Utf8CP str_HLine() {return "hline";}
-    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
@@ -201,8 +201,10 @@ public:
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
 
-    Render::SceneLights GetSceneLights() {return Render::SceneLights::FromJson(GetStyle(str_SceneLights()));}
-    void SetSceneLights(Render::SceneLights const& lights) {SetStyle(str_SceneLights(), lights.ToJson());}
+    Render::SceneLights CreateSceneLights(Render::TargetR);
+    DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
+    DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
+    DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
