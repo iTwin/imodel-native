@@ -2,7 +2,7 @@
 |
 |  $Source: DataCaptureSchema/Tests/BackDoor/PublicAPI/BackDoor/DataCapture/DataCaptureTestDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ struct TestElementGroup : PhysicalElement, IElementGroupOf < PhysicalElement >
     public:
         TestElementGroup(CreateParams const& params) : T_Super(params) {}
         static TestElementGroupPtr Create(DgnDbR dgndb, DgnModelId modelId, DgnCategoryId categoryId, DgnCode elementCode);
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DATACAPTURE_TEST_SCHEMA_NAME, DATACAPTURE_TEST_ELEMENTGROUP_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DATACAPTURE_TEST_SCHEMA_NAME, DATACAPTURE_TEST_ELEMENTGROUP_CLASS_NAME)); }
     };
 
 //=======================================================================================

@@ -659,7 +659,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
 
 void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models)
     {
-    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    DgnClassId classId(dgnDb.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
     BeAssert(classId.IsValid());
 
     for (auto& model : dgnDb.Models().GetLoadedModels())
@@ -953,7 +953,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     {
-    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh","ScalableMeshModel"));
+    DgnClassId classId(dgnDb.Schemas().GetClassId("ScalableMesh","ScalableMeshModel"));
     BeAssert(classId.IsValid());
 
     ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, dgnDb.Elements().GetRootSubjectId(), DgnModel::CreateModelCode("terrain")));
@@ -1093,7 +1093,7 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDbR db, Utf8S
         BeFileName::CreateNewDirectory(smtFileName.GetDirectoryName().c_str());
         */
     Utf8String nameToSet = modelName;
-    DgnClassId classId(db.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    DgnClassId classId(db.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
     BeAssert(classId.IsValid());        
          
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));

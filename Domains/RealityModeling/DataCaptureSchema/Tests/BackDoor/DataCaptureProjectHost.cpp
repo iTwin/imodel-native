@@ -199,7 +199,7 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     if (DgnDbStatus::Success != (status = ImportDataCaptureSchema(*projectPtr)))
         return nullptr;
 
-    projectPtr->Schemas().CreateECClassViewsInDb();
+    projectPtr->Schemas().CreateClassViewsInDb();
 
     auto& spatialModelHandlerR = dgn_ModelHandler::Spatial::GetHandler();
     auto spatialModelPtr = spatialModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(spatialModelHandlerR),
