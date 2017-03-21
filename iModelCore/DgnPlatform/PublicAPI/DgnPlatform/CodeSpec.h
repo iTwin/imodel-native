@@ -27,7 +27,6 @@
 #define BIS_CODESPEC_GeometryPart                   BIS_CODESPEC(BIS_CLASS_GeometryPart)
 #define BIS_CODESPEC_GraphicalType2d                BIS_CODESPEC(BIS_CLASS_GraphicalType2d)
 #define BIS_CODESPEC_TemplateRecipe2d               BIS_CODESPEC(BIS_CLASS_TemplateRecipe2d)
-#define BIS_CODESPEC_LightDefinition                BIS_CODESPEC(BIS_CLASS_LightDefinition)
 #define BIS_CODESPEC_LineStyle                      BIS_CODESPEC(BIS_CLASS_LineStyle)
 #define BIS_CODESPEC_LinkElement                    BIS_CODESPEC(BIS_CLASS_LinkElement)
 #define BIS_CODESPEC_MaterialElement                BIS_CODESPEC(BIS_CLASS_MaterialElement)
