@@ -184,7 +184,7 @@
         </Bindings>
     </Part>
 	
-	<Part Name="RunMemoryLeakAnalysis" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}GeomLibs/MemoryLeak.mke" BentleyBuildMakeOptions="-dTEST_EXE_PATH=$(OutputRootDir)/Product/GeomLibs-Gtest -dEXE_NAME=GeomLibsTest.exe"  OnlyPlatforms="x86,x64">
+	<Part Name="RunMemoryLeakAnalysis" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/MemoryLeak.mke" BentleyBuildMakeOptions="-dTEST_EXE_PATH=$(OutputRootDir)/Product/GeomLibs-Gtest -dEXE_NAME=GeomLibsTest.exe"  OnlyPlatforms="x86,x64">
 	 <!-- BentleyBuildMakeOptions="-dGTEST_OUTPUT_DIR=$(OutputRootDir)Product/Gtest-DgnClientFx-TestCollection-Performance"-->
 	</Part>
 	
