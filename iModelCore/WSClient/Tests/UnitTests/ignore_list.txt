@@ -221,6 +221,41 @@ DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingC
 DataSourceCacheTests.CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance
 #<-----
 
+DgnDbServerEventParserTests.CodeEventTests
+    # bim0200, NDEBUG, x86 & x64
+    # [ RUN      ] DgnDbServerEventParserTests.CodeEventTests
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(359): error: Expected: (nullptr) != (validPtr), actual: 8-byte object <00-00 00-00 00-00 00-00> vs 0000000000000000
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _C_specific_handler (0x7fff6c2bc0b0)
+    # [16] _chkstk (0x7fff8961aa80)
+    # [15] RtlImageNtHeaderEx (0x7fff895b9490)
+    # [14] KiUserExceptionDispatcher (0x7fff89619c80)
+    # [13] DgnDbServerEventParserTests_CodeEventTests_Test::TestBody (0x7ff6d6e2d800)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6d703fed0)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6d703fd60)
+    # [10] testing::Test::Run (0x7ff6d704fec0)
+    # [9] testing::TestInfo::Run (0x7ff6d70501d0)
+    # [8] testing::TestCase::Run (0x7ff6d704ffe0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff6d7050490)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6d703ff70)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6d703fe50)
+    # [4] testing::UnitTest::Run (0x7ff6d7050370)
+    # [3] main (0x7ff6d6a7c0e0)
+    # [2] __scrt_common_main_seh (0x7ff6d705ddec)
+    # [1] BaseThreadInitThunk (0x7fff88b08350)
+    # [0] RtlUserThreadStart (0x7fff895d70b0)
+    # [  FAILED  ] DgnDbServerEventParserTests.CodeEventTests (935 ms)
 
-
-
+DgnDbServerEventParserTests.InvalidEventTests
+    # bim0200, NDEBUG, x86 & x64
+    # [ RUN      ] DgnDbServerEventParserTests.InvalidEventTests
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(447): error:       Expected: nullptr
+    #       Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2())
+    #       Which is: 000001A6FD00C410
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(458): error:       Expected: nullptr
+    #       Which is: 8-byte object <00-00 00-00 00-00 00-00>
+    # To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2())
+    #       Which is: 000001A6FD00C350
+    # [  FAILED  ] DgnDbServerEventParserTests.InvalidEventTests (1 ms)
