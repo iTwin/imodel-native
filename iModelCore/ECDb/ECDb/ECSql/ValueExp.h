@@ -146,7 +146,7 @@ struct LiteralValueExp final : ValueExp
     public:
         static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo type);
 
-        Utf8StringCR GetValue() const;
+        Utf8StringCR GetValue() const { return m_value; }
         int64_t GetValueAsInt64() const;
         bool GetValueAsBoolean() const;
 
@@ -252,9 +252,9 @@ struct UnaryValueExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        UnaryValueExp(ValueExp* operand, UnarySqlOperator op) : ValueExp(Type::UnaryValue, operand->IsConstant()), m_op(op)
+        UnaryValueExp(std::unique_ptr<ValueExp>& operand, UnarySqlOperator op) : ValueExp(Type::UnaryValue, operand->IsConstant()), m_op(op)
             {
-            m_operandExpIndex = AddChild(std::unique_ptr<Exp>(operand));
+            m_operandExpIndex = AddChild(std::move(operand));
             }
 
         ValueExp const* GetOperand() const { return GetChild<ValueExp>(m_operandExpIndex); }

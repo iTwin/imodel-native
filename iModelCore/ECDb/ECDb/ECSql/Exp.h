@@ -56,13 +56,13 @@ struct PropertyPath final
 
     private:
         std::vector<Location> m_path;
-        ClassMap const* m_classMap;
+        ClassMap const* m_classMap = nullptr;
 
         void Reset();
         void Clear();
 
     public:
-        PropertyPath() : m_classMap(nullptr) {}
+        PropertyPath() {}
         ~PropertyPath() {}
 
         PropertyPath(PropertyPath const& rhs) : m_path(rhs.m_path), m_classMap(rhs.m_classMap) {}

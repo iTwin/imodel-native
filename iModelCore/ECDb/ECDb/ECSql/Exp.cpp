@@ -11,8 +11,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-using namespace std;
-
 //************************* Exp *******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
@@ -78,11 +76,11 @@ std::vector<Exp const*> Exp::Find(Exp::Type ofType, bool recusive) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-size_t Exp::AddChild(unique_ptr<Exp> child)
+size_t Exp::AddChild(std::unique_ptr<Exp> child)
     {
     BeAssert(child != nullptr);
     child->m_parent = this;
-    m_children.m_collection.push_back(move(child));
+    m_children.m_collection.push_back(std::move(child));
     //return index of added child
     return m_children.size() - 1;
     }

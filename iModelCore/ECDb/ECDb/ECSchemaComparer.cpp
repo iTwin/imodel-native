@@ -9,7 +9,6 @@
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_EC
-using namespace std;
 
 #define NULL_TEXT "<null>"
 

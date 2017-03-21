@@ -403,10 +403,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, BasicCRUD)
         "JoinedTablePerDirectSubclass on both subclasses and shared columns",
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECCustomAttributes>"
@@ -495,9 +492,13 @@ TEST_F(JoinedTableECDbMapStrategyTests, BasicCRUD)
 
 
 
+    int fileNameSuffix = 0;
     for (SchemaItem const& testSchema : testSchemas)
         {
-        ECDbR ecdb = SetupECDb("JoinedTableTest.ecdb", testSchema);
+        fileNameSuffix++;
+        Utf8String fileName;
+        fileName.Sprintf("JoinedTableTest%d.ecdb", fileNameSuffix);
+        ECDbR ecdb = SetupECDb(fileName.c_str(), testSchema);
         ASSERT_TRUE(ecdb.IsDbOpen());
         for (Utf8StringCR nonSelectECSql : nonSelectECSqls)
             {

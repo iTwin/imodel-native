@@ -54,7 +54,7 @@ struct PropertyNameExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        explicit PropertyNameExp(PropertyPath&& propPath);
+        explicit PropertyNameExp(PropertyPath const& propPath);
         PropertyNameExp(ECSqlParseContext const&, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
         PropertyNameExp(ECSqlParseContext const&, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
 
