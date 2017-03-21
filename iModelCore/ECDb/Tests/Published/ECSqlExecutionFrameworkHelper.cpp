@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/ECDbTestHelper.cpp $
+|     $Source: Tests/Published/ECSqlExecutionFrameworkHelper.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECDbTestHelper.h"
+#include "ECSqlExecutionFrameworkHelper.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE

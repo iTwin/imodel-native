@@ -4604,7 +4604,72 @@ TEST_F(ECSqlStatementTestFixture, SelectCountPolymorphic)
     ASSERT_EQ(9, count);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                           07/12
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, SelectClause)
+    {
+    ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ASSERT_TRUE(db.IsDbOpen());
+    ECClassCP employee = db.Schemas().GetClass("StartupCompany", "Employee");
+    ASSERT_TRUE(employee != nullptr);
 
+    ECSqlStatement ecStatement;
+
+    Utf8String jobTitle1;
+    int managerId1;
+    {
+    // ECSQL should honor the order of the ecColumns from the select clause
+    ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare(db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
+    jobTitle1 = ecStatement.GetValueText(0);
+    managerId1 = ecStatement.GetValueInt(1);
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
+    ecStatement.Finalize();
+    }
+
+    {
+    ASSERT_EQ(ECSqlStatus::Success, ecStatement.Prepare(db, "SELECT JobTitle, ManagerID FROM [StartupCompany].[Employee]"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecStatement.Step());
+    Utf8String jobTitle2 = ecStatement.GetValueText(0);
+    int        managerId2 = ecStatement.GetValueInt(1);
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ManagerID"));
+    ecStatement.Finalize();
+
+    ASSERT_EQ(managerId1, managerId2);
+    ASSERT_TRUE(jobTitle1.Equals(jobTitle2));
+    }
+
+    {
+    // ECSQL SelectAll (aka '*') should select in same order as ECProperties appear in the ECSchema
+    ASSERT_TRUE(ECSqlStatus::Success == ecStatement.Prepare(db, "SELECT * FROM [StartupCompany].[Employee]"));
+    ASSERT_TRUE(BE_SQLITE_ROW == ecStatement.Step());
+    EXPECT_TRUE(ecStatement.GetColumnInfo(0).GetProperty()->GetName().Equals("ECInstanceId"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(1).GetProperty()->GetName().Equals("ECClassId"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(2).GetProperty()->GetName().Equals("EmployeeID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(3).GetProperty()->GetName().Equals("FirstName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(4).GetProperty()->GetName().Equals("JobTitle"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(5).GetProperty()->GetName().Equals("LastName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(6).GetProperty()->GetName().Equals("ManagerID"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(7).GetProperty()->GetName().Equals("Room"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(8).GetProperty()->GetName().Equals("SSN"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(9).GetProperty()->GetName().Equals("Project"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(10).GetProperty()->GetName().Equals("WorkPhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(11).GetProperty()->GetName().Equals("MobilePhone"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(12).GetProperty()->GetName().Equals("FullName"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(13).GetProperty()->GetName().Equals("Certifications"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(14).GetProperty()->GetName().Equals("Location"));
+    EXPECT_TRUE(ecStatement.GetValue(14)["Coordinate"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValue(14)["Street"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(15).GetProperty()->GetName().Equals("EmployeeType"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(16).GetProperty()->GetName().Equals("Address"));
+    EXPECT_TRUE(ecStatement.GetValue(16)["Coordinate"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Coordinate"));
+    EXPECT_TRUE(ecStatement.GetValue(16)["Street"].GetColumnInfo().GetProperty()->GetName().Equals(/*Location.*/"Street"));
+    EXPECT_TRUE(ecStatement.GetColumnInfo(17).GetProperty()->GetName().Equals("EmployeeRecordKey"));
+    }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   09/12
 //---------------------------------------------------------------------------------------
@@ -4635,13 +4700,13 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
 
     // Add some employees
     ECClassCP employeeClass = db.Schemas().GetClass("StartupCompany", "Employee");
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Leonardo", "Da Vinci"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Galileo", "Galilei"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Nikola", "Tesla"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Niels", "Bohr"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Albert", "Einstein"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Albert", "Einstein"));
-    ASSERT_EQ(BE_SQLITE_DONE, insertPerson(db, *employeeClass, "Srinivasa", "Ramanujan"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Leonardo", "Da Vinci"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Galileo", "Galilei"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Nikola", "Tesla"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Niels", "Bohr"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Albert", "Einstein"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Albert", "Einstein"));
+    ASSERT_EQ(BE_SQLITE_OK, insertPerson(db, *employeeClass, "Srinivasa", "Ramanujan"));
     db.SaveChanges();
 
     // Retrieve them in alphabetical order

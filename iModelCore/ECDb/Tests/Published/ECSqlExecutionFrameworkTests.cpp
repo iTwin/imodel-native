@@ -1,20 +1,89 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECSqlInsertTests.cpp $
+|  $Source: Tests/Published/ECSqlExecutionFrameworkTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 #include "ECDbPublishedTests.h"
-#include "ECDbTestHelper.h"
+#include "ECSqlExecutionFrameworkHelper.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+struct ECSqlExecutionFrameworkTests : ECDbTestFixture
+    {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, Insert)
+TEST_F(ECSqlExecutionFrameworkTests, Select)
+    {
+    ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Select.ecdb");
+
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John Snow','England',12345)");
+    STATEMENT_EXECUTE_SUCCESS();
+    STATEMENT_PREPARE_SUCCESS("SELECT ContactName,Phone,Country FROM ECST.Supplier");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_TEXT(0, "John Snow");
+    ASSERT_INT(1, 12345);
+    ASSERT_TEXT(2, "England");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, CountWithDistinctClause)
+    {
+    ECTEST_SETUP("CountWithDistinctClause", "ECSqlStatementTests.01.00.ecschema.xml", "CountWithDistinctClause.ecdb");
+
+    ADD_QUERY("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Tom Hardy','France',012)");
+    ADD_QUERY("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('John','UK',234)");
+    ADD_QUERY("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Snow','Spain',567)");
+    ADD_QUERY("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('David','France',469)");
+    ADD_QUERY("INSERT INTO ECST.Supplier(ContactName,Country,Phone) VALUES('Beckham','Spain',7345)");
+    EXECUTE_LIST();
+
+    STATEMENT_PREPARE_SUCCESS("SELECT COUNT(DISTINCT Country) FROM ECST.Supplier");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_INT(0, 3);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, RelationalOperatorsOnPointProperties)
+    {
+    ECTEST_SETUP("RelationalOperatorsOnPointProperties", "ECSqlTest.01.00.ecschema.xml", "RelationalOperatorsOnPointProperties.ecdb");
+
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, P2D, P3D) VALUES (123, ?, ?)");
+    BIND_POINT2D(1, DPoint2d::From(1, 2));
+    BIND_POINT3D(2, DPoint3d::From(3, 4, 5));
+    STATEMENT_EXECUTE_SUCCESS();
+
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, P2D, P3D) VALUES (321, ?, ?)");
+    BIND_POINT2D(1, DPoint2d::From(6, 7));
+    BIND_POINT3D(2, DPoint3d::From(8, 9, 10));
+    STATEMENT_EXECUTE_SUCCESS();
+
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, P2D, P3D) VALUES (456, ?, ?)");
+    BIND_POINT2D(1, DPoint2d::From(12.5, 14.5));
+    BIND_POINT3D(2, DPoint3d::From(9.5, 10.5, 11.5));
+    STATEMENT_EXECUTE_SUCCESS();
+
+    STATEMENT_PREPARE_SUCCESS("SELECT P2D.X FROM ecsql.P WHERE P2D.X>=12");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_DOUBLE(0, 12.5);
+
+    STATEMENT_PREPARE_SUCCESS("SELECT P3D.X,P3D.Y,P3D.Z FROM ecsql.P WHERE P3D.X>=2 AND P3D.Y<=5");
+    ASSERT_STATEMENT_EXECUTE(DbResult::BE_SQLITE_ROW);
+    ASSERT_DOUBLE(0, 3);
+    ASSERT_DOUBLE(1, 4);
+    ASSERT_DOUBLE(2, 5);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, Insert)
     {
             {
             ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Insert.ecdb");
@@ -42,7 +111,7 @@ TEST(ECSqlInsertTests, Insert)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, Update)
+TEST_F(ECSqlExecutionFrameworkTests, Update)
     {
     ECTEST_SETUP("ECSqlStatementTests", "ECSqlStatementTests.01.00.ecschema.xml", "Update.ecdb");
 
@@ -60,7 +129,7 @@ TEST(ECSqlInsertTests, Update)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, Delete)
+TEST_F(ECSqlExecutionFrameworkTests, Delete)
     {
     ECTEST_SETUP("ECSqlStatementTests", "NestedStructArrayTest.01.00.ecschema.xml", "Delete.ecdb");
 
@@ -75,7 +144,7 @@ TEST(ECSqlInsertTests, Delete)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, ParameterAdvancedTests)
+TEST_F(ECSqlExecutionFrameworkTests, ParameterAdvancedTests)
     {
     ECTEST_SETUP("ParameterAdvancedTests", "ECSqlTest.01.00.ecschema.xml", "ParameterAdvancedTests.ecdb");
 
@@ -206,7 +275,7 @@ TEST(ECSqlInsertTests, ParameterAdvancedTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, ArrayTests)
+TEST_F(ECSqlExecutionFrameworkTests, ArrayTests)
     {
     ECTEST_SETUP("ArrayTests", "ECSqlTest.01.00.ecschema.xml", "ArrayTests.ecdb");
 
@@ -220,7 +289,7 @@ TEST(ECSqlInsertTests, ArrayTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, CommonGeometryTests)
+TEST_F(ECSqlExecutionFrameworkTests, CommonGeometryTests)
     {
     ECTEST_SETUP("CommonGeometryTests", "ECSqlTest.01.00.ecschema.xml", "CommonGeometryTests.ecdb");
 
@@ -248,7 +317,7 @@ TEST(ECSqlInsertTests, CommonGeometryTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, DateTimeTests)
+TEST_F(ECSqlExecutionFrameworkTests, DateTimeTests)
     {
     ECTEST_SETUP("DateTimeTests", "ECSqlTest.01.00.ecschema.xml", "DateTimeTests.ecdb");
 
@@ -390,7 +459,7 @@ TEST(ECSqlInsertTests, DateTimeTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, IntoTests)
+TEST_F(ECSqlExecutionFrameworkTests, IntoTests)
     {
     ECTEST_SETUP("IntoTests", "ECSqlTest.01.00.ecschema.xml", "IntoTests.ecdb");
 
@@ -466,7 +535,7 @@ TEST(ECSqlInsertTests, IntoTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, MiscTests)
+TEST_F(ECSqlExecutionFrameworkTests, MiscTests)
     {
     ECTEST_SETUP("MiscTests", "ECSqlTest.01.00.ecschema.xml", "MiscTests.ecdb");
 
@@ -622,7 +691,7 @@ TEST(ECSqlInsertTests, MiscTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Maha Nasir                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECSqlInsertTests, StructTests)
+TEST_F(ECSqlExecutionFrameworkTests, StructTests)
     {
     ECTEST_SETUP("StructTests", "ECSqlTest.01.00.ecschema.xml", "StructTests.ecdb");
 
@@ -637,7 +706,10 @@ TEST(ECSqlInsertTests, StructTests)
     EXECUTE_LIST();
     }
 
-TEST(ECSqlInsertTests, NamedParameterTest)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Maha Nasir                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlExecutionFrameworkTests, NamedParameterTest)
     {
     ECTEST_SETUP("NamedParameterTest", "ECSqlTest.01.00.ecschema.xml", "NamedParameterTest.ecdb");
 

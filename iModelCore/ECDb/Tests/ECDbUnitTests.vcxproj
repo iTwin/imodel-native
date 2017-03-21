@@ -40,9 +40,7 @@
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
-    <ClCompile Include="Published\ECDbInstances_Test.cpp" />
     <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
-    <ClCompile Include="Published\ECDbTestHelper.cpp" />
     <ClCompile Include="Published\ECDbTests.cpp" />
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
@@ -50,13 +48,13 @@
     <ClCompile Include="Published\ECSqlAsserter.cpp" />
     <ClCompile Include="Published\ECSqlCustomFunctionTests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlExecutionFrameworkHelper.cpp" />
+    <ClCompile Include="Published\ECSqlExecutionFrameworkTests.cpp" />
     <ClCompile Include="Published\ECSqlInsertTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp" />
-    <ClCompile Include="Published\ECSqlInsertTests.cpp" />
     <ClCompile Include="Published\ECSqlRangeTreeTests.cpp" />
     <ClCompile Include="Published\ECSqlSelectTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
-    <ClCompile Include="Published\ECSqlSelectTests.cpp" />
     <ClCompile Include="Published\ECSqlStatementCacheTest.cpp" />
     <ClCompile Include="Published\ECSqlStatementFunctionTests.cpp" />
     <ClCompile Include="Published\ECSqlStatementTestFixture.cpp" />
@@ -94,9 +92,9 @@
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
-    <ClInclude Include="Published\ECDbTestHelper.h" />
     <ClInclude Include="Published\ECSqlAsserter.h" />
     <ClInclude Include="Published\ECSqlDeleteTestDataset.h" />
+    <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlExpectedResultImpls.h" />
     <ClInclude Include="Published\ECSqlCommonTestDataset.h" />
     <ClInclude Include="Published\ECSqlInsertTestDataset.h" />
