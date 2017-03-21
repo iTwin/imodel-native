@@ -7021,16 +7021,7 @@ int     code
                 }
             index++;
             }
-        /* If the unit type is not length then it must be angular and can only be used to set klat/long geographic coordinate systems */
-        else if (cs_PRJCOD_UNITY == m_csParameters->prj_code)
-            {
-            if (code == index)
-                {
-                CSMap::CS_stncp (m_csParameters->csdef.unit, pUnit->name, DIM (m_csParameters->csdef.unit));
-                return SUCCESS;
-                }
-            index++;
-            }
+
         }
     return GEOCOORDERR_InvalidUnitCode;
     }
