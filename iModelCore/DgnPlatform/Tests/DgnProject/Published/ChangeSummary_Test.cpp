@@ -272,7 +272,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 ModeledElement.Id;NULL;1099511627782
                 ModeledElement.RelECClassId;NULL;BisCore:ModelModelsElement:174
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"mm","num":1000.0,"sys":2}}}"
-                Visibility;NULL;1
+                IsPrivate;NULL;0
         0:9;BisCore:AuthorityIssuesElementCode:169;Insert;No
                 SourceECClassId;NULL;BisCore:NullAuthority:274
                 SourceECInstanceId;NULL;0:1

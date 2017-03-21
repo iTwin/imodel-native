@@ -538,7 +538,7 @@ DbResult DgnDomains::DoImportSchemas(DgnDbR dgndb, bvector<ECSchemaCP> const& im
         {
         LOG.debug("Schemas to be imported:");
         for (ECSchemaCP schema : importSchemas)
-            LOG.debugv("\t%s", schema->GetFullSchemaName());
+            LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
         }
     
     if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportECSchemas(importSchemas, isImportingFromV8, dgndb.GetSchemaImportToken()))

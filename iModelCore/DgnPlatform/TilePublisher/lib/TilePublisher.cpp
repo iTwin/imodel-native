@@ -3060,7 +3060,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
     auto cameraView = nullptr != spatialView ? view.ToView3d() : nullptr;
-    if (nullptr != cameraView)
+    if (nullptr != cameraView && cameraView->IsCameraOn())
         {
         json["type"] = "camera";
 

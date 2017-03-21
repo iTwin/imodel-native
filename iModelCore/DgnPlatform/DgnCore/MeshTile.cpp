@@ -805,6 +805,9 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
     {
+    if (!materialId.IsValid())
+        return false;
+
     m_materialEl = DgnMaterial::Get(dgnDb, materialId);
     BeAssert(m_materialEl.IsValid());
     m_material = &m_materialEl->GetRenderingAsset();
@@ -885,6 +888,10 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster, uint32_t fillColor)
     {
     TilePolyline    newPolyline;
+
+    // Temporary white => black color inversion.  Remove when we have uniform background and can handle correctly in shaders.
+    if (0xffffff  == fillColor)
+        fillColor = 0;
 
     for (auto& point : points)
         {

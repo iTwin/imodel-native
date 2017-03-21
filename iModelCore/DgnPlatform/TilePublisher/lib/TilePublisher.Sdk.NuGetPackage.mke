@@ -15,4 +15,4 @@ NUGET_BUILD_DIR = $(OutputRootDir)Build/TilePublisher/
 %include $(SrcRoot)bsicommon/sharedMki/nuspecCreate.mki
 
 always:
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_BUILD_DIR)NuGetPackages $(OutputRootDir)Product/TilePublisher/Assets/NuGetPackages
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_BUILD_DIR)NuGetPackages/$(NuGetBaseName).$(ASSEMBLY_FILE_VERSION).nupkg $(OutputRootDir)Product/TilePublisher/Assets/NuGetPackages/$(NuGetBaseName).$(ASSEMBLY_FILE_VERSION).nupkg

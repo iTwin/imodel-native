@@ -51,6 +51,7 @@
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
+#define DPTEST_CLASS_TestInformationRecord "TestInformationRecord"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 #define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
@@ -440,6 +441,38 @@ typedef RefCountedCPtr<TestGraphicalType2d> TestGraphicalType2dCPtr;
 struct TestGraphicalType2dHandler : Dgn::dgn_ElementHandler::GraphicalType2d
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, TestGraphicalType2d, TestGraphicalType2dHandler, Dgn::dgn_ElementHandler::GraphicalType2d, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestInformationRecord : Dgn::InformationRecordElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestInformationRecord, Dgn::InformationRecordElement)
+    friend struct TestInformationRecordHandler;
+
+protected:
+    explicit TestInformationRecord(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestInformationRecord> Create(Dgn::InformationRecordModelR);
+
+    Utf8String GetStringProperty() const {return GetPropertyValueString("StringProperty");}
+    void SetStringProperty(Utf8CP s) {SetPropertyValue("StringProperty", s);}
+
+    int32_t GetIntProperty() const {return GetPropertyValueInt32("IntProperty");}
+    void SetIntProperty(int32_t i) {SetPropertyValue("IntProperty", i);}
+};
+
+typedef RefCountedPtr<TestInformationRecord> TestInformationRecordPtr;
+typedef RefCountedCPtr<TestInformationRecord> TestInformationRecordCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    03/17
+//=======================================================================================
+struct TestInformationRecordHandler : Dgn::dgn_ElementHandler::InformationRecord
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestInformationRecord, TestInformationRecord, TestInformationRecordHandler, Dgn::dgn_ElementHandler::InformationRecord, )
 };
 
 //=======================================================================================
