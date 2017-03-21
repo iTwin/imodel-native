@@ -37,7 +37,6 @@ struct BCSSignInInfo
         m_environment = WebServices::UrlProvider::Environment::Release;
 #endif
         }
-    
     //! Set m_environment by parsing a string
     BentleyStatus SetEnvironmentFromString(Utf8StringCR str)
         {
