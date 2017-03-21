@@ -44,10 +44,10 @@ const DgnLockInfoSet& DgnDbCodeLockSetResultInfo::GetLockStates() const { return
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
+void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeBriefcaseId briefcaseId)
     {
     m_codes.insert(dgnCode);
-    AddCodeInfoToList(m_codeStates, dgnCode, dgnCodeState, briefcaseId, repositoryId);
+    AddCodeInfoToList(m_codeStates, dgnCode, dgnCodeState, briefcaseId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1008,24 +1008,15 @@ bool                            queryOnly = false
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-void CodeStateToReservedUsed(DgnCodeStateCR state, bool* reserved, bool* used)
+uint8_t DgnCodeStateToInt(DgnCodeStateCR state)
     {
     //NEEDSWORK: Make DgnCodeState::Type public
-    if (state.IsReserved())
-        {
-        *reserved = true;
-        *used     = false;
-        return;
-        }
-    if (state.IsUsed())
-        {
-        *reserved = false;
-        *used     = true;
-        return;
-        }
-    
-    *reserved = false;
-    *used     = false;
+	if (state.IsReserved())
+		return 1;
+	if (state.IsUsed())
+		return 2;
+
+	return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1036,25 +1027,18 @@ Json::Value CreateCodeInstanceJson
 bvector<DgnCode> const&      codes,
 DgnCodeStateCR               state,
 BeBriefcaseId                briefcaseId,
-BeGuidCR                     masterFileId,
-Utf8StringCR                 stateRevisionId,
 bool                         queryOnly
 )
     {
     Json::Value properties;
     DgnCode const* firstCode = codes.begin();
 
-    bool reserved, used;
-    CodeStateToReservedUsed(state, &reserved, &used);
 
-    properties[ServerSchema::Property::AuthorityId]   = firstCode->GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::Namespace]     = firstCode->GetScope();
-    properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
-    properties[ServerSchema::Property::Reserved]      = reserved;
-    properties[ServerSchema::Property::Used]          = used;
-    properties[ServerSchema::Property::MasterFileId]  = masterFileId.ToString();
-    properties[ServerSchema::Property::StateRevision] = stateRevisionId;
-    properties[ServerSchema::Property::QueryOnly]     = queryOnly;
+    properties[ServerSchema::Property::CodeSpecId]   = firstCode->GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::CodeScope]    = firstCode->GetScope();
+    properties[ServerSchema::Property::BriefcaseId]  = briefcaseId.GetValue();
+    properties[ServerSchema::Property::State]        = DgnCodeStateToInt(state);
+    properties[ServerSchema::Property::QueryOnly]    = queryOnly;
 
     properties[ServerSchema::Property::Values] = Json::arrayValue;
     int i = 0;
@@ -1157,8 +1141,6 @@ WSChangeset::ChangeState const&  changeState,
 bvector<DgnCode> const&          codes,
 DgnCodeStateCR                   state,
 BeBriefcaseId                    briefcaseId,
-BeGuidCR                         masterFileId,
-Utf8StringCR                     stateRevisionId,
 bool                             queryOnly
 )
     {
@@ -1166,7 +1148,7 @@ bool                             queryOnly
         return;
 
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiCode, "MultiCode");
-    JsonValueCR codeJson = CreateCodeInstanceJson(codes, state, briefcaseId, masterFileId, stateRevisionId, queryOnly);
+    JsonValueCR codeJson = CreateCodeInstanceJson(codes, state, briefcaseId, queryOnly);
     changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
     }
 
@@ -1199,8 +1181,6 @@ void SetCodesJsonRequestToChangeSet
 const DgnCodeSet                codes,
 DgnCodeState                    state,
 BeBriefcaseId                   briefcaseId,
-BeGuidCR                        masterFileId,
-Utf8StringCR                    stateRevisionId,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState,
 bool                            queryOnly = false
@@ -1214,7 +1194,7 @@ bool                            queryOnly = false
 
     for (auto& group : groupedCodes)
         {
-        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, masterFileId, stateRevisionId, queryOnly);
+        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, queryOnly);
         }
     }
 
@@ -1231,8 +1211,8 @@ Json::Value CreateCodeTemplateJson
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::Namespace] = codeTemplate.GetScope();
+    properties[ServerSchema::Property::CodeSpecId] = codeTemplate.GetCodeSpecId().GetValue();
+    properties[ServerSchema::Property::CodeScope] = codeTemplate.GetScope();
     properties[ServerSchema::Property::ValuePattern] = codeTemplate.GetValuePattern();
     properties[ServerSchema::Property::Type] = (int)templateType;
 
@@ -1421,7 +1401,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocksInternal
     
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created);
 
     return SendChangesetRequestInternal(changeset, options, cancellationToken);
     }
@@ -1446,7 +1426,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
 
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created, true);
 
     return SendChangesetRequest(changeset, options, cancellationToken);
     }
@@ -1488,7 +1468,7 @@ ICancellationTokenPtr                   cancellationToken
 
     DgnCodeState state;
     state.SetAvailable();
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, masterFileId, "", *changeset, WSChangeset::ChangeState::Modified);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
 
     return SendChangesetRequestInternal(changeset, options, cancellationToken);
     }
@@ -1731,10 +1711,9 @@ void AddCodes(const WSObjectsReader::Instance& value, DgnDbCodeLockSetResultInfo
     DgnCode        code;
     DgnCodeState   codeState;
     BeBriefcaseId  briefcaseId;
-    Utf8String     repositoryId;
 
-    if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId, repositoryId))
-        codesLocksSetOut->AddCode(code, codeState, briefcaseId, repositoryId);
+    if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId))
+        codesLocksSetOut->AddCode(code, codeState, briefcaseId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1780,14 +1759,13 @@ ICancellationTokenPtr cancellationToken
         DgnCode        code;
         DgnCodeState   codeState;
         BeBriefcaseId  briefcaseId;
-        Utf8String     repositoryId;
 
         DgnCodeSet codeSet;
-        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId, repositoryId))
+        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId))
             {
             for (auto const& code : codeSet)
                 {
-                codesLocksSetOut->AddCode(code, codeState, briefcaseId, repositoryId);
+                codesLocksSetOut->AddCode(code, codeState, briefcaseId);
                 }
             }
         };
@@ -1809,7 +1787,6 @@ inline const char * const BoolToString(bool b)
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesInternal
 (
 const BeBriefcaseId briefcaseId, 
-const uint64_t lastRevisionIndex,
 DgnDbCodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
@@ -1817,14 +1794,8 @@ ICancellationTokenPtr cancellationToken
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Code);
 
     Utf8String filter;
-    Utf8String codesFilter;
-
-    //NEEDSWORK: Make DgnCodeState::Type public
-    codesFilter.Sprintf("%s+eq+%s+or+%s+eq+%s+or+%s+gt+%u", ServerSchema::Property::Reserved, BoolToString(true),
-                        ServerSchema::Property::Used, BoolToString(true), ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
-
-    filter.Sprintf("%s+ne+%u+and+(%s)", ServerSchema::Property::BriefcaseId,
-                   briefcaseId.GetValue(), codesFilter.c_str());
+    filter.Sprintf("%s+ne+%u", ServerSchema::Property::BriefcaseId,
+                   briefcaseId.GetValue());
 
     query.SetFilter(filter);
 
@@ -2013,7 +1984,7 @@ ICancellationTokenPtr cancellationToken
             auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
             bset<DgnDbServerStatusTaskPtr> tasks;
 
-            auto task = QueryUnavailableCodesInternal(briefcaseId, revisionIndex, finalValue, cancellationToken);
+            auto task = QueryUnavailableCodesInternal(briefcaseId, finalValue, cancellationToken);
             tasks.insert(task);
             task = QueryUnavailableLocksInternal(briefcaseId, revisionIndex, finalValue, cancellationToken);
             tasks.insert(task);
@@ -3127,9 +3098,9 @@ ICancellationTokenPtr               cancellationToken
 //---------------------------------------------------------------------------------------
 Json::Value PushRevisionJson
 (
-Dgn::DgnRevisionPtr            revision,
-Utf8StringCR                   repositoryName,
-BeBriefcaseId                  briefcaseId
+Dgn::DgnRevisionPtr revision,
+BeBriefcaseId       briefcaseId,
+bool                containsSchemaChanges
 )
     {
     Json::Value pushRevisionJson = Json::objectValue;
@@ -3148,6 +3119,7 @@ BeBriefcaseId                  briefcaseId
     properties[ServerSchema::Property::MasterFileId] = revision->GetDbGuid();
     properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue ();
     properties[ServerSchema::Property::IsUploaded] = false;
+    properties[ServerSchema::Property::ContainingChanges] = containsSchemaChanges ? 1 : 0;
     return pushRevisionJson;
     }
 
@@ -3188,14 +3160,14 @@ ICancellationTokenPtr           cancellationToken
         {
         DgnCodeState state;
         state.SetUsed(revision->GetId());
-        SetCodesJsonRequestToChangeSet(assignedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(assignedCodes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
         }
 
     if (!discardedCodes.empty())
         {
         DgnCodeState state;
         state.SetDiscarded(revision->GetId());
-        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
         }
 
     if (relinquishCodesLocks)
@@ -3268,18 +3240,19 @@ ICancellationTokenPtr           cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
-Dgn::DgnRevisionPtr             revision,
-Dgn::DgnDbCR                    dgndb,
-bool                            relinquishCodesLocks,
+Dgn::DgnRevisionPtr               revision,
+Dgn::DgnDbCR                      dgndb,
+bool                              relinquishCodesLocks,
+bool                              containsSchemaChanges,
 Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr           cancellationToken
+ICancellationTokenPtr             cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::Push";
     DgnDbCP pDgnDb = &dgndb;
 
     // Stage 1. Create revision.
-    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, m_repositoryInfo.GetId(), dgndb.GetBriefcaseId()));
+    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, dgndb.GetBriefcaseId(), containsSchemaChanges));
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
