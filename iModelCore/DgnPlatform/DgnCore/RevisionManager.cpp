@@ -814,6 +814,33 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    03/2017
+//---------------------------------------------------------------------------------------
+bool DgnRevision::ContainsSchemaChanges(DgnDbCR dgndb) const
+    {
+    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
+    ChangeIterator changeIter(dgndb, changeStream);
+
+    for (ChangeIterator::RowEntry const& entry : changeIter)
+        {
+        if (entry.GetTableName().StartsWith("ec_"))
+            return true;
+        }
+
+    // Validate that there aren't any DbSchema changes in the change set
+    // Note: We do NOT typically expect database schema changes without corresponding EC changes
+    SchemaChangeSet dbSchemaChanges;
+    changeStream.GetSchemaChanges(dbSchemaChanges);
+    if (!dbSchemaChanges.IsEmpty())
+        {
+        LOG.warning("Detected database schema changes without importing shemas");
+        return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 RevisionManager::RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb)
