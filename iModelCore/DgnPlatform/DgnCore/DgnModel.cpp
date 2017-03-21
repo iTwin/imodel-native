@@ -148,7 +148,7 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     // WIP: Add m_modeledElementRelClassId to CreateParams!!!
-    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1718,7 +1718,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
             ECN::IECRelationshipInstancePtr relinst(dynamic_cast<ECN::IECRelationshipInstanceP>(sourceReader.GetInstance().get()));
 
             ECN::ECClassCR srcClass = relinst->GetClass();
-            ECClassCP actualDstClass = destDb.Schemas().GetECClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
+            ECClassCP actualDstClass = destDb.Schemas().GetClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
             if (nullptr == actualDstClass)
                 {
                 // the lookup will fail to only if the ecclass is not found, and that can only be because the necessary domain/schema was not imported

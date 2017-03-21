@@ -308,7 +308,7 @@ GraphicalType2dCPtr TypeTests::InsertType2d(DefinitionModelR typeModel, Utf8CP t
     if (!type.IsValid())
         return nullptr;
 
-    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalType2dHasTemplateRecipe));
+    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalType2dHasTemplateRecipe));
     return recipe.GetDgnDb().Elements().Insert<GraphicalType2d>(*type);
     }
 
@@ -321,7 +321,7 @@ PhysicalTypeCPtr TypeTests::InsertType3d(DefinitionModelR typeModel, Utf8CP type
     if (!type.IsValid())
         return nullptr;
 
-    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalTypeHasTemplateRecipe));
+    type->SetRecipe(recipe.GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalTypeHasTemplateRecipe));
     return recipe.GetDgnDb().Elements().Insert<PhysicalType>(*type);
     }
 
@@ -354,7 +354,7 @@ DrawingGraphicPtr TypeTests::CreateDrawingGraphic(DrawingModelR model, Graphical
     if (subCategoryOverride.IsValid())
         builder->Append(subCategoryOverride);
 
-    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType));
+    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType));
 
     if (userLabel && *userLabel)
         element->SetUserLabel(userLabel);
@@ -431,7 +431,7 @@ PhysicalElementPtr TypeTests::CreatePhysicalObject(PhysicalModelR model, Physica
     if (!builder.IsValid())
         return nullptr;
 
-    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType));
+    element->SetTypeDefinition(type.GetElementId(), db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType));
 
     if (userLabel && *userLabel)
         element->SetUserLabel(userLabel);
@@ -732,7 +732,7 @@ PhysicalModelPtr TypeTests::InsertSlabAndColumnsTemplate(TemplateRecipe3dCR reci
         return nullptr;
 
     DgnDbR db = recipe.GetDgnDb();
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "BrownCategory3d");
     DgnSubCategoryId slabSubCategoryId = DgnDbTestUtils::InsertSubCategory(*m_db, categoryId, "Slabs", ColorDef::Brown());
     DgnSubCategoryId columnSubCategoryId = DgnDbTestUtils::InsertSubCategory(*m_db, categoryId, "Columns", ColorDef::DarkBrown());
@@ -951,7 +951,7 @@ DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
 TEST_F(TypeTests, CreateSampleBim)
     {
     SetupSeedProject();
-    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateECClassViewsInDb());
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateClassViewsInDb());
 
     DefinitionModelPtr typeModel2d = DgnDbTestUtils::InsertDefinitionModel(*m_db, "2D Types");
     TemplateRecipe2dCPtr recipe2A = InsertTemplateRecipe2d(*typeModel2d, "Recipe2-A");
@@ -1060,7 +1060,7 @@ TEST_F(TypeTests, CreateSampleBim)
 TEST_F(TypeTests, MimicCellLibraryImport)
     {
     SetupSeedProject();
-    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateECClassViewsInDb());
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateClassViewsInDb());
 
     SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
     SubjectCPtr symbolsSubject = Subject::CreateAndInsert(*rootSubject, "My Symbols");

@@ -20,7 +20,7 @@ static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId mode
     {
     PhysicalElement::CreateParams createParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
     if (parentId.IsValid())
-        createParams.m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
+        createParams.m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
 
     return createParams;
     }
@@ -36,7 +36,7 @@ public:
     Elem1(DgnDbR db, DgnModelId model, DgnCategoryId category, DgnElementId parentId=DgnElementId())
         : Elem1(makeCreateParams(db, model, QueryClassId(db), category, parentId)) { }
 
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MHTEST_SCHEMA, MHTEST_ELEM1_CLASS)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MHTEST_SCHEMA, MHTEST_ELEM1_CLASS)); }
 
     static uint64_t GetRestrictions()
         {
@@ -60,7 +60,7 @@ public:
     Elem2(DgnDbR db, DgnModelId model, DgnCategoryId category, DgnElementId parentId=DgnElementId())
         : Elem2(makeCreateParams(db, model, QueryClassId(db), category, parentId)) { }
 
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MHTEST_SCHEMA, MHTEST_ELEM2_CLASS)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MHTEST_SCHEMA, MHTEST_ELEM2_CLASS)); }
 
     static uint64_t GetRestrictions()
         {
@@ -273,7 +273,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     auto pElem = cpElem->MakeCopy<GeometricElement3d>();
     ASSERT_TRUE(pElem.IsValid());
     DgnElementId parentId;
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
     ASSERT_TRUE(parentRelClassId.IsValid());
     status = pElem->SetParentId(parentId, parentRelClassId);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetParent));

@@ -2014,7 +2014,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams
         (
         *db,
-        DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)),
+        DgnClassId(db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)),
         DgnModel::CreateModelCode("Physical Model")
         ));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
@@ -2022,7 +2022,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnClassId pclassId = DgnClassId(db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject));
+    DgnClassId pclassId = DgnClassId(db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject));
     ASSERT_TRUE(pclassId.IsValid());
 
     //make diagram from scope

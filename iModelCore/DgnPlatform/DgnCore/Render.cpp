@@ -21,17 +21,9 @@ BEGIN_UNNAMED_NAMESPACE
     static constexpr Utf8CP str_Color() {return "color";}
     static constexpr Utf8CP str_Pattern() {return "pattern";}
     static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_Ambient() {return "ambient";}
-    static constexpr Utf8CP str_Flash() {return "flash";}
-    static constexpr Utf8CP str_PortraitLeft() {return "left";}
-    static constexpr Utf8CP str_PortraitRight() {return "right";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
     static constexpr Utf8CP str_AvgLum() {return "avgLum";}
     static constexpr Utf8CP str_MaxLum() {return "maxLum";}
     static constexpr Utf8CP str_Fstop() {return "fstop";}
-    static constexpr Utf8CP str_Sun() {return "sun";}
-    static constexpr Utf8CP str_Intensity() {return "intensity";}
-    static constexpr Utf8CP str_Direction() {return "dir";}
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,7 +337,7 @@ Render::Plan::Plan(DgnViewportCR vp)
     if (style3d)
         {
         m_hline = style3d->GetHiddenLineParams();
-        m_sceneLights = style3d->GetSceneLights();
+        m_sceneLights = style3d->CreateSceneLights(*vp.GetRenderTarget());
         }
     }
 
@@ -721,6 +713,7 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     return params;
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -768,9 +761,10 @@ Json::Value Render::DirectionalLight::ToJson() const
         JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
     return val;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
+* @BSIMETHOD                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
     {
@@ -793,6 +787,7 @@ Json::Value Render::SceneLights::Brightness::ToJson() const
     return val;
     }
 
+#if defined (NEEDS_WORK_RANGE_INDEX)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -802,11 +797,13 @@ Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
 
     if (val.isObject())
         {
+#if defined (NEEDS_WORK_RANGE_INDEX)
         lights.m_ambient.FromJson(val[str_Ambient()]);
         lights.m_flash.FromJson(val[str_Flash()]);
         lights.m_portraitLeft.FromJson(val[str_PortraitLeft()]);
         lights.m_portraitRight.FromJson(val[str_PortraitRight()]);
         lights.m_sun.FromJson(val[str_Sun()]);
+#endif
         lights.m_brightness.FromJson(val[str_Brightness()]);
         }
     return lights;
@@ -818,12 +815,15 @@ Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
 Json::Value Render::SceneLights::ToJson() const
     {
     Json::Value val;
+#if defined (NEEDS_WORK_RANGE_INDEX)
     if (m_ambient.IsEnabled()) val[Json::StaticString(str_Ambient())] = m_ambient.ToJson();
     if (m_flash.IsEnabled()) val[Json::StaticString(str_Flash())] = m_flash.ToJson();
     if (m_portraitLeft.IsEnabled()) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft.ToJson();
     if (m_portraitRight.IsEnabled()) val[Json::StaticString(str_PortraitRight())] = m_portraitRight.ToJson();
-    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
     if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
+#endif
+    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
     return val;
     }
 
+#endif

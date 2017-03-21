@@ -1907,21 +1907,11 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="LightDefinition" modifier="Sealed" displayLabel="Light Definition">
+    <ECEntityClass typeName="LightLocation" modifier="Sealed" displayLabel="Location of a light source">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Description" typeName="string">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Value" typeName="string" extendedTypeName="Json">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <BaseClass>SpatialLocationElement</BaseClass>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="Sealed">

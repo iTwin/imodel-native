@@ -1581,7 +1581,7 @@ void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
     // *** WIP_AUTO_HANDLED_PROPERTIES: "ECInstanceId" is handled specially. It's in the table but not in the properties collection
     ecSqlParams.Add("ECInstanceId", ECSqlClassParams::StatementType::Insert);
 
-    auto ecclass = m_elements.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(m_classId.GetValue()));
+    auto ecclass = m_elements.GetDgnDb().Schemas().GetClass(ECN::ECClassId(m_classId.GetValue()));
     AutoHandledPropertiesCollection props(*ecclass, m_elements.GetDgnDb(), ECSqlClassParams::StatementType::All, true);
     for (auto i = props.begin(); i != props.end(); ++i)
         {

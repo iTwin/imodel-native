@@ -50,7 +50,7 @@ public:
     DGNPLATFORM_EXPORT explicit LockableId(DgnDbCR db); //!< Constructs a LockableId for a DgnDb
     DGNPLATFORM_EXPORT explicit LockableId(DgnModelCR model); //!< Constructs a LockableId for a model
     DGNPLATFORM_EXPORT explicit LockableId(DgnElementCR element); //!< Constructs a LockableId for an element
-    DGNPLATFORM_EXPORT explicit LockableId(BeSQLite::EC::ECDbSchemaManagerCR schemas); //!< Constructs a LockableId for ecshemas
+    DGNPLATFORM_EXPORT explicit LockableId(BeSQLite::EC::SchemaManager const& schemas); //!< Constructs a LockableId for ecshemas
     BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
     LockableType GetType() const { return m_type; } //!< The type of the lockable object
     bool IsValid() const { return m_id.IsValid(); } //!< Determine if this LockableId refers to a valid object
@@ -128,7 +128,7 @@ public:
     DgnLock(DgnElementId elemId, LockLevel level) : m_id(elemId), m_level(level) { } //!< Constructs a lock for an element
     DgnLock(DgnModelId modelId, LockLevel level) : m_id(modelId), m_level(level) { } //!< Constructs a lock for a model
     DgnLock(DgnDbCR db, LockLevel level) : m_id(db), m_level(level) { } //!< Constructs a lock for a DgnDb
-    DgnLock(BeSQLite::EC::ECDbSchemaManagerCR schemas, LockLevel level) : m_id(schemas), m_level(level) { } //!< Constructs a lock for ECSchemas in a DgnDb
+    DgnLock(BeSQLite::EC::SchemaManager const& schemas, LockLevel level) : m_id(schemas), m_level(level) { } //!< Constructs a lock for ECSchemas in a DgnDb
 
     BeInt64Id GetId() const { return m_id.GetId(); } //!< The ID of the lockable object
     LockLevel GetLevel() const { return m_level; } //!< The level of the lock

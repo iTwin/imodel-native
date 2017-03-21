@@ -53,7 +53,7 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 public:
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DimensionStyle));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DimensionStyle));}
     
     explicit DimensionStyle(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), DgnCode())) {}
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
@@ -168,7 +168,7 @@ protected:
 public:
     explicit LinearDimension2d(CreateParams const& params);
     DGNPLATFORM_EXPORT static LinearDimension2dPtr Create(CreateParams const& params);
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension2d));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension2d));}
     GeometricElement const& _DimToElement() const override final {return *this;}
     static LinearDimension2dCPtr Get(DgnDbR db, DgnElementId id) {return db.Elements().Get<LinearDimension2d>(id);}
     static LinearDimension2dPtr GetForEdit(DgnDbR db, DgnElementId id) {return db.Elements().GetForEdit<LinearDimension2d>(id);}
@@ -196,7 +196,7 @@ public:
     explicit LinearDimension3d(CreateParams const& params);
     DGNPLATFORM_EXPORT static LinearDimension3dPtr Create(CreateParams const& params);
 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension3d));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinearDimension3d));}
     GeometricElement const& _DimToElement() const override final {return *this;}
     static LinearDimension3dCPtr Get(DgnDbR db, DgnElementId id) {return db.Elements().Get<LinearDimension3d>(id);}
     static LinearDimension3dPtr GetForEdit(DgnDbR db, DgnElementId id) {return db.Elements().GetForEdit<LinearDimension3d>(id);}

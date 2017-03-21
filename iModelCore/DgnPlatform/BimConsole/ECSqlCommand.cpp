@@ -136,7 +136,7 @@ void ECSqlCommand::ExecuteInsert(Session& session, ECSqlStatement& statement) co
         return;
         }
 
-    BimConsole::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetECInstanceId().ToString().c_str());
+    BimConsole::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetInstanceId().ToString().c_str());
     }
 
 //---------------------------------------------------------------------------------------

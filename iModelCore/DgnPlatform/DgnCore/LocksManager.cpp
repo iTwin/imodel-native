@@ -22,7 +22,7 @@ LockableId::LockableId(DgnDbCR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockableId::LockableId(ECDbSchemaManagerCR schemas)
+LockableId::LockableId(SchemaManagerCR schemas)
     : m_id(s_dbId), m_type(LockableType::Schemas)
     {
     //

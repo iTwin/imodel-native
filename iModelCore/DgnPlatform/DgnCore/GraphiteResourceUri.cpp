@@ -666,7 +666,7 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
         return DgnElementId();
         }
 
-    ECN::ECClassCP ecClass = db.Schemas().GetECClass(ecSchemaName.c_str(), ecClassName.c_str());
+    ECN::ECClassCP ecClass = db.Schemas().GetClass(ecSchemaName.c_str(), ecClassName.c_str());
     if (ecClass == nullptr)
         return DgnElementId();
 
