@@ -374,7 +374,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine("Current file: ");
     BimConsole::WriteLine("  %s", session.GetFile().GetPath());
 
-    SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
+    ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
         {
         BimConsole::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
@@ -393,7 +393,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             }
 
         if (BE_SQLITE_ROW == stmt.Step())
-            initialECDbProfileVersion = SchemaVersion(stmt.GetValueText(0));
+            initialECDbProfileVersion = ProfileVersion(stmt.GetValueText(0));
         }
 
 

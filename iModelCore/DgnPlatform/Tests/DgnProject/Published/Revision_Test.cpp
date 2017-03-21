@@ -272,6 +272,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
         DgnRevisionPtr revision = CreateRevision();
         ASSERT_TRUE(revision.IsValid());
+        ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
 
         revisions.push_back(revision);
         }
@@ -318,6 +319,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     DgnRevisionPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
+    ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
 
     // Create Revision 2 after deleting the same element
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
@@ -329,6 +331,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     DgnRevisionPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
+    ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
@@ -340,6 +343,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     DgnRevisionPtr revision3 = CreateRevision();
     ASSERT_TRUE(revision3.IsValid());
+    ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
 
     RevisionStatus revStatus;
 

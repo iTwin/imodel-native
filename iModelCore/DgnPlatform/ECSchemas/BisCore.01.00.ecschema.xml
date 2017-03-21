@@ -147,12 +147,12 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Visibility" typeName="int" description="Visibility flags that control whether or not this Model is displayed in GUI lists.">
+        <ECProperty propertyName="IsPrivate" typeName="boolean" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="IsTemplate" typeName="boolean" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
+        <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
@@ -455,7 +455,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json">
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist ad-hoc JSON values.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
                 <CustomHandledProperty>

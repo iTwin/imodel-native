@@ -256,7 +256,7 @@ module DgnScriptTests {
     function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
         var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
-        builder.AppendGeometry (arc);
+        builder.AppendGeometry (arc, be.BuilderCoordSystem.Local);
         }
 
     //---------------------------------------------------------------------------------------
@@ -264,18 +264,18 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
-        builder.AppendGeometry (arc);
+        builder.AppendGeometry (arc, be.BuilderCoordSystem.Local);
         ShowPoint (builder, arc.PointAtFraction (0.0));
         var basis = arc.GetBasisPlane ();
-        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(1.4,0)));
-        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(0,0.95)));
+        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(1.4,0)), be.BuilderCoordSystem.Local);
+        builder.AppendGeometry (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(0,0.95)), be.BuilderCoordSystem.Local);
         var points = new be.DPoint3dArray ();
             points.Add (basis.Evaluate (1,-1));
             points.Add (basis.Evaluate (1,1));
             points.Add (basis.Evaluate (-1,1));
             points.Add (basis.Evaluate (-1,-1));
             points.Add (basis.Evaluate (1,-1));
-        builder.AppendGeometry (new be.LineString (points));
+        builder.AppendGeometry (new be.LineString (points), be.BuilderCoordSystem.Local);
         }
 
     //---------------------------------------------------------------------------------------
@@ -285,7 +285,7 @@ module DgnScriptTests {
     {
         var builder = be.GeometryBuilder.CreateGeometryPart(db, true);
         for (var i = 0; i < geoms.length; ++i)
-            builder.AppendGeometry(geoms[i]);
+            builder.AppendGeometry(geoms[i], be.BuilderCoordSystem.Local);
         var geompart = be.DgnGeometryPart.Create(db);
         builder.FinishPart(geompart);
         geompart.Insert();
@@ -365,7 +365,7 @@ module DgnScriptTests {
         gparams.LineColor = color;
         gparams.GeometryClass = geomClass;
         builder.AppendRenderGeometryParams(gparams);
-        builder.AppendGeometry(geom);
+        builder.AppendGeometry(geom, be.BuilderCoordSystem.Local);
         return builder;
     }
 
@@ -568,7 +568,7 @@ module DgnScriptTests {
         //  2, add DgnSphere. We will look for this in the collection test below
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
         Shift (sphere, shiftCount, 0);
-        builder.AppendGeometry(sphere);
+        builder.AppendGeometry(sphere, be.BuilderCoordSystem.Local);
 
         //  3, add DgnCone. We will look for this in the collection test below
         var cone = be.DgnCone.CreateCircularCone (
@@ -576,7 +576,7 @@ module DgnScriptTests {
                 new be.DPoint3d (1,1,0),
                 0.5, 0.3, true);
         Shift (cone, shiftCount, 1);
-        builder.AppendGeometry(cone);
+        builder.AppendGeometry(cone, be.BuilderCoordSystem.Local);
         shiftCount++;
         var center = new be.DPoint3d (0,0,zz);
         var vector0 = new be.DVector3d (2,1,0).Scale (0.3);
@@ -598,11 +598,11 @@ module DgnScriptTests {
         var centerToCenterLine  = new be.LineSegment (arc.GetCenter (), arc.GetCenter().Plus (centerToCenterVector));
         var startTestLine = new be.LineSegment (arc.PointAtFraction (0.0), arc.PointAtFraction (0.0).Plus (centerToCenterVector));
         var endTestLine   = new be.LineSegment (arc.PointAtFraction (1.0), arc.PointAtFraction (1.0).Plus (centerToCenterVector));
-        builder.AppendGeometry (centerToCenterLine);
-        builder.AppendGeometry (startTestLine);
-        builder.AppendGeometry (endTestLine);
+        builder.AppendGeometry (centerToCenterLine, be.BuilderCoordSystem.Local);
+        builder.AppendGeometry (startTestLine, be.BuilderCoordSystem.Local);
+        builder.AppendGeometry (endTestLine, be.BuilderCoordSystem.Local);
         var line = new be.LineSegment (new be.DPoint3d (0,0,zz), new be.DPoint3d(0,4,zz));
-        builder.AppendGeometry (line);
+        builder.AppendGeometry (line, be.BuilderCoordSystem.Local);
         shiftCount++;
 
         var points = new be.DPoint3dArray ();
@@ -616,7 +616,7 @@ module DgnScriptTests {
 
         Shift(linestring, shiftCount, 0);
         shiftCount++;
-        builder.AppendGeometry (linestring);
+        builder.AppendGeometry (linestring, be.BuilderCoordSystem.Local);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
                     new be.DPoint3d (0,0,zz),
                     new be.DVector3d (1,0,0),
@@ -627,21 +627,21 @@ module DgnScriptTests {
                     );
         Shift (catenary, shiftCount, 0);
         shiftCount++;
-        builder.AppendGeometry (catenary);
+        builder.AppendGeometry (catenary, be.BuilderCoordSystem.Local);
 
         var arc3 = be.EllipticArc.CreateCircleStartMidEnd (new be.DPoint3d (1,0,0), new be.DPoint3d (0,1,0), new be.DPoint3d (-1,0,0));
         Shift(arc3, shiftCount,0);
         shiftCount++;
-        builder.AppendGeometry (arc3);
+        builder.AppendGeometry (arc3, be.BuilderCoordSystem.Local);
 
         var bspline2 = be.BsplineCurve.CreateFromPoles (points, 2);
-        Shift (bspline2, shiftCount,0);      builder.AppendGeometry (bspline2);
+        Shift (bspline2, shiftCount,0);      builder.AppendGeometry (bspline2, be.BuilderCoordSystem.Local);
         var bspline3 = be.BsplineCurve.CreateFromPoles (points, 3);
-        Shift (bspline3, shiftCount, 2);     builder.AppendGeometry (bspline3);
+        Shift (bspline3, shiftCount, 2);     builder.AppendGeometry (bspline3, be.BuilderCoordSystem.Local);
         var bspline4 = be.BsplineCurve.CreateFromPoles (points, 4);
-        Shift (bspline4, shiftCount, 4);     builder.AppendGeometry (bspline4);
+        Shift (bspline4, shiftCount, 4);     builder.AppendGeometry (bspline4, be.BuilderCoordSystem.Local);
         var bspline5 = be.BsplineCurve.CreateFromPoles (points, 5);
-        Shift (bspline5, shiftCount, 6);     builder.AppendGeometry (bspline5);
+        Shift (bspline5, shiftCount, 6);     builder.AppendGeometry (bspline5, be.BuilderCoordSystem.Local);
 
 
         if (0 != builder.Finish(ele))
