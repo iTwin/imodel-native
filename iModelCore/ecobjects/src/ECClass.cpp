@@ -2853,7 +2853,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECEntityClassC
         {
         // Get the relationship base class
         ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
-        auto baseConstraint = (m_isSource) ? relationshipBaseClass->GetSource() : relationshipBaseClass->GetTarget();
+        ECRelationshipConstraintCR baseConstraint = (m_isSource) ? relationshipBaseClass->GetSource() : relationshipBaseClass->GetTarget();
 
         if (ECObjectsStatus::Success != ValidateBaseConstraint(baseConstraint))
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
