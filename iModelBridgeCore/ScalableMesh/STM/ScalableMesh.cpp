@@ -894,7 +894,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     Json::Value     config;
                         {
                         // NEEDS_WORK_SM_STREAMING - replace json config file with 3sm data when available 
-                        BeFileName config_file_name = BEFILENAME(GetDirectoryName, BeFileName(m_path.c_str())).AppendToPath(L"3sm_config.json");
+                    BeFileName config_file_name(BEFILENAME(GetDirectoryName, BeFileName(m_path.c_str())).c_str());
+                    config_file_name.AppendToPath(L"3sm_config.json");
                         BeFile config_file;
                         if (BeFileStatus::Success != OPEN_FILE(config_file, config_file_name.c_str(), BeFileAccess::Read))
                             {
@@ -903,7 +904,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             }
 
                         bvector<Byte> config_file_buffer;
+#ifndef VANCOUVER_API
                         config_file.ReadEntireFile(config_file_buffer);
+#else
+                        uint32_t maxConfigFileBytes = 100000;
+                        uint32_t bytesRead = 0;
+                        config_file_buffer.resize(maxConfigFileBytes);
+                        config_file.Read(config_file_buffer.data(), &bytesRead, maxConfigFileBytes);
+                        assert(bytesRead > 0 && bytesRead < maxConfigFileBytes);
+                        config_file_buffer.resize(bytesRead);
+#endif
 
                         Json::Reader    config_reader;
                         config_reader.parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);

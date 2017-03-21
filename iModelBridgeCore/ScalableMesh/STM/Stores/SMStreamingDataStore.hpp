@@ -190,8 +190,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
         BeFileName masterFileName(settings.GetURL().c_str());
-        m_masterFileName = masterFileName.GetFileNameAndExtension();
-        account_prefix = DataSourceURL((L"file:///" + masterFileName.GetDirectoryName()).c_str());
+        m_masterFileName = BEFILENAME(GetFileNameAndExtension, masterFileName);
+        account_prefix = DataSourceURL((L"file:///" + BEFILENAME(GetDirectoryName, masterFileName)).c_str());
         if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
         }
     else if (settings.IsLocal())
@@ -444,8 +444,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
         BeFileName baseUrl(m_masterFileName.c_str());
-        auto tilesetDir = baseUrl.GetDirectoryName();
-        auto tilesetName = baseUrl.GetFileNameAndExtension();
+        auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
+        auto tilesetName = BEFILENAME(GetFileNameAndExtension, baseUrl);
 
         m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
@@ -1385,10 +1385,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
             if (header->m_contentExtentDefined)
                 {
-                auto const& bv = cesiumNodeHeader["content"]["boundingVolume"];
-                if (bv.isMember("box"))
+                auto const& contentBV = cesiumNodeHeader["content"]["boundingVolume"];
+                if (contentBV.isMember("box"))
                     {
-                    auto& boundingBox = bv["box"];
+                    auto& boundingBox = contentBV["box"];
                     DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
                     DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
                     ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
@@ -1400,8 +1400,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                     }
                 else
                     {
-                    assert(bv.isMember("sphere")); // must be sphere if not a box
-                    auto const& boundingSphere = bv["sphere"];
+                    assert(contentBV.isMember("sphere")); // must be sphere if not a box
+                    auto const& boundingSphere = contentBV["sphere"];
                     DPoint3d center = DPoint3d::From(boundingSphere[0].asDouble(), boundingSphere[1].asDouble(), boundingSphere[2].asDouble());
                     double radius = boundingSphere[3].asDouble();
                     ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - radius);
@@ -2009,7 +2009,7 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         if (m_jsonHeader->isMember("transform"))
             {
             auto& transform = (*m_jsonHeader)["transform"];
-            Transform m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
                                                    transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
                                                    transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
             }

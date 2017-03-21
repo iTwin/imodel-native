@@ -146,6 +146,10 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
+        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+            {
+            return new SMStreamingStore(dataSourceManager, settings);
+            }
 #endif
 
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
