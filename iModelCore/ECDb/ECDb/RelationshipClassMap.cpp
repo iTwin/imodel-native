@@ -298,7 +298,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (ClassMappingStatus::Error == MapProperties(ctx))
         return ClassMappingStatus::Error;
 
-    AddIndexToRelationshipEnd();
+    AddIndexToRelationshipEnd(relClassMappingInfo);
     return ClassMappingStatus::Success;
     }
 
@@ -430,19 +430,22 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 {
                 if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
                     Issues().Report("Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. "
-                                    "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                                    relClass.GetFullName());
+                        "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                        relClass.GetFullName());
                 else
                     Issues().Report("Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. "
-                                    "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                                    relClass.GetFullName());
+                        "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                        relClass.GetFullName());
 
                 return ERROR;
                 }
             }
 
-        if (!fkTable.IsOwnedByECDb() || fkTable.GetPersistenceType() == PersistenceType::Virtual ||
-            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsShared())
+        if (!fkTable.IsOwnedByECDb()
+            || fkTable.GetPersistenceType() == PersistenceType::Virtual
+            || referencedTable->GetPersistenceType() == PersistenceType::Virtual
+            || fkCol->IsShared()
+            || !classMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
             continue;
 
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
@@ -881,11 +884,14 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd()
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(RelationshipMappingInfo const& relClassMappingInfo)
     {
     //0:0 or 1:1 cardinalities imply unique index
     const bool isUniqueIndex = GetRelationshipClass().GetSource().GetMultiplicity().GetUpperLimit() <= 1 &&
                                GetRelationshipClass().GetTarget().GetMultiplicity().GetUpperLimit() <= 1;
+
+    if (!relClassMappingInfo.GetFkMappingInfo()->IsPhysicalFk())
+        return;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     std::vector<DbColumn const*> referencedEndIdColumns;

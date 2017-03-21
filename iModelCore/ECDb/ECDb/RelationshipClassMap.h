@@ -193,7 +193,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 
         RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        void AddIndexToRelationshipEnd();
+        void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, ForeignKeyColumnInfo const&, DbColumn const& fkCol) const;

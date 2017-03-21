@@ -279,6 +279,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     SetupECDb("ecdbrelationshipmappingrules_onetomanyandholding.ecdb",
               SchemaItem("1:N and holding",
                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                          "  <ECEntityClass typeName='Geometry' >"
                          "    <ECProperty propertyName='Type' typeName='string' />"
                          "  </ECEntityClass>"
@@ -286,6 +287,9 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
                          "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+                         "     <ECCustomAttributes>"
+                         "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                         "     </ECCustomAttributes>"
                          "     <Source cardinality='(0,1)' polymorphic='True'>"
                          "         <Class class='Geometry' />"
                          "     </Source>"
@@ -359,6 +363,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     SetupECDb("ecdbrelationshipmappingrules_onetomanyandholding.ecdb",
               SchemaItem("1:N and holding",
                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                          "  <ECEntityClass typeName='Geometry' >"
                          "    <ECProperty propertyName='Type' typeName='string' />"
                          "  </ECEntityClass>"
@@ -366,6 +371,9 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
                          "    <ECProperty propertyName='Stream' typeName='binary' />"
                          "  </ECEntityClass>"
                          "  <ECRelationshipClass typeName='PartHeldByGeometry' strength='holding' strengthDirection='Backward' modifier='Sealed'>"
+                         "    <ECCustomAttributes>"
+                         "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                         "    </ECCustomAttributes>"
                          "    <Source cardinality='(0,1)' polymorphic='True'>"
                          "        <Class class='GeometryPart' />"
                          "     </Source>"
@@ -1204,7 +1212,7 @@ TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialI
 TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest(ecdb, false, false, true);
+    ExecuteRelationshipInsertionIntegrityTest(ecdb, false, true, true);
     ASSERT_TRUE(ecdb.TableExists("ts_Foo"));
     ASSERT_TRUE(ecdb.TableExists("ts_Goo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
@@ -1218,7 +1226,7 @@ TEST_F(ReferentialIntegrityTestFixture, DoNotAllowDuplicateRelationships)
 TEST_F(ReferentialIntegrityTestFixture, AllowDuplicateRelationships)
     {
     ECDbR ecdb = SetupECDb("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest(ecdb, true, false, true);
+    ExecuteRelationshipInsertionIntegrityTest(ecdb, true, true, true);
     ASSERT_TRUE(ecdb.TableExists("ts_Foo"));
     ASSERT_TRUE(ecdb.TableExists("ts_Goo"));
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));
@@ -1289,6 +1297,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ECEntityClassP foo = nullptr, goo = nullptr;
     ECRelationshipClassP oneFooHasOneGoo = nullptr, oneFooHasManyGoo = nullptr, manyFooHasManyGoo = nullptr;
     PrimitiveECPropertyP prim;
+
     auto readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
     auto ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
@@ -1860,6 +1869,7 @@ ECRelatedInstanceDirection ECDbRelationshipsIntegrityTests::GetRelationDirection
 void ECDbRelationshipsIntegrityTests::CreateSchema(Utf8CP schemaName, Utf8CP schemaNameAlias)
     {
     ECSchema::CreateSchema(testSchema, schemaName, schemaNameAlias, 1, 0, 0);
+
     ASSERT_TRUE(testSchema.IsValid());
     }
 
@@ -1917,6 +1927,19 @@ void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Multiplicity SourceCl
     Utf8String reversedRoleLabel = testRelationshipClass->GetName() + " (Reversed)";
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetRoleLabel(reversedRoleLabel.c_str()));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetMultiplicity(GetClassMultiplicity(targetClassMultiplicity)));
+
+    if (SourceClassMultiplicity == Multiplicity::OneOne
+        || SourceClassMultiplicity == Multiplicity::ZeroOne
+        || targetClassMultiplicity == Multiplicity::OneOne
+        || targetClassMultiplicity == Multiplicity::ZeroOne
+        )
+        {
+        ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+        ECSchemaCP ecdbMap = testSchema->FindSchema(schemaKey, SchemaMatchType::Exact);
+        ECClassCP foreignKeyConstraintCA = ecdbMap->GetClassCP("ForeignKeyConstraint");
+        IECInstancePtr  foreignKeyConstraintInstance = foreignKeyConstraintCA->GetDefaultStandaloneEnabler()->CreateInstance();
+        testRelationshipClass->SetCustomAttribute(*foreignKeyConstraintInstance);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2044,6 +2067,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Embedding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
@@ -2138,6 +2169,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
@@ -2232,6 +2271,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Referencing, Direction::Forward, "FooHasGoo", "Foo", "Goo", true);
@@ -2368,6 +2415,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasFoo", "Foo", "Goo", true);
@@ -2504,6 +2559,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
@@ -2597,6 +2660,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
@@ -2687,6 +2758,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
@@ -2820,6 +2899,14 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     CreateSchema("testSchema", "ts");
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECN::SchemaKey schemaKey = ECN::SchemaKey("ECDbMap", 2, 0, 0);
+    ECSchemaPtr ecdbMap = ECSchema::LocateSchema(schemaKey, *readContext);
+    readContext->RemoveSchemaLocater(GetECDb().GetSchemaLocater());
+    ASSERT_TRUE(ecdbMap.IsValid());
+    testSchema->AddReferencedSchema(*ecdbMap);
+
     AddEntityClass("Foo");
     AddEntityClass("Goo");
     AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);

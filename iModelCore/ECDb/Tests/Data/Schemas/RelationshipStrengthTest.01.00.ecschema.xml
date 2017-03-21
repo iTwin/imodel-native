@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="RelationshipStrengthTest" alias="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+	<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
     <ECEntityClass typeName="Person" modifier="None">
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ChildrenHasSingleParent" modifier="Sealed" strength="embedding" strengthDirection="backward">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>					
         <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -29,6 +33,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -37,6 +44,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
@@ -45,6 +55,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
