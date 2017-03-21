@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbHelper.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -155,10 +155,10 @@ ECRelationshipClassCP ECDbHelper::GetRelationshipClass(ECSchemaCP schema, Utf8CP
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbHelper::IsInstanceInMultiMap(ECInstanceKeyCR instance, const ECInstanceKeyMultiMap& map)
     {
-    auto range = map.equal_range(instance.GetECClassId());
+    auto range = map.equal_range(instance.GetClassId());
     for (auto it = range.first; it != range.second; it++)
         {
-        if (it->second == instance.GetECInstanceId())
+        if (it->second == instance.GetInstanceId())
             {
             return true;
             }
@@ -192,7 +192,7 @@ bool ECDbHelper::IsObjectClass(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKeyMultiMapPair ECDbHelper::ToPair(ECInstanceKeyCR key)
     {
-    return ECInstanceKeyMultiMapPair(key.GetECClassId(), key.GetECInstanceId());
+    return ECInstanceKeyMultiMapPair(key.GetClassId(), key.GetInstanceId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -200,10 +200,10 @@ ECInstanceKeyMultiMapPair ECDbHelper::ToPair(ECInstanceKeyCR key)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbHelper::Erase(ECInstanceKeyMultiMap& map, ECInstanceKeyCR key)
     {
-    auto range = map.equal_range(key.GetECClassId());
+    auto range = map.equal_range(key.GetClassId());
     for (auto it = range.first; it != range.second; ++it)
         {
-        if (key.GetECInstanceId() == it->second)
+        if (key.GetInstanceId() == it->second)
             {
             map.erase(it);
             break;

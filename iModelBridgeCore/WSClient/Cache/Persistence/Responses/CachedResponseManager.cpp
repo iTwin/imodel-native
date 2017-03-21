@@ -81,7 +81,7 @@ CacheNodeKey CachedResponseManager::GetCacheNodeKey(ECInstanceKeyCR instanceKey)
     ECSchemaId cacheSchemaId = m_responseClass->GetSchema().GetId();
     if (cacheSchemaId == ecClass->GetSchema().GetId())
         {
-        return CacheNodeKey(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+        return CacheNodeKey(instanceKey.GetClassId(), instanceKey.GetInstanceId());
         }
 
     return m_objectInfoManager.ReadInfoKey(instanceKey);
@@ -141,7 +141,7 @@ CachedResponseInfo CachedResponseManager::ReadInfo(ResponseKeyCR key)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, key.GetParent().GetECInstanceId());
+    statement->BindId(1, key.GetParent().GetInstanceId());
     statement->BindText(2, key.GetName().c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
@@ -189,7 +189,7 @@ CacheNodeKey CachedResponseManager::FindInfo(ResponseKeyCR key)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, parent.GetECInstanceId());
+    statement->BindId(1, parent.GetInstanceId());
     statement->BindText(2, name.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
@@ -314,7 +314,7 @@ CacheNodeKey CachedResponseManager::SavePage(CachedResponseInfoCR info, uint64_t
         }
     else
         {
-        UpdatePage(pageKey.GetECInstanceId(), cacheTag, isPartial);
+        UpdatePage(pageKey.GetInstanceId(), cacheTag, isPartial);
         }
     return pageKey;
     }
@@ -334,7 +334,7 @@ CacheNodeKey CachedResponseManager::FindPage(CachedResponseInfoCR info, uint64_t
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetInstanceId());
     statement->BindInt64(2, page);
 
     statement->Step();
@@ -355,7 +355,7 @@ bvector<CacheNodeKey> CachedResponseManager::FindPages(CacheNodeKeyCR responseKe
             "WHERE rel.SourceECInstanceId = ? ";
         });
 
-    statement->BindId(1, responseKey.GetECInstanceId());
+    statement->BindId(1, responseKey.GetInstanceId());
 
     bvector<CacheNodeKey> pages;
     while (BE_SQLITE_ROW == statement->Step())
@@ -525,7 +525,7 @@ BentleyStatus CachedResponseManager::UpdatePageCachedDate(ResponseKeyCR response
     {
     auto info = ReadInfo(responseKey);
     ECInstanceKey pageKey = FindPage(info, page);
-    return UpdatePageCacheDate(pageKey.GetECInstanceId());
+    return UpdatePageCacheDate(pageKey.GetInstanceId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -657,7 +657,7 @@ BentleyStatus CachedResponseManager::RemoveAdditionalInstance(CachedObjectInfoKe
         return "DELETE FROM ONLY " + m_responseToAdditionalInstanceClass->GetECSqlName() + " WHERE TargetECInstanceId = ?";
         });
 
-    statement->BindId(1, instanceInfoKey.GetECInstanceId());
+    statement->BindId(1, instanceInfoKey.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -848,7 +848,7 @@ Utf8StringCR propertyName
         });
 
     statement->BindText(1, responseKey.GetName().c_str(), IECSqlBinder::MakeCopy::No);
-    statement->BindId(2, responseKey.GetParent().GetECInstanceId());
+    statement->BindId(2, responseKey.GetParent().GetInstanceId());
     statement->BindInt64(3, page);
 
     return statement;
@@ -876,7 +876,7 @@ BentleyStatus CachedResponseManager::TrimPages(ResponseKeyCR responseKey, uint64
         });
 
     statement->BindText(1, responseKey.GetName().c_str(), IECSqlBinder::MakeCopy::No);
-    statement->BindId(2, responseKey.GetParent().GetECInstanceId());
+    statement->BindId(2, responseKey.GetParent().GetInstanceId());
     statement->BindInt64(3, maxPageIndex);
 
     return m_hierarchyManager.DeleteInstances(*statement);
@@ -901,7 +901,7 @@ CacheStatus CachedResponseManager::SetResponseCompleted(ResponseKeyCR responseKe
         });
 
     statement->BindBoolean(1, isCompleted);
-    statement->BindId(2, infoKey.GetECInstanceId());
+    statement->BindId(2, infoKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_DONE != status) // WIP06
@@ -933,7 +933,7 @@ bool CachedResponseManager::IsResponseCompleted(ResponseKeyCR responseKey)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, responseKey.GetParent().GetECInstanceId());
+    statement->BindId(1, responseKey.GetParent().GetInstanceId());
     statement->BindText(2, responseKey.GetName().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement->Step();
@@ -1005,7 +1005,7 @@ const ECInstanceKeyMultiMap& fullyPersistedNodes
             });
 
         updateStatement->BindInt(1, static_cast<int> (CachedInstanceState::Partial));
-        updateStatement->BindId(2, infoKey.GetECInstanceId());
+        updateStatement->BindId(2, infoKey.GetInstanceId());
 
         if (BE_SQLITE_DONE != updateStatement->Step())
             {
@@ -1043,8 +1043,8 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
         return Utf8PrintfString(ecSql, ECSql_ResponsePageToResult, 0); // XXX: 0 is workaround to crash
         });
 
-    statement->BindId(1, nodeKey.GetECClassId());
-    statement->BindId(2, nodeKey.GetECInstanceId());
+    statement->BindId(1, nodeKey.GetClassId());
+    statement->BindId(2, nodeKey.GetInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
@@ -1055,8 +1055,8 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
         return Utf8PrintfString(ecSql, ECSql_ResponsePageToResultWeak, 0); // XXX: 0 is workaround to crash
         });
 
-    statement->BindId(1, nodeKey.GetECClassId());
-    statement->BindId(2, nodeKey.GetECInstanceId());
+    statement->BindId(1, nodeKey.GetClassId());
+    statement->BindId(2, nodeKey.GetInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         return ERROR;
@@ -1079,7 +1079,7 @@ BentleyStatus CachedResponseManager::InvalidateFullResponsePagesContainingInstan
 
     ECInstanceIdSet idSet;
     for (auto instance : instances)
-        idSet.insert(instance.GetInfoKey().GetECInstanceId());
+        idSet.insert(instance.GetInfoKey().GetInstanceId());
 
     bvector<ECInstanceId> pageIds;
 

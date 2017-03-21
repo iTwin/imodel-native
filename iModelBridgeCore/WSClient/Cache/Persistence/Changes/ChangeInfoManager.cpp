@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Changes/ChangeInfoManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -272,8 +272,8 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
             );
         });
 
-    statement->BindId(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindId(1, instanceKey.GetClassId());
+    statement->BindId(2, instanceKey.GetInstanceId());
     DbResult status = statement->Step();
 
     if (BE_SQLITE_ROW != status)
@@ -345,7 +345,7 @@ BentleyStatus ChangeInfoManager::ReadBackupInstance(ObjectInfoCR info, RapidJson
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetInstanceId());
     statement->Step();
     auto backupStr = statement->GetValueText(0);
 
@@ -407,7 +407,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP se
             "[" CLASS_InstanceBackup_PROPERTY_Instance "]) "
             "VALUES (?, ?) ";
         });
-    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetInstanceId());
     statement->BindText(2, serializedInstance, IECSqlBinder::MakeCopy::No);
     ECInstanceKey backupKey;
     if (statement->Step(backupKey) != BE_SQLITE_DONE)
@@ -426,7 +426,7 @@ BentleyStatus ChangeInfoManager::DeleteBackupInstance(ObjectInfoCR info)
         {
         return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE " CLASS_InstanceBackup_PROPERTY_InfoId ".Id = ? ";
         });
-    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetInstanceId());
     if (statement->Step() != BE_SQLITE_DONE)
         return ERROR;
     return SUCCESS;
@@ -445,7 +445,7 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
             "WHERE " CLASS_InstanceBackup_PROPERTY_InfoId ".Id = ? "
             "LIMIT 1 ";
         });
-    statement->BindId(1, info.GetInfoKey().GetECInstanceId());
+    statement->BindId(1, info.GetInfoKey().GetInstanceId());
     statement->Step();
     return statement->GetValueId<ECInstanceId>(0);
     }

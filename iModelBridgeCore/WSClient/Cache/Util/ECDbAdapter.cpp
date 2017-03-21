@@ -65,7 +65,7 @@ ECInstanceFinder& ECDbAdapter::GetECInstanceFinder()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
     {
-    return m_ecDb->Schemas().GetECSchema(schemaName.c_str());
+    return m_ecDb->Schemas().GetSchema(schemaName.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -81,7 +81,7 @@ bool ECDbAdapter::HasECSchema(Utf8StringCR schemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbAdapter::GetECClass(Utf8StringCR schemaName, Utf8StringCR className)
     {
-    return m_ecDb->Schemas().GetECClass(schemaName.c_str(), className.c_str());
+    return m_ecDb->Schemas().GetClass(schemaName.c_str(), className.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -102,7 +102,7 @@ ECClassCP ECDbAdapter::GetECClass(Utf8StringCR classKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbAdapter::GetECClass(ECClassId classId)
     {
-    return m_ecDb->Schemas().GetECClass(classId);
+    return m_ecDb->Schemas().GetClass(classId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -110,7 +110,7 @@ ECClassCP ECDbAdapter::GetECClass(ECClassId classId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbAdapter::GetECClass(ECInstanceKeyCR instanceKey)
     {
-    return GetECClass(instanceKey.GetECClassId());
+    return GetECClass(instanceKey.GetClassId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -181,7 +181,7 @@ ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(Utf8StringCR schemaNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(ECInstanceKeyCR instanceKey)
     {
-    return GetECRelationshipClass(instanceKey.GetECClassId());
+    return GetECRelationshipClass(instanceKey.GetClassId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -746,7 +746,7 @@ bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR instanceKey)
     {
-    return GetJsonInstance(objectOut, GetECClass(instanceKey.GetECClassId()), instanceKey.GetECInstanceId());
+    return GetJsonInstance(objectOut, GetECClass(instanceKey.GetClassId()), instanceKey.GetInstanceId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -860,10 +860,10 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
             );
         });
 
-    statement->BindId(1, source.GetECClassId());
-    statement->BindId(2, source.GetECInstanceId());
-    statement->BindId(3, target.GetECClassId());
-    statement->BindId(4, target.GetECInstanceId());
+    statement->BindId(1, source.GetClassId());
+    statement->BindId(2, source.GetInstanceId());
+    statement->BindId(3, target.GetClassId());
+    statement->BindId(4, target.GetInstanceId());
 
     if (BE_SQLITE_DONE != statement->Step(relationshipKey))
         {
@@ -900,10 +900,10 @@ ECInstanceKey ECDbAdapter::FindRelationship(ECRelationshipClassCP relClass, ECIn
             );
         });
 
-    statement->BindId(1, source.GetECClassId());
-    statement->BindId(2, source.GetECInstanceId());
-    statement->BindId(3, target.GetECClassId());
-    statement->BindId(4, target.GetECInstanceId());
+    statement->BindId(1, source.GetClassId());
+    statement->BindId(2, source.GetInstanceId());
+    statement->BindId(3, target.GetClassId());
+    statement->BindId(4, target.GetInstanceId());
 
     if (BE_SQLITE_ROW != statement->Step())
         {
@@ -935,7 +935,7 @@ BentleyStatus ECDbAdapter::DeleteRelationship(ECRelationshipClassCP relClass, EC
         }
 
     ECInstanceKeyMultiMap instances;
-    instances.Insert(relationship.GetECClassId(), relationship.GetECInstanceId());
+    instances.Insert(relationship.GetClassId(), relationship.GetInstanceId());
 
     return DeleteInstances(instances);
     }
@@ -965,7 +965,7 @@ BentleyStatus ECDbAdapter::GetRelatedTargetIds(ECRelationshipClassCP relClass, E
         return ERROR;
         }
 
-    statement.BindId(1, source.GetECInstanceId());
+    statement.BindId(1, source.GetInstanceId());
 
     return ExtractECIdsFromStatement(statement, 0, ecIdsOut);
     }
@@ -995,7 +995,7 @@ BentleyStatus ECDbAdapter::GetRelatedSourceIds(ECRelationshipClassCP relClass, E
         return ERROR;
         }
 
-    statement.BindId(1, target.GetECInstanceId());
+    statement.BindId(1, target.GetInstanceId());
 
     return ExtractECIdsFromStatement(statement, 0, ecIdsOut);
     }
@@ -1025,7 +1025,7 @@ BentleyStatus ECDbAdapter::GetJsonRelatedSources(JsonValueR arrayOut, ECRelation
         return ERROR;
         }
 
-    statement.BindId(1, target.GetECInstanceId());
+    statement.BindId(1, target.GetInstanceId());
 
     return ExtractJsonInstanceArrayFromStatement(statement, sourceClass, arrayOut);
     }
@@ -1060,7 +1060,7 @@ BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelation
         return ERROR;
         }
 
-    statement.BindId(1, source.GetECInstanceId());
+    statement.BindId(1, source.GetInstanceId());
 
     return ExtractJsonInstanceArrayFromStatement(statement, targetClass, arrayOut);
     }
@@ -1088,8 +1088,8 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
         return ERROR;
         }
 
-    statement.BindId(1, source.GetECClassId());
-    statement.BindId(2, source.GetECInstanceId());
+    statement.BindId(1, source.GetClassId());
+    statement.BindId(2, source.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()))
@@ -1153,7 +1153,7 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 
     for (ECInstanceKeyCR key : allInstancesBeingDeleted)
         {
-        allInstancesBeingDeletedMap.insert({key.GetECClassId(), key.GetECInstanceId()});
+        allInstancesBeingDeletedMap.insert({key.GetClassId(), key.GetInstanceId()});
 
         ECClassCP ecClass = GetECClass(key);
         if (nullptr == ecClass)
@@ -1161,7 +1161,7 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 
         for (auto listener : m_deleteListeners)
             {
-            if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetECInstanceId(), additionalInstancesSet))
+            if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetInstanceId(), additionalInstancesSet))
                 return ERROR;
             }
         }
@@ -1175,7 +1175,7 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
         if (deleted.find(key) != deleted.end())
             continue;
 
-        additionalInstancesMap.insert({key.GetECClassId(), key.GetECInstanceId()});
+        additionalInstancesMap.insert({key.GetClassId(), key.GetInstanceId()});
         }
 
     return DeleteInstances(additionalInstancesMap, deleted);
@@ -1355,7 +1355,7 @@ ECInstanceKeyCR instanceToDelete,
 bset<ECInstanceKey>& allInstancesBeingDeletedOut
 )
     {
-    if (relClass.GetId() != instanceToDelete.GetECClassId())
+    if (relClass.GetId() != instanceToDelete.GetClassId())
         {
         return ERROR;
         }
@@ -1383,7 +1383,7 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
         return ecsql;
         });
 
-    statement->BindId(1, instanceToDelete.GetECInstanceId());
+    statement->BindId(1, instanceToDelete.GetInstanceId());
 
     auto status = statement->Step();
     if (BE_SQLITE_DONE == status)
