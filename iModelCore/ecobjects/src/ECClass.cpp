@@ -385,27 +385,31 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         delete newProperty;
         return status;
         }
-
+    LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), prop->GetName().c_str(), newName.c_str());
     if (renameDerivedProperties)
         {
-        for (ECClassP derivedClass : m_derivedClasses)
-            {
-            ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
-            if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
-                derivedClass->RenameConflictProperty(fromDerived, renameDerivedProperties, newName);
-            for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
-                {
-                ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
-                if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
-                    continue;
-                derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
-                }
-            }
+        RenameDerivedProperties(newName);
         }
     return ECObjectsStatus::Success;
     }
 
-
+void ECClass::RenameDerivedProperties(Utf8String newName)
+    {
+    for (ECClassP derivedClass : m_derivedClasses)
+        {
+        ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
+        if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
+            derivedClass->RenameConflictProperty(fromDerived, true, newName);
+        for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
+            {
+            ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
+            if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
+                continue;
+            derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
+            }
+        derivedClass->RenameDerivedProperties(newName);
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
