@@ -2780,17 +2780,6 @@ RotMatrixCR matrix,
     }
 
 
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool DVec3d::IsZero ()
-
-    {
-   return x == 0.0 && y == 0.0 && z == 0.0;
-    }
-
-
 //! Compute an axis and angle to rotate from the instance vector to a target.
 //! @param [out] target direction that the instance is to rotate towards.
 //! @param [out] axis   returned axis of rotation

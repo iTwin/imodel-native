@@ -9,6 +9,9 @@
 #include "serializationPCH.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 
+// need mutex for std::call_once
+#include <mutex>
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 typedef struct PlacementOriginZX const &PlacementOriginZXCR;
 typedef struct PlacementOriginZX &PlacementOriginZXR;
@@ -200,7 +203,7 @@ typedef bmap <Utf8String, ParseMethod> ParseDictionary;
 
 static ParseDictionary s_parseTable;
 
-static void InitParseTable ()
+static void InitParseTable_go ()
     {
     if (s_parseTable.empty ())
         {
@@ -257,6 +260,15 @@ static void InitParseTable ()
         s_parseTable[Utf8String("TransitionSpiral")] = &BeJsonToCGReaderImplementation::ReadITransitionSpiral;
         s_parseTable[Utf8String("PartialCurve")] = &BeJsonToCGReaderImplementation::ReadIPartialCurve;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Earlin.Lutz                     03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void InitParseTable ()
+    {
+    static std::once_flag s_ignoreListOnceFlag;
+    std::call_once(s_ignoreListOnceFlag, InitParseTable_go);
     }
 
 Utf8String m_parseSearchString;

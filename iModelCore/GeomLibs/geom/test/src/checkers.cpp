@@ -104,7 +104,7 @@ void Check::PrintScope (int volume)
     printf ("(");
     for (size_t i = 0; i < s_stack.size (); i++)
         {
-        wprintf (L" %s", s_stack[i].data ());
+        printf (" %s", Utf8String(s_stack[i].data ()).c_str());
         }
     printf (")\n");
     }
@@ -277,11 +277,14 @@ bool Check::False (bool a, char const*pString)
 
 bool Check::NearZero (double a, char const*pString, double refValue)
     {
-    if (fabs (a) < s_simpleZeroTol)
-        return true;
+    double tol = s_simpleZeroTol;
+    if (refValue > 1.0)
+        tol *= refValue;
+    if (fabs (a) < tol)
+       return true;
     StartScope (pString);
     StartScope ("nearZero", a);
-    DoAssert (fabs (a) < s_simpleZeroTol, "");
+    DoAssert (fabs (a) < tol, "");
     EndScope ();
     EndScope ();
     return false;
