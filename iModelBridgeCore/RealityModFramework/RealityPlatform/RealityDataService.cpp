@@ -1917,7 +1917,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
     else
         {
         RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
-        if ((uint8_t)entities.size() < request.GetPageSize())
+        if ((uint16_t)entities.size() < request.GetPageSize())
             status = RequestStatus::LASTPAGE;
         }
 
