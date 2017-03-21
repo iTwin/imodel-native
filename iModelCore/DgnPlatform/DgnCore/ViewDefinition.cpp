@@ -2257,64 +2257,64 @@ void SpatialView::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayout
 
 }
 
-static DgnHost::Key s_displayMetricsRecorderKey;
+static DgnHost::Key s_DisplayMetricsHandlerKey;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-IDisplayMetricsRecorder* IDisplayMetricsRecorder::GetRecorder()
+IDisplayMetricsHandler* IDisplayMetricsHandler::GetHandler()
     {
     // This is normally NULL. It is only used when playing back a DisplayBenchmark
-    return static_cast<IDisplayMetricsRecorder*> (T_HOST.GetHostObject (s_displayMetricsRecorderKey));
+    return static_cast<IDisplayMetricsHandler*> (T_HOST.GetHostObject (s_DisplayMetricsHandlerKey));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void IDisplayMetricsRecorder::SetRecorder(IDisplayMetricsRecorder*recorder)
+void IDisplayMetricsHandler::SetHandler(IDisplayMetricsHandler*handler)
     {
     //  This should happen 0 or 1 times.
-    BeAssert(GetRecorder() == nullptr);
+    BeAssert(GetHandler() == nullptr);
 
-    T_HOST.SetHostObject (s_displayMetricsRecorderKey, recorder);
+    T_HOST.SetHostObject (s_DisplayMetricsHandlerKey, handler);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-bool IDisplayMetricsRecorder::IsRecorderActive()
+bool IDisplayMetricsHandler::IsRecorderActive()
     {
-    IDisplayMetricsRecorder*recorder = GetRecorder();
-    return recorder ? recorder->_IsActive() : false;
+    IDisplayMetricsHandler*handler = GetHandler();
+    return handler ? handler->_IsRecorderActive() : false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void DisplayMetricsRecorder::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
+void DisplayMetricsHandler::RecordQuerySceneComplete(double seconds, ViewController::QueryResults const& queryResults)
     {
-    if (!IDisplayMetricsRecorder::IsRecorderActive())
+    if (!IDisplayMetricsHandler::IsRecorderActive())
         return;
 
-    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
     measurement["seconds"] = seconds;
     measurement["count"] = queryResults.GetCount();
     if (queryResults.m_incomplete)
         measurement["incomplete"] = 1;
         
-    recorder->_RecordMeasurement("QuerySceneFinished", measurement);
+    handler->_RecordMeasurement("QuerySceneFinished", measurement);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2017
 //---------------------------------------------------------------------------------------
-void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
+void DisplayMetricsHandler::RecordCreateSceneComplete(double seconds, ViewController::Scene const & scene, bool aborted, bool complete)
     {
-    if (!IDisplayMetricsRecorder::IsRecorderActive())
+    if (!IDisplayMetricsHandler::IsRecorderActive())
         return;
 
-    IDisplayMetricsRecorder*recorder = IDisplayMetricsRecorder::GetRecorder();
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
     Json::Value measurement(Json::objectValue);
     measurement["seconds"] = seconds;
     if (aborted)
@@ -2322,9 +2322,20 @@ void DisplayMetricsRecorder::RecordCreateSceneComplete(double seconds, ViewContr
     if (!complete)
         measurement["incomplete"] = 1;
         
-    recorder->_RecordMeasurement("CreateSceneComplete", measurement);
+    handler->_RecordMeasurement("CreateSceneComplete", measurement);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2017
+//---------------------------------------------------------------------------------------
+bool DisplayMetricsHandler::HandleForceHealImmediate(DgnViewportP vp, UpdatePlan& plan)
+    {
+    IDisplayMetricsHandler*handler = IDisplayMetricsHandler::GetHandler();
+    if (nullptr == handler)
+        return false;   //  Not handled by IDisplayMetricsHandler
+
+    return handler->_HandleForceHealImmediate(vp, plan);
+    }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
