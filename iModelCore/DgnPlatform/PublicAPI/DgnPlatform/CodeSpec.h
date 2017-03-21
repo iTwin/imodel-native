@@ -157,13 +157,12 @@ public:
     {
         DgnDbR          m_dgndb;
         CodeSpecId      m_id;
-        DgnClassId      m_classId;
         Utf8String      m_name;
         Utf8String      m_registrySuffix;
         CodeScopeSpec   m_scopeSpec;
 
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec(), Utf8CP registrySuffix="") :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec), m_registrySuffix(registrySuffix) {}
+        CreateParams(DgnDbR dgndb, Utf8CP name, CodeSpecId id=CodeSpecId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec(), Utf8CP registrySuffix="") :
+            m_dgndb(dgndb), m_id(id), m_name(name), m_scopeSpec(scopeSpec), m_registrySuffix(registrySuffix) {}
     };
 
 private:
@@ -172,7 +171,6 @@ private:
 
     DgnDbR          m_dgndb;
     CodeSpecId      m_codeSpecId;
-    DgnClassId      m_classId;
     Utf8String      m_name;
     Utf8String      m_registrySuffix;
 
@@ -193,7 +191,6 @@ private:
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     CodeSpecId GetCodeSpecId() const { return m_codeSpecId; }
-    DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
     Utf8StringCR GetRegistrySuffix() const {return m_registrySuffix;}
 
@@ -201,8 +198,6 @@ public:
     static CodeSpecId GetNullCodeSpecId() {return CodeSpecId((uint64_t)1LL);}
     //! Return true if the specified CodeSpec is the NullCodeSpec
     bool IsNullCodeSpec() const {return GetCodeSpecId() == GetNullCodeSpecId();}
-
-    DGNPLATFORM_EXPORT CodeSpecHandlerR GetCodeSpecHandler() const;
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
@@ -250,9 +245,8 @@ namespace dgn_CodeSpecHandler
     protected:
         CodeSpecHandlerP _ToCodeSpecHandler() override { return this; }
         virtual CodeSpecP _CreateInstance(Dgn::CodeSpec::CreateParams const& params) { return new Dgn::CodeSpec(params); }
-    public:
-        DGNPLATFORM_EXPORT static CodeSpecHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
+    public:
         CodeSpecPtr Create(Dgn::CodeSpec::CreateParams const& params) { return _CreateInstance(params); }
     };
 };

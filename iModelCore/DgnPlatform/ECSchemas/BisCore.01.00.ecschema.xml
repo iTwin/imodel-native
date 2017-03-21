@@ -88,14 +88,11 @@
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
-    <ECEntityClass typeName="CodeSpec" modifier="None" displayLabel="Code Specification" description="A Code Specification captures the rules for encoding and decoding significant business information into and from a Code (string). This specification is used to generate and validate Codes.">
+    <ECEntityClass typeName="CodeSpec" modifier="Sealed" displayLabel="Code Specification" description="A Code Specification captures the rules for encoding and decoding significant business information into and from a Code (string). This specification is used to generate and validate Codes.">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" description="Name of CodeSpec. Name must be unique so typically incorporates the name of the domain that introduced it.">
+        <ECProperty propertyName="Name" typeName="string" description="The unique name of Code Specification. A best practice is to incorporate the domain name into the Code Specification name to ensure uniqueness.">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <Collation>NoCase</Collation>
@@ -142,7 +139,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
         </ECNavigationProperty>
-        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json">
+        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json" description="A string property used by the system to persist ad-hoc JSON values.">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
             </ECCustomAttributes>
@@ -337,7 +334,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="Element" modifier="Abstract" description="">
+    <ECEntityClass typeName="Element" modifier="Abstract" description="Elements are the smallest individually identifiable building blocks for modeling the real world. Each element represents an entity in the real world. Sets of Elements (contained in Models) are used to model other Elements that represent larger scale real world entities. Using this recursive modeling strategy, Elements can represent entities at any scale. Elements can represent physical things or abstract concepts or simply be information records.">
         <!-- NOTE: Only platform can directly subclass from Element. Everyone else should pick the most appropriate superclass. -->
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
         <ECCustomAttributes>
@@ -1501,17 +1498,14 @@
         </ECProperty>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect">
-        <!-- An ElementAspect is related to an Element with a relationship of strength="embedding" (ElementAspect is deleted if the Element is deleted) -->
-        <!-- Semantically, an ElementAspect can be considered part of the Element -->
+    <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="An Element Aspect is a class that defines a set of properties that are related to (and owned by) a single element. Semantically, an Element Aspect can be considered part of the Element. Thus, an Element Aspect is deleted if its owning Element is deleted.">
         <!-- BIS Guideline: Subclass ElementUniqueAspect or ElementMultiAspect rather than subclassing ElementAspect directly. -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Unique Aspect">
-        <!-- An ElementUniqueAspect is related to an Element with the following constraints: 1) there can only be one instance of a given aspect class associated with a given element, and 2) the instance has the same ID as the element. -->
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Unique Aspect" description="An Element Unique Aspect is an Element Aspect where there can be only zero or one instance of the Element Aspect class per Element.">
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -1523,7 +1517,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
@@ -1542,8 +1536,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect">
-        <!-- An ElementMultiAspect is related to an Element with the following constraints: 1) there can be N instances of a given aspect class associated with a given element, and 2) the value of the ElementId foreign key column is the same ID as the element. -->
+    <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect is an Element Aspect where there can be N instances of the Element Aspect class per Element.">
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -1555,7 +1548,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
@@ -2148,7 +2141,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SpatialIndex" modifier="Sealed" displayLabel="Spatial Index">
+    <ECEntityClass typeName="SpatialIndex" modifier="Sealed" displayLabel="Spatial Index" description="The Spatial Index contains information used to optimize spatial queries. Like other database indices, it is automatically maintained by the system.">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>ExistingTable</MapStrategy>
@@ -2156,12 +2149,12 @@
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="MinX" typeName="double" readOnly="True" displayLabel="Min X" />
-        <ECProperty propertyName="MaxX" typeName="double" readOnly="True" displayLabel="Max X" />
-        <ECProperty propertyName="MinY" typeName="double" readOnly="True" displayLabel="Min Y" />
-        <ECProperty propertyName="MaxY" typeName="double" readOnly="True" displayLabel="Max Y" />
-        <ECProperty propertyName="MinZ" typeName="double" readOnly="True" displayLabel="Min Z" />
-        <ECProperty propertyName="MaxZ" typeName="double" readOnly="True" displayLabel="Max Z" />
+        <ECProperty propertyName="MinX" typeName="double" readOnly="True" displayLabel="Min X" description="Minimum X value of the axis-aligned range box that encloses the spatial element"/>
+        <ECProperty propertyName="MaxX" typeName="double" readOnly="True" displayLabel="Max X" description="Maximum X value of the axis-aligned range box that encloses the spatial element"/>
+        <ECProperty propertyName="MinY" typeName="double" readOnly="True" displayLabel="Min Y" description="Minimum Y value of the axis-aligned range box that encloses the spatial element"/>
+        <ECProperty propertyName="MaxY" typeName="double" readOnly="True" displayLabel="Max Y" description="Maximum Y value of the axis-aligned range box that encloses the spatial element"/>
+        <ECProperty propertyName="MinZ" typeName="double" readOnly="True" displayLabel="Min Z" description="Minimum Z value of the axis-aligned range box that encloses the spatial element"/>
+        <ECProperty propertyName="MaxZ" typeName="double" readOnly="True" displayLabel="Max Z" description="Maximum Z value of the axis-aligned range box that encloses the spatial element"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="GeometryPart" displayLabel="Geometry Part">
