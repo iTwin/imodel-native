@@ -932,6 +932,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             //(0,1):(0,1)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -939,6 +940,9 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "    <ECCustomAttributes>"
+                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -998,6 +1002,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             //(0,1):(0,N)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1005,6 +1010,9 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Code' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "    <ECCustomAttributes>"
+                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"
@@ -1064,10 +1072,14 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             {
             ECDbR ecdb = SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
+                "    <ECCustomAttributes>"
+                "       <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "    </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                 "      <Class class='A'/>"
                 "    </Source>"

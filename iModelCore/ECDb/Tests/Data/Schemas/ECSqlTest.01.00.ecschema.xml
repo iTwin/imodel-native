@@ -187,6 +187,9 @@
         <ECStructArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="PSAHasPSA_1N" strength="referencing" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>		
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="PSA">
             <Class class="PSA"/>
         </Source>
@@ -195,6 +198,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PSAHasPSA_11" strength="referencing" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>			
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="PSA">
             <Class class="PSA"/>
         </Source>
@@ -324,6 +330,9 @@
         <ECProperty propertyName="S" typeName="string"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="PSAHasOnlyTHBase_0N" strength="referencing" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>			
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="PSA">
             <Class class="PSA"/>
         </Source>
@@ -340,6 +349,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PSAHasP" strength="referencing" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>			
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="PSA">
             <Class class="PSA"/>
         </Source>
@@ -368,6 +380,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PSAHasP_N1" strength="embedding" strengthDirection="Backward" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>			
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="PSAs">
             <Class class="PSA"/>
         </Source>
@@ -376,6 +391,9 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PSAHasTHBase_0N" strength="embedding" modifier="Sealed">
+		<ECCustomAttributes>
+			<ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+		</ECCustomAttributes>			
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="PSA">
             <Class class="PSA"/>
         </Source>
