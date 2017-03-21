@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -288,8 +288,8 @@ Json::Value FileInfoManager::ReadCachedFileInfo(CachedInstanceKeyCR cachedKey)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, infoKey.GetECClassId());
-    statement->BindId(2, infoKey.GetECInstanceId());
+    statement->BindId(1, infoKey.GetClassId());
+    statement->BindId(2, infoKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -328,7 +328,7 @@ Json::Value FileInfoManager::ReadExternalFileInfo(CachedInstanceKeyCR cachedKey)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, cachedObjectInfoKey.GetECInstanceId());
+    statement->BindId(1, cachedObjectInfoKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -352,10 +352,10 @@ ECInstanceKey FileInfoManager::InsertFileInfoOwnership(ECInstanceKeyCR ownerKey,
         return "INSERT INTO " ECSql_FileInfoOwnership " (OwnerECClassId, OwnerId, FileInfoECClassId, FileInfoId) VALUES (?,?,?,?)";
         });
 
-    statement->BindId(1, ownerKey.GetECClassId());
-    statement->BindId(2, ownerKey.GetECInstanceId());
-    statement->BindId(3, fileInfoKey.GetECClassId());
-    statement->BindId(4, fileInfoKey.GetECInstanceId());
+    statement->BindId(1, ownerKey.GetClassId());
+    statement->BindId(2, ownerKey.GetInstanceId());
+    statement->BindId(3, fileInfoKey.GetClassId());
+    statement->BindId(4, fileInfoKey.GetInstanceId());
 
     ECInstanceKey ownershipKey;
     if (BE_SQLITE_DONE != statement->Step(ownershipKey))

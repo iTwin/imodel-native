@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfoManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,10 +68,10 @@ RelationshipInfo RelationshipInfoManager::ReadInfo(ECRelationshipClassCR relatio
         });
 
     statement->BindId(1, relationshipClass.GetId());
-    statement->BindId(2, source.GetECClassId());
-    statement->BindId(3, source.GetECInstanceId());
-    statement->BindId(4, target.GetECClassId());
-    statement->BindId(5, target.GetECInstanceId());
+    statement->BindId(2, source.GetClassId());
+    statement->BindId(3, source.GetInstanceId());
+    statement->BindId(4, target.GetClassId());
+    statement->BindId(5, target.GetInstanceId());
 
     ECInstanceId relationshipInstanceId;
     Json::Value infoJson;
@@ -87,10 +87,10 @@ RelationshipInfo RelationshipInfoManager::ReadInfo(ECRelationshipClassCR relatio
         {
         // Return valid info object so it could be saved
         infoJson[CLASS_CachedRelationshipInfo_PROPERTY_ClassId] = BeJsonUtilities::StringValueFromInt64(relationshipClass.GetId().GetValue());
-        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_SourceClassId] = BeJsonUtilities::StringValueFromInt64(source.GetECClassId().GetValue());
-        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_TargetClassId] = BeJsonUtilities::StringValueFromInt64(target.GetECClassId().GetValue());
-        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_SourceInstanceId] = ECDbHelper::StringFromECInstanceId(source.GetECInstanceId());
-        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_TargetInstanceId] = ECDbHelper::StringFromECInstanceId(target.GetECInstanceId());
+        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_SourceClassId] = BeJsonUtilities::StringValueFromInt64(source.GetClassId().GetValue());
+        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_TargetClassId] = BeJsonUtilities::StringValueFromInt64(target.GetClassId().GetValue());
+        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_SourceInstanceId] = ECDbHelper::StringFromECInstanceId(source.GetInstanceId());
+        infoJson[CLASS_CachedRelationshipInfo_PROPERTY_TargetInstanceId] = ECDbHelper::StringFromECInstanceId(target.GetInstanceId());
         }
 
     return RelationshipInfo(infoJson, &relationshipClass, relationshipInstanceId, m_cachedRelationshipInfoClass->GetId());
@@ -101,7 +101,7 @@ RelationshipInfo RelationshipInfoManager::ReadInfo(ECRelationshipClassCR relatio
 +--------------------------------------------------------------------------------------*/
 RelationshipInfo RelationshipInfoManager::FindInfo(ECInstanceKeyCR relationshipKey)
     {
-    ECRelationshipClassCP relationshipClass = m_dbAdapter.GetECRelationshipClass(relationshipKey.GetECClassId());
+    ECRelationshipClassCP relationshipClass = m_dbAdapter.GetECRelationshipClass(relationshipKey.GetClassId());
     if (nullptr == relationshipClass)
         {
         return RelationshipInfo();
@@ -118,7 +118,7 @@ RelationshipInfo RelationshipInfoManager::FindInfo(ECInstanceKeyCR relationshipK
         });
 
     statement->BindId(1, relationshipClass->GetId());
-    statement->BindId(2, relationshipKey.GetECInstanceId());
+    statement->BindId(2, relationshipKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -130,7 +130,7 @@ RelationshipInfo RelationshipInfoManager::FindInfo(ECInstanceKeyCR relationshipK
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     adapter.GetRowInstance(infoJson, m_cachedRelationshipInfoClass->GetId());
 
-    return RelationshipInfo(infoJson, relationshipClass, relationshipKey.GetECInstanceId(), m_cachedRelationshipInfoClass->GetId());
+    return RelationshipInfo(infoJson, relationshipClass, relationshipKey.GetInstanceId(), m_cachedRelationshipInfoClass->GetId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -165,8 +165,8 @@ ObjectId RelationshipInfoManager::ReadObjectId(ECInstanceKeyCR relationship)
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, relationship.GetECClassId());
-    statement->BindId(2, relationship.GetECInstanceId());
+    statement->BindId(1, relationship.GetClassId());
+    statement->BindId(2, relationship.GetInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
@@ -190,7 +190,7 @@ BentleyStatus RelationshipInfoManager::SaveInfo(RelationshipInfoR info)
         }
     if (info.IsInCache())
         {
-        if (BE_SQLITE_OK != m_infoUpdater.Get().Update(info.GetInfoKey().GetECInstanceId(), info.GetJsonInfo()))
+        if (BE_SQLITE_OK != m_infoUpdater.Get().Update(info.GetInfoKey().GetInstanceId(), info.GetJsonInfo()))
             {
             return ERROR;
             }
@@ -221,7 +221,7 @@ ECInstanceKeyR targetOut
         return ERROR;
         }
 
-    Utf8PrintfString key("RelationshipInfoManager::ReadRelationshipEnds:%s", relationship.GetECClassId().ToString().c_str());
+    Utf8PrintfString key("RelationshipInfoManager::ReadRelationshipEnds:%s", relationship.GetClassId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return Utf8PrintfString
@@ -234,7 +234,7 @@ ECInstanceKeyR targetOut
             );
         });
 
-    statement->BindId(1, relationship.GetECInstanceId());
+    statement->BindId(1, relationship.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)
@@ -275,8 +275,8 @@ Utf8StringCR remoteId
 
     IECInstancePtr infoECInstance = m_cachedRelationshipInfoClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_ClassId, ECValue(relationship.GetECClassId().GetValue()));
-    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_InstanceId, ECValue(relationship.GetECInstanceId().GetValue()));
+    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_ClassId, ECValue(relationship.GetClassId().GetValue()));
+    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_InstanceId, ECValue(relationship.GetInstanceId().GetValue()));
     infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
 
     CacheNodeKey infoKey;
@@ -303,8 +303,8 @@ CachedInstanceKey RelationshipInfoManager::ReadCachedRelationshipKey(ECInstanceK
             "LIMIT 1";
         });
 
-    statement->BindId(1, relationship.GetECClassId());
-    statement->BindId(2, relationship.GetECInstanceId());
+    statement->BindId(1, relationship.GetClassId());
+    statement->BindId(2, relationship.GetInstanceId());
 
     CacheNodeKey infoKey;
 
@@ -337,7 +337,7 @@ ECInstanceKey RelationshipInfoManager::ReadRelationshipKeyByInfo(CacheNodeKeyCR 
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, infoKey.GetECInstanceId());
+    statement->BindId(1, infoKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)
@@ -368,8 +368,8 @@ ECInstanceId RelationshipInfoManager::ReadInfoIdByRelationship(ECInstanceKeyCR r
             "LIMIT 1";
         });
 
-    statement->BindId(1, relationshipDesc.GetECClassId());
-    statement->BindId(2, relationshipDesc.GetECInstanceId());
+    statement->BindId(1, relationshipDesc.GetClassId());
+    statement->BindId(2, relationshipDesc.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)
@@ -396,7 +396,7 @@ bset<CachedInstanceKey>& cachedRelationshipsOut
         return ERROR;
         }
 
-    Utf8PrintfString key("RelationshipInfoManager::GetRelationshipsForHolder:%s:%s", holder.GetECClassId().ToString().c_str(), holderToInfoRelClass->GetId().ToString().c_str());
+    Utf8PrintfString key("RelationshipInfoManager::GetRelationshipsForHolder:%s:%s", holder.GetClassId().ToString().c_str(), holderToInfoRelClass->GetId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -410,7 +410,7 @@ bset<CachedInstanceKey>& cachedRelationshipsOut
             "WHERE holder.ECInstanceId = ? ";
         });
 
-    statement->BindId(1, holder.GetECInstanceId());
+    statement->BindId(1, holder.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -443,7 +443,7 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
 
     ECInstanceDeleter deleter(m_dbAdapter.GetECDb(), *relClass, nullptr);
 
-    if (!deleter.IsValid() || BE_SQLITE_OK != deleter.Delete(info.GetInstanceKey().GetECInstanceId()))
+    if (!deleter.IsValid() || BE_SQLITE_OK != deleter.Delete(info.GetInstanceKey().GetInstanceId()))
         {
         return ERROR;
         }
