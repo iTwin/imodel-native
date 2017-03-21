@@ -450,6 +450,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
+        m_CesiumGroup->ResetNodeIDGenerator();
         }
     else
         {
@@ -2478,8 +2479,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
-        auto transform = s_import_from_bim_exported_cesium_3d_tiles ? Transform::From(533459, 5212605, 0) : Transform::FromIdentity();
-        transform = Transform::From(333011, 4728426, 0);
+        auto transform = Transform::FromIdentity();
+        //transform = Transform::From(333011, 4728426, 0);
         if (false && !RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];

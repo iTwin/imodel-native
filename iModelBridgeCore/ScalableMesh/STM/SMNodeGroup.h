@@ -280,6 +280,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     private:
         bool   m_isLoaded = false;
         bool   m_isLoading = false;
+        bool   m_mustResetNodeIDGenerator = false;
         StrategyType   m_strategyType = NORMAL;
         uint32_t m_level = 0;
         size_t m_totalSize;
@@ -381,6 +382,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             }
 
         void SetNodeContainer(map<uint32_t, Json::Value*>& nodes) { m_nodeHeaders = &nodes; }
+
+        void ResetNodeIDGenerator() { m_mustResetNodeIDGenerator = true; }
 
         uint32_t GetLevel() { return m_level; }
 
