@@ -50,9 +50,8 @@
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
-#define DPTEST_CLASS_TestPhysicalRecipe "TestPhysicalRecipe"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
-#define DPTEST_CLASS_TestGraphicalRecipe2d "TestGraphicalRecipe2d"
+#define DPTEST_CLASS_TestInformationRecord "TestInformationRecord"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 #define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
@@ -110,8 +109,8 @@ protected:
     void _CopyFrom(Dgn::DgnElementCR el) override;
 
 public:
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
-    static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
+    static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
     
     // This Create function does not put any geometry on the new element. The caller is expected to add a TestItem.
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
@@ -170,7 +169,7 @@ struct PerfElement : Dgn::PhysicalElement
         PerfElement(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
         static PerfElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
     };
 
@@ -196,7 +195,7 @@ struct PerfElementSub1 : PerfElement
         PerfElementSub1(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
         static PerfElementSub1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
     };
 
@@ -222,7 +221,7 @@ struct PerfElementSub2 : PerfElementSub1
         PerfElementSub2(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
         static PerfElementSub2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
     };
 
@@ -248,7 +247,7 @@ struct PerfElementSub3 : PerfElementSub2
         PerfElementSub3(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
         static PerfElementSub3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
     };
 
@@ -279,7 +278,7 @@ struct CN : SUPERCN                                                             
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;                                                               \
     void _CopyFrom(Dgn::DgnElementCR el) override {/*TBD*/BeAssert("false");}                                                               \
   public:                                                                                                                                   \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, # CN)); }    \
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, # CN)); }    \
     static CN ## Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);                                            \
     };                                                                                                                                      \
                                                                                                                                             \
@@ -304,7 +303,7 @@ struct TestElement2d : Dgn::AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d) 
 
 public:
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME)); }
     TestElement2d(CreateParams const& params) : T_Super(params) {}
     static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double length);
 };
@@ -415,32 +414,6 @@ struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestPhysicalRecipe : Dgn::PhysicalRecipe
-{
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, Dgn::PhysicalRecipe)
-    friend struct TestPhysicalRecipeHandler;
-
-protected:
-    explicit TestPhysicalRecipe(CreateParams const& params) : T_Super(params) {}
-
-public:
-    static RefCountedPtr<TestPhysicalRecipe> Create(Dgn::DefinitionModelR, Utf8CP name);
-};
-
-typedef RefCountedPtr<TestPhysicalRecipe> TestPhysicalRecipePtr;
-typedef RefCountedCPtr<TestPhysicalRecipe> TestPhysicalRecipeCPtr;
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
-struct TestPhysicalRecipeHandler : Dgn::dgn_ElementHandler::PhysicalRecipe
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalRecipe, TestPhysicalRecipe, TestPhysicalRecipeHandler, Dgn::dgn_ElementHandler::PhysicalRecipe, )
-};
-
-//=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
-//=======================================================================================
 struct TestGraphicalType2d : Dgn::GraphicalType2d
 {
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalType2d, Dgn::GraphicalType2d)
@@ -473,27 +446,33 @@ struct TestGraphicalType2dHandler : Dgn::dgn_ElementHandler::GraphicalType2d
 //=======================================================================================
 // @bsiclass                                                     Shaun.Sewall    08/16
 //=======================================================================================
-struct TestGraphicalRecipe2d : Dgn::GraphicalRecipe2d
+struct TestInformationRecord : Dgn::InformationRecordElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, Dgn::GraphicalRecipe2d)
-    friend struct TestGraphicalRecipe2dHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestInformationRecord, Dgn::InformationRecordElement)
+    friend struct TestInformationRecordHandler;
 
 protected:
-    explicit TestGraphicalRecipe2d(CreateParams const& params) : T_Super(params) {}
+    explicit TestInformationRecord(CreateParams const& params) : T_Super(params) {}
 
 public:
-    static RefCountedPtr<TestGraphicalRecipe2d> Create(Dgn::DefinitionModelR, Utf8CP name);
+    static RefCountedPtr<TestInformationRecord> Create(Dgn::InformationRecordModelR);
+
+    Utf8String GetStringProperty() const {return GetPropertyValueString("StringProperty");}
+    void SetStringProperty(Utf8CP s) {SetPropertyValue("StringProperty", s);}
+
+    int32_t GetIntProperty() const {return GetPropertyValueInt32("IntProperty");}
+    void SetIntProperty(int32_t i) {SetPropertyValue("IntProperty", i);}
 };
 
-typedef RefCountedPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dPtr;
-typedef RefCountedCPtr<TestGraphicalRecipe2d> TestGraphicalRecipe2dCPtr;
+typedef RefCountedPtr<TestInformationRecord> TestInformationRecordPtr;
+typedef RefCountedCPtr<TestInformationRecord> TestInformationRecordCPtr;
 
 //=======================================================================================
-// @bsiclass                                                     Shaun.Sewall    08/16
+// @bsiclass                                                     Shaun.Sewall    03/17
 //=======================================================================================
-struct TestGraphicalRecipe2dHandler : Dgn::dgn_ElementHandler::GraphicalRecipe2d
+struct TestInformationRecordHandler : Dgn::dgn_ElementHandler::InformationRecord
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestGraphicalRecipe2d, TestGraphicalRecipe2d, TestGraphicalRecipe2dHandler, Dgn::dgn_ElementHandler::GraphicalRecipe2d, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestInformationRecord, TestInformationRecord, TestInformationRecordHandler, Dgn::dgn_ElementHandler::InformationRecord, )
 };
 
 //=======================================================================================
@@ -515,7 +494,7 @@ private:
 public:
     static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
 
-    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME);}
+    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME);}
 
     Utf8StringCR GetTestUniqueAspectProperty() const {return m_testUniqueAspectProperty;}
     void SetTestUniqueAspectProperty(Utf8CP s) {m_testUniqueAspectProperty = s;}
@@ -556,7 +535,7 @@ private:
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}
 
-    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME);}
+    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME);}
 
     Utf8StringCR GetTestMultiAspectProperty() const {return m_testMultiAspectProperty;}
     void SetTestMultiAspectProperty(Utf8CP s) {m_testMultiAspectProperty = s;}
@@ -609,7 +588,7 @@ public:
     static void SetProperty1(Dgn::DgnDbR, Utf8CP, EC::ECInstanceKeyCR);
     static Utf8String GetProperty1(Dgn::DgnDbR, EC::ECInstanceId);
 
-    static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
+    static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
 
     static ECInstanceKey Insert(Dgn::DgnDbR db, Dgn::DgnElementId root, Dgn::DgnElementId dependent);
     };
@@ -622,10 +601,7 @@ struct DgnPlatformTestDomain : Dgn::DgnDomain
 private:
     DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
     DgnPlatformTestDomain();
-
-public:
-    static Dgn::DgnDbStatus Register();
-    static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" DPTEST_SCHEMA_NAMEW L".01.00.ecschema.xml"; }
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

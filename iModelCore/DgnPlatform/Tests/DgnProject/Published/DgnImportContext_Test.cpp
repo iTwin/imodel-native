@@ -154,7 +154,7 @@ static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMo
     db2 = initDb(destName,mode,true);
     if (!db2.IsValid())
         return nullptr;
-    DgnPlatformTestDomain::ImportSchema(*db2);
+    DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
     return db2;
     }
 
@@ -241,9 +241,9 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 
     DgnElementPtr gelem;
     if (is3d)
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, Placement3d()));
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(subcat);
@@ -663,7 +663,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     BentleyStatus db1_fontEmbedStatus = DgnFontPersistence::Db::Embed(db1->Fonts().DbFaceData(), *db1_font);
     ASSERT_TRUE(SUCCESS == db1_fontEmbedStatus);
 
-    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetECClass(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
+    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetClass(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
     BeAssert(nullptr != db1_physicalClass);
     DgnClassId db1_physicalDgnClass = DgnClassId(db1_physicalClass->GetId());
     BeAssert(db1_physicalDgnClass.IsValid());

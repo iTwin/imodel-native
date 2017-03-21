@@ -38,7 +38,7 @@ struct DgnModelTests : public DgnDbTestFixture
 DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
     DgnCategoryId cat = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
-    DgnElementPtr elem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
+    DgnElementPtr elem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), cat, placement));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
@@ -54,7 +54,7 @@ DgnElementId DgnModelTests::InsertElement3d(DgnModelId mid, Placement3dCR placem
 DgnElementId DgnModelTests::InsertElement2d(DgnModelId mid, Placement2dCR placement, DPoint3dCR pt1, DPoint3dCR pt2)
     {
     DgnCategoryId cat = DgnDbTestUtils::GetFirstDrawingCategoryId(*m_db);
-    DgnElementPtr elem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
+    DgnElementPtr elem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(*m_db, mid, DgnClassId(m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, placement));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*elem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(pt1, pt2)));
@@ -392,7 +392,7 @@ TEST_F(DgnModelTests, ModelIterator)
     PhysicalModelPtr physicalModel1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel1");
     PhysicalModelPtr physicalModel2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel2");
     PhysicalModelPtr physicalModel3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel3");
-    DgnClassId physicalModelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel);
+    DgnClassId physicalModelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel);
 
     SpatialLocationModelPtr spatialLocationModel1 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel1");
     SpatialLocationModelPtr spatialLocationModel2 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel2");
@@ -432,7 +432,7 @@ TEST_F(DgnModelTests, ModelIterator)
         ASSERT_EQ(physicalModel1->GetModelId(), entry.GetModelId());
         ASSERT_EQ(physicalModel1->GetModeledElementId(), entry.GetModeledElementId());
         ASSERT_EQ(physicalModelClassId, entry.GetClassId());
-        ASSERT_TRUE(entry.GetInGuiList());
+        ASSERT_TRUE(!entry.IsPrivate());
         ASSERT_FALSE(entry.GetIsTemplate());
         ++count;
         }

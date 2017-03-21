@@ -101,7 +101,7 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext))
         return ERROR;
 
-    if (DgnDbStatus::Success != m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()))
+    if (BE_SQLITE_OK != m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()))
         return ERROR;
 
     m_db->SaveChanges();
@@ -232,7 +232,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
             updateStmt->BindText(1, s_textVal, IECSqlBinder::MakeCopy::No);
             updateStmt->BindInt64(2, s_int64Val);
             updateStmt->BindDouble(3, s_doubleVal);
-            updateStmt->BindId(4, newKey.GetECInstanceId());
+            updateStmt->BindId(4, newKey.GetInstanceId());
             ASSERT_EQ(BE_SQLITE_DONE, updateStmt->Step());
             updateStmt->Reset();
             updateStmt->ClearBindings();

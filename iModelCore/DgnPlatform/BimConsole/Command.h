@@ -118,13 +118,7 @@ struct CreateCommand final : public Command
 struct FileInfoCommand final : public Command
     {
     private:
-        enum class KnownProfile
-            {
-            BeSQLite,
-            ECDb,
-            DgnDb,
-            Unknown
-            };
+        
 
         Utf8String _GetName() const override { return ".fileinfo"; }
         Utf8String _GetUsage() const override { return " .fileinfo                      Displays information about the open file"; }
@@ -187,15 +181,15 @@ struct ExportCommand final : public Command
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    12/2015
 //---------------------------------------------------------------------------------------
-struct CreateECClassViewsCommand final : public Command
+struct CreateClassViewsCommand final : public Command
     {
     private:
-        Utf8String _GetName() const override { return ".createecclassviews"; }
+        Utf8String _GetName() const override { return ".createclassviews"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
     public:
-        CreateECClassViewsCommand() : Command() {}
-        ~CreateECClassViewsCommand() {}
+        CreateClassViewsCommand() : Command() {}
+        ~CreateClassViewsCommand() {}
     };
 
 //---------------------------------------------------------------------------------------

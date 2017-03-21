@@ -77,6 +77,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
     friend struct SceneQueue::Task;
     friend struct CreateSceneTask;
+    friend struct AuxCoordSystem;
 
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
@@ -129,8 +130,6 @@ protected:
     friend struct ViewContext;
     friend struct DgnViewport;
     friend struct ViewManager;
-    friend struct IACSManager;
-    friend struct IAuxCoordSys;
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
@@ -146,6 +145,7 @@ protected:
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
     uint32_t m_gridsPerRef = 10;
+    AuxCoordSystemCPtr m_auxCoordSys; //!< The auxiliary coordinate system in use.
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -276,6 +276,12 @@ public:
     virtual Sheet::ViewControllerCP _ToSheetView() const {return nullptr;}
     Sheet::ViewControllerP ToSheetViewP() {return const_cast<Sheet::ViewControllerP>(_ToSheetView());}
 
+    virtual TemplateViewController2dCP _ToTemplateView2d() const {return nullptr;}
+    TemplateViewController2dP ToTemplateView2dP() {return const_cast<TemplateViewController2dP>(_ToTemplateView2d());}
+
+    virtual TemplateViewController3dCP _ToTemplateView3d() const {return nullptr;}
+    TemplateViewController3dP ToTemplateView3dP() {return const_cast<TemplateViewController3dP>(_ToTemplateView3d());}
+
     //! determine whether this view is a 3d view
     bool Is3d() const {return nullptr != _ToView3d();}
 
@@ -288,6 +294,12 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
+    //! determine whether this is a 2d template view
+    bool IsTemplateView2d() const {return nullptr != _ToTemplateView2d();}
+
+    //! determine whether this is a 3d template view
+    bool IsTemplateView3d() const {return nullptr != _ToTemplateView3d();}
+
     //! Get the ViewFlags from the DisplayStyle of this view
     Render::ViewFlags GetViewFlags() const {return m_definition->GetDisplayStyle().GetViewFlags();}
 
@@ -298,6 +310,13 @@ public:
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
+
+    //! Gets the Auxiliary Coordinate System for this view.
+    AuxCoordSystemCR GetAuxCoordinateSystem() const {return *m_auxCoordSys;}
+
+    //! Sets the Auxiliary Coordinate System to use for this view.
+    //! @param[in] acs The new Auxiliary Coordinate System.
+    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (Is3d() != (nullptr != acs.ToAuxCoordSystem3d())) return false; m_auxCoordSys = &acs; return true;}
 
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
@@ -401,32 +420,6 @@ public:
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
     DGNPLATFORM_EXPORT ViewportStatus TurnCameraOn(Angle lensAngle);
-};
-
-//=======================================================================================
-//! A TemplateViewController3d is used to view a single 3d template model.
-//! @ingroup GROUP_DgnView
-// @bsiclass                                                    Shaun.Sewall    02/17
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
-{
-    DEFINE_T_SUPER(ViewController3d);
-
-protected:
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
-    GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
-    bool _Allow3dManipulations() const override {return true;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
-    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-
-public:
-    TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}
-    TemplateViewDefinition3dCR GetTemplateViewDefinition3d() const {return static_cast<TemplateViewDefinition3dCR>(*m_definition);}
-    TemplateViewDefinition3dR GetTemplateViewDefinition3dR() {return static_cast<TemplateViewDefinition3dR>(*m_definition);}
-
-    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition3d().GetTemplateModelId();}
-    GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
 };
 
 //=======================================================================================
@@ -557,7 +550,6 @@ protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     Render::MaterialPtr m_skybox;
-    IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -609,13 +601,6 @@ public:
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
-
-    //! Gets the Auxiliary Coordinate System for this view.
-    IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
-
-    //! Sets the Auxiliary Coordinate System to use for this view.
-    //! @param[in] acs The new Auxiliary Coordinate System.
-    void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 
     //! Get the Level-of-Detail filtering size for scene creation for this SpatialViewController. This is the size, in pixels, of one side of a square. 
     //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
@@ -786,6 +771,63 @@ public:
     void SetDrawingSymbology(DrawingSymbology const& s) {m_symbology=s;} //!< Set the symbology for some aspects of the drawings when they are drawn in context.
     Pass GetPassesToDraw() const {return m_passesToDraw;} //!< Get the drawing elements to draw.
     void SetPassesToDraw(Pass p) {m_passesToDraw = p;} //!< Set the drawing elements to draw.
+};
+
+//=======================================================================================
+//! A TemplateViewController2d is used to view a single 2d template model.
+//! @ingroup GROUP_DgnView
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController2d : ViewController2d
+{
+    DEFINE_T_SUPER(ViewController2d);
+
+private:
+    DgnModelId m_viewedModelId;
+
+protected:
+    TemplateViewController2dCP _ToTemplateView2d() const override final {return this;}
+    GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+
+public:
+    TemplateViewController2d(TemplateViewDefinition2dCR viewDef) : T_Super(viewDef) {}
+    TemplateViewDefinition2dCR GetTemplateViewDefinition2d() const {return static_cast<TemplateViewDefinition2dCR>(*m_definition);}
+    TemplateViewDefinition2dR GetTemplateViewDefinition2dR() {return static_cast<TemplateViewDefinition2dR>(*m_definition);}
+
+    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
+};
+
+//=======================================================================================
+//! A TemplateViewController3d is used to view a single 3d template model.
+//! @ingroup GROUP_DgnView
+// @bsiclass                                                    Shaun.Sewall    02/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
+{
+    DEFINE_T_SUPER(ViewController3d);
+
+private:
+    DgnModelId m_viewedModelId;
+
+protected:
+    TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) override {return nullptr;}
+    GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+    bool _Allow3dManipulations() const override {return true;}
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+
+public:
+    TemplateViewController3d(TemplateViewDefinition3dCR viewDef) : T_Super(viewDef) {}
+    TemplateViewDefinition3dCR GetTemplateViewDefinition3d() const {return static_cast<TemplateViewDefinition3dCR>(*m_definition);}
+    TemplateViewDefinition3dR GetTemplateViewDefinition3dR() {return static_cast<TemplateViewDefinition3dR>(*m_definition);}
+
+    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
 };
 
 END_BENTLEY_DGN_NAMESPACE

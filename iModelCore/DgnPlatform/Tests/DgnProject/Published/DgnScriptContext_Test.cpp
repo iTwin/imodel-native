@@ -32,12 +32,12 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     if (model.Is3d())
         {
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
         }
     else
         {
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), categoryId, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), categoryId, Placement2d()));
         }
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
@@ -92,12 +92,18 @@ static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::Geomet
 //=======================================================================================
 struct DgnScriptTest : public DgnDbTestFixture
 {
+    void SetUp() override
+    {
+    DgnDomains::RegisterDomain(ScriptDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    }
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, TestEga)
     {
+    static bool s_hasRunOnce;
+
     SetupSeedProject();
     DgnDbP project = m_db.get();// tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
@@ -119,13 +125,20 @@ TEST_F(DgnScriptTest, TestEga)
     YawPitchRollAngles angles;
     Json::Value parms (Json::objectValue);
 
-    for (int i=0; i<2; ++i)
+    if (!s_hasRunOnce)
         {
-        int sres = -1;
-        DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEga", org, angles, parms);
-        ASSERT_NE( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
-        ASSERT_NE( 0 , sres );
+        // This test is only valid if the EGA below is not yet registered. If somebody runs gtest with a repeat count,
+        //  then we'll get here a second time in the same session (using the same BeJsContext), and we would find
+        //  that the EGA is registered.
+        for (int i=0; i<2; ++i)
+            {
+            int sres = -1;
+            DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEga", org, angles, parms);
+            ASSERT_NE( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
+            ASSERT_NE( 0 , sres );
+            }
         }
+    s_hasRunOnce = true;
 
     JsProg jsProg;
     jsProg.m_jsProgramName = "DgnScriptTest";
@@ -297,6 +310,8 @@ TEST_F(DgnScriptTest, ScriptsInMultipleThreads)
     ASSERT_EQ(2 + _countof(threads), s_mtStats.accum);
     ASSERT_EQ(0, s_mtStats.failed);
 
+    memset(&s_mtStats, 0, sizeof(s_mtStats)); // in case this test is executed again in the same session due to a repeat count
+
     T_HOST.GetScriptAdmin().CheckCleanup();
     }
 
@@ -439,8 +454,8 @@ TEST_F(DgnScriptTest, CRUD)
 TEST_F(DgnScriptTest, ScriptElementCRUD)
     {
     SetupSeedProject();
-    DgnDbStatus dstatus = ScriptDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, dstatus);
+    DbResult result = ScriptDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
     m_db->SaveChanges();
 
     DgnDbStatus status;

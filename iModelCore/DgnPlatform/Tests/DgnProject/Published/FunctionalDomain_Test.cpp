@@ -30,8 +30,7 @@ private:
     DOMAIN_DECLARE_MEMBERS(FunctionalTestDomain, )
     FunctionalTestDomain();
 
-public:
-    static Dgn::DgnDbStatus ImportSchema(DgnDbR);
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/FunctionalTest.01.00.ecschema.xml"; }
 };
 
 //=======================================================================================
@@ -132,7 +131,7 @@ FunctionalTestDomain::FunctionalTestDomain() : DgnDomain(FUNCTEST_DOMAIN_NAME, "
 TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp1)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Schemas().GetECClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestBreakdown);
+    DgnClassId classId = db.Schemas().GetClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestBreakdown);
     if (!classId.IsValid())
         return nullptr;
 
@@ -149,7 +148,7 @@ TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp
 TestComponentPtr TestComponent::Create(FunctionalModelR model, double doubleProp1)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Schemas().GetECClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestComponent);
+    DgnClassId classId = db.Schemas().GetClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestComponent);
     if (!classId.IsValid())
         return nullptr;
 
@@ -169,20 +168,6 @@ TestFunctionalTypePtr TestFunctionalType::Create(DgnDbR db)
     return new TestFunctionalType(CreateParams(db, DgnModel::DictionaryId(), classId));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    08/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus FunctionalTestDomain::ImportSchema(DgnDbR db)
-    {
-    BeFileName testSchemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    testSchemaFile.AppendToPath(L"ECSchemas");
-    testSchemaFile.AppendSeparator();
-    testSchemaFile.AppendToPath(L"FunctionalTest.01.00.ecschema.xml");
-
-    DgnDomainR domain = GetDomain();
-    return domain.ImportSchema(db, testSchemaFile);
-    }
-
 //=======================================================================================
 // @bsiclass                                    Shaun.Sewall                    08/2016
 //=======================================================================================
@@ -196,14 +181,14 @@ struct FunctionalDomainTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 void FunctionalDomainTests::SetupFunctionalTestDomain()
     {
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain());
-    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain());
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
-    DgnDbStatus importSchemaStatus = FunctionalDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
-
-    importSchemaStatus = FunctionalTestDomain::ImportSchema(*m_db);
-    ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
+    DbResult result = FunctionalDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
+		
+    result = FunctionalTestDomain::GetDomain().ImportSchema(*m_db);
+    ASSERT_EQ(BE_SQLITE_OK, result);
     }
 
 //---------------------------------------------------------------------------------------
@@ -214,7 +199,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     SetupSeedProject();
     SetupFunctionalTestDomain();
 
-    DgnClassId functionalTypeRelClassId = m_db->Schemas().GetECClassId(FUNCTIONAL_DOMAIN_NAME, FUNC_REL_FunctionalElementIsOfType);
+    DgnClassId functionalTypeRelClassId = m_db->Schemas().GetClassId(FUNCTIONAL_DOMAIN_NAME, FUNC_REL_FunctionalElementIsOfType);
     ASSERT_TRUE(functionalTypeRelClassId.IsValid());
 
     DgnElementId functionalTypeId[3];

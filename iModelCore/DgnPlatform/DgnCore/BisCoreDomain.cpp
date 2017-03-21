@@ -34,9 +34,9 @@ HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(Role)
 HANDLER_DEFINE_MEMBERS(Information)
+HANDLER_DEFINE_MEMBERS(InformationRecord)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
-HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(DocumentList)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -72,17 +72,17 @@ HANDLER_DEFINE_MEMBERS(Category);
 HANDLER_DEFINE_MEMBERS(DrawingCategory);
 HANDLER_DEFINE_MEMBERS(SpatialCategory);
 HANDLER_DEFINE_MEMBERS(SubCategory);
-HANDLER_DEFINE_MEMBERS(Session)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
-HANDLER_DEFINE_MEMBERS(PhysicalRecipe)
+HANDLER_DEFINE_MEMBERS(TemplateRecipe3d)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
-HANDLER_DEFINE_MEMBERS(GraphicalRecipe2d)
+HANDLER_DEFINE_MEMBERS(TemplateRecipe2d)
 HANDLER_DEFINE_MEMBERS(SpatialLocationType)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
 HANDLER_DEFINE_MEMBERS(DocumentPartition)
 HANDLER_DEFINE_MEMBERS(GroupInformationPartition)
+HANDLER_DEFINE_MEMBERS(InformationRecordPartition)
 HANDLER_DEFINE_MEMBERS(PhysicalPartition)
 HANDLER_DEFINE_MEMBERS(SpatialLocationPartition)
 };
@@ -124,12 +124,12 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(WebMercator::StreetMapHandler::GetHandler());
     RegisterHandler(dgn_ModelHandler::Role::GetHandler());
     RegisterHandler(dgn_ModelHandler::Information::GetHandler());
+    RegisterHandler(dgn_ModelHandler::InformationRecord::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::DocumentList::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Session::GetHandler());
     RegisterHandler(dgn_ModelHandler::Repository::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
@@ -156,15 +156,14 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Session::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalRecipe::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
-    RegisterHandler(dgn_ElementHandler::GraphicalRecipe2d::GetHandler());
+    RegisterHandler(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
-    RegisterHandler(dgn_ElementHandler::LightDef::GetHandler());
+    RegisterHandler(Lighting::Handlers::LightLoc::GetHandler());
     RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingCategory::GetHandler());
@@ -177,6 +176,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::DefinitionPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::DocumentPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    RegisterHandler(dgn_ElementHandler::InformationRecordPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::LinkPartitionHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationPartition::GetHandler());
@@ -195,6 +195,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::View::GetHandler());
     RegisterHandler(ViewElementHandler::View2d::GetHandler());
     RegisterHandler(ViewElementHandler::View3d::GetHandler());
+    RegisterHandler(ViewElementHandler::TemplateView2d::GetHandler());
     RegisterHandler(ViewElementHandler::TemplateView3d::GetHandler());
     RegisterHandler(ViewElementHandler::SpatialView::GetHandler());
     RegisterHandler(ViewElementHandler::DrawingView::GetHandler());
@@ -205,6 +206,9 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
+
+    RegisterHandler(ACSElementHandler::CoordSys2d::GetHandler());
+    RegisterHandler(ACSElementHandler::CoordSys3d::GetHandler());
 
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
     
@@ -217,43 +221,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                  02 / 2017
 //---------------------------------------------------------------------------------------
-static BeFileName getSchemaPathname()
+void BisCoreDomain::_OnSchemaImported(DgnDbR db) const
     {
-    BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    genericDomainSchemaFile.AppendToPath(BISCORE_ECSCHEMA_PATH);
-    BeAssert(genericDomainSchemaFile.DoesPathExist());
-
-    return genericDomainSchemaFile;
+    BeAssert(m_createParams != nullptr && "SetCreateParams() before importing the BisCoreDomain");
+    db.SetupNewDgnDb(*m_createParams);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DbResult BisCoreDomain::ValidateSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    return dgnDomain.ValidateSchema(db, getSchemaPathname());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                  02 / 2017
-//---------------------------------------------------------------------------------------
-DgnDbStatus BisCoreDomain::UpgradeSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.UpgradeSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus BisCoreDomain::ImportSchema(DgnDbR db)
-    {
-    DgnDomainCR dgnDomain = BisCoreDomain::GetDomain();
-    DgnDbStatus status = dgnDomain.ImportSchema(db, getSchemaPathname());
-    BeAssert(DgnDbStatus::Success == status);
-    return status;
-    }
-

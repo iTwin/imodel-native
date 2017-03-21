@@ -38,7 +38,7 @@ TEST(ECDbInstances, DgnElement)
     DgnDbR project = *tdm.GetDgnProjectP();
 
     ECN::ECSchemaP dgnschema = NULL;
-    auto schemaStat = project.Schemas().GetECSchema(dgnschema, BIS_ECSCHEMA_NAME);
+    auto schemaStat = project.Schemas().GetSchema(dgnschema, BIS_ECSCHEMA_NAME);
     ASSERT_EQ(SUCCESS, schemaStat);
     WString classNameW(BIS_CLASS_ElementGraphics, BentleyCharEncoding::Utf8);
     ECN::ECClassP elementClass = dgnschema->GetClassP(classNameW.c_str());
@@ -107,7 +107,7 @@ TEST(ECDbInstances, DgnElementByElementId)
         }
 
     ECN::ECSchemaP dgnschema = NULL;
-    auto schemaStat = project.Schemas().GetECSchema(dgnschema, "dgn");
+    auto schemaStat = project.Schemas().GetSchema(dgnschema, "dgn");
     ASSERT_EQ(SUCCESS, schemaStat);
     ECN::ECClassCP elementClass = dgnschema->GetClassCP(L"Element");
     ASSERT_TRUE(elementClass != NULL);
@@ -335,7 +335,7 @@ TEST(ECDbInstances, JsonValueFormatting)
     ASSERT_TRUE(ref.IsValid());
     ECN::ECClassId classId = (ECN::ECClassId) ref->GetECClassId();
     ECClassP ecClass = NULL;
-    project.Schemas().GetECClass(ecClass, classId);
+    project.Schemas().GetClass(ecClass, classId);
     ASSERT_TRUE(ecClass != NULL);
     ECInstanceId instanceId = ref->GetECInstanceId();
 
@@ -736,7 +736,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
         orphanedWidgets.push_back(widget);
         widgetInserter.Insert(ecInstanceKey, *widget);
-        SetECInstanceId(*widget, ecInstanceKey.GetECInstanceId());
+        SetECInstanceId(*widget, ecInstanceKey.GetInstanceId());
 
         IECInstancePtr bar = CreateArbitraryECInstance(*barClass, PopulatePrimitiveValueWithRandomValues);
         bar->GetValue(name, L"Name");
@@ -746,7 +746,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
         orphanedBars.push_back(bar);
         barInserter.Insert(ecInstanceKey, *bar);
-        SetECInstanceId(*bar, ecInstanceKey.GetECInstanceId());
+        SetECInstanceId(*bar, ecInstanceKey.GetInstanceId());
 
         IECInstancePtr foo = CreateArbitraryECInstance(*fooClass, PopulatePrimitiveValueWithRandomValues);
         foo->GetValue(name, L"Name");
@@ -755,7 +755,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
         foo->SetValue(L"Name", name);
         orphanedFoos.push_back(foo);
         fooInserter.Insert(ecInstanceKey, *foo);
-        SetECInstanceId(*foo, ecInstanceKey.GetECInstanceId());
+        SetECInstanceId(*foo, ecInstanceKey.GetInstanceId());
 
         }
 
@@ -777,7 +777,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
         lineWidgets.push_back(widget);
         ECInstanceKey ecInstanceKey;
         widgetInserter.Insert(ecInstanceKey, *widget);
-        SetECInstanceId(*widget, ecInstanceKey.GetECInstanceId());
+        SetECInstanceId(*widget, ecInstanceKey.GetInstanceId());
 
         StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement(*eeh, ecInstanceKey, project);
         ASSERT_EQ(SUCCESS, stat2);
@@ -802,7 +802,7 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
         lineBars.push_back(bar);
         ECInstanceKey ecInstanceKey;
         barInserter.Insert(ecInstanceKey, *bar);
-        SetECInstanceId(*bar, ecInstanceKey.GetECInstanceId());
+        SetECInstanceId(*bar, ecInstanceKey.GetInstanceId());
 
         StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement(*eeh, ecInstanceKey, project);
         ASSERT_EQ(SUCCESS, stat2);

@@ -20,7 +20,7 @@ static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId mode
     {
     PhysicalElement::CreateParams createParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
     if (parentId.IsValid())
-        createParams.m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
+        createParams.m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementAssemblesElements);
 
     return createParams;
     }
@@ -36,7 +36,7 @@ public:
     Elem1(DgnDbR db, DgnModelId model, DgnCategoryId category, DgnElementId parentId=DgnElementId())
         : Elem1(makeCreateParams(db, model, QueryClassId(db), category, parentId)) { }
 
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MHTEST_SCHEMA, MHTEST_ELEM1_CLASS)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MHTEST_SCHEMA, MHTEST_ELEM1_CLASS)); }
 
     static uint64_t GetRestrictions()
         {
@@ -60,7 +60,7 @@ public:
     Elem2(DgnDbR db, DgnModelId model, DgnCategoryId category, DgnElementId parentId=DgnElementId())
         : Elem2(makeCreateParams(db, model, QueryClassId(db), category, parentId)) { }
 
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MHTEST_SCHEMA, MHTEST_ELEM2_CLASS)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MHTEST_SCHEMA, MHTEST_ELEM2_CLASS)); }
 
     static uint64_t GetRestrictions()
         {
@@ -94,6 +94,10 @@ struct Elem2Handler : dgn_ElementHandler::Physical
 struct MissingHandlerDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(MissingHandlerDomain, );
+
+private:
+    WCharCP _GetSchemaRelativePath() const override { return L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml"; }
+
 public:
     MissingHandlerDomain() : DgnDomain(MHTEST_SCHEMA, "Missing Handlers domain", 1)
         {
@@ -101,12 +105,6 @@ public:
         RegisterHandler(Elem2Handler::GetHandler());
         }
 
-    void ImportSchema(DgnDbR db, BeFileNameCR schemasDir)
-        {
-        BeFileName schemaFile = schemasDir;
-        schemaFile.AppendToPath(L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml");
-        ASSERT_TRUE(DgnDbStatus::Success == DgnDomain::ImportSchema(db, schemaFile));
-        }
 };
 
 HANDLER_DEFINE_MEMBERS(Elem1Handler);
@@ -153,7 +151,13 @@ DgnPlatformSeedManager::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
 void MissingHandlerTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-    MissingHandlerTest::s_seedFileInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(true, true));
+    DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
+
+    MissingHandlerTest::s_seedFileInfo = rootSeedInfo;
+    MissingHandlerTest::s_seedFileInfo.fileName.SetName(L"MissingHandlerTest/Test.bim");
+
+    DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(rootSeedInfo.fileName, MissingHandlerTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    ASSERT_TRUE(db.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -161,7 +165,7 @@ void MissingHandlerTest::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = db.Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     GenericPhysicalObject elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();
@@ -269,7 +273,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     auto pElem = cpElem->MakeCopy<GeometricElement3d>();
     ASSERT_TRUE(pElem.IsValid());
     DgnElementId parentId;
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
     ASSERT_TRUE(parentRelClassId.IsValid());
     status = pElem->SetParentId(parentId, parentRelClassId);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetParent));
@@ -339,14 +343,17 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Create a new dgndb, with our domain + handlers loaded
         {
         ScopedDgnHost host;
+
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(MissingHandlerTest::s_seedFileInfo.fileName, L"HandlerRestrictions");
         ASSERT_TRUE(db.IsValid());
         fullDgnDbFileName = db->GetFileName();
 
+
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain);
-        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
+		
+		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
         // Populate the db with elements belonging to our domain
         InitDb(*db);
@@ -385,7 +392,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
 
         // register domain and handlers
         MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain);
+        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
 
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());

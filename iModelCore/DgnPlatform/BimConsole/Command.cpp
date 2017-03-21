@@ -64,7 +64,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
     BimConsole::WriteLine();
-    BimConsole::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".createclassviews")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
@@ -144,37 +144,62 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
 
-    DbResult bimStat;
-    Dgn::DgnDb::OpenParams params(openMode);
-    Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
-    if (BE_SQLITE_OK == bimStat)
-        {
-        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-        BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-
-    std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-    if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
-        {
-        session.SetFile(std::move(ecdbFile));
-        BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
-        return;
-        }
-    else
-        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
-
+    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
+    //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
-    if (BE_SQLITE_OK == sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
-        session.SetFile(std::move(sqliteFile));
-        BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'. File might not be a BIM file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
         return;
         }
-    else
-        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
 
-    BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!sqliteFile->TryRetrieveProfileInfos(profileInfos))
+        {
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not retrieve profiles from file '%s'. Closing file again.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        DbResult bimStat;
+        Dgn::DgnDb::OpenParams params(openMode);
+        Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
+        if (BE_SQLITE_OK == bimStat)
+            {
+            session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+            BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (profileInfos.find(SessionFile::ProfileInfo::Type::ECDb) != profileInfos.end())
+        {
+        sqliteFile->GetHandleR().CloseDb();
+
+        std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+            {
+            session.SetFile(std::move(ecdbFile));
+            BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            return;
+            }
+
+
+        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    session.SetFile(std::move(sqliteFile));
+    BimConsole::WriteLine("Opened BeSQLite file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
     }
 
 
@@ -349,7 +374,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine("Current file: ");
     BimConsole::WriteLine("  %s", session.GetFile().GetPath());
 
-    SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
+    ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
         {
         BimConsole::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
@@ -368,7 +393,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             }
 
         if (BE_SQLITE_ROW == stmt.Step())
-            initialECDbProfileVersion = SchemaVersion(stmt.GetValueText(0));
+            initialECDbProfileVersion = ProfileVersion(stmt.GetValueText(0));
         }
 
 
@@ -384,71 +409,35 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
 
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion' ORDER BY Namespace"))
+    bmap<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> profileInfos;
+    if (!session.GetFile().TryRetrieveProfileInfos(profileInfos))
         {
-        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        BimConsole::WriteErrorLine("Could not retrieve profile infos for the current file");
         return;
         }
 
-    bmap<KnownProfile, Utf8String> knownProfileInfos;
-    std::vector<Utf8String> otherProfileInfos;
-    Utf8CP profileFormat = "    %s: %s";
-    while (BE_SQLITE_ROW == stmt.Step())
+    BimConsole::WriteLine("  Profiles:");
+    auto it = profileInfos.find(SessionFile::ProfileInfo::Type::DgnDb);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
+
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::ECDb);
+    if (it != profileInfos.end())
         {
-        SchemaVersion profileVersion(stmt.GetValueText(1));
-        Utf8CP profileName = stmt.GetValueText(0);
-
-        KnownProfile knownProfile = KnownProfile::Unknown;
-
-        Utf8String profileInfo;
-        Utf8String addendum;
-
-        //use human readable names for core profiles
-        if (BeStringUtilities::StricmpAscii(profileName, "be_Db") == 0)
-            {
-            profileName = "BeSQLite";
-            knownProfile = KnownProfile::BeSQLite;
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "ec_Db") == 0)
-            {
-            profileName = "ECDb";
-            knownProfile = KnownProfile::ECDb;
-
-            if (!initialECDbProfileVersion.IsEmpty())
-                addendum.Sprintf(" (Creation version: %s)", initialECDbProfileVersion.ToString().c_str());
-            }
-        else if (BeStringUtilities::StricmpAscii(profileName, "dgn_Proj") == 0)
-            {
-            profileName = "DgnDb";
-            knownProfile = KnownProfile::DgnDb;
-            }
-
-        profileInfo.Sprintf(profileFormat, profileName, profileVersion.ToString().c_str());
-        if (!addendum.empty())
-            profileInfo.append(addendum);
-
-        if (knownProfile == KnownProfile::Unknown)
-            otherProfileInfos.push_back(profileInfo);
+        if (!initialECDbProfileVersion.IsEmpty())
+            BimConsole::WriteLine("    %s: %s (Creation version: %s)", it->second.m_name.c_str(), it->second.m_version.ToString().c_str(), initialECDbProfileVersion.ToString().c_str());
         else
-            knownProfileInfos[knownProfile] = profileInfo;
+            BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
         }
 
-    BimConsole::WriteLine("  Profiles:");
-    auto it = knownProfileInfos.find(KnownProfile::BeSQLite);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
+    it = profileInfos.find(SessionFile::ProfileInfo::Type::BeSQLite);
+    if (it != profileInfos.end())
+        BimConsole::WriteLine("    %s: %s", it->second.m_name.c_str(), it->second.m_version.ToString().c_str());
 
-    it = knownProfileInfos.find(KnownProfile::ECDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    it = knownProfileInfos.find(KnownProfile::DgnDb);
-    if (it != knownProfileInfos.end())
-        BimConsole::WriteLine(it->second.c_str());
-
-    for (Utf8StringCR otherProfileInfo : otherProfileInfos)
+    for (bpair<SessionFile::ProfileInfo::Type, SessionFile::ProfileInfo> const& profileInfo : profileInfos)
         {
-        BimConsole::WriteLine(otherProfileInfo.c_str());
+        if (profileInfo.first == SessionFile::ProfileInfo::Type::Unknown)
+            BimConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
         }
 
     }
@@ -536,7 +525,7 @@ void RollbackCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "ecschema";
+Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "schema";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
@@ -548,7 +537,7 @@ Utf8CP const ImportCommand::CSV_SWITCH = "csv";
 //---------------------------------------------------------------------------------------
 Utf8String ImportCommand::_GetUsage() const
     {
-    return " .import ecschema <ecschema xml file|folder>\r\n"
+    return " .import schema <ecschema xml file|folder>\r\n"
         COMMAND_USAGE_IDENT "Imports the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are imported.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
@@ -652,7 +641,7 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         return;
         }
 
-    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
+    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         {
         session.GetFile().GetHandleR().SaveChanges();
         BimConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
@@ -735,7 +724,7 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
         }
 
-    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName, csvFilePath.GetNameUtf8().c_str());
+    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName.c_str(), csvFilePath.GetNameUtf8().c_str());
     }
 
 
@@ -872,7 +861,7 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "ecschema";
+Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "schema";
 //static
 Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 
@@ -881,7 +870,7 @@ Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 //---------------------------------------------------------------------------------------
 Utf8String ExportCommand::_GetUsage() const
     {
-    return " .export ecschema [v2] <out folder>  Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
+    return " .export schema [v2] <out folder>    Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
            COMMAND_USAGE_IDENT "Otherwise ECXML v3 is used.\r\n"
            "         tables <JSON file>     Exports the data in all tables of the file into a JSON file\r\n";
     }
@@ -942,7 +931,7 @@ void ExportCommand::RunExportTables(Session& session, Utf8CP jsonFile) const
 //---------------------------------------------------------------------------------------
 void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool useECXmlV2) const
     {
-    bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetECSchemas(true);
+    bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetSchemas(true);
     if (schemas.empty())
         {
         BimConsole::WriteErrorLine("Failed to load schemas from file.");
@@ -1047,21 +1036,21 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
         }
     }
 
-//******************************* CreateECClassViewsCommand ******************
+//******************************* CreateClassViewsCommand ******************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-Utf8String CreateECClassViewsCommand::_GetUsage() const
+Utf8String CreateClassViewsCommand::_GetUsage() const
     {
-    return " .createecclassviews            Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
+    return " .createclassviews              Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
         COMMAND_USAGE_IDENT "ECProperties rather than tables and columns.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-void CreateECClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
+void CreateClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1072,7 +1061,7 @@ void CreateECClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
         return;
         }
 
-    if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateECClassViewsInDb())
+    if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb())
         BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
     else
         BimConsole::WriteLine("Created or updated ECClass views in the file.");
@@ -1593,7 +1582,7 @@ void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8Strin
     BeAssert(csvFile != nullptr);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), ECDbSchemaManager::GetValidateDbMappingSql()))
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), SchemaManager::GetValidateDbMappingSql()))
         {
         BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -1655,7 +1644,7 @@ void DebugCommand::_Run(Session& session, Utf8StringCR args) const
     for (BeFileNameCR schemaFile : diegoSchemas)
         {
         Utf8String cmdArgs;
-        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8());
+        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8().c_str());
         importCmd.Run(session, cmdArgs);
         }
     }

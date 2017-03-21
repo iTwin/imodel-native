@@ -80,7 +80,7 @@ void ScriptTest::TearDownTestCase()
 ScriptTest::ScriptTest()
     {
     // Must register my domain whenever I initialize a host
-    DgnPlatformTestDomain::Register();
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**

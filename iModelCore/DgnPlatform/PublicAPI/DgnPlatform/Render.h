@@ -10,6 +10,7 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
+#include "Lighting.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -196,11 +197,11 @@ struct Task : RefCounted<NonCopyableClass>
     friend struct Queue;
 
 protected:
-    Priority    m_priority;
-    Operation   m_operation;
-    TargetPtr   m_target;
-    Outcome     m_outcome = Outcome::Waiting;
-    double      m_elapsedTime = 0.0;
+    Priority m_priority;
+    Operation m_operation;
+    TargetPtr m_target;
+    Outcome m_outcome = Outcome::Waiting;
+    double m_elapsedTime = 0.0;
     void Perform(StopWatch&);
 
 public:
@@ -264,7 +265,7 @@ struct Queue
 private:
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_tasks;
-    TaskPtr             m_currTask;
+    TaskPtr m_currTask;
 
     void WaitForWork();
     void Process();
@@ -305,9 +306,9 @@ struct Image
     enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
     enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
 protected:
-    uint32_t   m_width = 0;
-    uint32_t   m_height = 0;
-    Format     m_format = Format::Rgb;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
+    Format m_format = Format::Rgb;
     ByteStream m_image;
 
     void ClearData() {m_image.Clear();}
@@ -486,7 +487,7 @@ struct Material : RefCounted<NonCopyableClass>
         double m_val[2][3];
         Trans2x3() {}
         Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
-        DGNPLATFORM_EXPORT Transform GetTransform() const;
+        Transform GetTransform() const;
     };
 
     struct TextureMapParams
@@ -988,8 +989,9 @@ public:
         Code5 = 0xe0e0e0e0, // 5
         Code6 = 0xf888f888, // 6
         Code7 = 0xff18ff18, // 7
-        HiddenLine = 0xcccccccc,    // hidden lines 
+        HiddenLine = 0xcccccccc,  // hidden lines 
         Invisible = 0x00000001, // nearly invisible
+        Invalid = 0xffffffff,
         };
 
     void Cook(GeometryParamsCR, ViewContextR);
@@ -1150,17 +1152,17 @@ struct Graphic : RefCounted<NonCopyableClass>
     struct CreateParams
     {
         DgnViewportCP m_vp;
-        Transform     m_placement;
-        double        m_pixelSize;
+        Transform m_placement;
+        double m_pixelSize;
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
 
 protected:
     DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
-    double        m_pixelSize; //! Pixel size to use for stroke
-    double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
-    double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
-    Transform     m_localToWorldTransform;
+    double m_pixelSize; //! Pixel size to use for stroke
+    double m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    double m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    Transform m_localToWorldTransform;
 
     virtual ~Graphic() {}
     virtual bool _IsSimplifyGraphic() const {return false;}
@@ -1276,8 +1278,8 @@ struct GraphicBuilder
 private:
     friend struct GraphicBuilderPtr;
 
-    GraphicPtr          m_graphic;
-    IGraphicBuilderP    m_builder;
+    GraphicPtr m_graphic;
+    IGraphicBuilderP m_builder;
 
     GraphicBuilder() : m_builder(nullptr) {}
     GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
@@ -1310,58 +1312,58 @@ public:
     void SetGeometryStreamEntryId(GeometryStreamEntryIdCP entry) {m_builder->_SetGeometryStreamEntryId(entry);}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
-    //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
-    //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
+    //! @param[in] graphicParams The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
+    //! @param[in] geomParams The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
     void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {m_builder->_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
-    //! @param[in]          numPoints   Number of vertices in points array.
-    //! @param[in]          points      Array of vertices in the line string.
+    //! @param[in] numPoints Number of vertices in points array.
+    //! @param[in] points Array of vertices in the line string.
     void AddLineString(int numPoints, DPoint3dCP points) {m_builder->_AddLineString(numPoints, points);}
 
     //! Draw a 2D line string.
-    //! @param[in]          numPoints   Number of vertices in points array.
-    //! @param[in]          points      Array of vertices in the line string.
-    //! @param[in]          zDepth      Z depth value in local coordinates.
+    //! @param[in] numPoints Number of vertices in points array.
+    //! @param[in] points Array of vertices in the line string.
+    //! @param[in] zDepth Z depth value in local coordinates.
     void AddLineString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddLineString2d(numPoints, points, zDepth);}
 
     //! Draw a 3D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
-    //! @param[in]          numPoints   Number of vertices in points array.
-    //! @param[in]          points      Array of vertices in the point string.
+    //! @param[in] numPoints Number of vertices in points array.
+    //! @param[in] points Array of vertices in the point string.
     void AddPointString(int numPoints, DPoint3dCP points) {m_builder->_AddPointString(numPoints, points);}
 
     //! Draw a 2D point string. A point string is displayed as a series of points, one at each vertex in the array, with no vectors connecting the vertices.
-    //! @param[in]          numPoints   Number of vertices in points array.
-    //! @param[in]          points      Array of vertices in the point string.
-    //! @param[in]          zDepth      Z depth value.
+    //! @param[in] numPoints Number of vertices in points array.
+    //! @param[in] points Array of vertices in the point string.
+    //! @param[in] zDepth Z depth value.
     void AddPointString2d(int numPoints, DPoint2dCP points, double zDepth) {m_builder->_AddPointString2d(numPoints, points, zDepth);}
 
     //! Draw a closed 3D shape.
-    //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
-    //!                                     additional vertex will be added to close the shape.
-    //! @param[in]          points      Array of vertices of the shape.
-    //! @param[in]          filled      If true, the shape will be drawn filled.
+    //! @param[in] numPoints Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
+    //!                      additional vertex will be added to close the shape.
+    //! @param[in] points Array of vertices of the shape.
+    //! @param[in] filled If true, the shape will be drawn filled.
     void AddShape(int numPoints, DPoint3dCP points, bool filled) {m_builder->_AddShape(numPoints, points, filled);}
 
     //! Draw a 2D shape.
-    //! @param[in]          numPoints   Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
+    //! @param[in] numPoints Number of vertices in \c points array. If the last vertex in the array is not the same as the first vertex, an
     //!                                     additional vertex will be added to close the shape.
-    //! @param[in]          points      Array of vertices of the shape.
-    //! @param[in]          zDepth      Z depth value.
-    //! @param[in]          filled      If true, the shape will be drawn filled.
+    //! @param[in] points Array of vertices of the shape.
+    //! @param[in] zDepth Z depth value.
+    //! @param[in] filled If true, the shape will be drawn filled.
     void AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth) {m_builder->_AddShape2d(numPoints, points, filled, zDepth);}
 
     //! Draw a 3D elliptical arc or ellipse.
-    //! @param[in]          ellipse     arc data.
-    //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
-    //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
+    //! @param[in] ellipse arc data.
+    //! @param[in] isEllipse If true, and if full sweep, then draw as an ellipse instead of an arc.
+    //! @param[in] filled If true, and isEllipse is also true, then draw ellipse filled.
     void AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled) {m_builder->_AddArc(ellipse, isEllipse, filled);}
 
     //! Draw a 2D elliptical arc or ellipse.
-    //! @param[in]          ellipse     arc data.
-    //! @param[in]          isEllipse   If true, and if full sweep, then draw as an ellipse instead of an arc.
-    //! @param[in]          filled      If true, and isEllipse is also true, then draw ellipse filled.
-    //! @param[in]          zDepth      Z depth value
+    //! @param[in] ellipse arc data.
+    //! @param[in] isEllipse If true, and if full sweep, then draw as an ellipse instead of an arc.
+    //! @param[in] filled If true, and isEllipse is also true, then draw ellipse filled.
+    //! @param[in] zDepth Z depth value
     void AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) {m_builder->_AddArc2d(ellipse, isEllipse, filled, zDepth);}
 
     //! Draw a BSpline curve.
@@ -1397,7 +1399,7 @@ public:
     void AddBody(IBRepEntityCR entity) {m_builder->_AddBody(entity);}
 
     //! Draw a series of Glyphs.
-    //! @param[in]          text        Text drawing parameters
+    //! @param[in] text Text drawing parameters
     void AddTextString(TextStringCR text) {m_builder->_AddTextString(text);}
 
     //! Draw a series of Glyphs with display priority.
@@ -1406,16 +1408,16 @@ public:
     void AddTextString2d(TextStringCR text, double zDepth) {m_builder->_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
-    //! @param[in] numPoints   Number of vertices in \c points array.
-    //! @param[in] points      Array of vertices.
-    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in] numPoints Number of vertices in \c points array.
+    //! @param[in] points Array of vertices.
+    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
     void AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags) {m_builder->_AddTriStrip(numPoints, points, usageFlags);}
 
     //! Draw a filled triangle strip from 2D points.
-    //! @param[in] numPoints   Number of vertices in \c points array.
-    //! @param[in] points      Array of vertices.
-    //! @param[in] zDepth      Z depth value.
-    //! @param[in] usageFlags  0 or 1 if tri-strip represents a thickened line.
+    //! @param[in] numPoints Number of vertices in \c points array.
+    //! @param[in] points Array of vertices.
+    //! @param[in] zDepth Z depth value.
+    //! @param[in] usageFlags 0 or 1 if tri-strip represents a thickened line.
     void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {m_builder->_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
@@ -1521,9 +1523,9 @@ struct GraphicList : RefCounted<NonCopyableClass>
 {
     struct Node
     {
-        GraphicPtr  m_ptr;
-        void*       m_overrides;
-        uint32_t    m_ovrFlags;
+        GraphicPtr m_ptr;
+        void* m_overrides;
+        uint32_t m_ovrFlags;
         Node(Graphic& graphic, void* ovr, uint32_t ovrFlags) : m_ptr(&graphic), m_overrides(ovr), m_ovrFlags(ovrFlags) {}
     };
 
@@ -1587,24 +1589,70 @@ struct FrustumPlanes
 //=======================================================================================
 struct HiddenLineParams
 {
-    bool m_overrideEdgeColor = false;
-    bool m_overrideElementColor = false;
-    uint32_t m_pattern = (uint32_t) GraphicParams::LinePixels::HiddenLine;
-    uint32_t m_visibleEdgeWidth = 1;
-    uint32_t m_hiddenEdgeWidth = 1;
-    ColorDef m_edgeColor;
-    ColorDef m_elementColor;
+    struct Style
+    {
+        bool m_ovrColor;
+        ColorDef m_color;
+        GraphicParams::LinePixels m_pattern;
+        uint32_t m_width; // 0 means don't override
+        Style(bool ovrColor, ColorDef color, GraphicParams::LinePixels pattern, uint32_t width) : m_ovrColor(ovrColor), m_color(color), m_pattern(pattern), m_width(width){}
+        bool operator==(Style const& rhs) const {return m_ovrColor==rhs.m_ovrColor && m_color==rhs.m_color && m_pattern==rhs.m_pattern && m_width==rhs.m_width;}
+        bool operator!=(Style const& rhs) const {return !(*this==rhs);}
+        Json::Value ToJson() const;
+        void FromJson(JsonValueCR);
+    };
+
+    Style m_visible = Style(false, ColorDef(), GraphicParams::LinePixels::Solid, 1);
+    Style m_hidden = Style(true, ColorDef::Black(), GraphicParams::LinePixels::HiddenLine, 1);
     double m_transparencyThreshold = 1.0;
 
-    bool operator==(HiddenLineParams const& rhs) const {return ToJson() == rhs.ToJson();}
+    bool operator==(HiddenLineParams const& rhs) const {return m_visible==rhs.m_visible && m_hidden==rhs.m_hidden && m_transparencyThreshold==rhs.m_transparencyThreshold;}
     bool operator!=(HiddenLineParams const& rhs) const {return !(*this==rhs);}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static HiddenLineParams FromJson(JsonValueCR);
 };
 
 //=======================================================================================
+//! A Light that illuminates Graphics in a scene.
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct Light : RefCounted<NonCopyableClass>
+{
+};
+DEFINE_REF_COUNTED_PTR(Light)
+
+//=======================================================================================
+//! A list of Render::Lights
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct LightList
+{
+    bvector<LightPtr> m_lights;
+    void AddLight(LightPtr light) {if (light.IsValid()) m_lights.push_back(light);}
+    bool IsEmpty() const {return m_lights.empty();}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   03/17
+//=======================================================================================
+struct SceneLights : LightList
+{
+    struct Brightness
+    {
+        double m_avgLum = 0.0; //!< either avg lumens or fstop should be 0
+        double m_maxLum = 0.0;
+        double m_fstop = 0.0; //!< must be between -3 and +3
+        bool IsValid() const {return m_avgLum!=0.0 || m_fstop!=0.0;}
+        Json::Value ToJson() const;
+        void FromJson(JsonValueCR val);
+    };
+
+    Brightness m_brightness;
+};
+
+//=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
-//! the current Render::Scene into a Render::Target.
+//! a Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Plan
@@ -1620,6 +1668,7 @@ struct Plan
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
+    SceneLights m_sceneLights;
     ClipVectorPtr m_activeVolume;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
@@ -1742,6 +1791,9 @@ struct System
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+
+    //! Create a Light from Light::Parameters
+    virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
 };
 
 //=======================================================================================
@@ -1772,9 +1824,9 @@ public:
 };
 
 //=======================================================================================
-//! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
+//! A Render::Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render:Target holds a reference to a Render::Device, and a Render::System
+//! A Render::Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -1854,6 +1906,7 @@ public:
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
+    LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}
 
     static double DefaultFrameRateGoal()

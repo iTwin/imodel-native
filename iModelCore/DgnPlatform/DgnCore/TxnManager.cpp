@@ -895,6 +895,9 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        m_dgndb.ClearECDbCache(); // Recreate the ECDb cache since the merge would have affected the schema entries. 
+
     return MergeDataChangesInRevision(revision, changeStream);
     }
 
@@ -1997,7 +2000,7 @@ void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change ch
     int const TargetECInstanceId_LTColId = 3;
     
     ECClassId relclsid = change.GetValue(ECClassId_LTColId, stage).GetValueId<ECClassId>();
-    ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetECClass(relclsid);
+    ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetClass(relclsid);
 
     if (m_ecclasses.find(relcls) == m_ecclasses.end())  // while this class (among others) is mapped into this table,
         return;                                         // I am not actually tracking this class.

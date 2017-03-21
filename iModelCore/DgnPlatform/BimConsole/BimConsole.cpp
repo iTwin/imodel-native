@@ -10,6 +10,7 @@
 #include "BimConsole.h"
 #include <Bentley/BeTimeUtilities.h>
 
+USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 
@@ -79,6 +80,52 @@ Utf8CP SessionFile::TypeToString(Type type)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    03/2017
+//---------------------------------------------------------------------------------------
+bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& profileInfos) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion'"))
+        {
+        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        return false;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP profileNamespace = stmt.GetValueText(0);
+
+        ProfileInfo profileInfo;
+        if (BeStringUtilities::StricmpAscii(profileNamespace, "be_Db") == 0)
+            {
+            profileInfo.m_type = ProfileInfo::Type::BeSQLite;
+            profileInfo.m_name.assign("BeSQlite");
+            }
+        else if (BeStringUtilities::StricmpAscii(profileNamespace, "ec_Db") == 0)
+            {
+            profileInfo.m_type = ProfileInfo::Type::ECDb;
+            profileInfo.m_name.assign("ECDb");
+            }
+        else if (BeStringUtilities::StricmpAscii(profileNamespace, "dgn_Db") == 0)
+            {
+            profileInfo.m_type = ProfileInfo::Type::DgnDb;
+            profileInfo.m_name.assign("DgnDb");
+            }
+        else
+            {
+            profileInfo.m_type = ProfileInfo::Type::Unknown;
+            profileInfo.m_name.assign(profileNamespace);
+            }
+
+        profileInfo.m_version = ProfileVersion(stmt.GetValueText(1));
+
+        profileInfos.insert(bpair<ProfileInfo::Type, ProfileInfo>(profileInfo.m_type, profileInfo));
+        }
+
+    return !profileInfos.empty();
+    }
+
 //******************** BimConsole ***********************
 
 //---------------------------------------------------------------------------------------
@@ -116,7 +163,7 @@ void BimConsole::Setup()
     AddCommand(std::make_shared<ExportCommand>());
 
     AddCommand(std::make_shared<ParseCommand>());
-    AddCommand(std::make_shared<CreateECClassViewsCommand>());
+    AddCommand(std::make_shared<CreateClassViewsCommand>());
 
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());

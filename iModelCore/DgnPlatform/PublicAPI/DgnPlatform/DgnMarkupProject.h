@@ -89,6 +89,9 @@ enum DgnMarkupProjectSchemaValues
 struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+
+    private:
+        WCharCP _GetSchemaRelativePath() const override { return MARKUP_SCHEMA_PATH; }
         void _OnDgnDbOpened(DgnDbR) const override;
         void _OnSchemaImported(DgnDbR) const override;
     public:
@@ -108,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Redline : Document
 
     Redline(CreateParams const& params) : T_Super(params) {}
 public:
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_Redline)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_Redline)); }
 
     //! Create a Redline document element. @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
     //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
@@ -134,7 +137,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : GraphicalModel2d
 
     explicit RedlineModel(CreateParams const& params): T_Super(params) {}
 public:
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineModel)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineModel)); }
 
     //! Create a RedlineModel that is to contain the graphics for the specified Redline.  @note It is the caller's responsibility to call Insert on the returned model in order to make it persistent.
     //! @param createStatus Optional. If not null, non-zero error status is returned in \a createStatus if creation fails
@@ -173,7 +176,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
 
 
         //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
-        static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
+        static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
 
     public:
         //! Create a new redline view definition element, prior to inserting it.  @note It is the caller's responsibility to call Insert on the returned element in order to make it persistent.
@@ -378,8 +381,6 @@ private:
     DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
     BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
-
-    DgnDbStatus ImportMarkupSchema();
 
 public:
     BentleyStatus CheckIsOpen();

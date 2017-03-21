@@ -29,13 +29,13 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnM
     if (!model.Is3d())
         return ERROR; // What kind of model is this?!?
 
-    DgnClassId elementClassId = DgnClassId(model.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement)); // Should be passed in from primary ECInstance...
+    DgnClassId elementClassId = DgnClassId(model.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement)); // Should be passed in from primary ECInstance...
     ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), elementClassId);
 
     if (nullptr == elementHandler)
         return ERROR;
 
-    DgnElementPtr element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(model.GetDgnDb(), model.GetModelId(), DgnClassId(model.GetDgnDb().Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
+    DgnElementPtr element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(model.GetDgnDb(), model.GetModelId(), DgnClassId(model.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
 
     if (!element.IsValid())
         return ERROR;

@@ -33,7 +33,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
     DgnElementId eleid;
     if (true)
     {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d());
         TestElement el(params);
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(LMindex, "LastMod"));
@@ -198,7 +198,7 @@ TEST_F(GetSetCustomHandledProprty, InaccessibleProperty)
     {
     //test Custom Attributes when we get them
     SetupSeedProject();
-    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
 
@@ -227,7 +227,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties3d)
     uint32_t Orgindex, Yawindex, Pitchindex, Rollindex, BBlindex, BBHindex;
     if (true)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
         //Check a few CustomhandleProperties 
@@ -379,7 +379,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProprties2d)
     uint32_t Orgindex,Rotindex, BBlindex, BBHindex;
     if (true)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
         DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "TestCategory");
         DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "Drawing");
@@ -508,7 +508,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     DgnSubCategory::Appearance subappearence;
     if (true)
        {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME));
 
         DrawingCategory category(*m_db, "TestCategory");
         ASSERT_EQ(DgnDbStatus::Success,category.GetPropertyIndex(catindex,"Description"));
@@ -995,7 +995,7 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
 TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
     {
     SetupSeedProject();
-    m_db->Schemas().CreateECClassViewsInDb();
+    m_db->Schemas().CreateClassViewsInDb();
     uint32_t orindex,exindex,raindex;
     ECN::ECValue checkValue;
     DgnViewId viewId;

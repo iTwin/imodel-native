@@ -180,9 +180,9 @@ TEST_F(CodeAdminTests, CodeAdmin)
         ASSERT_EQ(CodeScopeSpec::Type::ParentElement, parentElementScope.GetType());
         }
     
-    ECN::ECClassCP informationPartitionElementClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_InformationPartitionElement);
-    ECN::ECClassCP physicalPartitionClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalPartition);
-    ECN::ECClassCP drawingClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Drawing);
+    ECN::ECClassCP informationPartitionElementClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_InformationPartitionElement);
+    ECN::ECClassCP physicalPartitionClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalPartition);
+    ECN::ECClassCP drawingClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Drawing);
     ASSERT_NE(nullptr, informationPartitionElementClass);
     ASSERT_NE(nullptr, physicalPartitionClass);
     ASSERT_NE(nullptr, drawingClass);

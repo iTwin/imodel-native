@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    auto customHandledProperty = GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
     if (nullptr == customHandledProperty)
         return false;
 
@@ -62,8 +62,8 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
         printf("%s\n", eclass.GetFullName());
         printf("---------------------------\n");
     #endif
-    m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
-    m_autoHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
+    m_customHandledProperty = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    m_autoHandledProperty = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,11 +141,11 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,Visibility) VALUES(?,?,?,?,0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,IsPrivate) VALUES(?,?,?,?,1)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
-    stmt.BindId(4, db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    stmt.BindId(4, db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
 
     DbResult result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -171,7 +171,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(1, partitionId);
     statement.BindId(2, DgnModel::RepositoryModelId());
     statement.BindId(3, Elements().GetRootSubjectId());
-    statement.BindId(4, Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
+    statement.BindId(4, Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
     statement.BindId(5, partitionCode.GetCodeSpecId());
     statement.BindText(6, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
@@ -194,21 +194,6 @@ DbResult DgnDb::CreateDictionaryModel()
         return result;
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
-    BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, modeledElementId, classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateSessionModel()
-    {
-    DgnElementId modeledElementId = Elements().GetSessionPartitionId();
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, BIS_SCHEMA(BIS_CLASS_SessionModel));
-    if (BE_SQLITE_DONE != result)
-        return result;
-
-    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Session::GetHandler());
     BeAssert(classId.IsValid());
     return insertIntoDgnModel(*this, modeledElementId, classId);
     }
@@ -295,29 +280,13 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    if (DgnDbStatus::Success != BisCoreDomain::ImportSchema(*this))
+    BisCoreDomain::GetDomain().SetCreateParams(params); // Used by BisCoreDomain::_OnSchemaImported(), and passed to DgnDb::SetupNewDgnDb()
+
+    DbResult result = Domains().ImportSchemas();
+    if (BE_SQLITE_OK != result)
         {
         BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
-
-    // Every DgnDb has a few built-in CodeSpec for element codes
-    CreateCodeSpecs();
-
-    // Every DgnDb has a RepositoryModel and a DictionaryModel
-    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
-    CreateRepositoryModel();
-    CreateRootSubject(params);
-    ExecuteSql("PRAGMA defer_foreign_keys = false;");
-    CreateDictionaryModel();
-    CreateSessionModel();
-    CreateRealityDataSourcesModel();
-
-    // The Generic domain is used when a conversion process doesn't have enough information to pick something better
-    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
+        return result;
         }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
@@ -339,10 +308,28 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    DbResult result = DgnSearchableText::CreateTable(*this);
+    result = DgnSearchableText::CreateTable(*this);
     BeAssert(BE_SQLITE_OK == result && "Failed to create FTS5 tables");
 
     return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// Called from BisCoreDomain::_OnSchemaImported to setup a newly created DgnDb
+// @bsimethod                                Ramanujam.Raman                  02 / 2017
+//---------------------------------------------------------------------------------------
+void DgnDb::SetupNewDgnDb(CreateDgnDbParams const& params)
+    {
+    // Every DgnDb has a few built-in CodeSpec for element codes
+    CreateCodeSpecs();
+
+    // Every DgnDb has a RepositoryModel and a DictionaryModel
+    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and root Subject have foreign keys to each other
+    CreateRepositoryModel();
+    CreateRootSubject(params);
+    ExecuteSql("PRAGMA defer_foreign_keys = false;");
+    CreateDictionaryModel();
+    CreateRealityDataSourcesModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,7 +367,7 @@ DgnDbProfileVersion DgnDbProfileVersion::Extract(BeFileNameCR fileName)
         return DgnDbProfileVersion(); // not a BeSQLite database
 
     Utf8String packageVersion;
-    if (BE_SQLITE_ROW == db.QueryProperty(packageVersion, PackageProperty::SchemaVersion()))
+    if (BE_SQLITE_ROW == db.QueryProperty(packageVersion, PackageProperty::ProfileVersion()))
         {
         // is a package, query DgnDbProfileVersion from embedded DgnDb (use current PropertySpec)
         Utf8String profileVersion;
@@ -437,10 +424,10 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 // @bsiclass                                                    Keith.Bentley   06/13
 //=======================================================================================
 struct ProjectSchemaUpgrader
-{
+    {
     virtual DgnDbProfileVersion _GetVersion() = 0;
     virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
-};
+    };
 
 
 #if defined (WHEN_FIRST_UPGRADER)
@@ -453,10 +440,10 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* Each call to _DoUpgrade will upgrade the schema from its stored version to the immediately succeeding version.
+* Each call to _DoUpgradeProfile will upgrade the profile from its stored version to the immediately succeeding version.
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnDbProfileVersion& version) const
+DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersion& version) const
     {
 #if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
@@ -480,15 +467,15 @@ DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnDbProfileVersion& vers
 * The schema stored in the newly opened project is too old. Perform an upgrade, if possible.
 * @bsimethod                                    Keith.Bentley                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
+DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
     {
-    if (!_ReopenForSchemaUpgrade(project))
+    if (!_ReopenForProfileUpgrade(project))
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
 
     DgnDbProfileVersion version = project.GetProfileVersion();
     for (;;)
         {
-        DbResult stat = _DoUpgrade(project, version);
+        DbResult stat = _DoUpgradeProfile(project, version);
         if (BE_SQLITE_OK != stat)
             return stat;
 
@@ -502,14 +489,14 @@ DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
     return project.SaveChanges();
     }
 
-DgnDbProfileVersion DgnDb::GetProfileVersion() {return m_profileVersion;}
+DgnDbProfileVersion DgnDb::GetProfileVersion() { return m_profileVersion; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
+DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
     {
-    DbResult result = T_Super::_VerifySchemaVersion(params);
+    DbResult result = T_Super::_VerifyProfileVersion(params);
     if (BE_SQLITE_OK != result)
         return result;
 
@@ -530,17 +517,74 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     bool profileIsAutoUpgradable = false;
     result = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_profileVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
     if (profileIsAutoUpgradable)
-        result = ((DgnDb::OpenParams&)params).UpgradeSchema(*this);
+        result = ((DgnDb::OpenParams&)params).UpgradeProfile(*this);
     if (result != BE_SQLITE_OK)
         return result;
 
-    result = BisCoreDomain::ValidateSchema(*this);
-    if (result != BE_SQLITE_OK)
-        return result;
+    Domains().SetEnableSchemaImport(((DgnDb::OpenParams const&) params).IsSchemaImportEnabled());
+    return BE_SQLITE_OK;
+    }
 
-    result = GenericDomain::ValidateSchema(*this);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::ImportSchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    bvector<ECN::ECSchemaCP> schemasToImport;
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
     if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "One or more schemas are incompatible.");
         return result;
+        }
+
+    return DgnDomains::DoImportSchemas(*this, schemasToImport, false /*=isImportingFromV8*/);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::ImportV8LegacySchemas(bvector<ECSchemaCP> const& schemas)
+    {
+    bvector<ECN::ECSchemaCP> schemasToImport;
+    DbResult result = PickSchemasToImport(schemasToImport, schemas, true);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "One or more schemas are incompatible.");
+        return result;
+        }
+
+    return DgnDomains::DoImportSchemas(*this, schemasToImport, true /*=isImportingFromV8*/);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Ramanujam.Raman                    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvector<ECSchemaCP> const& schemas, bool isImportingFromV8) const
+    {
+    importSchemas.clear();
+
+    for (ECSchemaCP appSchema : schemas)
+        {
+        DbResult result = DgnDomains::DoValidateSchema(*appSchema, false /*=isReadonly*/, *this);
+
+        if (result == BE_SQLITE_OK)
+            {
+            if (isImportingFromV8)
+                {
+                LOG.infov("Application schema %s was found in the BIM, but re-imported since it's a legacy schema (with unreliable versions)", appSchema->GetFullSchemaName().c_str());
+                importSchemas.push_back(appSchema);
+                }
+            continue;
+            }
+
+        if (result == BE_SQLITE_ERROR_SchemaTooNew || result == BE_SQLITE_ERROR_SchemaTooOld)
+            return result;
+
+        BeAssert(result == BE_SQLITE_ERROR_SchemaImportRequired || result == BE_SQLITE_ERROR_SchemaNotFound);
+
+        importSchemas.push_back(appSchema);
+        }
 
     return BE_SQLITE_OK;
     }

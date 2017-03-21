@@ -226,7 +226,7 @@ public:
     //! @return The number of sub-categories.
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, DgnCategoryId categoryId=DgnCategoryId());
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory);} //!< Returns the class ID used for sub-categories.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory);} //!< Returns the class ID used for sub-categories.
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for sub-categories
 };
 
@@ -362,7 +362,7 @@ public:
     static DrawingCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DrawingCategory>(categoryId);}
 
     //! Returns the class ID of DrawingCategory in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingCategory));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingCategory));}
 };
 
 //=======================================================================================
@@ -405,7 +405,7 @@ public:
     static SpatialCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<SpatialCategory>(categoryId);}
 
     //! Returns the class ID of SpatialCategory in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory));}
 };
 
 //=======================================================================================

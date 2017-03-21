@@ -327,7 +327,7 @@ $(CoreObjs)DgnCategory$(oext) :                     $(DgnCoreDir)DgnCategory.cpp
 
 $(CoreObjs)DgnMaterial$(oext) :                     $(DgnCoreDir)DgnMaterial.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnMaterial.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnLight$(oext) :                        $(DgnCoreDir)DgnLight.cpp $(DgnPlatformAPISrc)DgnDbTables.h $(DgnPlatformAPISrc)DgnLight.h ${MultiCompileDepends}
+$(CoreObjs)Lighting$(oext) :                        $(DgnCoreDir)Lighting.cpp $(DgnPlatformAPISrc)Lighting.h ${MultiCompileDepends}
 
 $(CoreObjs)ViewDefinition$(oext) :                  $(DgnCoreDir)ViewDefinition.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)ViewDefinition.h ${MultiCompileDepends}
 

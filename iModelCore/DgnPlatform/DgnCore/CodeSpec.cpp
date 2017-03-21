@@ -373,14 +373,14 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationFrameStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationLeaderStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationTextStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AuxCoordSystem2d, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AuxCoordSystem3d, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_CategorySelector, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_DisplayStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GeometryPart, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LightDefinition, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LineStyle, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_MaterialElement, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ModelSelector, CodeScopeSpec::CreateRepositoryScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Session, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialCategory, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TextAnnotationSeed, CodeScopeSpec::CreateRepositoryScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Texture, CodeScopeSpec::CreateRepositoryScope())) ||
@@ -392,9 +392,9 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LinkElement, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Sheet, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalType, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalRecipe, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe3d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalType2d, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalRecipe2d, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_TemplateRecipe2d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialLocationType, CodeScopeSpec::CreateModelScope())) ||
         // CodeSpecs with ParentElement scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
