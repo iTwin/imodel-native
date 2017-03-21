@@ -675,7 +675,7 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Product Name="CWSCC-Samples" >
         <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubPart PartName="CWCC-Android-Sample-GetProjects"/>
+        <SubPart PartName="CWSCC-Android-Sample-GetProjects"/>
     </Product>
 
     <ProductDirectoryList ListName="CWSCCSamplesDirectoryList" >
@@ -695,8 +695,8 @@
         <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
     </ProductDirectoryList>
 
-    <Part Name="CWCC-Android-Samples" OnlyPlatforms="Android*">
-        <SubPart PartName="CWCC-Android-Sample-GetProjects"/>
+    <Part Name="CWSCC-Android-Samples" OnlyPlatforms="Android*">
+        <SubPart PartName="CWSCC-Android-Sample-GetProjects"/>
     </Part>
 
 
@@ -707,7 +707,7 @@
 </Part>
 
 
-    <Part Name="CWCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
+    <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Tools-AndroidShared" />
     </Part>
 
