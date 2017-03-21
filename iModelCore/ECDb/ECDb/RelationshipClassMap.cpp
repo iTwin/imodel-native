@@ -1244,7 +1244,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
 DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(RelationshipMappingInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
     {
     DbColumn* endECClassIdColumn = nullptr;
-    ECRelationshipClassCP relationship = mapInfo.GetECClass().GetRelationshipClassCP();
+    ECRelationshipClassCP relationship = mapInfo.GetClass().GetRelationshipClassCP();
     BeAssert(relationship != nullptr);
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
     ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
@@ -1836,11 +1836,11 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
 //---------------------------------------------------------------------------------------
 void RelationshipClassEndTableMap::ColumnFactory::Initialize()
     {
-    ECDbMap const& ecdbMap = m_relMap.GetDbMap();
+    DbMap const& ecdbMap = m_relMap.GetDbMap();
     ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
 
-    std::function<void(ECDbMap const&, ECClassCR, ECN::ECRelationshipConstraintCR)> traverseConstraintClass;
-    traverseConstraintClass = [this, &traverseConstraintClass] (ECDbMap const& ecdbMap, ECClassCR constraintClass, ECN::ECRelationshipConstraintCR constraint)
+    std::function<void(DbMap const&, ECClassCR, ECN::ECRelationshipConstraintCR)> traverseConstraintClass;
+    traverseConstraintClass = [this, &traverseConstraintClass] (DbMap const& ecdbMap, ECClassCR constraintClass, ECN::ECRelationshipConstraintCR constraint)
         {
         ClassMapCP classMap = ecdbMap.GetClassMap(constraintClass);
         if (classMap != nullptr)

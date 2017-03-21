@@ -426,7 +426,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass, nullptr);
 
@@ -447,7 +447,7 @@ TEST_F(RapidJsonTests, InsertIntoECDb)
     rapidJsonInput["Urx"].SetDouble(3.3);
     rapidJsonInput["Ury"].SetDouble(4.4);
 
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetECInstanceId(), rapidJsonInput));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(ecInstanceKey.GetInstanceId(), rapidJsonInput));
     ecdb.SaveChanges();
     }
 

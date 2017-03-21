@@ -265,7 +265,7 @@ void ECSqlStatementHelper::SetUpTest(Utf8String TestName, Utf8CP schema, Utf8CP 
     EXPECT_EQ(SchemaReadStatus::Success, ReadXml(ecdb, schemaDir));
 
     //Imports schemas and cross checks.
-    EXPECT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()));
+    EXPECT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
     }
 
 //------------------------------------------------------------------------------------------------------------------------------------------

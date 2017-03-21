@@ -46,9 +46,9 @@ struct JsonUpdaterTests : SchemaImportTestFixture
     //+---------------+---------------+---------------+---------------+---------------+------
     void ValidateSpatialInstance(ECDbR db, ECInstanceKey spatialInstanceKey, JsonValueCR expectedJsonValue)
         {
-        JsonReader reader(db, spatialInstanceKey.GetECClassId());
+        JsonReader reader(db, spatialInstanceKey.GetClassId());
         Json::Value actualJsonValue;
-        BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+        BentleyStatus status = reader.ReadInstance(actualJsonValue, spatialInstanceKey.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
         ASSERT_EQ(SUCCESS, status);
 
         //printf ("%s\r\n", actualJsonValue.toStyledString ().c_str ());
@@ -71,7 +71,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     {
     ECDbCR ecdb = SetupECDb("jsonupdatertests.ecdb");
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECDbFileInfo", "ExternalFileInfo");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(testClass != nullptr);
 
     ECInstanceKey key;
@@ -92,7 +92,7 @@ TEST_F(JsonUpdaterTests, InvalidInput)
     ASSERT_EQ(BE_SQLITE_ERROR, updater.Update(ECInstanceId(), val)) << "Empty JSON value";
 
     val["Name"] = "test2.txt";
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), val)) << "JSON value without $ECInstanceId member";
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), val)) << "JSON value without $ECInstanceId member";
     }
 
 //---------------------------------------------------------------------------------------
@@ -133,14 +133,14 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 111));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(sourceKey));
-    sourceInstanceId = sourceKey.GetECInstanceId();
+    sourceInstanceId = sourceKey.GetInstanceId();
 
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 222));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(targetKey));
-    targetInstanceId = targetKey.GetECInstanceId();
+    targetInstanceId = targetKey.GetInstanceId();
 
     stmt.Finalize();
 
@@ -151,10 +151,10 @@ TEST_F(JsonUpdaterTests, UpdateRelationshipProperty)
 
     ECInstanceKey relKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(relKey));
-    relInstanceId = relKey.GetECInstanceId();
+    relInstanceId = relKey.GetInstanceId();
     }
 
-    ECClassCP relClass = db.Schemas().GetECClass("test", "AHasA");
+    ECClassCP relClass = db.Schemas().GetClass("test", "AHasA");
     ASSERT_TRUE(relClass != nullptr);
     JsonReader reader(db, relClass->GetId());
     Json::Value relationshipJson;
@@ -227,11 +227,11 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step(key));
     }
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
     JsonReader reader(ecdb, ecClass->GetId());
     Json::Value ecClassJson;
-    ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+    ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
     ASSERT_EQ(100, ecClassJson["P1"].asInt());
     ASSERT_STREQ("JsonTest", ecClassJson["P2"].asCString());
     ASSERT_DOUBLE_EQ(1000.10, ecClassJson["P3"].asDouble());
@@ -249,12 +249,12 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassJson["P2"] = expectedVal;
     ecClassJson["P3"] = 2000.20;
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), ecClassJson));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), ecClassJson));
 
     ECSqlStatement checkStmt;
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.Prepare(ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
 
-    ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 200));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(3, expectedVal, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindDouble(4, 1000.10)); //Readonly values will not be updated
@@ -273,9 +273,9 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ecClassRapidJson.AddMember("P2", rapidjson::StringRef(expectedVal), ecClassRapidJson.GetAllocator());
     ecClassRapidJson.AddMember("P3", 3000.30, ecClassRapidJson.GetAllocator());
 
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), ecClassRapidJson));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), ecClassRapidJson));
 
-    ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindInt(2, 300));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindText(3, expectedVal, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, checkStmt.BindDouble(4, 1000.10));//Readonly values will not be updated
@@ -300,7 +300,7 @@ TEST_F(JsonUpdaterTests, CommonGeometryJsonSerialization)
                                                                   "</ECSchema>"), 3);
 
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ECClassCP spatialClass = ecdb.Schemas().GetECClass("Test", "SpatialLocation");
+    ECClassCP spatialClass = ecdb.Schemas().GetClass("Test", "SpatialLocation");
     ASSERT_TRUE(nullptr != spatialClass);
 
     BeFileName pathname;
@@ -358,7 +358,7 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     AssertSchemaImport(ecdb, asserted, testItem, "updateClassProperties.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "Foo");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("testSchema", "Foo");
 
     const int oldNum = 2;
     Utf8CP oldSquare = "4";
@@ -384,9 +384,9 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     Savepoint sp(ecdb, "default updater");
     JsonUpdater updater(ecdb, *ecClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
 
-    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
     ASSERT_EQ(oldNum, validateStmt.GetValueInt(0)) << "Readonly property Num is expected to not be modified without ECSQLOPTION ReadonlyPropertiesAreUpdatable";
@@ -401,9 +401,9 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
     {
     JsonUpdater updater(ecdb, *ecClass, nullptr, "ReadonlyPropertiesAreUpdatable");
     ASSERT_TRUE(updater.IsValid());
-    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetECInstanceId(), properties));
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), properties));
 
-    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, validateStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
 
     ASSERT_EQ(newNum, validateStmt.GetValueInt(0)) << "Readonly property Num is expected to be modified with ECSQLOPTION ReadonlyPropertiesAreUpdatable";

@@ -52,7 +52,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     IECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ecdb, *exp);
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select, writeToken));
+    Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select, writeToken));
     if (!policy.IsSupported())
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());

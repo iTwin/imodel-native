@@ -272,7 +272,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsql.P WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //select clause item 0
@@ -301,7 +301,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //select clause item 3
@@ -314,7 +314,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE Id=?"));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     //select clause item 0
@@ -339,7 +339,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, sql.c_str()));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(0)) << "SQL: " << stmt.GetSql();

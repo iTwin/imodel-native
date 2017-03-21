@@ -203,16 +203,16 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         return result;
         }
 
-    ECDbSchemaManagerCR ecDbSchemaManager = ecDb.Schemas();
+    SchemaManager const& schemaManager = ecDb.Schemas();
 
-    ECClassCP anyClass = ecDbSchemaManager.GetECClass("Bentley_Standard_Classes", "AnyClass");
+    ECClassCP anyClass = schemaManager.GetClass("Bentley_Standard_Classes", "AnyClass");
     if (anyClass != nullptr)
         {
         int anyClassIdx = stmt->GetParameterIndex(":anyClassId");
         stmt->BindId(anyClassIdx, anyClass->GetId());
         }
 
-    ECClassCP foreignEndClass = ecDbSchemaManager.GetECClass(foreignEndClassId);
+    ECClassCP foreignEndClass = schemaManager.GetClass(foreignEndClassId);
     BeAssert(foreignEndClass != nullptr);
     int endClassIdx = stmt->GetParameterIndex(":endClassId");
     stmt->BindId(endClassIdx, foreignEndClass->GetId());
@@ -220,7 +220,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
     while (BE_SQLITE_ROW == (result = stmt->Step()))
         {
         ECClassId ecRelationshipClassId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP ecClass = ecDbSchemaManager.GetECClass(ecRelationshipClassId);
+        ECClassCP ecClass = schemaManager.GetClass(ecRelationshipClassId);
         ECRelationshipClassCP ecRelationshipClass = ecClass->GetRelationshipClassCP();
         BeAssert(ecRelationshipClass != nullptr);
 
@@ -284,7 +284,7 @@ void ECInstanceFinder::DumpInstanceKeyMap(const ECInstanceKeyMultiMap& instanceK
         if (ids.size() == 0)
             continue;
 
-        ECClassCP ecClass = ecDb.Schemas().GetECClass(classId);
+        ECClassCP ecClass = ecDb.Schemas().GetClass(classId);
 
         LOG.tracev("Class: %s, Instances:%" PRIu64, ecClass->GetName().c_str(), (uint64_t) ids.size());
         for (ECInstanceId& id : ids)
@@ -304,7 +304,7 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances
 )
     {
     ECInstanceKeyMultiMap seedInstanceKeyMap;
-    ECInstanceKeyMultiMapPair seedInstanceEntry(seedInstanceKey.GetECClassId(), seedInstanceKey.GetECInstanceId());
+    ECInstanceKeyMultiMapPair seedInstanceEntry(seedInstanceKey.GetClassId(), seedInstanceKey.GetInstanceId());
     seedInstanceKeyMap.insert(seedInstanceEntry);
 
     return FindRelatedInstances(relatedInstanceKeyMap, relationshipInstanceKeyMap, seedInstanceKeyMap, findRelatedDirections);
@@ -450,7 +450,7 @@ BentleyStatus ECInstanceFinder::FindInstancesRecursive
         ECInstanceKeyMultiMapPair instanceEntry(iter->first, iter->second);
         if (instanceKeyMap.end() != std::find(instanceKeyMap.begin(), instanceKeyMap.end(), instanceEntry))
             {
-            ECClassCP ecClass = m_ecDb.Schemas().GetECClass(iter->first);
+            ECClassCP ecClass = m_ecDb.Schemas().GetClass(iter->first);
             LOG.warningv("Detected a relationship cycle with instance id %s of class %s", iter->second.ToString().c_str(),
                          ecClass->GetName().c_str());
             iter = newSeedInstanceKeyMap.erase(iter); // C++ 11 returns the next entry after erase

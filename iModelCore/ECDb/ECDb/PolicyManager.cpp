@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbPolicyManager.cpp $
+|     $Source: ECDb/PolicyManager.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbPolicyManager.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
-ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy const& rhs)
+Policy& Policy::operator= (Policy const& rhs)
     {
     if (this != &rhs)
         {
@@ -31,7 +30,7 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy const& rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
-ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
+Policy& Policy::operator= (Policy&& rhs)
     {
     if (this != &rhs)
         {
@@ -43,26 +42,26 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
     }
 
 
-//********************* ECDbPolicyManager ******************************************
+//********************* PolicyManager ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
+Policy PolicyManager::GetPolicy(PolicyAssertion const& assertion)
     {
     switch (assertion.GetType())
         {
-            case ECDbPolicyAssertion::Type::ClassIsValidInECSql:
+            case PolicyAssertion::Type::ClassIsValidInECSql:
                 return DoGetPolicy(static_cast<ClassIsValidInECSqlPolicyAssertion const&> (assertion));
 
-            case ECDbPolicyAssertion::Type::ECCrudPermission:
+            case PolicyAssertion::Type::ECCrudPermission:
                 return DoGetPolicy(static_cast<ECCrudPermissionPolicyAssertion const&> (assertion));
 
-            case ECDbPolicyAssertion::Type::ECSchemaImportPermission:
-                return DoGetPolicy(static_cast<ECSchemaImportPermissionPolicyAssertion const&> (assertion));
+            case PolicyAssertion::Type::ECSchemaImportPermission:
+                return DoGetPolicy(static_cast<SchemaImportPermissionPolicyAssertion const&> (assertion));
 
             default:
-                return ECDbPolicy::CreateNotSupported();
+                return Policy::CreateNotSupported();
         }
     }
 
@@ -70,7 +69,7 @@ ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& assertion)
+Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& assertion)
     {
     ECClassCR ecClass = assertion.GetClassMap().GetClass();
     Utf8StringCR className = ecClass.GetName();
@@ -80,7 +79,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it is neither an entity class nor a relationship class.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+        return Policy::CreateNotSupported(notSupportedMessage);
         }
 
     if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
@@ -90,7 +89,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                                     " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
                                     " In that case, please see the log for details about why the class was not mapped.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+        return Policy::CreateNotSupported(notSupportedMessage);
         }
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
@@ -101,7 +100,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+        return Policy::CreateNotSupported(notSupportedMessage);
         }
 
     //if policy for specific ECSQL type was requested, check that now
@@ -116,7 +115,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                 notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
                                             className.c_str());
 
-                return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+                return Policy::CreateNotSupported(notSupportedMessage);
                 }
 
             if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
@@ -128,7 +127,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("Programmer error: ECRelationshipClass '%s' is not mapped to a table.",
                                                 className.c_str());
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+                    return Policy::CreateNotSupported(notSupportedMessage);
                     }
 
                 if (tables[0]->GetType() == DbTable::Type::Existing)
@@ -136,7 +135,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
                                                 className.c_str());
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+                    return Policy::CreateNotSupported(notSupportedMessage);
                     }
                 }
 
@@ -149,47 +148,47 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
                                                 className.c_str());
 
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
+                    return Policy::CreateNotSupported(notSupportedMessage);
                     }
 
                 }
             }
         }
 
-    return ECDbPolicy::CreateSupported();
+    return Policy::CreateSupported();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2016
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const& assertion)
+Policy PolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const& assertion)
     {
     if (!assertion.IsWriteOperation())
-        return ECDbPolicy::CreateSupported(); //reading is always allowed
+        return Policy::CreateSupported(); //reading is always allowed
 
     ECDbCR ecdb = assertion.GetECDb();
     if (ecdb.IsReadonly())
-        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
+        return Policy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
 
-    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetSettings().GetECCrudWriteToken();
+    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
-        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data without ECCrudWriteToken."));
+        return Policy::CreateNotSupported(Utf8String("Cannot modify EC data without ECCrudWriteToken."));
 
-    return ECDbPolicy::CreateSupported();
+    return Policy::CreateSupported();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2016
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSchemaImportPermissionPolicyAssertion const& assertion)
+Policy PolicyManager::DoGetPolicy(SchemaImportPermissionPolicyAssertion const& assertion)
     {
-    ECSchemaImportToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetSettings().GetECSchemaImportToken();
+    SchemaImportToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetSettings().GetSchemaImportToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
-        return ECDbPolicy::CreateNotSupported();
+        return Policy::CreateNotSupported();
 
-    return ECDbPolicy::CreateSupported();
+    return Policy::CreateSupported();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

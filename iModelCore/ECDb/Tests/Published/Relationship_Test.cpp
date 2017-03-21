@@ -1,6 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbRelationship_Test.cpp $
+|  $Source: Tests/Published/Relationship_Test.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,13 +11,13 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct ECRelationshipMappingTestFixture : ECDbMappingTestFixture
+struct RelationshipMappingTestFixture : DbMappingTestFixture
     {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationship)
+TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     {
     SetupECDb("LogicalForeignKeyRelationship.ecdb",
               SchemaItem("Diamond Problem",
@@ -69,10 +69,10 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationship)
                          "</ECSchema>"));
 
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
-    ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
-    ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
+    ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
+    ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
 
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
@@ -91,7 +91,7 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn)
+TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToSharedColumn)
     {
     SetupECDb("logicalfk_sharedcol.ecdb",
               SchemaItem("Diamond Problem",
@@ -166,7 +166,7 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToSh
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter      ) VALUES ('CODE-3', 15.0)"));
 
 
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
@@ -196,7 +196,7 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToSh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUnsharedColumn)
+TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUnsharedColumn)
     {
     SetupECDb("logicalfk_unsharedcol.ecdb",
               SchemaItem("Diamond Problem",
@@ -225,10 +225,10 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUn
                          "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
 
-    ECClassCP elementClass = GetECDb().Schemas().GetECClass("TestSchema", "Element");
+    ECClassCP elementClass = GetECDb().Schemas().GetClass("TestSchema", "Element");
     ASSERT_TRUE(elementClass != nullptr);
 
     AssertForeignKey(false, GetECDb(), "ts_Element", "ModelId");
@@ -238,7 +238,7 @@ TEST_F(ECRelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture
+struct ECDbHoldingRelationshipStrengthTestFixture : DbMappingTestFixture
     {
     protected:
         bool InstanceExists(Utf8CP classExp, ECInstanceKey const& key) const
@@ -247,7 +247,7 @@ struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture
             ecsql.Sprintf("SELECT NULL FROM %s WHERE ECInstanceId=?", classExp);
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql.c_str())) << ecsql.c_str();
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
 
             DbResult stat = stmt.Step();
             EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
@@ -260,10 +260,10 @@ struct ECDbHoldingRelationshipStrengthTestFixture : ECDbMappingTestFixture
             ecsql.Sprintf("SELECT NULL FROM %s WHERE SourceECInstanceId=? AND SourceECClassId=? AND TargetECInstanceId=? AND TargetECClassId=?", relClassExp);
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql.c_str())) << ecsql.c_str();
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetECInstanceId()));
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetECClassId()));
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetECInstanceId()));
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, targetKey.GetECClassId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetInstanceId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetClassId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetInstanceId()));
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, targetKey.GetClassId()));
 
             DbResult stat = stmt.Step();
             EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
@@ -329,10 +329,10 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     //1-1
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -343,7 +343,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneForward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
     delGeomStmt.Reset();
     delGeomStmt.ClearBindings();
@@ -414,10 +414,10 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -428,7 +428,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToOneBackward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
     delGeomStmt.Reset();
     delGeomStmt.ClearBindings();
@@ -495,18 +495,18 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     //2-1
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -515,7 +515,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
     delGeomStmt.Reset();
     delGeomStmt.ClearBindings();
@@ -528,7 +528,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyForward)
     ASSERT_TRUE(RelationshipExists("ts.GeometryHoldsParts", geomKey2, partKey1));
 
     //delete Geom2
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey2));
@@ -591,18 +591,18 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     //1-2
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartIsHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -611,7 +611,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
     delGeomStmt.Reset();
     delGeomStmt.ClearBindings();
@@ -624,7 +624,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, OneToManyBackward)
     ASSERT_TRUE(RelationshipExists("ts.PartIsHeldByGeometry", partKey1, geomKey2));
 
     //delete Geom2
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey2.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey2));
@@ -688,27 +688,27 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyForward)
     //2-2
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHasParts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, geomKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, geomKey2.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, partKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, partKey2.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -717,7 +717,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyForward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey1));
@@ -785,27 +785,27 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
     //2-2
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.PartsHeldByGeometry(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey1.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey1.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey1.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, partKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, partKey2.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, geomKey2.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, geomKey2.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -814,7 +814,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
     //Delete Geom1
     ECSqlStatement delGeomStmt;
     ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.Prepare(GetECDb(), "DELETE FROM ts.Geometry WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, delGeomStmt.BindId(1, geomKey1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, delGeomStmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Geometry", geomKey1));
@@ -829,7 +829,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
-struct RelationshipsAndSharedTablesTestFixture : ECDbMappingTestFixture
+struct RelationshipsAndSharedTablesTestFixture : DbMappingTestFixture
     {
     protected:
         static Utf8CP const SCHEMA_XML;
@@ -954,7 +954,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     ASSERT_FALSE(ecdb.TableExists("t_BaseHasClassA"));
     ASSERT_FALSE(ecdb.TableExists("t_BaseHasClassB"));
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("test", true);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("test", true);
     ASSERT_TRUE(schema != nullptr) << "Couldn't locate test schema";
 
     ECClassCP baseClass = schema->GetClassCP("Base");
@@ -1132,7 +1132,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     //retrieve ECInstance from Db before inserting Relationship Instance, based on ECInstanceId, verify ECInstance is valid
     ECSqlStatement selectStmt;
     ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(ecdb, "SELECT * FROM t.Base WHERE ECInstanceId = ?"));
-    selectStmt.BindId(1, TPHKey1.GetECInstanceId());
+    selectStmt.BindId(1, TPHKey1.GetInstanceId());
     ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
     ECInstanceECSqlSelectAdapter TPHadapter(selectStmt);
     IECInstancePtr readInstance = TPHadapter.GetInstance();
@@ -1141,25 +1141,25 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
 
     ECSqlStatement relationStmt;
     ASSERT_EQ(relationStmt.Prepare(ecdb, "INSERT INTO t.BaseHasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
-    relationStmt.BindId(1, TPHKey1.GetECInstanceId());
-    relationStmt.BindId(2, TPHKey1.GetECClassId());
-    relationStmt.BindId(3, classAKey1.GetECInstanceId());
-    relationStmt.BindId(4, classAKey1.GetECClassId());
+    relationStmt.BindId(1, TPHKey1.GetInstanceId());
+    relationStmt.BindId(2, TPHKey1.GetClassId());
+    relationStmt.BindId(3, classAKey1.GetInstanceId());
+    relationStmt.BindId(4, classAKey1.GetClassId());
     ASSERT_EQ(BE_SQLITE_DONE, relationStmt.Step());
     relationStmt.Finalize();
 
     //try to insert Duplicate relationship step() should return error
     ASSERT_EQ(relationStmt.Prepare(ecdb, "INSERT INTO t.BaseHasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
-    relationStmt.BindId(1, TPHKey1.GetECInstanceId());
-    relationStmt.BindId(2, TPHKey1.GetECClassId());
-    relationStmt.BindId(3, classAKey1.GetECInstanceId());
-    relationStmt.BindId(4, classAKey1.GetECClassId());
+    relationStmt.BindId(1, TPHKey1.GetInstanceId());
+    relationStmt.BindId(2, TPHKey1.GetClassId());
+    relationStmt.BindId(3, classAKey1.GetInstanceId());
+    relationStmt.BindId(4, classAKey1.GetClassId());
     ASSERT_TRUE((BE_SQLITE_CONSTRAINT_BASE & relationStmt.Step()) == BE_SQLITE_CONSTRAINT_BASE);
     relationStmt.Finalize();
 
     //retrieve ECInstance from Db After Inserting Relationship Instance, based on ECInstanceId, verify ECInstance is valid
     ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(ecdb, "SELECT * FROM t.ClassA WHERE ECInstanceId = ?"));
-    selectStmt.BindId(1, classAKey1.GetECInstanceId());
+    selectStmt.BindId(1, classAKey1.GetInstanceId());
     ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
     ECInstanceECSqlSelectAdapter ClassAadapter(selectStmt);
     readInstance = ClassAadapter.GetInstance();
@@ -1172,7 +1172,7 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
-struct ReferentialIntegrityTestFixture : ECDbMappingTestFixture
+struct ReferentialIntegrityTestFixture : DbMappingTestFixture
     {
     private:
         void VerifyRelationshipInsertionIntegrity(ECDbCR ecdb, Utf8CP relationshipClass, std::vector<ECInstanceKey> const& sourceKeys, std::vector<ECInstanceKey>const& targetKeys, std::vector<DbResult> const& expected, size_t& rowInserted) const;
@@ -1256,10 +1256,10 @@ void ReferentialIntegrityTestFixture::VerifyRelationshipInsertionIntegrity(ECDbC
             {
             stmt.Reset();
             ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
-            stmt.BindId(sECInstanceId, fooKey.GetECInstanceId());
-            stmt.BindId(sECClassId, fooKey.GetECClassId());
-            stmt.BindId(tECInstanceId, gooKey.GetECInstanceId());
-            stmt.BindId(tECClassId, gooKey.GetECClassId());
+            stmt.BindId(sECInstanceId, fooKey.GetInstanceId());
+            stmt.BindId(sECClassId, fooKey.GetClassId());
+            stmt.BindId(tECInstanceId, gooKey.GetInstanceId());
+            stmt.BindId(tECClassId, gooKey.GetClassId());
             if (expected[n] != BE_SQLITE_DONE)
                 ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
             else
@@ -1377,10 +1377,10 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         }
 
     if (schemaImportExpectedToSucceed)
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
     else
         {
-        ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
         return;
         }
 
@@ -1502,8 +1502,8 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     ECInstanceKey InsertRelationship(Utf8CP relationshipClassECSqlName, ECInstanceKey const& source, ECInstanceKey const& target)
         {
         Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO %s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", relationshipClassECSqlName, source.GetECInstanceId().ToString().c_str(),
-                      target.GetECInstanceId().ToString().c_str());
+        ecsql.Sprintf("INSERT INTO %s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", relationshipClassECSqlName, source.GetInstanceId().ToString().c_str(),
+                      target.GetInstanceId().ToString().c_str());
         ECSqlStatement stmt;
         if (stmt.Prepare(GetECDb(), ecsql.c_str()) != ECSqlStatus::Success)
             return ECInstanceKey();
@@ -1518,12 +1518,12 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     //+---------------+---------------+---------------+---------------+---------------+------
     BentleyStatus DeleteInstance(ECInstanceKey const& key)
         {
-        ECClassCP ecClass = GetECDb().Schemas().GetECClass(key.GetECClassId());
+        ECClassCP ecClass = GetECDb().Schemas().GetClass(key.GetClassId());
         if (ecClass == nullptr)
             return ERROR;
 
         Utf8String ecsql;
-        ecsql.Sprintf("DELETE FROM %s WHERE ECInstanceId=%s", ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+        ecsql.Sprintf("DELETE FROM %s WHERE ECInstanceId=%s", ecClass->GetECSqlName().c_str(), key.GetInstanceId().ToString().c_str());
         ECSqlStatement stmt;
         if (stmt.Prepare(GetECDb(), ecsql.c_str()) != ECSqlStatus::Success)
             return ERROR;
@@ -1536,13 +1536,13 @@ struct RelationshipStrengthTestFixture : ECDbTestFixture
     //+---------------+---------------+---------------+---------------+---------------+------
     bool HasInstance(ECInstanceKey const& key)
         {
-        ECClassCP ecClass = GetECDb().Schemas().GetECClass(key.GetECClassId());
+        ECClassCP ecClass = GetECDb().Schemas().GetClass(key.GetClassId());
         if (ecClass == nullptr)
             return false;
 
         Utf8String ecsql;
         ecsql.Sprintf("SELECT NULL FROM ONLY %s WHERE ECInstanceId=%s",
-                      ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+                      ecClass->GetECSqlName().c_str(), key.GetInstanceId().ToString().c_str());
 
         ECSqlStatement statement;
         if (ECSqlStatus::Success != statement.Prepare(GetECDb(), ecsql.c_str()))
@@ -1781,7 +1781,7 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                       Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
+struct ECDbRelationshipsIntegrityTests : DbMappingTestFixture
     {
     enum class Multiplicity
         {
@@ -1883,11 +1883,11 @@ void ECDbRelationshipsIntegrityTests::AssertSchemaImport(bool isSchemaImportExpe
     EXPECT_EQ(ECObjectsStatus::Success, readContext->AddSchema(*testSchema));
     if (isSchemaImportExpectedToSucceed)
         {
-        EXPECT_EQ(SUCCESS, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        EXPECT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
         }
     else
         {
-        EXPECT_EQ(ERROR, m_ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        EXPECT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
         }
     m_ecdb.SaveChanges();
     }
@@ -1981,10 +1981,10 @@ void ECDbRelationshipsIntegrityTests::InsertRelationshipInstances(Utf8CP relatio
             {
             stmt.Reset();
             ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
-            stmt.BindId(1, sourceKey.GetECInstanceId());
-            stmt.BindId(2, sourceKey.GetECClassId());
-            stmt.BindId(3, targetKey.GetECInstanceId());
-            stmt.BindId(4, targetKey.GetECClassId());
+            stmt.BindId(1, sourceKey.GetInstanceId());
+            stmt.BindId(2, sourceKey.GetClassId());
+            stmt.BindId(3, targetKey.GetInstanceId());
+            stmt.BindId(4, targetKey.GetClassId());
 
             if (expected[n] != BE_SQLITE_DONE)
                 ASSERT_NE(BE_SQLITE_DONE, stmt.Step());
@@ -2032,7 +2032,7 @@ bool ECDbRelationshipsIntegrityTests::InstanceExists(Utf8CP classExp, ECInstance
     ecsql.Sprintf("SELECT NULL FROM %s WHERE ECInstanceId=?", classExp);
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql.c_str())) << ecsql.c_str();
-    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
 
     DbResult stat = stmt.Step();
     EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
@@ -2048,10 +2048,10 @@ bool ECDbRelationshipsIntegrityTests::RelationshipExists(Utf8CP relClassExp, ECI
     ecsql.Sprintf("SELECT NULL FROM %s WHERE SourceECInstanceId=? AND SourceECClassId=? AND TargetECInstanceId=? AND TargetECClassId=?", relClassExp);
     ECSqlStatement stmt;
     EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), ecsql.c_str())) << ecsql.c_str();
-    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetECInstanceId()));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetECClassId()));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetECInstanceId()));
-    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, targetKey.GetECClassId()));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(1, sourceKey.GetInstanceId()));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(2, sourceKey.GetClassId()));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(3, targetKey.GetInstanceId()));
+    EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(4, targetKey.GetClassId()));
 
     DbResult stat = stmt.Step();
     EXPECT_TRUE(stat == BE_SQLITE_ROW || stat == BE_SQLITE_DONE);
@@ -2134,7 +2134,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
@@ -2236,7 +2236,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Goo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
@@ -2353,7 +2353,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
     //Delete fooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2374,7 +2374,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
 
     //Delete fooKeys[1]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2391,7 +2391,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
 
     //Delete fooKeys[2]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2497,7 +2497,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Goo WHERE ECInstanceId=?"));
     //Delete gooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2518,7 +2518,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
 
     //Delete gooKeys[1]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2535,7 +2535,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
 
     //Delete gooKeys[2]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2609,7 +2609,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
 
     //Delete fooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[0]));
@@ -2625,7 +2625,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     {
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
@@ -2640,7 +2640,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     {
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[2]));
@@ -2709,7 +2709,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
     //Delete fooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[0]));
@@ -2725,7 +2725,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     {
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[1]));
@@ -2739,7 +2739,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     {
     stmt.Reset();
     stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     ASSERT_FALSE(InstanceExists("ts.Foo", fooKeys[2]));
@@ -2840,7 +2840,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Foo WHERE ECInstanceId=?"));
     //Delete fooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2860,7 +2860,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
 
     //Delete fooKeys[1]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2876,7 +2876,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
 
     //Delete fooKeys[2]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -2981,7 +2981,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "DELETE FROM ts.Goo WHERE ECInstanceId=?"));
     //Delete gooKeys[0]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[0].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -3001,7 +3001,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
 
     //Delete gooKeys[1]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[1].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
@@ -3017,7 +3017,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
 
     //Delete gooKeys[2]
     {
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[2].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, gooKeys[2].GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();

@@ -29,7 +29,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlInsertPerformance_BindPropertyVa
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
         GenerateECSqlCRUDTestStatements(*testSchema, false);
 
@@ -51,7 +51,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlInsertPerformance_BindPropertyVa
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
         GenerateSqlCRUDTestStatements(baseClass, false);
 
         SqlInsertInstances(ecdb, const_cast<ECClassR> (*baseClass), true, 1000001);
@@ -76,7 +76,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlInsertPerformance_DoNotBindPrope
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
         GenerateECSqlCRUDTestStatements(*testSchema, false);
 
@@ -98,7 +98,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlInsertPerformance_DoNotBindPrope
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
         GenerateSqlCRUDTestStatements(baseClass, false);
 
         SqlInsertInstances(ecdb, const_cast<ECClassR> (*baseClass), true, 1000001);
@@ -125,7 +125,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlReadPerformance_IterateResultSet
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
 
         //Read Performance using ECSql
@@ -143,7 +143,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlReadPerformance_IterateResultSet
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
 
         //READ Performance using Sql statement.
         GenerateSqlCRUDTestStatements(baseClass, false);
@@ -171,7 +171,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlUpdatePerformance_DoNotBindPrope
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
 
         //UPDATE Performance using ECSql statement.
@@ -189,7 +189,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlUpdatePerformance_DoNotBindPrope
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
 
         //UPDATE Performance using Sql statement.
         GenerateSqlCRUDTestStatements(baseClass, true);
@@ -218,7 +218,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlUpdatePerformance_BindPropertyVa
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
 
         //UPDATE Performance using ECSql statement.
@@ -236,7 +236,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlUpdatePerformance_BindPropertyVa
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
 
         //UPDATE Performance using Sql statement.
         GenerateSqlCRUDTestStatements(baseClass, false);
@@ -265,7 +265,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlDeletePerformance)
         SetUpTestECDb(ecdb, dbName);
 
         ECSchemaPtr testSchema;
-        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetECSchema("testSchema", true)->CopySchema(testSchema));
+        ASSERT_TRUE(ECObjectsStatus::Success == ecdb.Schemas().GetSchema("testSchema", true)->CopySchema(testSchema));
         ASSERT_TRUE(testSchema != nullptr);
 
         //DELETE Performance using ECSql statement.
@@ -283,7 +283,7 @@ TEST_F(PerformanceECSqlVsSqliteTests, SqlVsECSqlDeletePerformance)
         SetUpTestECDb(ecdb, dbName);
 
         ECClassCP baseClass = nullptr;
-        baseClass = ecdb.Schemas().GetECClass("testSchema", "BaseClass");
+        baseClass = ecdb.Schemas().GetClass("testSchema", "BaseClass");
 
         //DELETE Performance using Sql statement.
         GenerateSqlCRUDTestStatements(baseClass, true);

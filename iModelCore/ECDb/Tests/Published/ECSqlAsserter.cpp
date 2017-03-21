@@ -147,7 +147,7 @@ ECSqlStatus ECSqlAsserter::BindParameters(ECSqlStatement& statement, vector<ECSq
             }
         else if (parameterValue.IsECInstanceId())
             {
-            auto stat = statement.BindId(parameterIndex, parameterValue.GetECInstanceId());
+            auto stat = statement.BindId(parameterIndex, parameterValue.GetInstanceId());
             if (stat != ECSqlStatus::Success)
                 return stat;
 

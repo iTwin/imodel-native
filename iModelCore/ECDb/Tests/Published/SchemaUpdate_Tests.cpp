@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbSchemaUpdate_Tests.cpp $
+|  $Source: Tests/Published/SchemaUpdate_Tests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECSchemaUpdateTests : public SchemaImportTestFixture
+struct SchemaUpdateTestFixture : public SchemaImportTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
     protected:
@@ -102,7 +102,7 @@ void AssertECProperties(ECDbCR ecdb, Utf8CP assertExpression, bool strict = true
     Utf8String schemaName = classQualifiedName.substr(0, n);
     Utf8String className = classQualifiedName.substr(n + 1);
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass(schemaName, className, ResolveSchema::AutoDetect);
+    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className, ResolveSchema::AutoDetect);
     ASSERT_TRUE(ecClass != nullptr) << "Failed to find class " << classQualifiedName;
 
     bvector<Utf8String> properties;
@@ -170,7 +170,7 @@ void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
+TEST_F(SchemaUpdateTestFixture, UpdateECSchemaAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -191,7 +191,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     ASSERT_FALSE(asserted);
 
     //Verify Schema attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -211,7 +211,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
+TEST_F(SchemaUpdateTestFixture, UpdateECClassAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -234,7 +234,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
     ASSERT_FALSE(asserted);
 
     //Verify Schema and Class attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -270,7 +270,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
+TEST_F(SchemaUpdateTestFixture, UpdateECPropertyAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -297,7 +297,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
     ASSERT_FALSE(asserted);
 
     //Verify Schema, Class and property attributes upgraded successfully
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -344,7 +344,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
+TEST_F(SchemaUpdateTestFixture, UpdatingECDbMapCAIsNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -388,7 +388,7 @@ TEST_F(ECSchemaUpdateTests, UpdatingECDbMapCAIsNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ClassModifier)
+TEST_F(SchemaUpdateTestFixture, ClassModifier)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -496,7 +496,7 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
+TEST_F(SchemaUpdateTestFixture, UpdateECClassModifierToAbstract)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -564,7 +564,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
+TEST_F(SchemaUpdateTestFixture, DeleteProperty_OwnTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -608,7 +608,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
+TEST_F(SchemaUpdateTestFixture, DeleteProperties_TPH)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -729,7 +729,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
+TEST_F(SchemaUpdateTestFixture, DeleteProperties_JoinedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -851,7 +851,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
+TEST_F(SchemaUpdateTestFixture, AddDeleteVirtualColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -896,7 +896,7 @@ TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
+TEST_F(SchemaUpdateTestFixture, DeleteOverriddenProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -951,7 +951,7 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
+TEST_F(SchemaUpdateTestFixture, UpdateCAProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1007,7 +1007,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -1048,7 +1048,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
 
         //verify CA changes
-        testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+        testProperty = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
         ASSERT_TRUE(testProperty != nullptr);
         IECInstancePtr propertyMapCA = testProperty->GetCustomAttribute("TestCA");
         ASSERT_TRUE(propertyMapCA != nullptr);
@@ -1063,7 +1063,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
+TEST_F(SchemaUpdateTestFixture, AddNewEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1096,7 +1096,7 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
         ASSERT_TRUE(GetECDb().TableExists("ts_modified_TestClass"));
 
         //Verify Schema attributes upgraded successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
 
         //Verify Newly Added Entity Class exists
@@ -1125,7 +1125,7 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
+TEST_F(SchemaUpdateTestFixture, AddNewSubClassForBaseWithTPH)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1199,7 +1199,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
+TEST_F(SchemaUpdateTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1305,7 +1305,7 @@ auto assertSelectSql = [](ECDbCR ecdb, Utf8CP sql, int expectedColumnCount, int 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         1/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
+TEST_F(SchemaUpdateTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -1395,7 +1395,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify that the class is added successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetClassCP("C3") != nullptr);
 
@@ -1450,7 +1450,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify that the classes are added successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetClassCP("C31") != nullptr);
         ASSERT_TRUE(testSchema->GetClassCP("C32") != nullptr);
@@ -1501,7 +1501,7 @@ TEST_F(ECSchemaUpdateTests, VerifyMappingOfPropertiesToOverflowOnJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
+TEST_F(SchemaUpdateTestFixture, AddNewClassModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1538,7 +1538,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -1603,7 +1603,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
+TEST_F(SchemaUpdateTestFixture, AddNewECDbMapCANotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1646,7 +1646,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewCA)
+TEST_F(SchemaUpdateTestFixture, AddNewCA)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1682,7 +1682,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -1716,7 +1716,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         statement.Finalize();
 
         //Verify newly added CA
-        testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
+        testClass = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("TestClass");
         ASSERT_TRUE(testClass != nullptr);
         IECInstancePtr bsca = testClass->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
         ASSERT_TRUE(bsca != nullptr);
@@ -1731,7 +1731,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewECProperty)
+TEST_F(SchemaUpdateTestFixture, AddNewECProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1763,7 +1763,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify newly added property exists
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
 
         ECClassCP testClass = testSchema->GetClassCP("TestClass");
@@ -1793,7 +1793,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
+TEST_F(SchemaUpdateTestFixture, AddECPropertyToBaseClass)
     {
     SetupECDb("schemaupdate.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1858,14 +1858,14 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
     GetECDb().SaveChanges();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT BaseProp1, Prop1, Prop2 FROM ts.Sub WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row1.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row1.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_TRUE(stmt.IsValueNull(0));
     ASSERT_STREQ("Instance1 Prop1", stmt.GetValueText(1));
     ASSERT_STREQ("Instance1 Prop2", stmt.GetValueText(2));
     stmt.ClearBindings();
     stmt.Reset();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row2.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row2.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_STREQ("Instance2 BaseProp1", stmt.GetValueText(0));
     ASSERT_STREQ("Instance2 Prop1", stmt.GetValueText(1));
@@ -1885,7 +1885,7 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
+TEST_F(SchemaUpdateTestFixture, Add_Delete_ECProperty_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1961,7 +1961,7 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
+TEST_F(SchemaUpdateTestFixture, AddNewPropertyModifyAllExistingAttributes)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1998,7 +1998,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -2059,7 +2059,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
+TEST_F(SchemaUpdateTestFixture, AddNewCAOnProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2103,7 +2103,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
         //Verify Schema, Class and property attributes upgraded successfully
-        ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
         ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
@@ -2145,7 +2145,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
         //verify newly added CA on Property
-        testProperty = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
+        testProperty = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
         ASSERT_TRUE(testProperty != nullptr);
         IECInstancePtr testCA = testProperty->GetCustomAttribute("TestCA");
         ASSERT_TRUE(testCA != nullptr);
@@ -2161,7 +2161,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_AddSharedColumnCount)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2216,7 +2216,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
+TEST_F(SchemaUpdateTestFixture, SharedColumnCountForSubClasses_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2297,7 +2297,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
+TEST_F(SchemaUpdateTestFixture, SharedColumnCountWithJoinedTable_AddProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2382,7 +2382,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
+TEST_F(SchemaUpdateTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2408,7 +2408,7 @@ TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
     ASSERT_FALSE(asserted);
 
     //Verify newly added property must not exist at this point
-    ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    ECSchemaCP testSchema = GetECDb().Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
     ECClassCP testClass = testSchema->GetClassCP("TestClass");
@@ -2430,7 +2430,7 @@ TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
     ASSERT_FALSE(asserted);
 
     //Verify newly added property must exist after third schema import
-    testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+    testSchema = GetECDb().Schemas().GetSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
 
     testClass = testSchema->GetClassCP("TestClass");
@@ -2457,7 +2457,7 @@ TEST_F(ECSchemaUpdateTests, ImportMultipleSchemaVersions_AddNewProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
+TEST_F(SchemaUpdateTestFixture, UpdateMultipleSchemasInDb)
     {
     ECDbTestFixture::Initialize();
     ECDbR ecdb = SetupECDb("updateStartupCompanyschema.ecdb", BeFileName(L"DSCacheSchema.01.00.ecschema.xml"));
@@ -2465,14 +2465,14 @@ TEST_F(ECSchemaUpdateTests, UpdateMultipleSchemasInDb)
     ECSchemaReadContextPtr schemaContext = nullptr;
     ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
     ASSERT_TRUE(ecSchema != nullptr);
-    BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
+    BentleyStatus schemaStatus = ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(ERROR, schemaStatus);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DowngradeSchemaMajorVersion)
+TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMajorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2496,7 +2496,7 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMajorVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DowngradeSchemaMiddleVersion)
+TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMiddleVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2520,7 +2520,7 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMiddleVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
+TEST_F(SchemaUpdateTestFixture, DowngradeSchemaMinorVersion)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2544,7 +2544,7 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UnsettingSchemaAlias)
+TEST_F(SchemaUpdateTestFixture, UnsettingSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2568,7 +2568,7 @@ TEST_F(ECSchemaUpdateTests, UnsettingSchemaAlias)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, InvalidValueForSchemaAlias)
+TEST_F(SchemaUpdateTestFixture, InvalidValueForSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2600,7 +2600,7 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForSchemaAlias)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, MajorVersionChange_WithoutMajorVersionIncremented)
+TEST_F(SchemaUpdateTestFixture, MajorVersionChange_WithoutMajorVersionIncremented)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2642,7 +2642,7 @@ TEST_F(ECSchemaUpdateTests, MajorVersionChange_WithoutMajorVersionIncremented)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
+TEST_F(SchemaUpdateTestFixture, Delete_ECDbMapCANotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2680,7 +2680,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
+TEST_F(SchemaUpdateTestFixture, Delete_ECEntityClass_OwnTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2707,10 +2707,10 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Delete Foo ===================================================================================================
     SchemaItem deleteFoo(
@@ -2726,12 +2726,12 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
     AssertSchemaImport(asserted, GetECDb(), deleteFoo);
     ASSERT_FALSE(asserted);
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT S, D, L FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
@@ -2756,10 +2756,10 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
     ASSERT_FALSE(asserted);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT S, D, L FROM ts.Foo");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT S, D, L FROM ts.Goo");
@@ -2781,7 +2781,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2810,9 +2810,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -2847,12 +2847,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify number of columns should not change as we don't delete columns
     testItems.clear();
@@ -2898,12 +2898,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify Number of columns
     testItems.clear();
@@ -2941,11 +2941,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
 
     //should exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following should not exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -2962,7 +2962,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2996,10 +2996,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Following table should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -3037,12 +3037,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
     testItems.clear();
@@ -3093,12 +3093,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify Column count
     testItems.clear();
@@ -3142,11 +3142,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Table should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify column count
     testItems.clear();
@@ -3163,7 +3163,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3197,10 +3197,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 
     //following table should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Following table should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -3238,12 +3238,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
     testItems.clear();
@@ -3294,12 +3294,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify Column count
     testItems.clear();
@@ -3344,11 +3344,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 
     //Table should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify column count
     testItems.clear();
@@ -3366,7 +3366,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3402,13 +3402,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -3449,15 +3449,15 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "JoinedTablePerDirectSubclass");
@@ -3490,7 +3490,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -3534,7 +3534,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -3570,10 +3570,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
     testItems.push_back(std::make_pair("ts_Goo", 5));
@@ -3617,14 +3617,14 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 
     //Table should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //verify number of columns
     testItems.clear();
@@ -3642,7 +3642,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3682,13 +3682,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -3734,14 +3734,14 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Following should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
@@ -3778,7 +3778,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -3826,7 +3826,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -3866,10 +3866,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
     testItems.push_back(std::make_pair("ts_Goo", 5));
@@ -3917,14 +3917,14 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 
     //Table should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //verify number of columns
     testItems.clear();
@@ -3942,7 +3942,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCount)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3982,13 +3982,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 
     //Following Table should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Verify number of columns
@@ -4033,15 +4033,15 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
     ASSERT_FALSE(asserted);
 
     //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_EQ(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify Number of columns
     AssertColumnCount(GetECDb(), testItems, "after deleting subclass Foo");
@@ -4078,7 +4078,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -4126,7 +4126,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 
     //Parent should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Verify number of columns
     testItems.clear();
@@ -4166,10 +4166,10 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 
     //Following should exist
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //verify number of columns
     testItems.push_back(std::make_pair("ts_Goo", 5));
@@ -4218,14 +4218,14 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 
     //Table should not exist
     ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
     ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
+    ASSERT_NE(GetECDb().Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //verify number of columns
     testItems.clear();
@@ -4243,7 +4243,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteSubclassOfRelationshipConstraintConstraint)
+TEST_F(SchemaUpdateTestFixture, DeleteSubclassOfRelationshipConstraintConstraint)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4308,7 +4308,7 @@ TEST_F(ECSchemaUpdateTests, DeleteSubclassOfRelationshipConstraintConstraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClass)
+TEST_F(SchemaUpdateTestFixture, DeleteConcreteImplementationOfAbstractConstraintClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4352,8 +4352,8 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    ECClassCP classB = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("B");
-    ECClassCP classD = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("D");
+    ECClassCP classB = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("B");
+    ECClassCP classD = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("D");
 
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.B(ECInstanceId, propA, propB) VALUES(1, 11, 22)");
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.D(ECInstanceId, propC, propD) VALUES(2, 33, 44)");
@@ -4414,7 +4414,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
+TEST_F(SchemaUpdateTestFixture, DeleteECRelationships)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4496,7 +4496,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnsupported)
+TEST_F(SchemaUpdateTestFixture, DeleteECStructClassUnsupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4524,7 +4524,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnsupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
+TEST_F(SchemaUpdateTestFixture, UpdateECDbMapCA_DbIndexChanges)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4564,7 +4564,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+    ECClassCP b = GetECDb().Schemas().GetClass("TestSchema", "B");
     ASSERT_NE(b, nullptr);
     IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
     ASSERT_FALSE(ca.IsNull());
@@ -4623,7 +4623,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECClassCP b = GetECDb().Schemas().GetECClass("TestSchema", "B");
+        ECClassCP b = GetECDb().Schemas().GetClass("TestSchema", "B");
         ASSERT_NE(b, nullptr);
         IECInstancePtr ca = b->GetCustomAttribute("DbIndexList");
         ASSERT_FALSE(ca.IsNull());
@@ -4674,7 +4674,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
+TEST_F(SchemaUpdateTestFixture, Add_Class_NavigationProperty_RelationshipClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4718,10 +4718,10 @@ TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECClassCP entityClass = GetECDb().Schemas().GetECClass("TestSchema", "B");
+        ECClassCP entityClass = GetECDb().Schemas().GetClass("TestSchema", "B");
         ASSERT_TRUE(entityClass != nullptr);
 
-        ECClassCP relClass = GetECDb().Schemas().GetECClass("TestSchema", "AHasB");
+        ECClassCP relClass = GetECDb().Schemas().GetClass("TestSchema", "AHasB");
         ASSERT_TRUE(relClass != nullptr);
 
         NavigationECPropertyCP navProp = entityClass->GetPropertyP("AId")->GetAsNavigationProperty();
@@ -4734,7 +4734,7 @@ TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteNavigationProperty)
+TEST_F(SchemaUpdateTestFixture, DeleteNavigationProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4764,7 +4764,7 @@ TEST_F(ECSchemaUpdateTests, DeleteNavigationProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
+TEST_F(SchemaUpdateTestFixture, ValidateModifingAddingDeletingBaseClassNotSupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4823,7 +4823,7 @@ TEST_F(ECSchemaUpdateTests, ValidateModifingAddingDeletingBaseClassNotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteExistingECEnumeration)
+TEST_F(SchemaUpdateTestFixture, DeleteExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4850,7 +4850,7 @@ TEST_F(ECSchemaUpdateTests, DeleteExistingECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyExistingECEnumeration)
+TEST_F(SchemaUpdateTestFixture, ModifyExistingECEnumeration)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4880,7 +4880,7 @@ TEST_F(ECSchemaUpdateTests, ModifyExistingECEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyIsEntityClass)
+TEST_F(SchemaUpdateTestFixture, ModifyIsEntityClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4905,7 +4905,7 @@ TEST_F(ECSchemaUpdateTests, ModifyIsEntityClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyIsStructClass)
+TEST_F(SchemaUpdateTestFixture, ModifyIsStructClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4930,7 +4930,7 @@ TEST_F(ECSchemaUpdateTests, ModifyIsStructClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyIsCustomAttributeClass)
+TEST_F(SchemaUpdateTestFixture, ModifyIsCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4955,7 +4955,7 @@ TEST_F(ECSchemaUpdateTests, ModifyIsCustomAttributeClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyIsRelationshipClass)
+TEST_F(SchemaUpdateTestFixture, ModifyIsRelationshipClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4989,7 +4989,7 @@ TEST_F(ECSchemaUpdateTests, ModifyIsRelationshipClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyRelationship)
+TEST_F(SchemaUpdateTestFixture, ModifyRelationship)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5175,7 +5175,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
+TEST_F(SchemaUpdateTestFixture, ModifyRelationshipConstrainsRoleLabel)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5307,7 +5307,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyECProperties)
+TEST_F(SchemaUpdateTestFixture, ModifyECProperties)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5471,7 +5471,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyNavigationProperty)
+TEST_F(SchemaUpdateTestFixture, ModifyNavigationProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5538,7 +5538,7 @@ TEST_F(ECSchemaUpdateTests, ModifyNavigationProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
+TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnly)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5668,7 +5668,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnly)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnlyOnClientBriefcase)
+TEST_F(SchemaUpdateTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5704,7 +5704,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropToReadOnlyOnClientBriefcase)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
+TEST_F(SchemaUpdateTestFixture, ModifyCustomAttributePropertyValues)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5799,7 +5799,7 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteECCustomAttributeClass)
+TEST_F(SchemaUpdateTestFixture, DeleteECCustomAttributeClass)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5825,7 +5825,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECCustomAttributeClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
+TEST_F(SchemaUpdateTestFixture, DeleteCustomAttribute)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5877,7 +5877,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromSchema);
     ASSERT_FALSE(asserted);
-    IECInstancePtr schemaCA = ecdb.Schemas().GetECSchema("TestSchema")->GetCustomAttribute("DynamicSchema");
+    IECInstancePtr schemaCA = ecdb.Schemas().GetSchema("TestSchema")->GetCustomAttribute("DynamicSchema");
     ASSERT_TRUE(schemaCA == nullptr);
 
     //Delete CA from Class
@@ -5899,7 +5899,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromClass);
     ASSERT_FALSE(asserted);
-    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
+    IECInstancePtr classCA = ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     ASSERT_TRUE(classCA == nullptr);
 
     //Delete CA from property
@@ -5917,7 +5917,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     AssertSchemaImport(asserted, ecdb, deleteCAFromProperty);
     ASSERT_FALSE(asserted);
     int caCount = 0;
-    for (IECInstancePtr ca : ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttributes(true))
+    for (IECInstancePtr ca : ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttributes(true))
         {
         caCount++;
         }
@@ -5928,7 +5928,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
+TEST_F(SchemaUpdateTestFixture, ChangesToExisitingTable)
     {
     ECDbR ecdb = SetupECDb("existingTableUpdate.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -6037,7 +6037,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
+TEST_F(SchemaUpdateTestFixture, DeleteCAInstanceWithoutProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6082,7 +6082,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECSchemaCP ecSchema = GetECDb().Schemas().GetECSchema("TestSchema");
+        ECSchemaCP ecSchema = GetECDb().Schemas().GetSchema("TestSchema");
         ECClassCP testClass = ecSchema->GetClassCP("TestClass");
         ECPropertyP ecProperty = testClass->GetPropertyP("prop");
 
@@ -6102,7 +6102,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
+TEST_F(SchemaUpdateTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6145,7 +6145,7 @@ TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
 
         KindOfQuantityCP myKindOfQuantity = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
         ASSERT_TRUE(myKindOfQuantity != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
@@ -6171,7 +6171,7 @@ TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToNonStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6207,9 +6207,9 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
         ASSERT_TRUE(nonStrictEnum != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6224,7 +6224,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6260,7 +6260,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
+TEST_F(SchemaUpdateTestFixture, UpdateKindOfQuantity)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6305,7 +6305,7 @@ TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
 
         KindOfQuantityCP KindOfQuantity2 = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
         ASSERT_TRUE(KindOfQuantity2 != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
@@ -6319,7 +6319,7 @@ TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
+TEST_F(SchemaUpdateTestFixture, DeleteKindOfQuantityFromECSchema)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6356,7 +6356,7 @@ TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
+TEST_F(SchemaUpdateTestFixture, ModifyECArrayProperty_KOQToKOQ)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6406,7 +6406,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
         ASSERT_TRUE(KindOfQuantity1 != nullptr);
         KindOfQuantityCP KindOfQuantity2 = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
         ASSERT_TRUE(KindOfQuantity2 != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveArrayECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
@@ -6424,7 +6424,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
+TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6445,7 +6445,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
     KindOfQuantityCP koq = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
     ASSERT_TRUE(koq != nullptr);
 
-    ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
     ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty()->GetKindOfQuantity());
@@ -6469,7 +6469,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
 
     //Verifying the property no longer has KOQ
     ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    PrimitiveArrayECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
+    PrimitiveArrayECPropertyCP foo_length = GetECDb().Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
     }
@@ -6477,7 +6477,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
+TEST_F(SchemaUpdateTestFixture, RemoveKindOfQuantityFromECProperty)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6498,7 +6498,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
     KindOfQuantityCP koq = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
     ASSERT_TRUE(koq != nullptr);
 
-    ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
     ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveProperty()->GetKindOfQuantity());
@@ -6522,7 +6522,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
 
     //Verifying the property no longer has KOQ
     ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    PrimitiveECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    PrimitiveECPropertyCP foo_length = GetECDb().Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveProperty();
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
     }
@@ -6530,7 +6530,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_PrimitiveToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6562,7 +6562,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6602,9 +6602,9 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "StrictEnum");
         ASSERT_TRUE(strictEnum != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6620,7 +6620,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyType_EnumToEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6674,14 +6674,14 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "StrictEnum");
         ASSERT_TRUE(strictEnum != nullptr);
-        ECEnumerationCP unstrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "UnStrictEnum");
+        ECEnumerationCP unstrictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "UnStrictEnum");
         ASSERT_TRUE(unstrictEnum != nullptr);
 
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
-        ECClassCP goo = GetECDb().Schemas().GetECClass("TestSchema", "Goo");
+        ECClassCP goo = GetECDb().Schemas().GetClass("TestSchema", "Goo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6699,7 +6699,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_EnumToPrimitive)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6739,9 +6739,9 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "StrictEnum");
         ASSERT_TRUE(strictEnum != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6757,7 +6757,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
+TEST_F(SchemaUpdateTestFixture, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6793,9 +6793,9 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
         ASSERT_TRUE(nonStrictEnum != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6810,7 +6810,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     2/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, ModifyEnumType_IntToString)
+TEST_F(SchemaUpdateTestFixture, ModifyEnumType_IntToString)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6850,7 +6850,7 @@ TEST_F(ECSchemaUpdateTests, ModifyEnumType_IntToString)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
+TEST_F(SchemaUpdateTestFixture, RemoveExistingEnum)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6886,9 +6886,9 @@ TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "StrictEnum");
         ASSERT_TRUE(strictEnum != nullptr);
-        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ECClassCP foo = GetECDb().Schemas().GetClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
         PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
@@ -6903,7 +6903,7 @@ TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewRelationship)
+TEST_F(SchemaUpdateTestFixture, AddNewRelationship)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6994,7 +6994,7 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
+TEST_F(SchemaUpdateTestFixture, AddNewDerivedEndTableRelationship)
     {
     SchemaItem schemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -7086,7 +7086,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetECClassId("TestSchema", "ModelHasGeometricElements");
+        ECClassId modelHasGeometricElementsRelClassId = GetECDb().Schemas().GetClassId("TestSchema", "ModelHasGeometricElements");
         ASSERT_TRUE(modelHasGeometricElementsRelClassId.IsValid());
 
         //Insert Test Data
@@ -7137,7 +7137,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
+TEST_F(SchemaUpdateTestFixture, AddNewDerivedLinkTableRelationship)
     {
     SchemaItem schemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -7365,9 +7365,9 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, Model.Id, Name) VALUES(501, 'Code9', 102,'bliblablub')");
         ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.EmbeddedLink(ECInstanceId,Code, Model.Id, Name) VALUES(502, 'Code10', 102,'bliblablub')");
 
-        ECClassId urlLInkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("UrlLink")->GetId();
-        ECClassId embeddedLinkId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("EmbeddedLink")->GetId();
-        ECClassId annotation3dElementId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Annotation3dElement")->GetId();
+        ECClassId urlLInkId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("UrlLink")->GetId();
+        ECClassId embeddedLinkId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("EmbeddedLink")->GetId();
+        ECClassId annotation3dElementId = GetECDb().Schemas().GetSchema("TestSchema")->GetClassCP("Annotation3dElement")->GetId();
 
         //InformationElementDrivesInformationElement
         Utf8String ecsql;
@@ -7416,7 +7416,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, AddSharedColumnCount)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7478,7 +7478,7 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
+TEST_F(SchemaUpdateTestFixture, DeleteSharedColumnCount)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7541,7 +7541,7 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddingECEnumerationIntegerType)
+TEST_F(SchemaUpdateTestFixture, AddingECEnumerationIntegerType)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7570,7 +7570,7 @@ TEST_F(ECSchemaUpdateTests, AddingECEnumerationIntegerType)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
     ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
     ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
@@ -7594,7 +7594,7 @@ TEST_F(ECSchemaUpdateTests, AddingECEnumerationIntegerType)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddingECEnumerationStringType)
+TEST_F(SchemaUpdateTestFixture, AddingECEnumerationStringType)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7623,7 +7623,7 @@ TEST_F(ECSchemaUpdateTests, AddingECEnumerationStringType)
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
     ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
     ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
@@ -7646,7 +7646,7 @@ TEST_F(ECSchemaUpdateTests, AddingECEnumerationStringType)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnumerators)
+TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnumerators)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7675,7 +7675,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnu
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);
-    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+    ECEnumerationCP updatedEnum = GetECDb().Schemas().GetEnumeration("TestSchema", "NonStrictEnum");
     ASSERT_TRUE(updatedEnum != nullptr);
     ASSERT_STREQ("Test2Display", updatedEnum->GetDisplayLabel().c_str());
     ASSERT_STREQ("Test2Desc", updatedEnum->GetDescription().c_str());
@@ -7699,7 +7699,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromStrictToNonStrictAndUpdateEnu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromUnStrictToStrict)
+TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationFromUnStrictToStrict)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7732,7 +7732,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECEnumerationFromUnStrictToStrict)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
+TEST_F(SchemaUpdateTestFixture, UpdateECEnumerationStrictEnumAddDeleteEnumerators)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

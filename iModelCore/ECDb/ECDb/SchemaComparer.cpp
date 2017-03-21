@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSchemaComparer.cpp $
+|     $Source: ECDb/SchemaComparer.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -176,7 +176,7 @@ BentleyStatus Binary::CopyFrom(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
+BentleyStatus SchemaComparer::Compare(SchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
     {
     m_options = options;
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
@@ -199,7 +199,7 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::E
         const bool existInRhs = rhsIt != rhsMap.end();
         if (existInLhs && existInRhs)
             {
-            ECSchemaChange& schemaChange = changes.Add(ChangeState::Modified, schemaName);
+            SchemaChange& schemaChange = changes.Add(ChangeState::Modified, schemaName);
             if (SUCCESS != CompareECSchema(schemaChange, *lhsIt->second, *rhsIt->second))
                 return ERROR;
             }
@@ -222,7 +222,7 @@ BentleyStatus ECSchemaComparer::Compare(ECSchemaChanges& changes, bvector<ECN::E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchemaCR a, ECSchemaCR b)
+BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a, ECSchemaCR b)
     {
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
@@ -270,7 +270,7 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR a, ECClassCR b)
+BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR a, ECClassCR b)
     {
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
@@ -326,7 +326,7 @@ BentleyStatus ECSchemaComparer::CompareECClass(ECClassChange& change, ECClassCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
+BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
     {
     auto m = std::min(a.size(), b.size());
     for (size_t i = 0; i < m; i++)
@@ -348,7 +348,7 @@ BentleyStatus ECSchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
+BentleyStatus SchemaComparer::CompareECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
     {
     if (a.GetStrength() != b.GetStrength())
         change.GetStrength().SetValue(a.GetStrength(), b.GetStrength());
@@ -365,7 +365,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipClass(ECRelationshipChange&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
+BentleyStatus SchemaComparer::CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
     {
     if (a.GetRoleLabel() != b.GetRoleLabel())
         change.GetRoleLabel().SetValue(a.GetRoleLabel(), b.GetRoleLabel());
@@ -382,7 +382,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
+BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
     {
     std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP constraintClassCP : a)
@@ -423,7 +423,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b)
+BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b)
     {
     if (a.GetTypeName() != b.GetTypeName())
         change.GetTypeName().SetValue(a.GetTypeName(), b.GetTypeName());
@@ -578,7 +578,7 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
+BentleyStatus SchemaComparer::CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
     {
     std::map<Utf8CP, ECPropertyCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECPropertyCP propertyCP : a)
@@ -621,7 +621,7 @@ BentleyStatus ECSchemaComparer::CompareECProperties(ECPropertyChanges& changes, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECClasses(ECClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b)
+BentleyStatus SchemaComparer::CompareECClasses(ClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b)
     {
     std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP classCP : a)
@@ -664,7 +664,7 @@ BentleyStatus ECSchemaComparer::CompareECClasses(ECClassChanges& changes, ECClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
+BentleyStatus SchemaComparer::CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
     {
     std::map<Utf8CP, ECEnumerationCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECEnumerationCP enumCP : a)
@@ -707,7 +707,7 @@ BentleyStatus ECSchemaComparer::CompareECEnumerations(ECEnumerationChanges& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
+BentleyStatus SchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
     {
     std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (KindOfQuantityCP enumCP : a)
@@ -749,7 +749,7 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantities(ECKindOfQuantityChanges&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareCustomAttribute(ECPropertyValueChange& changes, IECInstanceCR a, IECInstanceCR b)
+BentleyStatus SchemaComparer::CompareCustomAttribute(ECPropertyValueChange& changes, IECInstanceCR a, IECInstanceCR b)
     {
     std::map<Utf8String, ECValue> aMap, bMap;  
     std::set<Utf8CP, CompareUtf8> cMap;
@@ -793,7 +793,7 @@ BentleyStatus ECSchemaComparer::CompareCustomAttribute(ECPropertyValueChange& ch
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes, IECInstanceCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     std::map<Utf8String, ECValue> map;
@@ -810,7 +810,7 @@ BentleyStatus ECSchemaComparer::AppendCustomAttribute(ECInstanceChanges& changes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR v, ValueId appendType)
     {
     for (IECInstancePtr const& ptr : v.GetCustomAttributes(false))
         {
@@ -823,7 +823,7 @@ BentleyStatus ECSchemaComparer::AppendCustomAttributes(ECInstanceChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b)
+BentleyStatus SchemaComparer::CompareCustomAttributes(ECInstanceChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b)
     {
     std::map<Utf8CP, IECInstanceCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (IECInstancePtr const& instancePtr : a.GetCustomAttributes(false))
@@ -865,7 +865,7 @@ BentleyStatus ECSchemaComparer::CompareCustomAttributes(ECInstanceChanges& chang
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b)
+BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR a, ECEnumerationCR b)
     {
     if (!a.GetName().EqualsIAscii(b.GetName()))
         change.GetName().SetValue(a.GetName(), b.GetName());
@@ -906,7 +906,7 @@ BentleyStatus ECSchemaComparer::CompareECEnumeration(ECEnumerationChange& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
+BentleyStatus SchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
     {
     std::map<int, ECEnumeratorCP> aMap, bMap, cMap;
     for (ECEnumeratorCP enumCP : a)
@@ -950,7 +950,7 @@ BentleyStatus ECSchemaComparer::CompareIntegerECEnumerators(ECEnumeratorChanges&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
+BentleyStatus SchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
     {
     std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECEnumeratorCP enumCP : a)
@@ -994,7 +994,7 @@ BentleyStatus ECSchemaComparer::CompareStringECEnumerators(ECEnumeratorChanges& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
+BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
     {
     if (a.GetName() != b.GetName())
         change.GetName().SetValue(a.GetName(), b.GetName());
@@ -1045,7 +1045,7 @@ BentleyStatus ECSchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
+BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
     {
     std::set<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP classCP : a)
@@ -1079,7 +1079,7 @@ BentleyStatus ECSchemaComparer::CompareBaseClasses(BaseClassChanges& changes, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
+BentleyStatus SchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
     {
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (auto& ref : a)
@@ -1111,10 +1111,10 @@ BentleyStatus ECSchemaComparer::CompareReferences(ReferenceChanges& changes, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchemaCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECSchema(SchemaChanges& changes, ECSchemaCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    ECSchemaChange& change = changes.Add(state, v.GetName().c_str());
+    SchemaChange& change = changes.Add(state, v.GetName().c_str());
     change.GetName().SetValue(appendType, v.GetName());
 
     if (v.GetIsDisplayLabelDefined())
@@ -1152,10 +1152,10 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECClass(ClassChanges& changes, ECClassCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    ECClassChange& change = changes.Add(state, v.GetName().c_str());
+    ClassChange& change = changes.Add(state, v.GetName().c_str());
 
     change.GetName().SetValue(appendType, v.GetName());
     if (v.GetIsDisplayLabelDefined())
@@ -1184,7 +1184,7 @@ BentleyStatus ECSchemaComparer::AppendECClass(ECClassChanges& changes, ECClassCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR v, ValueId appendType)
     {
     change.GetStrengthDirection().SetValue(appendType, v.GetStrengthDirection());
     change.GetStrength().SetValue(appendType, v.GetStrength());
@@ -1200,7 +1200,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipClass(ECRelationshipChange& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v, ValueId appendType)
     {
     change.GetRoleLabel().SetValue(appendType, v.GetRoleLabel());
     change.GetMultiplicity().SetValue(appendType, v.GetMultiplicity().ToString());
@@ -1214,7 +1214,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraint(ECRelationshipCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     for (ECClassCP constraintClass : v)
@@ -1229,7 +1229,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECClassCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECClassCR v, ValueId appendType)
     {
     change.GetClassName().SetValue(appendType, v.GetFullName());
     return SUCCESS;
@@ -1238,7 +1238,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationsh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECEnumeration(ECEnumerationChanges& changes, ECEnumerationCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     ECEnumerationChange& enumerationChange = changes.Add(state, v.GetName().c_str());
@@ -1269,7 +1269,7 @@ BentleyStatus ECSchemaComparer::AppendECEnumeration(ECEnumerationChanges& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     KindOfQuantityChange& kindOfQuantityChange = changes.Add(state, v.GetName().c_str());
@@ -1289,7 +1289,7 @@ BentleyStatus ECSchemaComparer::AppendKindOfQuantity(ECKindOfQuantityChanges& ch
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECPropertyCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     ECPropertyChange& propertyChange = changes.Add(state, v.GetName().c_str());
@@ -1359,7 +1359,7 @@ BentleyStatus ECSchemaComparer::AppendECProperty(ECPropertyChanges& changes, ECP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     for (ECClassCP baseClassCP : v)
@@ -1371,7 +1371,7 @@ BentleyStatus ECSchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECB
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
     for (auto& referenceCP : v)
@@ -1383,7 +1383,7 @@ BentleyStatus ECSchemaComparer::AppendReferences(ReferenceChanges& changes, ECSc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance)
+BentleyStatus SchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance)
     {
     ECValuesCollectionPtr values = ECValuesCollection::Create(instance);
     if (values.IsNull())
@@ -1395,7 +1395,7 @@ BentleyStatus ECSchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values)
+BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values)
     {
     for (ECValuesCollection::const_iterator itor = values.begin(); itor != values.end(); ++itor)
         {
@@ -1424,7 +1424,7 @@ BentleyStatus ECSchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
+std::vector<Utf8String> SchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
     {
     auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
         {
@@ -1462,7 +1462,7 @@ std::vector<Utf8String> ECSchemaComparer::Split(Utf8StringCR path , bool stripAr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECSchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
+Utf8String SchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
     {
     Utf8String str;
     for (auto itor = paths.begin(); itor != paths.end(); ++itor)
@@ -2302,7 +2302,7 @@ ECPropertyValueChange& ECPropertyValueChange::GetOrCreate(ChangeState stat, std:
 ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath) 
     {
     Utf8String ap = accessPath;
-    std::vector<Utf8String> path = ECSchemaComparer::Split(ap);
+    std::vector<Utf8String> path = SchemaComparer::Split(ap);
     if (path.empty())
         return nullptr;
 
@@ -2339,7 +2339,7 @@ ECPropertyValueChange* ECPropertyValueChange::GetValue(Utf8CP accessPath)
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 CustomAttributeValidator::Rule::Rule(Policy policy, Utf8CP pattren)
-    :m_policy(policy), m_pattren(ECSchemaComparer::Split(pattren))
+    :m_policy(policy), m_pattren(SchemaComparer::Split(pattren))
     {}
 
 //---------------------------------------------------------------------------------------
@@ -2469,7 +2469,7 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
         if (v->HasChildren())
             continue;
 
-        std::vector<Utf8String> path = ECSchemaComparer::Split(v->GetAccessString(), true);
+        std::vector<Utf8String> path = SchemaComparer::Split(v->GetAccessString(), true);
 
         for (std::unique_ptr<Rule> const& rule : rules)
             {

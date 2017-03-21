@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 JsonReader::JsonReader(ECDbCR ecdb, ECClassId ecClassId) : m_ecDb(ecdb), m_statementCache(50, "JsonReader ECSqlStatement Cache")
     {
-    m_ecClass = m_ecDb.Schemas().GetECClass(ecClassId);
+    m_ecClass = m_ecDb.Schemas().GetClass(ecClassId);
     BeAssert(m_ecClass != nullptr && "Could not retrieve class with specified id");
     }
 
@@ -135,7 +135,7 @@ BentleyStatus JsonReader::AddInstancesFromSpecifiedClassPath(JsonValueR allInsta
         ECClassId selectClassId = statementKey->GetValueId<ECClassId>(0);
         ECInstanceId selectInstanceId = statementKey->GetValueId<ECInstanceId>(1);
 
-        ECClassCP selectClass = m_ecDb.Schemas().GetECClass(selectClassId);
+        ECClassCP selectClass = m_ecDb.Schemas().GetClass(selectClassId);
         BeAssert(selectClass != nullptr);
 
         Utf8PrintfString ecSql("SELECT * FROM ONLY %s AS el WHERE el." ECDBSYS_PROP_ECInstanceId "=?", selectClass->GetECSqlName().c_str());
@@ -416,7 +416,7 @@ ECClassCP RelatedItemsDisplaySpecificationsCache::ResolveClass(Utf8StringCR poss
     if (schemaName.empty())
        schemaName = defaultSchema.GetName();
 
-    ECClassCP ecClass = m_ecDb.Schemas().GetECClass(schemaName, className);
+    ECClassCP ecClass = m_ecDb.Schemas().GetClass(schemaName, className);
     BeAssert(ecClass != nullptr);
 
     return ecClass;
@@ -463,7 +463,7 @@ void RelatedItemsDisplaySpecificationsCache::Initialize()
 //+---------------+---------------+---------------+---------------+---------------+------------------
 BentleyStatus RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfos(RelationshipPathInfosByClass& pathInfosByClass) const
     {
-    ECClassCP ridsClass = m_ecDb.Schemas().GetECClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
+    ECClassCP ridsClass = m_ecDb.Schemas().GetClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
     if (!ridsClass)
         {
         BeAssert(false);
@@ -477,7 +477,7 @@ BentleyStatus RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfo
         return ERROR;
         }
 
-    bvector<ECN::ECSchemaCP> allSchemas = m_ecDb.Schemas().GetECSchemas(false);
+    bvector<ECN::ECSchemaCP> allSchemas = m_ecDb.Schemas().GetSchemas(false);
     BeAssert(allSchemas.size() > 0);
 
     BentleyStatus status = SUCCESS;
@@ -720,7 +720,7 @@ void RelatedItemsDisplaySpecificationsCache::DumpCache(ECClassCP ecClass /*=null
     for (RelationshipPathsByClassId::const_iterator iter = m_pathsByClass.begin(); iter != m_pathsByClass.end(); iter++)
         {
         ECClassId classId = iter->first;
-        ECClassCP pathClass = m_ecDb.Schemas().GetECClass(classId);
+        ECClassCP pathClass = m_ecDb.Schemas().GetClass(classId);
 
         if (ecClass != nullptr && !ecClass->Is(pathClass))
             continue;
@@ -743,7 +743,7 @@ bool RelatedItemsDisplaySpecificationsCache::TryGetRelatedPaths(bvector<ECRelati
     for (RelationshipPathsByClassId::const_iterator iter = m_pathsByClass.begin(); iter != m_pathsByClass.end(); iter++)
         {
         ECClassId classId = iter->first;
-        ECClassCP pathClass = m_ecDb.Schemas().GetECClass(classId);
+        ECClassCP pathClass = m_ecDb.Schemas().GetClass(classId);
 
         if (!ecClass.Is(pathClass))
             continue;

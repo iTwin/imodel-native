@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbMapping_Tests.cpp $
+|  $Source: Tests/Published/DbMapping_Tests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
+TEST_F(DbMappingTestFixture, InvalidMapStrategyCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem(
@@ -137,7 +137,7 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                                   Krischan.Eberle   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, UnsupportedNavigationPropertyCases)
+TEST_F(DbMappingTestFixture, UnsupportedNavigationPropertyCases)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(
@@ -226,7 +226,7 @@ TEST_F(ECDbMappingTestFixture, UnsupportedNavigationPropertyCases)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, OwnTableCATests)
+TEST_F(DbMappingTestFixture, OwnTableCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -362,7 +362,7 @@ TEST_F(ECDbMappingTestFixture, OwnTableCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
+TEST_F(DbMappingTestFixture, TablePerHierarchyCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -546,7 +546,7 @@ TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
+TEST_F(DbMappingTestFixture, ExistingTableCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -661,7 +661,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << ecsql;
         }
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("MetaSchema", "ECClassDef");
+    ECClassCP testClass = ecdb.Schemas().GetClass("MetaSchema", "ECClassDef");
     ASSERT_TRUE(testClass != nullptr);
 
     {
@@ -687,7 +687,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotMappedCATests)
+TEST_F(DbMappingTestFixture, NotMappedCATests)
     {
     std::vector<SchemaItem> invalidSchemas;
     invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -808,13 +808,13 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
     ASSERT_FALSE(asserted);
 
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Sub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "SubSub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "SubSubSub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
     }
@@ -978,16 +978,16 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
     ASSERT_FALSE(asserted);
 
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Base")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Sub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "SubSub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "SubSubSub")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
     }
@@ -1052,10 +1052,10 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
     ASSERT_FALSE(asserted);
 
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Base")->GetId()));
     ASSERT_EQ((int) MapStrategyInfo::Strategy::TablePerHierarchy, (int) mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Sub")->GetId()));
     ASSERT_EQ((int) MapStrategyInfo::Strategy::NotMapped, (int) mapStrategy.m_strategy);
     }
 
@@ -1089,7 +1089,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
     ASSERT_FALSE(asserted);
 
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Rel")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
     }
 
@@ -1122,7 +1122,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
     MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "Rel")->GetId()));
     ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
     }
 
@@ -1131,7 +1131,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
+TEST_F(DbMappingTestFixture, JoinedTableCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -1319,7 +1319,7 @@ TEST_F(ECDbMappingTestFixture, JoinedTableCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                              Maha Nasir                         03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ECPropertyCATests)
+TEST_F(DbMappingTestFixture, ECPropertyCATests)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(
@@ -1367,7 +1367,7 @@ TEST_F(ECDbMappingTestFixture, ECPropertyCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle             03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IdNameCollisions)
+TEST_F(DbMappingTestFixture, IdNameCollisions)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(
@@ -1526,7 +1526,7 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(testClass != nullptr);
     ECPropertyCP idProp = testClass->GetPropertyP("MyId");
     ASSERT_TRUE(testClass != nullptr);
@@ -1559,7 +1559,7 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Sub");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Sub");
     ASSERT_TRUE(testClass != nullptr);
     ECPropertyCP idProp = testClass->GetPropertyP("BaseId");
     ASSERT_TRUE(testClass != nullptr);
@@ -1600,7 +1600,7 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Rel");
     ASSERT_TRUE(testClass != nullptr);
     ECPropertyCP idProp = testClass->GetPropertyP("MySourceId");
     ASSERT_TRUE(testClass != nullptr);
@@ -1641,7 +1641,7 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
                             </ECSchema>)xml"), "idnamecollisions.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "Rel");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "Rel");
     ASSERT_TRUE(testClass != nullptr);
     ECPropertyCP idProp = testClass->GetPropertyP("MyTargetId");
     ASSERT_TRUE(testClass != nullptr);
@@ -1656,7 +1656,7 @@ TEST_F(ECDbMappingTestFixture, IdNameCollisions)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
+TEST_F(DbMappingTestFixture, ForeignKeyMapCATests)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -1760,7 +1760,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ShareColumnsCA)
+TEST_F(DbMappingTestFixture, ShareColumnsCA)
     {
     std::vector<SchemaItem> testItems;
 
@@ -1972,7 +1972,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCA)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                  08/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ShareColumnsCAWithoutTPH)
+TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
     {
     std::vector<SchemaItem> testItems;
 
@@ -2036,7 +2036,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAWithoutTPH)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
+TEST_F(DbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
     {
     SchemaItem testSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2110,7 +2110,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnCount)
+TEST_F(DbMappingTestFixture, SharedColumnCount)
     {
             {
             AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -2247,7 +2247,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCount)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaImports)
+TEST_F(DbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchemaImports)
     {
     ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2318,7 +2318,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountWithJoinedTable_SubsequentSchema
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
+TEST_F(DbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
     {
     ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2547,7 +2547,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnJoinedTable_VariousScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_InsertWithNoParameters)
+TEST_F(DbMappingTestFixture, Overflow_InsertWithNoParameters)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2633,7 +2633,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertWithNoParameters)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
+TEST_F(DbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2716,7 +2716,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertExplicitNullsUsingECSql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns2)
+TEST_F(DbMappingTestFixture, Overflow_SharedColumns2)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2785,13 +2785,13 @@ TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns2)
     AssertSchemaImport(asserted, ecdb, thirdSchema);
     ASSERT_FALSE(asserted);
 
-    ecdb.Schemas().CreateECClassViewsInDb();
+    ecdb.Schemas().CreateClassViewsInDb();
     ecdb.SaveChanges();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns)
+TEST_F(DbMappingTestFixture, Overflow_SharedColumns)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2865,7 +2865,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_SharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
+TEST_F(DbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -2947,7 +2947,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertImplicitNullsUsingECSql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAndMixOrder)
+TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersAndMixOrder)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -3122,7 +3122,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypesWithUnNamedParametersA
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypes)
+TEST_F(DbMappingTestFixture, Overflow_InsertComplexTypes)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -3276,7 +3276,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_InsertComplexTypes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_UpdateComplexTypes)
+TEST_F(DbMappingTestFixture, Overflow_UpdateComplexTypes)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -3434,7 +3434,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_UpdateComplexTypes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                         02/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
+TEST_F(DbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
     {
     std::vector<SchemaItem> testItems;
 
@@ -3505,7 +3505,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMappingOnJoinedTable_FailingScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
+TEST_F(DbMappingTestFixture, SharedColumnCountBisScenario)
     {
     ECDbR ecdb = SetupECDb("minimumsharedcolumncount.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -3664,7 +3664,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCountBisScenario)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ShareColumnsCA_TableLayout)
+TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -3743,7 +3743,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCA_TableLayout)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, TablePrefix)
+TEST_F(DbMappingTestFixture, TablePrefix)
     {
             {
             SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -3806,7 +3806,7 @@ TEST_F(ECDbMappingTestFixture, TablePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
+TEST_F(DbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -3876,7 +3876,7 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AbstractClass)
+TEST_F(DbMappingTestFixture, AbstractClass)
     {
     std::vector<SchemaItem> testItems;
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -3937,7 +3937,7 @@ TEST_F(ECDbMappingTestFixture, AbstractClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
+TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
             {
             SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
@@ -3957,7 +3957,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 
             ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
 
-            ECClassId fooClassId = ecdb.Schemas().GetECClassId("TestSchema", "Foo");
+            ECClassId fooClassId = ecdb.Schemas().GetClassId("TestSchema", "Foo");
             ASSERT_TRUE(fooClassId.IsValid());
 
             Utf8String expectedColumnName;
@@ -3983,7 +3983,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
             ASSERT_FALSE(asserted);
 
             ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
-            ECClassId fooClassId = ecdb.Schemas().GetECClassId("TestSchema", "Foo");
+            ECClassId fooClassId = ecdb.Schemas().GetClassId("TestSchema", "Foo");
             ASSERT_TRUE(fooClassId.IsValid());
 
             Utf8String expectedColumnName;
@@ -3995,7 +3995,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
+TEST_F(DbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     {
     ECDbR ecdb = SetupECDb("VerifyInstanceInsertionForClassMappedToExistingTable.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -4028,7 +4028,7 @@ TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     //Verifying that the class is not mapped to any table other than the Existing Table.
     ASSERT_FALSE(ecdb.TableExists("t_Class"));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "TestClass");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "TestClass");
     ASSERT_TRUE(testClass != nullptr);
 
     ECInstanceInserter inserter(ecdb, *testClass, nullptr);
@@ -4044,7 +4044,7 @@ TEST_F(ECDbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
+TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
     {
     auto assertECSql = [] (Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
         {
@@ -4439,7 +4439,7 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotNullConstraint)
+TEST_F(DbMappingTestFixture, NotNullConstraint)
     {
 
             //NotNull constraint on FK Relationship for OwnTable
@@ -4525,7 +4525,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotNullConstraintForRelationshipClassId)
+TEST_F(DbMappingTestFixture, NotNullConstraintForRelationshipClassId)
     {
 
     //NotNull determination on RelClassIdColumn for FK Relationship
@@ -4563,7 +4563,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintForRelationshipClassId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ConstraintCheckOnProperties)
+TEST_F(DbMappingTestFixture, ConstraintCheckOnProperties)
     {
             {
             SchemaItem testItem(
@@ -4711,7 +4711,7 @@ TEST_F(ECDbMappingTestFixture, ConstraintCheckOnProperties)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
+TEST_F(DbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
     {
     auto assertECSql = [] (Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
         {
@@ -4791,7 +4791,7 @@ TEST_F(ECDbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     1/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IndexSkippedForIdSpecificationCA)
+TEST_F(DbMappingTestFixture, IndexSkippedForIdSpecificationCA)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4828,9 +4828,9 @@ TEST_F(ECDbMappingTestFixture, IndexSkippedForIdSpecificationCA)
     AssertSchemaImport(db, asserted, testItem, "IdSpecification.ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithBusinessKey")->GetPropertyCount(false));
-    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithGlobalId")->GetPropertyCount(false));
-    ASSERT_EQ(1, db.Schemas().GetECSchema("TestSchema", true)->GetClassCP("ClassWithSyncId")->GetPropertyCount(false));
+    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithBusinessKey")->GetPropertyCount(false));
+    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithGlobalId")->GetPropertyCount(false));
+    ASSERT_EQ(1, db.Schemas().GetSchema("TestSchema", true)->GetClassCP("ClassWithSyncId")->GetPropertyCount(false));
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithBusinessKey_BusinessKeySpecification_Name' AND type='index'"));
@@ -4849,7 +4849,7 @@ TEST_F(ECDbMappingTestFixture, IndexSkippedForIdSpecificationCA)
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ClassAndPropertyWithSameName)
+TEST_F(DbMappingTestFixture, ClassAndPropertyWithSameName)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4907,7 +4907,7 @@ TEST_F(ECDbMappingTestFixture, ClassAndPropertyWithSameName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ECSqlForUnmappedClass)
+TEST_F(DbMappingTestFixture, ECSqlForUnmappedClass)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4937,7 +4937,7 @@ TEST_F(ECDbMappingTestFixture, ECSqlForUnmappedClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
+TEST_F(DbMappingTestFixture, ECClassIdAsVirtualColumn)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4967,7 +4967,7 @@ TEST_F(ECDbMappingTestFixture, ECClassIdAsVirtualColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotMappedCAForFKRelationships)
+TEST_F(DbMappingTestFixture, NotMappedCAForFKRelationships)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5003,7 +5003,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCAForFKRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotMappedCAForLinkTable)
+TEST_F(DbMappingTestFixture, NotMappedCAForLinkTable)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5043,7 +5043,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCAForLinkTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
+TEST_F(DbMappingTestFixture, MismatchDataTypesInExistingTable)
     {
     ECDbR ecdb = SetupECDb("DataTypeMismatchInExistingTableTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -5078,7 +5078,7 @@ TEST_F(ECDbMappingTestFixture, MismatchDataTypesInExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
+TEST_F(DbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
     {
     ECDbR ecdb = SetupECDb("InvalidPrimaryKeyInExistingTable.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -5112,7 +5112,7 @@ TEST_F(ECDbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle   12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
+TEST_F(DbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
     {
     ECDbR ecdb = SetupECDb("existingtablemapstrategy.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -5150,7 +5150,7 @@ TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IndexGenerationOnClassId)
+TEST_F(DbMappingTestFixture, IndexGenerationOnClassId)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5194,7 +5194,7 @@ TEST_F(ECDbMappingTestFixture, IndexGenerationOnClassId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
+TEST_F(DbMappingTestFixture, NotMappedWithinClassHierarchy)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5245,7 +5245,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedWithinClassHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
+TEST_F(DbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
     {
     std::vector<SchemaItem> unsupportedSchemas;
 
@@ -5426,7 +5426,7 @@ TEST_F(ECDbMappingTestFixture, MultiInheritence_UnsupportedScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTable)
+TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTable)
     {
     ECDbCR ecdb = SetupECDb("multiinheritance.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5461,7 +5461,7 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTa
         "</ECSchema>"), 3);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassId myClassId = ecdb.Schemas().GetECClassId("ts1", "MyClass", ResolveSchema::BySchemaAlias);
+    ECClassId myClassId = ecdb.Schemas().GetClassId("ts1", "MyClass", ResolveSchema::BySchemaAlias);
     ASSERT_TRUE(myClassId.IsValid());
 
     {
@@ -5489,7 +5489,7 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan Eberle                     09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
+TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
     {
     bvector<SchemaItem> testSchemas;
   /*  testSchemas.push_back(SchemaItem("TPH, no joined table, no shared columns",
@@ -5621,14 +5621,14 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
         //stmt.Finalize();
 
         //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.MyClass WHERE ECInstanceId=?")) << scenarioName;
-        //ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId())) << scenarioName << " " << stmt.GetECSql();
+        //ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << scenarioName << " " << stmt.GetECSql();
         //ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
         //ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
         //ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
 
         stmt.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT IMixin_Prop1 FROM ts.IMixin WHERE ECInstanceId=?")) << scenarioName;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId())) << scenarioName << " " << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << scenarioName << " " << stmt.GetECSql();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << scenarioName << " " << stmt.GetECSql();
         ASSERT_FALSE(stmt.IsValueNull(0)) << scenarioName << " " << stmt.GetECSql();
         ASSERT_STREQ("imixin", stmt.GetValueText(0)) << scenarioName << " " << stmt.GetECSql();
@@ -5640,7 +5640,7 @@ TEST_F(ECDbMappingTestFixture, BaseClassAndMixins_Diamond)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipMapping_FailingScenarios)
+TEST_F(DbMappingTestFixture, RelationshipMapping_FailingScenarios)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(
@@ -5794,7 +5794,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipMapping_FailingScenarios)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, CascadeDeletion)
+TEST_F(DbMappingTestFixture, CascadeDeletion)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -5839,7 +5839,7 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     AssertSchemaImport(db, asserted, testItem, "CascadeDeletion.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECSchemaCP schema = db.Schemas().GetECSchema("TestSchema");
+    ECSchemaCP schema = db.Schemas().GetSchema("TestSchema");
     EXPECT_TRUE(schema != nullptr);
 
     ECClassCP ClassA = schema->GetClassCP("ClassA");
@@ -5869,8 +5869,8 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
     ASSERT_TRUE(ClassB_Inserter.IsValid());
     ClassB_Inserter.Insert(*ClassB_Instance);
 
-    ECRelationshipClassCP AHasB = db.Schemas().GetECClass("TestSchema", "AHasB")->GetRelationshipClassCP();
-    ECRelationshipClassCP BHasC = db.Schemas().GetECClass("TestSchema", "BHasC")->GetRelationshipClassCP();
+    ECRelationshipClassCP AHasB = db.Schemas().GetClass("TestSchema", "AHasB")->GetRelationshipClassCP();
+    ECRelationshipClassCP BHasC = db.Schemas().GetClass("TestSchema", "BHasC")->GetRelationshipClassCP();
 
     //Inserting relationship instance.
     ECN::StandaloneECRelationshipInstancePtr ClassAHasB_relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*AHasB)->CreateRelationshipInstance();
@@ -5975,7 +5975,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     ASSERT_EQ(expectedStat, stmt.Step(newKey));
     ASSERT_EQ(expectedToSucceed, newKey.IsValid());
 
-    id = newKey.GetECInstanceId();
+    id = newKey.GetInstanceId();
     }
 
     //now test when ECInstanceId is specified
@@ -5988,7 +5988,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
     ECInstanceKey newKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
-    ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
+    ASSERT_EQ(id.GetValue(), newKey.GetInstanceId().GetValue());
     }
 
     {
@@ -6002,7 +6002,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     stmt.BindId(1, id);
     ECInstanceKey newKey;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << "Disable flag does not affect case when ECInstanceId is specified";
-    ASSERT_EQ(id.GetValue(), newKey.GetECInstanceId().GetValue());
+    ASSERT_EQ(id.GetValue(), newKey.GetInstanceId().GetValue());
     }
 
     BeTest::SetFailOnAssert(true);
@@ -6011,7 +6011,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
+TEST_F(DbMappingTestFixture, EnforceLinkTableMapping)
     {
     SchemaItem testItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -6061,7 +6061,7 @@ TEST_F(ECDbMappingTestFixture, EnforceLinkTableMapping)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
+TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
     {
             {
             std::vector<SchemaItem> testItems;
@@ -6498,7 +6498,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest3.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECClassId baseClassId = db.Schemas().GetECClassId("TestSchema", "Base");
+                ECClassId baseClassId = db.Schemas().GetClassId("TestSchema", "Base");
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId<>%s", baseClassId.ToString().c_str());
                 AssertIndex(db, "uix_sub1_code", true, "ts3_Base", {"Code"}, indexWhereClause.c_str());
@@ -6575,7 +6575,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 ASSERT_FALSE(asserted);
                 ecdb.SaveChanges();
                 ecdbFilePath = ecdb.GetDbFileName();
-                sub3ClassId = ecdb.Schemas().GetECClassId("TestSchema", "Sub3");
+                sub3ClassId = ecdb.Schemas().GetClassId("TestSchema", "Sub3");
 
                 AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
@@ -6595,7 +6595,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
                 //This index must include the new subclass Sub4
-                ECClassId sub4ClassId = ecdb.Schemas().GetECClassId("TestSchema2", "Sub4");
+                ECClassId sub4ClassId = ecdb.Schemas().GetClassId("TestSchema2", "Sub4");
                 Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString() + " OR ECClassId=" + sub4ClassId.ToString();
                 AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
                 }
@@ -6704,8 +6704,8 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest6.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
-                ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
+                ECClassId sub1ClassId = db.Schemas().GetClassId("TestSchema", "Sub1");
+                ECClassId sub11ClassId = db.Schemas().GetClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
                 AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc1"}, indexWhereClause.c_str());
                 }
@@ -6946,7 +6946,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(db, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
                 AssertIndex(db, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
 
-                ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
+                ECClassCP subSubClass = db.Schemas().GetClass("TestSchema", "SubSub");
                 ASSERT_TRUE(subSubClass != nullptr);
                 Utf8String indexWhere = "ECClassId=" + subSubClass->GetId().ToString();
 
@@ -7011,7 +7011,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                  02/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, UserDefinedIndexOnMixin)
+TEST_F(DbMappingTestFixture, UserDefinedIndexOnMixin)
     {
     SchemaItem testItem("Index on mixin",
                         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7068,7 +7068,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexOnMixin)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                  02/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
+TEST_F(DbMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(
@@ -7192,7 +7192,7 @@ TEST_F(ECDbMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbMappingTestFixture, PartialIndex)
+TEST_F(DbMappingTestFixture, PartialIndex)
     {
         ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
@@ -7259,7 +7259,7 @@ TEST_F(ECDbMappingTestFixture, PartialIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbMappingTestFixture, UniqueIndex)
+TEST_F(DbMappingTestFixture, UniqueIndex)
     {
     ECDbCR ecdb = SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                 "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -7312,7 +7312,7 @@ TEST_F(ECDbMappingTestFixture, UniqueIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Majd.Uddin                         03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbMappingTestFixture, IndexErrors)
+TEST_F(DbMappingTestFixture, IndexErrors)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
@@ -7413,7 +7413,7 @@ TEST_F(ECDbMappingTestFixture, IndexErrors)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
+TEST_F(DbMappingTestFixture, PropertyMapCAOnNavigationProperty)
     {
     std::vector<SchemaItem> invalidCases {
         SchemaItem(
@@ -7476,7 +7476,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
+TEST_F(DbMappingTestFixture, PropertyMapCAColumnNameCollation)
     {
     std::vector<SchemaItem> invalidSchemas;
     invalidSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -7666,7 +7666,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
+TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     {
     ECDbCR ecdb = SetupECDb("propertymapcatests.ecdb",
                             SchemaItem(
@@ -7821,7 +7821,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
+TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
     {
             {
             SchemaItem testItem(
@@ -7947,7 +7947,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
+TEST_F(DbMappingTestFixture, IndexCreationForRelationships)
     {
             {
             SchemaItem testItem(
@@ -8435,8 +8435,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts8_B").size());
 
-                ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
-                ECClassId b11ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B11");
+                ECClassId b1ClassId = ecdb.Schemas().GetClassId("TestSchema", "B1");
+                ECClassId b11ClassId = ecdb.Schemas().GetClassId("TestSchema", "B11");
 
                 //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
                 Utf8String indexWhereClause;
@@ -8517,7 +8517,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
+TEST_F(DbMappingTestFixture, NotNullConstraintsOnFkColumns)
     {
     {
     SchemaItem testItem("Plain relationship classes",
@@ -8879,7 +8879,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
+TEST_F(DbMappingTestFixture, ForeignKeyColumnPosition)
     {
     auto assertColumnPosition = [] (ECDbCR ecdb, Utf8CP tableName, Utf8CP columnName, int expectedPosition, Utf8CP scenario)
         {
@@ -9177,7 +9177,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyColumnPosition)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
+TEST_F(DbMappingTestFixture, OneToOneRelationshipMapping)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem("embedding relationships", "<?xml version='1.0' encoding='utf-8'?>"
@@ -9507,7 +9507,7 @@ TEST_F(ECDbMappingTestFixture, OneToOneRelationshipMapping)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
+TEST_F(DbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -9649,7 +9649,7 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyConstraintWhereLinkTableIsRequired)
+TEST_F(DbMappingTestFixture, ForeignKeyConstraintWhereLinkTableIsRequired)
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -9685,7 +9685,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraintWhereLinkTableIsRequired)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
+TEST_F(DbMappingTestFixture, ForeignKeyConstraint_Misc)
     {
     Utf8CP ecdbName = "ForeignKeyConstraint.ecdb";
     Utf8CP childTableName = "ts_Child";
@@ -9868,7 +9868,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
+TEST_F(DbMappingTestFixture, UseECInstanceIdAsForeignKey)
     {
     SetupECDb("useecinstanceidasfk1.ecdb", SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -10187,7 +10187,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)
+TEST_F(DbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)
     {
     auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
         {
@@ -10288,7 +10288,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubcl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
+TEST_F(DbMappingTestFixture, RelationshipWithAbstractConstraintClass)
     {
     auto getGeometrySourceHasGeometryRowCount = [] (ECDbCR ecdb)
         {
@@ -10463,10 +10463,10 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
 
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, geomElem1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, geomElem1Key.GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom1Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, geomElem1Key.GetInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, geomElem1Key.GetClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom1Key.GetInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom1Key.GetClassId()));
 
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against GeometricElement is expected to succeed";
         insertStmt.Reset();
@@ -10474,10 +10474,10 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
 
         ASSERT_EQ(1, getGeometrySourceHasGeometryRowCount(ecdb)) << "After inserting one relationship [Scenario: " << testSchema.m_name << "]";
 
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetECClassId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetECInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom2Key.GetECClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(1, elem1Key.GetInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(2, elem1Key.GetClassId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(3, geom2Key.GetInstanceId()));
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindId(4, geom2Key.GetClassId()));
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step()) << "Inserting GeometrySourceHasGeometry against ExtendedElement is also expected to succeed";
         insertStmt.Reset();
         insertStmt.ClearBindings();
@@ -10488,7 +10488,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildEnd)
+TEST_F(DbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildEnd)
     {
     SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -10513,7 +10513,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraintOnChildEnd.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassId faceClassId = ecdb.Schemas().GetECClassId("TestSchema", "Face");
+    ECClassId faceClassId = ecdb.Schemas().GetClassId("TestSchema", "Face");
     ASSERT_TRUE(faceClassId.IsValid());
     ECInstanceKey solidKey;
     {
@@ -10540,7 +10540,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
+TEST_F(DbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
     {
             {
             SchemaItem testItem(
@@ -10577,7 +10577,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
                 MapStrategyInfo mapStrategy;
                 ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
                 ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
@@ -10619,7 +10619,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
                 MapStrategyInfo mapStrategy;
                 ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
                 ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
@@ -10669,7 +10669,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
                 MapStrategyInfo mapStrategy;
                 ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
                 ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
@@ -10714,7 +10714,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 AssertSchemaImport(ecdb, asserted, testItem, "relationshipwithnotmappedclassacsconstraint.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
+                ECRelationshipClassCP relClass = ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
                 MapStrategyInfo mapStrategy;
                 ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
                 ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
@@ -10725,7 +10725,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationship)
+TEST_F(DbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationship)
     {
     SchemaItem opSchema(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
@@ -10752,8 +10752,8 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationshi
     AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassonNsideof1Nrelationship.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
-    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
 
     Savepoint sp(ecdb, "CRUD Operations");
     //Insert Statements
@@ -10802,9 +10802,9 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationshi
     AssertSchemaImport(asserted, ecdb, op3dSchema);
     ASSERT_FALSE(asserted);
 
-    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
-    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
-    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
+    item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetClass("OpenPlant_3D", "ITEM_3D");
 
     //Insert Statements
     {
@@ -10856,7 +10856,7 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRelationshi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationship)
+TEST_F(DbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationship)
     {
     SchemaItem opSchema(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
@@ -10883,8 +10883,8 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
     AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclasson1sideof1Nrelationship.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
-    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
+    ECClassCP item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
 
     Savepoint sp(ecdb, "CRUD operations");
     //Insert Statements
@@ -10933,9 +10933,9 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
     AssertSchemaImport(asserted, ecdb, op3dSchema);
     ASSERT_FALSE(asserted);
 
-    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
-    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
-    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+    item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
+    ECClassCP unit_3D = ecdb.Schemas().GetClass("OpenPlant_3D", "UNIT_3D");
 
     //Insert Statements
     {
@@ -10987,7 +10987,7 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
+TEST_F(DbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     {
     SchemaItem opSchema(
         "<?xml version = '1.0' encoding = 'utf-8'?>"
@@ -11015,8 +11015,8 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     AssertSchemaImport(ecdb, asserted, opSchema, "addderivedclassofconstraintsforNNrelationship.ecdb");
     ASSERT_FALSE(asserted);
 
-    ECClassCP item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
-    ECClassCP unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
+    ECClassCP item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
+    ECClassCP unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
 
     Savepoint sp(ecdb, "CRUD Operations");
     //Insert Statements
@@ -11075,10 +11075,10 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     AssertSchemaImport(asserted, ecdb, op3dSchema);
     ASSERT_FALSE(asserted);
 
-    item = ecdb.Schemas().GetECClass("OpenPlant", "ITEM");
-    unit = ecdb.Schemas().GetECClass("OpenPlant", "UNIT");
-    ECClassCP item_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "ITEM_3D");
-    ECClassCP unit_3D = ecdb.Schemas().GetECClass("OpenPlant_3D", "UNIT_3D");
+    item = ecdb.Schemas().GetClass("OpenPlant", "ITEM");
+    unit = ecdb.Schemas().GetClass("OpenPlant", "UNIT");
+    ECClassCP item_3D = ecdb.Schemas().GetClass("OpenPlant_3D", "ITEM_3D");
+    ECClassCP unit_3D = ecdb.Schemas().GetClass("OpenPlant_3D", "UNIT_3D");
 
     //Insert Statements
     {
@@ -11138,7 +11138,7 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCA)
+TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCA)
     {
     SetupECDb("classhascurrenttimestampCA.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -11165,7 +11165,7 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCA)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT LastMod FROM ts.Foo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetInstanceId()));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_FALSE(statement.IsValueNull(0));
@@ -11177,11 +11177,11 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCA)
     BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp
     ECSqlStatement updateStatement;
     ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(GetECDb(), "UPDATE ts.Foo SET Code=23 WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
     }
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_FALSE(statement.IsValueNull(0));
     DateTime lastMod2 = statement.GetValueDateTime(0);
@@ -11195,7 +11195,7 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCA)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle             03/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
+TEST_F(DbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
     {
     AssertSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -11227,7 +11227,7 @@ TEST_F(ECDbMappingTestFixture, ClassHasCurrentTimeStampCAOnMixin)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
+TEST_F(DbMappingTestFixture, DiamondProblem_Case0)
     {
     SetupECDb("diamond_problem.ecdb",
               SchemaItem("Diamond Problem",
@@ -11326,7 +11326,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
                          "</ECSchema>"
               ));
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
 
 
 
@@ -11491,7 +11491,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case0)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
+TEST_F(DbMappingTestFixture, DiamondProblem_Case1)
     {
     SetupECDb("diamond_problem.ecdb",
               SchemaItem("Diamond Problem",
@@ -11539,7 +11539,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D_A      (P1, P2, P3) VALUES (11, 21, 31)"));
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D_B      (P1, P4    ) VALUES (12, 42    )"));
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.DB_XFace (P1, P2, P4) VALUES (12, 22, 43)"));
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3 FROM ts.D_A WHERE ECInstanceId = 1"));
@@ -11572,7 +11572,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
+TEST_F(DbMappingTestFixture, DiamondProblem_Case2)
     {
     SetupECDb("diamond_problem.ecdb",
               SchemaItem("Diamond Problem",
@@ -11635,7 +11635,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D2_AB (P1, P2, P3, P5, P7) VALUES (12, 22, 32, 52, 72)"));
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D3_A  (P1, P2, P4)     VALUES (13, 23, 43)"));
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.D4_B  (P1, P3, P5)     VALUES (14, 34, 54)"));
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P3, P4, P6 FROM ts.D1_AB WHERE ECInstanceId = 1"));
@@ -11693,7 +11693,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
+TEST_F(DbMappingTestFixture, DiamondProblem_Case3)
     {
     SetupECDb("diamond_problem3.ecdb",
               SchemaItem("Diamond Problem",
@@ -11734,7 +11734,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
                          "  </ECEntityClass>"
                          "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
 
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Base   (P1                ) VALUES ('P1-Base')"));
@@ -11773,7 +11773,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case3)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
+TEST_F(DbMappingTestFixture, MixinAsRelationshipEnd)
     {
     SetupECDb("diamond_problem3.ecdb",
               SchemaItem("Diamond Problem",
@@ -11842,7 +11842,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.Tire           (Code, Diameter      ) VALUES ('CODE-3', 15.0)"));
 
 
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT  SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
@@ -11863,7 +11863,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
+TEST_F(DbMappingTestFixture, MixinAsRelationshipEnd2)
     {
     SetupECDb("diamond_problem3.ecdb",
               SchemaItem("Diamond Problem",
@@ -11954,14 +11954,14 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd2)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')")) << GetECDb().GetLastError().c_str();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << ": " << GetECDb().GetLastError().c_str();
     stmt.Finalize();
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
+TEST_F(DbMappingTestFixture, MixinAsRelationshipEnd3)
     {
     SetupECDb("diamond_problem3.ecdb",
               SchemaItem("Diamond Problem",
@@ -12020,7 +12020,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
                          "  </ECEntityClass>"
                          "</ECSchema>"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
 
     Reopen();
@@ -12097,7 +12097,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
                                  "</ECSchema>");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), item);
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
 
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
@@ -12110,7 +12110,7 @@ TEST_F(ECDbMappingTestFixture, MixinAsRelationshipEnd3)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
+TEST_F(DbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
     {
     SetupECDb("useecinstanceidasfk3.ecdb",
               SchemaItem(R"xml(
@@ -12166,7 +12166,7 @@ TEST_F(ECDbMappingTestFixture, VerifyPositionOfColumnsForNavigationProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
+TEST_F(DbMappingTestFixture, DiamondProblemInMixin)
     {
     SetupECDb("useecinstanceidasfk3.ecdb",
               SchemaItem(R"xml(
@@ -12230,13 +12230,13 @@ TEST_F(ECDbMappingTestFixture, DiamondProblemInMixin)
 
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
-    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().Schemas().CreateClassViewsInDb();
     GetECDb().SaveChanges();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
+TEST_F(DbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
     {
     ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
@@ -12385,7 +12385,7 @@ TEST_F(ECDbMappingTestFixture, Overflow_PartiallyMapStructToOverFlow)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
+TEST_F(DbMappingTestFixture, AmbigousRelationshipProperty)
     {
     SetupECDb("ambigousRelationshipProperty.ecdb",
               SchemaItem("N:N and holding",
@@ -12436,10 +12436,10 @@ TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
     {//INSERT GeometryHoldsParts
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, P1) VALUES(?,?,?,?, 'GHP1')"));
-    stmt.BindId(1, geometryKey.GetECInstanceId());
-    stmt.BindId(2, geometryKey.GetECClassId());
-    stmt.BindId(3, geometryPartKey.GetECInstanceId());
-    stmt.BindId(4, geometryPartKey.GetECClassId());
+    stmt.BindId(1, geometryKey.GetInstanceId());
+    stmt.BindId(2, geometryKey.GetClassId());
+    stmt.BindId(3, geometryPartKey.GetInstanceId());
+    stmt.BindId(4, geometryPartKey.GetClassId());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     GetECDb().SaveChanges();
     }//===============
@@ -12448,10 +12448,10 @@ TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, P1 FROM ts.GeometryHoldsParts WHERE P1 = 'GHP1'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(geometryKey.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(0));
-    ASSERT_EQ(geometryKey.GetECClassId(), stmt.GetValueId<ECClassId>(1));
-    ASSERT_EQ(geometryPartKey.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(2));
-    ASSERT_EQ(geometryPartKey.GetECClassId(), stmt.GetValueId<ECClassId>(3));
+    ASSERT_EQ(geometryKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    ASSERT_EQ(geometryKey.GetClassId(), stmt.GetValueId<ECClassId>(1));
+    ASSERT_EQ(geometryPartKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(2));
+    ASSERT_EQ(geometryPartKey.GetClassId(), stmt.GetValueId<ECClassId>(3));
     ASSERT_STREQ("GHP1", stmt.GetValueText(4));
     }//===============
     }
@@ -12459,7 +12459,7 @@ TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
+TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
     {
     SetupECDb("propertyOrderTest.ecdb", SchemaItem("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                                                    "<ECSchema schemaName=\"OrderSchema\" alias=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
@@ -12506,7 +12506,7 @@ TEST_F(ECDbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, LoadECSchemas)
+TEST_F(DbMappingTestFixture, LoadECSchemas)
     {
     ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -12538,19 +12538,19 @@ TEST_F(ECDbMappingTestFixture, LoadECSchemas)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ImportECSchemaWithSameVersionAndSameContentTwice)
+TEST_F(DbMappingTestFixture, ImportECSchemaWithSameVersionAndSameContentTwice)
     {
     ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(db.IsDbOpen());
     ECSchemaReadContextPtr schemaContext = nullptr;
     ECSchemaPtr ecSchema = ReadECSchemaFromDisk(schemaContext, BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas()));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DiegoRelationshipTest)
+TEST_F(DbMappingTestFixture, DiegoRelationshipTest)
     {
     // Create a sample project
     ECDbCR ecdb = SetupECDb("importecschema.ecdb");
@@ -12563,15 +12563,15 @@ TEST_F(ECDbMappingTestFixture, DiegoRelationshipTest)
     ASSERT_TRUE(s2.IsValid());
 
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(ctx->GetCache().GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
-    ECClassCP civilModelClass = ecdb.Schemas().GetECClass("DiegoSchema1", "CivilModel");
+    ECClassCP civilModelClass = ecdb.Schemas().GetClass("DiegoSchema1", "CivilModel");
     ASSERT_TRUE(civilModelClass != nullptr);
-    ECClassCP datasetModelClass = ecdb.Schemas().GetECClass("DiegoSchema1", "DataSetModel");
+    ECClassCP datasetModelClass = ecdb.Schemas().GetClass("DiegoSchema1", "DataSetModel");
     ASSERT_TRUE(datasetModelClass != nullptr);
-    ECClassCP relClass = ecdb.Schemas().GetECClass("DiegoSchema1", "CivilModelHasDataSetModel");
+    ECClassCP relClass = ecdb.Schemas().GetClass("DiegoSchema1", "CivilModelHasDataSetModel");
     ASSERT_TRUE(relClass != nullptr);
-    ECClassCP geometricModelClass = ecdb.Schemas().GetECClass("DiegoSchema2", "GeometricModel");
+    ECClassCP geometricModelClass = ecdb.Schemas().GetClass("DiegoSchema2", "GeometricModel");
     ASSERT_TRUE(geometricModelClass != nullptr);
 
     IECInstancePtr civilModel1 = ECDbTestUtility::CreateArbitraryECInstance(*civilModelClass);
@@ -12667,7 +12667,7 @@ void AssertImportedSchema(ECDbCR ecdb, Utf8CP expectedSchemaName, Utf8CP expecte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
+TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
     {
     ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
@@ -12678,18 +12678,18 @@ TEST_F(ECDbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstance
     //now import test schema where the table already exists for the ECClass. This is expected to fail.
     BeTest::SetFailOnAssert(false);
     {
-    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
     }
     BeTest::SetFailOnAssert(true);
 
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_FALSE(ecdb.ColumnExists("t_Foo", "ECInstanceId")) << "ECInstanceId column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportSchemas.";
+    EXPECT_FALSE(ecdb.ColumnExists("t_Foo", "ECInstanceId")) << "ECInstanceId column not expected to be in the table after ImportSchemas as ImportSchemas is not expected to modify existing tables.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
+TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
     {
     ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
@@ -12698,12 +12698,12 @@ TEST_F(ECDbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdC
 
     ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
     //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
     AssertImportedSchema(ecdb, "test", "Foo", "Name");
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Id")) << "Existing column is expected to still be in the table after ImportECSchemas.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Name")) << "Existing column is expected to still be in the table after ImportSchemas.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Foo", "Id")) << "Existing column is expected to still be in the table after ImportSchemas.";
     }
 
 
@@ -12711,7 +12711,7 @@ TEST_F(ECDbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
+TEST_F(DbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
     {
     // Create a sample project
     ECDbCR ecdb = SetupECDb("importecschema.ecdb");
@@ -12723,12 +12723,12 @@ TEST_F(ECDbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
     ECSchemaCachePtr testSchemaCache = CreateImportSchemaAgainstExistingTablesTestSchema();
     //now import test schema where the table already exists for the ECClass
     //missing link tables are created if true is passed for createTables
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
 
     //ImportSchema does not (yet) modify the existing tables. So it is expected that the ECInstanceId column is not added
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Id")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportECSchemas.";
-    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FK_t_FooHasGoo")) << "FK_t_FooHasGoo column not expected to be in the table after ImportECSchemas as ImportECSchemas is not expected to modify existing tables.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Id")) << "Existing column is expected to still be in the table after ImportSchemas.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "Price")) << "Existing column is expected to still be in the table after ImportSchemas.";
+    EXPECT_TRUE(ecdb.ColumnExists("t_Goo", "FK_t_FooHasGoo")) << "FK_t_FooHasGoo column not expected to be in the table after ImportSchemas as ImportSchemas is not expected to modify existing tables.";
     EXPECT_TRUE(ecdb.TableExists("t_RelFooGoo")) << "Existence of Link table not as expected.";
     }
 
@@ -12828,7 +12828,7 @@ IECInstancePtr CreateAndAssignRandomCAInstance(ECSchemaPtr testSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ReadCustomAttributesTest)
+TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     {
     Utf8CP const CAClassName = "MyCA";
 
@@ -12849,7 +12849,7 @@ TEST_F(ECDbMappingTestFixture, ReadCustomAttributesTest)
     Utf8String dbPath;
     {
     ECDbR db = SetupECDb("customattributestest.ecdb");
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas())) << "Could not import test schema into ECDb file";
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(testSchemaCache->GetSchemas())) << "Could not import test schema into ECDb file";
     db.SaveChanges();
     dbPath = db.GetDbFileName();
     db.CloseDb();
@@ -12859,7 +12859,7 @@ TEST_F(ECDbMappingTestFixture, ReadCustomAttributesTest)
     DbResult stat = GetECDb().OpenBeSQLiteDb(dbPath.c_str(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Could not open test ECDb file";
 
-    ECSchemaCP readSchema = GetECDb().Schemas().GetECSchema(testSchema->GetName().c_str());
+    ECSchemaCP readSchema = GetECDb().Schemas().GetSchema(testSchema->GetName().c_str());
     ASSERT_TRUE(readSchema != nullptr) << "Could not read test schema from reopened ECDb file.";
     //*** assert custom attribute instance with instance id
     ECClassCP domainClass1 = readSchema->GetClassCP("domain1");
@@ -12892,7 +12892,7 @@ TEST_F(ECDbMappingTestFixture, ReadCustomAttributesTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
+TEST_F(DbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
     {
     ECSchemaPtr testSchema = nullptr;
     ECSchemaCachePtr testSchemaCache = nullptr;
@@ -12902,7 +12902,7 @@ TEST_F(ECDbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
     CreateAndAssignRandomCAInstance(testSchema);
 
     ECDbCR db = SetupECDb("customattributestest.ecdb");
-    auto importStat = db.Schemas().ImportECSchemas(testSchemaCache->GetSchemas());
+    auto importStat = db.Schemas().ImportSchemas(testSchemaCache->GetSchemas());
     ASSERT_EQ(SUCCESS, importStat) << "Could not import test schema into ECDb file";
 
     //now retrieve the persisted CA XML from ECDb directly
@@ -12932,7 +12932,7 @@ TEST_F(ECDbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ImportSupplementalSchemas)
+TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
     {
     Utf8CP dbFileName = "supplementalschematest.ecdb";
     ECDbR ecdb = SetupECDb(dbFileName);
@@ -12948,7 +12948,7 @@ TEST_F(ECDbMappingTestFixture, ImportSupplementalSchemas)
     supplementalSchemas.push_back(supple.get());
     SupplementedSchemaBuilder builder;
 
-    BentleyStatus schemaStatus = ecdb.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
+    BentleyStatus schemaStatus = ecdb.Schemas().ImportSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
 
     ecdb.SaveChanges();
@@ -12959,7 +12959,7 @@ TEST_F(ECDbMappingTestFixture, ImportSupplementalSchemas)
     dbPath.AppendToPath(BeFileName(dbFileName));
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
-    ECSchemaCP startupCompanySchema = ecdb.Schemas().GetECSchema("StartupCompany");
+    ECSchemaCP startupCompanySchema = ecdb.Schemas().GetSchema("StartupCompany");
     ASSERT_TRUE(startupCompanySchema != nullptr);
     ECClassCP aaa2 = startupCompanySchema->GetClassCP("AAA");
 
@@ -12975,12 +12975,12 @@ TEST_F(ECDbMappingTestFixture, ImportSupplementalSchemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ArrayPropertyTest)
+TEST_F(DbMappingTestFixture, ArrayPropertyTest)
     {
     ECDbCR db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(db.IsDbOpen());
 
-    ECSchemaCP startupCompanySchema = db.Schemas().GetECSchema("StartupCompany", true);
+    ECSchemaCP startupCompanySchema = db.Schemas().GetSchema("StartupCompany", true);
     ASSERT_TRUE(startupCompanySchema != nullptr);
 
     ECClassCP arrayTestClass = startupCompanySchema->GetClassCP("ArrayTestclass");
@@ -13025,7 +13025,7 @@ TEST_F(ECDbMappingTestFixture, ArrayPropertyTest)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
+TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
     {
     auto getColumnCount = [] (ECDbCR db, Utf8CP table)
         {

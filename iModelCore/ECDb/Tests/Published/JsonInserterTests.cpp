@@ -51,7 +51,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     Json::Value jsonInput;
     ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
 
-    ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass, nullptr);
 
@@ -64,7 +64,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, "A-Model.pdf", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
@@ -125,7 +125,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass, nullptr);
 
@@ -138,7 +138,7 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, "A-Model.pdf", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
@@ -175,7 +175,7 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
     ECDbCR ecdb = SetupECDb("InsertPartialPointJson.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
 
     std::vector<std::pair<Utf8CP, bool>> testDataset
@@ -285,7 +285,7 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
     point3dObjValue.AddMember("z", 0, rapidJsonVal.GetAllocator());
     rapidJsonVal.AddMember("p3d", point3dObjValue, rapidJsonVal.GetAllocator());
 
-    ECClassCP parentClass = ecdb.Schemas().GetECClass("TestSchema", "Parent");
+    ECClassCP parentClass = ecdb.Schemas().GetClass("TestSchema", "Parent");
     ASSERT_TRUE(parentClass != nullptr);
     JsonInserter inserter(ecdb, *parentClass, nullptr);
 

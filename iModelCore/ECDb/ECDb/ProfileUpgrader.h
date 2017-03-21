@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbProfileUpgrader.h $
+|     $Source: ECDb/ProfileUpgrader.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,29 +13,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader
+struct ProfileUpgrader
     {
 private:
     virtual DbResult _Upgrade(ECDbCR) const = 0;
 
 protected:
-    ECDbProfileUpgrader() {}
+    ProfileUpgrader() {}
 
 public:
-    virtual ~ECDbProfileUpgrader() {}
+    virtual ~ProfileUpgrader() {}
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
     };
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbProfileECSchemaUpgrader final
+struct ProfileSchemaUpgrader final
     {
 private:
-    ECDbProfileECSchemaUpgrader();
-    ~ECDbProfileECSchemaUpgrader();
+    ProfileSchemaUpgrader();
+    ~ProfileSchemaUpgrader();
 
-    static Utf8CP GetECDbSystemECSchemaXml();
+    static Utf8CP GetECDbSystemSchemaXml();
 
     static BentleyStatus ReadECDbSystemSchema(ECN::ECSchemaReadContextR readContext, Utf8CP ecdbFileName);
     static BentleyStatus ReadSchemaFromDisk(ECN::ECSchemaReadContextR readContext, ECN::SchemaKey&, Utf8CP ecdbFileName);

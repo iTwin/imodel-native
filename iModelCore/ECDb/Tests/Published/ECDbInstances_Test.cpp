@@ -15,90 +15,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECDbInstances : ECDbTestFixture {};
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECInstanceIdTests, Conversion)
-    {
-    //ToString
-    ECInstanceId ecInstanceId(UINT64_C(123456789));
-    Utf8CP expectedInstanceId = "123456789";
-    Utf8Char actualInstanceId[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    ecInstanceId.ToString(actualInstanceId);
-    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue();
 
-    ecInstanceId = ECInstanceId(UINT64_C(0));
-    expectedInstanceId = "0";
-    actualInstanceId[0] = '\0';
-    ecInstanceId.ToString(actualInstanceId);
-    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValueUnchecked();
 
-    //FromString
-    Utf8CP instanceId = "123456789";
-    ECInstanceId expectedECInstanceId(UINT64_C(123456789));
-    ECInstanceId actualECInstanceId;
-    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-    EXPECT_EQ(expectedECInstanceId.GetValue(), actualECInstanceId.GetValue()) << "Unexpected ECInstanceId parsed from InstanceId " << instanceId;
 
-    instanceId = "0";
-    expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-
-    instanceId = "0000";
-    expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-
-    instanceId = "-123456";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "-12345678901234";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    //now test with invalid instance ids
-    BeTest::SetFailOnAssert(false);
-
-    instanceId = "0x75BCD15";
-    expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "i-12345";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId starting with i- '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "1234a123";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "blabla";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    BeTest::SetFailOnAssert(true);
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                          04/12
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbInstances, QuoteTest)
-    {
-    ECDbCR ecdb = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''a''a'''"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ONLY stco.ClassWithPrimitiveProperties SET stringProp = '''g''''g'''"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT stringProp FROM stco.ClassWithPrimitiveProperties WHERE stringProp = '''g''''g'''"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
@@ -169,7 +88,7 @@ void PopulatePrimitiveValueWithCustomDataSet(ECValueR value, PrimitiveType primi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SetupInsertECInstanceWithNullValues(ECInstanceKey& instanceKey, ECValueP nonNullValue, ECClassCP& testClass, ECDbCR ecdb, Utf8CP testSchemaName, Utf8CP testClassName, Utf8CP nonNullPropertyName)
     {
-    testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
+    testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
     if (testClass == nullptr)
         return ERROR;
 
@@ -212,7 +131,7 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
     auto stat = statement.Prepare(db, ecsql.c_str());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    stat = statement.BindId(1, instanceKey.GetECInstanceId());
+    stat = statement.BindId(1, instanceKey.GetInstanceId());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
     int rowCount = 0;
@@ -256,7 +175,7 @@ TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
     auto stat = statement.Prepare(db, ecsql.c_str());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
-    stat = statement.BindId(1, instanceKey.GetECInstanceId());
+    stat = statement.BindId(1, instanceKey.GetInstanceId());
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
     ECInstanceECSqlSelectAdapter dataAdapter(statement);
@@ -344,7 +263,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     bvector<ECSchemaCP> schemas;
     schemas.push_back(schema.get());
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemas));
 
     StandaloneECEnablerPtr struct1Enabler = struct1->GetDefaultStandaloneEnabler();
     StandaloneECEnablerPtr struct2Enabler = struct2->GetDefaultStandaloneEnabler();
@@ -526,7 +445,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ASSERT_EQ(3, (int) instances.size());
     IECInstancePtr targetInstance = instances[0];
 
-    ECRelationshipClassCP relClass = ecdb.Schemas().GetECClass("StartupCompany", "Foo_has_Bars")->GetRelationshipClassCP();
+    ECRelationshipClassCP relClass = ecdb.Schemas().GetClass("StartupCompany", "Foo_has_Bars")->GetRelationshipClassCP();
     ASSERT_TRUE(relClass != nullptr) << "Could not find relationship class Foo_has_Bars in test schema";
 
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass);
@@ -560,7 +479,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ecStatement.Reset();
 
     rows = 0;
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("StartupCompany", "Bar");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("StartupCompany", "Bar");
     ASSERT_TRUE(ecClass != nullptr) << "ECDbTestSchemaManager::GetClassP returned null";
     while (ecStatement.Step() == BE_SQLITE_ROW)
         {
@@ -581,7 +500,7 @@ TEST_F(ECDbInstances, SelectClause)
     {
     ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
     ASSERT_TRUE(db.IsDbOpen());
-    ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
+    ECClassCP employee = db.Schemas().GetClass("StartupCompany", "Employee");
     ASSERT_TRUE(employee != nullptr);
 
     ECSqlStatement ecStatement;
@@ -651,10 +570,10 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     ECDb& db = SetupECDb("StartupCompany.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
 
     //Get two classes and create instance of second
-    ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
+    ECClassCP employee = db.Schemas().GetClass("StartupCompany", "Employee");
     ASSERT_TRUE(employee != nullptr);
 
-    ECClassCP project = db.Schemas().GetECClass("StartupCompany", "Project");
+    ECClassCP project = db.Schemas().GetClass("StartupCompany", "Project");
     ASSERT_TRUE(project != nullptr);
     IECInstancePtr projectInstance = ECDbTestUtility::CreateArbitraryECInstance(*project, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
 
@@ -685,7 +604,7 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
     ASSERT_EQ(BE_SQLITE_ERROR, jsonInserter.Insert(instanceKey, jsonInput));
 
     JsonUpdater jsonUpdater(db, *employee, nullptr);
-    ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetECInstanceId(), jsonInput));
+    ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetInstanceId(), jsonInput));
 
     JsonDeleter jsonDeleter(db, *employee, nullptr);
     ASSERT_TRUE(jsonDeleter.IsValid());

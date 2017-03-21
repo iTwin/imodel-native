@@ -48,7 +48,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                 {
                 ECClassId rootClassId = classMap.GetTphHelper()->DetermineTphRootClassId();
                 BeAssert(rootClassId.IsValid());
-                ECClassCP rootClass = ctx.GetECDb().Schemas().GetECClass(rootClassId);
+                ECClassCP rootClass = ctx.GetECDb().Schemas().GetClass(rootClassId);
                 BeAssert(rootClass != nullptr);
                 ClassMap const* rootClassMap = ctx.GetECDb().Schemas().GetDbMap().GetClassMap(*rootClass);
                 BeAssert(rootClassMap != nullptr);

@@ -74,7 +74,7 @@ struct ECSqlRangeTreeTests : SchemaImportTestFixture
         ECInstanceKey newKey;
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
 
-        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-80.7749, 35.3776, -80.7747, 35.3778)));
+        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetInstanceId(), DRange2d::From(-80.7749, 35.3776, -80.7747, 35.3778)));
 
         stmt.Reset();
         stmt.ClearBindings();
@@ -84,7 +84,7 @@ struct ECSqlRangeTreeTests : SchemaImportTestFixture
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
         stmt.Finalize();
 
-        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetECInstanceId(), DRange2d::From(-81.0, 35.0, -79.6, 36.2)));
+        ASSERT_EQ(SUCCESS, AddRowToRtree(ecdb, newKey.GetInstanceId(), DRange2d::From(-81.0, 35.0, -79.6, 36.2)));
 
         ecdb.SaveChanges();
         Utf8String filePath(ecdb.GetDbFileName());

@@ -93,7 +93,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
     {
     ECSqlTestDataset dataset;
 
-    auto abstractClass = ecdb.Schemas().GetECClass("ECSqlTest", "AbstractTablePerHierarchy");
+    auto abstractClass = ecdb.Schemas().GetClass("ECSqlTest", "AbstractTablePerHierarchy");
     Utf8String ecsqlStub;
     if (ToECSql(ecsqlStub, ecsqlType, *abstractClass, true)) //polymorphic
         {
@@ -126,7 +126,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
-    auto abstractNoSubclassesClass = ecdb.Schemas().GetECClass("ECSqlTest", "AbstractNoSubclasses");
+    auto abstractNoSubclassesClass = ecdb.Schemas().GetClass("ECSqlTest", "AbstractNoSubclasses");
     if (ToECSql(ecsqlStub, ecsqlType, *abstractNoSubclassesClass, true)) // polymorphic
         {
         Utf8String ecsql;
@@ -159,7 +159,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAndOrPrecedenceTests(ECSqlType ecs
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "TH3");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "TH3");
     Utf8String testClassECSqlStub;
     if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -191,7 +191,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
     {
     ECSqlTestDataset dataset;
 
-    auto pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    auto pClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
     Utf8String pClassECSqlStub;
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
@@ -540,7 +540,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
     {
     ECSqlTestDataset dataset;
 
-    auto testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PASpatial");
+    auto testClass = ecdb.Schemas().GetClass("ECSqlTest", "PASpatial");
     Utf8String testClassECSqlStub;
     if (ToECSql (testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -565,7 +565,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereCommonGeometryTests (ECSqlType ecs
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         }
 
-    testClass = ecdb.Schemas().GetECClass("ECSqlTest", "SSpatial");
+    testClass = ecdb.Schemas().GetClass("ECSqlTest", "SSpatial");
     if (ToECSql (testClassECSqlStub, ecsqlType, *testClass, false))
         {
         Utf8String ecsql;
@@ -594,7 +594,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    ECClassCP pClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
     const ECClassId pClassId = pClass->GetId ();
 
     Utf8String pClassECSqlStub;
@@ -659,7 +659,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereMatchTests(ECSqlType ecsqlType, EC
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
     Utf8String testClassECSqlStub;
     if (ToECSql(testClassECSqlStub, ecsqlType, *testClass, false))
         {
@@ -694,8 +694,8 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ecdb.Schemas().GetECClassId ("ECSqlTest", "PSA");
-    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
+    auto psaClassId = ecdb.Schemas().GetClassId ("ECSqlTest", "PSA");
+    auto pClassId = ecdb.Schemas().GetClassId("ECSqlTest", "P");
 
     ECInstanceId psaECInstanceId;
     ECInstanceId pECInstanceId;
@@ -718,7 +718,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
     savepoint.Commit ();
     }
 
-    auto psaHasPClass = ecdb.Schemas().GetECClass ("ECSqlTest", "PSAHasP");
+    auto psaHasPClass = ecdb.Schemas().GetClass ("ECSqlTest", "PSAHasP");
     Utf8String psaHasPClassECSqlStub;
     if (ToECSql (psaHasPClassECSqlStub, ecsqlType, *psaHasPClass, false))
         {
@@ -762,7 +762,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
+    auto psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
     
     ECInstanceId psaECInstanceId1;
     ECInstanceId psaECInstanceId2;
@@ -784,7 +784,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     savepoint.Commit ();
     }
 
-    auto psaHasPsaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasPSA");
+    auto psaHasPsaClass = ecdb.Schemas().GetClass("ECSqlTest", "PSAHasPSA");
     Utf8String psaHasPsaClassECSqlStub;
     if (ToECSql (psaHasPsaClassECSqlStub, ecsqlType, *psaHasPsaClass, false))
         {
@@ -828,8 +828,8 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     {
     ECSqlTestDataset dataset;
 
-    auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
-    auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
+    auto psaClassId = ecdb.Schemas().GetClassId("ECSqlTest", "PSA");
+    auto pClassId = ecdb.Schemas().GetClassId("ECSqlTest", "P");
 
     ECInstanceId sourceECInstanceId;
     {
@@ -862,7 +862,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     savepoint.Commit ();
     }
 
-    auto relClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSAHasPWithPrimProps");
+    auto relClass = ecdb.Schemas().GetClass("ECSqlTest", "PSAHasPWithPrimProps");
     Utf8String relClassECSqlStub;
     if (ToECSql (relClassECSqlStub, ecsqlType, *relClass, false))
         {
@@ -915,7 +915,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP psaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ECClassCP psaClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     Utf8String psaClassECSqlStub;
     if (ToECSql (psaClassECSqlStub, ecsqlType, *psaClass, false))
         {
@@ -940,7 +940,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
         }
 
-    ECClassCP saClass = ecdb.Schemas().GetECClass("ECSqlTest", "SA");
+    ECClassCP saClass = ecdb.Schemas().GetClass("ECSqlTest", "SA");
     Utf8String saClassECSqlStub;
     if (ToECSql (saClassECSqlStub, ecsqlType, *saClass, false))
         {
@@ -979,7 +979,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::OptionsTests(ECSqlType ecsqlType, ECDbC
     {
     ECSqlTestDataset dataset;
 
-    ECClassCP pClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    ECClassCP pClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
     Utf8String pClassECSqlStub;
     if (ToECSql(pClassECSqlStub, ecsqlType, *pClass, false))
         {

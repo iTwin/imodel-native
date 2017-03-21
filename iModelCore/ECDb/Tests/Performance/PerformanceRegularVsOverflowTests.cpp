@@ -926,7 +926,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
             testClass->CreatePrimitiveProperty(primitiveP, propName, PrimitiveType::PRIMITIVETYPE_Integer);
             }
 
-        EXPECT_EQ(BentleyStatus::SUCCESS, GetECDb().Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+        EXPECT_EQ(BentleyStatus::SUCCESS, GetECDb().Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
         EXPECT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
         GetECDb().CloseDb();
@@ -940,7 +940,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql)
     {
-    ECSchemaCP ecSchema = GetECDb().Schemas().GetECSchema("TestSchema", true);
+    ECSchemaCP ecSchema = GetECDb().Schemas().GetSchema("TestSchema", true);
     for (ECClassCP testClass : ecSchema->GetClasses())
         {
         Utf8StringCR className = testClass->GetECSqlName();

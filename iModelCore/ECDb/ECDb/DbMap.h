@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbMap.h $
+|     $Source: ECDb/DbMap.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     Casey.Mullen      11/2011
 +===============+===============+===============+===============+===============+======*/
-struct ECDbMap final : NonCopyableClass
+struct DbMap final : NonCopyableClass
     {
     public:
         typedef bmap<DbTable*, bset<ClassMap*>> ClassMapsByTable;
@@ -48,8 +48,8 @@ struct ECDbMap final : NonCopyableClass
         BentleyStatus LogInvalidDbMappings() const;
 
     public:
-        explicit ECDbMap(ECDbCR ecdb);
-        ~ECDbMap() {}
+        explicit DbMap(ECDbCR ecdb);
+        ~DbMap() {}
         void ClearCache() const;
 
         ClassMap const* GetClassMap(ECN::ECClassCR) const;

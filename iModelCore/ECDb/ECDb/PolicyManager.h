@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbPolicyManager.h $
+|     $Source: ECDb/PolicyManager.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,22 +17,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! in a given context
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbPolicy final
+struct Policy final
     {
     private:
         bool m_isSupported;
         Utf8String m_notSupportedMessage;
 
-        ECDbPolicy(bool isSupported) : m_isSupported(isSupported) {}
-        ECDbPolicy(Utf8StringCR notSupportedMessage) : m_isSupported(false), m_notSupportedMessage(notSupportedMessage) {}
+        Policy(bool isSupported) : m_isSupported(isSupported) {}
+        Policy(Utf8StringCR notSupportedMessage) : m_isSupported(false), m_notSupportedMessage(notSupportedMessage) {}
 
     public:
-        ~ECDbPolicy() {}
+        ~Policy() {}
 
-        ECDbPolicy(ECDbPolicy const& rhs) : m_isSupported(rhs.m_isSupported), m_notSupportedMessage(rhs.m_notSupportedMessage) {}
-        ECDbPolicy& operator= (ECDbPolicy const& rhs);
-        ECDbPolicy(ECDbPolicy&& rhs) : m_isSupported(std::move(rhs.m_isSupported)), m_notSupportedMessage(std::move(rhs.m_notSupportedMessage)) {}
-        ECDbPolicy& operator= (ECDbPolicy&& rhs);
+        Policy(Policy const& rhs) : m_isSupported(rhs.m_isSupported), m_notSupportedMessage(rhs.m_notSupportedMessage) {}
+        Policy& operator= (Policy const& rhs);
+        Policy(Policy&& rhs) : m_isSupported(std::move(rhs.m_isSupported)), m_notSupportedMessage(std::move(rhs.m_notSupportedMessage)) {}
+        Policy& operator= (Policy&& rhs);
 
         //! Gets a value indicating whether the policy is supported or not.
         //! @remarks If the policy is not supported, ECDbPolicy::GetNotSupportedMessage may contain
@@ -46,18 +46,18 @@ struct ECDbPolicy final
 
         //Factory
         //! Creates a 'Supported' policy
-        static ECDbPolicy CreateSupported() { return ECDbPolicy(true); }
+        static Policy CreateSupported() { return Policy(true); }
 
         //! Creates a 'Not supported' policy
-        static ECDbPolicy CreateNotSupported() { return ECDbPolicy(false); }
-        static ECDbPolicy CreateNotSupported(Utf8StringCR notSupportedMessage) { return ECDbPolicy(notSupportedMessage); }
+        static Policy CreateNotSupported() { return Policy(false); }
+        static Policy CreateNotSupported(Utf8StringCR notSupportedMessage) { return Policy(notSupportedMessage); }
     };
 
 //=======================================================================================
-//! Policy assertion for which a policy is to be requested by the ECDbPolicyManager
+//! Policy assertion for which a policy is to be requested by the PolicyManager
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbPolicyAssertion
+struct PolicyAssertion
     {
     public:
         enum class Type
@@ -71,10 +71,10 @@ struct ECDbPolicyAssertion
         Type m_type;
 
     protected:
-        explicit ECDbPolicyAssertion(Type type) : m_type(type) {}
+        explicit PolicyAssertion(Type type) : m_type(type) {}
 
     public:
-        virtual ~ECDbPolicyAssertion() {}
+        virtual ~PolicyAssertion() {}
 
         Type GetType() const { return m_type; }
     };
@@ -83,7 +83,7 @@ struct ECDbPolicyAssertion
 //! Policy whether a given ECClass can be used in ECSQL or not.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ClassIsValidInECSqlPolicyAssertion final : ECDbPolicyAssertion
+struct ClassIsValidInECSqlPolicyAssertion final : PolicyAssertion
     {
     private:
         ClassMap const& m_classMap;
@@ -93,13 +93,13 @@ struct ClassIsValidInECSqlPolicyAssertion final : ECDbPolicyAssertion
 
     public:
         ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
-            : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
+            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(isPolymorphicClassExpression)
             {}
         ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap, ECSqlType ecSqlTypeFilter)
-            : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(false)
+            : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(true), m_ecSqlTypeFilter(ecSqlTypeFilter), m_isPolymorphicClassExpression(false)
             {}
         explicit ClassIsValidInECSqlPolicyAssertion(ClassMap const& classMap) 
-                : ECDbPolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
+                : PolicyAssertion(Type::ClassIsValidInECSql), m_classMap(classMap), m_useECSqlTypeFilter(false), m_isPolymorphicClassExpression(false)
             {}
 
         ClassMap const& GetClassMap() const { return m_classMap; }
@@ -125,7 +125,7 @@ struct ClassIsValidInECSqlPolicyAssertion final : ECDbPolicyAssertion
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct ECCrudPermissionPolicyAssertion final : ECDbPolicyAssertion
+struct ECCrudPermissionPolicyAssertion final : PolicyAssertion
     {
     private:
         ECDbCR m_ecdb;
@@ -134,7 +134,7 @@ struct ECCrudPermissionPolicyAssertion final : ECDbPolicyAssertion
 
     public:
         ECCrudPermissionPolicyAssertion(ECDbCR ecdb, bool isWriteOperation, ECCrudWriteToken const* token)
-            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECCrudPermission), m_ecdb(ecdb), m_isWriteOperation(isWriteOperation), m_token(token)
+            : PolicyAssertion(PolicyAssertion::Type::ECCrudPermission), m_ecdb(ecdb), m_isWriteOperation(isWriteOperation), m_token(token)
             {}
 
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -145,37 +145,37 @@ struct ECCrudPermissionPolicyAssertion final : ECDbPolicyAssertion
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaImportPermissionPolicyAssertion final : ECDbPolicyAssertion
+struct SchemaImportPermissionPolicyAssertion final : PolicyAssertion
     {
     private:
         ECDbCR m_ecdb;
-        ECSchemaImportToken const* m_token;
+        SchemaImportToken const* m_token;
 
     public:
-        ECSchemaImportPermissionPolicyAssertion(ECDbCR ecdb, ECSchemaImportToken const* token)
-            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECSchemaImportPermission), m_ecdb(ecdb), m_token(token)
+        SchemaImportPermissionPolicyAssertion(ECDbCR ecdb, SchemaImportToken const* token)
+            : PolicyAssertion(PolicyAssertion::Type::ECSchemaImportPermission), m_ecdb(ecdb), m_token(token)
             {}
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        ECSchemaImportToken const* GetToken() const { return m_token; }
+        SchemaImportToken const* GetToken() const { return m_token; }
     };
 
 //=======================================================================================
 //! Determines whether a given ECDb feature is supported in a given context.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbPolicyManager final
+struct PolicyManager final
     {
     private:
-        ECDbPolicyManager();
-        ~ECDbPolicyManager();
+        PolicyManager();
+        ~PolicyManager();
 
-        static ECDbPolicy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
-        static ECDbPolicy DoGetPolicy(ECCrudPermissionPolicyAssertion const&);
-        static ECDbPolicy DoGetPolicy(ECSchemaImportPermissionPolicyAssertion const&);
+        static Policy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
+        static Policy DoGetPolicy(ECCrudPermissionPolicyAssertion const&);
+        static Policy DoGetPolicy(SchemaImportPermissionPolicyAssertion const&);
 
     public:
-        static ECDbPolicy GetPolicy(ECDbPolicyAssertion const&);
+        static Policy GetPolicy(PolicyAssertion const&);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

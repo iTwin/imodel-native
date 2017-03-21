@@ -159,7 +159,7 @@ ECClassId TableMap::QueryClassId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     04/2016
 //---------------------------------------------------------------------------------------
-ECN::ECClassId TableMap::GetECClassId() const
+ECN::ECClassId TableMap::GetClassId() const
     {
     if (ContainsECClassIdColumn())
         {
@@ -914,7 +914,7 @@ void ChangeExtractor::ExtractRelInstances(ChangeIterator::RowEntry const& rowEnt
     bvector<ECClassId> const& relClassIds = rowEntry.GetTableMap()->GetMappedForeignKeyRelationshipClasses();
     for (ECClassId relClassId : relClassIds)
         {
-        ECN::ECClassCP relClass = m_ecdb.Schemas().GetECClass(relClassId);
+        ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
         BeAssert(relClass != nullptr);
 
         RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass));
@@ -992,9 +992,9 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
         return;
 
     // Check if the other end of the relationship matches the actual class found. 
-    if (newOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newOtherEndInstanceKey.GetECClassId()))
+    if (newOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newOtherEndInstanceKey.GetClassId()))
         return;
-    if (oldOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldOtherEndInstanceKey.GetECClassId()))
+    if (oldOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldOtherEndInstanceKey.GetClassId()))
         return;
 
     DbOpcode relDbOpcode;
@@ -1039,10 +1039,10 @@ bool ChangeExtractor::RecordRelInstance(ChangeSummary::InstanceCR instance, Chan
     ECClassId classId = instance.GetClassId();
     ECInstanceId instanceId = instance.GetInstanceId();
 
-    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECClassId, oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClassId());
-    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECInstanceId, oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetECInstanceId() : ECInstanceId());
-    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECClassId, oldTargetKey.IsValid() ? oldTargetKey.GetECClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetECClassId() : ECClassId());
-    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECInstanceId, oldTargetKey.IsValid() ? oldTargetKey.GetECInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetECInstanceId() : ECInstanceId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECClassId, oldSourceKey.IsValid() ? oldSourceKey.GetClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetClassId() : ECClassId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_SourceECInstanceId, oldSourceKey.IsValid() ? oldSourceKey.GetInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetInstanceId() : ECInstanceId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECClassId, oldTargetKey.IsValid() ? oldTargetKey.GetClassId() : ECClassId(), newTargetKey.IsValid() ? newTargetKey.GetClassId() : ECClassId());
+    m_valuesTable.Insert(classId, instanceId, ECDBSYS_PROP_TargetECInstanceId, oldTargetKey.IsValid() ? oldTargetKey.GetInstanceId() : ECInstanceId(), newTargetKey.IsValid() ? newTargetKey.GetInstanceId() : ECInstanceId());
 
     return true;
     }
@@ -1062,7 +1062,7 @@ void ChangeExtractor::RecordInstance(ChangeSummary::InstanceCR instance, ChangeI
     m_instancesTable.InsertOrUpdate(instance);
 
     bool updatedProperties = false;
-    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(classId);
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
     for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakeColumnIterator(*ecClass))
         {
         if (columnEntry.IsPrimaryKeyColumn())
@@ -1371,7 +1371,7 @@ Utf8String ChangeSummary::FormatClassIdStr(ECClassId id) const
     if (!id.IsValid())
         return "NULL";
 
-    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(id);
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetClass(id);
     BeAssert(ecClass != nullptr);
 
     Utf8PrintfString idStr("%s:%" PRIu64, ecClass->GetFullName(), id.GetValue());
@@ -1799,7 +1799,7 @@ void ChangeSummary::UnregisterSqlFunctions(ECDbCR ecdb)
 // @e Example
 //     SELECT el.ECInstanceId
 //     JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom
-//     WHERE IsChangedInstance(elg.GetECClassId(), elg.ECInstanceId)
+//     WHERE IsChangedInstance(elg.GetClassId(), elg.ECInstanceId)
 //---------------------------------------------------------------------------------------
 void IsChangedInstanceSqlFunction::_ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args)
     {
@@ -1977,9 +1977,9 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
     if (m_tableMap->ContainsECClassIdColumn())
         primaryClassId = GetClassIdFromChangeOrTable(m_tableMap->GetECClassIdColumn().GetName().c_str(), m_primaryInstanceId);
     else
-        primaryClassId = m_tableMap->GetECClassId();
+        primaryClassId = m_tableMap->GetClassId();
 
-    m_primaryClass = m_ecdb.Schemas().GetECClass(primaryClassId);
+    m_primaryClass = m_ecdb.Schemas().GetClass(primaryClassId);
     BeAssert(m_primaryClass != nullptr && "Couldn't determine the class corresponding to the change.");
     }
 

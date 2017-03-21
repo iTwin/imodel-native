@@ -24,7 +24,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
     {
     ECDbCR ecdb = SetupECDb("ecclassidlookup.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 10, ECDb::OpenParams(ECDb::OpenMode::Readonly));
 
-    bvector<ECSchemaCP> schemas = ecdb.Schemas().GetECSchemas(true);
+    bvector<ECSchemaCP> schemas = ecdb.Schemas().GetSchemas(true);
     bmap<Utf8String, bmap<Utf8String, ECClassId>> expectedClassIds;
     int classCount = 0;
     for (ECSchemaCP schema : schemas)
@@ -51,7 +51,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
                     {
                     Utf8StringCR className = innerKvPair.first;
                     ECClassId expectedId = innerKvPair.second;
-                    ECClassId actualId = ecdb.Schemas().GetECClassId(schemaName, className, ResolveSchema::BySchemaName);
+                    ECClassId actualId = ecdb.Schemas().GetClassId(schemaName, className, ResolveSchema::BySchemaName);
                     ASSERT_EQ(expectedId.GetValue(), actualId.GetValue()) << "ECClass: " << schemaName.c_str() << "." << className.c_str();
                     }
                 }
@@ -86,14 +86,14 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
 
     Utf8CP testSchemaName = "ECSqlTest";
     Utf8CP testClassName = "PSA";
-    ECClassId expectedClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
+    ECClassId expectedClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
     const int repetitionCount = 100000;
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
         {
-        ECClassId actualClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
+        ECClassId actualClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
         ASSERT_EQ(expectedClassId.GetValue(), actualClassId.GetValue());
         }
 
@@ -122,7 +122,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
 
     Utf8CP testSchemaName = "ECSqlTest";
     Utf8CP testClassName = "PSA";
-    ECClassId expectedClassId = ecdb.Schemas().GetECClassId(testSchemaName, testClassName);
+    ECClassId expectedClassId = ecdb.Schemas().GetClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
     Utf8String ecsql;
@@ -151,13 +151,13 @@ TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
     ECDbCR ecdb = SetupECDb("ecclassidsqlscenarios.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaCP expectedSchema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
+    ECSchemaCP expectedSchema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(expectedSchema != nullptr);
     Utf8CP testClassName1 = "ABounded";
     Utf8CP testClassName2 = "PSA";
-    ECClassId expectedClassId1 = ecdb.Schemas().GetECClassId("ECSqlTest", testClassName1);
+    ECClassId expectedClassId1 = ecdb.Schemas().GetClassId("ECSqlTest", testClassName1);
     ASSERT_TRUE(expectedClassId1.IsValid());
-    ECClassId expectedClassId2 = ecdb.Schemas().GetECClassId("ECSqlTest", testClassName2);
+    ECClassId expectedClassId2 = ecdb.Schemas().GetClassId("ECSqlTest", testClassName2);
     ASSERT_TRUE(expectedClassId2.IsValid());
 
     const int opCount = 100000;

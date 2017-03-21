@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbProfileManager.h $
+|     $Source: ECDb/ProfileManager.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,21 +8,21 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
-#include "ECDbProfileUpgrader.h"
+#include "ProfileUpgrader.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
 //+===============+===============+===============+===============+===============+======
-struct ECDbProfileManager final
+struct ProfileManager final
     {
 private:
     //non-instantiable class
-    ECDbProfileManager();
-    ~ECDbProfileManager();
+    ProfileManager();
+    ~ProfileManager();
 
-    static DbResult CreateECProfileTables(ECDbCR);
+    static DbResult CreateProfileTables(ECDbCR);
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile

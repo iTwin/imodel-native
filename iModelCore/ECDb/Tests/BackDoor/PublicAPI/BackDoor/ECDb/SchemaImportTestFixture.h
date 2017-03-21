@@ -34,8 +34,8 @@ public:
                 ApplyECDbSettings(false, requiresSchemaImportToken, allowChangesetMergingIncompatibleECSchemaImport);
                 }
 
-            ECSchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
-            bool AllowChangesetMergingIncompatibleECSchemaImport() const { return GetECDbSettings().AllowChangesetMergingIncompatibleECSchemaImport(); }
+            SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
+            bool AllowChangesetMergingIncompatibleSchemaImport() const { return GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport(); }
         };
 
 
@@ -64,7 +64,7 @@ public:
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  10/15
 //=======================================================================================    
-struct ECDbMappingTestFixture : SchemaImportTestFixture
+struct DbMappingTestFixture : SchemaImportTestFixture
     {
 protected:
     //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
@@ -131,8 +131,8 @@ protected:
     bool TryGetColumnInfo(std::vector<ColumnInfo>&, ECDbCR ecdb, ECN::ECPropertyCR) const;
 
 public:
-    ECDbMappingTestFixture () : SchemaImportTestFixture() {}
+    DbMappingTestFixture () : SchemaImportTestFixture() {}
 
-    virtual ~ECDbMappingTestFixture() {}
+    virtual ~DbMappingTestFixture() {}
     };
 END_ECDBUNITTESTS_NAMESPACE

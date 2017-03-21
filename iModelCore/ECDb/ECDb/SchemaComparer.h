@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSchemaComparer.h $
+|     $Source: ECDb/SchemaComparer.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,8 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define INDENT_SIZE 3
 
-struct ECSchemaChange;
-struct ECClassChange;
+struct SchemaChange;
+struct ClassChange;
 struct ECEnumerationChange;
 struct StringChange;
 struct ECPropertyChange;
@@ -328,32 +328,32 @@ struct ECChangeArray : ECChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaChanges final: ECChangeArray<ECSchemaChange>
+struct SchemaChanges final: ECChangeArray<SchemaChange>
     {
     public:
-        ECSchemaChanges()
-            : ECChangeArray<ECSchemaChange>(ChangeState::Modified, SystemId::Schemas, nullptr, nullptr, SystemId::Schema)
+        SchemaChanges()
+            : ECChangeArray<SchemaChange>(ChangeState::Modified, SystemId::Schemas, nullptr, nullptr, SystemId::Schema)
             {}
-        ECSchemaChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECSchemaChange>(state, SystemId::Schemas, parent, customId, SystemId::Schema)
+        SchemaChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<SchemaChange>(state, SystemId::Schemas, parent, customId, SystemId::Schema)
             {
             BeAssert(systemId == GetSystemId());
             }
-        virtual ~ECSchemaChanges(){}
+        virtual ~SchemaChanges(){}
     };
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECClassChanges final: ECChangeArray<ECClassChange>
+struct ClassChanges final: ECChangeArray<ClassChange>
     {
     public:
-        ECClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECClassChange>(state, SystemId::Classes, parent, customId, SystemId::Class)
+        ClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ClassChange>(state, SystemId::Classes, parent, customId, SystemId::Class)
             {
             BeAssert(systemId == GetSystemId());
             }
-        virtual ~ECClassChanges() {}
+        virtual ~ClassChanges() {}
     };
 
 //=======================================================================================
@@ -817,15 +817,15 @@ struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaChange final : ECObjectChange
+struct SchemaChange final : ECObjectChange
     {
     public:
-        ECSchemaChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        SchemaChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Schema, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
             }
-        virtual ~ECSchemaChange(){}
+        virtual ~SchemaChange(){}
 
         StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
@@ -835,7 +835,7 @@ struct ECSchemaChange final : ECObjectChange
         UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
         StringChange& GetAlias() { return Get<StringChange>(SystemId::Alias); }
         ReferenceChanges& References() { return Get<ReferenceChanges>(SystemId::References); }
-        ECClassChanges& Classes() { return Get<ECClassChanges>(SystemId::Classes); }
+        ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         ECKindOfQuantityChanges& KindOfQuantities() { return Get<ECKindOfQuantityChanges>(SystemId::KindOfQuantities); }
@@ -1072,15 +1072,15 @@ struct ECRelationshipChange final :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECClassChange final :ECObjectChange
+struct ClassChange final :ECObjectChange
     {
     public:
-        ECClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Class, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
             }
-        virtual ~ECClassChange() {}
+        virtual ~ClassChange() {}
         StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
@@ -1159,7 +1159,7 @@ struct ECPropertyChange final :ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSchemaComparer
+struct SchemaComparer
     {
 public:
     enum class AppendDetailLevel
@@ -1185,15 +1185,15 @@ public:
 private :
     Options m_options;
 
-    BentleyStatus CompareECSchema(ECSchemaChange&, ECN::ECSchemaCR, ECN::ECSchemaCR);
-    BentleyStatus CompareECClass(ECClassChange&, ECN::ECClassCR, ECN::ECClassCR);
+    BentleyStatus CompareECSchema(SchemaChange&, ECN::ECSchemaCR, ECN::ECSchemaCR);
+    BentleyStatus CompareECClass(ClassChange&, ECN::ECClassCR, ECN::ECClassCR);
     BentleyStatus CompareECBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
     BentleyStatus CompareECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ECN::ECRelationshipClassCR);
     BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipConstraintCR);
     BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&, ECN::ECRelationshipConstraintClassList const&);
     BentleyStatus CompareECProperty(ECPropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCR);
     BentleyStatus CompareECProperties(ECPropertyChanges&, ECN::ECPropertyIterableCR, ECN::ECPropertyIterableCR);
-    BentleyStatus CompareECClasses(ECClassChanges&, ECN::ECClassContainerCR, ECN::ECClassContainerCR);
+    BentleyStatus CompareECClasses(ClassChanges&, ECN::ECClassContainerCR, ECN::ECClassContainerCR);
     BentleyStatus CompareECEnumerations(ECEnumerationChanges&, ECN::ECEnumerationContainerCR, ECN::ECEnumerationContainerCR);
     BentleyStatus CompareCustomAttributes(ECInstanceChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
     BentleyStatus CompareCustomAttribute(ECPropertyValueChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
@@ -1202,8 +1202,8 @@ private :
     BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
     BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
     BentleyStatus CompareReferences(ReferenceChanges&, ECN::ECSchemaReferenceListCR, ECN::ECSchemaReferenceListCR);
-    BentleyStatus AppendECSchema(ECSchemaChanges&, ECN::ECSchemaCR, ValueId appendType);
-    BentleyStatus AppendECClass(ECClassChanges&, ECN::ECClassCR, ValueId appendType);
+    BentleyStatus AppendECSchema(SchemaChanges&, ECN::ECSchemaCR, ValueId appendType);
+    BentleyStatus AppendECClass(ClassChanges&, ECN::ECClassCR, ValueId appendType);
     BentleyStatus AppendECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ValueId appendType);
     BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR v, ValueId appendType);
     BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const& v, ValueId appendType);
@@ -1221,9 +1221,9 @@ private :
     BentleyStatus CompareKindOfQuantities(ECKindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
 
 public:
-    ECSchemaComparer(){}
+    SchemaComparer(){}
 
-    BentleyStatus Compare(ECSchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
+    BentleyStatus Compare(SchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
     static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };

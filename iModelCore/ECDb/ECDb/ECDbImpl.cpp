@@ -28,7 +28,7 @@ DbResult ECDb::Impl::OnDbCreated() const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ECDbProfileManager::CreateProfile(m_ecdb);
+    return ProfileManager::CreateProfile(m_ecdb);
     }
 
 
@@ -199,7 +199,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     bool isFirstOwnerClassId = true;
     for (ECClassId ownerClassId : ownerClassIds)
         {
-        ECClassCP ownerClass = Schemas().GetECClass(ownerClassId);
+        ECClassCP ownerClass = Schemas().GetClass(ownerClassId);
         if (ownerClass == nullptr)
             {
             GetIssueReporter().Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
@@ -252,7 +252,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
     if (blobIO.IsValid())
         return ERROR;
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
+    Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
     if (!policy.IsSupported())
         {
         GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());
@@ -339,7 +339,7 @@ void SettingsHolder::ApplySettings(bool requireECCrudTokenValidation, bool requi
         m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken());
 
     if (requireECSchemaImportTokenValidation)
-        m_ecSchemaImportToken = std::unique_ptr<ECSchemaImportToken>(new ECSchemaImportToken());
+        m_ecSchemaImportToken = std::unique_ptr<SchemaImportToken>(new SchemaImportToken());
 
     m_settings = ECDb::Settings(m_eccrudWriteToken.get(), m_ecSchemaImportToken.get(), allowChangesetMergingIncompatibleECSchemaImport);
     }

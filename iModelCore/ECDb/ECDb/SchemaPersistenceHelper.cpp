@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbSchemaPersistenceHelper.cpp $
+|     $Source: ECDb/SchemaPersistenceHelper.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
+ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaName)
     {
     CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
@@ -31,7 +31,7 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    04/2016
 //---------------------------------------------------------------------------------------
-bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
+bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
@@ -50,7 +50,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    04/2016
 //---------------------------------------------------------------------------------------
-bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
+bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
@@ -70,7 +70,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchem
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP alias)
+bool SchemaPersistenceHelper::ContainsSchemaWithAlias(ECDbCR db, Utf8CP alias)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Alias=?"))
@@ -84,7 +84,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP al
 // @bsimethod                                                    Krischan.Eberle   09/2016
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECSchemaId schemaId, Utf8CP className)
+ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, ECSchemaId schemaId, Utf8CP className)
     {
     CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?");
     if (stmt == nullptr)
@@ -106,7 +106,7 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECSchemaId schema
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema)
+ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema)
     {
     Utf8CP sql = nullptr;
     switch (resolveSchema)
@@ -139,7 +139,7 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //---------------------------------------------------------------------------------------
-ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
+ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?");
     if (stmt == nullptr)
@@ -158,7 +158,7 @@ ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf
 // @bsimethod                                                    Krischan.Eberle 06/2016
 //---------------------------------------------------------------------------------------
 //static
-KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
+KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
     {
     CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? AND koq.Name=?");
     if (stmt == nullptr)
@@ -176,7 +176,7 @@ KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)
+ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)
     {
     CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Property WHERE ClassId=? AND Name=?");
     if (stmt == nullptr)
@@ -198,7 +198,7 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, ECClassId e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
+ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
     CachedStatementPtr stmt = db.GetCachedStatement("SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? AND c.Name=? AND p.Name=?");
     if (stmt == nullptr)
@@ -217,7 +217,7 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum)
+BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum)
     {
     Json::Value enumValuesJson(Json::arrayValue);
     BeAssert(ecEnum.GetEnumeratorCount() > 0);
@@ -251,7 +251,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8Stri
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnumerationR ecEnum, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumerationR ecEnum, Utf8CP jsonStr)
     {
     Json::Value enumValuesJson;
     Json::Reader reader;
@@ -303,7 +303,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::DeserializeECEnumerationValues(ECEnum
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, KindOfQuantityCR koq)
     {
     Json::Value altPresUnitsJson(Json::arrayValue);
     BeAssert(!koq.GetAlternativePresentationUnitList().empty());
@@ -321,7 +321,7 @@ BentleyStatus ECDbSchemaPersistenceHelper::SerializeKoqAlternativePresentationUn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqAlternativePresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
     {
     Json::Value altPresUnitsJson;
     Json::Reader reader;

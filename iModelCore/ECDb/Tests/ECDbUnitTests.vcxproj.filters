@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Published\ECDbDateTime_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbReadTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDb_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -43,12 +37,6 @@
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSchemaManager_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbFileInfoTests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -76,13 +64,7 @@
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSchemaRules_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECDbInstances_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbProfile_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\FSRTests.cpp">
@@ -99,9 +81,6 @@
     </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp">
       <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbMapping_Tests.cpp">
-      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\JsonUpdaterTests.cpp">
       <Filter>Published\ECSql</Filter>
@@ -132,9 +111,6 @@
     </ClCompile>
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECDbJoinedTable_Test.cpp">
-      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceJoinedTableTests.cpp">
       <Filter>Performance</Filter>
@@ -178,9 +154,6 @@
     <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbSchemaUpdate_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -217,7 +190,31 @@
     <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbRelationship_Test.cpp">
+    <ClCompile Include="Published\SchemaManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTime_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DbMapping_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\JoinedTable_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Profile_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Relationship_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaRules_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaUpdate_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FileInfo_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>

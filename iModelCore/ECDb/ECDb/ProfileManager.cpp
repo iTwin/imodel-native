@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbProfileManager.cpp $
+|     $Source: ECDb/ProfileManager.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,11 +16,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
+DbResult ProfileManager::CreateProfile(ECDbR ecdb)
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin CreateECProfile");
 
-    DbResult stat = CreateECProfileTables(ecdb);
+    DbResult stat = CreateProfileTables(ecdb);
     if (stat != BE_SQLITE_OK)
         {
         LOG.errorv("Failed to create " PROFILENAME " profile in %s: %s", ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
@@ -28,7 +28,7 @@ DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
         return stat;
         }
 
-    stat = ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb);
+    stat = ProfileSchemaUpgrader::ImportProfileSchemas(ecdb);
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges();
@@ -53,7 +53,7 @@ DbResult ECDbProfileManager::CreateProfile(ECDbR ecdb)
 // @bsimethod                                                   Krischan.Eberle  01/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
+DbResult ProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly)
     {
     fileIsAutoUpgradable = false;
     const DbResult stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
@@ -96,7 +96,7 @@ struct ProfileUpgradeContext final: NonCopyableClass
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
+DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
     bool runProfileUpgrade = false;
     ProfileVersion actualProfileVersion(0, 0, 0, 0);
@@ -123,7 +123,7 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
+    if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(ecdb))
         {
         ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -155,13 +155,13 @@ DbResult ECDbProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& op
 // @bsimethod                                                   Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& currentProfileVersion)
+DbResult ProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& currentProfileVersion)
     {
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
-    std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
+    std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
     
-    for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
+    for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(ecdb);
         if (BE_SQLITE_OK != stat)
@@ -175,7 +175,7 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& cur
 // @bsimethod                                                    Affan.Khan        07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation)
+DbResult ProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCreation)
     {
     //Save the profile version as string (JSON format)
     Utf8String profileVersionStr = GetExpectedVersion().ToJson();
@@ -194,7 +194,7 @@ DbResult ECDbProfileManager::AssignProfileVersion(ECDbR ecdb, bool onProfileCrea
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
+DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
     {
     //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
     //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
@@ -227,7 +227,7 @@ DbResult ECDbProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, 
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
+DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     {
     //ec_Schema
     DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_Schema("

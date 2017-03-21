@@ -2674,7 +2674,7 @@ void ECSqlParseContext::PopFinalizeParseArg() { m_finalizeParseArgs.pop_back(); 
 BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className)
     {
     BeAssert(!schemaNameOrAlias.empty());
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrAlias, className, ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className, ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
@@ -2730,7 +2730,7 @@ int ECSqlParseContext::TrackECSqlParameter(ParameterExp& parameterExp)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
     {
-    for (auto derivedClass : Schemas().GetDerivedECClasses(const_cast<ECClassR>(ecClass)))
+    for (auto derivedClass : Schemas().GetDerivedClasses(const_cast<ECClassR>(ecClass)))
         {
         if (classes.find(derivedClass->GetId()) == classes.end())
             {

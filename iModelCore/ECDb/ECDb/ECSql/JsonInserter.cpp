@@ -40,7 +40,7 @@ DbResult JsonInserter::Insert(JsonValueR jsonValue) const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    jsonValue["$" ECDBSYS_PROP_ECInstanceId] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
+    jsonValue["$" ECDBSYS_PROP_ECInstanceId] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetInstanceId().GetValue());
     return BE_SQLITE_OK;
     }
 

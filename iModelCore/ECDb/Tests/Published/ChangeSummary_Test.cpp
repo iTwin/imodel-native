@@ -69,7 +69,7 @@ void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSumm
 bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ECDbCR ecdb, ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
     {
     Utf8String tableName = changeSummary.GetInstancesTableName();
-    ECClassId classId = ecdb.Schemas().GetECClassId(schemaName, className);
+    ECClassId classId = ecdb.Schemas().GetClassId(schemaName, className);
 
     Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
     CachedStatementPtr statement = ecdb.GetCachedStatement(sql.c_str());
@@ -788,21 +788,21 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 Model;NULL;"Prius"
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
     ecdb.SaveChanges();
     tracker.Restart();
 
     statement.Finalize();
     statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, companyKey1.GetECClassId());
-    statement.BindId(4, companyKey1.GetECInstanceId());
+    statement.BindId(1, employeeKey.GetClassId());
+    statement.BindId(2, employeeKey.GetInstanceId());
+    statement.BindId(3, companyKey1.GetClassId());
+    statement.BindId(4, companyKey1.GetInstanceId());
 
     ECInstanceKey employeeCompanyKey;
     stepStatus = statement.Step(employeeCompanyKey);
@@ -810,10 +810,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, hardwareKey1.GetECClassId());
-    statement.BindId(4, hardwareKey1.GetECInstanceId());
+    statement.BindId(1, employeeKey.GetClassId());
+    statement.BindId(2, employeeKey.GetInstanceId());
+    statement.BindId(3, hardwareKey1.GetClassId());
+    statement.BindId(4, hardwareKey1.GetInstanceId());
 
     ECInstanceKey employeeHardwareKey;
     stepStatus = statement.Step(employeeHardwareKey);
@@ -846,8 +846,8 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
     ecdb.SaveChanges();
     tracker.Restart();
@@ -857,22 +857,22 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     */
     statement.Finalize();
     statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
-    statement.BindId(1, employeeHardwareKey.GetECInstanceId());
+    statement.BindId(1, employeeHardwareKey.GetInstanceId());
     stepStatus = statement.Step();
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
-    statement.BindId(1, employeeCompanyKey.GetECInstanceId());
+    statement.BindId(1, employeeCompanyKey.GetInstanceId());
     stepStatus = statement.Step();
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
     statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, hardwareKey2.GetECClassId());
-    statement.BindId(4, hardwareKey2.GetECInstanceId());
+    statement.BindId(1, employeeKey.GetClassId());
+    statement.BindId(2, employeeKey.GetInstanceId());
+    statement.BindId(3, hardwareKey2.GetClassId());
+    statement.BindId(4, hardwareKey2.GetInstanceId());
 
     ECInstanceKey employeeHardwareKey2;
     stepStatus = statement.Step(employeeHardwareKey2);
@@ -880,10 +880,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     statement.Finalize();
     statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetECClassId());
-    statement.BindId(2, employeeKey.GetECInstanceId());
-    statement.BindId(3, companyKey2.GetECClassId());
-    statement.BindId(4, companyKey2.GetECInstanceId());
+    statement.BindId(1, employeeKey.GetClassId());
+    statement.BindId(2, employeeKey.GetInstanceId());
+    statement.BindId(3, companyKey2.GetClassId());
+    statement.BindId(4, companyKey2.GetInstanceId());
 
     ECInstanceKey employeeCompanyKey2;
     stepStatus = statement.Step(employeeCompanyKey2);
@@ -921,10 +921,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 TargetECInstanceId;0:2;0:3
     */
     EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_TRUE(employeeCompanyKey.GetInstanceId() == employeeCompanyKey2.GetInstanceId());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

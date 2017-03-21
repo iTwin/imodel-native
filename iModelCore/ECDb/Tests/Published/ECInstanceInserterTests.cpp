@@ -22,7 +22,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
     {
     ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass(schemaName, className);
+    ECClassCP testClass = ecdb.Schemas().GetClass(schemaName, className);
 
     ECInstanceInserter inserter(ecdb, *testClass, nullptr);
     bvector<IECInstancePtr> instances;
@@ -69,10 +69,10 @@ void ECInstanceInserterTests::InsertRelationshipInstances(Utf8CP relationshipCla
     {
     ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
-    ECClassCP sourceClass = ecdb.Schemas().GetECClass(schemaName, sourceClassName);
-    ECClassCP targetClass = ecdb.Schemas().GetECClass(schemaName, targetClassName);
+    ECClassCP sourceClass = ecdb.Schemas().GetClass(schemaName, sourceClassName);
+    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, targetClassName);
 
-    ECClassCP tempClass = ecdb.Schemas().GetECClass(schemaName, relationshipClassName);
+    ECClassCP tempClass = ecdb.Schemas().GetClass(schemaName, relationshipClassName);
     ECRelationshipClassCP relationshipClass = tempClass->GetRelationshipClassCP();
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
 
@@ -125,7 +125,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
     ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
 
-    ECClassCP structClass = ecdb.Schemas().GetECClass("KitchenSink", "Struct1");
+    ECClassCP structClass = ecdb.Schemas().GetClass("KitchenSink", "Struct1");
     ASSERT_TRUE(structClass != nullptr);
     ECInstanceInserter inserter(ecdb, *structClass, nullptr);
     ASSERT_FALSE(inserter.IsValid());
@@ -185,10 +185,10 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
         */
         };
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("TestSchema", "MyClass");
+    ECClassCP testClass = ecdb.Schemas().GetClass("TestSchema", "MyClass");
     ASSERT_TRUE(testClass != nullptr);
 
-    ECClassCP locationStruct = ecdb.Schemas().GetECClass("TestSchema", "LocationStruct");
+    ECClassCP locationStruct = ecdb.Schemas().GetClass("TestSchema", "LocationStruct");
     ASSERT_TRUE(locationStruct != nullptr);
 
     ECInstanceKey key;
@@ -247,7 +247,7 @@ TEST_F(ECInstanceInserterTests, InsertIntoStructArray)
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     Utf8String actualJson(stmt.GetValueText(0));
     actualJson.ReplaceAll(" ", "");
@@ -316,7 +316,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleRuleInstance)
     {
     ECDbR ecdb = SetupECDb("insertRulesInstances.ecdb", BeFileName(L"ECRules.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen()) << "Setup of test ECDb with ECRules ECSchema failed";
-    ECSchemaCP rulesECSchema = ecdb.Schemas().GetECSchema("ECRules");
+    ECSchemaCP rulesECSchema = ecdb.Schemas().GetSchema("ECRules");
     ASSERT_TRUE(rulesECSchema != nullptr);
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext(*rulesECSchema);
@@ -357,7 +357,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     {
     ECDbR ecdb = SetupECDb("insertwithuserprovidedecinstanceid.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "P");
     ASSERT_TRUE(testClass != nullptr);
 
     ECInstanceInserter inserter(ecdb, *testClass, nullptr);
@@ -387,9 +387,9 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         {
         ECInstanceKey generatedKey;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(generatedKey, testInstance)) << testScenario << ": Inserting instance without instance id is expected to succeed if auto generation is enabled";
-        assertInsert(testInstance, generatedKey.GetECInstanceId());
+        assertInsert(testInstance, generatedKey.GetInstanceId());
 
-        ECInstanceId userProvidedId(generatedKey.GetECInstanceId().GetValue() + 1111LL);
+        ECInstanceId userProvidedId(generatedKey.GetInstanceId().GetValue() + 1111LL);
 
         ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(generatedKey, testInstance, true, &userProvidedId)) << testScenario << ": When passing autogenerateECInstanceId=true user provided id must not be passed";
 
@@ -404,9 +404,9 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         //now pass a valid instance id
         ECInstanceKey userProvidedKey;
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(userProvidedKey, testInstance, false, &userProvidedId)) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
-        ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetECInstanceId().GetValue());
-        ASSERT_EQ(testClass->GetId(), userProvidedKey.GetECClassId());
-        assertInsert(testInstance, userProvidedKey.GetECInstanceId());
+        ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetInstanceId().GetValue());
+        ASSERT_EQ(testClass->GetId(), userProvidedKey.GetClassId());
+        assertInsert(testInstance, userProvidedKey.GetInstanceId());
 
         //now set a valid instance id in test instance
         userProvidedId = ECInstanceId(userProvidedId.GetValue() + 100LL);
@@ -415,9 +415,9 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         testInstance.SetInstanceId(instanceIdStr);
 
         ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(userProvidedKey, testInstance, false)) << testScenario << ": Inserting instance with instance id of type ECInstanceId is expected to succeed if auto generation is disabled";
-        ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetECInstanceId().GetValue());
-        ASSERT_EQ(testClass->GetId(), userProvidedKey.GetECClassId());
-        assertInsert(testInstance, userProvidedKey.GetECInstanceId());
+        ASSERT_EQ(userProvidedId.GetValue(), userProvidedKey.GetInstanceId().GetValue());
+        ASSERT_EQ(testClass->GetId(), userProvidedKey.GetClassId());
+        assertInsert(testInstance, userProvidedKey.GetInstanceId());
 
         ASSERT_EQ(BE_SQLITE_CONSTRAINT_PRIMARYKEY, inserter.Insert(userProvidedKey, testInstance, false)) << testScenario << ": inserting instance with same instance id twice should result in constraint violation error";
         };
@@ -453,7 +453,7 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
     Utf8CP p2Value = "sample string";
     const int64_t p3Value = INT64_C(1000);
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("testSchema", "A");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("testSchema", "A");
     ASSERT_TRUE(ecClass != nullptr);
 
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -475,7 +475,7 @@ TEST_F(ECInstanceInserterTests, InsertReadonlyProperty)
 
     Utf8String validateECSql;
     validateECSql.Sprintf("SELECT NULL FROM ts.A WHERE ECInstanceId=%s AND P1=%d AND P2 LIKE '%s' AND P3=%" PRId64,
-                          key.GetECInstanceId().ToString().c_str(), p1Value, p2Value, p3Value);
+                          key.GetInstanceId().ToString().c_str(), p1Value, p2Value, p3Value);
 
     ECSqlStatement validateStmt;
     ASSERT_EQ(ECSqlStatus::Success, validateStmt.Prepare(ecdb, validateECSql.c_str()));
@@ -517,7 +517,7 @@ void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId id, bool expectedIsNull, Ut
 TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     {
     ECDbR ecdb = SetupECDb("insertwithcurrenttimestamptrigger.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    auto testClass = ecdb.Schemas().GetECClass("ECSqlTest", "ClassWithLastModProp");
+    auto testClass = ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
     //scenario 1: double-check what SQLite does with default values if the INSERT statement
@@ -571,7 +571,7 @@ TEST_F(ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, *testInstance));
 
-    AssertCurrentTimeStamp(ecdb, key.GetECInstanceId(), false, "ECInstanceInserter INSERT");
+    AssertCurrentTimeStamp(ecdb, key.GetInstanceId(), false, "ECInstanceInserter INSERT");
     }
 
 //---------------------------------------------------------------------------------------
@@ -667,7 +667,7 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ASSERT_EQ(ECObjectsStatus::Success, schemaCache->AddSchema(*testSchema));
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemaCache->GetSchemas()));
     ecdb.SaveChanges();
 
     StandaloneECEnablerPtr enabler = testClass->GetDefaultStandaloneEnabler();
@@ -756,38 +756,38 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
     ExecuteECSql(stmt, key5, db, "INSERT INTO rc.ClassD (P4) VALUES(4)");
 
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key1.GetECInstanceId());
-    stmt.BindId(2, key1.GetECClassId());
-    stmt.BindId(3, key3.GetECInstanceId());
-    stmt.BindId(4, key3.GetECClassId());
+    stmt.BindId(1, key1.GetInstanceId());
+    stmt.BindId(2, key1.GetClassId());
+    stmt.BindId(3, key3.GetInstanceId());
+    stmt.BindId(4, key3.GetClassId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:N, end tabler relationship
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassA (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key1.GetECInstanceId());
-    stmt.BindId(2, key4.GetECInstanceId());
+    stmt.BindId(1, key1.GetInstanceId());
+    stmt.BindId(2, key4.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key1.GetECInstanceId());
-    stmt.BindId(2, key1.GetECClassId());
-    stmt.BindId(3, key3.GetECInstanceId());
-    stmt.BindId(4, key3.GetECClassId());
+    stmt.BindId(1, key1.GetInstanceId());
+    stmt.BindId(2, key1.GetClassId());
+    stmt.BindId(3, key3.GetInstanceId());
+    stmt.BindId(4, key3.GetClassId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
     //Instance insertion query without specifing Souce/TargetClassId's should be successful for a 1:1, end tabler relationship
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassB (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key2.GetECInstanceId());
-    stmt.BindId(2, key4.GetECInstanceId());
+    stmt.BindId(1, key2.GetInstanceId());
+    stmt.BindId(2, key4.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key1.GetECInstanceId());
-    stmt.BindId(2, key1.GetECClassId());
-    stmt.BindId(3, key3.GetECInstanceId());
-    stmt.BindId(4, key3.GetECClassId());
+    stmt.BindId(1, key1.GetInstanceId());
+    stmt.BindId(2, key1.GetClassId());
+    stmt.BindId(3, key3.GetInstanceId());
+    stmt.BindId(4, key3.GetClassId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
     //Instance insertion query without specifing Souce/TargetClassId's shouldn't work for a link table relationship if constraint isn't a single table or isn't polymorphic Constraint
@@ -796,8 +796,8 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
 
     //Instance insertion query without specifing Souce/TargetClassId's should work for a link table relationship if each constraint is a single table
     ASSERT_EQ(stmt.Prepare(db, "INSERT INTO rc.RelationshipClassD (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
-    stmt.BindId(1, key4.GetECInstanceId());
-    stmt.BindId(2, key5.GetECInstanceId());
+    stmt.BindId(1, key4.GetInstanceId());
+    stmt.BindId(2, key5.GetInstanceId());
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
     }

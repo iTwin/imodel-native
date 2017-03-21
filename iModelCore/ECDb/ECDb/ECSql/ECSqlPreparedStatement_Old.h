@@ -160,7 +160,7 @@ struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
                     : m_ecClassId(ecClassId), m_ecInstanceIdBinder(nullptr), m_userProvidedECInstanceId(userProvidedLiteral)
                     {}
 
-                ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
+                ECN::ECClassId GetClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
 
                 ECSqlBinder* GetECInstanceIdBinder() const { return m_ecInstanceIdBinder; }
                 bool HasUserProvidedECInstanceId() const { return m_userProvidedECInstanceId.IsValid(); }

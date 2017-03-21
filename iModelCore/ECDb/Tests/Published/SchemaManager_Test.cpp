@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbSchemaManager_Test.cpp $
+|  $Source: Tests/Published/SchemaManager_Test.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,13 +12,13 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 
-struct ECDbSchemaManagerTests : SchemaImportTestFixture
+struct SchemaManagerTests : SchemaImportTestFixture
     {};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
+TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     {
     ECDbR ecdb = SetupECDb("ecdbschemamanagertests.ecdb");
 
@@ -32,9 +32,9 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
         schemas.push_back(schema.get());
 
         if (expectedToSucceed)
-            ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
+            ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
         else
-            ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
+            ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas(schemas)) << "ECVersion " << ECSchema::GetECVersionString(version);
 
         ecdb.AbandonChanges();
         };
@@ -47,7 +47,7 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportToken)
+TEST_F(SchemaManagerTests, ImportToken)
     {
     auto assertImport = [this] (Utf8CP ecschemaXml, BeFileNameCR seedFilePath)
         {
@@ -235,7 +235,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
+TEST_F(SchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
     {
     auto assertImport = [this] (Utf8CP ecschemaXml, BeFileNameCR seedFilePath, std::pair<bool,bool> const& expectedToSucceed, Utf8CP scenario)
         {
@@ -487,7 +487,7 @@ TEST_F(ECDbSchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
+TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
     {
     ECDbCR ecdb = SetupECDb("invariantculturetest.ecdb");
 
@@ -562,12 +562,12 @@ TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
         }, true, ""));
     ASSERT_FALSE(asserted);
 
-    ECDbSchemaManager const& schemas = GetECDb().Schemas();
-    ECSchemaCP testSchema = schemas.GetECSchema("TestSchema", false);
+    SchemaManager const& schemas = GetECDb().Schemas();
+    ECSchemaCP testSchema = schemas.GetSchema("TestSchema", false);
     ASSERT_TRUE(testSchema != nullptr);
     ASSERT_STRCASEEQ("Test Schema", testSchema->GetDisplayLabel().c_str());
 
-    ECEnumerationCP animalEnum = schemas.GetECEnumeration("TestSchema", "Animal");
+    ECEnumerationCP animalEnum = schemas.GetEnumeration("TestSchema", "Animal");
     ASSERT_TRUE(animalEnum != nullptr);
     ASSERT_STRCASEEQ("Animal", animalEnum->GetDisplayLabel().c_str());
     ASSERT_EQ(2, (int) animalEnum->GetEnumeratorCount());
@@ -581,7 +581,7 @@ TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
             FAIL();
         }
 
-    ECClassCP spatialElementClass = schemas.GetECClass("TestSchema", "SpatialElement");
+    ECClassCP spatialElementClass = schemas.GetClass("TestSchema", "SpatialElement");
     ASSERT_TRUE(spatialElementClass != nullptr);
     ASSERT_STRCASEEQ("Spatial Element", spatialElementClass->GetDisplayLabel().c_str());
 
@@ -597,126 +597,126 @@ TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, IncrementalLoading)
+TEST_F(SchemaManagerTests, IncrementalLoading)
     {
     SetupECDb("ecdbschemamanagertests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     BeFileName testFilePath(GetECDb().GetDbFileName());
 
-    const int expectedClassCount = GetECDb().Schemas().GetECSchema("ECSqlTest")->GetClassCount();
+    const int expectedClassCount = GetECDb().Schemas().GetSchema("ECSqlTest")->GetClassCount();
     GetECDb().CloseDb();
 
     {
-    //GetECSchema with ensureAllClassesLoaded = false
+    //GetSchema with ensureAllClassesLoaded = false
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(0, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., false) is expected to return an empty schema";
+    ASSERT_EQ(0, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., false) is expected to return an empty schema";
     }
 
-    //GetECSchema with ensureAllClassesLoaded = true
+    //GetSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", true);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., true) is expected to return a fully populated schema";
+    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., true) is expected to return a fully populated schema";
     }
 
-    //GetECClass from a different schema first and then GetECSchema with ensureAllClassesLoaded = true
+    //GetClass from a different schema first and then GetSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("MetaSchema", "ECClassDef");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('MetaSchema', 'ECClassDef') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetClass("MetaSchema", "ECClassDef");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass ('MetaSchema', 'ECClassDef') is expected to succeed as the class exists in the ecdb file.";
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
-    ASSERT_EQ(0, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., false) is expected to return a schema with only the classes already loaded.";
+    ASSERT_EQ(0, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., false) is expected to return a schema with only the classes already loaded.";
 
-    schema = ecdb.Schemas().GetECSchema("ECSqlTest", true);
+    schema = ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetECClass was called before for a class in a different ECSchema.";
+    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetClass was called before for a class in a different ECSchema.";
     }
 
-    //GetECClass from same schema first and then GetECSchema with ensureAllClassesLoaded = true
+    //GetClass from same schema first and then GetSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "THBase");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('THBase') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetClass("ECSqlTest", "THBase");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass ('THBase') is expected to succeed as the class exists in the ecdb file.";
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECSqlTest", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
-    ASSERT_EQ(1, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., false) is expected to return a schema with only the classes already loaded.";
+    ASSERT_EQ(1, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., false) is expected to return a schema with only the classes already loaded.";
 
-    schema = ecdb.Schemas().GetECSchema("ECSqlTest", true);
+    schema = ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(schema != nullptr);
 
-    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetECSchema (..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetECClass was called before for a class in the same schema.";
+    ASSERT_EQ(expectedClassCount, schema->GetClassCount()) << "ECDbSchemaManager::GetSchema (..., true) is expected to return a fully populated schema even if ECDbSchemaManager::GetClass was called before for a class in the same schema.";
     }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CasingTests)
+TEST_F(SchemaManagerTests, CasingTests)
     {
     ECDbCR ecdb = SetupECDb("schemamanagercasingtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDBFILEinfo");
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDBFILEinfo");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
 
-    schema = ecdb.Schemas().GetECSchema("ecsqltest");
+    schema = ecdb.Schemas().GetSchema("ecsqltest");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECSqlTest"));
 
     ECClassCP ecclass = nullptr;
-    ecclass = ecdb.Schemas().GetECClass("ecsqltest", "P");
+    ecclass = ecdb.Schemas().GetClass("ecsqltest", "P");
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ECSqlTest", "p");
+    ecclass = ecdb.Schemas().GetClass("ECSqlTest", "p");
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecSqL", "P", ResolveSchema::BySchemaAlias);
+    ecclass = ecdb.Schemas().GetClass("ecSqL", "P", ResolveSchema::BySchemaAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::BySchemaAlias);
+    ecclass = ecdb.Schemas().GetClass("ecsql", "p", ResolveSchema::BySchemaAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecsqlTest", "P", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsqlTest", "P", ResolveSchema::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecsqL", "P", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsqL", "P", ResolveSchema::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ECSqlTest", "p", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ECSqlTest", "p", ResolveSchema::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::AutoDetect);
+    ecclass = ecdb.Schemas().GetClass("ecsql", "p", ResolveSchema::AutoDetect);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetDerivedECClasses)
+TEST_F(SchemaManagerTests, GetDerivedClasses)
     {
     ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP baseClass = ecdb.Schemas().GetECClass("ECSqlTest", "THBase");
+    ECClassCP baseClass = ecdb.Schemas().GetClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
 
     //derived classes are not loaded when calling ECClass::GetDerivedClasses
     ASSERT_TRUE(baseClass->GetDerivedClasses().empty()) << "ECClass::GetDerivedClasses is expected to not load subclasses.";
 
     //derived classes are expected to be loaded when calling ECDbSchemaManager::GetDerivedClasses
-    ASSERT_EQ(1, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count with derived classes now being loaded";
+    ASSERT_EQ(1, ecdb.Schemas().GetDerivedClasses(*baseClass).size()) << "Unexpected derived class count with derived classes now being loaded";
 
     //now ECClass::GetDerivedClasses can also be called
     ASSERT_EQ(1, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count after derived classes were loaded";
@@ -725,27 +725,27 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClasses)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
+TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
     ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaCP testSchema = ecdb.Schemas().GetECSchema("ECSqlTest", true);
+    ECSchemaCP testSchema = ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(testSchema != nullptr);
 
-    ECClassCP baseClass = ecdb.Schemas().GetECClass("ECSqlTest", "THBase");
+    ECClassCP baseClass = ecdb.Schemas().GetClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
 
     ASSERT_EQ(1, baseClass->GetDerivedClasses().size()) << "Unexpected derived class count. Derived classes are expected to already be loaded along with having loaded the schema";
 
     //derived classes are expected to be loaded when calling ECDbSchemaManager::GetDerivedClasses
-    ASSERT_EQ(1, ecdb.Schemas().GetDerivedECClasses(*baseClass).size()) << "Unexpected derived class count";
+    ASSERT_EQ(1, ecdb.Schemas().GetDerivedClasses(*baseClass).size()) << "Unexpected derived class count";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetEnumeration)
+TEST_F(SchemaManagerTests, GetEnumeration)
     {
     ECDbCR ecdb = SetupECDb("getenumeration.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -764,7 +764,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDbFileInfo", "StandardRootFolderType");
+    ECEnumerationCP ecEnum = ecdb.Schemas().GetEnumeration("ECDbFileInfo", "StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
@@ -773,10 +773,10 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDbFileInfo", "ExternalFileInfo");
+    ECClassCP classWithEnum = ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("RootFolder");
@@ -796,10 +796,10 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetEnumerationCount());
-    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP classWithEnum = ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(classWithEnum != nullptr);
 
     ECPropertyCP prop = classWithEnum->GetPropertyP("Folder");
@@ -819,7 +819,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDbFileInfo", true);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("ECDbFileInfo", true);
     ASSERT_TRUE(schema != nullptr);
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
     ASSERT_TRUE(ecEnum != nullptr);
@@ -831,7 +831,7 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetKindOfQuantity)
+TEST_F(SchemaManagerTests, GetKindOfQuantity)
     {
     auto assertKoq = [] (KindOfQuantityCR actualKoq)
         {
@@ -890,10 +890,10 @@ TEST_F(ECDbSchemaManagerTests, GetKindOfQuantity)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("Schema1", false);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("Schema1", false);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(0, schema->GetKindOfQuantityCount());
-    ECClassCP classWithKoq = ecdb.Schemas().GetECClass("Schema2", "Foo");
+    ECClassCP classWithKoq = ecdb.Schemas().GetClass("Schema2", "Foo");
     ASSERT_TRUE(classWithKoq != nullptr);
     ASSERT_EQ(1, schema->GetKindOfQuantityCount());
     KindOfQuantityCP koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
@@ -913,7 +913,7 @@ TEST_F(ECDbSchemaManagerTests, GetKindOfQuantity)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << ecdbPath.c_str();
 
-    ECSchemaCP schema = ecdb.Schemas().GetECSchema("Schema1", true);
+    ECSchemaCP schema = ecdb.Schemas().GetSchema("Schema1", true);
     ASSERT_TRUE(schema != nullptr);
     ASSERT_EQ(1, schema->GetKindOfQuantityCount());
     }
@@ -922,7 +922,7 @@ TEST_F(ECDbSchemaManagerTests, GetKindOfQuantity)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
+TEST_F(SchemaManagerTests, GetPropertyWithExtendedType)
     {
     ECDbR ecdb = SetupECDb("propertywithextendedtype.ecdb", 
                            SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
@@ -936,7 +936,7 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
                                       "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP fooClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP fooClass = ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(fooClass != nullptr);
 
     ECPropertyCP prop = fooClass->GetPropertyP("Name");
@@ -961,7 +961,7 @@ TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
+TEST_F(SchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
     {
     ECDbR ecdb = SetupECDb("relationshipwithabstractconstraintclass.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
@@ -1007,26 +1007,26 @@ TEST_F(ECDbSchemaManagerTests, GetRelationshipWithAbstractConstraintClass)
                                       "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP ecclass = ecdb.Schemas().GetECClass("TestSchema", "ModelHasFooOrGooElements");
+    ECClassCP ecclass = ecdb.Schemas().GetClass("TestSchema", "ModelHasFooOrGooElements");
     ASSERT_TRUE(ecclass != nullptr);
     ECRelationshipClassCP relWithAbstractConstraint = ecclass->GetRelationshipClassCP();
     ASSERT_TRUE(relWithAbstractConstraint != nullptr);
     
-    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Model"), relWithAbstractConstraint->GetSource().GetAbstractConstraint());
-    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "BaseElement"), relWithAbstractConstraint->GetTarget().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetClass("TestSchema", "Model"), relWithAbstractConstraint->GetSource().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetClass("TestSchema", "BaseElement"), relWithAbstractConstraint->GetTarget().GetAbstractConstraint());
 
-    ecclass = ecdb.Schemas().GetECClass("TestSchema", "ModelHasElements");
+    ecclass = ecdb.Schemas().GetClass("TestSchema", "ModelHasElements");
     ASSERT_TRUE(ecclass != nullptr);
     ECRelationshipClassCP relWithoutAbstractConstraint = ecclass->GetRelationshipClassCP();
     ASSERT_TRUE(relWithoutAbstractConstraint != nullptr);
-    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Model"), relWithoutAbstractConstraint->GetSource().GetAbstractConstraint());
-    ASSERT_EQ(ecdb.Schemas().GetECClass("TestSchema", "Element"), relWithoutAbstractConstraint->GetTarget().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetClass("TestSchema", "Model"), relWithoutAbstractConstraint->GetSource().GetAbstractConstraint());
+    ASSERT_EQ(ecdb.Schemas().GetClass("TestSchema", "Element"), relWithoutAbstractConstraint->GetTarget().GetAbstractConstraint());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
+TEST_F(SchemaManagerTests, AddDuplicateECSchemaInCache)
     {
     ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1041,16 +1041,16 @@ TEST_F(ECDbSchemaManagerTests, AddDuplicateECSchemaInCache)
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     ASSERT_EQ(ECObjectsStatus::Success, schemacache->AddSchema(*schemaPtr)) << "couldn't add schema to the cache" << schemaPtr->GetName().c_str();
     ASSERT_EQ(ECObjectsStatus::DuplicateSchema, schemacache->AddSchema(*schemaPtr1));
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "could not import test ecschema.";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "could not import test ecschema.";
 
-    ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
+    ECClassCP ecclass = ecdb.Schemas().GetClass("BaseSchemaA", "Address");
     EXPECT_TRUE(ecclass != NULL) << "ecclass with the specified name does not exist";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
+TEST_F(SchemaManagerTests, ImportDuplicateSchema)
     {
     ECDbR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"BaseSchemaA.01.00.ecschema.xml"), 3);
 
@@ -1061,16 +1061,16 @@ TEST_F(ECDbSchemaManagerTests, ImportDuplicateSchema)
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*schema);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemaCache->GetSchemas()));
 
-    ECClassCP ecclass = ecdb.Schemas().GetECClass("BaseSchemaA", "Address");
+    ECClassCP ecclass = ecdb.Schemas().GetClass("BaseSchemaA", "Address");
     ASSERT_TRUE(ecclass != nullptr) << "Class with the specified name doesn't exist :- ecclass is empty";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
+TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
     {
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1084,8 +1084,8 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
     ECSchemaPtr supple1 = ReadECSchemaFromDisk(context, ecdb, BeFileName(L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml"));
     ASSERT_TRUE(supple1 != NULL);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
 
     ECClassCP ecclassCourse = SchoolSupplSchema->GetClassCP("Course");
@@ -1128,7 +1128,7 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
+TEST_F(SchemaManagerTests, ImportLowPrioritySupplementalSchama)
     {
     ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(testecdb.IsDbOpen());
@@ -1143,8 +1143,8 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
     schemaPtr = ReadECSchemaFromDisk(context, BeFileName(L"SchoolSchema_Supplemental_Localization.01.00.ecschema.xml"));
     schemaCache->AddSchema(*schemaPtr);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemaCache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportSchemas(schemaCache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
     }
 
@@ -1152,7 +1152,7 @@ TEST_F(ECDbSchemaManagerTests, ImportLowPrioritySupplementalSchama)
  //---------------------------------------------------------------------------------------
  // @bsimethod                                    Muhammad Hassan                  10/14
  //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
+TEST_F(SchemaManagerTests, ImportHighPrioritySupplementalSchama)
     {
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1167,27 +1167,27 @@ TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
     schemacache->AddSchema(*schemaptr);
     schemacache->AddSchema(*supplementalSchemaptr);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
+TEST_F(SchemaManagerTests, TestGetClassResolver)
     {
     ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ECClassCP ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
-    ecClass = ecdb.Schemas().GetECClass("ecsql", "PSA", ResolveSchema::BySchemaAlias);
-    EXPECT_TRUE(ecClass != nullptr);
-
-    ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", ResolveSchema::BySchemaAlias);
     EXPECT_TRUE(ecClass != nullptr);
 
-    ecClass = ecdb.Schemas().GetECClass("ecsql", "PSA", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA", ResolveSchema::AutoDetect);
+    EXPECT_TRUE(ecClass != nullptr);
+
+    ecClass = ecdb.Schemas().GetClass("ecsql", "PSA", ResolveSchema::AutoDetect);
     EXPECT_TRUE(ecClass != nullptr);
     }
 
@@ -1195,7 +1195,7 @@ TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 // A primary schema should be supplemented with the latest available supplemental schema
-TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
+TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     {
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1215,8 +1215,8 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1235,7 +1235,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
-TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
+TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
     {
     ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1255,8 +1255,8 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMaj
     ASSERT_TRUE(supple != NULL);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = ecdb.Schemas().GetSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1315,12 +1315,12 @@ void AssertECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan Khan                        12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
+TEST_F(SchemaManagerTests, CreateECClassViews)
     {
     ECDbR ecdb = SetupECDb("createecclassviews.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
     ecdb.SaveChanges();
     bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
     bool validationFailed = false;
@@ -1336,8 +1336,8 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ECSchemaCachePtr schemacache = ECSchemaCache::Create();
     schemacache->AddSchema(*schemaptr);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
     ecdb.SaveChanges();
     AssertECClassViews(schemasWithECClassViews, validationFailed, ecdb);
     ASSERT_FALSE(validationFailed);
@@ -1349,7 +1349,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
+TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     {
     ECDbR ecdb = SetupECDb("createecclassviewspartially.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1364,7 +1364,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
         classIds.push_back(id);
         }
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb(classIds));
     ecdb.SaveChanges();
 
     bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
@@ -1393,7 +1393,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViews_SharedColumns)
+TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
     {
     ECDbR ecdb = SetupECDb("createecclassviewssharedcols.ecdb",
                       SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
@@ -1451,7 +1451,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews_SharedColumns)
             "</ECSchema>"), 3);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
     bmap<Utf8String, bset<Utf8String>> classViewInfo;
     bool validationFailed = false;
     AssertECClassViews(classViewInfo, validationFailed, ecdb);
@@ -1461,7 +1461,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews_SharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForInvalidClasses)
+TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
     {
     ECDbCR ecdb = SetupECDb("createecclassviewsforinvalidclasses.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1476,13 +1476,13 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForInvalidClasses)
         classIds.push_back(id);
         }
 
-    ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    ASSERT_EQ(ERROR, ecdb.Schemas().CreateClassViewsInDb(classIds));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad.Hassan                   12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
+TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
     {
     ECDbR ecdb = SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -1497,7 +1497,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidCla
         classIds.push_back(id);
         }
 
-    ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    ASSERT_EQ(ERROR, ecdb.Schemas().CreateClassViewsInDb(classIds));
     ecdb.SaveChanges();
 
     // Class view will be created for the provided list of ECClassIds untill it get the first invalid one
@@ -1516,7 +1516,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidCla
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
-TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
+TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
     {
     ECDbCR testecdb = SetupECDb("supplementalSchematest.ecdb");
     ASSERT_TRUE(testecdb.IsDbOpen());
@@ -1537,8 +1537,8 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMin
     ASSERT_TRUE(supple != nullptr);
     schemacache->AddSchema(*supple);
 
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
+    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetSchema("BasicSchema", true);
     ASSERT_TRUE(basicSupplSchema != NULL);
 
     ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
@@ -1555,7 +1555,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMin
 //---------------------------------------------------------------------------------------
 //                                               Krischan.Eberle                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
+TEST_F(SchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
     auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb)
         {
@@ -1581,7 +1581,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         context1->AddSchemaLocater(ecdb.GetSchemaLocater());
         ECSchemaPtr schema1 = nullptr;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema1, baseSchemaXml, *context1));
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context1->GetCache().GetSchemas()));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context1->GetCache().GetSchemas()));
 
         Utf8CP secondSchemaXml =
             "<ECSchema schemaName='Construction' nameSpacePrefix='c' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1596,7 +1596,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         context2->AddSchemaLocater(ecdb.GetSchemaLocater());
         ECSchemaPtr schema2 = nullptr;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, secondSchemaXml, *context2));
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context2->GetCache().GetSchemas()));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context2->GetCache().GetSchemas()));
 
         ECInstanceKey newKey;
         ECSqlStatement insStmt;
@@ -1605,7 +1605,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
 
         ECSqlStatement updStmt;
         ASSERT_EQ(ECSqlStatus::Success, updStmt.Prepare(ecdb, "UPDATE p.Activity SET PlanId=100, OutlineIndex=100 WHERE ECInstanceId=?"));
-        updStmt.BindId(1, newKey.GetECInstanceId());
+        updStmt.BindId(1, newKey.GetInstanceId());
         ASSERT_EQ(BE_SQLITE_DONE, updStmt.Step());
 
         activityKey = newKey;
@@ -1619,7 +1619,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
-    stmt.BindId(1, activityKey.GetECInstanceId());
+    stmt.BindId(1, activityKey.GetInstanceId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_FALSE(stmt.IsValueNull(0)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
@@ -1633,7 +1633,7 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
 //-------------------------------------------------------------------------------------- -
 // @bsimethod                                     Krischan.Eberle           11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
+TEST_F(SchemaManagerTests, IGeometryTypes)
     {
     SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
                           "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1647,7 +1647,7 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
     ECDb& ecdb = SetupECDb("ecdbgeometrytypes.ecdb", testSchema);
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP cl = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ECClassCP cl = ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_TRUE(cl != nullptr);
     ASSERT_EQ(PRIMITIVETYPE_IGeometry, cl->GetPropertyP("g1")->GetAsPrimitiveProperty()->GetType());
     ASSERT_EQ(PRIMITIVETYPE_IGeometry, cl->GetPropertyP("g2")->GetAsPrimitiveProperty()->GetType());
@@ -1670,7 +1670,7 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT g1,g2,g3 FROM ts.Foo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     ASSERT_TRUE(stmt.GetValueGeometry(0)->IsSameStructureAndGeometry(*g1));
@@ -1681,7 +1681,7 @@ TEST_F(ECDbSchemaManagerTests, IGeometryTypes)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad.Hassan                 02/16
 //+---------------+---------------+---------------+---------------+---------------+-----
-TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
+TEST_F(SchemaManagerTests, EnforceECEnumeration)
     {
     ECDbR ecdb = SetupECDb("propertywithEnumerationType.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
@@ -1788,7 +1788,7 @@ TEST_F(ECDbSchemaManagerTests, EnforceECEnumeration)
 //---------------------------------------------------------------------------------------
 //                                               Krischan.Eberle                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
+TEST_F(SchemaManagerTests, DuplicateInMemorySchemaTest)
     {
     Utf8CP stdXml = 
         "<?xml version='1.0' encoding='utf-8' ?>"
@@ -1818,10 +1818,10 @@ TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
 
     ECDb& ecdb = SetupECDb("duplicateInMemorySchemaTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas())) << "Failed because locater was not added for schemas that already exist in ECDb";
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas())) << "Failed because locater was not added for schemas that already exist in ECDb";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

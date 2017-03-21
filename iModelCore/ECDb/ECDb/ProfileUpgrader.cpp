@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbProfileUpgrader.cpp $
+|     $Source: ECDb/ProfileUpgrader.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                    Krischan.Eberle        07/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
+DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
     PERFLOG_START("ECDb", "profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -40,7 +40,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    BentleyStatus importStat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetSettings().GetECSchemaImportToken());
+    BentleyStatus importStat = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetSettings().GetSchemaImportToken());
     PERFLOG_FINISH("ECDb", "profile schema import");
     if (importStat != SUCCESS)
         {
@@ -56,10 +56,10 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
 // @bsimethod                                                    Krischan.Eberle    10/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
+BentleyStatus ProfileSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadContextR readContext, Utf8CP ecdbFileName)
     {
     ECSchemaPtr ecdbSystemSchema = nullptr;
-    const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString(ecdbSystemSchema, GetECDbSystemECSchemaXml(), readContext);
+    const SchemaReadStatus deserializeStat = ECSchema::ReadFromXmlString(ecdbSystemSchema, GetECDbSystemSchemaXml(), readContext);
     if (SchemaReadStatus::Success != deserializeStat)
         {
         if (SchemaReadStatus::ReferencedSchemaNotFound == deserializeStat)
@@ -82,7 +82,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema(ECSchemaReadCont
 // @bsimethod                                                    Krischan.Eberle    04/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR readContext, SchemaKey& schemaKey, Utf8CP ecdbFileName)
+BentleyStatus ProfileSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR readContext, SchemaKey& schemaKey, Utf8CP ecdbFileName)
     {
     ECSchemaPtr schema = readContext.LocateSchema(schemaKey, SchemaMatchType::LatestWriteCompatible);
     if (schema == nullptr)
@@ -99,7 +99,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 // @bsimethod                                 Krischan.Eberle                12/2012
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
+Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"

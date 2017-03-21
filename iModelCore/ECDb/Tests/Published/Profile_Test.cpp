@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbProfile_Test.cpp $
+|  $Source: Tests/Published/Profile_Test.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -22,7 +22,7 @@ static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_ecinstanceidsequence";
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ECDbProfile)
+TEST_F(ECDbTestFixture, Profile)
     {
     BeFileName dbPath = BuildECDbPath("ecdbprofiletest.db");
     if (dbPath.DoesPathExist())
@@ -70,17 +70,17 @@ TEST_F(ECDbTestFixture, ECDbProfile)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, ECDbProfileSchemas)
+TEST_F(ECDbTestFixture, ProfileSchemas)
     {
     ECDbCR ecdb = SetupECDb("empty.ecdb");
 
-    ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDbSystem");
+    ECSchemaCP systemSchema = ecdb.Schemas().GetSchema("ECDbSystem");
     ASSERT_TRUE(systemSchema != nullptr);
 
     //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
     ASSERT_FALSE(systemSchema->IsSystemSchema());
 
-    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetECSchema("ECDbFileInfo");
+    ECSchemaCP fileInfoSchema = ecdb.Schemas().GetSchema("ECDbFileInfo");
     ASSERT_TRUE(fileInfoSchema != nullptr);
 
     ASSERT_FALSE(fileInfoSchema->IsSystemSchema());
@@ -90,7 +90,7 @@ TEST_F(ECDbTestFixture, ECDbProfileSchemas)
 // Test to verify TFS 107173: ECDb profile creation should fail if it exists
 // @bsimethod                                     Majd.Uddin                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbTestFixture, CreateECDbProfileFailsIfAlreadyCreated)
+TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
     ECDbR ecdb = SetupECDb("ecdbprofiletest2.ecdb");
 

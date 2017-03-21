@@ -30,7 +30,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
     ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
-    ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass, nullptr);
     const int repetitionCount = 10000;
@@ -80,7 +80,7 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetECClass("JsonTests", "Document");
+    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass, nullptr);
 

@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSchemaValidator.cpp $
+|     $Source: ECDb/SchemaValidator.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSchemaValidator.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -16,9 +15,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
+bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
     {
-    ECSchemaValidationRules rules;
+    SchemaValidationRules rules;
     rules.m_classRules.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
     rules.m_classRules.push_back(std::make_unique<ValidRelationshipRule>());
 
@@ -26,7 +25,7 @@ bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN
     rules.m_propertyRules.push_back(std::make_unique<ValidPropertyNameRule>());
     rules.m_propertyRules.push_back(std::make_unique<ValidNavigationPropertyRule>());
 
-    ECSchemaValidationResult result;
+    SchemaValidationResult result;
     bool valid = true;
     for (ECSchemaCP schema : schemas)
         {
@@ -46,12 +45,12 @@ bool ECSchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECSchemaValidationRules const& rules, ECN::ECSchemaCR schema)
+bool SchemaValidator::ValidateSchema(SchemaValidationResult& result, SchemaValidationRules const& rules, ECN::ECSchemaCR schema)
     {
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
         {
-        for (std::unique_ptr<IECSchemaValidationRule> const& rule : rules.m_classRules)
+        for (std::unique_ptr<ISchemaValidationRule> const& rule : rules.m_classRules)
             {
             bool succeeded = rule->ValidateSchema(result, schema, *ecClass);
             if (!succeeded)
@@ -70,12 +69,12 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECSchem
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
 //static
-bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECSchemaValidationRules const& rules, ECN::ECClassCR ecClass)
+bool SchemaValidator::ValidateClass(SchemaValidationResult& result, SchemaValidationRules const& rules, ECN::ECClassCR ecClass)
     {
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties(true))
         {
-        for (std::unique_ptr<IECSchemaValidationRule> const& rule : rules.m_propertyRules)
+        for (std::unique_ptr<ISchemaValidationRule> const& rule : rules.m_propertyRules)
             {
             bool succeeded = rule->ValidateClass(result, ecClass, *prop);
             if (!succeeded)
@@ -91,9 +90,9 @@ bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECSchema
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
 //static
-void ECSchemaValidator::Log(IssueReporter const& issues, ECSchemaValidationResult const& result)
+void SchemaValidator::Log(IssueReporter const& issues, SchemaValidationResult const& result)
     {
-    for (std::pair<const IECSchemaValidationRule::Type, std::unique_ptr<IECSchemaValidationRule::IError>> const& error : result.GetErrors())
+    for (std::pair<const ISchemaValidationRule::Type, std::unique_ptr<ISchemaValidationRule::IError>> const& error : result.GetErrors())
         {
         error.second->Log(issues);
         }
@@ -106,7 +105,7 @@ void ECSchemaValidator::Log(IssueReporter const& issues, ECSchemaValidationResul
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-IECSchemaValidationRule::IError* ECSchemaValidationResult::operator[](IECSchemaValidationRule::Type ruleType)
+ISchemaValidationRule::IError* SchemaValidationResult::operator[](ISchemaValidationRule::Type ruleType)
     {
     auto it = m_errors.find(ruleType);
     if (it == m_errors.end())
@@ -118,9 +117,9 @@ IECSchemaValidationRule::IError* ECSchemaValidationResult::operator[](IECSchemaV
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2017
 //---------------------------------------------------------------------------------------
-IECSchemaValidationRule::IError& ECSchemaValidationResult::AddError(std::unique_ptr<IECSchemaValidationRule::IError> error)
+ISchemaValidationRule::IError& SchemaValidationResult::AddError(std::unique_ptr<ISchemaValidationRule::IError> error)
     {
-    IECSchemaValidationRule::IError* errorP = error.get();
+    ISchemaValidationRule::IError* errorP = error.get();
     m_errors[errorP->GetRuleType()] = std::move(error);
     return *errorP;
     }
@@ -132,7 +131,7 @@ IECSchemaValidationRule::IError& ECSchemaValidationResult::AddError(std::unique_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidBaseClassesRule::_ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool ValidBaseClassesRule::_ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     IError* errorP = result[GetType()];
     if (errorP == nullptr)
@@ -232,7 +231,7 @@ void ValidBaseClassesRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipRule::_ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool ValidRelationshipRule::_ValidateSchema(SchemaValidationResult& result, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
@@ -338,7 +337,7 @@ void ValidRelationshipRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-bool ValidPropertyNameRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool ValidPropertyNameRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
     {
     Utf8StringCR propName = ecProperty.GetName();
 
@@ -423,7 +422,7 @@ void ValidPropertyNameRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2016
 //---------------------------------------------------------------------------------------
-bool ValidNavigationPropertyRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool ValidNavigationPropertyRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
     {
     NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
     if (navProp == nullptr)
@@ -488,7 +487,7 @@ void ValidNavigationPropertyRule::Error::_Log(IssueReporter const& issues) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------
-bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
+bool NoPropertiesOfSameTypeAsClassRule::_ValidateClass(SchemaValidationResult& result, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) const
     {
     IError* errorP = result[GetType()];
     if (errorP == nullptr)

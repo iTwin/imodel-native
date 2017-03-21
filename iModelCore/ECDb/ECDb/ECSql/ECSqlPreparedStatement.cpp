@@ -457,7 +457,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     InsertStatementExp const& insertExp = exp.GetAs<InsertStatementExp>();
     ClassMap const& classMap = insertExp.GetClassNameExp()->GetInfo().GetMap();
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
@@ -684,7 +684,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         SingleECSqlPreparedStatement& leafECSqlStmt = *m_statements[i];
         IECSqlBinder* idBinder = leafECSqlStmt.GetParameterMap().GetInternalECInstanceIdBinder();
         BeAssert(idBinder != nullptr);
-        if (ECSqlStatus::Success != idBinder->BindId(instanceKey.GetECInstanceId()))
+        if (ECSqlStatus::Success != idBinder->BindId(instanceKey.GetInstanceId()))
             return BE_SQLITE_ERROR;
 
         const DbResult stat = leafECSqlStmt.DoStep();
@@ -828,7 +828,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     UpdateStatementExp const& updateExp = exp.GetAs<UpdateStatementExp>();
     ClassMap const& classMap = updateExp.GetClassNameExp()->GetInfo().GetMap();
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
@@ -872,7 +872,7 @@ ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     DeleteStatementExp const& deleteExp = exp.GetAs<DeleteStatementExp>();
     ClassMap const& classMap = deleteExp.GetClassNameExp()->GetInfo().GetMap();
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
     if (!policy.IsSupported())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());

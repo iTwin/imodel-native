@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ECDb/ECDbSchemaManager.h $
+|     $Source: PublicAPI/ECDb/SchemaManager.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,13 +12,13 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #if !defined (DOCUMENTATION_GENERATOR)
-struct ECDbMap;
-struct ECDbSchemaReader;
+struct DbMap;
+struct SchemaReader;
 struct SchemaImportContext;
 #endif
 
 //=======================================================================================
-//! Options for how to specify the ECSchema when calling ECDbSchemaManager::GetECClass
+//! Options for how to specify the ECSchema when calling SchemaManager::GetClass
 //! @ingroup ECDbGroup
 // @bsiclass                                                Muhammad.Zaighum      10/2014
 //+===============+===============+===============+===============+===============+======
@@ -30,37 +30,37 @@ enum class ResolveSchema
     };
 
 //=======================================================================================
-//! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
+//! The SchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
 //! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or 
-//! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %ECDbSchemaManager.
+//! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %SchemaManager.
 //!
 //! ###Incremental Loading of ECClasses
-//! ECDbSchemaManager supports incremental loading of ECClasses. So unlike with ECObjects calling
-//! ECDbSchemaManager::GetECClass doesn't load the rest of the ECN::ECSchema. 
-//! When incrementally loading ECClasses you shouldn't use ECN::ECSchema::GetECClass because 
-//! the ECN::ECSchema might not be fully populated yet. Always use the respective ECDbSchemaManager
+//! SchemaManager supports incremental loading of ECClasses. So unlike with ECObjects calling
+//! SchemaManager::GetClass doesn't load the rest of the ECN::ECSchema. 
+//! When incrementally loading ECClasses you shouldn't use ECN::ECSchema::GetClass because 
+//! the ECN::ECSchema might not be fully populated yet. Always use the respective SchemaManager
 //! methods instead.
 //!
 //! ####Details
 //! 
-//! (which you don't need to be aware of if you consistently use the ECDbSchemaManager API to get ECClasses)
+//! (which you don't need to be aware of if you consistently use the SchemaManager API to get ECClasses)
 //!
-//! * ECDbSchemaManager::GetECSchema with <c>ensureAllClassesLoaded=false</c> 
+//! * SchemaManager::GetSchema with <c>ensureAllClassesLoaded=false</c> 
 //!     * Returns the ECSchema with only those ECClasses that have been loaded previously already. If
 //!       no ECClasses have been loaded previously, the returned ECSchema is empty.
-//! * ECDbSchemaManager::GetECClass
+//! * SchemaManager::GetClass
 //!     * loads the specified ECClass
 //!     * loads all base classes of the specified ECClass
 //!     * loads all struct classes used by the specified ECClass
 //!     * loads all CustomAttribute classes used by the specified ECClass
 //!     * does @b not load derived classes of the specified ECClass
-//! * ECDbSchemaManager::GetECClass for a relationship class
+//! * SchemaManager::GetClass for a relationship class
 //!     * same as for regular classes
 //!     * loads the ECClasses specified in the constraints of the relationship class
 //!       (but @b not their derived ECClasses)
 //!        
-//! ### %ECDbSchemaManager is an %IECSchemaLocater
-//! ECDbSchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
+//! ### %SchemaManager is an %IECSchemaLocater
+//! SchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
 //! already stored in the %ECDb file when reading an ECSchema from disk, for example:
 //! 
 //!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
@@ -72,18 +72,18 @@ enum class ResolveSchema
 //! @ingroup ECDbGroup
 // @bsimethod                                                  Affan.Khan        05/2012
 //+===============+===============+===============+===============+===============+======
-struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
+struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
     private:
         ECDb const& m_ecdb;
-        ECDbSchemaReader* m_schemaReader;
-        ECDbMap* m_dbMap;
+        SchemaReader* m_schemaReader;
+        DbMap* m_dbMap;
         BeMutex& m_mutex;
 
-        BentleyStatus DoImportECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const*) const;
-        BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
+        BentleyStatus DoImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*) const;
+        BentleyStatus PersistSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
-        ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
+        ECN::ECSchemaCP GetSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
 
         //! Implementation of IECSchemaLocater
         ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
@@ -93,15 +93,15 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
-        ECDbSchemaManager(ECDb const&, BeMutex&);
-        ~ECDbSchemaManager();
+        SchemaManager(ECDb const&, BeMutex&);
+        ~SchemaManager();
 #endif
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
         //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
         //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
-        //! they should be obtained as needed through the ECDbSchemaManager API.
+        //! they should be obtained as needed through the SchemaManager API.
         //! @remarks ECDb always persists ECSchemas in their invariant culture. That means localization ECSchemas are ignored
         //! during the import.
         //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
@@ -116,51 +116,51 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpdate
-        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, ECSchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //only for legacy support which cannot yet follow the strict bim rules
-        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, ECSchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailSchemaValidationForLegacyIssues, SchemaImportToken const* token = nullptr) const;
 #endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for
         //! @return true if the ECDb file contains the ECSchema. false otherwise.
-        ECDB_EXPORT bool ContainsECSchema(Utf8CP schemaName) const;
+        ECDB_EXPORT bool ContainsSchema(Utf8CP schemaName) const;
 
         //! Get an ECSchema by name
         //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return The retrieved ECSchema or nullptr if not found
-        ECDB_EXPORT ECN::ECSchemaCP GetECSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
+        ECDB_EXPORT ECN::ECSchemaCP GetSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
         //! @return Vector of all ECSchemas stored in the file
-        ECDB_EXPORT bvector<ECN::ECSchemaCP> GetECSchemas(bool loadSchemaEntities = true) const;
+        ECDB_EXPORT bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities = true) const;
 
         //! Gets the ECClass for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p resolveSchema)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved ECClass or nullptr if not found
-        ECDB_EXPORT ECN::ECClassCP GetECClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+        ECDB_EXPORT ECN::ECClassCP GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
 
         //! Gets the ECClassId for the ECClass with the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the class (@see @p resolveSchema)
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECDB_EXPORT ECN::ECClassId GetECClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+        ECDB_EXPORT ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
 
         //! Gets the ECClass for the specified ECClassId.
         //! @param[in] ecClassId Id of the ECClass to retrieve
-        ECDB_EXPORT ECN::ECClassCP GetECClass(ECN::ECClassId ecClassId) const;
+        ECDB_EXPORT ECN::ECClassCP GetClass(ECN::ECClassId ecClassId) const;
 
         //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
-        //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
+        //! Callers should use this method in favor of ECN::ECClass::GetDerivedClasses to ensure
         //! that derived classes are actually loaded from the ECDb file.
         //! This method allows to just load the inheritance hierarchy of a given ECClass without having
         //! to load entire ECSchemas.
@@ -168,14 +168,14 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
         //! of inheriting ECClasses.
         //! @param[in] baseECClass ECClass to return derived classes for.
         //! @return Derived classes list
-        //! @see ECN::ECClass::GetDerivedECClasses
-        ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses(ECN::ECClassCR baseECClass) const;
+        //! @see ECN::ECClass::GetDerivedClasses
+        ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedClasses(ECN::ECClassCR baseECClass) const;
 
         //! Gets the ECEnumeration for the specified name.
         //! @param[in] schemaName Name (not full name) of the schema containing the ECEnumeration
         //! @param[in] enumName Name of the ECEnumeration to be retrieved
         //! @return The retrieved ECEnumeration or nullptr if not found
-        ECDB_EXPORT ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
+        ECDB_EXPORT ECN::ECEnumerationCP GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
         //! Gets the KindOfQuantity for the specified name.
         //! @param[in] schemaName Name (not full name) of the schema containing the KindOfQuantity
@@ -188,7 +188,7 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
         //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
         //! No code should depend on these views.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
+        ECDB_EXPORT BentleyStatus CreateClassViewsInDb() const;
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
@@ -198,7 +198,7 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
         //! @note ECClass views can only be created for ECEntityClasses and ECRelationshipClasses and only if they are mapped
         //! to the database. Otherwise the method will return an error.
         //! @return SUCCESS or ERROR
-        ECDB_EXPORT BentleyStatus CreateECClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
+        ECDB_EXPORT BentleyStatus CreateClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Only use this until we solved handling legacy v8 class inheritance issues when BISifying v8 ECSchemas.
@@ -208,13 +208,13 @@ struct ECDbSchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, No
         ECDB_EXPORT static Utf8CP GetValidateDbMappingSql();
 
         void ClearCache() const;
-        ECDbSchemaReader const& GetReader() const;
-        ECDbMap const& GetDbMap() const;
+        SchemaReader const& GetReader() const;
+        DbMap const& GetDbMap() const;
         ECDb const& GetECDb() const;
 #endif
     };
 
-typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
+typedef SchemaManager const& SchemaManagerCR;
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

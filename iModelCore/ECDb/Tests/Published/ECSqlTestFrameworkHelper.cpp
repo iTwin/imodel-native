@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlTestFrameworkHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFrameworkHelper.h"
@@ -102,7 +102,7 @@ ECInstanceId ECSqlTestFrameworkHelper::InsertTestInstance (ECDbCR ecdb, Utf8CP e
         return ECInstanceId ();
         }
     else
-        return newECInstanceKey.GetECInstanceId ();
+        return newECInstanceKey.GetInstanceId ();
     }
 
 END_ECSQLTESTFRAMEWORK_NAMESPACE

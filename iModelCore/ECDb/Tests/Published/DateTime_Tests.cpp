@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECDbDateTime_Test.cpp $
+|  $Source: Tests/Published/DateTime_Tests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Krischan.Eberle                      01/16
 //---------------+---------------+---------------+---------------+---------------+-------
-struct ECDbDateTimeTests : ECDbTestFixture
+struct DateTimeTestFixture : ECDbTestFixture
     {
     protected:
         //---------------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ struct ECDbDateTimeTests : ECDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbDateTimeTests, DifferingDateTimeInfos)
+TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
     {
     ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -238,12 +238,12 @@ TEST_F(ECDbDateTimeTests, DifferingDateTimeInfos)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbDateTimeTests, ECSqlStatementGetValueDateTime)
+TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
     {
     ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSADateTime");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSADateTime");
 
     //test set up -> insert test data
     bvector<Utf8String> nonArrayPropertyAccessStringList;
@@ -256,7 +256,7 @@ TEST_F(ECDbDateTimeTests, ECSqlStatementGetValueDateTime)
     //actual test
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly, utcarray, arrayofstructwithdatetimes FROM ONLY ecsqltest.PSADateTime WHERE ECInstanceId=?"));
-    statement.BindId(1, ecInstanceKey.GetECInstanceId());
+    statement.BindId(1, ecInstanceKey.GetInstanceId());
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Executing ECSQL '" << statement.GetECSql() << "' didn't return the expected row.";
 
@@ -330,7 +330,7 @@ TEST_F(ECDbDateTimeTests, ECSqlStatementGetValueDateTime)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/12
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
+TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     {
     ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -355,7 +355,7 @@ TEST_F(ECDbDateTimeTests, DateTimeStorageAccuracyTest)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(instanceKey));
         stmt.Reset();
         stmt.ClearBindings();
-        testDataset[instanceKey.GetECInstanceId()] = testDate;
+        testDataset[instanceKey.GetInstanceId()] = testDate;
         }
 
     stmt.Finalize();
