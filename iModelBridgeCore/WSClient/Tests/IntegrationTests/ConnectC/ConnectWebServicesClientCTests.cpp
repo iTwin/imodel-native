@@ -158,6 +158,7 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNul
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
         nullptr
         );
     ASSERT_TRUE (api != nullptr);

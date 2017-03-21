@@ -17,24 +17,20 @@ DgnDbServerCodeEvent::DgnDbServerCodeEvent
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
-Utf8String codeAuthorityId,
-Utf8String codeNamespace,
+Utf8String codeSpecId,
+Utf8String codeScope,
 bvector<Utf8String> values,
-Utf8String reserved,
-Utf8String used,
-int        briefcaseId,
-Utf8String usedWithRevision
+int        state,
+int        briefcaseId
 )
     {
     m_eventTopic = eventTopic;
     m_fromEventSubscriptionId = fromEventSubscriptionId;
-    m_codeAuthorityId = codeAuthorityId;
-    m_codeNamespace = codeNamespace;
+    m_codeSpecId = codeSpecId;
+    m_codeScope = codeScope;
     m_values = values;
-    m_reserved = reserved;
-    m_used = used;
+    m_state = state;
     m_briefcaseId = briefcaseId;
-    m_usedWithRevision = usedWithRevision;
     }
 
 //---------------------------------------------------------------------------------------
@@ -44,13 +40,11 @@ std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
 (
 Utf8String eventTopic,
 Utf8String fromEventSubscriptionId,
-Utf8String codeAuthorityId,
-Utf8String codeNamespace,
+Utf8String codeSpecId,
+Utf8String codeScope,
 bvector<Utf8String> values,
-Utf8String reserved,
-Utf8String used,
-int        briefcaseId,
-Utf8String usedWithRevision
+int        state,
+int        briefcaseId
 )
     {
     return std::shared_ptr<struct DgnDbServerCodeEvent>
@@ -58,90 +52,9 @@ Utf8String usedWithRevision
                 (
                 eventTopic,
                 fromEventSubscriptionId,
-                codeAuthorityId,
-                codeNamespace,
+                codeSpecId,
+                codeScope,
                 values,
-                reserved,
-                used,
-                briefcaseId,
-                usedWithRevision));
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetEventTopic()
-    {
-    return m_eventTopic;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetFromEventSubscriptionId()
-    {
-    return m_fromEventSubscriptionId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetCodeAuthorityId()
-    {
-    return m_codeAuthorityId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetNamespace()
-    {
-    return m_codeNamespace;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-bvector<Utf8String> DgnDbServerCodeEvent::GetValues()
-    {
-    return m_values;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetReserved()
-    {
-    return m_reserved;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetUsed()
-    {
-    return m_used;
-    }
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-int DgnDbServerCodeEvent::GetBriefcaseId()
-    {
-    return m_briefcaseId;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetUsedWithRevision()
-    {
-    return m_usedWithRevision;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerCodeEvent::GetEventType()
-    {
-    return DgnDbServerEvent::DgnDbServerEventType::CodeEvent;
+                state,
+                briefcaseId));
     }
