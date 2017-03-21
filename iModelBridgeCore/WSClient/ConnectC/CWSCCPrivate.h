@@ -73,7 +73,8 @@ class ConnectWebServicesClientC_internal
             Utf8String applicationName,
             BeVersion applicationVersion,
             Utf8String applicationGUID,
-            Utf8String applicationProductId
+            Utf8String applicationProductId,
+            void* securityStoreInitializer
             );
 
     public:
@@ -88,7 +89,8 @@ class ConnectWebServicesClientC_internal
             Utf8StringP proxyUrl = nullptr,
             Utf8StringP proxyUsername = nullptr,
             Utf8StringP proxyPassword = nullptr,
-            IHttpHandlerPtr customHandler = nullptr
+            IHttpHandlerPtr customHandler = nullptr,
+            void* securityStoreInitializer = nullptr
             );
 
         ~ConnectWebServicesClientC_internal ();

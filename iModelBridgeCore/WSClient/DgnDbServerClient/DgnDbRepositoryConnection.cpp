@@ -608,7 +608,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICa
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
-    filter.Sprintf("%s+eq+false", ServerSchema::Property::Initialized);
+    filter.Sprintf("%s+gt+0", ServerSchema::Property::Initialized);
     query.SetFilter(filter);
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)

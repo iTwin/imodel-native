@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectSignInManagerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectSignInManagerTests.h"
@@ -207,7 +207,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     {
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
 
-    SamlToken token = "InvalidToken";
+    SamlToken token(Utf8String("InvalidToken"));
     auto info = manager->GetUserInfo(token);
 
     EXPECT_EQ("", info.firstName);
