@@ -895,6 +895,9 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        m_dgndb.ClearECDbCache(); // Recreate the ECDb cache since the merge would have affected the schema entries. 
+
     return MergeDataChangesInRevision(revision, changeStream);
     }
 

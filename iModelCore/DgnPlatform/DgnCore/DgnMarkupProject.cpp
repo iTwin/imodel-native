@@ -459,7 +459,7 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
     Utf8String typeProperty;
     if (markupProject->QueryProperty(typeProperty, DgnProjectProperty::ProjectType()) != BE_SQLITE_ROW  ||  typeProperty != s_projectType)
         {
-        status = BE_SQLITE_ERROR_BadDbSchema;
+        status = BE_SQLITE_ERROR_BadDbProfile;
         return nullptr;
         }
 

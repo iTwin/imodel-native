@@ -367,7 +367,7 @@ DgnDbProfileVersion DgnDbProfileVersion::Extract(BeFileNameCR fileName)
         return DgnDbProfileVersion(); // not a BeSQLite database
 
     Utf8String packageVersion;
-    if (BE_SQLITE_ROW == db.QueryProperty(packageVersion, PackageProperty::SchemaVersion()))
+    if (BE_SQLITE_ROW == db.QueryProperty(packageVersion, PackageProperty::ProfileVersion()))
         {
         // is a package, query DgnDbProfileVersion from embedded DgnDb (use current PropertySpec)
         Utf8String profileVersion;
@@ -469,7 +469,7 @@ DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersio
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
     {
-    if (!_ReopenForSchemaUpgrade(project))
+    if (!_ReopenForProfileUpgrade(project))
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
 
     DgnDbProfileVersion version = project.GetProfileVersion();
@@ -494,9 +494,9 @@ DgnDbProfileVersion DgnDb::GetProfileVersion() { return m_profileVersion; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
+DbResult DgnDb::_VerifyProfileVersion(Db::OpenParams const& params)
     {
-    DbResult result = T_Super::_VerifySchemaVersion(params);
+    DbResult result = T_Super::_VerifyProfileVersion(params);
     if (BE_SQLITE_OK != result)
         return result;
 

@@ -484,6 +484,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     SaveDb();
     DgnRevisionPtr revision1 = CreateRevision();
     EXPECT_TRUE(revision1.IsValid());
+    EXPECT_TRUE(revision1->ContainsSchemaChanges(*m_db));
 
     DumpRevision(*revision1, "Revision 1");
 
@@ -501,6 +502,7 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     SaveDb();
     DgnRevisionPtr revision2 = CreateRevision();
     EXPECT_TRUE(revision2.IsValid());
+    EXPECT_TRUE(revision2->ContainsSchemaChanges(*m_db));
 
     DumpRevision(*revision2, "Revision 2");
 
@@ -528,12 +530,6 @@ TEST_F(SchemaVersionTestFixture, CreateAndMergeRevision)
     /* Merge revision with schema upgrade and validate */
     status = m_db->Revisions().MergeRevision(*revision2);
     ASSERT_TRUE(status == RevisionStatus::Success);
-
-    m_db->ClearECDbCache(); // NEEDS_WORK: The method should be automatically called when merging revisions containing schemas
-
-    SchemaVersionTestDomain::GetDomain().SetVersion("02.03.02");
-    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    EXPECT_TRUE(result == BE_SQLITE_OK);
 
     testProperty = m_db->Schemas().GetECClass(SchemaVersionTestElement::QueryClassId(*m_db))->GetPropertyP("IntegerProperty3");
     EXPECT_TRUE(testProperty != nullptr);

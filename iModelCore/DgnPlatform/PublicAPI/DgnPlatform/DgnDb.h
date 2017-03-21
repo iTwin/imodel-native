@@ -35,9 +35,9 @@ enum DgnDbProfileValues : int32_t
 //! A 4-digit number that specifies a serializable version of something in a DgnDb.
 // @bsiclass
 //=======================================================================================
-struct DgnDbProfileVersion : BeSQLite::SchemaVersion
+struct DgnDbProfileVersion : BeSQLite::ProfileVersion
 {
-    DEFINE_T_SUPER(BeSQLite::SchemaVersion)
+    DEFINE_T_SUPER(BeSQLite::ProfileVersion)
     friend struct DgnDb;
 
 private:
@@ -51,7 +51,7 @@ private:
 public:
     DgnDbProfileVersion() : T_Super(0, 0, 0, 0) {}
     DgnDbProfileVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
-    DgnDbProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
+    DgnDbProfileVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : ProfileVersion(major, minor, sub1, sub2) {}
     explicit DgnDbProfileVersion(Utf8CP json) : T_Super(json) {}
 
     bool IsValid() const {return !IsEmpty();}
@@ -197,7 +197,7 @@ protected:
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     SceneQueue m_sceneQueue;
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened() override;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
