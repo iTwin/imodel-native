@@ -16,7 +16,7 @@
 #include "CacheSchema.h"
 #include "SchemaContext.h"
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
@@ -95,7 +95,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
 
     m_db.NotifyOnSchemaChangedListeners();
 
-    if (SUCCESS != m_db.Schemas().ImportECSchemas(schemaCache->GetSchemas()))
+    if (SUCCESS != m_db.Schemas().ImportSchemas(schemaCache->GetSchemas()))
         {
         LOG.errorv("Failed to import one or more schemas: %s", ToFullNameListString(schemas).c_str());
         return ERROR;
@@ -218,3 +218,5 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
 
     return SUCCESS;
     }
+
+END_BENTLEY_WEBSERVICES_NAMESPACE
