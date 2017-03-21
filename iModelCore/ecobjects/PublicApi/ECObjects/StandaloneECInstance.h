@@ -289,7 +289,7 @@ protected:
     ECObjectsStatus             _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override;
     bool                        _IsPropertyReadOnly (uint32_t propertyIndex) const override;
 
-    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 0x7fffffff;} 
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
     //! Creates a StandaloneECEnabler for the specified ECClass
