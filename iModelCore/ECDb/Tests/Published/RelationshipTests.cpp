@@ -868,6 +868,69 @@ TEST_F(RelationshipMappingTestFixture, CascadeDeletion)
     stmt.Finalize();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
+    {
+    ECDbCR ecdb = SetupECDb("multiplefkendtables.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                            <ECEntityClass typeName="Parent">
+                              <ECProperty propertyName="Code" typeName="int" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Child">
+                              <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="SpecialChild">
+                              <BaseClass>Child</BaseClass>
+                              <ECProperty propertyName="SpecialName" typeName="string" />
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="Rel" strength="Referencing">
+                                <Source multiplicity="(0..1)" polymorphic="False">
+                                   <Class class ="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True">
+                                   <Class class ="Child" />
+                                </Target>
+                            </ECRelationshipClass>
+                        </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey parentKey, childKey, specialChildKey;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Parent(Code) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(parentKey)) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Child(Name) VALUES('Child1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(childKey)) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SpecialChild(Name,SpecialName) VALUES('Child2','I am special')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(specialChildKey)) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, childKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, parentKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, specialChildKey.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(parentKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
+        ECInstanceKey const* expectedChildKey = rowCount == 1 ? &childKey : &specialChildKey;
+        ASSERT_EQ(expectedChildKey->GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(1).GetValue()) << stmt.GetECSql();
+        ASSERT_EQ(expectedChildKey->GetClassId().GetValue(), stmt.GetValueId<ECClassId>(2).GetValue()) << stmt.GetECSql();
+        }
+    ASSERT_EQ(2, rowCount);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         01/17

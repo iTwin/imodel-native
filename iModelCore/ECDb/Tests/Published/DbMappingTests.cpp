@@ -8572,7 +8572,7 @@ void AssertImportedSchema(ECDbCR ecdb, Utf8CP expectedSchemaName, Utf8CP expecte
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithoutECInstanceIdColumn)
     {
-    ECDbCR ecdb = SetupECDb("importecschema.ecdb", SchemaItem();
+    ECDbCR ecdb = SetupECDb("importecschema.ecdb");
 
     //create ec table bypassing ECDb API, but don't add it to the ec_ profile tables
     ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE TABLE t_Foo (Name TEXT)"));
@@ -8612,7 +8612,7 @@ TEST_F(DbMappingTestFixture, ImportSchemaAgainstExistingTableWithECInstanceIdCol
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
+TEST_F(DbMappingTestFixture, ImportSchemaWithRelationshipAgainstExistingTable)
     {
     // Create a sample project
     ECDbCR ecdb = SetupECDb("importecschema.ecdb");
