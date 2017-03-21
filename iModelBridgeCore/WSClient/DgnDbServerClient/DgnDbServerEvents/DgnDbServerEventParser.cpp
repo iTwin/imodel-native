@@ -69,14 +69,12 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 		    if (
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
 			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::CodeSpecId) &&
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::CodeScope) &&
 			    data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
 			    data[DgnDbServerEvent::CodeEventProperties::Values].isArray() &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::Reserved) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::Used) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId)
 			    )
 			    isSuccess = true;
 		    break;
@@ -195,13 +193,11 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 	    (
 		(*data)[DgnDbServerEvent::EventTopic].asString(),
 		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::CodeSpecId].asString(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::CodeScope].asString(),
 		values,
-		(*data)[DgnDbServerEvent::CodeEventProperties::Reserved].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::Used].asString(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asInt(),
-		(*data)[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
+		(*data)[DgnDbServerEvent::CodeEventProperties::State].asInt(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asInt()
 	    );
     }
 

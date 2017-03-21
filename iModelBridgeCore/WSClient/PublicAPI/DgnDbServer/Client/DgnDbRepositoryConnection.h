@@ -69,7 +69,7 @@ struct DgnDbCodeLockSetResultInfo
         DgnLockInfoSet  m_lockStates;
     public:
         DgnDbCodeLockSetResultInfo() {};
-        void AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+        void AddCode(const DgnCode dgnCode, DgnCodeState dgnCodeState, BeSQLite::BeBriefcaseId briefcaseId);
         void AddLock(const DgnLock dgnLock, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
         void Insert(const DgnDbCodeLockSetResultInfo& codeLockResultInfo);
         void Insert(const DgnCodeSet& codes, const DgnCodeInfoSet& codeStates, const DgnLockSet& locks, const DgnLockInfoSet& lockStates);
@@ -237,7 +237,7 @@ private:
                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this revision file to server.
-    DgnDbServerStatusTaskPtr Push(DgnRevisionPtr revision, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr Push(DgnRevisionPtr revision, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, bool containsSchemaChanges, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query (repeated).
@@ -357,8 +357,8 @@ private:
         BeGuidCR masterFileId, Utf8StringCR lastRevisionId, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DgnDbServerStatusTaskPtr QueryUnavailableCodesInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
-                                                           DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
+    DgnDbServerStatusTaskPtr QueryUnavailableCodesInternal(const BeBriefcaseId briefcaseId, DgnDbCodeLockSetResultInfoPtr codesLocksOut, 
+		ICancellationTokenPtr cancellationToken) const;
 
     DgnDbServerStatusTaskPtr QueryUnavailableLocksInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
                                                            DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;

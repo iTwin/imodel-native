@@ -43,6 +43,12 @@ class ECSchema(object):
                 return True
         return False
 
+    def has_included_ecclass_with_property_type(self, property_type):
+        for ecclass in self.get_classes():
+            if not ecclass.should_exclude_entire_class() and ecclass.does_contain_property_type(property_type) :
+                return True
+        return False
+
     def init_xml(self, xmldoc):
         self.__ecschema_xmldoc = xmldoc
         ecclasses = self.__ecschema_xmldoc.getElementsByTagName('ECClass')
