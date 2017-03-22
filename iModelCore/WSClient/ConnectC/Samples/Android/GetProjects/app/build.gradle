@@ -45,32 +45,3 @@ dependencies {
     compile project(":BeSecurity-1.0.0")
     compile 'com.android.support:appcompat-v7:25.1.1'
 }
-
-    File jniLibs =  file("$projectDir/src/main/jniLibs")
-
-    task dump {
-        doLast {
-            println "path=$path"
-            println "gradle=$gradle"
-            println "rootDir=$rootDir"
-            println "libsDir=$libsDir"
-            println "projectDir = $projectDir"
-            println "buildFile = $buildFile"
-            File test = file('libs')
-            println "libs (in dependencies) directory path = $test.absolutePath"
-            //println "properties=$properties"
-            println "jniLibs Directory path = $jniLibs.absolutePath"
-            FileTree tree = fileTree(dir: "$jniLibs", include: '**/*.so')
-            println "BEGIN: Contents of jniLibs..."
-            tree.each {File file ->
-                println file
-            }
-            println "END: Contents of jniLibs..."
-            println "buildDir = $buildDir\n"
-
-        }
-     }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn(dump)
-    }
