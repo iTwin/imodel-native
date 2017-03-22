@@ -574,7 +574,16 @@ struct SplitConsoleProvider : ILogProvider
     {
         WString m_name;
 
-        Title() : m_name(getenv("BENTLEY_SPLIT_CONSOLE_TITLE"), BentleyCharEncoding::Utf8) { }
+        Title()
+            {
+            // getenv is considered unsafe in VS 2017.
+            WCharP envTitle;
+            if (0 == _wdupenv_s(&envTitle, nullptr, L"BENTLEY_SPLIT_CONSOLE_TITLE") && nullptr != envTitle)
+                {
+                m_name = envTitle;
+                free(envTitle);
+                }
+            }
 
         bool Matches(WCharCP name) const { return !m_name.empty() && nullptr != name && m_name.Equals(name); }
 
@@ -976,10 +985,14 @@ bool STDCALL_ATTRIBUTE SplitConsoleProvider::IsSeverityEnabled(ILogProviderConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILogProvider* createConsoleLogger()
     {
-    WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_LOG"), BentleyCharEncoding::Utf8);
+    // getenv is considered unsafe in VS 2017.
+    WCharP envNames;
     bvector<WString> names;
-    if (!envVar.empty())
-        BeStringUtilities::Split(envVar.c_str(), L",", names);
+    if (0 == _wdupenv_s(&envNames, nullptr, L"BENTLEY_SPLIT_CONSOLE_LOG") && nullptr != envNames)
+        {
+        BeStringUtilities::Split(envNames, L",", names);
+        free(envNames);
+        }
 
     if (names.size() > 0)
         return new SplitConsoleProvider(names);
@@ -988,4 +1001,3 @@ ILogProvider* createConsoleLogger()
     }
 
 #endif // BENTLEY_WIN32
-

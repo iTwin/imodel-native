@@ -8,7 +8,8 @@
 #if defined (BENTLEY_WIN32)
     #include <windows.h>
 #elif defined (BENTLEY_WINRT)
-    #include <wrl.h>
+    #include <windows.h>
+    //#include <wrl.h>
     #include <setjmp.h>
     static jmp_buf s_test_failure_jmp_buf;
     static jmp_buf* s_test_failure_jmp_buf_to_use;
@@ -391,7 +392,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32)// || defined (BENTLEY_WINRT)
 static void onInvalidParameter
 (
 const wchar_t * expression,
