@@ -164,7 +164,7 @@ public:
     //! Returns a list of SpatialEntity object that are of the specified classification.
     //! The list returned contains pointers to result of filtering
     //! Spatial entities are not copied
-    REALITYDATAPLATFORM_EXPORT static const bvector<SpatialEntityPtr> FilterByClassification(bvector<SpatialEntityPtr> const & listToFilter, Utf8StringCR classification);
+    REALITYDATAPLATFORM_EXPORT static const bvector<SpatialEntityPtr> FilterByClassification(bvector<SpatialEntityPtr> const & listToFilter, RealityDataBase::Classification classification);
 
     //! Returns a list of SpatialEntity object that are of the specified time range
     //! The list returned contains pointers to result of filtering

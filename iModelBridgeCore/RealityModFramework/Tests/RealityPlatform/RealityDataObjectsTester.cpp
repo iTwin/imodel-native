@@ -45,7 +45,7 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityBasicTest)
     EXPECT_STREQ(mySpatialEntity->GetProvider().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetProviderName().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetDataType().c_str(), "");
-    EXPECT_TRUE(mySpatialEntity->GetClassification() == SpatialEntity::Classification::UNDEFINED);
+    EXPECT_TRUE(mySpatialEntity->GetClassification() == SpatialEntity::Classification::UNDEFINED_CLASSIF);
     ASSERT_STRCASEEQ(mySpatialEntity->GetClassificationTag().c_str(), "Undefined"); // Default is preset
     EXPECT_STREQ(mySpatialEntity->GetDataset().c_str(), "");
     EXPECT_STREQ(mySpatialEntity->GetThumbnailURL().c_str(), "");
@@ -481,7 +481,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetName().c_str(), "");
     EXPECT_STREQ(myRealityData->GetResolution().c_str(), "");
     EXPECT_STREQ(myRealityData->GetRealityDataType().c_str(), "");
-    EXPECT_TRUE(myRealityData->GetClassification() == RealityData::Classification::UNDEFINED);
+    EXPECT_TRUE(myRealityData->GetClassification() == RealityData::Classification::UNDEFINED_CLASSIF);
     ASSERT_STRCASEEQ(myRealityData->GetClassificationTag().c_str(), "Undefined"); // Default is preset
     EXPECT_STREQ(myRealityData->GetDataset().c_str(), "");
     EXPECT_STREQ(myRealityData->GetThumbnailDocument().c_str(), "");

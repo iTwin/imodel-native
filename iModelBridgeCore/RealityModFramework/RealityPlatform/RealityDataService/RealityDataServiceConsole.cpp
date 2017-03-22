@@ -881,7 +881,7 @@ void RealityDataConsole::ChangeProps()
             }
         }
 
-    RealityDataServiceChange changeReq = RealityDataServiceChange(m_currentNode->node.GetRootId(), propertyString);
+    RealityDataChange changeReq = RealityDataChange(m_currentNode->node.GetRootId(), propertyString);
 
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1025,7 +1025,7 @@ void RealityDataConsole::CreateRD()
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, m_lastInput);
 
-    RealityDataServiceCreate createRequest = RealityDataServiceCreate("", RealityDataServiceUpload::PackageProperties(properties));
+    RealityDataCreate createRequest = RealityDataCreate("", RealityDataServiceUpload::PackageProperties(properties));
     int status;
     Utf8String response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
     if (status != CURLE_OK)

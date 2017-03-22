@@ -594,6 +594,9 @@ Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataSer
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataPagedRequest::_PrepareBaseRequestString() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -828,7 +831,7 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties)
+RealityDataCreate::RealityDataCreate(Utf8String realityDataId, Utf8String properties)
     { 
     m_id = realityDataId; 
     m_validRequestString = false;
@@ -844,7 +847,7 @@ RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
+void RealityDataCreate::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -854,7 +857,7 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf8String properties)
+RealityDataChange::RealityDataChange(Utf8String realityDataId, Utf8String properties)
     {
     m_id = realityDataId;
     m_validRequestString = false;
@@ -870,7 +873,7 @@ RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceChange::_PrepareHttpRequestStringAndPayload() const
+void RealityDataChange::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -911,6 +914,13 @@ void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
 RealityDataServiceTransfer::~RealityDataServiceTransfer()
     {
     delete m_handshakeRequest;
+
+    // Delete all file transfers
+    // &&AR Desactivated because the entries are supposed to be already deleted but the 
+    // list still pointing to freed objects ...
+    //for (auto fileTransfer : m_filesToTransfer)
+    //    delete fileTransfer;
+
     }
 
 //=====================================================================================
@@ -1150,7 +1160,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     Utf8String response;
     if (m_id.length() == 0 || RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
         {
-        RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
+        RealityDataCreate createRequest = RealityDataCreate(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
         if (m_id.length() != 0 && RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
@@ -1906,7 +1916,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
     else
         {
         RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
-        if ((uint8_t)entities.size() < request.GetPageSize())
+        if ((uint16_t)entities.size() < request.GetPageSize())
             status = RequestStatus::NOMOREPAGES;
         }
 

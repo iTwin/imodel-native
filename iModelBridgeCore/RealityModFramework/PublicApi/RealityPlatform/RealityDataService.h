@@ -183,6 +183,9 @@ private:
     RealityDataDocumentByIdRequest() {}
     };
 
+//=====================================================================================
+//! @bsiclass                                         Spencer.Mason            12/2016
+//=====================================================================================
 struct AzureHandshake : public RealityDataUrl
     {
 public:
@@ -536,9 +539,9 @@ typedef std::function<int()> RealityDataServiceTransfer_HeartbeatCallBack;
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A class used to create a new reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceCreate : public RealityDataUrl
+struct RealityDataCreate : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataCreate(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -547,9 +550,9 @@ protected:
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to modify an existing reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceChange : public RealityDataUrl
+struct RealityDataChange : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceChange(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataChange(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
