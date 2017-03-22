@@ -377,7 +377,7 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
 //static
 void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap)
     {
-    ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
+    ECClassIdPropertyMap const* ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
     if (!ecClassIdPropertyMap->IsMappedToSingleTable() || !classMap.IsMappedToSingleTable())
         {
         BeAssert(false && "We should not be able to insert into endtable that mapped top multiple tables");
@@ -402,8 +402,8 @@ void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& update
     DbColumn const& classIdCol = perTableClassIdPropMap->GetColumn();
     if (classIdCol.GetPersistenceType() == PersistenceType::Physical)
         {
-        //class id is persisted so determine the class id literal and append it to the SQL
-        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(perTableClassIdPropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
+        //class id is persisted so append the class id literal to the SQL
+        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(classMap.GetClass().GetId());
         }
 
     //add WHERE clause so that the right row in the end table is updated
