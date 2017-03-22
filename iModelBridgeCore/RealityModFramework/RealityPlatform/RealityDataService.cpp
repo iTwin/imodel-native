@@ -916,8 +916,7 @@ RealityDataRelationshipCreate::RealityDataRelationshipCreate(Utf8String realityD
 void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append("/RealityDataProjectRelationship");
     m_requestHeader.push_back("Content-Type: application/json");
     }
 

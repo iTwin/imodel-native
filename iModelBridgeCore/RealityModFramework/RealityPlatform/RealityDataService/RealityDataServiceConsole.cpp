@@ -80,6 +80,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Filter;
     else if (args[0].EqualsI("Relationships"))
         m_lastCommand = Command::Relationships;
+    else if (args[0].EqualsI("Link"))
+        m_lastCommand = Command::Link;
     else
         {
         m_lastCommand = Command::Error;
@@ -136,6 +138,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Filter,       &RealityDataConsole::Filter);
     m_functionMap.Insert(Command::Relationships,&RealityDataConsole::Relationships);
     m_functionMap.Insert(Command::CreateRD,     &RealityDataConsole::CreateRD);
+    m_functionMap.Insert(Command::Link,         &RealityDataConsole::Link);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
@@ -270,6 +273,7 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  AzureAdress Prints the URL to use (pass \"read\" or \"write\")\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
     DisplayInfo ("  Relationships Show all projects attached to this RealityData\n");
+    DisplayInfo ("  Link        Create a relationship between a RealityData and a project");
     DisplayInfo ("  CreateRD    Create a new RealityData (must provide a name)\n");
     DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
     }
@@ -474,6 +478,9 @@ void RealityDataConsole::ListRoots()
         properties.push_back(RealityDataFilterCreator::FilterByOwner(m_ownerFilter));
     if(properties.size() > 0)
         enterpriseReq.SetFilter(RealityDataFilterCreator::GroupFiltersAND(properties));
+
+    if (m_queryFilter.length() > 0)
+        enterpriseReq.SetQuery(m_queryFilter);
 
     RequestStatus status = RequestStatus::SUCCESS;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
@@ -1001,7 +1008,7 @@ void RealityDataConsole::Filter()
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
         DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
-        DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter), DisplayOption::Question);
+        DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter));
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
@@ -1010,11 +1017,7 @@ void RealityDataConsole::Filter()
             break;
 
         if (filter.Equals("Fuzzy Filter"))
-            {
             DisplayInfo("\nSet Fuzzy Filter (Enter blank field to remove filter)\nThis Filter searches every property of the RealityData for the specified value (case insensitive)\n", DisplayOption::Tip);
-            DisplayInfo("Warning: this overrides all other filters\n", DisplayOption::Tip);
-            }
-            
         else
             DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
 
@@ -1037,7 +1040,7 @@ void RealityDataConsole::Relationships()
     {
     if (m_currentNode == nullptr)
         {
-        DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
+        DisplayInfo("Please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
         }
     RequestStatus status;
@@ -1090,9 +1093,38 @@ void RealityDataConsole::CreateRD()
         }*/
     }
 
+void RealityDataConsole::Link()
+    {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("Please navigate to a RealityData before using this command\n", DisplayOption::Tip);
+        return;
+        }
+
+    DisplayInfo(Utf8PrintfString("Creating a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+    DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
+    DisplayInfo("Please enter the id of the project you would like to link this to\n ?", DisplayOption::Question);
+
+    InterpretCommand();
+    if (m_lastCommand == Command::Cancel)
+        return;
+    
+    RealityDataRelationshipCreate relReq = RealityDataRelationshipCreate(m_currentNode->node.GetInstanceId(), m_lastInput);
+    
+    int status = RequestType::Body;
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(relReq, status, RealityDataService::GetVerifyPeer());
+
+    Json::Value instances(Json::objectValue);
+    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+        DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
+    else
+        Relationships();
+    }
+
 void RealityDataConsole::InputError()
     {
-    DisplayInfo("unrecognized Command. Type \"help\" for usage\n", DisplayOption::Error);
+    DisplayInfo("Unrecognized Command. Type \"help\" for usage\n", DisplayOption::Error);
     }
 
 void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)

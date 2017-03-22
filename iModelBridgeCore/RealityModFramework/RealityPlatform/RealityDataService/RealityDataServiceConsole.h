@@ -52,7 +52,8 @@ enum class Command
     Delete,
     Filter,
     Relationships,
-    CreateRD
+    CreateRD,
+    Link
     };
 
 struct RealityDataConsole
@@ -91,6 +92,7 @@ public:
     void Filter();
     void Relationships();
     void CreateRD();
+    void Link();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
