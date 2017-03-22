@@ -178,11 +178,13 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr DisplayParams::QueryTexture(DgnDbR db) const
     {
-    RenderingAssetCP mat = RenderingAsset::Load(GetMaterialId(), db);
-    if (nullptr == mat)
+    DgnMaterialCPtr material = DgnMaterial::Get(db, GetMaterialId());
+    if (material.IsNull())
         return nullptr;
 
-    auto texMap = mat->GetPatternMap();
+    auto& mat = material->GetRenderingAsset();
+    auto texMap = mat.GetPatternMap();
+
     DgnTextureId texId;
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
@@ -547,6 +549,23 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR db)
+    {
+    if (!materialId.IsValid())
+        return false;
+
+    m_materialEl = DgnMaterial::Get(db, materialId);
+    BeAssert(m_materialEl.IsValid());
+    if (m_materialEl.IsNull())
+        return false;
+
+    m_material = &m_materialEl->GetRenderingAsset();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
@@ -566,7 +585,7 @@ void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId
     Triangle            newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d>   params = visitor.Param();
 
-    if (includeParams && !params.empty() && (m_material || (nullptr != (m_material = RenderingAsset::Load(materialId, dgnDb)))))
+    if (includeParams && !params.empty() && (m_material || GetMaterial(materialId, dgnDb)))
         {
         auto const&         patternMap = m_material->GetPatternMap();
         bvector<DPoint2d>   computedParams;

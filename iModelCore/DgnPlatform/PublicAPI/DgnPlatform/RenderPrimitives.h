@@ -9,7 +9,7 @@
 
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/DgnTexture.h>
-#include <DgnPlatform/RenderMaterial.h>
+#include <DgnPlatform/DgnMaterial.h>
 
 #define BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Primitives {
 #define END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
@@ -502,10 +502,14 @@ private:
     TriangleSet         m_triangleSet;
     double              m_tolerance;
     double              m_areaTolerance;
+    DgnMaterialCPtr     m_materialEl;
     RenderingAssetCP    m_material = nullptr;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance) : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_areaTolerance(areaTolerance) {  }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance)
+        : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+          m_tolerance(tolerance), m_areaTolerance(areaTolerance) {  }
+
+    bool GetMaterial(DgnMaterialId materailId, DgnDbR db);
 public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance) { return new MeshBuilder(params, tolerance, areaTolerance); }
 

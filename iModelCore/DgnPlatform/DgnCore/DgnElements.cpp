@@ -1681,4 +1681,3 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
 
-/*---------------------------------------------------------------------------------**//**
