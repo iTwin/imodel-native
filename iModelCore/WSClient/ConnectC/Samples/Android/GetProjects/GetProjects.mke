@@ -43,6 +43,10 @@ $(BuildDir)settings.gradle : $(_MakeFilePath)settings.gradle
 $(BuildDir)app/ : $(_MakeFilePath)app/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+#Include the BeSecurity archive
+$(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
 #%return
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
