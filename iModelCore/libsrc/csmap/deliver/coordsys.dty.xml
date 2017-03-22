@@ -21,16 +21,16 @@
                  <KeyName>EPSG:102024</KeyName>
                </Member>
                <Member>
-                 <KeyName>EPSG:3339</KeyName>
+                 <KeyName>CongoBelge55.TM-12</KeyName>
                </Member>
                <Member>
-                 <KeyName>EPSG:3340</KeyName>
+                 <KeyName>CongoBelge55.TM-14</KeyName>
                </Member>
                <Member>
-                 <KeyName>EPSG:3341</KeyName>
+                 <KeyName>CongoBelge55.TM-16</KeyName>
                </Member>
                <Member>
-                 <KeyName>EPSG:3342</KeyName>
+                 <KeyName>CongoBelge55.UTM-33S</KeyName>
                </Member>
                <Member>
                  <KeyName>EPSG:2931</KeyName>
@@ -481,31 +481,19 @@
                 <Name>Guinea</Name>
                 <Members>
                   <Member>
-                    <KeyName>Dabola81.UTM-28N</KeyName>
+                    <KeyName>Dabola1981.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Dabola81.UTM-29N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2063</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2064</KeyName>
+                    <KeyName>Dabola1981.UTM-29N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Bissau_1.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Conakry05.UTM-28N</KeyName>
+                    <KeyName>Conakry1905.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31528</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Conakry05.UTM-29N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31529</KeyName>
+                    <KeyName>Conakry1905.UTM-29N</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -1179,12 +1167,6 @@
                   </Member>
                   <Member>
                     <KeyName>Combani50.UTM-38S</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3461</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3462</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -22412,19 +22394,16 @@
                 <Name>French Guiana</Name>
                 <Members>
                   <Member>
-                    <KeyName>CSG67.UTM-22N</KeyName>
+                    <KeyName>CSG1967.UTM-21N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CSG1967.UTM-22N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>RGFG95.UTM-22N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2971</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>EPSG:2972</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3312</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3313</KeyName>
@@ -27757,6 +27736,60 @@
               <Member>
                 <KeyName>EPSG:4474</KeyName>
               </Member>
+              <Member>
+                <KeyName>Dabola81.UTM-28N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Dabola81.UTM-29N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CSG67.UTM-22N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Conakry05.UTM-28N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Conakry05.UTM-29N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2063</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2064</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2971</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31528</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31529</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3312</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3339</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3340</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3341</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3342</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3343</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3461</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3462</KeyName>
+              </Member>
             </Members>
             <Groups>
               <Group>
@@ -30500,16 +30533,10 @@
                 <Name>Guinea</Name>
                 <Members>
                   <Member>
-                    <KeyName>Dabola81.LL</KeyName>
+                    <KeyName>Dabola1981.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4155</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Conakry05.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4315</KeyName>
+                    <KeyName>Conakry1905.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30729,10 +30756,7 @@
                 <Name>Others</Name>
                 <Members>
                   <Member>
-                    <KeyName>CongoBelge1955.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4701</KeyName>
+                    <KeyName>CongoBelge55.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -33089,10 +33113,7 @@
                 <Name>French Guiana</Name>
                 <Members>
                   <Member>
-                    <KeyName>CSG67.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4623</KeyName>
+                    <KeyName>CSG1967.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Guyane95.LL</KeyName>
@@ -33969,6 +33990,30 @@
               </Member>
               <Member>
                 <KeyName>EPSG:37252</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Dabola81.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Conakry05.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CSG67.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CongoBelge1955.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4315</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4623</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4701</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4155</KeyName>
               </Member>
             </Members>
           </Group>
