@@ -47,8 +47,6 @@ $(BuildDir)app/ : $(_MakeFilePath)app/
 $(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-#%return
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------------
@@ -68,6 +66,6 @@ GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
                   MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)] \
 				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] 
 	
-Verbose=1
+#Verbose=1
 %include $(SrcRoot)WSClient/mki/Android/gradleBuild.mki
 
