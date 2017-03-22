@@ -1378,21 +1378,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
-
-    switch (map.GetNumIndices())
-        {
-        case 0:
-            BeAssert(false && "empty color map");
-            m_colorDimension = ColorIndex::Dimension::None;
-            break;
-        case 1:
-            m_colorDimension = ColorIndex::Dimension::Zero;
-            break;
-        default:
-            m_colorDimension = map.GetNumIndices() <= ColorIndex::GetMaxWidth() ? ColorIndex::Dimension::One : ColorIndex::Dimension::Two;
-            break;
-        }
-
+    m_colorDimension = ColorIndex::CalcDimension(map.GetNumIndices());
     m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
 
     if (0 != displayParams.GetLinePixels())
@@ -1540,30 +1526,9 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
     m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
 
     if (m_overridesAlpha && m_overridesRgb)
-        {
         m_colorDimension = ColorIndex::Dimension::Zero;
-        }
     else
-        {
-        uint16_t nColors = mesh.GetColorIndexMap().GetNumIndices();
-        if (0 == nColors)
-            {
-            BeAssert(false && "empty color map");
-            m_colorDimension = ColorIndex::Dimension::None;
-            }
-        else if (1 == nColors)
-            {
-            m_colorDimension = ColorIndex::Dimension::Zero;
-            }
-        else if (nColors <= ColorIndex::GetMaxWidth())
-            {
-            m_colorDimension = ColorIndex::Dimension::One;
-            }
-        else
-            {
-            m_colorDimension = ColorIndex::Dimension::Two;
-            }
-        }
+        m_colorDimension = ColorIndex::CalcDimension(mesh.GetColorIndexMap().GetNumIndices());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3060,10 +3025,10 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
     auto cameraView = nullptr != spatialView ? view.ToView3d() : nullptr;
-    if (nullptr != cameraView && cameraView->IsCameraOn())
+    if (nullptr != cameraView)
         {
         json["type"] = "camera";
-
+        json["isCameraOn"] = cameraView->IsCameraOn();
         DPoint3d eyePoint = cameraView->GetEyePoint();
         transform.Multiply(eyePoint);
         json["eyePoint"] = PointToJson(eyePoint);

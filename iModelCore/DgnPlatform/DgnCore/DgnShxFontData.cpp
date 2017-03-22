@@ -80,7 +80,6 @@ void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
     size_t numGlyphs = (size_t)GetNextUInt16();
     size_t dataStart = (size_t)(_Tell() + (4 * numGlyphs));
     size_t dataOffset = 0;
-    DgnShxFont::GlyphFPos const* zeroGlyphFPos = nullptr;
 
     // Read glyph GlyphFPos data.
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
@@ -92,24 +91,22 @@ void IDgnShxFontData::LoadNonUnicodeGlyphFPosCacheAndMetrics()
 
         m_glyphFPosCache[glyphId] = glyphFPos;
         dataOffset += glyphFPos.m_dataSize;
-        
-        if (0 == glyphId)
-            zeroGlyphFPos = &m_glyphFPosCache[glyphId];
         }
     
     //.............................................................................................
     // Read metric data. Char 0 is the font specifier...
-    if (nullptr == zeroGlyphFPos)
+    T_GlyphFPosCache::const_iterator zeroGlyphFPos = m_glyphFPosCache.find(0);
+    if (m_glyphFPosCache.end() == zeroGlyphFPos)
         {
         m_ascender = 1;
         m_descender = 1;
         return;
         }
 
-    if (0 != _Seek(zeroGlyphFPos->m_dataOffset, BeFileSeekOrigin::Begin))
+    if (0 != _Seek(zeroGlyphFPos->second.m_dataOffset, BeFileSeekOrigin::Begin))
         return;
 
-    size_t pBufSize = (size_t)zeroGlyphFPos->m_dataSize;
+    size_t pBufSize = (size_t)zeroGlyphFPos->second.m_dataSize;
     ScopedArray<Byte> pBuf(pBufSize);
 
     // Read code 0 which should be the font specifier.
