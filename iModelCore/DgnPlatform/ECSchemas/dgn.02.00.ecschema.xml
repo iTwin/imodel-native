@@ -252,9 +252,6 @@
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
-            </ECCustomAttributes>
         </ECStructProperty>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
@@ -426,7 +423,6 @@
                 <PropertyStatementType>
                   <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
-                <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECStructProperty>                          
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
