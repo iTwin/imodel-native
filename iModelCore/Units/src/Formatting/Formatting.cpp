@@ -828,7 +828,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, BEU::QuantityCR q
 //   that the caller needs to append the unit name to the value
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
     {
     BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
     BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);

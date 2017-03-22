@@ -262,12 +262,17 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     return AddUnitP(phenomName, systemName, unitName, definition, factor, offset);
     }
 
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           05/16
-//+---------------+---------------+---------------+---------------+---------------+------//
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::AddDummyUnit(Utf8CP unitName)
     {
-    return AddUnit("ONE", "USCUSTOM", unitName, "ONE");
+    auto dummy = LookupUnit(unitName);
+    if (nullptr == dummy)
+        dummy = AddUnit("ONE", "USCUSTOM", unitName, "ONE");
+
+    BeAssert(nullptr != dummy);
+    return dummy;
     }
 
 //---------------------------------------------------------------------------------------//
