@@ -686,7 +686,7 @@ void RealityDataConsole::Upload()
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
 
-        Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
+        propertyString = RealityDataServiceUpload::PackageProperties(properties);
         }
     else
         {
