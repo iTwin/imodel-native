@@ -224,6 +224,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceAzureCURL";
         account_name = L"AzureCURLAccount";
+        BeFileName masterFileName(settings.GetURL().c_str());
+        m_masterFileName = BEFILENAME(GetFileNameAndExtension, masterFileName);
         account_prefix = DataSourceURL(settings.GetGUID().c_str());
         account_identifier = settings.GetServerID().c_str();
         }

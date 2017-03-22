@@ -558,6 +558,8 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     StatusInt&              status)
 {
     status = BSISUCCESS;
+    bool isLocal = true;
+    Utf8String newBaseEditsFilePath(baseEditsFilePath);
     SMSQLiteFilePtr smSQLiteFile;
     if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") == 0)
         { // Open 3sm file
@@ -572,6 +574,14 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         }
     else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
         { // Open json streaming format
+        auto directory = BeFileName::GetDirectoryName(filePath);
+        isLocal = BeFileName::DoesPathExist(directory.c_str());
+        if (!isLocal)
+            {
+            wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+            if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
+            newBaseEditsFilePath.Assign(temp);
+            }
         }
     else
         {
@@ -580,13 +590,13 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         }
 
     if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
-    if(0 != _waccess(filePath, 04))
+    if(isLocal && 0 != _waccess(filePath, 04))
     {
         status = BSISUCCESS;
         return 0; // File not found
     }
 
-    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, baseEditsFilePath, needsNeighbors, status);
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, newBaseEditsFilePath, needsNeighbors, status);
 
 }
 
@@ -928,10 +938,31 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                             {
                             config["data_type"] = "3DTiles";
                             auto& config_server = config["server"];
-                            config_server["type"] = "local";
-                            auto& config_server_settings = config_server["settings"];
                             auto utf8Path = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(m_path.c_str());
-                            config_server_settings["url"] = Json::Value(utf8Path.c_str());
+                            if (BeFileName::DoesPathExist(m_path.c_str()))
+                                { // local
+                                config_server["type"] = "local";
+                                config_server["settings"]["url"] = Json::Value(utf8Path.c_str());
+                                }
+                            else
+                                { // RDS
+                                config_server["type"] = "rds";
+                                auto& server_settings = config_server["settings"];
+                                assert(m_path.substr(0, 8) == L"https://");
+                                auto firstSeparatorPos = m_path.find(L".");
+                                auto utf16ServerID = m_path.substr(8, firstSeparatorPos - 8);
+                                auto utf8ServerID = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16ServerID.c_str());
+                                server_settings["id"] = Json::Value(utf8ServerID.c_str());
+                                server_settings["authentication"]["public"] = true;
+                                auto guidPos = m_path.find(L"/", 8) + 1;
+                                auto guidLength = m_path.find(L"/", guidPos) - guidPos;
+                                auto utf16GUID = m_path.substr(guidPos, guidLength);
+                                auto utf8GUID = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16GUID.c_str());
+                                auto utf16RootTilesetPath = m_path.substr(guidPos + guidLength + 1, WString::npos);
+                                auto utf8RootTilesetPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(utf16RootTilesetPath.c_str());
+                                server_settings["url"] = Json::Value(utf8RootTilesetPath.c_str());
+                                config["guid"] = Json::Value(utf8GUID.c_str());
+                                }
                             }
 
                         }
