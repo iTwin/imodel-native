@@ -457,12 +457,12 @@ int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 void     Db::SetAllowImplictTransactions(bool val) {m_dbFile->m_allowImplicitTxns=val;}
 
-Utf8String SchemaVersion::ToJson() const {return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}");}
+Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaVersion::FromJson(Utf8CP val)
+void ProfileVersion::FromJson(Utf8CP val)
     {
     FromString(val, "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}");
     }
@@ -2448,10 +2448,10 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called before the schema upgrade process starts. Make sure the Db is writeable.
+* Called before the profile upgrade process starts. Make sure the Db is writeable.
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
+bool Db::OpenParams::_ReopenForProfileUpgrade(Db& db) const
     {
     if (!IsReadonly())
         return true;
@@ -2480,7 +2480,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
 
     if (rc == BE_SQLITE_OK && !params.m_forSchemaUpgrade && !params.m_rawSQLite)
         {
-        rc = _VerifySchemaVersion(params);
+        rc = _VerifyProfileVersion(params);
 
         if (rc == BE_SQLITE_OK)
             rc = _OnDbOpened();
@@ -2578,8 +2578,8 @@ void Db::_OnDbChangedByOtherConnection()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const& expectedProfileVersion, SchemaVersion const& actualProfileVersion,
-                                  SchemaVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly,
+DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion,
+                                  ProfileVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly,
                                   Utf8CP profileName)
     {
     fileIsAutoUpgradable = false;
@@ -2597,7 +2597,7 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         }
 
     //If major/minor of file version is older than minimum version to which auto-upgrades can be done, file is too old
-    if (actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, SchemaVersion::VERSION_MajorMinor) < 0)
+    if (actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) < 0)
         {
         BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion) <= 0 && "Minimum auto-upgradable profile version must be less or equal expected profile version.");
 
@@ -2607,7 +2607,7 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         }
 
     //If major and minor of actual profile version is newer than expected, file cannot be opened.
-    if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) > 0)
+    if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) > 0)
         {
         LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s. Please upgrade your product to the latest version.", 
                    profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
@@ -2615,15 +2615,15 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         }
 
     //at this point, actual major / minor is between or equal minimum and expected version.
-    BeAssert(actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, SchemaVersion::VERSION_MajorMinor) >= 0 &&
-            actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) <= 0 && "Logical error in Db::CheckProfileVersion");
+    BeAssert(actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) >= 0 &&
+            actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) <= 0 && "Logical error in Db::CheckProfileVersion");
 
     //If file is older than expected version (but newer or equal than minimum auto-upgrade version), file is auto-upgradable
-    if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_All) < 0)
+    if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_All) < 0)
         {
         fileIsAutoUpgradable = true;
 
-        if (actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) < 0)
+        if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) < 0)
             {
             LOG.debugv("File's %s profile (%s) is too old, but auto-upgradable.", profileName, actualProfileVersion.ToString().c_str());
             return BE_SQLITE_ERROR_ProfileTooOld;
@@ -2637,7 +2637,7 @@ DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, SchemaVersion const
         }
 
     //at this point actual version's major and minor are equal to expected, and sub1 and sub2 are equal or greater than expected
-    BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion, SchemaVersion::VERSION_MajorMinor) == 0 &&
+    BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) == 0 &&
              (actualProfileVersion.GetSub1() >= expectedProfileVersion.GetSub1() || actualProfileVersion.GetSub2() >= expectedProfileVersion.GetSub2()) &&
              "Logical error in Db::CheckProfileVersion");
 
@@ -2873,7 +2873,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_CONSTRAINT_TRIGGER:    return "BE_SQLITE_CONSTRAINT_TRIGGER";
         case BE_SQLITE_CONSTRAINT_UNIQUE:     return "BE_SQLITE_CONSTRAINT_UNIQUE";
         case BE_SQLITE_CONSTRAINT_VTAB:       return "BE_SQLITE_CONSTRAINT_VTAB";
-        case BE_SQLITE_ERROR_BadDbSchema:                            return "BE_SQLITE_ERROR_BadDbSchema";
+        case BE_SQLITE_ERROR_BadDbProfile:                           return "BE_SQLITE_ERROR_BadDbProfile";
         case BE_SQLITE_ERROR_InvalidProfileVersion:                  return "BE_SQLITE_ERROR_InvalidProfileVersion";
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:                   return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
         case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite: return "BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite";
