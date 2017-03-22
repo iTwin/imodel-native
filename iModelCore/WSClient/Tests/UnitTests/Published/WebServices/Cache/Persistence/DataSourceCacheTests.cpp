@@ -1555,7 +1555,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
-    EXPECT_TRUE(responseKey.GetParent().GetECClassId().IsValid());
+    EXPECT_TRUE(responseKey.GetParent().GetClassId().IsValid());
 
     EXPECT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
@@ -5301,7 +5301,7 @@ TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKey
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
     EXPECT_FALSE(instanceKey.IsValid());
-    EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetECClassId());
+    EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetClassId());
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)

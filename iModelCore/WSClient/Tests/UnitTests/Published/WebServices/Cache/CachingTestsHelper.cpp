@@ -82,7 +82,7 @@ bool DoesInstanceExist(IDataSourceCache& ds, ECInstanceKeyCR key)
     EXPECT_TRUE(key.IsValid());
     auto ecClass = ds.GetAdapter().GetECClass(key);
     EXPECT_TRUE(nullptr != ecClass);
-    auto ecInstanceId = ds.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()).c_str());
+    auto ecInstanceId = ds.GetAdapter().FindInstance(ecClass, Utf8PrintfString("ECInstanceId = %llu", key.GetInstanceId().GetValue()).c_str());
     return ecInstanceId.IsValid();
     }
 
