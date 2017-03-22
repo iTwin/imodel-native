@@ -686,6 +686,10 @@ void RealityDataConsole::Upload()
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
 
+        DisplayInfo("please input value for RootDocument\n  ?", DisplayOption::Question);
+        std::getline(std::cin, input);
+        properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
+
         propertyString = RealityDataServiceUpload::PackageProperties(properties);
         }
     else
