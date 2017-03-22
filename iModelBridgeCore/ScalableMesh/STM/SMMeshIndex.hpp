@@ -3694,24 +3694,39 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
 
     if (!IsLoaded()) Load();
-    DRange2d rasterBox = sourceRasterP->GetTextureExtent(); 
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
     //get overlap between node and raster extent
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
-    
+
     unitTransform.Multiply(contentExtent.low, contentExtent.low);
     unitTransform.Multiply(contentExtent.high, contentExtent.high);
     if (!rasterBox.IntersectsWith(contentExtent)) return;
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
-    
+
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
     DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
-    
-        if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))
-            SplitNodeBasedOnImageRes();
+
+
+    if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))        
+        SplitNodeBasedOnImageRes();
+        
+
+
+    if (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels)
+        {
+        m_nodeHeader.m_textureResolution = std::max(contentExtent.XLength() / textureWidthInPixels, contentExtent.YLength() / textureHeightInPixels);
+        }
+    else
+        {
+        m_nodeHeader.m_textureResolution = std::max(pixSize.x, pixSize.y);
+        }
+
+
+    if (m_nodeHeader.m_geometricResolution == 0)m_nodeHeader.m_geometricResolution = m_nodeHeader.m_textureResolution;
         if (!tex.empty())
         PushTexture(tex.data(), tex.size());     
 
@@ -3887,6 +3902,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<bpair<double, int>> metadata;
     DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
+    size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
@@ -3896,8 +3912,32 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             polys.push_back(bvector<DPoint3d>());
             GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
-            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength()) extentOfBiggestPoly = polyExtent;
-            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly)) polyInclusion = true;
+            if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
+                {
+                extentOfBiggestPoly = polyExtent;
+                indexOfBiggestPoly = polys.size() - 1;
+                }
+            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly))
+                {
+                bool allInPoly = true;
+                for (auto&pt : polys.back())
+                    {
+                    if (!polyExtent.IsContainedXY(pt)) allInPoly = false;
+                    }
+                if (allInPoly)
+                    {
+                    auto curvePtr = ICurvePrimitive::CreateLineString(polys.back());
+                    auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+                    auto outerCurvePtr = ICurvePrimitive::CreateLineString(polys[indexOfBiggestPoly]);
+                    auto outerCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, outerCurvePtr);
+
+                    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *outerCurveVectorPtr);
+                    if (!intersection.IsNull())
+                        polyInclusion = true;
+                    }
+                }
+
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);

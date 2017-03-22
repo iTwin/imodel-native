@@ -196,11 +196,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             }
         else
             {
-            m_masterFileName = url.GetFileNameAndExtension();
-            url = url.GetDirectoryName();
+            m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
+            url = BEFILENAME(GetDirectoryName, url);
             }
         account_prefix = DataSourceURL((L"file:///" + url).c_str());
-        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
+        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) BeFileName::CreateNewDirectory(url.c_str());
         }
     else if (settings.IsLocal())
         {
@@ -452,12 +452,13 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
         BeFileName baseUrl(m_masterFileName.c_str());
-        auto tilesetDir = baseUrl.GetDirectoryName();
-        auto tilesetName = baseUrl.GetFileNameAndExtension();
+        auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
+        auto tilesetName = BEFILENAME(GetFileNameAndExtension, baseUrl);
 
         m_CesiumGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), m_nodeHeaderCache, rootNodeBlockID, true);
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
+        m_CesiumGroup->ResetNodeIDGenerator();
         }
     else
         {
@@ -665,7 +666,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     return headerSize;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize)
     {
     assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
@@ -781,7 +782,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
     po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize) const
     {
 #ifndef VANCOUVER_API
     // Get Cesium 3D tiles required properties
@@ -983,7 +984,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID)
     {
-    uint32_t headerSize = 0;
+    size_t headerSize = 0;
     std::unique_ptr<Byte> headerData = nullptr;
     std::wstring extension;
     switch (m_formatType)
@@ -1081,7 +1082,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 1;
@@ -1101,7 +1102,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
-        uint64_t headerSize = 0;
+        size_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 0;
@@ -1160,7 +1161,7 @@ template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMB
     return group;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const
     {
     size_t dataIndex = 0;
 
@@ -1393,10 +1394,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
             if (header->m_contentExtentDefined)
                 {
-                auto const& bv = cesiumNodeHeader["content"]["boundingVolume"];
-                if (bv.isMember("box"))
+                auto const& contentBV = cesiumNodeHeader["content"]["boundingVolume"];
+                if (contentBV.isMember("box"))
                     {
-                    auto& boundingBox = bv["box"];
+                    auto& boundingBox = contentBV["box"];
                     DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
                     DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
                     ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
@@ -1408,8 +1409,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                     }
                 else
                     {
-                    assert(bv.isMember("sphere")); // must be sphere if not a box
-                    auto const& boundingSphere = bv["sphere"];
+                    assert(contentBV.isMember("sphere")); // must be sphere if not a box
+                    auto const& boundingSphere = contentBV["sphere"];
                     DPoint3d center = DPoint3d::From(boundingSphere[0].asDouble(), boundingSphere[1].asDouble(), boundingSphere[2].asDouble());
                     double radius = boundingSphere[3].asDouble();
                     ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - radius);
@@ -1587,7 +1588,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         }
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize)
     {
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
     std::unique_ptr<DataSource::Buffer[]>          dest;
@@ -2017,7 +2018,7 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         if (m_jsonHeader->isMember("transform"))
             {
             auto& transform = (*m_jsonHeader)["transform"];
-            Transform m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
+            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
                                                    transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
                                                    transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
             }
@@ -2486,8 +2487,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
-        auto transform = s_import_from_bim_exported_cesium_3d_tiles ? Transform::From(533459, 5212605, 0) : Transform::FromIdentity();
-        transform = Transform::From(333011, 4728426, 0);
+        auto transform = Transform::FromIdentity();
+        //transform = Transform::From(333011, 4728426, 0);
         if (false && !RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];

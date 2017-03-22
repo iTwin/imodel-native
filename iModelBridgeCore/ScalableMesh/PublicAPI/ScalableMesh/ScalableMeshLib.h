@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,8 +61,8 @@ public:
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
         BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
 
-        IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
-        void             RemoveRegisteredScalableMesh(const WString& path);
+        BENTLEY_SM_EXPORT IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
+        BENTLEY_SM_EXPORT void             RemoveRegisteredScalableMesh(const WString& path);
         void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 

@@ -54,17 +54,19 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     {        
     Savepoint sp(*this, "CreateVersion");
-    CreateTable("SMFileMetadata", "Version TEXT");
+    CreateTable("SMFileMetadata", "Version TEXT, Properties TEXT");
     //m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
 
     CachedStatementPtr stmt;
-    GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version) VALUES(?)");
+    GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version, Properties) VALUES(?,?)");
     SchemaVersion currentVersion = GetCurrentVersion();
     Utf8String versonJson(currentVersion.ToJson());
 #ifndef VANCOUVER_API
        stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
+       stmt->BindText(2, "", Statement::MakeCopy::Yes);
 #else
         stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
+        stmt->BindUtf8String(2, Utf8String(), Statement::MAKE_COPY_Yes);
 #endif
     DbResult status = stmt->Step();
     status = status;

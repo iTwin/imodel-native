@@ -82,6 +82,11 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                     {
                         jsonNode["SMHeader"]["parentID"] = parentID;
                         static std::atomic<uint32_t> s_currentNodeID = 0;
+                        if (m_mustResetNodeIDGenerator)
+                            {
+                            s_currentNodeID = 0;
+                            m_mustResetNodeIDGenerator = false;
+                            }
                         uint32_t nodeID = isRootNode && parentID != uint32_t(-1) && currentNodeID != uint32_t(-1) ? currentNodeID : s_currentNodeID++;
                         if (jsonNode["SMHeader"].isMember("id"))
                         {
