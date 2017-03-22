@@ -38,7 +38,7 @@ DataCaptureTestDomain::DataCaptureTestDomain() : DgnDomain("DataCaptureTest", "D
 //---------------------------------------------------------------------------------------
 DgnDbStatus DataCaptureTestDomain::Register()
     {
-    DgnDomains::RegisterDomain(GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     return DgnDbStatus::Success;
     }
 
@@ -54,7 +54,7 @@ DgnDbStatus DataCaptureTestDomain::ImportSchema(DgnDbR dgndb)
     if (DgnDbStatus::Success != status)
         return status;
 
-    ECN::ECSchemaCP schema = dgndb.Schemas().GetECSchema(DATACAPTURE_TEST_SCHEMA_NAME, true);
+    ECN::ECSchemaCP schema = dgndb.Schemas().GetSchema(DATACAPTURE_TEST_SCHEMA_NAME, true);
     if (nullptr == schema)
         return DgnDbStatus::BadSchema;
 

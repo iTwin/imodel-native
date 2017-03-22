@@ -181,7 +181,7 @@ WmsModelPtr WmsModelHandler::CreateWmsModel(DgnDbR db, Dgn::RepositoryLinkCR lin
     if (!link.GetElementId().IsValid())        // link must be persisted.
         return nullptr;
 
-    DgnClassId classId(db.Schemas().GetECClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
+    DgnClassId classId(db.Schemas().GetClassId(RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
 
     if(!mapInfo.HasValidParameters())

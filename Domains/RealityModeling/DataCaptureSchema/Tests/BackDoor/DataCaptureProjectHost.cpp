@@ -199,7 +199,7 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     if (DgnDbStatus::Success != (status = ImportDataCaptureSchema(*projectPtr)))
         return nullptr;
 
-    projectPtr->Schemas().CreateECClassViewsInDb();
+    projectPtr->Schemas().CreateClassViewsInDb();
 
     auto& spatialModelHandlerR = dgn_ModelHandler::Spatial::GetHandler();
     auto spatialModelPtr = spatialModelHandlerR.Create(DgnModel::CreateParams(*projectPtr, projectPtr->Domains().GetClassId(spatialModelHandlerR),
@@ -235,7 +235,7 @@ DataCaptureProjectHostImpl::DataCaptureProjectHostImpl() : m_isInitialized(false
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DataCaptureDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     m_isInitialized = true;
     }
 

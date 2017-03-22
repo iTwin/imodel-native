@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/DataCaptureSchemaDefinitions.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -101,8 +101,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_DATACAPTURE_QUERYCLASS_METHODS(__name__) \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(BDCP_SCHEMA_NAME, BDCP_CLASS_##__name__)); } \
-    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(BDCP_SCHEMA_NAME, BDCP_CLASS_##__name__)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(BDCP_SCHEMA_NAME, BDCP_CLASS_##__name__)); } \
+    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(BDCP_SCHEMA_NAME, BDCP_CLASS_##__name__)); }
 
 
 //-----------------------------------------------------------------------------------------
