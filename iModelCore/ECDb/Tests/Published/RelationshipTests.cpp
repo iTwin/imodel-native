@@ -921,8 +921,38 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Name FROM ts.Child ORDER BY ECInstanceId"));
     int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        switch (rowCount)
+            {
+                case 1:
+                {
+                ASSERT_EQ(childKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << "Child 1";
+                ASSERT_EQ(childKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << "Child 1";
+                ASSERT_STREQ("Child1", stmt.GetValueText(2)) << "Child 1";
+                break;
+                }
+                case 2:
+                {
+                ASSERT_EQ(specialChildKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << "Child 2, SpecialChild";
+                ASSERT_EQ(specialChildKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << "Child 2, SpecialChild";
+                ASSERT_STREQ("Child2", stmt.GetValueText(2)) << "Child 2, SpecialChild";
+                break;
+                }
+
+                default:
+                    FAIL();
+                    return;
+            }
+        }
+    ASSERT_EQ(2, rowCount);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    rowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         rowCount++;

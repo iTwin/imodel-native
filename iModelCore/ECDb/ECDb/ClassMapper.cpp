@@ -110,7 +110,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
         }
 
     ecClassIdColumns.push_back(ecClassIdColumn);
-    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, ecClassIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");

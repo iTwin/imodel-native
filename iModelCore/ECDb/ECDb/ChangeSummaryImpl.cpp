@@ -947,8 +947,11 @@ void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry con
 ECClassId ChangeExtractor::ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId)
     {
     ECClassIdPropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap();
-    if (classIdPropMap->IsVirtual(*rowEntry.GetTableMap()->GetDbTable()))
-        return classIdPropMap->GetDefaultECClassId();
+    ECClassIdPropertyMap::PerTableIdPropertyMap const* perTableClassIdPropMap = classIdPropMap->FindDataPropertyMap(*rowEntry.GetTableMap()->GetDbTable());
+    BeAssert(perTableClassIdPropMap != nullptr && perTableClassIdPropMap->GetType() == PropertyMap::Type::SystemPerTableClassId);
+    DbColumn const& classIdCol = perTableClassIdPropMap->GetColumn();
+    if (classIdCol.GetPersistenceType() == PersistenceType::Virtual)
+        return perTableClassIdPropMap->GetAs<ECClassIdPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId();
 
     GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
     classIdPropMap->AcceptVisitor(columnsDisp);

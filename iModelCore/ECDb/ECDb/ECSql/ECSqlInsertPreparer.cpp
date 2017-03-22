@@ -251,7 +251,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
 //static
 void ECSqlInsertPreparer::PrepareClassId(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap)
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
+    SystemPropertyMap::PerTableIdPropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetPrimaryTable());
     if (classIdPropMap == nullptr || classIdPropMap->GetColumn().GetPersistenceType() == PersistenceType::Virtual)
         return;
 
@@ -397,12 +397,13 @@ void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& update
     updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
     updateBuilder.Append(propertyNamesNativeSqlSnippets, "=", valuesNativeSqlSnippets);
 
-    if (!ecClassIdPropertyMap->IsVirtual(contextTable))
+    SystemPropertyMap::PerTableIdPropertyMap const* perTableClassIdPropMap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
+    BeAssert(perTableClassIdPropMap != nullptr && perTableClassIdPropMap->GetType() == PropertyMap::Type::SystemPerTableClassId);
+    DbColumn const& classIdCol = perTableClassIdPropMap->GetColumn();
+    if (classIdCol.GetPersistenceType() == PersistenceType::Physical)
         {
         //class id is persisted so determine the class id literal and append it to the SQL
-        SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = ecClassIdPropertyMap->FindDataPropertyMap(contextTable);
-        BeAssert(vmap != nullptr);
-        updateBuilder.AppendComma().Append(vmap->GetColumn().GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(ecClassIdPropertyMap->GetDefaultECClassId());
+        updateBuilder.AppendComma().Append(classIdCol.GetName().c_str()).Append(BooleanSqlOperator::EqualTo).Append(perTableClassIdPropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         }
 
     //add WHERE clause so that the right row in the end table is updated

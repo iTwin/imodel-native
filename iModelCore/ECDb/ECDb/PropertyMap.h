@@ -117,17 +117,18 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
             ECClassId = 1024,
             ConstraintECInstanceId = 2048,
             ConstraintECClassId = 4096,
-            SystemPerTablePrimitive = 8192,
+            SystemPerTableId = 8192,
+            SystemPerTableClassId = 16384,
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
-            SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTablePrimitive,
+            SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTableId | SystemPerTableClassId,
             Data = SingleColumnData | Point3d | Point2d | Struct | Navigation,
             All = System | Data
             };
     private:
         Type m_type;
         ECN::ECPropertyCR m_ecProperty;
-        PropertyMap const* m_parentPropertMap;
+        PropertyMap const* m_parentPropertMap = nullptr;
         ClassMap const& m_classMap;
         const Utf8String m_propertyAccessString;
 
@@ -136,9 +137,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
     protected:
 
         PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertMap(nullptr),
-            m_propertyAccessString(ecProperty.GetName())
-            {}
+            : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertMap(nullptr), m_propertyAccessString(ecProperty.GetName()) {}
 
         PropertyMap(Type type, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
             :m_type(type), m_classMap(parentPropertyMap.GetClassMap()), m_ecProperty(ecProperty), m_parentPropertMap(&parentPropertyMap),
@@ -173,7 +172,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         //! Test if current property map part of class map tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         Path GetPath() const { return Path::From(*this); }
-        //! It traverse base property hiearchy 
+        //! It traverse base property hierarchy 
         static ECN::ECPropertyCR GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty);
     };
 

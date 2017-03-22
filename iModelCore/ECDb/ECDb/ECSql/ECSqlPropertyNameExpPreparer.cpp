@@ -230,7 +230,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
         if (columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumnCount())
-            selectSql.Append(propMap.GetDefaultECClassId());
+            {
+            BeAssert(propMap.GetDataPropertyMaps().size() == 1 && "DELETE or UPDATE against relationships with constraint class ids mapped to multiple tables should have been caught before.");
+            BeAssert(propMap.GetDataPropertyMaps()[0]->GetType() == PropertyMap::Type::SystemPerTableClassId);
+            SystemPropertyMap::PerTableClassIdPropertyMap const& perTablePropMap = propMap.GetDataPropertyMaps()[0]->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>();
+            BeAssert(perTablePropMap.GetDefaultECClassId().IsValid());
+            selectSql.Append(perTablePropMap.GetDefaultECClassId());
+            }
         else
             selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());
         }

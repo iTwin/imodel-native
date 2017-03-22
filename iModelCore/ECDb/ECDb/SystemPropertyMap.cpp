@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -24,7 +25,7 @@ SystemPropertyMap::SystemPropertyMap(Type kind, ClassMap const& classMap, ECN::P
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-SystemPropertyMap::PerTablePrimitivePropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableName) const
+SystemPropertyMap::PerTableIdPropertyMap const* SystemPropertyMap::FindDataPropertyMap(Utf8CP tableName) const
     {
     auto itor = m_dataPropMaps.find(tableName);
     if (itor != m_dataPropMaps.end())
@@ -58,8 +59,8 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
             }
 
         doneList.insert(&column->GetTable());
-        RefCountedPtr<PerTablePrimitivePropertyMap> prop = PerTablePrimitivePropertyMap::CreateInstance(*this, *GetProperty().GetAsPrimitiveProperty(), *column);
-        if (prop == nullptr)
+        RefCountedPtr<PerTableIdPropertyMap> propMap = _CreatePerTablePropertyMap(*this, *GetProperty().GetAsPrimitiveProperty(), *column);
+        if (propMap == nullptr)
             {
             BeAssert(false && "Failed to create property Map");
             m_dataPropMaps.clear();
@@ -68,12 +69,24 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
             return ERROR;
             }
 
-        m_dataPropMaps[prop->GetTable().GetName().c_str()] = prop;
-        m_tables.push_back(&prop->GetTable());
-        m_dataPropMapList.push_back(prop.get());
+        m_dataPropMaps[propMap->GetTable().GetName().c_str()] = propMap;
+        m_tables.push_back(&propMap->GetTable());
+        m_dataPropMapList.push_back(propMap.get());
         }
     
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle      10/16
+//---------------------------------------------------------------------------------------
+bool SystemPropertyMap::_IsMappedToTable(DbTable const& table) const
+    {
+    for (DbTable const* t : m_tables)
+        if (t == &table)
+            return true;
+
+    return false;
     }
 
 
@@ -83,7 +96,7 @@ BentleyStatus SystemPropertyMap::Init(std::vector<DbColumn const*> const& column
 // @bsimethod                                                 Krischan.Eberle      10/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<SystemPropertyMap::PerTablePrimitivePropertyMap> SystemPropertyMap::PerTablePrimitivePropertyMap::CreateInstance(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+RefCountedPtr<SystemPropertyMap::PerTableIdPropertyMap> SystemPropertyMap::PerTableIdPropertyMap::CreateInstance(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
     {
     if (ecProperty.GetType() != PRIMITIVETYPE_Long)
         {
@@ -91,9 +104,25 @@ RefCountedPtr<SystemPropertyMap::PerTablePrimitivePropertyMap> SystemPropertyMap
         return nullptr;
         }
 
-    return new PerTablePrimitivePropertyMap(parentPropertyMap, ecProperty, column);
+    return new PerTableIdPropertyMap(parentPropertyMap, ecProperty, column);
     }
 
+//************************************SystemPropertyMap::PerTableClassIdPropertyMap********************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle      10/16
+//---------------------------------------------------------------------------------------
+//static 
+RefCountedPtr<SystemPropertyMap::PerTableClassIdPropertyMap> SystemPropertyMap::PerTableClassIdPropertyMap::CreateInstance(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, ECN::ECClassId defaultClassId)
+    {
+    if (ecProperty.GetType() != PRIMITIVETYPE_Long)
+        {
+        BeAssert(false && "SystemPropertyMap's child prop map must always be of data type PRIMITIVETYPE_Long");
+        return nullptr;
+        }
+
+    return new PerTableClassIdPropertyMap(parentPropertyMap, ecProperty, column, defaultClassId);
+    }
 
 //************************************ECInstanceIdPropertyMap********************
 //---------------------------------------------------------------------------------------
@@ -117,11 +146,12 @@ RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(C
     }
 
 //************************************ECClassIdPropertyMap********************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
+RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
     ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
     if (systemProperty == nullptr)
@@ -130,7 +160,7 @@ RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMa
         return nullptr;
         }
 
-    RefCountedPtr<ECClassIdPropertyMap> systemPropertyMap = new ECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), defaultEClassId);
+    RefCountedPtr<ECClassIdPropertyMap> systemPropertyMap = new ECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty());
     if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
@@ -138,11 +168,32 @@ RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMa
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle      03/17
+//---------------------------------------------------------------------------------------
+RefCountedPtr<SystemPropertyMap::PerTableIdPropertyMap> ECClassIdPropertyMap::_CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR prop, DbColumn const& col) const
+    {
+    ECClassId defaultClassId;
+    if (col.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        ClassMap const& classMap = parentPropMap.GetClassMap();
+        //For end table relationships the exclusive root class of a table is not the relationship class, but the constraint class
+        //of the relationship. In that case we can safely use the rel class' id as the table will not contain subclasses of it
+        //(because otherwise the column wouldn't be virtual)
+        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable || !col.GetTable().HasExclusiveRootECClass())
+            defaultClassId = classMap.GetClass().GetId();
+        else
+            defaultClassId = col.GetTable().GetExclusiveRootECClassId();
+        }
+
+    return PerTableClassIdPropertyMap::CreateInstance(parentPropMap, prop, col, defaultClassId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle      11/16
 //---------------------------------------------------------------------------------------
 bool ECClassIdPropertyMap::IsVirtual(DbTable const& table) const
     {
-    PerTablePrimitivePropertyMap const* propMap = FindDataPropertyMap(table);
+    PerTableIdPropertyMap const* propMap = FindDataPropertyMap(table);
     if (propMap == nullptr)
         {
         BeAssert(false);
@@ -157,7 +208,7 @@ bool ECClassIdPropertyMap::IsVirtual(DbTable const& table) const
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
+RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
     ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::SourceECClassId() : ECSqlSystemPropertyInfo::TargetECClassId());
     if (systemProperty == nullptr)
@@ -166,7 +217,7 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::Cr
         return nullptr;
         }
 
-    RefCountedPtr<ConstraintECClassIdPropertyMap> systemPropertyMap = new ConstraintECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), defaultEClassId, constraintType);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> systemPropertyMap = new ConstraintECClassIdPropertyMap(classMap, *systemProperty->GetAsPrimitiveProperty(), constraintType);
     if (SUCCESS != systemPropertyMap->Init(columns))
         return nullptr;
 
@@ -174,11 +225,26 @@ RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::Cr
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle      03/17
+//---------------------------------------------------------------------------------------
+RefCountedPtr<SystemPropertyMap::PerTableIdPropertyMap> ConstraintECClassIdPropertyMap::_CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR prop, DbColumn const& col) const
+    {
+    ECClassId defaultClassId;
+    if (col.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        BeAssert(col.GetTable().HasExclusiveRootECClass());
+        defaultClassId = col.GetTable().GetExclusiveRootECClassId();
+        }
+
+    return PerTableClassIdPropertyMap::CreateInstance(parentPropMap, prop, col, defaultClassId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle      11/16
 //---------------------------------------------------------------------------------------
 bool ConstraintECClassIdPropertyMap::IsVirtual(DbTable const& table) const
     {
-    PerTablePrimitivePropertyMap const* propMap = FindDataPropertyMap(table);
+    PerTableIdPropertyMap const* propMap = FindDataPropertyMap(table);
     if (propMap == nullptr)
         {
         BeAssert(false);

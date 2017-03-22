@@ -374,11 +374,11 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
     {
     sql.Clear();
     std::vector<Utf8String> values;
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data);
-    baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
-    for (PropertyMap const* result : typeVisitor.Results())
+    SearchPropertyMapVisitor baseClassDataPropMapVisitor(PropertyMap::Type::Data, false);
+    baseClassMap.GetPropertyMaps().AcceptVisitor(baseClassDataPropMapVisitor);
+    for (PropertyMap const* baseClassDataPropertyMap : baseClassDataPropMapVisitor.Results())
         {
-        PropertyMap const* derivedPropMap = derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str());
+        PropertyMap const* derivedPropMap = derivedClassMap.GetPropertyMaps().Find(baseClassDataPropertyMap->GetAccessString().c_str());
         if (derivedPropMap == nullptr || !derivedPropMap->IsData())
             {
             BeAssert(false);
@@ -387,18 +387,24 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
 
         std::vector<DbColumn const*> derivedColumnList, baseColumnList;
         GetColumnsPropertyMapVisitor baseColumnVisitor, derivedColumnVisitor;
-        result->AcceptVisitor(baseColumnVisitor);
+        baseClassDataPropertyMap->AcceptVisitor(baseColumnVisitor);
         derivedPropMap->AcceptVisitor(derivedColumnVisitor);
-        if (baseColumnVisitor.GetColumns().size() != derivedColumnVisitor.GetColumns().size())
+        const size_t colCount = baseColumnVisitor.GetColumnCount();
+        if (colCount != derivedColumnVisitor.GetColumns().size())
             {
             BeAssert(false);
             return ERROR;
             }
 
-        for (auto deriveColumnItor = derivedColumnVisitor.GetColumns().begin(), baseColumnItor = baseColumnVisitor.GetColumns().begin(); deriveColumnItor != derivedColumnVisitor.GetColumns().end() && baseColumnItor != baseColumnVisitor.GetColumns().end(); ++deriveColumnItor, ++baseColumnItor)
+        for (size_t i = 0; i < colCount; i++)
             {
+            DbColumn const* derivedPropMapCol = derivedColumnVisitor.GetColumns()[i];
+            DbColumn const* basePropMapCol = baseColumnVisitor.GetColumns()[i];
+            if (derivedPropMapCol->GetPersistenceType() == PersistenceType::Virtual)
+                continue;
+
             Utf8String str;
-            str.Sprintf("[%s] = NEW.[%s]", (*deriveColumnItor)->GetName().c_str(), (*baseColumnItor)->GetName().c_str());
+            str.Sprintf("[%s] = NEW.[%s]", derivedPropMapCol->GetName().c_str(), basePropMapCol->GetName().c_str());
             values.push_back(str);
             }
         }
@@ -503,7 +509,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         if (ctx.GetViewType() == ViewType::ECClassView)
             ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
-        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
+        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && 
@@ -647,7 +653,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             view.Append(targetECClassIdJoinInfo.GetNativeJoinSql());
 
         ECClassIdPropertyMap const* classIdPropMap = relationMap.GetECClassIdPropertyMap();
-        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdDataPropertyMap = classIdPropMap->FindDataPropertyMap(partition.GetTable()))
+        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdDataPropertyMap = classIdPropMap->FindDataPropertyMap(partition.GetTable()))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
             if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
@@ -714,7 +720,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
         view.Append(" WHERE ").AppendEscaped(relationMap.GetReferencedEndECInstanceIdPropMap()->GetAccessString().c_str()).Append(" IS NOT NULL");
         //! Add Polymorphic Filter if required
-        if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
+        if (SystemPropertyMap::PerTableIdPropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
             if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical &&
@@ -978,7 +984,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
                 if (rootPropertyMap == nullptr)
                     {
-                    SystemPropertyMap::PerTablePrimitivePropertyMap const* perTableSystemPropMap = systemPropertyMap.FindDataPropertyMap(contextTable);
+                    SystemPropertyMap::PerTableIdPropertyMap const* perTableSystemPropMap = systemPropertyMap.FindDataPropertyMap(contextTable);
                     if (perTableSystemPropMap == nullptr)
                         {
                         BeAssert(false);
@@ -996,7 +1002,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                         }
 
                     SystemPropertyMap const* rootSystemPropertyMap = &rootPropertyMap->GetAs<SystemPropertyMap>();
-                    SystemPropertyMap::PerTablePrimitivePropertyMap const* perTableSystemPropMap = rootSystemPropertyMap->FindDataPropertyMap(baseClass->GetPrimaryTable());
+                    SystemPropertyMap::PerTableIdPropertyMap const* perTableSystemPropMap = rootSystemPropertyMap->FindDataPropertyMap(baseClass->GetPrimaryTable());
                     if (perTableSystemPropMap == nullptr)
                         {
                         BeAssert(false);
@@ -1156,7 +1162,7 @@ ConstraintECClassIdJoinInfo ConstraintECClassIdJoinInfo::Create(ConstraintECClas
     const bool isSource = propertyMap.GetEnd() == ECN::ECRelationshipEnd::ECRelationshipEnd_Source;
     ConstraintECInstanceIdPropertyMap const*  constraintId = isSource ? relationshipMap.GetSourceECInstanceIdPropMap() : relationshipMap.GetTargetECInstanceIdPropMap();
     BeAssert(constraintId != nullptr);
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* releventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
+    SystemPropertyMap::PerTableIdPropertyMap const* releventECClassIdPropertyMap = constraintId->FindDataPropertyMap(contextTable);
     if (releventECClassIdPropertyMap == nullptr)
         {
         BeAssert(false && "Expecting a property map for given context table");
@@ -1270,7 +1276,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
         RelationshipClassEndTableMap const& map = propertyMap.GetClassMap().GetAs<RelationshipClassEndTableMap>();
         if (map.GetConstraintMap(map.GetReferencedEnd()).GetECClassIdPropMap() == &propertyMap)
             {
-            SystemPropertyMap::PerTablePrimitivePropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
+            SystemPropertyMap::PerTableIdPropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
             if (Enum::Contains(c->GetColumn().GetKind(), DbColumn::Kind::ECClassId))
                 return table;
             }
@@ -1408,7 +1414,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    SystemPropertyMap::PerTableIdPropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
     if (vmap == nullptr)
         {
         BeAssert(false);
@@ -1443,24 +1449,24 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
-    if (vmap == nullptr)
+    SystemPropertyMap::PerTableIdPropertyMap const* perTableClassIdPropMap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    if (perTableClassIdPropMap == nullptr || perTableClassIdPropMap->GetType() != PropertyMap::Type::SystemPerTableClassId)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
+    Result& result = Record(*perTableClassIdPropMap);
 
-    Utf8StringCR colName = vmap->GetColumn().GetName();
-    Result& result = Record(*vmap);
-    if (isVirtual)
+    DbColumn const& col = perTableClassIdPropMap->GetColumn();
+    if (col.GetPersistenceType() == PersistenceType::Virtual)
         {
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        BeAssert(perTableClassIdPropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId().IsValid());
+        result.GetSqlBuilderR().Append(perTableClassIdPropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         result.SetIsLiteralSqlSnippet();
         }
     else
-        result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
+        result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
 
     switch (m_columnAliasMode)
         {
@@ -1469,7 +1475,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
 
             case ColumnAliasMode::SystemPropertyName:
             {
-            if (!colName.EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
+            if (!col.GetName().EqualsIAscii(propertyMap.GetAccessString()) || col.GetPersistenceType() == PersistenceType::Virtual)
                 result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
 
             return SUCCESS;
@@ -1487,24 +1493,24 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
-    if (vmap == nullptr)
+    SystemPropertyMap::PerTableIdPropertyMap const* perTablePropMap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    if (perTablePropMap == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
-    Utf8StringCR colName = vmap->GetColumn().GetName();
+    Result& result = Record(*perTablePropMap);
 
-    Result& result = Record(*vmap);
-    if (isVirtual)
+    DbColumn const& col = perTablePropMap->GetColumn();
+    if (col.GetPersistenceType() == PersistenceType::Virtual)
         {
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        BeAssert(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId().IsValid());
+        result.GetSqlBuilderR().Append(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         result.SetIsLiteralSqlSnippet();
         }
     else
-        result.GetSqlBuilderR().Append(m_classIdentifier, colName.c_str());
+        result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
 
     switch (m_columnAliasMode)
         {
@@ -1513,7 +1519,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
 
             case ColumnAliasMode::SystemPropertyName:
             {
-            if (!colName.EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
+            if (!col.GetName().EqualsIAscii(propertyMap.GetAccessString()) || col.GetPersistenceType() == PersistenceType::Virtual)
                 result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
 
             return SUCCESS;
@@ -1530,7 +1536,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECInstanceIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    SystemPropertyMap::PerTableIdPropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
     if (vmap == nullptr)
         {
         BeAssert(false);

@@ -742,11 +742,11 @@ BentleyStatus ClassMapColumnFactory::UsedColumnFinder::Execute(ColumnMap& column
         RelationshipConstraintMap const& persistedEnd = relClassEndTableMap->GetConstraintMap(relClassEndTableMap->GetForeignEnd());
         for (DbTable const* mappedTable : m_classMap.GetTables())
             {
-            SystemPropertyMap::PerTablePrimitivePropertyMap const* ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
+            SystemPropertyMap::PerTableIdPropertyMap const* ecInstanceIdPropMap = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*mappedTable);
             if (ecInstanceIdPropMap != nullptr)
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(ecInstanceIdPropMap->GetAccessString()), &ecInstanceIdPropMap->GetColumn()));
 
-            SystemPropertyMap::PerTablePrimitivePropertyMap const* relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
+            SystemPropertyMap::PerTableIdPropertyMap const* relECClassIdPropMap = relClassEndTableMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*mappedTable);
             if (relECClassIdPropMap != nullptr)
                 columnMap.insert(std::make_pair(relClassEndTableMap->BuildQualifiedAccessString(relECClassIdPropMap->GetAccessString()), &relECClassIdPropMap->GetColumn()));
             }

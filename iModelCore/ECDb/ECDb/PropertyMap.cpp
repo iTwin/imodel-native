@@ -653,7 +653,7 @@ RefCountedPtr<SystemPropertyMap> PropertyMapCopier::CreateCopy(SystemPropertyMap
         return ECInstanceIdPropertyMap::CreateInstance(newContext, columns);
 
     if (propertyMap.GetType() == PropertyMap::Type::ECClassId)
-        return ECClassIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ECClassIdPropertyMap>().GetDefaultECClassId(), columns);
+        return ECClassIdPropertyMap::CreateInstance(newContext, columns);
 
     if (propertyMap.GetType() == PropertyMap::Type::ConstraintECInstanceId)
         return ConstraintECInstanceIdPropertyMap::CreateInstance(newContext, propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>().GetEnd(), columns);
@@ -661,7 +661,7 @@ RefCountedPtr<SystemPropertyMap> PropertyMapCopier::CreateCopy(SystemPropertyMap
     if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
         {
         ConstraintECClassIdPropertyMap const& constraintECClassIdPropMap = propertyMap.GetAs<ConstraintECClassIdPropertyMap>();
-        return ConstraintECClassIdPropertyMap::CreateInstance(newContext, constraintECClassIdPropMap.GetDefaultECClassId(), constraintECClassIdPropMap.GetEnd(), columns);
+        return ConstraintECClassIdPropertyMap::CreateInstance(newContext, constraintECClassIdPropMap.GetEnd(), columns);
         }
 
     BeAssert(false && "Unhandled case");

@@ -16,15 +16,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //****************************************************************************************
 //DbSchema
 //****************************************************************************************
-bool DbSchema::IsTableNameInUse(Utf8StringCR tableName) const
-    {
-    SyncTableCache();
-    return m_tableMapByName.find(tableName) != m_tableMapByName.end();
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     if (tableType == DbTable::Type::Existing)
         {
@@ -68,7 +63,7 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, Persi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8StringCR name, DbTable::Type tableType, PersistenceType persType, ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     if (name.empty() || !tableId.IsValid())
         {
@@ -163,6 +158,14 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool DbSchema::IsTableNameInUse(Utf8StringCR tableName) const
+    {
+    SyncTableCache();
+    return m_tableMapByName.find(tableName) != m_tableMapByName.end();
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -189,6 +192,7 @@ DbTable const* DbSchema::FindTable(Utf8CP name) const
 
     return nullptr;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -203,6 +207,7 @@ DbTable const* DbSchema::FindTable(DbTableId id) const
 
     return nullptr;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1068,7 +1073,7 @@ DbTable const* DbSchema::GetNullTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable)
     : m_id(id), m_name(name), m_dbSchema(dbSchema), m_sharedColumnNameGenerator("sc%d"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
       m_pkConstraint(nullptr), m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
     {
@@ -1899,7 +1904,7 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     BeAssert(!primaryKeyColumnName.empty() && "should always be set (either to user value or default value) by this time");
 
@@ -1940,15 +1945,14 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
     if (tableType != DbTable::Type::Existing)
         return CreateTableForOtherStrategies(dbSchema, tableName, tableType, isVirtual, primaryKeyColumnName, exclusiveRootClassId, primaryTable);
 
-    BeAssert(!exclusiveRootClassId.IsValid() && "For MapStrategy Existing we don't persist an exclusive class");
-    return CreateTableForExistingTableStrategy(dbSchema, tableName, primaryKeyColumnName);
+    return CreateTableForExistingTableStrategy(dbSchema, tableName, primaryKeyColumnName, exclusiveRootClassId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle       11/2016
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
+DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
     {
     DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Physical, exclusiveRootClassId, primaryTable);
     
@@ -1978,13 +1982,10 @@ DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8Stri
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
-DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName)
+DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, ECClassId exclusiveRootClassId)
     {
     BeAssert(!existingTableName.empty());
-
-    //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
-    //cases where schema authors want to map two ECClasses to the same existing table.
-    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, ECClassId(), nullptr);
+    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, exclusiveRootClassId, nullptr);
     if (table == nullptr)
         return nullptr;
 
