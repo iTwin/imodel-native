@@ -111,6 +111,7 @@ private:
     Utf8String           m_groupFilter;
     Utf8String           m_typeFilter;
     Utf8String           m_ownerFilter;
+    Utf8String           m_queryFilter;
 
     HANDLE        m_hConsole;
     };

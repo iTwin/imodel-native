@@ -22,6 +22,14 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
+static void statusFunc(int index, void *pClient, int ErrorCode, const char* pMsg)
+    {
+    if (ErrorCode > 0)
+        std::cout << Utf8PrintfString("Curl error code : %d \n %s", ErrorCode, pMsg) << std::endl;
+    else if (ErrorCode < 0)
+        std::cout << pMsg << std::endl;
+    }
+
 void RealityDataConsole::InterpretCommand()
     {
     m_lastCommand = Command::Dummy;
@@ -166,6 +174,7 @@ RealityDataConsole::RealityDataConsole() :
     m_filterProperties.push_back("Group");
     m_filterProperties.push_back("Type");
     m_filterProperties.push_back("OwnedBy");
+    m_filterProperties.push_back("Fuzzy Filter");
     m_filterProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
@@ -175,7 +184,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
     DisplayInfo ("An option can be selected by its Index\n", DisplayOption::Question);
-    DisplayInfo ("Please input your choice? ", DisplayOption::Question);
+    DisplayInfo ("Please input your choice\n? ", DisplayOption::Question);
     
     uint64_t choice;
 
@@ -241,7 +250,7 @@ void RealityDataConsole::Run()
 void RealityDataConsole::Usage()
     {
     DisplayInfo ("  RealityDataConsole tool for RDS V1.0\n\n");
-    DisplayInfo ("  Avalaible Commands (case insensitive):\n");
+    DisplayInfo ("  Available Commands (case insensitive):\n");
     DisplayInfo ("  Quit        Exit the application\n");
     DisplayInfo ("  Retry       (during a multi-step operation) Restart current operation\n");
     DisplayInfo ("  Help        Print current Display\n");
@@ -424,6 +433,12 @@ void RealityDataConsole::ConfigureServer()
 
 void RealityDataConsole::List()
     {
+    if(m_currentNode != nullptr && m_currentNode->node.GetClassName() == "Document")
+        {
+        DisplayInfo("You are currently on a document, there are no files beneath this point\n", DisplayOption::Error);
+        return;
+        }
+
     m_serverNodes.clear();
     Utf8String nodeString;
     bvector<Utf8String> nodeStrings;
@@ -563,8 +578,9 @@ void RealityDataConsole::ChangeDir()
 
     if(m_serverNodes.size() == 0)
         {   
-        DisplayInfo("Need to use \"List\" or \"Dir\" before using this command\n", DisplayOption::Tip);
-        DisplayInfo("If you have already done this, there may be no listable locations to navigate to\n", DisplayOption::Tip);
+        DisplayInfo("Need to use \"List\" or \"Dir\" before using this command\n", DisplayOption::Error);
+        DisplayInfo("If you have already done this, there may be no listable locations to navigate to\n", DisplayOption::Error);
+        return;
         }
 
     choice -= 1; //Adjusted for how navnodes are displayed
@@ -580,7 +596,7 @@ void RealityDataConsole::ChangeDir()
         m_serverNodes.clear();
         }
     else
-        DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 0 and %lu\n", (m_serverNodes.size() - 1)), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 1 and %lu\n", m_serverNodes.size()), DisplayOption::Error);
     }
 
 void RealityDataConsole::EnterpriseStat()
@@ -697,7 +713,7 @@ void RealityDataConsole::Upload()
         guid = m_currentNode->node.GetInstanceId();
         }
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true, statusFunc);
     upload.SetProgressCallBack(uploadProgressFunc);
     upload.SetProgressStep(0.1);
     upload.OnlyReportErrors(true);
@@ -980,11 +996,12 @@ void RealityDataConsole::Filter()
     while (filter != "-Finish-")
         {
         DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
-        DisplayInfo("Current Filters:\n");
+        DisplayInfo("Current Filters:\n", DisplayOption::Tip);
         DisplayInfo(Utf8PrintfString("Name : %s\n", m_nameFilter));
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
         DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
+        DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter), DisplayOption::Question);
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
 
@@ -992,7 +1009,14 @@ void RealityDataConsole::Filter()
         if (filter == "-Finish-")
             break;
 
-        DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
+        if (filter.Equals("Fuzzy Filter"))
+            {
+            DisplayInfo("\nSet Fuzzy Filter (Enter blank field to remove filter)\nThis Filter searches every property of the RealityData for the specified value (case insensitive)\n", DisplayOption::Tip);
+            DisplayInfo("Warning: this overrides all other filters\n", DisplayOption::Tip);
+            }
+            
+        else
+            DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
 
         std::getline(std::cin, str);
         value = Utf8String(str.c_str());
@@ -1004,6 +1028,8 @@ void RealityDataConsole::Filter()
             m_typeFilter = value;
         else if (filter.Equals("OwnedBy"))
             m_ownerFilter = value;
+        else if (filter.Equals("Fuzzy Filter"))
+            m_queryFilter = value;
         }
     }
 

@@ -205,7 +205,7 @@ private:
 struct RealityDataFileDownload : public RealityDataFileTransfer
 {
 public:
-    RealityDataFileDownload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index, uint64_t fileSize) :
+    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize) :
         iAppend(0)
         {
         m_azureServer = azureServer;
@@ -215,11 +215,7 @@ public:
         m_transferProgress = 0;
         nbRetry = 0;
         m_validRequestString = false;
-        Utf8String fileFromRoot = filename.GetNameUtf8();
-        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
-        m_fileUrl = "/";
-        m_fileUrl.append(fileFromRoot);
-        m_fileUrl.ReplaceAll("\\", "/");
+        m_fileUrl = fileUrl;
 
         m_requestType = HttpRequestType::GET_Request;
         }
@@ -615,12 +611,16 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append("/RealityData?");
+
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("$filter=%s&", m_filter));
     if (m_order.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("%s&", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("'$skip=%u&$top=%u", m_startIndex, m_pageSize));
+    
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
 }
 
 //=====================================================================================
@@ -707,6 +707,11 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
 void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter; }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataPagedRequest::SetQuery(Utf8StringCR query) { m_query = query; }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
@@ -740,6 +745,9 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order)); 
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
 }
 
 //=====================================================================================
@@ -758,6 +766,9 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
     }
 
 //=====================================================================================
@@ -776,6 +787,9 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
     }
 
 //=====================================================================================
@@ -913,6 +927,8 @@ void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
 RealityDataServiceTransfer::~RealityDataServiceTransfer()
     {
     delete m_handshakeRequest;
+    for (RealityDataFileTransfer* fileTransfer : m_filesToTransfer)
+        delete fileTransfer;
     }
 
 //=====================================================================================
@@ -1488,29 +1504,32 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
 //=====================================================================================
 void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
-    if(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK))
-        return;
-
-    if (m_pStatusFunc)
-        m_pStatusFunc(index, pClient, ErrorCode, pMsg);
-
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(pEntry == nullptr)
+    if(!(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK)))
+        {
+        if (m_pStatusFunc)
+            m_pStatusFunc(index, pClient, ErrorCode, pMsg);
+
+        if(pEntry == nullptr)
+            return;
+
+        TransferResult* tr = new TransferResult();
+        tr->errorCode = ErrorCode;
+        uint64_t uploadSize = pEntry->GetFileSize();
+        if(uploadSize > 0)
+            tr->progress = (100 * pEntry->GetTransferedSize() / pEntry->GetFileSize());
+        else
+            tr->progress = 100;
+        tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
+        tr->name = pEntry->GetFilename();
+        m_report.results.push_back(tr);
+        }
+
+    if (pEntry == nullptr)
         return;
 
-    TransferResult* tr = new TransferResult();
-    tr->errorCode = ErrorCode;
-    uint64_t uploadSize = pEntry->GetFileSize();
-    if(uploadSize > 0)
-        tr->progress = (100 * pEntry->GetTransferedSize() / pEntry->GetFileSize());
-    else
-        tr->progress = 100;
-    tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
-    tr->name = pEntry->GetFilename();
-    m_report.results.push_back(tr);
-    pEntry->GetFileStream().Close();
-
+    m_filesToTransfer[pEntry->m_index] = nullptr;
     delete pEntry;
     }
 
@@ -1635,11 +1654,28 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
     BeFileName downloadLocation;
     WString path;
+    WString fileUrl;
+    Utf8String utf8FileUrl;
     size_t parts;
+
+    WString root;
+    BeStringUtilities::Utf8ToWChar(root, m_id.c_str());
+    bvector<WString> folders;
+    BeStringUtilities::Split(root.c_str(),L"/", folders);
+    WString guid = folders[0];
+    guid.append(L"/");
+    root.ReplaceAll(guid.c_str(), L""); //remove guid from root
 
     for( int i = 0; i < filesInRepo.size(); ++i)
         {
         path = filesInRepo[i].first;
+
+        fileUrl = L"/";
+        fileUrl.append(path);
+        fileUrl.ReplaceAll(L"\\", L"/");
+        BeStringUtilities::WCharToUtf8(utf8FileUrl, fileUrl.c_str());
+
+        path.ReplaceAll(root.c_str(), L""); // if user downloader Folder1/Folder2/Data1, it should download to Data1, not Folder1/Folder2/Data1
         parts = path.ReplaceAll(L"/", L"/"); // only way I've found to count occurences in a string, replace if better exists
         if(parts > 0) //if file is in a directory
             {
@@ -1653,8 +1689,8 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 
         downloadLocation = targetLocation;
         downloadLocation.AppendToPath(path.c_str());
-
-        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i, filesInRepo[i].second));
+        
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
         }
 
     m_fullTransferSize = m_filesToTransfer.size();

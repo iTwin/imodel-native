@@ -418,6 +418,7 @@ public:
     REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
+    REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
 
     //! Sets the sort order for the list. This sorting is performed server-side.
     //! Note that it is not possible to specify two sorts (sort by field a then by filed b is not supported).
@@ -434,6 +435,7 @@ protected:
     bool m_informationSourceFilteringSet;
     Utf8String m_order;
     Utf8String m_filter;
+    Utf8String m_query;
     Utf8String m_sort;
     };
 
