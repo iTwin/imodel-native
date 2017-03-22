@@ -55,6 +55,7 @@ always:
     %else
         GradleScriptsDir=$[@subst \, \/, $(BuildContext)\SubParts\AndroidTools\Gradle] \
     %endif
+	org.gradle.jvmargs=-Xmx1536M
     $(GRADLE_PROPERTIES)
     <
     python $(bsiScripts)RegexReplaceInFile.py "\s+" "\n" $(APP_ProjectRoot)gradle.properties
