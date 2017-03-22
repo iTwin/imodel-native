@@ -611,9 +611,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create manager?
-			DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
+        DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
         
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
@@ -622,8 +622,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
+
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());                
+        fileNameDir = fileNameDir.GetDirectoryName();
+        dataStore->SetProjectFilesPath(fileNameDir, true);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -641,9 +645,11 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher2_5d,
                                        pMesher3d);
 
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
-
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+        fileNameDir = fileNameDir.GetDirectoryName();
+        dataStore->SetProjectFilesPath(fileNameDir, true);
         pDataIndex->SetGenerating(true);        
         }           
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());

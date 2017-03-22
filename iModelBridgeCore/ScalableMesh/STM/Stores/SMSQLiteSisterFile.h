@@ -38,7 +38,9 @@ class SMSQLiteSisterFile
 
         ~SMSQLiteSisterFile();
 
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool inCreation = false);
+        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType);
+
+        void RemoveSisterSQLiteFile(SMStoreDataType dataType);
 
         bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation = false);
 
