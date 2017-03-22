@@ -189,9 +189,17 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
-        BeFileName masterFileName(settings.GetURL().c_str());
-        m_masterFileName = masterFileName.GetFileNameAndExtension();
-        account_prefix = DataSourceURL((L"file:///" + masterFileName.GetDirectoryName()).c_str());
+        BeFileName url(settings.GetURL().c_str());
+        if (BEFILENAME(IsDirectory, url))
+            {
+            assert(settings.IsPublishing());
+            }
+        else
+            {
+            m_masterFileName = url.GetFileNameAndExtension();
+            url = url.GetDirectoryName();
+            }
+        account_prefix = DataSourceURL((L"file:///" + url).c_str());
         if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(settings.GetURL().c_str())) BeFileName::CreateNewDirectory(settings.GetURL().c_str());
         }
     else if (settings.IsLocal())
