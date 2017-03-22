@@ -174,8 +174,8 @@ RealityDataConsole::RealityDataConsole() :
 void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     {
     PrintResults(options);
-    DisplayInfo ("an option can be selected by its Index\n", DisplayOption::Question);
-    DisplayInfo ("please input your choice", DisplayOption::Question);
+    DisplayInfo ("An option can be selected by its Index\n", DisplayOption::Question);
+    DisplayInfo ("Please input your choice? ", DisplayOption::Question);
     
     uint64_t choice;
 
@@ -360,7 +360,7 @@ void RealityDataConsole::ConfigureServer()
         }
     else
         {
-        DisplayInfo("please select a repository from the following options\n", DisplayOption::Question);
+        DisplayInfo("Please select a repository from the following options\n", DisplayOption::Question);
         Choice(repoNames, repo);
         switch(m_lastCommand)
             {
@@ -923,7 +923,7 @@ void RealityDataConsole::Delete()
 
     if (className == "Document")
         {
-        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        DisplayInfo(Utf8PrintfString("Deleting Document %s.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(std::cin, str);
         if(str != "y")
             return;
@@ -933,7 +933,7 @@ void RealityDataConsole::Delete()
         }
     else if (className == "Folder")
         {
-        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+        DisplayInfo(Utf8PrintfString("Deleting Folder %s. All documents contained within will also be deleted.\nConfirm? [ y / n ]", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
         std::getline(std::cin, str);
         if (str != "y")
             return;
@@ -943,8 +943,8 @@ void RealityDataConsole::Delete()
         }
     else if (className == "RealityData")
         {
-        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
-        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Tip);
+        DisplayInfo(Utf8PrintfString("Deleting RealityData %s. All folders and documents contained within will also be deleted.\n", m_currentNode->node.GetInstanceId()), DisplayOption::Question);
+        DisplayInfo("All project relationships attached to this RealityData will also be removed.\nConfirm ? [y / n]", DisplayOption::Question);
         std::getline(std::cin, str);
         if (str != "y")
             return;
