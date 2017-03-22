@@ -44,8 +44,18 @@ $(BuildDir)app/ : $(_MakeFilePath)app/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 #Include the BeSecurity archive
-$(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
-    $(LinkFirstDepToFirstTargetAsDirectory)
+#$(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
+#    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#security jar
+%mkdir $(BuildDir)BeSecurity-1.0.0/
+	
+$(BuildDir)BeSecurity-1.0.0/build.gradle : $(_MakeFilePath)BeSecurity-1.0.0/build.gradle
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/MavenDependencies/com/bentley/android/BeSecurity/1.0.0/BeSecurity-1.0.0.aar
+    $(LinkFirstDepToFirstTarget)
+
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 
