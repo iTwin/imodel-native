@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      09/2015
 //+===============+===============+===============+===============+===============+======
-struct IssueReporter : NonCopyableClass
+struct IssueReporter final : NonCopyableClass
     {
 private:
     static const NativeLogging::SEVERITY s_logSeverity = NativeLogging::LOG_ERROR;

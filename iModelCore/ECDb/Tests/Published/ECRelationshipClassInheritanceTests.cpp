@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  06/16
 //=======================================================================================    
-struct ECRelationshipInheritanceTestFixture : ECDbMappingTestFixture
+struct ECRelationshipInheritanceTestFixture : DbMappingTestFixture
     {};
 
 
@@ -160,9 +160,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFilePath.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    modelHasGeom3dElementsRelClassId = ecdb.Schemas().GetECClassId("TestSchema", "ModelHasGeometric3dElements");
+    modelHasGeom3dElementsRelClassId = ecdb.Schemas().GetClassId("TestSchema", "ModelHasGeometric3dElements");
     ASSERT_TRUE(modelHasGeom3dElementsRelClassId.IsValid());
-    modelHasLinkElementsRelClassId = ecdb.Schemas().GetECClassId("TestSchema", "ModelHasLinkElements");
+    modelHasLinkElementsRelClassId = ecdb.Schemas().GetClassId("TestSchema", "ModelHasLinkElements");
     ASSERT_TRUE(modelHasLinkElementsRelClassId.IsValid());
 
     ECSqlStatement stmt;
@@ -185,7 +185,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     //VolumeElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.VolumeElement(Code, Model.Id, Model.RelECClassId, Name) VALUES(?,?,?, 'Volume')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     volumeElKeys.push_back(key);
@@ -193,7 +193,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     volumeElKeys.push_back(key);
@@ -201,7 +201,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "VolumeElement 3", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     volumeElKeys.push_back(key);
@@ -210,7 +210,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     //AnnotationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Annotation3dElement(Code, Model.Id, Model.RelECClassId, Font) VALUES(?,?,?, 'Consolas Sans Serif')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     annotationElKeys.push_back(key);
@@ -218,7 +218,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     annotationElKeys.push_back(key);
@@ -226,7 +226,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Annotation3dElement 3", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasGeom3dElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     annotationElKeys.push_back(key);
@@ -235,7 +235,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     //UrlLink
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLink(Code, Model.Id,Model.RelECClassId, Url) VALUES(?,?,?, 'http://www.staufen.de')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasLinkElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     urlLinkKeys.push_back(key);
@@ -243,7 +243,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "UrlLinkElement 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[0].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasLinkElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     urlLinkKeys.push_back(key);
@@ -252,7 +252,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     //EmbeddedLink
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.EmbeddedLink(Code, Model.Id, Model.RelECClassId, Name) VALUES(?,?,?, 'bliblablub')"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasLinkElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     embeddedLinkKeys.push_back(key);
@@ -260,7 +260,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     stmt.ClearBindings();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "EmbeddedLinkElement 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelKeys[1].GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, modelHasLinkElementsRelClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << ecdb.GetLastError().c_str();
     embeddedLinkKeys.push_back(key);
@@ -268,43 +268,43 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
 
     //InformationElementDrivesInformationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.InformationElementDrivesInformationElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[0].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[0].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[0].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[0].GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[1].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[1].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[0].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[0].GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, embeddedLinkKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, embeddedLinkKeys[1].GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Finalize();
 
     //UrlLinkDrivesAnnotationElement
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.UrlLinkDrivesAnnotation3dElement(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[0].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[0].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[0].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[0].GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[1].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[1].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[1].GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[2].GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[2].GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, urlLinkKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, urlLinkKeys[1].GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, annotationElKeys[2].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, annotationElKeys[2].GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << ecdb.GetLastError().c_str();
     stmt.Finalize();
     }
@@ -420,13 +420,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                "validrelinheritance.ecdb");
 
             MapStrategyInfo mapStrategy;
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasElements")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements2")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
@@ -478,13 +478,13 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                "validrelinheritance.ecdb");
 
             MapStrategyInfo mapStrategy;
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasElements")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements2")->GetId()));
             ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
@@ -1369,10 +1369,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
@@ -1380,17 +1380,17 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     //verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
-                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+                  stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
     }
 
@@ -1481,29 +1481,29 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbst
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ElementOwnsChildElements(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
-                    stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+                    stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(bolt1Key.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(bolt1Key.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for ECSQL " << ecsql.c_str();
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
     }
 
@@ -1601,33 +1601,33 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionDrivesBolt(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionDrivesBolt2(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //this should actually fail, but narrowing is not enforced for link tables (yet)
     stmt.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionDrivesBolt(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
     //verify equality between leaf and base rel class
     Utf8String ecsql;
     ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
-                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+                  stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //For link tables ECDb doesn't enforce equality between base and leaf instances. They are standalone classes like regular classes
@@ -1635,7 +1635,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
 
     //now do polymorphic query to see whether we catch the subclass instances
     ecsql.Sprintf("SELECT count(*) FROM ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
-                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+                  stealbeamConnKey.GetInstanceId().ToString().c_str(), bolt1Key.GetInstanceId().ToString().c_str());
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -1698,18 +1698,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubRel(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of first relationship: " << ecdb.GetLastError().c_str();
     stmt.Reset();
     stmt.ClearBindings();
     //now insert same rel again.
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, a.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << ecdb.GetLastError().c_str();
     }
 

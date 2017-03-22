@@ -110,7 +110,7 @@ BentleyStatus ClassMapper::CreateECClassIdPropertyMap(ClassMap& classMap)
         }
 
     ecClassIdColumns.push_back(ecClassIdColumn);
-    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, classMap.GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> newProperty = ECClassIdPropertyMap::CreateInstance(classMap, ecClassIdColumns);
     if (newProperty == nullptr)
         {
         BeAssert(false && "Failed to create property map");
@@ -530,7 +530,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         return ERROR;
         }
 
-    ECDbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
+    DbMap const& ecdbMap = propertyMap.GetClassMap().GetDbMap();
     ECN::NavigationECPropertyCP navigationProperty = propertyMap.GetProperty().GetAsNavigationProperty();
     ClassMap const* relClassMap = ecdbMap.GetClassMap(*navigationProperty->GetRelationshipClass());
     if (relClassMap == nullptr)

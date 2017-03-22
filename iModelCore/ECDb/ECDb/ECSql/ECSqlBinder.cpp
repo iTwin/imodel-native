@@ -10,11 +10,12 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** ECSqlBinder **************************
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-    : m_ecsqlStatement(ctx.GetECSqlStatementR()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+    : m_preparedStatement(ctx.GetPreparedStatement()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
     {
     for (int i = 0; i < mappedSqlParameterCount; i++)
         {
@@ -22,6 +23,18 @@ ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo
         }
     }
 
+#else
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
+    : m_preparedStatement(*ctx.GetECSqlStatementR().GetPreparedStatementP()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+    {
+    for (int i = 0; i < mappedSqlParameterCount; i++)
+        {
+        m_mappedSqlParameterNames.push_back(nameGen.GetNextName());
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      08/2013
@@ -36,31 +49,22 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
     m_onBindEventHandlers->push_back(&binder);
     return ECSqlStatus::Success;
     }
-
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-Statement& ECSqlBinder::GetSqliteStatementR() const
-    {
-    BeAssert(m_ecsqlStatement.GetPreparedStatementP() != nullptr);
-    return m_ecsqlStatement.GetPreparedStatementP()->GetSqliteStatementR();
-    }
+Statement& ECSqlBinder::GetSqliteStatement() const { return m_preparedStatement.GetSqliteStatement(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2015
 //---------------------------------------------------------------------------------------
-ECDbCR ECSqlBinder::GetECDb() const
-    {
-    BeAssert(m_ecsqlStatement.GetECDb() != nullptr);
-    return *m_ecsqlStatement.GetECDb();
-    }
+ECDbCR ECSqlBinder::GetECDb() const { return m_preparedStatement.GetECDb(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlBinder::LogSqliteError(DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
-    BeAssert(m_ecsqlStatement.IsPrepared());
     ECDbLogger::LogSqliteError(GetECDb(), sqliteStat, errorMessageHeader);
     return ECSqlStatus(sqliteStat);
     }
@@ -211,8 +215,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
                 return true;
 
             BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-            DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
-            return constraintClassIdPropMap.IsVirtual(*contextTable);
+            return constraintClassIdPropMap.IsVirtual(propMap.GetClassMap().GetJoinedTable());
             }
             case PropertyMap::Type::NavigationRelECClassId:
                 return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();
@@ -263,19 +266,6 @@ ECSqlStatus ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, int ecsqlParam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const
-    {
-    if (internalBinderIndex >= m_internalSqlParameterBinders.size())
-        return ECSqlStatus::Error;
-
-    binder = m_internalSqlParameterBinders[internalBinderIndex];
-    return ECSqlStatus::Success;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
 int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
     {
     auto it = m_nameToIndexMapping.find(ecsqlParameterName);
@@ -285,6 +275,7 @@ int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
         return -1;
     }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
@@ -423,6 +414,9 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
 
     return ECSqlStatus::Success;
     }
+
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
@@ -436,21 +430,21 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
         return nullptr;
         }
 
-    auto binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
+    std::unique_ptr<ECSqlBinder> binder = ECSqlBinderFactory::CreateBinder(ctx, parameterExp);
     if (binder == nullptr)
         return nullptr;
 
-    auto binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
+    ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
     m_binders.push_back(binderP);
+
+    BeAssert(((int) m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
 
     if (binderP->HasToCallOnClearBindings())
         m_bindersToCallOnClearBindings.push_back(binderP);
-
-    BeAssert(static_cast<int> (m_binders.size()) == parameterExp.GetParameterIndex()); //Parameter indices are 1-based
 
     //insert name to index mapping. 
     if (parameterExp.IsNamedParameter())
@@ -474,7 +468,7 @@ ECSqlBinder* ECSqlParameterMap::AddInternalECInstanceIdBinder(ECSqlPrepareContex
 
     ECSqlBinder* binderP = binder.get(); //cache raw pointer as return value as the unique_ptr will be moved into the list
     m_ownedBinders.push_back(std::move(binder));
-    m_internalSqlParameterBinders.push_back(binderP);
+    m_internalECInstanceIdBinder = binderP;
 
     if (binderP->HasToCallOnBeforeStep())
         m_bindersToCallOnStep.push_back(binderP);
@@ -543,18 +537,6 @@ ECSqlStatus ArrayConstraintValidator::ValidateMaximum(ECDbCR ecdb, ECSqlTypeInfo
         }
 
     return ECSqlStatus::Success;
-    }
-
-//***************************************************************************************
-//    ProxyECSqlBinder
-//***************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2017
-//---------------------------------------------------------------------------------------
-IECSqlBinder& ProxyECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
-    {
-    BeAssert(false && "Should not be called");
-    return NoopECSqlBinder::Get();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

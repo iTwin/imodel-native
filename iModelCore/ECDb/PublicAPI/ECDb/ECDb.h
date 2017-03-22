@@ -13,10 +13,10 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbSchemaManager;
+struct SchemaManager;
 
 struct ECCrudWriteToken;
-struct ECSchemaImportToken;
+struct SchemaImportToken;
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -42,22 +42,22 @@ public:
     struct Settings final
         {
     private:
-        ECCrudWriteToken const* m_eccrudWriteToken = nullptr;
-        ECSchemaImportToken const* m_ecSchemaImportToken = nullptr;
-        bool m_allowChangesetMergingIncompatibleECSchemaImport = true;
+        ECCrudWriteToken const* m_crudWriteToken = nullptr;
+        SchemaImportToken const* m_schemaImportToken = nullptr;
+        bool m_allowChangesetMergingIncompatibleSchemaImport = true;
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //not inlined as ctors are only needed internally
         Settings();
-        Settings(ECCrudWriteToken const*, ECSchemaImportToken const*, bool allowChangesetMergingIncompatibleECSchemaImport);
+        Settings(ECCrudWriteToken const*, SchemaImportToken const*, bool allowChangesetMergingIncompatibleSchemaImport);
 #endif
         //! Consumers can only execute EC CRUD operations like ECSQL INSERT, UPDATE or DELETE statements
-        ECCrudWriteToken const* GetECCrudWriteToken() const { return m_eccrudWriteToken; }
+        ECCrudWriteToken const* GetCrudWriteToken() const { return m_crudWriteToken; }
         //! Consumers can only import ECSchemas with the token
-        ECSchemaImportToken const* GetECSchemaImportToken() const { return m_ecSchemaImportToken; }
+        SchemaImportToken const* GetSchemaImportToken() const { return m_schemaImportToken; }
 
-        bool AllowChangesetMergingIncompatibleECSchemaImport() const { return m_allowChangesetMergingIncompatibleECSchemaImport; }
+        bool AllowChangesetMergingIncompatibleSchemaImport() const { return m_allowChangesetMergingIncompatibleSchemaImport; }
         };
 
     //=======================================================================================
@@ -112,14 +112,14 @@ protected:
     ECDB_EXPORT DbResult _OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
-    ECDB_EXPORT DbResult _VerifySchemaVersion(Db::OpenParams const&) override;
+    ECDB_EXPORT DbResult _VerifyProfileVersion(Db::OpenParams const&) override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
 
     ECDB_EXPORT Settings const& GetECDbSettings() const;
 #endif
 
-    virtual void _OnAfterECSchemaImport() const {}
+    virtual void _OnAfterSchemaImport() const {}
 
 public:
     //! This method @b must be called once per process before any other ECDb method is called.
@@ -163,7 +163,7 @@ public:
     //! Gets the schema manager for this @ref ECDbFile "ECDb file". With the schema manager clients can import @ref ECN::ECSchema "ECSchemas"
     //! into or retrieve @ref ECN::ECSchema "ECSchemas" or individual @ref ECN::ECClass "ECClasses" from the %ECDb file.
     //! @return Schema manager
-    ECDB_EXPORT ECDbSchemaManager const& Schemas() const;
+    ECDB_EXPORT SchemaManager const& Schemas() const;
 
     //! Gets the schema locator for schemas stored in this ECDb file.
     //! @return This ECDb file's schema locater
@@ -215,7 +215,7 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetECDbImplR() const;
-    void FireAfterECSchemaImportEvent() const { _OnAfterECSchemaImport(); }
+    void FireAfterSchemaImportEvent() const { _OnAfterSchemaImport(); }
 #endif
 };
 

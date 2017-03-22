@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECDb.h>
-#include <ECDb/ECDbSchemaManager.h>
+#include <ECDb/SchemaManager.h>
 #include "BeBriefcaseBasedIdSequence.h"
-#include "ECDbProfileManager.h"
+#include "ProfileManager.h"
 #include "IssueReporter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECCrudWriteToken final
     {};
 
-struct ECSchemaImportToken final
+struct SchemaImportToken final
     {};
 
 //=======================================================================================
@@ -30,7 +30,7 @@ private:
     ECDb::Settings m_settings;
 
     std::unique_ptr<ECCrudWriteToken> m_eccrudWriteToken;
-    std::unique_ptr<ECSchemaImportToken> m_ecSchemaImportToken;
+    std::unique_ptr<SchemaImportToken> m_ecSchemaImportToken;
 
 public:
     SettingsHolder() : m_eccrudWriteToken(nullptr), m_ecSchemaImportToken(nullptr) {}
@@ -43,7 +43,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      02/2017
 //+===============+===============+===============+===============+===============+======
-struct IdSequences : NonCopyableClass
+struct IdSequences final : NonCopyableClass
     {
 public:
     //the numbers are the indexes into the sequence vector of SequenceManager. So they
@@ -79,7 +79,7 @@ public:
 //! (PIMPL idiom)
 // @bsiclass                                                Krischan.Eberle      12/2014
 //+===============+===============+===============+===============+===============+======
-struct ECDb::Impl : NonCopyableClass
+struct ECDb::Impl final : NonCopyableClass
     {
 friend struct ECDb;
 
@@ -91,7 +91,7 @@ public:
     //! an error from any of its methods.
     // @bsiclass                                                Krischan.Eberle       10/2016
     //+===============+===============+===============+===============+===============+======
-    struct ClearCacheCounter
+    struct ClearCacheCounter final
         {
         private:
             uint32_t m_value;
@@ -107,7 +107,7 @@ public:
         };
 
 private:
-    struct DbFunctionKey
+    struct DbFunctionKey final
         {
         Utf8CP m_functionName;
         int m_argCount;
@@ -129,7 +129,7 @@ private:
     
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
-    std::unique_ptr<ECDbSchemaManager> m_schemaManager;
+    std::unique_ptr<SchemaManager> m_schemaManager;
 
     SettingsHolder m_settings;
 
@@ -142,12 +142,12 @@ private:
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_idSequences(ecdb)
         {
-        m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, m_mutex));
+        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
         }
 
-    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { SchemaVersion unused(0, 0, 0, 0); return ECDbProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
+    DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const { ProfileVersion unused(0, 0, 0, 0); return ProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly); }
 
-    ECDbSchemaManager const& Schemas() const { return *m_schemaManager; }
+    SchemaManager const& Schemas() const { return *m_schemaManager; }
     ECN::IECSchemaLocaterR GetSchemaLocater() const { return *m_schemaManager; }
     ECN::IECClassLocaterR GetClassLocater() const { return *m_schemaManager; }
 
@@ -170,7 +170,7 @@ private:
     void OnDbClose() const;
     DbResult OnBriefcaseIdChanged(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
-    DbResult VerifySchemaVersion(Db::OpenParams const& params) const { return ECDbProfileManager::UpgradeProfile(m_ecdb, params); }
+    DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }
 
     void RegisterBuiltinFunctions() const;
     void UnregisterBuiltinFunctions() const;

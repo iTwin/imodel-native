@@ -33,14 +33,12 @@
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
 
-
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSystemPropertyInfo
+struct ECSqlSystemPropertyInfo final
     {
 public:
     enum class Type
@@ -153,7 +151,7 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
 
         BentleyStatus InitializeCache() const;
 
-        ECDbSchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
+        SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
 
     public:
         explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}

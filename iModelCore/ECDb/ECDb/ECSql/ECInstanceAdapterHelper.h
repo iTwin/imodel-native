@@ -72,7 +72,7 @@ struct ECValueBindingInfo : NonCopyableClass
 //! Factory to create ECValueBindingInfos
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECValueBindingInfoFactory
+struct ECValueBindingInfoFactory final
     {
     private:
         ECValueBindingInfoFactory();
@@ -87,7 +87,7 @@ struct ECValueBindingInfoFactory
 //! BindingInfo for ECSQL System properties
 // @bsiclass                                                 Krischan.Eberle     07/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSystemPropertyBindingInfo : ECValueBindingInfo
+struct ECSqlSystemPropertyBindingInfo final : ECValueBindingInfo
     {
     public:
 
@@ -107,7 +107,7 @@ struct ECSqlSystemPropertyBindingInfo : ECValueBindingInfo
 //! ECValueBindingInfo for primitive ECProperties
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECValueBindingInfo : ECValueBindingInfo
+struct PrimitiveECValueBindingInfo final : ECValueBindingInfo
     {
     private:
         PrimitiveECValueBindingInfo(int ecsqlParameterIndex, uint32_t propertyIndex) :  ECValueBindingInfo(Type::Primitive, ecsqlParameterIndex, propertyIndex) {}
@@ -121,7 +121,7 @@ struct PrimitiveECValueBindingInfo : ECValueBindingInfo
 //! ECValueBindingInfo for struct ECProperties
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct StructECValueBindingInfo : ECValueBindingInfo
+struct StructECValueBindingInfo final : ECValueBindingInfo
     {
     private:
         std::map<ECN::ECPropertyId, std::unique_ptr<ECValueBindingInfo>> m_memberBindingInfos;
@@ -141,7 +141,7 @@ struct StructECValueBindingInfo : ECValueBindingInfo
 //! ECValueBindingInfo for array ECProperties
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct ArrayECValueBindingInfo : ECValueBindingInfo
+struct ArrayECValueBindingInfo final : ECValueBindingInfo
     {
     private:
         std::unique_ptr<StructECValueBindingInfo> m_structArrayElementBindingInfo = nullptr;
@@ -163,7 +163,7 @@ struct ArrayECValueBindingInfo : ECValueBindingInfo
 //! ECValueBindingInfo for NavigationECProperties
 // @bsiclass                                                 Krischan.Eberle     11/2016
 //+===============+===============+===============+===============+===============+======
-struct NavigationECValueBindingInfo : ECValueBindingInfo
+struct NavigationECValueBindingInfo final : ECValueBindingInfo
     {
     private:
         NavigationECValueBindingInfo(int ecsqlParameterIndex, uint32_t propertyIndex) : ECValueBindingInfo(Type::Navigation, ecsqlParameterIndex, propertyIndex) {}
@@ -181,13 +181,13 @@ struct NavigationECValueBindingInfo : ECValueBindingInfo
 //! Collection of ECValueBindingInfos
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECValueBindingInfoCollection
+struct ECValueBindingInfoCollection final
     {
     public:
         //======================================================================================
         // @bsiclass                                                 Krischan.Eberle     06/2014
         //+===============+===============+===============+===============+===============+======
-        struct const_iterator : std::iterator<std::forward_iterator_tag, ECValueBindingInfo const*>
+        struct const_iterator final : std::iterator<std::forward_iterator_tag, ECValueBindingInfo const*>
             {
             private:
                 std::vector<std::unique_ptr<ECValueBindingInfo>>::const_iterator m_iterator;
@@ -247,9 +247,7 @@ struct ECValueBindingInfoCollection
 
     public:
         //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
-
-        ECValueBindingInfoCollection()
-            {}
+        ECValueBindingInfoCollection() {}
 
         //!Generates and adds a new binding info for the given parameter.
         //!@return SUCCESS in case of success, ERROR otherwise
@@ -267,10 +265,10 @@ struct ECValueBindingInfoCollection
 //! Helper class for ECInstance ECSQL adapters
 // @bsiclass                                                 Krischan.Eberle     06/2014
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceAdapterHelper
+struct ECInstanceAdapterHelper final
     {
     public:
-        struct ECInstanceInfo : NonCopyableClass
+        struct ECInstanceInfo final : NonCopyableClass
             {
             private:
                 ECN::IECInstanceCP m_instance = nullptr;

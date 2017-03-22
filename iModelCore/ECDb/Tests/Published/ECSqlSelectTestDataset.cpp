@@ -1329,22 +1329,22 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     //invalid expressions
-    ecsql = "SELECT GetECClassId() FROM ecsql.PSA";
+    ecsql = "SELECT GetClassId() FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT p.GetECClassId() FROM ecsql.PSA p";
+    ecsql = "SELECT p.GetClassId() FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT p.GetECClassId FROM ecsql.PSA p";
+    ecsql = "SELECT p.GetClassId FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT GetECClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
+    ecsql = "SELECT GetClassId() FROM ecsql.PSA p JOIN ecsql.P c USING ecsql.PSAHasP";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT a.GetECClassId() FROM ecsql.PSA";
+    ecsql = "SELECT a.GetClassId() FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT a.GetECClassId() FROM ecsql.PSA p";
+    ecsql = "SELECT a.GetClassId() FROM ecsql.PSA p";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     return dataset;

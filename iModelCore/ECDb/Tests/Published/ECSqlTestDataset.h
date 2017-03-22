@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlTestDataset.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -217,7 +217,7 @@ struct ECSqlTestItem : NonCopyableClass
                     return m_geomValue.get();
                     }
 
-                ECInstanceId GetECInstanceId() const
+                ECInstanceId GetInstanceId() const
                     {
                     BeAssert(IsECInstanceId());
                     return m_ecinstanceId;

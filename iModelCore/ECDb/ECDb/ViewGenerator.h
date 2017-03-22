@@ -18,7 +18,7 @@ struct ConstraintECClassIdJoinInfo;
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
 +===============+===============+===============+===============+===============+======*/
-struct ViewGenerator
+struct ViewGenerator final
     {
     private:
         enum class ViewType
@@ -191,7 +191,7 @@ struct ViewGenerator
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       11/2016
 +===============+===============+===============+===============+===============+======*/
-struct ConstraintECClassIdJoinInfo
+struct ConstraintECClassIdJoinInfo final
     {
     private:
         bool m_joinIsRequired;

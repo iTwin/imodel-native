@@ -51,7 +51,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
     while (BE_SQLITE_ROW == schemaStatement.Step())
         {
         Utf8CP actualSchemaName = schemaStatement.GetValueText(0);
-        ECSchemaCP expectedSchema = GetECDb().Schemas().GetECSchema(actualSchemaName);
+        ECSchemaCP expectedSchema = GetECDb().Schemas().GetSchema(actualSchemaName);
         ASSERT_TRUE(expectedSchema != nullptr);
 
         AssertSchemaDef(*expectedSchema, schemaStatement);
@@ -61,7 +61,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDefs()
         actualSchemaCount++;
         }
 
-    bvector<ECSchemaCP> expectedSchemas = GetECDb().Schemas().GetECSchemas(false);
+    bvector<ECSchemaCP> expectedSchemas = GetECDb().Schemas().GetSchemas(false);
     ASSERT_EQ((int) expectedSchemas.size(), actualSchemaCount);
     }
 
@@ -84,7 +84,7 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
         if (colName.EqualsI("ECInstanceId"))
             ASSERT_EQ(expectedSchema.GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "ECSchemaDef.ECInstanceId";
         else if (colName.EqualsI("ECClassId"))
-            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
+            ASSERT_EQ(GetECDb().Schemas().GetClass("MetaSchema", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
         else if (colName.EqualsI("Name"))
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
@@ -153,7 +153,7 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
     ECCustomAttributeClassCP expectedCAClass = expectedClass.GetCustomAttributeClassCP();
     ECRelationshipClassCP expectedRelClass = expectedClass.GetRelationshipClassCP();
     
-    ECClassId schemaOwnsClassesRelClassId = GetECDb().Schemas().GetECClassId("MetaSchema", "SchemaOwnsClasses");
+    ECClassId schemaOwnsClassesRelClassId = GetECDb().Schemas().GetClassId("MetaSchema", "SchemaOwnsClasses");
     ASSERT_TRUE(schemaOwnsClassesRelClassId.IsValid());
 
     const int colCount = actualClassDefRow.GetColumnCount();
@@ -175,7 +175,7 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECClassDef")->GetId(), val.GetId<ECClassId>()) << "ECClassDef.ECClassId";
+            ASSERT_EQ(GetECDb().Schemas().GetClass("MetaSchema", "ECClassDef")->GetId(), val.GetId<ECClassId>()) << "ECClassDef.ECClassId";
             continue;
             }
 
@@ -323,7 +323,7 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDefs(ECSchemaCR expectedSchema
 //+---------------+---------------+---------------+---------------+---------------+------
 void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEnum, ECSqlStatement const& actualEnumerationDefRow)
     {
-    ECClassId schemaOwnsEnumsRelClassId = GetECDb().Schemas().GetECClassId("MetaSchema", "SchemaOwnsEnumerations");
+    ECClassId schemaOwnsEnumsRelClassId = GetECDb().Schemas().GetClassId("MetaSchema", "SchemaOwnsEnumerations");
     ASSERT_TRUE(schemaOwnsEnumsRelClassId.IsValid());
 
     const int colCount = actualEnumerationDefRow.GetColumnCount();
@@ -346,7 +346,7 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECEnumerationDef")->GetId(), val.GetId<ECClassId>()) << "ECEnumerationDef.ECClassId";
+            ASSERT_EQ(GetECDb().Schemas().GetClass("MetaSchema", "ECEnumerationDef")->GetId(), val.GetId<ECClassId>()) << "ECEnumerationDef.ECClassId";
             continue;
             }
 
@@ -514,7 +514,7 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "KindOfQuantityDef")->GetId(), val.GetId<ECClassId>()) << "KindOfQuantityDef.ECClassId";
+            ASSERT_EQ(GetECDb().Schemas().GetClass("MetaSchema", "KindOfQuantityDef")->GetId(), val.GetId<ECClassId>()) << "KindOfQuantityDef.ECClassId";
             continue;
             }
 
@@ -662,7 +662,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
         
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetECClass("MetaSchema", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
+            ASSERT_EQ(GetECDb().Schemas().GetClass("MetaSchema", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
             continue;
             }
 
@@ -944,7 +944,7 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
         ASSERT_EQ(ECObjectsStatus::Success, imported->SetAlias(schemaIn.GetAlias()));
         ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
         ASSERT_EQ(ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
-        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache().GetSchemas()));
+        ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(contextPtr->GetCache().GetSchemas()));
         };
 
     // create schema
@@ -995,7 +995,7 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
     ECDbR ecdb = SetupECDb("PropertyOverrides.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
     importSchema(ecdb, *testSchema);
-    ECSchemaCP readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    ECSchemaCP readOutSchema = ecdb.Schemas().GetSchema("testSchema");
     ECClassCP readOutmn = readOutSchema->GetClassCP("MN");
 
     // compare local copy properties with ECSql-retrieved properties
@@ -1011,7 +1011,7 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
 
     // re-import and read out schema, then validate through ECSql
     importSchema(ecdb, *testSchema);
-    readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    readOutSchema = ecdb.Schemas().GetSchema("testSchema");
     readOutmn = readOutSchema->GetClassCP("MN");
     VerifyECDbPropertyInheritance(readOutmn);
 
@@ -1030,7 +1030,7 @@ TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
 
     // re-import and read out schema, then validate through ECSql
     importSchema(ecdb, *testSchema);
-    readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    readOutSchema = ecdb.Schemas().GetSchema("testSchema");
     readOutmn = readOutSchema->GetClassCP("MN");
     VerifyECDbPropertyInheritance(readOutmn);
     }

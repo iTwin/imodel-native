@@ -6,10 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ValueExp.h"
-#include "ExpHelper.h"
 
-using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -31,7 +28,7 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContex
 
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
         {
-        vector<ValueExp const*> operands {GetLowerBoundOperand(), GetUpperBoundOperand()};
+        std::vector<ValueExp const*> operands {GetLowerBoundOperand(), GetUpperBoundOperand()};
         for (ValueExp const* operand : operands)
             {
             //parameter exp type is determined later, so do not check type for it here
@@ -216,7 +213,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             }
         else
             {
-            ECClassCP targetType = ctx.Schemas().GetECClass(m_castTargetSchemaName, GetCastTargetClassName(), ResolveSchema::AutoDetect);
+            ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName(), ResolveSchema::AutoDetect);
             if (targetType == nullptr)
                 {
                 ctx.Issues().Report("Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetClassName().c_str());
@@ -251,7 +248,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
     if (castOperandTypeInfo.GetPrimitiveType() != expectedTypeInfo.GetPrimitiveType())
         {
         //primitives can be cast except for points because they map to multiple columns
-        vector<ECSqlTypeInfo const*> typeInfos {&expectedTypeInfo, &castOperandTypeInfo};
+        std::vector<ECSqlTypeInfo const*> typeInfos {&expectedTypeInfo, &castOperandTypeInfo};
         for (ECSqlTypeInfo const* typeInfo : typeInfos)
             {
             if (typeInfo->IsPoint())
@@ -606,33 +603,24 @@ Utf8CP const  LiteralValueExp::CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus LiteralValueExp::Create(unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
+BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
     {
     exp = nullptr;
 
-    unique_ptr<LiteralValueExp> valueExp = unique_ptr<LiteralValueExp>(new LiteralValueExp(value, typeInfo));
-    BentleyStatus stat = valueExp->ResolveDataType(ctx);
-    if (stat == SUCCESS)
-        exp = move(valueExp);
+    std::unique_ptr<LiteralValueExp> valueExp(new LiteralValueExp(value, typeInfo));
+    if (SUCCESS != valueExp->ResolveDataType(ctx))
+        return ERROR;
 
-    return stat;
+    exp = std::move(valueExp);
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo typeInfo)
-    : ValueExp(Type::LiteralValue, true), m_value(value)
+LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo typeInfo) : ValueExp(Type::LiteralValue, true), m_value(value)
     {
     SetTypeInfo(typeInfo);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8StringCR LiteralValueExp::GetValue() const
-    {
-    return m_value;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -714,7 +702,11 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         const PrimitiveType primType = typeInfo.GetPrimitiveType();
         if (primType == PRIMITIVETYPE_String)
             {
-            ctx.AppendToECSql("'").AppendToECSql(m_value).AppendToECSql("'");
+            //escape single quotes again
+            Utf8String escapedLiteral(m_value);
+            escapedLiteral.ReplaceAll("'", "''");
+
+            ctx.AppendToECSql("'").AppendToECSql(escapedLiteral).AppendToECSql("'");
 
             if (HasParentheses())
                 ctx.AppendToECSql(")");

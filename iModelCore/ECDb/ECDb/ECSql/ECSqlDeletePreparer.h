@@ -2,24 +2,24 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlPreparer.h"
-#include "../ECDbPolicyManager.h"
+#include "../PolicyManager.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    01/2014
 //+===============+===============+===============+===============+===============+======
-struct ECSqlDeletePreparer
+struct ECSqlDeletePreparer final
     {
 private:
-    struct NativeSqlSnippets
+    struct NativeSqlSnippets final
         {
         NativeSqlBuilder m_classNameNativeSqlSnippet;
         NativeSqlBuilder::List m_pkColumnNamesNativeSqlSnippets;

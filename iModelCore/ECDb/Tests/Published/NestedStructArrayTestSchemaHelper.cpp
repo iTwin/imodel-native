@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/NestedStructArrayTestSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "NestedStructArrayTestSchemaHelper.h"
@@ -116,7 +116,7 @@ void NestedStructArrayTestSchemaHelper::setProductsValues(StandaloneECInstancePt
 void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::EC::ECDbR ecdb)
     {
     //Create Instances of ContactDetails class
-    ECClassCP contactDetails = ecdb.Schemas().GetECClass("ECSqlStatementTests", "ContactDetails");
+    ECClassCP contactDetails = ecdb.Schemas().GetClass("ECSqlStatementTests", "ContactDetails");
     ASSERT_TRUE(contactDetails != nullptr);
 
     StandaloneECInstancePtr contactInstance1 = contactDetails->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -137,7 +137,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     setContactDetailsValues(contactInstance8, "Address 2", "8 FAYETTEVILLE ROAD");
 
     //Create instances of Employee and insert into Db
-    ECClassCP employeeClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Employee");
+    ECClassCP employeeClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Employee");
     ASSERT_TRUE(employeeClass != nullptr);
 
     StandaloneECInstancePtr employeeInstance1 = employeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -169,7 +169,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, employeeInserter.Insert(*employeeInstance3, true));
 
     //Create instances of Customer and insert into Db
-    ECClassCP customerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
+    ECClassCP customerClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Customer");
     ASSERT_TRUE(customerClass != nullptr);
 
     StandaloneECInstancePtr customerInstance1 = customerClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -209,7 +209,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, customerInserter.Insert(*customerInstance4));
 
     //Create and Insert instance of Class Order
-    ECClassCP orderClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Order");
+    ECClassCP orderClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Order");
     ASSERT_TRUE(orderClass != nullptr);
 
     StandaloneECInstancePtr orderInstance1 = orderClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -245,7 +245,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance9));
 
     //Insert Relationship Instance CustomerHasOrder
-    ECRelationshipClassCP customerHasOrder = ecdb.Schemas().GetECClass("ECSqlStatementTests", "CustomerHasOrder")->GetRelationshipClassCP();
+    ECRelationshipClassCP customerHasOrder = ecdb.Schemas().GetClass("ECSqlStatementTests", "CustomerHasOrder")->GetRelationshipClassCP();
     ASSERT_TRUE(customerHasOrder != nullptr);
 
     StandaloneECRelationshipInstancePtr customerHasOrderInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*customerHasOrder)->CreateRelationshipInstance();
@@ -290,7 +290,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
     //Insert Relationship Instance EmployeeHasOrder
-    ECRelationshipClassCP employeeHasOrder = ecdb.Schemas().GetECClass("ECSqlStatementTests", "EmployeeHasOrder")->GetRelationshipClassCP();
+    ECRelationshipClassCP employeeHasOrder = ecdb.Schemas().GetClass("ECSqlStatementTests", "EmployeeHasOrder")->GetRelationshipClassCP();
     ASSERT_TRUE(employeeHasOrder != nullptr);
 
     StandaloneECRelationshipInstancePtr employeeHasOrderInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*employeeHasOrder)->CreateRelationshipInstance();
@@ -335,7 +335,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     //Create and Insert Instances of Shipper
-    ECClassCP shipperClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Shipper");
+    ECClassCP shipperClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Shipper");
     ASSERT_TRUE(shipperClass != nullptr);
     StandaloneECInstancePtr shipperInstance1 = shipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
     StandaloneECInstancePtr shipperInstance2 = shipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -350,7 +350,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, shipperInserter.Insert(*shipperInstance3, true));
 
     //Create and Insert Instances of Supplier
-    ECClassCP supplierClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Supplier");
+    ECClassCP supplierClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Supplier");
     ASSERT_TRUE(supplierClass != nullptr);
     StandaloneECInstancePtr supplierInstance1 = supplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
     StandaloneECInstancePtr supplierInstance2 = supplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -365,7 +365,7 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, supplierInserter.Insert(*supplierInstance3, true));
 
     //Create and Insert Instances of Products
-    ECClassCP productClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Product");
+    ECClassCP productClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Product");
     ASSERT_TRUE(productClass != nullptr);
     StandaloneECInstancePtr productsInstance1 = productClass->GetDefaultStandaloneEnabler()->CreateInstance();
     StandaloneECInstancePtr productsInstance2 = productClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -458,7 +458,7 @@ Utf8CP const NestedStructArrayTestSchemaHelper::s_testSchemaXml =
 //+---------------+---------------+---------------+---------------+---------------+------
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S4(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
-    ECClassCP s4 = ecdb.Schemas().GetECClass("NestedStructArrayTest", "S4");
+    ECClassCP s4 = ecdb.Schemas().GetClass("NestedStructArrayTest", "S4");
     EXPECT_TRUE(s4 != nullptr);
 
     Utf8String stringValue;
@@ -482,7 +482,7 @@ bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S4(B
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S3(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
-    ECClassCP s3 = ecdb.Schemas().GetECClass("NestedStructArrayTest", "S3");
+    ECClassCP s3 = ecdb.Schemas().GetClass("NestedStructArrayTest", "S3");
     EXPECT_TRUE(s3 != nullptr);
 
     Utf8String stringValue;
@@ -515,7 +515,7 @@ bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S3(B
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S2(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
-    ECClassCP s2 = ecdb.Schemas().GetECClass("NestedStructArrayTest", "S2");
+    ECClassCP s2 = ecdb.Schemas().GetClass("NestedStructArrayTest", "S2");
     EXPECT_TRUE(s2 != nullptr);
 
     Utf8String stringValue;
@@ -548,7 +548,7 @@ bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S2(B
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S1(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
-    ECClassCP s1 = ecdb.Schemas().GetECClass("NestedStructArrayTest", "S1");
+    ECClassCP s1 = ecdb.Schemas().GetClass("NestedStructArrayTest", "S1");
     EXPECT_TRUE(s1 != nullptr);
 
     Utf8String stringValue;
@@ -581,7 +581,7 @@ bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstance_S1(B
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstances(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
-    ECClassCP ecClassCP = ecdb.Schemas().GetECClass("NestedStructArrayTest", className);
+    ECClassCP ecClassCP = ecdb.Schemas().GetClass("NestedStructArrayTest", className);
     EXPECT_TRUE(ecClassCP != nullptr);
     Utf8String stringValue;
     stringValue.Sprintf("testData_%s", className);
@@ -612,7 +612,7 @@ bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstances(BeS
 //+---------------+---------------+---------------+---------------+---------------+------
 bvector<IECInstancePtr> NestedStructArrayTestSchemaHelper::CreateECInstanceWithOutStructArrayProperty(BeSQLite::EC::ECDbR ecdb, int n, Utf8CP className)
     {
-    ECClassCP ecClassCP = ecdb.Schemas().GetECClass("NestedStructArrayTest", className);
+    ECClassCP ecClassCP = ecdb.Schemas().GetClass("NestedStructArrayTest", className);
     EXPECT_TRUE(ecClassCP != nullptr);
     Utf8String stringValue;
     stringValue.Sprintf("testData_%s", className);
@@ -700,7 +700,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
     //Create and Insert Constraint Classes Instances and then for relationship class BaseHasDerivedA
     if (insertRelationships)
         {
-        ECRelationshipClassCP baseHasDerivedA = ecdb.Schemas().GetECClass("NestedStructArrayTest", "BaseHasDerivedA")->GetRelationshipClassCP();
+        ECRelationshipClassCP baseHasDerivedA = ecdb.Schemas().GetClass("NestedStructArrayTest", "BaseHasDerivedA")->GetRelationshipClassCP();
 
         instances = CreateECInstanceWithOutStructArrayProperty(ecdb, 1, "ClassA");
         for (auto sourceInstance : instances)
@@ -720,7 +720,7 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(BeSQLite::EC
             }
 
         //Create and Insert Constraint Classes Instances and then for relationship class DerivedBOwnsChilds, relationship contains multiple target classes also containing structArray properties.
-        ECRelationshipClassCP derivedBHasChildren = ecdb.Schemas().GetECClass("NestedStructArrayTest", "DerivedBHasChildren")->GetRelationshipClassCP();
+        ECRelationshipClassCP derivedBHasChildren = ecdb.Schemas().GetClass("NestedStructArrayTest", "DerivedBHasChildren")->GetRelationshipClassCP();
         instances = CreateECInstanceWithOutStructArrayProperty(ecdb, 1, "DerivedB");
         for (IECInstancePtr sourceInstance : instances)
             {

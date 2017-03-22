@@ -15,9 +15,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    11/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlInsertPreparer
+struct ECSqlInsertPreparer final
     {
 private:
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     enum class ECInstanceIdMode
         {
         Invalid = 0,
@@ -25,10 +26,12 @@ private:
         UserProvidedNotNull = 2,
         UserProvidedNull = 4
         };
-
-    struct NativeSqlSnippets
+#endif
+    struct NativeSqlSnippets final
         {
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
         ECInstanceIdMode m_ecinstanceIdMode;
+#endif
         int m_ecinstanceIdExpIndex;
         NativeSqlBuilder m_classNameNativeSqlSnippet;
         NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
@@ -48,12 +51,14 @@ private:
     static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext&, NativeSqlSnippets&, InsertStatementExp const&, RelationshipClassEndTableMap const&);
 
     static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
-    static void PreparePrimaryKey (ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
+    static void PrepareClassId(ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
 
     static void BuildNativeSqlInsertStatement (NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, InsertStatementExp const& exp);
     static void BuildNativeSqlUpdateStatement (NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertNativeSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap);
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     static ECInstanceIdMode ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext&, InsertStatementExp const&, ClassMap const&);
-
+    static void PreparePrimaryKey(ECSqlPrepareContext&, NativeSqlSnippets& nativeSqlSnippets, ClassMap const&);
+#endif
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext&, InsertStatementExp const&);
     };

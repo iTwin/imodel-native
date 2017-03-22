@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonUpdater.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -103,12 +103,12 @@ DbResult JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue
 //+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr JsonUpdater::CreateEmptyInstance(ECInstanceKeyCR instanceKey) const
     {
-    ECClassCP ecClass = m_ecdb.Schemas().GetECClass(instanceKey.GetECClassId());
+    ECClassCP ecClass = m_ecdb.Schemas().GetClass(instanceKey.GetClassId());
     if (!ecClass)
         return nullptr;
 
     IECInstancePtr instance = CreateEmptyInstance(*ecClass);
-    ECInstanceAdapterHelper::SetECInstanceId(*instance, instanceKey.GetECInstanceId());
+    ECInstanceAdapterHelper::SetECInstanceId(*instance, instanceKey.GetInstanceId());
     return instance;
     }
 

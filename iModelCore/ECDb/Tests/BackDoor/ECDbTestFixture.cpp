@@ -139,7 +139,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (schema == nullptr)
         return ERROR;
 
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(schemaReadContext->GetCache().GetSchemas()))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(schemaReadContext->GetCache().GetSchemas()))
         return ERROR;
 
     Populate(ecdb, instanceCountPerClass);
@@ -163,7 +163,7 @@ BentleyStatus ECDbTestFixture::CreateECDb(BeFileNameR filePath, Utf8CP fileName,
     if (SUCCESS != ReadECSchemaFromString(context, ecdb, schemaItem))
         return ERROR;
 
-    if (SUCCESS != ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         return ERROR;
 
     Populate(ecdb, instanceCountPerClass);
@@ -207,7 +207,7 @@ BentleyStatus ECDbTestFixture::Populate(ECDbCR ecdb, int instanceCountPerClass)
     {
     if (instanceCountPerClass > 0)
         {
-        bvector<ECN::ECSchemaCP> schemas = ecdb.Schemas().GetECSchemas(true);
+        bvector<ECN::ECSchemaCP> schemas = ecdb.Schemas().GetSchemas(true);
         for (ECSchemaCP schema : schemas)
             {
             if (schema->IsStandardSchema() || schema->IsSystemSchema() || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
@@ -253,7 +253,7 @@ BentleyStatus ECDbTestFixture::GetInstances(bvector<ECN::IECInstancePtr>& instan
     {
     instances.clear();
 
-    ECN::ECClassCP ecClass = GetECDb().Schemas().GetECClass(schemaName, className);
+    ECN::ECClassCP ecClass = GetECDb().Schemas().GetClass(schemaName, className);
     EXPECT_TRUE(ecClass != nullptr) << "ECDbTestFixture::GetInstances> ECClass '" << className << "' not found.";
     if (ecClass == nullptr)
         return ERROR;

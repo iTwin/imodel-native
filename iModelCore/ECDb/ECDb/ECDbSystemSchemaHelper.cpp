@@ -58,7 +58,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
         {
             case ECSqlSystemPropertyInfo::Type::Class:
             {
-            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_ClassECSqlSystemProperties);
+            systemClass = Schemas().GetClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_ClassECSqlSystemProperties);
             switch (sysPropInfo.GetClass())
                 {
                     case ECSqlSystemPropertyInfo::Class::ECInstanceId:
@@ -77,7 +77,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Relationship:
             {
-            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_RelationshipECSqlSystemProperties);
+            systemClass = Schemas().GetClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_RelationshipECSqlSystemProperties);
             switch (sysPropInfo.GetRelationship())
                 {
                     case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
@@ -102,7 +102,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Navigation:
             {
-            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_NavigationECSqlSystemProperties);
+            systemClass = Schemas().GetClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_NavigationECSqlSystemProperties);
             switch (sysPropInfo.GetNavigation())
                 {
                     case ECSqlSystemPropertyInfo::Navigation::Id:
@@ -121,7 +121,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo c
 
             case ECSqlSystemPropertyInfo::Type::Point:
             {
-            systemClass = Schemas().GetECClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_PointECSqlSystemProperties);
+            systemClass = Schemas().GetClass(ECSCHEMA_ECDbSystem, ECDBSYS_CLASS_PointECSqlSystemProperties);
             switch (sysPropInfo.GetPoint())
                 {
                     case ECSqlSystemPropertyInfo::Point::X:

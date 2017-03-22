@@ -16,36 +16,50 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SystemPropertyMap : PropertyMap
     {
     public:
-        struct PerTablePrimitivePropertyMap : SingleColumnDataPropertyMap
+        struct PerTableIdPropertyMap: SingleColumnDataPropertyMap
             {
         private:
-            PerTablePrimitivePropertyMap(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
-                : SingleColumnDataPropertyMap(Type::SystemPerTablePrimitive, parentPropertyMap, ecProperty, column, false)
-                {}
-
             DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }
 
-        public:
-            virtual ~PerTablePrimitivePropertyMap() {}
+            PerTableIdPropertyMap(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+                : PerTableIdPropertyMap(Type::SystemPerTableId, parentPropertyMap, ecProperty, column)
+                {}
 
-            static RefCountedPtr<PerTablePrimitivePropertyMap> CreateInstance(PropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
+        protected:
+            PerTableIdPropertyMap(Type type, SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column)
+                : SingleColumnDataPropertyMap(type, parentPropertyMap, ecProperty, column, false)
+                {}
+
+        public:
+            virtual ~PerTableIdPropertyMap() {}
+
+            static RefCountedPtr<PerTableIdPropertyMap> CreateInstance(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column);
+            };
+
+        struct PerTableClassIdPropertyMap final : PerTableIdPropertyMap
+            {
+            private:
+                ECN::ECClassId m_defaultClassId;
+
+                PerTableClassIdPropertyMap(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, ECN::ECClassId defaultClassId)
+                    : PerTableIdPropertyMap(Type::SystemPerTableClassId, parentPropertyMap, ecProperty, column), m_defaultClassId(defaultClassId) {}
+            public:
+                ~PerTableClassIdPropertyMap() {}
+
+                static RefCountedPtr<PerTableClassIdPropertyMap> CreateInstance(SystemPropertyMap const& parentPropertyMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& column, ECN::ECClassId defaultClassId);
+
+                //!@returns invalid id if the property map doesn't have a default classid
+                ECN::ECClassId GetDefaultECClassId() const { return m_defaultClassId; }
             };
 
     private:
-        bmap<Utf8CP, RefCountedPtr<PerTablePrimitivePropertyMap>, CompareIUtf8Ascii> m_dataPropMaps;
-        std::vector<PerTablePrimitivePropertyMap const*> m_dataPropMapList;
+        bmap<Utf8CP, RefCountedPtr<PerTableIdPropertyMap>, CompareIUtf8Ascii> m_dataPropMaps;
+        std::vector<PerTableIdPropertyMap const*> m_dataPropMapList;
         std::vector<DbTable const*> m_tables;
 
-        bool _IsMappedToTable(DbTable const& table) const override
-            {
-            for (DbTable const* t : m_tables)
-                if (t == &table)
-                    return true;
-
-            return false;
-            }
-
+        bool _IsMappedToTable(DbTable const& table) const override;
         BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
+        virtual RefCountedPtr<PerTableIdPropertyMap> _CreatePerTablePropertyMap(SystemPropertyMap&, ECN::PrimitiveECPropertyCR, DbColumn const&) const = 0;
 
     protected:
         SystemPropertyMap(Type, ClassMap const&, ECN::PrimitiveECPropertyCR);
@@ -56,9 +70,9 @@ struct SystemPropertyMap : PropertyMap
     public:
         virtual ~SystemPropertyMap() {}
 
-        PerTablePrimitivePropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
-        PerTablePrimitivePropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
-        std::vector<PerTablePrimitivePropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
+        PerTableIdPropertyMap const* FindDataPropertyMap(Utf8CP tableName) const;
+        PerTableIdPropertyMap const* FindDataPropertyMap(DbTable const& table) const { return FindDataPropertyMap(table.GetName().c_str()); }
+        std::vector<PerTableIdPropertyMap const*> const& GetDataPropertyMaps() const { return m_dataPropMapList; }
         //! Get list of table to which this property map and its children are mapped to. It is never empty.
         std::vector<DbTable const*> const& GetTables() const { return m_tables; }
         bool IsMappedToSingleTable() const { return GetDataPropertyMaps().size() == 1; }
@@ -70,13 +84,13 @@ struct SystemPropertyMap : PropertyMap
 struct ECInstanceIdPropertyMap final : SystemPropertyMap
     {
     private:
-        ECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : SystemPropertyMap(Type::ECInstanceId, classMap, ecProperty)
-            {}
+        ECInstanceIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty) : SystemPropertyMap(Type::ECInstanceId, classMap, ecProperty) {}
+
+        RefCountedPtr<PerTableIdPropertyMap> _CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR prop, DbColumn const& col) const override { return PerTableIdPropertyMap::CreateInstance(parentPropMap, prop, col); }
 
     public:
-        virtual ~ECInstanceIdPropertyMap() {}
-        static RefCountedPtr<ECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns);
+        ~ECInstanceIdPropertyMap() {}
+        static RefCountedPtr<ECInstanceIdPropertyMap> CreateInstance(ClassMap const&, std::vector<DbColumn const*> const&);
     };
 
 //=======================================================================================
@@ -85,17 +99,14 @@ struct ECInstanceIdPropertyMap final : SystemPropertyMap
 struct ECClassIdPropertyMap final : SystemPropertyMap
     {
     private:
-        ECN::ECClassId m_defaultECClassId;
+        ECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty) : SystemPropertyMap(Type::ECClassId, classMap, ecProperty) {}
 
-        ECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId)
-            : SystemPropertyMap(Type::ECClassId, classMap, ecProperty), m_defaultECClassId(defaultECClassId)
-            {}
+        RefCountedPtr<PerTableIdPropertyMap> _CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR, DbColumn const&) const override;
 
     public:
-        virtual ~ECClassIdPropertyMap() {}
+        ~ECClassIdPropertyMap() {}
         bool IsVirtual(DbTable const& table) const;
-        ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
-        static RefCountedPtr<ECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<ECClassIdPropertyMap> CreateInstance(ClassMap const&, std::vector<DbColumn const*> const&);
     };
 
 //=======================================================================================
@@ -104,21 +115,21 @@ struct ECClassIdPropertyMap final : SystemPropertyMap
 struct ConstraintECClassIdPropertyMap final : SystemPropertyMap
     {
     private:
-        ECN::ECClassId m_defaultECClassId;
         ECN::ECRelationshipEnd m_end;
 
-        ConstraintECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECClassId defaultECClassId, ECN::ECRelationshipEnd constraintEnd)
-            : SystemPropertyMap(Type::ConstraintECClassId, classMap, ecProperty), m_defaultECClassId(defaultECClassId), m_end(constraintEnd)
+        ConstraintECClassIdPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty, ECN::ECRelationshipEnd constraintEnd)
+            : SystemPropertyMap(Type::ConstraintECClassId, classMap, ecProperty), m_end(constraintEnd)
             {}
 
+        RefCountedPtr<PerTableIdPropertyMap> _CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR, DbColumn const&) const override;
+
     public:
-        virtual ~ConstraintECClassIdPropertyMap() {}
+        ~ConstraintECClassIdPropertyMap() {}
 
         bool IsVirtual(DbTable const& table) const;
-        ECN::ECClassId GetDefaultECClassId() const { return m_defaultECClassId; }
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
      
-        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<ConstraintECClassIdPropertyMap> CreateInstance(ClassMap const&, ECN::ECRelationshipEnd, std::vector<DbColumn const*> const&);
     };
 
 //=======================================================================================
@@ -133,11 +144,13 @@ struct ConstraintECInstanceIdPropertyMap final : SystemPropertyMap
             : SystemPropertyMap(Type::ConstraintECInstanceId, classMap, ecProperty), m_end(constraintEnd)
             {}
 
+        RefCountedPtr<PerTableIdPropertyMap> _CreatePerTablePropertyMap(SystemPropertyMap& parentPropMap, ECN::PrimitiveECPropertyCR prop, DbColumn const& col) const override { return PerTableIdPropertyMap::CreateInstance(parentPropMap, prop, col); }
+
     public:
-        virtual ~ConstraintECInstanceIdPropertyMap() {}
+        ~ConstraintECInstanceIdPropertyMap() {}
         ECN::ECRelationshipEnd GetEnd() const { return m_end; }
 
-        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const& classMap, ECN::ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns);
+        static RefCountedPtr<ConstraintECInstanceIdPropertyMap> CreateInstance(ClassMap const&, ECN::ECRelationshipEnd, std::vector<DbColumn const*> const&);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -25,32 +25,32 @@ enum class PersistenceType
     Virtual //! Not persisted in db rather used as a view specification
     };
 
-struct DbTableId : BeInt64Id
+struct DbTableId final: BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(DbTableId, BeInt64Id)
     };
 
-struct DbColumnId : BeInt64Id
+struct DbColumnId final : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(DbColumnId, BeInt64Id)
     };
 
-struct DbIndexId : BeInt64Id
+struct DbIndexId final : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(DbIndexId, BeInt64Id)
     };
 
-struct DbConstraintId : BeInt64Id
+struct DbConstraintId final : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(DbConstraintId, BeInt64Id)
     };
 
-struct PropertyPathId : BeInt64Id
+struct PropertyPathId final : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PropertyPathId, BeInt64Id)
     };
 
-struct DbSchemaNameGenerator
+struct DbSchemaNameGenerator final
     {
 private:
     int m_lastId;
@@ -76,7 +76,7 @@ struct PrimaryKeyDbConstraint;
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbColumn : NonCopyableClass
+struct DbColumn final: NonCopyableClass
     {
 public:
     enum class Type
@@ -105,7 +105,7 @@ public:
         RelECClassId = 256
         };
 
-    struct Constraints : NonCopyableClass
+    struct Constraints final: NonCopyableClass
         {
         public:
             enum class Collation
@@ -236,7 +236,7 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct PrimaryKeyDbConstraint : DbConstraint
+struct PrimaryKeyDbConstraint final : DbConstraint
     {
 private:
     std::vector<DbColumn const*> m_columns;
@@ -255,7 +255,7 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct ForeignKeyDbConstraint : DbConstraint
+struct ForeignKeyDbConstraint final : DbConstraint
     {
 public:
     //=======================================================================================
@@ -305,7 +305,7 @@ public:
 //======================================================================================
 // @bsiclass                                        muhammad.zaighum        01/2015
 //======================================================================================
-struct DbTrigger : NonCopyableClass
+struct DbTrigger final : NonCopyableClass
     {
 public:
     enum class Type
@@ -338,7 +338,7 @@ struct DbSchema;
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbTable : NonCopyableClass
+struct DbTable final : NonCopyableClass
     {
 public:
     enum class Type
@@ -386,7 +386,7 @@ private:
     DbColumn* CreateColumn(DbColumnId, Utf8StringCR name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable);
 
     ~DbTable() {}
 
@@ -403,7 +403,15 @@ public:
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
-    ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+    ECN::ECClassId GetExclusiveRootECClassId() const 
+        {
+        if (!HasExclusiveRootECClass())
+            {
+            BeAssert(HasExclusiveRootECClass());
+            }
+
+        return m_exclusiveRootECClassId; 
+        }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
@@ -437,7 +445,7 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbIndex
+struct DbIndex final
     {
 private:
     DbIndexId m_id;
@@ -476,7 +484,7 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbSchema : NonCopyableClass
+struct DbSchema final : NonCopyableClass
     {
 public:
     enum class EntityType
@@ -519,8 +527,8 @@ public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_%d"), m_nullTable(nullptr), m_indexesLoaded(false), m_syncTableCacheNames(false) { }
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
-    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
     DbTable const* FindTable(DbTableId id) const;
@@ -546,16 +554,16 @@ public:
 //======================================================================================
 // @bsiclass                                              Krischan.Eberle        22/2016
 //======================================================================================
-struct TableMapper : NonCopyableClass
+struct TableMapper final : NonCopyableClass
     {
 private:
     TableMapper();
     ~TableMapper();
 
-    static DbTable* CreateTableForExistingTableStrategy(DbSchema&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName);
-    static DbTable* CreateTableForOtherStrategies(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    static DbTable* CreateTableForExistingTableStrategy(DbSchema&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, ECN::ECClassId exclusiveRootClassId);
+    static DbTable* CreateTableForOtherStrategies(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
 public:
-    static DbTable* FindOrCreateTable(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    static DbTable* FindOrCreateTable(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

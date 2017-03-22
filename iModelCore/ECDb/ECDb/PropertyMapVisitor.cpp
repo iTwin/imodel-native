@@ -58,7 +58,7 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
     if (m_table != nullptr)
         {
         BeAssert(m_doNotSkipSystemPropertyMaps == false);
-        SystemPropertyMap::PerTablePrimitivePropertyMap const* dataPropMap = propertyMap.FindDataPropertyMap(*m_table);
+        SystemPropertyMap::PerTableIdPropertyMap const* dataPropMap = propertyMap.FindDataPropertyMap(*m_table);
         if (dataPropMap != nullptr)
             {
             DbColumn const& col = dataPropMap->GetColumn();
@@ -72,7 +72,7 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
 
     if (m_doNotSkipSystemPropertyMaps)
         {
-        for (SystemPropertyMap::PerTablePrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
+        for (SystemPropertyMap::PerTableIdPropertyMap const* m : propertyMap.GetDataPropertyMaps())
             {
             DbColumn const& col = m->GetColumn();
             m_columns.push_back(&col);
@@ -297,7 +297,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    SystemPropertyMap::PerTableIdPropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
     if (vmap == nullptr)
         {
         BeAssert(false);
@@ -322,24 +322,27 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropert
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
-    if (vmap == nullptr)
+    SystemPropertyMap::PerTableIdPropertyMap const* perTablePropMap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    if (perTablePropMap == nullptr || perTablePropMap->GetType() != PropertyMap::Type::SystemPerTableClassId)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
-    Result& result = Record(*vmap);
-    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
+    Result& result = Record(*perTablePropMap);
+    if (m_wrapInParentheses) 
+        result.GetSqlBuilderR().AppendParenLeft();
+
     if (m_scope == ECSqlScope::Select)
         result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
     else
         {
-        if (isVirtual)
-            result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        DbColumn const& col = perTablePropMap->GetColumn();
+
+        if (col.GetPersistenceType() == PersistenceType::Virtual)
+            result.GetSqlBuilderR().Append(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         else
-            result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+            result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
         }
         
     if (m_wrapInParentheses) 
@@ -354,24 +357,29 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& p
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
-    if (vmap == nullptr)
+    SystemPropertyMap::PerTableIdPropertyMap const* perTablePropMap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    if (perTablePropMap == nullptr || perTablePropMap->GetType() != PropertyMap::Type::SystemPerTableClassId)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
-    Result& result = Record(*vmap);
-    if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
+    Result& result = Record(*perTablePropMap);
+
+    if (m_wrapInParentheses) 
+        result.GetSqlBuilderR().AppendParenLeft();
+
+
     if (m_scope == ECSqlScope::Select)
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetAccessString().c_str());
     else
         {
-        if (isVirtual)
-            result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+        DbColumn const& col = perTablePropMap->GetColumn();
+
+        if (col.GetPersistenceType() == PersistenceType::Virtual)
+            result.GetSqlBuilderR().Append(perTablePropMap->GetAs<SystemPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId());
         else
-            result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+            result.GetSqlBuilderR().Append(m_classIdentifier, col.GetName().c_str());
         }
 
     if (m_wrapInParentheses) 
@@ -385,7 +393,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMa
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const& propertyMap) const
     {
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
+    SystemPropertyMap::PerTableIdPropertyMap const* vmap = propertyMap.FindDataPropertyMap(m_tableFilter);
     if (vmap == nullptr)
         {
         BeAssert(false);
@@ -451,7 +459,7 @@ BentleyStatus SavePropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMa
     {
     const ECN::ECPropertyId propertyId = propertyMap.GetProperty().GetId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
-    for (SystemPropertyMap::PerTablePrimitivePropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
+    for (SystemPropertyMap::PerTableIdPropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
         {
         if (m_context.InsertPropertyMap(propertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
             {

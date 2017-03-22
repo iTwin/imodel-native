@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //*****************************************************************
 //ECDbMapHelper
 //*****************************************************************
-struct CustomAttributeReader
+struct CustomAttributeReader final
     {
     private:
         CustomAttributeReader();

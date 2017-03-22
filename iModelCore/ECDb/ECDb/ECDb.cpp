@@ -110,13 +110,13 @@ void ECDb::_OnDbChangedByOtherConnection()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_VerifySchemaVersion(Db::OpenParams const& params)
+DbResult ECDb::_VerifyProfileVersion(Db::OpenParams const& params)
     {
-    DbResult stat = Db::_VerifySchemaVersion(params);
+    DbResult stat = Db::_VerifyProfileVersion(params);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->VerifySchemaVersion(params);
+    return m_pimpl->VerifyProfileVersion(params);
     }
 
 //--------------------------------------------------------------------------------------
@@ -132,17 +132,17 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Schemas() const { return m_pimpl->Schemas(); }
+SchemaManager const& ECDb::Schemas() const { return m_pimpl->Schemas(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECN::IECSchemaLocaterR ECDb::GetSchemaLocater() const { return m_pimpl->GetSchemaLocater(); }
+ECN::IECSchemaLocater& ECDb::GetSchemaLocater() const { return m_pimpl->GetSchemaLocater(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-ECN::IECClassLocaterR ECDb::GetClassLocater() const { return m_pimpl->GetClassLocater(); }
+ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLocater(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2015
@@ -204,8 +204,8 @@ ECDb::Settings::Settings() {}
 //not inlined to prevent being called outside ECDb
 // @bsimethod                                                   Krischan.Eberle   02/2017
 //---------------------------------------------------------------------------------------
-ECDb::Settings::Settings(ECCrudWriteToken const* ecCrudWriteToken, ECSchemaImportToken const* schemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
-    : m_eccrudWriteToken(ecCrudWriteToken), m_ecSchemaImportToken(schemaImportToken), m_allowChangesetMergingIncompatibleECSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
+ECDb::Settings::Settings(ECCrudWriteToken const* ecCrudWriteToken, SchemaImportToken const* schemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
+    : m_crudWriteToken(ecCrudWriteToken), m_schemaImportToken(schemaImportToken), m_allowChangesetMergingIncompatibleSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
     {}
 
 //---------------------------------------------------------------------------------------

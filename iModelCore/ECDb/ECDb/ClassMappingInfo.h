@@ -15,7 +15,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbMap;
+struct DbMap;
 struct ClassMap;
 struct ClassMappingInfo;
 struct SchemaImportContext;
@@ -33,7 +33,7 @@ enum class ClassMappingStatus
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014
 //+===============+===============+===============+===============+===============+======
-struct ClassMappingInfoFactory
+struct ClassMappingInfoFactory final
     {
 private:
     ClassMappingInfoFactory ();
@@ -92,8 +92,8 @@ public:
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
-    ECDbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
-    ECN::ECClassCR GetECClass() const {return m_ecClass;}
+    DbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
+    ECN::ECClassCR GetClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
@@ -105,10 +105,10 @@ public:
 //======================================================================================
 // @bsiclass                                                     Krischan.Eberle     06/2015
 //+===============+===============+===============+===============+===============+======
-struct RelationshipMappingInfo : public ClassMappingInfo
+struct RelationshipMappingInfo final : public ClassMappingInfo
     {
 public:
-    struct FkMappingInfo : NonCopyableClass
+    struct FkMappingInfo final : NonCopyableClass
         {
         private:
             ECN::ECRelationshipEnd m_fkEnd;
@@ -133,7 +133,7 @@ public:
             ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsPhysicalFk()); return m_onUpdateAction; }
         };
 
-    struct LinkTableMappingInfo : NonCopyableClass
+    struct LinkTableMappingInfo final : NonCopyableClass
         {
     private:
         Utf8String m_sourceIdColumnName;
@@ -177,7 +177,7 @@ public:
         m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
         {}
 
-    virtual ~RelationshipMappingInfo() {}
+    ~RelationshipMappingInfo() {}
 
     bool IsRootClass() const { return m_isRootClass; }
     //only available for root classes. Subclasses just inherit from their base class
@@ -192,7 +192,7 @@ public:
 //======================================================================================
 // @bsiclass                                                Affan.Khan  02/2012
 //+===============+===============+===============+===============+===============+======
-struct IndexMappingInfo : RefCountedBase
+struct IndexMappingInfo final : RefCountedBase
     {
     private:
         Utf8String m_name;
@@ -226,7 +226,7 @@ struct IndexMappingInfo : RefCountedBase
 //======================================================================================
 // @bsiclass                                                Krischan.Eberle  02/2016
 //+===============+===============+===============+===============+===============+======
-struct IndexMappingInfoCache : NonCopyableClass
+struct IndexMappingInfoCache final : NonCopyableClass
     {
 private:
     ECDbCR m_ecdb;

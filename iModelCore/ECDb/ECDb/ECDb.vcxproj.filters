@@ -13,17 +13,11 @@
     <Filter Include="ECSql\Fields">
       <UniqueIdentifier>{69614862-1ddd-425c-b0c0-3313d50032aa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ECDbSchemaManager">
-      <UniqueIdentifier>{b512b729-dbde-4f4d-a0f4-00d306962fc8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSql\ECSqlParser">
       <UniqueIdentifier>{90e71772-67b6-4546-a326-1459d237154f}</UniqueIdentifier>
     </Filter>
     <Filter Include="ECSql\ECSqlStatement">
       <UniqueIdentifier>{3df038a0-37d1-4992-96bd-fb4aeed29e72}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECDbMap">
-      <UniqueIdentifier>{79bf8ac1-b52e-46b0-9b4f-156574cb4cff}</UniqueIdentifier>
     </Filter>
     <Filter Include="ECSql\Adapters">
       <UniqueIdentifier>{ee46bf79-75a0-40c3-9800-bcd5f58da13c}</UniqueIdentifier>
@@ -49,14 +43,20 @@
     <Filter Include="ECSql\OSQLParser">
       <UniqueIdentifier>{36dbf070-8794-4e62-9915-23997399c693}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ECDbProfile">
-      <UniqueIdentifier>{40e9ef85-b8b8-468a-ad73-fb807d2d3f09}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
     <Filter Include="ChangeSummary">
       <UniqueIdentifier>{ab551814-340e-4afa-abd0-bc5b227d4c11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SchemaManager">
+      <UniqueIdentifier>{b512b729-dbde-4f4d-a0f4-00d306962fc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DbMap">
+      <UniqueIdentifier>{79bf8ac1-b52e-46b0-9b4f-156574cb4cff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Profile">
+      <UniqueIdentifier>{40e9ef85-b8b8-468a-ad73-fb807d2d3f09}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -65,9 +65,6 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\SqlBison.h">
@@ -121,12 +118,6 @@
     <ClInclude Include="ECSql\ECSqlPrepareContext.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbProfileManager.h">
-      <Filter>ECDbProfile</Filter>
-    </ClInclude>
-    <ClInclude Include="ECDbProfileUpgrader.h">
-      <Filter>ECDbProfile</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ECSqlParser.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -163,12 +154,6 @@
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSchemaReader.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
-    <ClInclude Include="ECDbSchemaWriter.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\InsertStatementExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -199,7 +184,6 @@
     <ClInclude Include="ECSql\ECSqlInsertPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbPolicyManager.h" />
     <ClInclude Include="ECSql\NativeSqlBuilder.h">
       <Filter>ECSql</Filter>
     </ClInclude>
@@ -225,14 +209,11 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECDbLogger.h" />
-    <ClInclude Include="ECSchemaValidator.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="SchemaImportContext.h">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h">
       <Filter>ECSql\Adapters</Filter>
@@ -295,25 +276,19 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ClassMap.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
-    <ClInclude Include="ECDbMap.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="MapStrategy.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="RelationshipClassMap.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ViewGenerator.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\OptionsExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
-    </ClInclude>
-    <ClInclude Include="ECDbSchemaPersistenceHelper.h">
-      <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
@@ -323,38 +298,35 @@
     </ClInclude>
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="DbSchema.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSchemaComparer.h">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="DbSchemaPersistenceManager.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ClassMappingInfo.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="IssueReporter.h">
       <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="LightweightCache.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ClassMapPersistenceManager.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ClassMapper.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="SqlNames.h" />
     <ClInclude Include="PropertyMap.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="SystemPropertyMap.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="PropertyMapVisitor.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\NavigationPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
@@ -388,10 +360,10 @@
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
     <ClInclude Include="ClassMapColumnFactory.h">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="ECDbSystemSchemaHelper.h">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ChangeSummaryImpl.h">
       <Filter>ChangeSummary</Filter>
@@ -400,7 +372,7 @@
       <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="ECDbMapSchemaHelper.h">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ArrayECSqlField.h">
       <Filter>ECSql\Fields</Filter>
@@ -413,6 +385,34 @@
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlPreparedStatement.h">
       <Filter>ECSql\ECSqlStatement</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaReader.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaWriter.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaPersistenceHelper.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaComparer.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaValidator.h">
+      <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="PolicyManager.h" />
+    <ClInclude Include="ProfileManager.h">
+      <Filter>Profile</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfileUpgrader.h">
+      <Filter>Profile</Filter>
+    </ClInclude>
+    <ClInclude Include="DbMap.h">
+      <Filter>DbMap</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -475,12 +475,6 @@
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbProfileManager.cpp">
-      <Filter>ECDbProfile</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbSchemaManager.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECSqlParser.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
@@ -529,12 +523,6 @@
     <ClCompile Include="ECSql\ECSqlStatementBase.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbSchemaReader.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbSchemaWriter.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp">
       <Filter>docs\samplecode</Filter>
     </ClCompile>
@@ -577,7 +565,6 @@
     <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECSql\NativeSqlBuilder.cpp">
       <Filter>ECSql</Filter>
     </ClCompile>
@@ -615,11 +602,8 @@
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECDbLogger.cpp" />
-    <ClCompile Include="ECSchemaValidator.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
     <ClCompile Include="SchemaImportContext.cpp">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp">
       <Filter>ECSql\Adapters</Filter>
@@ -646,62 +630,50 @@
       <Filter>ECSql</Filter>
     </ClCompile>
     <ClCompile Include="ClassMap.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbMap.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="MapStrategy.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="RelationshipClassMap.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ViewGenerator.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\OptionsExp.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="DbSchema.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSchemaComparer.cpp">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="DbSchemaPersistenceManager.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMappingInfo.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbProfileUpgrader.cpp">
-      <Filter>ECDbProfile</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="IssueReporter.cpp">
       <Filter>ECDb</Filter>
     </ClCompile>
     <ClCompile Include="LightweightCache.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMapPersistenceManager.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMapper.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="PropertyMap.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="SystemPropertyMap.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="PropertyMapVisitor.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\NavigationPropertyECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
@@ -731,10 +703,10 @@
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
     <ClCompile Include="ClassMapColumnFactory.cpp">
-      <Filter>ECDbMap</Filter>
+      <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="ECDbSystemSchemaHelper.cpp">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ChangeSummaryImpl.cpp">
       <Filter>ChangeSummary</Filter>
@@ -743,7 +715,7 @@
       <Filter>ECDb</Filter>
     </ClCompile>
     <ClCompile Include="ECDbMapSchemaHelper.cpp">
-      <Filter>ECDbSchemaManager</Filter>
+      <Filter>SchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ArrayECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
@@ -756,6 +728,34 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaManager.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaReader.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaWriter.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaPersistenceHelper.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaComparer.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaValidator.cpp">
+      <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="PolicyManager.cpp" />
+    <ClCompile Include="ProfileManager.cpp">
+      <Filter>Profile</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfileUpgrader.cpp">
+      <Filter>Profile</Filter>
+    </ClCompile>
+    <ClCompile Include="DbMap.cpp">
+      <Filter>DbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

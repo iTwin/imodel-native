@@ -7,11 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+
 #include "Exp.h"
 #include "ECSqlPrepareContext.h"
 #include "ECSqlBinder.h"
 #include "ECSqlField.h"
 #include "DynamicSelectClauseECClass.h"
+
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -23,6 +26,7 @@ struct IECSqlPreparedStatement : NonCopyableClass
     protected:
         ECDb const& m_ecdb;
         ECSqlType m_type;
+        bool m_isCompoundStatement;
         bool m_isNoopInSqlite = false;
 
     private:
@@ -37,14 +41,14 @@ struct IECSqlPreparedStatement : NonCopyableClass
         virtual Utf8CP _GetNativeSql() const = 0;
 
     protected:
-        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : m_ecdb(ecdb), m_type(type) {}
+        IECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type, bool isCompoundStmt) : m_ecdb(ecdb), m_type(type), m_isCompoundStatement(isCompoundStmt) {}
 
         BentleyStatus AssertIsValid() const;
 
     public:
         virtual ~IECSqlPreparedStatement() {}
 
-        ECSqlStatus Prepare(ECSqlPrepareContext& ctx, Exp const& exp, Utf8CP ecsql);
+        ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;
 
@@ -55,45 +59,137 @@ struct IECSqlPreparedStatement : NonCopyableClass
         Utf8CP GetNativeSql() const;
 
         ECDb const& GetECDb() const { return m_ecdb; }
+        bool IsCompoundStatement() const { return m_isCompoundStatement; }
         ECSqlType GetType() const { return m_type; }
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that only requires a single SQLite statement to 
+//! be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct LeafECSqlPreparedStatement : IECSqlPreparedStatement
+struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
     {
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
 
-    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
     ECSqlStatus _ClearBindings() override;
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
 protected:
+    SingleECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, false) {}
 
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
     ECSqlStatus _Reset() override;
 
 public:
-    LeafECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
-    virtual ~LeafECSqlPreparedStatement() {}
+    virtual ~SingleECSqlPreparedStatement() {}
 
     DbResult DoStep();
 
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
+    ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
+    BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
     };
 
 //=======================================================================================
+//! IECSqlPreparedStatement for ECSQL that requires multiple SQLite statements to be executed
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
 struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
     {
+    public:
+        struct IProxyECSqlBinder : IECSqlBinder
+            {
+        private:
+            virtual void _AddBinder(IECSqlBinder&) = 0;
+
+        protected:
+            IProxyECSqlBinder() : IECSqlBinder() {}
+
+        public:
+            virtual ~IProxyECSqlBinder() {}
+            void AddBinder(IECSqlBinder& binder) { _AddBinder(binder); }
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct ProxyECInstanceIdECSqlBinder final : IProxyECSqlBinder
+            {
+            private:
+                IECSqlBinder* m_idBinder = nullptr;
+                bool m_boundValueIsNull = true;
+
+                ECSqlStatus _BindNull() override { m_boundValueIsNull = true; return GetBinder().BindNull(); }
+                ECSqlStatus _BindInt64(int64_t value) override { m_boundValueIsNull = false; return GetBinder().BindInt64(value); }
+                ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override { m_boundValueIsNull = false; return GetBinder().BindText(value, makeCopy, byteCount); }
+
+                ECSqlStatus _BindBoolean(bool value) override;
+                ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
+                ECSqlStatus _BindZeroBlob(int blobSize) override;
+                ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDouble(double value) override;
+                ECSqlStatus _BindInt(int value) override;
+                ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+                ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+
+                IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+                IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+                IECSqlBinder& _AddArrayElement() override;
+
+                void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
+            
+            public:
+                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder() {}
+
+                IECSqlBinder& GetBinder() { BeAssert(m_idBinder != nullptr); return *m_idBinder; }
+
+                void ClearState() { m_boundValueIsNull = true; }
+                bool IsBoundValueNull() const { return m_boundValueIsNull; }
+            };
+
     protected:
-        std::vector<std::unique_ptr<LeafECSqlPreparedStatement>> m_statements;
-        mutable bmap<int, ProxyECSqlBinder> m_proxyBinderMap;
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    03/2017
+        //+===============+===============+===============+===============+===============+======
+        struct ProxyECSqlBinder final : IProxyECSqlBinder
+            {
+            private:
+                std::vector<IECSqlBinder*> m_binders;
+                std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBindersById;
+                std::map<Utf8CP, std::unique_ptr<ProxyECSqlBinder>, CompareIUtf8Ascii> m_structMemberProxyBindersByName;
+                std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
+
+                ECSqlStatus _BindNull() override;
+                ECSqlStatus _BindBoolean(bool value) override;
+                ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
+                ECSqlStatus _BindZeroBlob(int blobSize) override;
+                ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const& dtInfo) override;
+                ECSqlStatus _BindDouble(double value) override;
+                ECSqlStatus _BindInt(int value) override;
+                ECSqlStatus _BindInt64(int64_t value) override;
+                ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
+                ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+                ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+                IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+                IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+                IECSqlBinder& _AddArrayElement() override;
+
+                void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
+
+            public:
+                ProxyECSqlBinder() : IProxyECSqlBinder() {}
+            };
+
+
+        std::vector<std::unique_ptr<SingleECSqlPreparedStatement>> m_statements;
+        mutable std::vector<std::unique_ptr<IProxyECSqlBinder>> m_proxyBinders;
         mutable bmap<Utf8CP, int, CompareIUtf8Ascii> m_parameterNameMap;
 
     private:
@@ -106,16 +202,18 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
         Utf8CP _GetNativeSql() const override;
 
     protected:
-        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type) {}
+        CompoundECSqlPreparedStatement(ECDb const& ecdb, ECSqlType type) : IECSqlPreparedStatement(ecdb, type, true) {}
 
     public:
         virtual ~CompoundECSqlPreparedStatement() {}
+
+        SingleECSqlPreparedStatement& GetPrimaryTableECSqlStatement() { BeAssert(!m_statements.empty()); return *m_statements[0]; }
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
+struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
     {
     private:
         DynamicSelectClauseECClass m_dynamicSelectClauseECClass;
@@ -130,7 +228,7 @@ struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
         ECSqlStatus OnAfterStep() const;
 
     public:
-        explicit ECSqlSelectPreparedStatement(ECDb const& ecdb) : LeafECSqlPreparedStatement(ecdb, ECSqlType::Select) {}
+        explicit ECSqlSelectPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Select) {}
 
         DbResult Step();
 
@@ -138,7 +236,6 @@ struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
         IECSqlValue const& GetValue(int columnIndex) const;
 
         void AddField(std::unique_ptr<ECSqlField>);
-
         DynamicSelectClauseECClass& GetDynamicSelectClauseECClassR() { return m_dynamicSelectClauseECClass; }
     };
 
@@ -147,48 +244,58 @@ struct ECSqlSelectPreparedStatement final : LeafECSqlPreparedStatement
 //+===============+===============+===============+===============+===============+======
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
-public:
+private:
+    struct LeafPreparedStatement final : SingleECSqlPreparedStatement
+        {
     public:
-        struct ECInstanceKeyInfo
+        explicit LeafPreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
+        ~LeafPreparedStatement() {}
+        };
+
+    struct ECInstanceKeyHelper final : NonCopyableClass
             {
+            public:
+                enum class Mode
+                    {
+                    NotUserProvided = 1,
+                    UserProvidedNullExp,
+                    UserProvidedParameterExp,
+                    UserProvidedOtherExp
+                    };
+
             private:
+                Mode m_mode = Mode::NotUserProvided;
                 ECN::ECClassId m_ecClassId;
-                ECSqlBinder* m_ecInstanceIdBinder;
-                ECInstanceId m_userProvidedECInstanceId;
+                IECSqlBinder* m_primaryTableECSqlECInstanceIdBinder = nullptr;
+                ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr;
+                mutable ECInstanceId m_generatedECInstanceId;
 
             public:
-                //compiler generated copy ctor and copy assignment
-                explicit ECInstanceKeyInfo() : m_ecInstanceIdBinder(nullptr) {}
-                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder) : m_ecClassId(ecClassId), m_ecInstanceIdBinder(&ecInstanceIdBinder) {}
-                ECInstanceKeyInfo(ECN::ECClassId ecClassId, ECInstanceId userProvidedLiteral) : m_ecClassId(ecClassId), m_ecInstanceIdBinder(nullptr), m_userProvidedECInstanceId(userProvidedLiteral) {}
+                ECInstanceKeyHelper() {}
 
-                ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId.IsValid()); return m_ecClassId; }
+                void Initialize(int &ecInstanceIdPropNameExpIx, ECN::ECClassId, PropertyNameListExp const& propNameListExp, ValueExpListExp const& valueListExp);
 
-                ECSqlBinder* GetECInstanceIdBinder() const { return m_ecInstanceIdBinder; }
-                bool HasUserProvidedECInstanceId() const { return m_userProvidedECInstanceId.IsValid(); }
-                ECInstanceId GetUserProvidedECInstanceId() const { return m_userProvidedECInstanceId; }
-
-                void SetBoundECInstanceId(ECInstanceId ecinstanceId) { m_userProvidedECInstanceId = ecinstanceId; }
-                void ResetBoundECInstanceId()
-                    {
-                    if (m_ecInstanceIdBinder != nullptr)
-                        m_userProvidedECInstanceId.Invalidate();
+                void SetUserProvidedParameterBinder(ProxyECInstanceIdECSqlBinder& idBinder) 
+                    { 
+                    BeAssert(m_mode == Mode::UserProvidedParameterExp && "Must only be used with mode Mode::UserProvidedParameterExp");
+                    BeAssert(m_idProxyBinder == nullptr && "Must not be called twice"); 
+                    m_idProxyBinder = &idBinder; 
                     }
+                ECSqlStatus InitializeIdPrimaryTableECInstanceIdBinder(SingleECSqlPreparedStatement&);
+                DbResult BindPrimaryTableECInstanceId(ECDbCR);
+                ECInstanceKey RetrieveLastInsertedKey(ECDbCR) const;
+
+                Mode GetMode() const { return m_mode; }
             };
 
-    private:
-        ECInstanceKeyInfo m_ecInstanceKeyInfo;
+        ECInstanceKeyHelper m_ecInstanceKeyHelper;
+        bool m_checkModifiedRowCountAfterStep = false;
 
         ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
 
-        ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId);
-
     public:
         explicit ECSqlInsertPreparedStatement(ECDb const& ecdb) : CompoundECSqlPreparedStatement(ecdb, ECSqlType::Insert) {}
-
         DbResult Step(ECInstanceKey&);
-        ECInstanceKeyInfo& GetECInstanceKeyInfo() { return m_ecInstanceKeyInfo; }
-        void SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo) { BeAssert(ecInstanceKeyInfo.GetECClassId().IsValid()); m_ecInstanceKeyInfo = ecInstanceKeyInfo; }
     };
 
 //=======================================================================================
@@ -208,11 +315,16 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct ECSqlDeletePreparedStatement final : LeafECSqlPreparedStatement
+struct ECSqlDeletePreparedStatement final : SingleECSqlPreparedStatement
     {
+private:
+    ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) override;
+
 public:
-    explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : LeafECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
+    explicit ECSqlDeletePreparedStatement(ECDb const& ecdb) : SingleECSqlPreparedStatement(ecdb, ECSqlType::Delete) {}
     DbResult Step();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
+#endif

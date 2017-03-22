@@ -42,7 +42,7 @@ private:
         { 
         BeAssert(GetMappedSqlParameterNames().size() == 1); 
         BeAssert(!GetMappedSqlParameterNames()[0].empty());
-        return GetSqliteStatementR().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+        return GetSqliteStatement().GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
         }
 
 public:

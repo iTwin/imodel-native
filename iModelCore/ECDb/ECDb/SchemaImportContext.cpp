@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "SchemaImportContext.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -72,7 +71,7 @@ bool SchemaImportContext::ClassMapSaveContext::NeedsSaving(ClassMap const& class
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECSchemaCompareContext::ReloadContextECSchemas(ECDbSchemaManager const& schemaManager)
+BentleyStatus SchemaCompareContext::ReloadContextECSchemas(SchemaManager const& schemaManager)
     {
     //We need to reload context schemas
     //if (HasNoSchemasToImport() || !RequiresUpdate())
@@ -92,7 +91,7 @@ BentleyStatus ECSchemaCompareContext::ReloadContextECSchemas(ECDbSchemaManager c
 
     for (Utf8StringCR name : existingSchemaNames)
         {
-        ECSchemaCP schema = schemaManager.GetECSchema(name.c_str());
+        ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
@@ -104,7 +103,7 @@ BentleyStatus ECSchemaCompareContext::ReloadContextECSchemas(ECDbSchemaManager c
 
     for (Utf8StringCR name : importingSchemaNames)
         {
-        ECSchemaCP schema = schemaManager.GetECSchema(name.c_str());
+        ECSchemaCP schema = schemaManager.GetSchema(name.c_str());
         if (schema == nullptr)
             {
             BeAssert(false && "Failed to reload a schema");
@@ -120,7 +119,7 @@ BentleyStatus ECSchemaCompareContext::ReloadContextECSchemas(ECDbSchemaManager c
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchemaCompareContext::AssertIfNotPrepared() const
+bool SchemaCompareContext::AssertIfNotPrepared() const
     {
     if (m_prepared)
         return false;
@@ -132,7 +131,7 @@ bool ECSchemaCompareContext::AssertIfNotPrepared() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
+ECSchemaCP SchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
     {
     if (AssertIfNotPrepared())
         return nullptr;
@@ -147,7 +146,7 @@ ECSchemaCP ECSchemaCompareContext::FindExistingSchema(Utf8CP schemaName) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchemaCompareContext::RequiresUpdate() const
+bool SchemaCompareContext::RequiresUpdate() const
     {
     AssertIfNotPrepared();
     return !m_existingSchemaList.empty();
@@ -155,7 +154,7 @@ bool ECSchemaCompareContext::RequiresUpdate() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaManager, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
+BentleyStatus SchemaCompareContext::Prepare(SchemaManager const& schemaManager, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
     {
     if (m_prepared)
         {
@@ -172,7 +171,7 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
             continue;
 
         doneList.insert(schema->GetFullSchemaName());
-        if (ECSchemaCP existingSchema = schemaManager.GetECSchema(schema->GetName().c_str(), true))
+        if (ECSchemaCP existingSchema = schemaManager.GetSchema(schema->GetName().c_str(), true))
             {
             if (existingSchema == schema)
                 continue;
@@ -185,9 +184,9 @@ BentleyStatus ECSchemaCompareContext::Prepare(ECDbSchemaManager const& schemaMan
 
     if (!m_existingSchemaList.empty())
         {
-        ECSchemaComparer comparer;
+        SchemaComparer comparer;
         //We do not require detail if schema is added or deleted the name and version suffice
-        ECSchemaComparer::Options options = ECSchemaComparer::Options(ECSchemaComparer::AppendDetailLevel::Partial, ECSchemaComparer::AppendDetailLevel::Partial);
+        SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::AppendDetailLevel::Partial, SchemaComparer::AppendDetailLevel::Partial);
         if (comparer.Compare(m_changes, m_existingSchemaList, m_importedSchemaList, options) != SUCCESS)
             return ERROR;
 

@@ -14,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointECSqlBinder::_BindNull()
     {
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto ehs = GetOnBindEventHandlers())
         {
         for (auto eh : *ehs)
@@ -23,8 +24,8 @@ ECSqlStatus PointECSqlBinder::_BindNull()
                 return es;
             }
         }
-
-    Statement& sqliteStmt = GetSqliteStatementR();
+#endif
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindNull(GetCoordSqlParamIndex(Coordinate::X));
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindNull against Point2d or Point3d property.");
@@ -54,6 +55,7 @@ ECSqlStatus PointECSqlBinder::_BindPoint2d(DPoint2dCR value)
         return ECSqlStatus::Error;
         }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto ehs = GetOnBindEventHandlers())
         {
         for (auto eh : *ehs)
@@ -63,8 +65,8 @@ ECSqlStatus PointECSqlBinder::_BindPoint2d(DPoint2dCR value)
                 return es;
             }
         }
-
-    Statement& sqliteStmt = GetSqliteStatementR();
+#endif
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint2d.");
@@ -87,6 +89,7 @@ ECSqlStatus PointECSqlBinder::_BindPoint3d(DPoint3dCR value)
         return ECSqlStatus::Error;
         }
 
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     if (auto ehs = GetOnBindEventHandlers())
         {
         for (auto eh : *ehs)
@@ -96,8 +99,8 @@ ECSqlStatus PointECSqlBinder::_BindPoint3d(DPoint3dCR value)
                 return es;
             }
         }
-
-    Statement& sqliteStmt = GetSqliteStatementR();
+#endif
+    Statement& sqliteStmt = GetSqliteStatement();
     DbResult sqliteStat = sqliteStmt.BindDouble(GetCoordSqlParamIndex(Coordinate::X), value.x);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindPoint3d.");

@@ -20,7 +20,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECDbTypes.h \
                 $(publicApiDir)ECDb.h \
                 $(publicApiDir)ECInstanceId.h \
-                $(publicApiDir)ECDbSchemaManager.h \
+                $(publicApiDir)SchemaManager.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
                 $(publicApiDir)IECSqlValue.h \
@@ -40,7 +40,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
                 $(baseDir)BeBriefcaseBasedIdSequence.h \
-                $(baseDir)ECDbMap.h \
+                $(baseDir)DbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
@@ -48,18 +48,19 @@ ECDbAllHeaders = \
                 $(baseDir)PropertyMapVisitor.h \
                 $(baseDir)ClassMapper.h \
                 $(baseDir)ClassMapPersistenceManager.h \
-                $(baseDir)ECDbSchemaPersistenceHelper.h \
-                $(baseDir)ECDbSchemaReader.h \
-                $(baseDir)ECDbSchemaWriter.h \
-                $(baseDir)ECSchemaValidator.h \
+                $(baseDir)SchemaPersistenceHelper.h \
+                $(baseDir)SchemaReader.h \
+                $(baseDir)SchemaWriter.h \
+                $(baseDir)SchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
+                $(baseDir)SchemaComparer.h \
                 $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
-                $(baseDir)ECDbProfileManager.h \
-                $(baseDir)ECDbProfileUpgrader.h \
+                $(baseDir)ProfileManager.h \
+                $(baseDir)ProfileUpgrader.h \
                 $(baseDir)ECDbSystemSchemaHelper.h \
                 $(baseDir)ECDbMapSchemaHelper.h \
-                $(baseDir)ECDbPolicyManager.h \
+                $(baseDir)PolicyManager.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
@@ -114,7 +115,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
-                $(baseDir)ECSchemaComparer.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
                 $(baseDir)ClassMapColumnFactory.h \
@@ -160,7 +160,7 @@ $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogg
 
 $(o)BeBriefcaseBasedIdSequence$(oext):                        $(baseDir)BeBriefcaseBasedIdSequence.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbMap$(oext):                                           $(baseDir)ECDbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -190,23 +190,25 @@ $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp
 
 $(o)IssueReporter$(oext):                                     $(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaPersistenceHelper$(oext):                       $(baseDir)ECDbSchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaPersistenceHelper$(oext):                           $(baseDir)SchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaReader$(oext):                                  $(baseDir)ECDbSchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaReader$(oext):                                      $(baseDir)SchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaWriter$(oext):                                  $(baseDir)ECDbSchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaWriter$(oext):                                      $(baseDir)SchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaManager$(oext):                                 $(baseDir)ECDbSchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaValidator$(oext):                                 $(baseDir)ECSchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaValidator$(oext):                                   $(baseDir)SchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbPolicyManager$(oext):                                 $(baseDir)ECDbPolicyManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)SchemaComparer$(oext):                                    $(baseDir)SchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbProfileManager$(oext):                                $(baseDir)ECDbProfileManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PolicyManager$(oext):                                     $(baseDir)PolicyManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbProfileUpgrader$(oext):                               $(baseDir)ECDbProfileUpgrader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ProfileManager$(oext):                                    $(baseDir)ProfileManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ProfileUpgrader$(oext):                                   $(baseDir)ProfileUpgrader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSystemSchemaHelper$(oext):                            $(baseDir)ECDbSystemSchemaHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -346,9 +348,7 @@ $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchema
 
 $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassMapColumnFactory$(oext):                                   $(baseDir)ClassMapColumnFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMapColumnFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

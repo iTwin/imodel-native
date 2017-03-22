@@ -150,7 +150,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
                 ColumnFactory& GetColumnFactory() { return m_columnFactory; }
             };
 
-        struct ForeignKeyColumnInfo : NonCopyableClass
+        struct ForeignKeyColumnInfo final: NonCopyableClass
             {
             private:
                 bool m_canImplyFromNavigationProperty;
@@ -193,7 +193,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 
         RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        void AddIndexToRelationshipEnd();
+        void AddIndexToRelationshipEnd(RelationshipMappingInfo const&);
 
         ClassMappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, ForeignKeyColumnInfo const&, DbColumn const& fkCol) const;
@@ -250,12 +250,12 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         ClassMappingStatus _Map(ClassMappingContext&) override;
         ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);
 
-        ClassMappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
+        ClassMappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, bool addTargetECClassIdColumnToTable);
 
         void AddIndices(ClassMappingContext&, bool allowDuplicateRelationship);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
         DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
-        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
+        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECRelationshipConstraintCR constraint) const;
 
 
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;

@@ -109,7 +109,7 @@ void CreateDeleteReferentialIntegrityTestDb(BeFileNameR testDbPath)
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlString(schema, schemaXml, *context);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
     }
 
 void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
@@ -127,14 +127,14 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
-    ECClassCP cachedInfoClass = ecdb.Schemas().GetECClass(testSchemaName, "CachedInfoClass");
+    ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
 
-    ECClassCP tempClass = ecdb.Schemas().GetECClass(testSchemaName, "TestClassRelationship");
+    ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
     ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    tempClass = ecdb.Schemas().GetECClass(testSchemaName, "CachedInfoClassRelationship");
+    tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
     ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
 
     // insert test data
@@ -142,11 +142,11 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     for (int i = 0; i < childCount; i++)
         {
         ECInstanceKey childKey = InsertInstance(ecdb, testClass);
-        RelateInstances(ecdb, testClass, testECInstanceKey.GetECInstanceId(), testClass, childKey.GetECInstanceId(), testRelationshipClass);
+        RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
         if (withRelationsToCachedInfo)
             {
             ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
-            RelateInstances(ecdb, cachedInfoClass, infoKey.GetECInstanceId(), testClass, childKey.GetECInstanceId(), cachedInfoRelationshipClass);
+            RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
             }
         }
 
@@ -157,7 +157,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
     //printf ("Attach to profiler\n");
     //getchar ();
@@ -165,7 +165,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     // Delete
     StopWatch timer(true);
     ECInstanceDeleter deleter(ecdb, *testClass, nullptr);
-    auto status = deleter.Delete(testECInstanceKey.GetECInstanceId());
+    auto status = deleter.Delete(testECInstanceKey.GetInstanceId());
     timer.Stop();
     ASSERT_EQ(SUCCESS, status);
 
@@ -196,14 +196,14 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testDbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    ECClassCP testClass = ecdb.Schemas().GetECClass(testSchemaName, testClassName);
+    ECClassCP testClass = ecdb.Schemas().GetClass(testSchemaName, testClassName);
 
-    ECClassCP cachedInfoClass = ecdb.Schemas().GetECClass(testSchemaName, "CachedInfoClass");
+    ECClassCP cachedInfoClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClass");
 
-    ECClassCP tempClass = ecdb.Schemas().GetECClass(testSchemaName, "TestClassRelationship");
+    ECClassCP tempClass = ecdb.Schemas().GetClass(testSchemaName, "TestClassRelationship");
     ECRelationshipClassCP testRelationshipClass = tempClass->GetRelationshipClassCP();
 
-    tempClass = ecdb.Schemas().GetECClass(testSchemaName, "CachedInfoClassRelationship");
+    tempClass = ecdb.Schemas().GetClass(testSchemaName, "CachedInfoClassRelationship");
     ECRelationshipClassCP cachedInfoRelationshipClass = tempClass->GetRelationshipClassCP();
 
     // insert test data
@@ -211,11 +211,11 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     for (int i = 0; i < childCount; i++)
         {
         ECInstanceKey childKey = InsertInstance(ecdb, testClass);
-        RelateInstances(ecdb, testClass, testECInstanceKey.GetECInstanceId(), testClass, childKey.GetECInstanceId(), testRelationshipClass);
+        RelateInstances(ecdb, testClass, testECInstanceKey.GetInstanceId(), testClass, childKey.GetInstanceId(), testRelationshipClass);
         if (withRelationsToCachedInfo)
             {
             ECInstanceKey infoKey = InsertInstance(ecdb, cachedInfoClass);
-            RelateInstances(ecdb, cachedInfoClass, infoKey.GetECInstanceId(), testClass, childKey.GetECInstanceId(), cachedInfoRelationshipClass);
+            RelateInstances(ecdb, cachedInfoClass, infoKey.GetInstanceId(), testClass, childKey.GetInstanceId(), cachedInfoRelationshipClass);
             }
         }
 
@@ -235,7 +235,7 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     ECSqlStatement stmt;
     auto preparedStatus = stmt.Prepare(ecdb, SqlPrintfString("DELETE FROM ONLY [%s].[%s] WHERE ECInstanceId = ?", testSchemaName, testClassName).GetUtf8CP());
     ASSERT_EQ(ECSqlStatus::Success, preparedStatus);
-    stmt.BindId(1, testECInstanceKey.GetECInstanceId());
+    stmt.BindId(1, testECInstanceKey.GetInstanceId());
     auto stepStatus = stmt.Step();
     ASSERT_EQ(BE_SQLITE_DONE, stepStatus);
     timer.Stop();

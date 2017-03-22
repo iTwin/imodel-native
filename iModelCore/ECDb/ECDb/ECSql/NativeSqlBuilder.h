@@ -17,7 +17,7 @@ struct ECSqlParameter;
 //=======================================================================================
 // @bsiclass                                             Krischan.Eberle    08/2013
 //+===============+===============+===============+===============+===============+======
-struct NativeSqlBuilder
+struct NativeSqlBuilder final
     {
     public:
 
@@ -70,7 +70,7 @@ struct NativeSqlBuilder
         NativeSqlBuilder& AppendIf(bool condition, Utf8CP stringLiteral) { if (condition) Append(stringLiteral); return *this; }
         NativeSqlBuilder& AppendIIf(bool condition, Utf8CP trueStr, Utf8CP falseStr) { return condition ? Append(trueStr) : Append(falseStr); }
 
-        void Reset();
+        void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
 
@@ -82,7 +82,7 @@ struct NativeSqlBuilder
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct SqlUpdateBuilder
+struct SqlUpdateBuilder final
     {
 private:
     Utf8String m_table;

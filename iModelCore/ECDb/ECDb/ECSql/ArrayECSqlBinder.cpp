@@ -53,7 +53,7 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
     rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStr);
     m_json.Accept(writer);
 
-    Statement& sqliteStmt = GetSqliteStatementR();
+    Statement& sqliteStmt = GetSqliteStatement();
     BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
     const int sqlParamIx = sqliteStmt.GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
     const DbResult dbRes = sqliteStmt.BindText(sqlParamIx, jsonStr.GetString(), Statement::MakeCopy::Yes);

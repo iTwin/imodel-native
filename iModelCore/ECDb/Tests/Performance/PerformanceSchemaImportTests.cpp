@@ -195,13 +195,13 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         schemas.push_back(ecSchema.get());
 
         StopWatch timer(true);
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemas));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemas));
         timer.Stop();
         importTime = timer.GetElapsedSeconds();
         ecdb.SaveChanges();
 
         timer.Start();
-        ECSchemaCP ecschema = ecdb.Schemas().GetECSchema("TestSchema", true);
+        ECSchemaCP ecschema = ecdb.Schemas().GetSchema("TestSchema", true);
         timer.Stop();
         schemaExportTime = timer.GetElapsedSeconds();
         ASSERT_TRUE(ecschema != nullptr);
@@ -229,7 +229,7 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     ASSERT_TRUE(schemaptr != nullptr);
 
     StopWatch timer(true);
-    BentleyStatus stat = ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas());
+    BentleyStatus stat = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
     timer.Stop();
     ASSERT_EQ(SUCCESS, stat);
 

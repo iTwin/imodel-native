@@ -54,7 +54,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     ASSERT_TRUE(customAttribute != nullptr);
     ASSERT_TRUE(baseClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
 
     GenerateECSqlCRUDTestStatements(*testSchema, false);
     ECSqlInsertInstances(ecdb, true, 1);
@@ -127,7 +127,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     ASSERT_TRUE(customAttribute->SetValue("MapStrategy", ECValue("TablePerHierarchy")) == ECObjectsStatus::Success);
     ASSERT_TRUE(baseClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
 
     GenerateECSqlCRUDTestStatements(*testSchema, false);
     ECSqlInsertInstances(ecdb, true, 1);
@@ -187,7 +187,7 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy(*testSchema, hierarchyLevel, *baseClass);
 
-    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
 
     GenerateECSqlCRUDTestStatements(*testSchema, false);
     ECSqlInsertInstances(ecdb, true, 1);

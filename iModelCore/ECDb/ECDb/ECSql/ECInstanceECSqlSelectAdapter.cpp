@@ -53,7 +53,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance(ECN::ECClassId ecC
         return nullptr;
 
     /* Create instance */
-    ECClassCP ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(ecClassid);
+    ECClassCP ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetClass(ecClassid);
     if (ecClass == nullptr)
         return nullptr;
 
@@ -83,7 +83,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
     if (-1 != m_ecClassIdColumnIndex)
         {
         IECSqlValue const& value = m_ecSqlStatement.GetValue(m_ecClassIdColumnIndex);
-        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(value.GetId<ECClassId>());
+        ecClass = m_ecSqlStatement.GetECDb()->Schemas().GetClass(value.GetId<ECClassId>());
         }
     else
         {
@@ -367,7 +367,7 @@ IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint(ECInstance
     {
     IECInstancePtr instance;
 
-    ECClassCP endpointClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(endpointClassId);
+    ECClassCP endpointClass = m_ecSqlStatement.GetECDb()->Schemas().GetClass(endpointClassId);
     if (nullptr == endpointClass)
         return instance;
 

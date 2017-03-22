@@ -63,8 +63,12 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         }
 
     nativeSql = context.GetNativeSql();
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
     ECSqlParameterMap& parameterMap = context.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
     return parameterMap.RemapForJoinTable(context);
+#else
+    return ECSqlStatus::Success;
+#endif
     }
 
 //************** ECSqlExpPreparer *******************************
@@ -483,16 +487,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     {
     const ECSqlType currentScopeECSqlType = ctx.GetCurrentScope().GetECSqlType();
     ClassMap const& classMap = exp.GetInfo().GetMap();
-    if (ctx.IsPrimaryStatement() && !ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
+
+#ifndef ECSQLPREPAREDSTATEMENT_REFACTOR
+    if (!ctx.IsParentOfJoinedTable() /*Disable abstract class test for joinedTable*/)
         {
-        ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
+        Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.IsPolymorphic()));
         if (!policy.IsSupported())
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
             return ECSqlStatus::InvalidECSql;
             }
         }
-
+#endif
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
@@ -915,6 +921,46 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
     return ECSqlStatus::Success;
     }
 
+#ifdef ECSQLPREPAREDSTATEMENT_REFACTOR
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ParameterExp const& exp)
+    {
+    BeAssert(exp.GetTypeInfo().GetKind() != ECSqlTypeInfo::Kind::Unset);
+
+    BeAssert(ctx.GetPreparedStatement().GetType() != ECSqlType::Insert || exp.IsNamedParameter() && "For INSERT parameters ECDb conversts all params to named ones");
+
+    ECSqlParameterMap& ecsqlParameterMap = ctx.GetPreparedStatement().GetParameterMapR();
+    ECSqlBinder* binder = nullptr;
+    const bool binderAlreadyExists = exp.IsNamedParameter() && ecsqlParameterMap.TryGetBinder(binder, exp.GetParameterName());
+    if (!binderAlreadyExists)
+        {
+        binder = ecsqlParameterMap.AddBinder(ctx, exp);
+        if (binder == nullptr)
+            return ECSqlStatus::Error;
+        }
+
+    for (Utf8StringCR sqlParamName : binder->GetMappedSqlParameterNames())
+        {
+        NativeSqlBuilder parameterBuilder;
+        if (exp.HasParentheses())
+            parameterBuilder.AppendParenLeft();
+
+        parameterBuilder.Append(sqlParamName.c_str());
+
+        if (exp.HasParentheses())
+            parameterBuilder.AppendParenRight();
+
+        nativeSqlSnippets.push_back(parameterBuilder);
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+#else
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -949,7 +995,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp(NativeSqlBuilder::List& native
 
     return ECSqlStatus::Success;
     }
-
+#endif
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1399,7 +1445,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(ECSqlPrepareContext& ctx, S
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryValueExp const& exp)
     {
-    Utf8String a = ctx.GetSqlBuilder().ToString();
     ctx.GetSqlBuilderR().Push(true);
     ECSqlStatus st = PrepareSubqueryExp(ctx, *exp.GetQuery());
     nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilderR().Pop().c_str()));

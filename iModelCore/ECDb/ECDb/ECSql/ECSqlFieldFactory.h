@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlFieldFactory
+struct ECSqlFieldFactory final
     {
     private:
         //static class
@@ -34,6 +34,8 @@ struct ECSqlFieldFactory
 
         static ECSqlColumnInfo CreateECSqlColumnInfoFromPropertyNameExp(ECSqlPrepareContext const&, PropertyNameExp const&);
         static ECSqlColumnInfo CreateECSqlColumnInfoFromGeneratedProperty(ECSqlPrepareContext const&, ECN::ECPropertyCR generatedProperty);
+
+        static ECSqlSelectPreparedStatement& GetPreparedStatement(ECSqlPrepareContext&);
 
     public:
         static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);

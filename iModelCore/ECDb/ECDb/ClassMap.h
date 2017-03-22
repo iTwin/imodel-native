@@ -15,7 +15,7 @@
 #include "ClassMapColumnFactory.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECDbMap;
+struct DbMap;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
@@ -40,7 +40,7 @@ public:
         m_navPropMaps.push_back(&propMap); 
         }
 
-    BentleyStatus Postprocess(ECDbMap const&);
+    BentleyStatus Postprocess(DbMap const&);
     };
 
 struct NativeSqlBuilder;
@@ -76,7 +76,7 @@ struct ClassMap : RefCountedBase
             Clone //! inherited property maps are cloned from the base class property map
             };
 
-        struct TablePerHierarchyHelper
+        struct TablePerHierarchyHelper final
             {
         private:
             ClassMap const& m_classMap;
@@ -94,7 +94,7 @@ struct ClassMap : RefCountedBase
             };
 
     protected:
-        struct ClassMappingContext : NonCopyableClass
+        struct ClassMappingContext final : NonCopyableClass
             {
             private:
                 SchemaImportContext& m_importCtx;
@@ -145,6 +145,8 @@ struct ClassMap : RefCountedBase
         BentleyStatus MapSystemColumns();
 
     public:
+        virtual ~ClassMap() {}
+
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new ClassMap(ecdb, Type::Class, ecClass, mapStrategy, setIsDirty); }
 
         template<typename TClassMap>
@@ -172,7 +174,7 @@ struct ClassMap : RefCountedBase
 
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-        ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
+        DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         Utf8String GetUpdatableViewName() const;
         DbTable const* ExpectingSingleTable() const;
 
@@ -199,7 +201,7 @@ struct ClassMap : RefCountedBase
 //! A class map indicating that the respective ECClass was @b not mapped to a DbTable
 // @bsiclass                                                Krischan.Eberle      02/2014
 //+===============+===============+===============+===============+===============+======
-struct NotMappedClassMap : public ClassMap
+struct NotMappedClassMap final : public ClassMap
     {
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}
