@@ -1067,7 +1067,9 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     {
     auto const& found = m_textureImages.find (&textureImage);
 
-    if (found != m_textureImages.end())
+    // For composite tiles, we must ensure that the texture is defined for each individual tile - cannot share
+    bool textureExists = found != m_textureImages.end();
+    if (textureExists && tileData.m_json.isMember("textures") && tileData.m_json["textures"].isMember(found->second.c_str()))
         return found->second;
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
@@ -1201,7 +1203,8 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         tileData.AddBinaryData (imageData.data(), imageData.size());
         }
 
-    m_textureImages.Insert (&textureImage, textureId);
+    if (!textureExists)
+        m_textureImages.Insert (&textureImage, textureId);
 
     return textureId;
     }
