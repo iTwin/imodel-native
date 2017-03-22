@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
     bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
 
-    if (status != RequestStatus::ERROR) // SUCCESS OR NOMOREPAGES
+    if (status != RequestStatus::ERROR) // SUCCESS OR LASTPAGE
         {
         std::cout << "Number of spatial entities found for filter : " << std::endl;
         std::cout << filteredSpatialEntities.size() << std::endl;

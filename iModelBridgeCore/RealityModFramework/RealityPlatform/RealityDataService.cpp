@@ -60,6 +60,8 @@ struct RealityDataFileTransfer : public RealityDataUrl
             m_requestWithToken = m_httpRequestString;
             m_requestWithToken.append(m_azureToken);
 
+            m_requestWithToken.ReplaceAll(" ", "%20");
+
             return m_requestWithToken;
         };
 
@@ -203,7 +205,7 @@ private:
 struct RealityDataFileDownload : public RealityDataFileTransfer
 {
 public:
-    RealityDataFileDownload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index, uint64_t fileSize) :
+    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize) :
         iAppend(0)
         {
         m_azureServer = azureServer;
@@ -213,11 +215,7 @@ public:
         m_transferProgress = 0;
         nbRetry = 0;
         m_validRequestString = false;
-        Utf8String fileFromRoot = filename.GetNameUtf8();
-        fileFromRoot.ReplaceAll(root.GetNameUtf8().c_str(), "");
-        m_fileUrl = "/";
-        m_fileUrl.append(fileFromRoot);
-        m_fileUrl.ReplaceAll("\\", "/");
+        m_fileUrl = fileUrl;
 
         m_requestType = HttpRequestType::GET_Request;
         }
@@ -616,12 +614,16 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
     m_httpRequestString.append("/RealityData?");
+
     if (m_filter.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("$filter=%s&", m_filter));
     if (m_order.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("%s&", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("'$skip=%u&$top=%u", m_startIndex, m_pageSize));
+    
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
 }
 
 //=====================================================================================
@@ -708,6 +710,11 @@ void RealityDataPagedRequest::SortBy(RealityDataField field, bool ascending)
 void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter; }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataPagedRequest::SetQuery(Utf8StringCR query) { m_query = query; }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
@@ -741,6 +748,9 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order)); 
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
 }
 
 //=====================================================================================
@@ -759,6 +769,9 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
     }
 
 //=====================================================================================
@@ -777,6 +790,9 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
         m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
+
+    if (m_query.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
     }
 
 //=====================================================================================
@@ -903,8 +919,7 @@ RealityDataRelationshipCreate::RealityDataRelationshipCreate(Utf8String realityD
 void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append("/RealityData/");
-    m_httpRequestString.append(m_id);
+    m_httpRequestString.append("/RealityDataProjectRelationship");
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
@@ -914,13 +929,8 @@ void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
 RealityDataServiceTransfer::~RealityDataServiceTransfer()
     {
     delete m_handshakeRequest;
-
-    // Delete all file transfers
-    // &&AR Desactivated because the entries are supposed to be already deleted but the 
-    // list still pointing to freed objects ...
-    //for (auto fileTransfer : m_filesToTransfer)
-    //    delete fileTransfer;
-
+    for (RealityDataFileTransfer* fileTransfer : m_filesToTransfer)
+        delete fileTransfer;
     }
 
 //=====================================================================================
@@ -956,7 +966,7 @@ bool RealityDataFileUpload::FinishedSending()
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataFileUpload::UpdateTransferedSize()//uint32_t amount, void* ptr)
+void RealityDataFileUpload::UpdateTransferedSize()
     {
     if(m_transferProgress < m_fileSize - 1)
         {
@@ -989,6 +999,7 @@ void RealityDataFileUpload::UpdateTransferedSize()//uint32_t amount, void* ptr)
         m_moreToSend = false;
         m_blockList.append("</BlockList>");
         m_chunkSize = m_blockList.length();
+        m_validRequestString = false;
         }
     }
 
@@ -1156,53 +1167,55 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
 //=====================================================================================
 BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     {
-    RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
     Utf8String response;
-    if (m_id.length() == 0 || RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
+    if(m_id.length() == 0)
         {
         RealityDataCreate createRequest = RealityDataCreate(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
-        if (m_id.length() != 0 && RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
+    
+        Json::Value instance(Json::objectValue);
+        Json::Reader::Parse(response, instance);
+        if (!instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
             {
-            ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
-            return BentleyStatus::ERROR;
+            m_id = instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id).c_str());
             }
         else
             {
-            Json::Value instances(Json::objectValue);
-            Json::Reader::Parse(response, instances);
-            if(instances["instances"].size() > 1)
-                {
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("RealityData creation failed for GUID %s\n", m_id).c_str());
-                return BentleyStatus::ERROR;
-                }
-            else if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
-                {
-                m_id = instances["instances"][0]["instanceId"].asString();
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id).c_str());
-                }
-            else
-                {
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("RealityData creation failed for GUID %s\n", m_id).c_str());
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", response).c_str());
-                return BentleyStatus::ERROR;
-                }
+            ReportStatus(0, nullptr, -1, "RealityData creation failed\n");
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", response).c_str());
+            return BentleyStatus::ERROR;
             }
         }
-    else if (!m_overwrite)
+    else
         {
-        ReportStatus(0, nullptr, -1, "RealityData with specified GUID already exists on server. Overwrite variable not specified, aborting operation");
-        return BentleyStatus::ERROR;
+        RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
+        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
+            {
+            RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
+            int status;
+            response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
+            if(response.ContainsI("error"))
+                {
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", response).c_str());
+                return BentleyStatus::ERROR;
+                }
+            if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
+                {
+                ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
+                return BentleyStatus::ERROR;
+                }
+            
+            }
+        else if (!m_overwrite)
+            {
+            ReportStatus(0, nullptr, -1, "RealityData with specified GUID already exists on server. Overwrite variable not specified, aborting operation");
+            return BentleyStatus::ERROR;
+            }
+        delete getRequest;
         }
 
-    delete getRequest;
-    Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(response, instances);
-    if(!instances["instances"].isNull() && !instances["instances"][0]["properties"].isNull() &&!instances["instances"][0]["properties"]["ThumbnailDocument"].isNull())
-        m_thumbnailDocument = instances["ThumbnailDocument"].asString();
-    if(!instances["instances"].isNull() && !instances["instances"][0]["properties"].isNull() && !instances["instances"][0]["properties"]["RootDocument"].isNull())
-        m_rootDocument = instances["RootDocument"].asString();
     return BentleyStatus::SUCCESS;
     }
 
@@ -1360,7 +1373,12 @@ TransferReport* RealityDataServiceTransfer::Perform()
                             }  
                         }
                     else
+                        {
+                        long code;
+                        curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &code);
                         ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                        ReportStatus(0, nullptr, -1, Utf8PrintfString("\nServer returned code %ld\n", code).c_str());
+                        }
                     }
                            
                     
@@ -1488,28 +1506,32 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
 //=====================================================================================
 void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
     {
-    if(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK))
-        return;
-
-    if (m_pStatusFunc)
-        m_pStatusFunc(index, pClient, ErrorCode, pMsg);
-
     RealityDataFileTransfer* pEntry = (RealityDataFileTransfer*)pClient;
 
-    if(pEntry == nullptr)
+    if(!(m_onlyReportErrors && ErrorCode == static_cast<int>(CURLE_OK)))
+        {
+        if (m_pStatusFunc)
+            m_pStatusFunc(index, pClient, ErrorCode, pMsg);
+
+        if(pEntry == nullptr)
+            return;
+
+        TransferResult* tr = new TransferResult();
+        tr->errorCode = ErrorCode;
+        uint64_t uploadSize = pEntry->GetFileSize();
+        if(uploadSize > 0)
+            tr->progress = (100 * pEntry->GetTransferedSize() / pEntry->GetFileSize());
+        else
+            tr->progress = 100;
+        tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
+        tr->name = pEntry->GetFilename();
+        m_report.results.push_back(tr);
+        }
+
+    if (pEntry == nullptr)
         return;
 
-    TransferResult* tr = new TransferResult();
-    tr->errorCode = ErrorCode;
-    uint64_t uploadSize = pEntry->GetFileSize();
-    if(uploadSize > 0)
-        tr->progress = (100 * pEntry->GetTransferedSize() / pEntry->GetFileSize());
-    else
-        tr->progress = 100;
-    tr->timeSpent = std::time(nullptr) - pEntry->GetStartTime();
-    tr->name = pEntry->GetFilename();
-    m_report.results.push_back(tr);
-
+    m_filesToTransfer[pEntry->m_index] = nullptr;
     delete pEntry;
     }
 
@@ -1578,7 +1600,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 
     if(uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {
-        uploadPath.AppendToPath(L"/");
+        uploadPath.AppendSeparator();
 
         BeFileName root(uploadPath);
 
@@ -1634,11 +1656,28 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
     BeFileName downloadLocation;
     WString path;
+    WString fileUrl;
+    Utf8String utf8FileUrl;
     size_t parts;
+
+    WString root;
+    BeStringUtilities::Utf8ToWChar(root, m_id.c_str());
+    bvector<WString> folders;
+    BeStringUtilities::Split(root.c_str(),L"/", folders);
+    WString guid = folders[0];
+    guid.append(L"/");
+    root.ReplaceAll(guid.c_str(), L""); //remove guid from root
 
     for( int i = 0; i < filesInRepo.size(); ++i)
         {
         path = filesInRepo[i].first;
+
+        fileUrl = L"/";
+        fileUrl.append(path);
+        fileUrl.ReplaceAll(L"\\", L"/");
+        BeStringUtilities::WCharToUtf8(utf8FileUrl, fileUrl.c_str());
+
+        path.ReplaceAll(root.c_str(), L""); // if user downloader Folder1/Folder2/Data1, it should download to Data1, not Folder1/Folder2/Data1
         parts = path.ReplaceAll(L"/", L"/"); // only way I've found to count occurences in a string, replace if better exists
         if(parts > 0) //if file is in a directory
             {
@@ -1652,8 +1691,8 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 
         downloadLocation = targetLocation;
         downloadLocation.AppendToPath(path.c_str());
-
-        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, targetLocation, m_azureServer, i, filesInRepo[i].second));
+        
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
         }
 
     m_fullTransferSize = m_filesToTransfer.size();
@@ -1724,7 +1763,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
         {
         RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
-            status = RequestStatus::NOMOREPAGES;
+            status = RequestStatus::LASTPAGE;
         }
 
     return entities;
@@ -1917,7 +1956,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
         {
         RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
         if ((uint16_t)entities.size() < request.GetPageSize())
-            status = RequestStatus::NOMOREPAGES;
+            status = RequestStatus::LASTPAGE;
         }
 
     return entities;
@@ -2003,7 +2042,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRela
         for (auto instance : instances["instances"])
             relations.push_back(RealityDataProjectRelationship::Create(instance));
         if ((uint8_t)relations.size() < request->GetPageSize())
-            status = RequestStatus::NOMOREPAGES;
+            status = RequestStatus::LASTPAGE;
         }
 
     return relations;

@@ -30,6 +30,7 @@ struct NodeList
 
 enum class Command
     {
+    Dummy,
     Quit,
     Retry,
     Error,
@@ -51,7 +52,8 @@ enum class Command
     Delete,
     Filter,
     Relationships,
-    CreateRD
+    CreateRD,
+    Link
     };
 
 struct RealityDataConsole
@@ -90,6 +92,7 @@ public:
     void Filter();
     void Relationships();
     void CreateRD();
+    void Link();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
@@ -110,6 +113,7 @@ private:
     Utf8String           m_groupFilter;
     Utf8String           m_typeFilter;
     Utf8String           m_ownerFilter;
+    Utf8String           m_queryFilter;
 
     HANDLE        m_hConsole;
     };
