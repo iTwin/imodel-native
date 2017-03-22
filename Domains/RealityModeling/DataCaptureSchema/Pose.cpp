@@ -227,22 +227,60 @@ bool Pose::IsEqual(PoseCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-YawPitchRollAngles Pose::GetYawPitchRoll() const
+YawPitchRollAngles Pose::GetYawPitchRoll(YPRConvention convention) const
     {
     RotMatrix rotation(GetRotMatrix());
     rotation.Transpose();
-
     YawPitchRollAngles angles;
-    if (!YawPitchRollAngles::TryFromRotMatrix(angles, rotation))
-        BeAssert(!"Cannot convert rotation matrix to angles");
+    switch (convention)
+        {
+        case YPRConvention::DgnDb:
+            {
+            if (!YawPitchRollAngles::TryFromRotMatrix(angles, rotation))
+                BeAssert(!"Cannot convert rotation matrix to angles");
+            }
+            break;
+        case YPRConvention::ENU_NorthForward:
+            {
+            double yaw(0.0);
+            double pitch(0.0);
+            double roll(0.0);
+            ContextCaptureFacility::Matrix2YawPitchRoll(rotation,yaw,pitch,roll);
+            angles = YawPitchRollAngles::FromRadians(yaw,pitch,roll);
+            }
+            break;
+        default:
+            BeAssert(!"Unknown convention for Yaw Pitch Roll angles");
+            break;
+        }
     return angles;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Pose::SetYawPitchRoll(YawPitchRollAnglesCR angles)
+void Pose::SetYawPitchRoll(YawPitchRollAnglesCR angles,YPRConvention convention)
     {
-    RotMatrix rotMatrixLocal(angles.ToRotMatrix());
+    RotMatrix rotMatrixLocal;
+
+    switch (convention)
+        {
+        case YPRConvention::DgnDb:
+            {
+            rotMatrixLocal= angles.ToRotMatrix();
+            }
+            break;
+        case YPRConvention::ENU_NorthForward:
+            {
+            double yaw(angles.GetYaw().Radians());
+            double pitch(angles.GetPitch().Radians());
+            double roll(angles.GetRoll().Radians());
+            rotMatrixLocal = ContextCaptureFacility::YawPitchRoll2Matrix(yaw, pitch, roll);
+            }
+            break;
+        default:
+            BeAssert(!"Unknown convention for Yaw Pitch Roll angles");
+            break;
+        }
     SetRotMatrix(rotMatrixLocal);
     }
 
