@@ -709,6 +709,8 @@
 
     <Part Name="CWSCC-Android-Sample-GetProjects" BentleyBuildMakeFile="ConnectC/Samples/Android/GetProjects/GetProjects.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Tools-AndroidShared" />
+        <SubPart PartName="WebServiceClientComponents" />
+        <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
     </Part>
 
 
