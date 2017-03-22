@@ -734,7 +734,7 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
     if (nullptr == fmtP)  // invalid name
@@ -747,7 +747,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
     NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
     // there are two major options here: the format is a pure Numeric or it has a composite specification
