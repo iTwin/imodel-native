@@ -1378,21 +1378,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
-
-    switch (map.GetNumIndices())
-        {
-        case 0:
-            BeAssert(false && "empty color map");
-            m_colorDimension = TilePublish::ColorIndex::Dimension::None;
-            break;
-        case 1:
-            m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
-            break;
-        default:
-            m_colorDimension = map.GetNumIndices() <= TilePublish::ColorIndex::GetMaxWidth() ? TilePublish::ColorIndex::Dimension::One : TilePublish::ColorIndex::Dimension::Two;
-            break;
-        }
-
+    m_colorDimension = ColorIndex::CalcDimension(map.GetNumIndices());
     m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
 
     if (0 != displayParams.GetLinePixels())
@@ -1503,9 +1489,10 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
 
     if (!m_ignoreLighting && params.GetMaterialId().IsValid())
         {
-        auto jsonMat = RenderingAsset::Load(params.GetMaterialId(), db);
-        if (nullptr != jsonMat)
+        auto material = DgnMaterial::Get(db, params.GetMaterialId());
+        if (material.IsValid())
             {
+            auto jsonMat = &material->GetRenderingAsset();
             m_overridesRgb = jsonMat->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false);
             m_overridesAlpha = jsonMat->GetBool(RENDER_MATERIAL_FlagHasTransmit, false);
 
@@ -1539,30 +1526,9 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
     m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
 
     if (m_overridesAlpha && m_overridesRgb)
-        {
-        m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
-        }
+        m_colorDimension = ColorIndex::Dimension::Zero;
     else
-        {
-        uint16_t nColors = mesh.GetColorIndexMap().GetNumIndices();
-        if (0 == nColors)
-            {
-            BeAssert(false && "empty color map");
-            m_colorDimension = TilePublish::ColorIndex::Dimension::None;
-            }
-        else if (1 == nColors)
-            {
-            m_colorDimension = TilePublish::ColorIndex::Dimension::Zero;
-            }
-        else if (nColors <= TilePublish::ColorIndex::GetMaxWidth())
-            {
-            m_colorDimension = TilePublish::ColorIndex::Dimension::One;
-            }
-        else
-            {
-            m_colorDimension = TilePublish::ColorIndex::Dimension::Two;
-            }
-        }
+        m_colorDimension = ColorIndex::CalcDimension(mesh.GetColorIndexMap().GetNumIndices());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2478,6 +2444,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
     bvector<uint16_t>           attributes, colors;
     bvector<uint32_t>           indices;
     bvector<double>             distances;
+    double                      minLength = 0.0, maxLength = 0.0;
     bool                        doColors = TilePublish::ColorIndex::Dimension::Zero != mat.GetColorIndexDimension();
 
     for (auto const& polyline : mesh.Polylines())
@@ -2513,6 +2480,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
             distances.push_back(cumulativeLength);
             scalePoints.push_back(rangeCenter);
             }
+        maxLength = std::max(maxLength, cumulativeLength);
         }
 
     Json::Value     primitive = Json::objectValue;
@@ -2527,7 +2495,7 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
 
     if (mat.IsTextured())
         {
-        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &distances.front(), &distances.back());
+        primitive["attributes"]["DISTANCE"]  = AddMeshVertexAttributes (tileData, &distances.front(), "Distance", idStr.c_str(), 1, distances.size(), "SCALAR", VertexEncoding::StandardQuantization, &minLength, &maxLength);
         primitive["attributes"]["TEXSCALEPNT"]  = AddMeshVertexAttributes (tileData, &scalePoints.front().x, "TexScalePnt", idStr.c_str(), 3, scalePoints.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
         }
 
@@ -3000,7 +2968,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
     
     for (auto& categoryId : categoryIds)
         {
-        auto const& category = SpatialCategory::Get(GetDgnDb(), categoryId);
+        auto const& category = DgnCategory::Get(GetDgnDb(), categoryId);
 
         if (category.IsValid())
             categoryJson[categoryId.ToString()] = category->GetCategoryName();
@@ -3060,7 +3028,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
-
+        json["isCameraOn"] = cameraView->IsCameraOn();
         DPoint3d eyePoint = cameraView->GetEyePoint();
         transform.Multiply(eyePoint);
         json["eyePoint"] = PointToJson(eyePoint);

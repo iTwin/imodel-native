@@ -246,15 +246,6 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
-    {
-    // Redline views have their own ACS
-    return T_Super::_GetAuxCoordinateSystem();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef SpatialRedlineViewController::_GetBackgroundColor() const
     {
     // There can only be one background color
@@ -468,7 +459,7 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
     Utf8String typeProperty;
     if (markupProject->QueryProperty(typeProperty, DgnProjectProperty::ProjectType()) != BE_SQLITE_ROW  ||  typeProperty != s_projectType)
         {
-        status = BE_SQLITE_ERROR_BadDbSchema;
+        status = BE_SQLITE_ERROR_BadDbProfile;
         return nullptr;
         }
 
@@ -545,10 +536,12 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     if (true)
         {
         Statement stmt;
-        // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
+        stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET IsPrivate=0");
         stmt.Step();
         }
+
+    if (BE_SQLITE_OK != MarkupDomain::GetDomain().ImportSchema(*this))
+        return BE_SQLITE_ERROR;
 
     SaveSettings();
     SaveChanges();
@@ -612,7 +605,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
         return nullptr;
         }
 
-    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */));
     if (!rdlModel.IsValid())
@@ -762,7 +755,7 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
     DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage));
 
     DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
-                            DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+                            DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
 

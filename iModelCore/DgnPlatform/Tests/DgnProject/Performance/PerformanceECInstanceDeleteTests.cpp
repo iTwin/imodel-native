@@ -40,7 +40,7 @@ TEST_F(PerformanceECInstanceDeleteTestsFixture, DeleteInstancesOfDgn_ElementItem
     DgnDbPtr dgnProj = nullptr;
     SetUPDgnProj(dgnProj);
 
-    ECN::ECClassCP elementItemClass = dgnProj->Schemas().GetECClass("dgn", "ElementItem");
+    ECN::ECClassCP elementItemClass = dgnProj->Schemas().GetClass("dgn", "ElementItem");
     ASSERT_TRUE(elementItemClass != nullptr);
 
     ECSqlStatement stmt;
@@ -86,7 +86,7 @@ TEST_F(PerformanceECInstanceDeleteTestsFixture, CascadeDeleteOnDgn_ElementItem)
     DgnDbPtr dgnProj = nullptr;
     SetUPDgnProj(dgnProj);
 
-    ECN::ECClassCP elementItemClass = dgnProj->Schemas().GetECClass("dgn", "ElementItem");
+    ECN::ECClassCP elementItemClass = dgnProj->Schemas().GetClass("dgn", "ElementItem");
     ASSERT_TRUE(elementItemClass != nullptr);
 
     ECSqlStatement stmt;

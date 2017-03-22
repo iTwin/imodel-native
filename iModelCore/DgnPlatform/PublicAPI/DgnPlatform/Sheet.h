@@ -147,7 +147,7 @@ protected:
     DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated) const override {return DgnDbStatus::InvalidParent;}
     
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
     static Placement2d ComputePlacement(DgnDbR db, DgnViewId viewId, DPoint2dCR origin, double scale);
     static double ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR);
 
@@ -210,7 +210,7 @@ namespace Attachment
 
         virtual void _QueueScene(UpdatePlan const& updatePlan);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
-        void _AdjustAspectRatio(Dgn::ViewControllerR viewController, bool expandView) override {}
+        void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
 
         //! Get the transfrom from attachment view coordinates to sheet view coordinates
         DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);

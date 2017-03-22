@@ -131,7 +131,7 @@ FunctionalTestDomain::FunctionalTestDomain() : DgnDomain(FUNCTEST_DOMAIN_NAME, "
 TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp1)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Schemas().GetECClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestBreakdown);
+    DgnClassId classId = db.Schemas().GetClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestBreakdown);
     if (!classId.IsValid())
         return nullptr;
 
@@ -148,7 +148,7 @@ TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp
 TestComponentPtr TestComponent::Create(FunctionalModelR model, double doubleProp1)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Schemas().GetECClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestComponent);
+    DgnClassId classId = db.Schemas().GetClassId(FUNCTEST_DOMAIN_NAME, FUNCTEST_CLASS_TestComponent);
     if (!classId.IsValid())
         return nullptr;
 
@@ -181,8 +181,8 @@ struct FunctionalDomainTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 void FunctionalDomainTests::SetupFunctionalTestDomain()
     {
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), true, false);
-    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), false, false);
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 
     DbResult result = FunctionalDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(BE_SQLITE_OK, result);
@@ -199,7 +199,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     SetupSeedProject();
     SetupFunctionalTestDomain();
 
-    DgnClassId functionalTypeRelClassId = m_db->Schemas().GetECClassId(FUNCTIONAL_DOMAIN_NAME, FUNC_REL_FunctionalElementIsOfType);
+    DgnClassId functionalTypeRelClassId = m_db->Schemas().GetClassId(FUNCTIONAL_DOMAIN_NAME, FUNC_REL_FunctionalElementIsOfType);
     ASSERT_TRUE(functionalTypeRelClassId.IsValid());
 
     DgnElementId functionalTypeId[3];

@@ -108,7 +108,7 @@ TEST_F (DgnElementTests, UpdateElement)
 TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
     {
     TestElementPtr child = TestElement::Create(*m_db, parent.GetModelId(), m_defaultCategoryId);
-    child->SetParentId(parent.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
+    child->SetParentId(parent.GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     auto el = child->Insert();
     if (!el.IsValid())
         return nullptr;
@@ -509,7 +509,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
     PhysicalModelPtr model = GetDefaultPhysicalModel();
     DgnModelId modelId = model->GetModelId();
     DgnCategoryId categoryId = GetDefaultCategoryId();
-    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     DgnElementId elementId;
 
     // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
@@ -710,7 +710,7 @@ TEST_F(DgnElementTests, HandlerlessClass)
     {
     SetupSeedProject();
 
-    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
     EXPECT_TRUE(el.Insert().IsValid());
@@ -726,7 +726,7 @@ TEST_F(DgnElementTests, TestAutoHandledPropertiesCA)
     {
     SetupSeedProject();
     // *** test Custom Attributes when we get them
-    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
 
@@ -774,7 +774,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     ECN::ECValue checkValue;
     if (true)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
@@ -903,7 +903,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructProperties)
     ECN::ECValue checkValue;
     if (true)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
@@ -1034,7 +1034,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
     uint32_t iArrayOfInt;
     if (true)
     {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
@@ -1202,7 +1202,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     ECN::ECValue checkValue;
     ECN::IECInstancePtr checkInstance;
     {
-    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
 
@@ -1222,7 +1222,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
         EXPECT_TRUE(checkValue.IsNull());
         }
 
-    ECN::ECClassCP locationStruct = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
+    ECN::ECClassCP locationStruct = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
     ASSERT_TRUE(nullptr != locationStruct);
     ECN::StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
     
@@ -1432,7 +1432,7 @@ TEST_F(DgnElementTests, OverrideAutohandledproperites)
     uint32_t boolean;
     if (true)
     {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(boolean, "p2d"));
@@ -1492,7 +1492,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
     DgnElementId eid;
         {
-        ECN::ECClassCP testClass = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
+        ECN::ECClassCP testClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
         auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
         DgnCode code = DgnCode::CreateEmpty();
         // custom-handled properties
@@ -1645,7 +1645,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         {
         DgnElementCPtr persistentEl;
 
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
@@ -1757,7 +1757,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         {
         DgnElementCPtr persistentEl;
 
-        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
 
@@ -1840,7 +1840,7 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     EXPECT_TRUE(parentA->Insert().IsValid());
     EXPECT_TRUE(parentB->Insert().IsValid());
     DgnElementId childIdA, childIdB, childIdC;
-    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     // test DgnElement::_OnChildInsert success
         {
@@ -2018,7 +2018,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     SetupSeedProject();
     DefinitionModelPtr typeModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "PhysicalTypes");
 
-    DgnClassId physicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
+    DgnClassId physicalTypeRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
     ASSERT_TRUE(physicalTypeRelClassId.IsValid());
 
     DgnElementId physicalTypeId[3];
@@ -2122,7 +2122,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
     SetupSeedProject();
     DefinitionModelPtr typesModel = DgnDbTestUtils::InsertDefinitionModel(*m_db, "GraphicalTypes");
 
-    DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
+    DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
     ASSERT_TRUE(graphicalTypeRelClassId.IsValid());
 
     DgnElementId graphicalTypeId[3];
@@ -2294,20 +2294,25 @@ TEST_F(DgnElementTests, ElementIterator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, TestSpatialLocation)
+TEST_F(DgnElementTests, SimpleInsert)
     {
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
     PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    InformationRecordModelPtr informationRecordModel = DgnDbTestUtils::InsertInformationRecordModel(*m_db, "TestInformationRecordModel");
 
-    TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
-    ASSERT_TRUE(element1.IsValid());
-    ASSERT_TRUE(element1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
+    TestSpatialLocationPtr spatialLocation1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
+    ASSERT_TRUE(spatialLocation1.IsValid());
+    ASSERT_TRUE(spatialLocation1->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a SpatialLocationModel";
 
-    TestSpatialLocationPtr element2 = TestSpatialLocation::Create(*physicalModel, categoryId);
-    ASSERT_TRUE(element2.IsValid());
-    ASSERT_TRUE(element2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
+    TestSpatialLocationPtr spatialLocation2 = TestSpatialLocation::Create(*physicalModel, categoryId);
+    ASSERT_TRUE(spatialLocation2.IsValid());
+    ASSERT_TRUE(spatialLocation2->Insert().IsValid()) << "SpatialLocationElements should be able to be inserted into a PhysicalModel";
+
+    TestInformationRecordPtr informationRecord = TestInformationRecord::Create(*informationRecordModel);
+    ASSERT_TRUE(informationRecord.IsValid());
+    ASSERT_TRUE(informationRecord->Insert().IsValid()) << "InformationRecordElements should be able to be inserted into an InformationRecordModel";
     }
 
 /*---------------------------------------------------------------------------------**//**

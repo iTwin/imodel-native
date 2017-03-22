@@ -90,7 +90,7 @@ public:
     uint32_t GetHeight() const {return m_height;}
     Flags GetFlags() const {return m_flags;}
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Texture);} //!< Return the class ID used for textures
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Texture);} //!< Return the class ID used for textures
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Return the class ID used for textures
 
     DgnTextureCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<DgnTexture>(*this, status);} //!< Inserts the texture into the DgnDb and returns the persistent copy.

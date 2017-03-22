@@ -739,18 +739,6 @@ DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     DistanceFormatterPtr formatter = DistanceFormatter::Create(*targetModel);
 
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-
-    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return formatter;
-
-    formatter->SetScaleFactor(1 / acs->GetScale());
-#endif
-
     return formatter;
     }
 
@@ -1040,7 +1028,7 @@ DistanceFormatterR  PointFormatter::GetDistanceFormatter()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuxCoordSystemP   PointFormatter::GetAuxCoordSys()
+AuxCoordSystemCP PointFormatter::GetAuxCoordSys()
     {
     return m_acs.get();
     }
@@ -1052,19 +1040,19 @@ void            PointFormatter::InitModelSettings(GeometricModelCR model, bool a
     {
     m_distanceFormatter = DistanceFormatter::Create(model);
 
-    auto geomModel = model.ToGeometricModel();
-    m_is3d = nullptr != geomModel && geomModel->Is3d();
+    if (!addGlobalOrigin)
+        return;
 
-    if (addGlobalOrigin && nullptr != geomModel)
-        {
-        // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
-        if (m_is3d)
-            m_acs = new AuxCoordSystem3d(geomModel->GetDgnDb());
-        else
-            m_acs = new AuxCoordSystem2d(geomModel->GetDgnDb());
+    auto spatialModel = model.ToSpatialModel();
 
-        m_acs->SetOrigin(geomModel->GetDgnDb().GeoLocation().GetGlobalOrigin());
-        }
+    if (nullptr == spatialModel)
+        return;
+
+    // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
+    AuxCoordSystemPtr acs = new AuxCoordSystem3d(spatialModel->GetDgnDb());
+
+    acs->SetOrigin(spatialModel->GetDgnDb().GeoLocation().GetGlobalOrigin());
+    m_acs = acs;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1085,20 +1073,13 @@ PointFormatterPtr   PointFormatter::Create(GeometricModelCR model, bool addGloba
 PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-
-#ifdef WIP_V10_MODEL_ACS
-    bool            useViewACS  = targetModel->GetDisplayInfo().GetIsAcsLocked();
-#else
-    bool            useViewACS  = false;
-#endif
+    bool            useViewACS  = viewport.IsContextRotationRequired();
 
     PointFormatterPtr   formatter = Create();
     formatter->InitModelSettings(*targetModel, !useViewACS);
 
-#ifdef WIP_V10_MODEL_ACS
     if (useViewACS)
-        formatter->SetAuxCoordSys(*IACSManager::GetManager().GetActive(viewport));
-#endif
+        formatter->SetAuxCoordSys(&viewport.GetViewController().GetAuxCoordinateSystem());
 
     return formatter;
     }
@@ -1231,17 +1212,6 @@ AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     AreaFormatterPtr formatter = AreaFormatter::Create(*targetModel);
 
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return formatter;
-
-    formatter->SetScaleFactor(1 / acs->GetScale());
-#endif
-
     return formatter;
     }
 
@@ -1316,17 +1286,6 @@ VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     VolumeFormatterPtr formatter = VolumeFormatter::Create(*targetModel);
-
-#ifdef WIP_V10_MODEL_ACS
-    IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive(viewport);
-
-    if (NULL == acs)
-        return formatter;
-
-    formatter->SetScaleFactor(1 / acs->GetScale());
-#endif
 
     return formatter;
     }

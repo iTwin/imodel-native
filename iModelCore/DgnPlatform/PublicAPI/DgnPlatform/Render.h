@@ -10,6 +10,7 @@
 
 #include "DgnModel.h"
 #include "DgnCategory.h"
+#include "Lighting.h"
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
@@ -1705,31 +1706,29 @@ struct HiddenLineParams
 };
 
 //=======================================================================================
+//! A Light that illuminates Graphics in a scene.
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct Light
+struct Light : RefCounted<NonCopyableClass>
 {
-    double m_intensity = 0.0; //!< lumens/square meter
-    ColorDef m_color = ColorDef::White();
-    bool IsEnabled() const {return m_intensity>0.0;}
-    Json::Value ToJson() const;
-    void FromJson(JsonValueCR val);
 };
+DEFINE_REF_COUNTED_PTR(Light)
+
 //=======================================================================================
+//! A list of Render::Lights
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct DirectionalLight : Light
+struct LightList
 {
-    DEFINE_T_SUPER(Light)
-    DVec3d m_direction = DVec3d::From(0.0,0.0,0.0);
-    Json::Value ToJson() const;
-    void FromJson(JsonValueCR val);
+    bvector<LightPtr> m_lights;
+    void AddLight(LightPtr light) {if (light.IsValid()) m_lights.push_back(light);}
+    bool IsEmpty() const {return m_lights.empty();}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct SceneLights
+struct SceneLights : LightList
 {
     struct Brightness
     {
@@ -1741,16 +1740,7 @@ struct SceneLights
         void FromJson(JsonValueCR val);
     };
 
-    Light m_ambient; //!< ambient light
-    Light m_flash; //!< flash bulb at camera
-    Light m_portraitLeft; //!< over the left sholder
-    Light m_portraitRight; //!< over the right sholder
-    DirectionalLight m_sun;
     Brightness m_brightness;
-
-    DGNPLATFORM_EXPORT Json::Value ToJson() const;
-    DGNPLATFORM_EXPORT static SceneLights FromJson(JsonValueCR val);
-    bool IsValid() const {return m_ambient.IsEnabled() || m_flash.IsEnabled() || m_portraitLeft.IsEnabled() || m_portraitRight.IsEnabled();}
 };
 
 //=======================================================================================
@@ -1918,6 +1908,9 @@ struct System
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
+
+    //! Create a Light from Light::Parameters
+    virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
 };
 
 //=======================================================================================
@@ -1947,9 +1940,9 @@ public:
 };
 
 //=======================================================================================
-//! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
+//! A Render::Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render:Target holds a reference to a Render::Device, and a Render::System
+//! A Render::Target holds a reference to a Render::Device, and a Render::System
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -2010,6 +2003,7 @@ public:
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
     TexturePtr CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
+    LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}
 
     static constexpr double DefaultTileSizeModifier()

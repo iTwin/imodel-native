@@ -26,7 +26,7 @@ namespace dgn_ElementHandler
 {
     struct Material;
 }
-    
+
 //=======================================================================================
 //! Defines a material. Material elements are stored in the dictionary model and identified
 //! by a palette name and material name. Each material's name must be unique within its
@@ -49,10 +49,10 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) {}
 
         //! Constructs parameters for creating a material.
-        //! @param[in]      db               The DgnDb in which the material will reside
-        //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's DgnCode.
-        //! @param[in]      materialName     The name of the material. This becomes the value of the material's DgnCode.
-        //! @param[in]      parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
+        //! @param[in] db The DgnDb in which the material will reside
+        //! @param[in] paletteName The name of the material's palette. This becomes the namespace of the material's DgnCode.
+        //! @param[in] materialName The name of the material. This becomes the value of the material's DgnCode.
+        //! @param[in] parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
         //! @note The combination of palette and material name must be unique within the DgnDb.
         DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, DgnMaterialId parentMaterialId=DgnMaterialId());
 
@@ -86,9 +86,9 @@ public:
     DgnMaterialId GetParentMaterialId() const {return DgnMaterialId(GetParentId().GetValueUnchecked());} //!< Returns the ID of this material's parent material
     DgnMaterialCPtr GetParentMaterial() const {return GetParentId().IsValid() ? GetDgnDb().Elements().Get<DgnMaterial>(GetParentId()) : nullptr;} //!< Returns this material's parent material, if one exists.
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement);} //!< Returns the class ID used for material elements.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement);} //!< Returns the class ID used for material elements.
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Returns the class ID used for material elements.
-    static ECN::ECClassCP QueryECClass(DgnDbR db) {return db.Schemas().GetECClass(QueryECClassId(db));} //!< Looks up the ECClass used for material elements.
+    static ECN::ECClassCP QueryECClass(DgnDbR db) {return db.Schemas().GetClass(QueryECClassId(db));} //!< Looks up the ECClass used for material elements.
 
     DgnMaterialCPtr Insert(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Insert<DgnMaterial>(*this, status);} //!< Inserts this material into the DgnDb and returns the persistent material.
     DgnMaterialCPtr Update(DgnDbStatus* status = nullptr) {return GetDgnDb().Elements().Update<DgnMaterial>(*this, status);} //!< Updates this material in the DgnDb and returns the updated persistent material

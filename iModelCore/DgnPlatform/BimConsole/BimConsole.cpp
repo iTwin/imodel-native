@@ -118,7 +118,7 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
             profileInfo.m_name.assign(profileNamespace);
             }
 
-        profileInfo.m_version = SchemaVersion(stmt.GetValueText(1));
+        profileInfo.m_version = ProfileVersion(stmt.GetValueText(1));
 
         profileInfos.insert(bpair<ProfileInfo::Type, ProfileInfo>(profileInfo.m_type, profileInfo));
         }
@@ -163,7 +163,7 @@ void BimConsole::Setup()
     AddCommand(std::make_shared<ExportCommand>());
 
     AddCommand(std::make_shared<ParseCommand>());
-    AddCommand(std::make_shared<CreateECClassViewsCommand>());
+    AddCommand(std::make_shared<CreateClassViewsCommand>());
 
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());

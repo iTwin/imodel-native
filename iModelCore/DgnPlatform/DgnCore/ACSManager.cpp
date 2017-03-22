@@ -261,36 +261,6 @@ public:
     //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
     DGNPLATFORM_EXPORT bool Locate(DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);
 };
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-IACSManager::IACSManager() {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   04/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IACSManager::IsPointAdjustmentRequired(DgnViewportR vp)
-    {
-    return vp.GetViewController()._IsPointAdjustmentRequired();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   04/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IACSManager::IsSnapAdjustmentRequired(DgnViewportR vp)
-    {
-    return vp.GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   04/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IACSManager::IsContextRotationRequired(DgnViewportR vp)
-    {
-    return vp.GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
@@ -319,58 +289,7 @@ StatusInt IACSManager::SetActive(AuxCoordSystemCP auxCoordSys, DgnViewportR vp)
 
     return SUCCESS;
     }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  11/09
-+===============+===============+===============+===============+===============+======*/
-struct          ACSEventCaller
-{
-AuxCoordSystemPtr   m_acs;
-ACSEventType        m_eventType;
-DgnModelP           m_modelRef;
-
-ACSEventCaller(AuxCoordSystemP acs, ACSEventType eventType, DgnModelP modelRef)
-    {
-    m_acs       = acs;
-    m_eventType = eventType;
-    m_modelRef  = modelRef;
-    }
-
-void CallHandler(IACSEvents& handler) {handler._OnACSEvent(m_acs.get(), m_eventType, m_modelRef);}
-
-}; // ACSEventCaller
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::SendEvent(AuxCoordSystemP acs, ACSEventType eventType, DgnModelP modelRef)
-    {
-    if (NULL == m_listeners)
-        return;
-
-    ACSEventCaller eventCaller(acs, eventType, modelRef);
-    m_listeners->CallAllHandlers(eventCaller);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::AddListener(IACSEvents* acsListener)
-    {
-    if (nullptr == m_listeners)
-        m_listeners = new EventHandlerList<IACSEvents>;
-
-    m_listeners->AddHandler(acsListener);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::DropListener(IACSEvents* acsListener)
-    {
-    if (nullptr != m_listeners)
-        m_listeners->DropHandler(acsListener);
-    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
@@ -601,15 +520,15 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     else if (ACSDisplayOptions::None == (options & ACSDisplayOptions::Active))
         pixelSize *= 0.9;
 
-//    DrawingViewDefinitionCP drawingViewDef = context.GetViewport()->GetViewController().GetViewDefinition()._ToDrawingView();
+    DrawingViewDefinitionCP drawingViewDef = context.GetViewport()->GetViewController().GetViewDefinition().ToDrawingView();
 
-    double      exagg = 1.0;//(nullptr == drawingViewDef ? 1.0 : drawingViewDef->GetAspectRatioSkew()); // NEEDSWORK_VIEWDEF
+    double      exagg = (nullptr != drawingViewDef ? drawingViewDef->GetAspectRatioSkew() : 1.0);
     double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * pixelSize;
     RotMatrix   rMatrix = _GetRotation();
     Transform   transform;
 
     rMatrix.InverseOf(rMatrix);
-    rMatrix.ScaleRows(rMatrix,  scale,  scale / exagg,  scale);
+    rMatrix.ScaleRows(rMatrix, scale, scale / exagg, scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
     Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), transform));

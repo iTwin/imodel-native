@@ -192,6 +192,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 
     //! The ElementHandler for GroupInformationElement
@@ -200,22 +201,16 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationElement, Dgn::GroupInformationElement, GroupInformation, InformationContent, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for Session
-    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Session, Dgn::Session, Session, Definition, DGNPLATFORM_EXPORT)
-    };
-
     //! The ElementHandler for PhysicalType
     struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for PhysicalRecipe
-    struct EXPORT_VTABLE_ATTRIBUTE PhysicalRecipe : Definition
+    //! The ElementHandler for TemplateRecipe3d
+    struct EXPORT_VTABLE_ATTRIBUTE TemplateRecipe3d : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalRecipe, Dgn::PhysicalRecipe, PhysicalRecipe, Definition, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateRecipe3d, Dgn::TemplateRecipe3d, TemplateRecipe3d, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GraphicalType2d
@@ -224,10 +219,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalType2d, Dgn::GraphicalType2d, GraphicalType2d, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for GraphicalRecipe2d
-    struct EXPORT_VTABLE_ATTRIBUTE GraphicalRecipe2d : Definition
+    //! The ElementHandler for TemplateRecipe2d
+    struct EXPORT_VTABLE_ATTRIBUTE TemplateRecipe2d : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GraphicalRecipe2d, Dgn::GraphicalRecipe2d, GraphicalRecipe2d, Definition, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TemplateRecipe2d, Dgn::TemplateRecipe2d, TemplateRecipe2d, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for SpatialLocationType
@@ -264,6 +259,12 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GroupInformationPartition : InformationPartition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationPartition, Dgn::GroupInformationPartition, GroupInformationPartition, InformationPartition, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationRecordPartition
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecordPartition : InformationPartition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordPartition, Dgn::InformationRecordPartition, InformationRecordPartition, InformationPartition, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for PhysicalPartition

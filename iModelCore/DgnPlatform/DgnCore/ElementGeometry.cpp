@@ -1372,7 +1372,9 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
             {
             IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
-            facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
+            facetOpt->SetAngleTolerance(0.2); // NOTE: This is the value XGraphics "optimize" used...
+            facetOpt->SetNormalsRequired(true);
+            facetOpt->SetParamsRequired(true);
 
             if (nullptr != attachments)
                 {
@@ -1390,6 +1392,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
                     params[i].ToGeometryParams(faceParams, baseParamsIgnored);
                     Append(faceParams, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
+                    polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
                     Append(*polyfaces[i], OpCode::BRepPolyface);
                     }
                 }
@@ -1398,7 +1401,10 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
                 PolyfaceHeaderPtr polyface = BRepUtil::FacetEntity(entity, *facetOpt);
 
                 if (polyface.IsValid())
+                    {
+                    polyface->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
                     Append(*polyface, OpCode::BRepPolyface);
+                    }
                 }
             break;
             }

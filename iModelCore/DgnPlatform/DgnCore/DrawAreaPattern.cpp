@@ -52,7 +52,7 @@ static double getTransformPatternScale(TransformCR transform)
 
     double mag = xDir.Magnitude ();
 
-    return ((mag > 1.0e-5) ? mag : 1.0);
+    return ((mag > 1.0e-10) ? mag : 1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -70,7 +70,7 @@ void PatternParams::ApplyTransform(TransformCR transform, uint32_t options)
         {
         double scale = getTransformPatternScale(transform);
 
-        if (!DoubleOps::WithinTolerance(1.0, scale, 1.0e-5))
+        if (!DoubleOps::WithinTolerance(1.0, scale, 1.0e-10))
             {
             m_scale *= scale;
 
@@ -455,7 +455,7 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
         {
         for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
             {
-            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, params.GetNetDisplayPriority());
+            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, 0.0); // NOTE: Don't supply net display priority, will be supplied by add calls...
             symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
             if (isSimplify && vp)

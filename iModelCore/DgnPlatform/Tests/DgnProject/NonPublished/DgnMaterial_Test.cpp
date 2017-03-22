@@ -89,7 +89,7 @@ TEST_F(MaterialTest, ParentChildCycles)
     parent->Insert();
 
     DgnElementId parentId = parent->GetElementId();
-    DgnClassId parentRelClassId = GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     // SetParentId() will detect direct cycles (this == this.parent)
     parent = GetDgnDb().Elements().GetElement(parentId)->MakeCopy<DgnMaterial>();

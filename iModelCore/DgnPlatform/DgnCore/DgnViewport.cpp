@@ -197,6 +197,13 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint3dCP viewPts, int nPts) c
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::IsPointAdjustmentRequired() const {return GetViewController()._IsPointAdjustmentRequired();}
+bool DgnViewport::IsSnapAdjustmentRequired() const {return GetViewController()._IsSnapAdjustmentRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSPlaneSnapLock());}
+bool DgnViewport::IsContextRotationRequired() const {return GetViewController()._IsContextRotationRequired(DgnPlatformLib::GetHost().GetSessionSettingsAdmin()._GetACSContextLock());}
+
+/*---------------------------------------------------------------------------------**//**
 * Ensure the rotation matrix for this view is aligns the root z with the view out (i.e. a "2d view").
 * @bsimethod                                    Keith.Bentley                   09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -215,15 +222,6 @@ void DgnViewport::AlignWithRootZ()
     r.SetColumn(zUp, 2);
     r.SquareAndNormalizeColumns(r, 2, 0);
     m_rotMatrix.TransposeOf(r);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expandView)
-    {
-    BSIRect viewRect = GetViewRect();
-    viewController.GetViewDefinition().AdjustAspectRatio(viewRect.Aspect(), expandView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,6 +436,34 @@ struct ViewChangedCaller
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::_AdjustAspectRatio(DPoint3dR origin, DVec3dR delta)
+    {
+    double windowAspect = GetViewRect().Aspect();
+    double viewAspect = delta.x / delta.y;
+
+    auto drawingView = m_viewController->GetViewDefinition()._ToDrawingView();
+    if (nullptr != drawingView)
+        windowAspect *= drawingView->GetAspectRatioSkew();
+
+    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
+        return;
+    
+    DVec3d oldDelta = delta;
+    if (viewAspect > windowAspect)
+        delta.y = delta.x / windowAspect;
+    else
+        delta.x = delta.y * windowAspect;
+
+    DPoint3d newOrigin;
+    m_rotMatrix.Multiply(&newOrigin, &origin, 1);
+    newOrigin.x += ((oldDelta.x - delta.x) / 2.0);
+    newOrigin.y += ((oldDelta.y - delta.y) / 2.0);
+    m_rotMatrix.MultiplyTranspose(origin, newOrigin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * set up this viewport from its viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -447,13 +473,24 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
-    _AdjustAspectRatio(*viewController, true); // expand with blank space on longer axis
-
     auto& viewDef = m_viewController->GetViewDefinition();
     DPoint3d origin = viewDef.GetOrigin();
     DVec3d   delta  = viewDef.GetExtents();
-
     m_rotMatrix     = viewDef.GetRotation();
+
+    // first, make sure none of the deltas are negative
+    delta.x = fabs(delta.x);
+    delta.y = fabs(delta.y);
+    delta.z = fabs(delta.z);
+
+    double maxExtent, minExtent;
+    viewDef._GetExtentLimits(minExtent, maxExtent);
+
+    LIMIT_RANGE(minExtent, maxExtent, delta.x);
+    LIMIT_RANGE(minExtent, maxExtent, delta.y);
+
+    _AdjustAspectRatio(origin, delta);
+
     m_is3dView      = false;
     m_isCameraOn    = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
@@ -582,75 +619,6 @@ ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
         return  status;
 
     return validSize;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
-    {
-    ViewControllerP viewController = m_viewController.get();
-    if (nullptr == viewController)
-        return  ViewportStatus::InvalidViewport;
-
-    SetupFromViewController();
-
-    auto& viewDef = m_viewController->GetViewDefinition();
-    DPoint3d worldPts[3] = {pts[0], pts[1], viewDef.GetOrigin()};
-    DPoint3d viewPts[3];
-    GetRotMatrix().Multiply(viewPts, worldPts, 3);
-
-    DRange3d range = DRange3d::From(viewPts, 2);
-    DVec3d delta;
-    delta.DifferenceOf(range.high, range.low);
-
-    auto cameraView = viewDef.ToView3dP();
-    if (cameraView && cameraView->IsCameraOn())
-        {
-        DPoint3d npcPts[2];
-        WorldToNpc(npcPts, worldPts, 2);
-
-        /// NEEDS_WORK_RANGE_OF_PIXELS - this should be replace by a QV call that will find the range of the pixels in the rectangle.
-        double low, high;
-        DRange3d npcRange = DRange3d::From(npcPts, 2);
-        if (SUCCESS != DetermineVisibleDepthNpc(low, high, &npcRange))
-            high = .5;
-
-        LIMIT_RANGE(0.0, 1.0, high);
-
-        npcPts[0].z = npcPts[1].z = high;
-        NpcToWorld(worldPts, npcPts, 2);
-
-        Angle lensAngle = cameraView->GetLensAngle();
-        double focusDist = std::max(delta.x, delta.y) / (2.0 * tan(lensAngle.Radians() / 2.0));
-
-        DPoint3d newTarget = DPoint3d::FromInterpolate(worldPts[0], .5, worldPts[1]);
-        DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
-
-        auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraView->GetYVector(), lensAngle);
-        if (ViewportStatus::Success != stat)
-            return stat;
-        }
-    else
-        {
-        // get the view extents
-        delta.z = viewDef.GetExtents().z;
-
-        // make sure its not too big or too small
-        auto stat = viewDef.ValidateViewDelta(delta, true);
-        if (stat != ViewportStatus::Success)
-            return stat;
-
-        viewDef.SetExtents(delta);
-
-        range.low.z = viewPts[2].z;     // don't change z origin
-        DPoint3d origin;
-        GetRotMatrix().MultiplyTranspose(&origin, &range.low, 1);
-        viewDef.SetOrigin(origin);
-        }
-
-    SynchWithViewController(true);
-    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1144,6 +1112,9 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
     {
     m_viewController->_DrawDecorations(context);
     m_viewController->_DrawGrid(context);
+
+    if (context.GetViewFlags().ShowAcsTriad())
+        m_viewController->GetAuxCoordinateSystem().Display(context, (ACSDisplayOptions::CheckVisible | ACSDisplayOptions::Active));
     }
 
 /*---------------------------------------------------------------------------------**//**

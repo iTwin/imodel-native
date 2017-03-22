@@ -44,7 +44,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
-                 m_geoLocation(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
+                 m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
@@ -56,13 +56,13 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettings().GetECCrudWriteToken();}
+ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettings().GetCrudWriteToken();}
 
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetECSchemaImportToken(); }
+SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -78,7 +78,6 @@ extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    m_sessionManager.ClearCurrent();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
@@ -240,14 +239,14 @@ DbResult DgnDb::InsertNonNavigationRelationship(BeSQLite::EC::ECInstanceKey& rel
 //--------------+---------------+---------------+---------------+---------------+------
 DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
     {
-    auto eclass = Schemas().GetECClass(key.GetECClassId());
+    auto eclass = Schemas().GetClass(key.GetClassId());
     if (nullptr == eclass)
         return DbResult::BE_SQLITE_ERROR;
     auto updater = Elements().m_updaterCache.GetUpdater(*this, *eclass);
     if (nullptr == updater)
         return DbResult::BE_SQLITE_ERROR;
     Utf8Char instidstr[32];
-    BeStringUtilities::FormatUInt64(instidstr, key.GetECInstanceId().GetValue());
+    BeStringUtilities::FormatUInt64(instidstr, key.GetInstanceId().GetValue());
     props.SetInstanceId(instidstr);
     return updater->Update(props);
     }
@@ -257,7 +256,7 @@ DbResult DgnDb::UpdateNonNavigationRelationshipProperties(EC::ECInstanceKeyCR ke
 //--------------+---------------+---------------+---------------+---------------+------
 DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
     {
-    auto eclass = Schemas().GetECClass(key.GetECClassId());
+    ECClassCP eclass = Schemas().GetClass(key.GetClassId());
     if (nullptr == eclass)
         return DbResult::BE_SQLITE_ERROR;
 
@@ -268,7 +267,7 @@ DbResult DgnDb::DeleteNonNavigationRelationship(EC::ECInstanceKeyCR key)
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
-    stmt->BindId(1, key.GetECInstanceId());
+    stmt->BindId(1, key.GetInstanceId());
     return stmt->Step();
     }
 
@@ -355,7 +354,7 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
     if (status != BE_SQLITE_OK)
         return nullptr;
 
-    // SchemaUpgrade logic may call OpenParams::_ReopenForSchemaUpgrade changing the file
+    // SchemaUpgrade logic may call OpenParams::_ReopenForProfileUpgrade changing the file
     // from Readonly to ReadWrite.  This changes it back to what the caller requested.
     if (!wantReadonly || openParams.IsReadonly())
         return dgnDb;
@@ -540,11 +539,11 @@ DgnClassId DgnImportContext::_RemapClassId(DgnClassId source)
     if (dest.IsValid())
         return dest;
 
-    ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source);
+    ECClassCP sourceecclass = GetSourceDb().Schemas().GetClass(source);
     if (nullptr == sourceecclass)
         return DgnClassId();
 
-    ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
+    ECClassCP destecclass = GetDestinationDb().Schemas().GetClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
     if (nullptr == destecclass)
         return DgnClassId();
 
@@ -627,18 +626,6 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a " BIS_CLASS_DictionaryModel);
     return *dict;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SessionModelPtr DgnDb::GetSessionModel()
-    {
-    DefinitionPartitionCPtr partition = Elements().Get<DefinitionPartition>(Elements().GetSessionPartitionId());
-    BeAssert(partition.IsValid() && "A DgnDb always has a sessions partition");
-    SessionModelPtr model = Models().Get<SessionModel>(partition->GetSubModelId());
-    BeAssert(model.IsValid() && "A DgnDb always has a " BIS_CLASS_SessionModel);
-    return model;
     }
 
 /*---------------------------------------------------------------------------------**//**

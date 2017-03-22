@@ -11,7 +11,6 @@
 
 #include "Render.h"
 #include "ValueFormat.h"
-#include "DgnCoreEvent.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -29,18 +28,6 @@ enum class ACSType
     Extended           = 4,
     };
 
-enum class ACSEventType
-    {
-    None              = 0,
-    ParameterChanged  = (1 << 0), // An ACS nongeometry parameter changed (e.g. description).
-    GeometryChanged   = (1 << 1), // An ACS geometry parameter changed (e.g. origin).
-    ChangeWritten     = (1 << 2), // An ACS was written to the file.
-    NewACS            = (1 << 3), // The ACS written was new.
-    Delete            = (1 << 4), // the ACS was deleted from the file.
-    };
-
-ENUM_IS_FLAGS (ACSEventType)
-
 enum class ACSDisplayOptions
     {
     None            = 0,        // used for testing individual bits.
@@ -53,70 +40,6 @@ enum class ACSDisplayOptions
 
 ENUM_IS_FLAGS (ACSDisplayOptions)
 
-//! \ingroup auxCoords
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct IACSEvents
-{
-virtual void _OnACSEvent(AuxCoordSystemP acs, ACSEventType eventType, DgnModelP modelRef) = 0;
-
-}; // IACSEvents
-
-//=======================================================================================
-//!
-//! Manager class to provide access to auxiliary coordinate systems.
-//! Auxiliary coordinate systems (ACS) are entities that can be created, edited, deleted, and
-//! activated under user control.
-//!
-//=======================================================================================
-struct  IACSManager : DgnHost::IHostObject
-{
-//__PUBLISH_SECTION_END__
-private:
-
-EventHandlerList<IACSEvents>* m_listeners = nullptr;
-
-public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-IACSManager();
-
-DGNPLATFORM_EXPORT void SendEvent(AuxCoordSystemP acs, ACSEventType eventType, DgnModelP modelRef);
-
-DGNPLATFORM_EXPORT static bool IsPointAdjustmentRequired(DgnViewportR viewport);
-DGNPLATFORM_EXPORT static bool IsSnapAdjustmentRequired(DgnViewportR viewport);
-DGNPLATFORM_EXPORT static bool IsContextRotationRequired(DgnViewportR viewport);
-
-DGNVIEW_EXPORT bool GetStandardRotation(RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS);
-DGNVIEW_EXPORT bool GetCurrentOrientation(RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS);
-
-//__PUBLISH_SECTION_START__
-public:
-
-//! Add a listener for acs events.
-DGNPLATFORM_EXPORT void AddListener(IACSEvents* acsListener);
-
-//! Drop a listener for acs events.
-DGNPLATFORM_EXPORT void DropListener(IACSEvents* acsListener);
-
-//! Gets the ACS object for the active ACS.
-//! @param[in]      vp          View to apply acs to.
-//! @return ACS if one is active, NULL otherwise.
-//! @remarks  This is not a copy and should not be freed; Use Clone uses you want
-//!           changes to directly affect the ACS attached to this view.
-DGNPLATFORM_EXPORT AuxCoordSystemCP GetActive(DgnViewportR vp);
-
-//! Sets the active ACS properties.
-//! @param[in]      auxCoordSys ACS to activate.
-//! @param[in]      vp          View to apply acs to.
-//! @return status
-DGNPLATFORM_EXPORT StatusInt SetActive(AuxCoordSystemCP auxCoordSys, DgnViewportR vp);
-
-DGNPLATFORM_EXPORT static IACSManagerR GetManager();
-
-}; // IACSManager
-
 namespace ACSElementHandler {struct CoordSys2d; struct CoordSys3d;}
 
 //=======================================================================================
@@ -128,6 +51,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem : DefinitionElement
 
 protected:
     explicit AuxCoordSystem(CreateParams const& params) : T_Super(params) {}
+
+    virtual AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const = 0; // Either this method or _GetAsAuxCoordSystem3d must return non-null.
+    virtual AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const = 0; // Either this method or _GetAsAuxCoordSystem2d must return non-null.
 
     virtual ACSType _GetType() const {return static_cast<ACSType>(GetPropertyValueInt32("Type"));};
     virtual BentleyStatus _SetType(ACSType type) {SetPropertyValue("Type", static_cast<int32_t>(type)); return SUCCESS;};
@@ -157,6 +83,15 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _StringFromPoint(Utf8StringR outString, Utf8StringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) const;
 
 public:
+    //! Create a new acs from an existing acs that is suitable for insert unlike acs->MakeCopy<AuxCoordSystem>() which just create a writeable copy for update.
+    static AuxCoordSystemPtr CreateFrom(AuxCoordSystemCR acs) {return dynamic_cast<AuxCoordSystem*>(acs.Clone().get());}
+
+    AuxCoordSystem2dCP ToAuxCoordSystem2d() const {return _GetAsAuxCoordSystem2d();}
+    AuxCoordSystem3dCP ToAuxCoordSystem3d() const {return _GetAsAuxCoordSystem3d();}
+
+    AuxCoordSystem2dP ToAuxCoordSystem2dP() {return const_cast<AuxCoordSystem2dP>(ToAuxCoordSystem2d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem2dP>(el)
+    AuxCoordSystem3dP ToAuxCoordSystem3dP() {return const_cast<AuxCoordSystem3dP>(ToAuxCoordSystem3d());} //!< more efficient substitute for dynamic_cast<AuxCoordSystem3dP>(el)
+
     //! Return type of the ACS object.
     ACSType GetType() const {return _GetType();}
 
@@ -214,6 +149,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem2d : AuxCoordSystem
 protected:
     explicit AuxCoordSystem2d(CreateParams const& params) : T_Super(params) {}
 
+    AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const override final {return this;}
+    AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const override final {return nullptr;}
+
     DPoint3d _GetOrigin() const override {return DPoint3d::From(GetOrigin2d());}
     BentleyStatus _SetOrigin(DPoint3dCR origin) override {SetOrigin2d(DPoint2d::From(origin)); return SUCCESS;}
 
@@ -227,7 +165,7 @@ public:
     AuxCoordSystem2d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem2d, name);} //!< @private
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem2d));} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem2d));} //!< @private
 
     DPoint2d GetOrigin2d() const {return GetPropertyValueDPoint2d("Origin");}
     void SetOrigin2d(DPoint2dCR origin) {SetPropertyValue("Origin", origin);}
@@ -248,6 +186,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AuxCoordSystem3d : AuxCoordSystem
 protected:
     explicit AuxCoordSystem3d(CreateParams const& params) : T_Super(params) {}
 
+    AuxCoordSystem2dCP _GetAsAuxCoordSystem2d() const override final {return nullptr;}
+    AuxCoordSystem3dCP _GetAsAuxCoordSystem3d() const override final {return this;}
+    
     DPoint3d _GetOrigin() const override {return GetOrigin3d();}
     BentleyStatus _SetOrigin(DPoint3dCR origin) override {SetOrigin3d(origin); return SUCCESS;}
 
@@ -261,7 +202,7 @@ public:
     AuxCoordSystem3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_AuxCoordSystem3d, name);} //!< @private
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem3d));} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AuxCoordSystem3d));} //!< @private
 
     DPoint3d GetOrigin3d() const {return GetPropertyValueDPoint3d("Origin");}
     void SetOrigin3d(DPoint3dCR origin) {SetPropertyValue("Origin", origin);}

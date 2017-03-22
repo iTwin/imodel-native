@@ -712,7 +712,7 @@ struct ElementUriTests : ::testing::Test
     ElementUriTests()
         {
         // Must register my domain whenever I initialize a host
-        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+        DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
         }
 
     CodeSpec& GetTestCodeSpec(DgnDbR db)

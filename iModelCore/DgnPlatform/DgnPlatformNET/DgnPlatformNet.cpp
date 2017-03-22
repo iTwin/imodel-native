@@ -2110,7 +2110,7 @@ internal:
         Utf8String ecschema(ecSqlClassName, dot);
         Utf8String ecclass(dot+1);
         BDGN::DgnDbR db = model.GetDgnDb();
-        BDGN::DgnClassId pclassId = BDGN::DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
+        BDGN::DgnClassId pclassId = BDGN::DgnClassId(db.Schemas().GetClassId(ecschema.c_str(), ecclass.c_str()));
         if (!pclassId.IsValid())
             {
             BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "ECClass not found", ecSqlClassName);

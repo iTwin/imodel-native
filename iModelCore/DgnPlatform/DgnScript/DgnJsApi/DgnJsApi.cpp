@@ -38,7 +38,7 @@ static DgnElementPtr createElementByClass(DgnModelR model, Utf8CP ecSqlClassName
     Utf8String ecschema(ecSqlClassName, dot);
     Utf8String ecclass(dot+1);
     DgnDbR db = model.GetDgnDb();
-    DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
+    DgnClassId pclassId = DgnClassId(db.Schemas().GetClassId(ecschema.c_str(), ecclass.c_str()));
     if (!pclassId.IsValid())
         {
         T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "ECClass not found", ecSqlClassName);

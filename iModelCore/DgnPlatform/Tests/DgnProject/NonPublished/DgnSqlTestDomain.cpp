@@ -79,7 +79,7 @@ void ObstacleElement::SetSomeProperty(Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ObstacleElement::SetTestUniqueAspect(Utf8CP value)
     {
-    auto eclass = GetDgnDb().Schemas().GetECClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
+    auto eclass = GetDgnDb().Schemas().GetClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
     auto instance = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue("TestUniqueAspectProperty", ECN::ECValue(value));
     ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*this, *instance));
@@ -91,7 +91,7 @@ void ObstacleElement::SetTestUniqueAspect(Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ObstacleElement::GetTestUniqueAspect() const
     {
-    auto eclass = GetDgnDb().Schemas().GetECClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
+    auto eclass = GetDgnDb().Schemas().GetClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
     auto inst = DgnElement::GenericUniqueAspect::GetAspect(*this, *eclass);
     if (nullptr == inst)
         return "";

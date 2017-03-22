@@ -158,7 +158,7 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 //---------------------------------------------------------------------------------------
 static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey eid)
     {
-    return std::find(rels.begin(), rels.end(), eid.GetECInstanceId());
+    return std::find(rels.begin(), rels.end(), eid.GetInstanceId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +167,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 ElementDependencyGraph::ElementDependencyGraph()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -633,7 +633,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
     ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
 
     CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
-    selectDepRel->BindId(1, e1_e2.GetECInstanceId());
+    selectDepRel->BindId(1, e1_e2.GetInstanceId());
 
     m_db->SaveChanges();
 
@@ -685,10 +685,10 @@ TEST_F(ElementDependencyGraph, CycleTest1)
 
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
         Utf8String ecsql("SELECT * FROM ");
-        ecsql.append(m_db->Schemas().GetECClass(e2_e1.GetECClassId())->GetECSqlName()).append(" WHERE ECInstanceId=?");
+        ecsql.append(m_db->Schemas().GetClass(e2_e1.GetClassId())->GetECSqlName()).append(" WHERE ECInstanceId=?");
         ECSqlStatement s;
         s.Prepare(*m_db, ecsql.c_str());
-        s.BindId(1, e2_e1.GetECInstanceId());
+        s.BindId(1, e2_e1.GetInstanceId());
         ASSERT_EQ( s.Step() , BE_SQLITE_DONE );
         }
     }
@@ -726,7 +726,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
 
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
         CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
-        getRelDep->BindId(1, e4_e2.GetECInstanceId());
+        getRelDep->BindId(1, e4_e2.GetInstanceId());
         ASSERT_EQ( getRelDep->Step() , BE_SQLITE_DONE );
         }
     }
@@ -930,9 +930,9 @@ TEST_F(ElementDependencyGraph, TestPriority)
     // Change the priority of e12_e2 to be greater. Now, it should be called first.
         {
         DgnElementDependencyGraph graph(m_db->Txns());
-        DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetECInstanceId());
+        DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetInstanceId());
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId().IsValid() );
-        ASSERT_TRUE( edge_e12_e2.GetECRelationshipId() == e12_e2.GetECInstanceId() );
+        ASSERT_TRUE( edge_e12_e2.GetECRelationshipId() == e12_e2.GetInstanceId() );
         int64_t priority = edge_e12_e2.GetPriority();
         ASSERT_EQ( graph.SetElementDrivesElementPriority(edge_e12_e2.GetECRelationshipId(), priority + 100), BSISUCCESS );
         }

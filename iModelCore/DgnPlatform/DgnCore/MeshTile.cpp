@@ -365,11 +365,12 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     {
-    RenderingAssetCP mat = RenderingAsset::Load(m_materialId, db);
-    if (nullptr == mat)
+    DgnMaterialCPtr material = DgnMaterial::Get(db, m_materialId);
+    if (!material.IsValid())
         return nullptr;
 
-    auto texMap = mat->GetPatternMap();
+    auto& mat = material->GetRenderingAsset();
+    auto texMap = mat.GetPatternMap();
     DgnTextureId texId;
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
@@ -409,7 +410,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
     if (m_fillColor != rhs.m_fillColor)
         {
-        if (compareFillColor)
+        if (compareFillColor || 0 != m_linePixels || 0 != rhs.m_linePixels)     // textured polylines already use texture so can't be batched.
             return m_fillColor < rhs.m_fillColor;
 
         // cannot batch translucent and opaque meshes
@@ -419,6 +420,7 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareFil
 
         if (lhsHasAlpha != rhsHasAlpha)
             return lhsHasAlpha;
+
         }
 
     if (m_rasterWidth != rhs.m_rasterWidth)
@@ -793,6 +795,20 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
+    {
+    if (!materialId.IsValid())
+        return false;
+
+    m_materialEl = DgnMaterial::Get(dgnDb, materialId);
+    BeAssert(m_materialEl.IsValid());
+    m_material = &m_materialEl->GetRenderingAsset();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool duplicateTwoSidedTriangles, bool includeParams, uint32_t fillColor)
@@ -814,9 +830,9 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 
     if (includeParams &&
         !params.empty() &&
-        (m_material || (nullptr != (m_material = RenderingAsset::Load(materialId, dgnDb)))))
+        (m_material || GetMaterial(materialId, dgnDb)))
         {
-        auto const&  patternMap = m_material->GetPatternMap();
+        auto patternMap = m_material->GetPatternMap();
         bvector<DPoint2d>   computedParams;
 
         if (patternMap.IsValid())
@@ -866,6 +882,10 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materi
 void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttributesCR attributes, bool doVertexCluster, uint32_t fillColor)
     {
     TilePolyline    newPolyline;
+
+    // Temporary white => black color inversion.  Remove when we have uniform background and can handle correctly in shaders.
+    if (0xffffff  == fillColor)
+        fillColor = 0;
 
     for (auto& point : points)
         {

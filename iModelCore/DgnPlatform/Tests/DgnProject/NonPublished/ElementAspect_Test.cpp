@@ -456,6 +456,8 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
         DgnDbPtr db2;
         DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
+        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
+        ASSERT_TRUE(BE_SQLITE_OK == status);
 
         DgnImportContext importContext(*m_db, *db2);
         DgnDbStatus stat;
@@ -496,7 +498,7 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
     SetupSeedProject();
     CodeSpecId codeSpec1Id;
 
-    auto maspectclassNoHandler = m_db->Schemas().GetECClass("DgnPlatformTest", "TestMultiAspectNoHandler");
+    auto maspectclassNoHandler = m_db->Schemas().GetClass("DgnPlatformTest", "TestMultiAspectNoHandler");
     ASSERT_TRUE(nullptr != maspectclassNoHandler);
 
     auto maspectclassWithHandler = TestMultiAspect::GetECClass(*m_db);
@@ -656,8 +658,8 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
     // Open Source Db
     SetupSeedProject();
     CodeSpecId codeSpec1Id;
-    m_db->Schemas().CreateECClassViewsInDb();
-    ECN::ECClassCP uaspectclassNoHandler = m_db->Schemas().GetECClass("DgnPlatformTest", "TestUniqueAspectNoHandler");
+    m_db->Schemas().CreateClassViewsInDb();
+    ECN::ECClassCP uaspectclassNoHandler = m_db->Schemas().GetClass("DgnPlatformTest", "TestUniqueAspectNoHandler");
     ASSERT_TRUE(nullptr != uaspectclassNoHandler);
 
     auto uaspectclassWithHandler = TestUniqueAspect::GetECClass(*m_db);

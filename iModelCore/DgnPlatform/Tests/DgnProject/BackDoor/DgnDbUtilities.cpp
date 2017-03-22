@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/DgnDbUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -31,10 +31,10 @@ ECInstanceKey DgnDbUtilities::QueryRelationshipSourceFromTarget (ECDbR db, Utf8C
     if (!status.IsSuccess())
         return ECInstanceKey();
 
-    if (ECSqlStatus::Success != statement.BindId(1, targetKey.GetECClassId()))
+    if (ECSqlStatus::Success != statement.BindId(1, targetKey.GetClassId()))
         return ECInstanceKey();
 
-    if (ECSqlStatus::Success != statement.BindId(2, targetKey.GetECInstanceId()))
+    if (ECSqlStatus::Success != statement.BindId(2, targetKey.GetInstanceId()))
         return ECInstanceKey();
 
     if (BE_SQLITE_ROW != statement.Step())

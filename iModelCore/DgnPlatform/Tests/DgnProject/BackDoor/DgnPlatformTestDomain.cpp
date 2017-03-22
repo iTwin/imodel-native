@@ -20,10 +20,9 @@ DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
-HANDLER_DEFINE_MEMBERS(TestPhysicalRecipeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
-HANDLER_DEFINE_MEMBERS(TestGraphicalRecipe2dHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
+HANDLER_DEFINE_MEMBERS(TestInformationRecordHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
@@ -338,17 +337,6 @@ TestPhysicalTypePtr TestPhysicalType::Create(DefinitionModelR model, Utf8CP name
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestPhysicalRecipePtr TestPhysicalRecipe::Create(DefinitionModelR model, Utf8CP name)
-    {
-    DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(TestPhysicalRecipeHandler::GetHandler());
-    DgnCode code = CreateCode(model, name);
-    return new TestPhysicalRecipe(CreateParams(db, model.GetModelId(), classId, code));
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8CP name)
@@ -360,14 +348,15 @@ TestGraphicalType2dPtr TestGraphicalType2d::Create(DefinitionModelR model, Utf8C
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall    02/17
+* @bsimethod                                    Shaun.Sewall    03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestGraphicalRecipe2dPtr TestGraphicalRecipe2d::Create(DefinitionModelR model, Utf8CP name)
+TestInformationRecordPtr TestInformationRecord::Create(InformationRecordModelR model)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnClassId classId = db.Domains().GetClassId(TestGraphicalRecipe2dHandler::GetHandler());
-    DgnCode code = CreateCode(model, name);
-    return new TestGraphicalRecipe2d(CreateParams(db, model.GetModelId(), classId, code));
+    DgnClassId classId = db.Domains().GetClassId(TestInformationRecordHandler::GetHandler());
+    TestInformationRecordPtr element = new TestInformationRecord(CreateParams(db, model.GetModelId(), classId));
+    BeAssert(element.IsValid());
+    return element;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,7 +445,7 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::ECInstanceKeyCR key)
     {
-    auto inst = db.Schemas().GetECClass(key.GetECClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
+    auto inst = db.Schemas().GetClass(key.GetClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
     inst->SetValue("Property1", ECN::ECValue(value));
     ASSERT_EQ(BE_SQLITE_OK, db.UpdateNonNavigationRelationshipProperties(key, *inst));
     }
@@ -491,11 +480,10 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
-    RegisterHandler(TestPhysicalRecipeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
-    RegisterHandler(TestGraphicalRecipe2dHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
+    RegisterHandler(TestInformationRecordHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());

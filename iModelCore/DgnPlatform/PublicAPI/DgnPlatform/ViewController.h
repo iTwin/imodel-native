@@ -110,8 +110,6 @@ protected:
     friend struct ViewContext;
     friend struct DgnViewport;
     friend struct ViewManager;
-    friend struct IACSManager;
-    friend struct IAuxCoordSys;
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
@@ -129,6 +127,7 @@ protected:
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
     uint32_t m_gridsPerRef = 10;
+    AuxCoordSystemCPtr m_auxCoordSys; //!< The auxiliary coordinate system in use.
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -290,6 +289,13 @@ public:
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
+
+    //! Gets the Auxiliary Coordinate System for this view.
+    AuxCoordSystemCR GetAuxCoordinateSystem() const {return *m_auxCoordSys;}
+
+    //! Sets the Auxiliary Coordinate System to use for this view.
+    //! @param[in] acs The new Auxiliary Coordinate System.
+    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (Is3d() != (nullptr != acs.ToAuxCoordSystem3d())) return false; m_auxCoordSys = &acs; return true;}
 
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;
@@ -500,7 +506,6 @@ protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
     Render::MaterialPtr m_skybox;
-    AuxCoordSystemCPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
@@ -549,13 +554,6 @@ public:
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
-
-    //! Gets the Auxiliary Coordinate System for this view.
-    AuxCoordSystemCP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
-
-    //! Sets the Auxiliary Coordinate System to use for this view.
-    //! @param[in] acs The new Auxiliary Coordinate System.
-    void SetAuxCoordinateSystem(AuxCoordSystemCP acs) {m_auxCoordSys = acs;}
 
     //! Get the Level-of-Detail filtering size for scene creation for this SpatialViewController. This is the size, in pixels, of one side of a square. 
     //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.

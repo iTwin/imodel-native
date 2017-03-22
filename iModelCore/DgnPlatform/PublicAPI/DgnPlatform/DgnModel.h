@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
 namespace TileTree {struct Root;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
+namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -72,7 +72,7 @@ public:
     DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
     DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
     DGNPLATFORM_EXPORT bool GetIsTemplate() const;
-    DGNPLATFORM_EXPORT bool GetInGuiList() const;
+    DGNPLATFORM_EXPORT bool IsPrivate() const;
 };
 
 //=======================================================================================
@@ -164,22 +164,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnDbR m_dgndb;
         DgnClassId m_classId;
         DgnElementId  m_modeledElementId;
-        bool m_inGuiList;
+        bool m_isPrivate;
         bool m_isTemplate = false;
 
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        //! @param[in] inGuiList Optional parameter that controls the visibility of the new DgnModel in model lists shown to the user
+        //! @param[in] isPrivate Optional parameter specifying that this model should @em not appear in lists shown to the user
         //! @param[in] isTemplate Optional parameter that indicates whether the new DgnModel is a template or not
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool inGuiList=true, bool isTemplate=false) :
-            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_inGuiList(inGuiList), m_isTemplate(isTemplate)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, bool isPrivate=false, bool isTemplate=false) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_isPrivate(isPrivate), m_isTemplate(isTemplate)
             {
             }
 
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
-        void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;} //!< Set the visibility of models created with this CreateParams in model lists shown to the user
+        void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
         void SetIsTemplate(bool isTemplate) {m_isTemplate = isTemplate;} //!< Set whether the DgnModel is a template used to create instances
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
@@ -219,7 +219,7 @@ protected:
     DgnClassId m_classId;
     DgnElementId m_modeledElementId;
     DgnClassId m_modeledElementRelClassId;
-    bool m_inGuiList;
+    bool m_isPrivate;
     bool m_isTemplate;
     BeMutex m_mutex;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
@@ -378,6 +378,7 @@ protected:
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
     virtual RoleModelCP _ToRoleModel() const {return nullptr;}
     virtual InformationModelCP _ToInformationModel() const {return nullptr;}
+    virtual InformationRecordModelCP _ToInformationRecordModel() const {return nullptr;}
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
@@ -489,11 +490,11 @@ public:
     //! Get the ECClassId of the ECRelationship that specifies how this DgnModel relates to the modeled element.
     DgnClassId GetModeledElementRelClassId() const {return m_modeledElementRelClassId;}
 
-    //! Get the visibility in model lists shown to the user
-    bool GetInGuiList() const {return m_inGuiList;}
+    //! Test if this model should @em not appear in lists shown to the user
+    bool IsPrivate() const {return m_isPrivate;}
 
-    //! Set the visibility in model lists shown to the user
-    void SetInGuiList(bool val) {m_inGuiList = val;}
+    //!< Specify that this model should @em not appear in lists shown to the user
+    void SetIsPrivate(bool val) {m_isPrivate = val;}
 
     //! Test whether this DgnModel is a template used to create instances
     bool IsTemplate() const {return m_isTemplate;}
@@ -506,6 +507,7 @@ public:
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
     RoleModelCP ToRoleModel() const {return _ToRoleModel();} //!< more efficient substitute for dynamic_cast<RoleModelCP>(model)
     InformationModelCP ToInformationModel() const {return _ToInformationModel();} //!< more efficient substitute for dynamic_cast<InformationModelCP>(model)
+    InformationRecordModelCP ToInformationRecordModel() const {return _ToInformationRecordModel();} //!< more efficient substitute for dynamic_cast<InformationRecordModelCP>(model)
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
@@ -518,6 +520,7 @@ public:
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     RoleModelP ToRoleModelP() {return const_cast<RoleModelP>(_ToRoleModel());} //!< more efficient substitute for dynamic_cast<RoleModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
+    InformationRecordModelP ToInformationRecordModelP() {return const_cast<InformationRecordModelP>(_ToInformationRecordModel());} //!< more efficient substitute for dynamic_cast<InformationRecordModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
@@ -536,6 +539,7 @@ public:
     bool Is3dModel() const {return nullptr != ToGeometricModel3d();}
     bool IsRoleModel() const {return nullptr != ToRoleModel();}
     bool IsInformationModel() const {return nullptr != ToInformationModel();}
+    bool IsInformationRecordModel() const {return nullptr != ToInformationRecordModel();}
     bool IsDefinitionModel() const {return nullptr != ToDefinitionModel();}
     bool IsSheetModel() const {return nullptr != ToSheetModel();}
     bool IsDrawingModel() const {return nullptr != ToDrawingModel();}
@@ -787,9 +791,9 @@ public:
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
-        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, modeledElementId, inGuiList), m_displayInfo(displayInfo)
+        //! @param[in] isPrivate Optional parameter specifying that this model should @em not appear in lists shown to the user
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DisplayInfo displayInfo = DisplayInfo(), bool isPrivate = false)
+            : T_Super(dgndb, classId, modeledElementId, isPrivate), m_displayInfo(displayInfo)
             {}
 
         //! @private
@@ -935,8 +939,8 @@ public:
     DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalElementCR modeledElement);
     DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalElementCR modeledElement);
 
-    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(PhysicalRecipeCR modeledElement);
-    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(PhysicalRecipeCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(TemplateRecipe3dCR modeledElement);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(TemplateRecipe3dCR modeledElement);
 };
 
 //=======================================================================================
@@ -1050,6 +1054,27 @@ protected:
 };
 
 //=======================================================================================
+//! A model which contains only information records.
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    03/17
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationRecordModel : InformationModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_InformationRecordModel, InformationModel);
+    friend struct dgn_ModelHandler::InformationRecord;
+
+protected:
+    InformationRecordModelCP _ToInformationRecordModel() const override final {return this;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+
+    explicit InformationRecordModel(CreateParams const& params) : T_Super(params) {}
+    static InformationRecordModelPtr Create(CreateParams const& params) { return new InformationRecordModel(params); }
+public:
+    DGNPLATFORM_EXPORT static InformationRecordModelPtr Create(InformationRecordPartitionCR modeledElement);
+    DGNPLATFORM_EXPORT static InformationRecordModelPtr CreateAndInsert(InformationRecordPartitionCR modeledElement);
+};
+
+//=======================================================================================
 //! A model which contains information about this repository.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    08/16
@@ -1088,21 +1113,6 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_DgnModel
-// @bsiclass                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SessionModel : DefinitionModel
-{
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SessionModel, DefinitionModel);
-protected:
-    DgnDbStatus _OnDelete() override {BeAssert(false && "The SessionModel cannot be deleted"); return DgnDbStatus::WrongModel;}
-    DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
-    DGNPLATFORM_EXPORT DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer, DgnElementCR destinationElementToModel) const override;
-public:
-    explicit SessionModel(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
@@ -1120,8 +1130,8 @@ public:
     //! Create a DrawingModel that breaks down the specified Drawing element
     DGNPLATFORM_EXPORT static DrawingModelPtr Create(DrawingCR drawing);
 
-    //! Create a DrawingModel that breaks down the specified GraphicalRecipe2d element
-    DGNPLATFORM_EXPORT static DrawingModelPtr Create(GraphicalRecipe2dCR drawing);
+    //! Create a DrawingModel that breaks down the specified TemplateRecipe2d element
+    DGNPLATFORM_EXPORT static DrawingModelPtr Create(TemplateRecipe2dCR drawing);
 };
 
 //=======================================================================================
@@ -1259,16 +1269,16 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, GroupInformationModel, GroupInformation, Information, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for InformationRecordModel
+    struct EXPORT_VTABLE_ATTRIBUTE InformationRecord : Information
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordModel, InformationRecordModel, InformationRecord, Information, DGNPLATFORM_EXPORT)
+    };
+
     //! The ModelHandler for DictionaryModel
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for SessionModel
-    struct EXPORT_VTABLE_ATTRIBUTE Session : Definition
-    {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SessionModel, SessionModel, Session, Definition, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for RepositoryModel

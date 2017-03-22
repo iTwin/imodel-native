@@ -41,7 +41,7 @@ public:
 public:
     explicit DgnDbTestFixture()
     {
-        DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain(), true /*=isRequired*/, false /*=isReadonly*/);
+    DgnDomains::RegisterDomain(DPTest::DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
     ~DgnDbTestFixture()

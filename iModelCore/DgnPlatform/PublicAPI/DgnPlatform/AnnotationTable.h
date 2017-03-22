@@ -1634,7 +1634,7 @@ public:
                     explicit                        AnnotationTable(CreateParams const& params);
 DGNPLATFORM_EXPORT  static AnnotationTablePtr       Create(CreateParams const& params);
 
-                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTable)); }
+                    static DgnClassId               QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTable)); }
 
                     static AnnotationTableCPtr      Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTable>(id); }
                     static AnnotationTablePtr       GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTable>(id); }
