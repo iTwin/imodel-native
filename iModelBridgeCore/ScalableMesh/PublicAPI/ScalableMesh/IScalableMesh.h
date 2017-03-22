@@ -129,6 +129,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool          _IsTerrain() = 0;
 
+        virtual bool          _IsTextured() = 0;
+
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
 
         virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) = 0;
@@ -206,6 +208,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual bool                               _RemoveClip(uint64_t clipID) = 0;
 
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) = 0;
+
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
@@ -223,7 +227,16 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) = 0;
 
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& ids) = 0;
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) = 0;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) = 0;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
+
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) = 0;
 
@@ -235,6 +248,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual Utf8String                         _GetEditFilesBasePath() = 0;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const = 0;
+
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
@@ -245,7 +260,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
 
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) = 0;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const = 0;
 
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
 
@@ -280,6 +295,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
         BENTLEY_SM_EXPORT bool          IsTerrain();
+
+        BENTLEY_SM_EXPORT bool          IsTextured();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
 
@@ -324,9 +341,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetEditFilesBasePath(const Utf8String& path);
 
-        BENTLEY_SM_EXPORT Utf8String              GetEditFilesBasePath();
+        BENTLEY_SM_EXPORT Utf8String             GetEditFilesBasePath();
 
-        BENTLEY_SM_EXPORT ScalableMeshState             GetState() const;
+        BENTLEY_SM_EXPORT void                   GetExtraFileNames(bvector<BeFileName>& extraFileNames) const;
+
+        BENTLEY_SM_EXPORT ScalableMeshState      GetState() const;
 
         BENTLEY_SM_EXPORT bool                   IsProgressive() const;
 
@@ -354,9 +373,15 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
+        BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive=true);
+
         BENTLEY_SM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
 
+        BENTLEY_SM_EXPORT bool                   ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive = true);
+
         BENTLEY_SM_EXPORT bool                   RemoveClip(uint64_t clipID);
+
+        BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, bvector<DPoint3d>& clipData);
 
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
@@ -378,6 +403,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 
+        BENTLEY_SM_EXPORT void                   SetClipOnOrOff (uint64_t id, bool isActive);
+        BENTLEY_SM_EXPORT void                   GetIsClipActive(uint64_t id, bool& isActive);
+
+        BENTLEY_SM_EXPORT void                   GetClipType(uint64_t id, SMNonDestructiveClipType& type);
+
         BENTLEY_SM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
@@ -394,7 +424,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 
-        BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids);
+        BENTLEY_SM_EXPORT void                   GetCoverageIds(bvector<uint64_t>& ids) const;
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
 

@@ -560,9 +560,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {            
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if (
-            m_requestedLevel == node->GetLevel() /*|| 
-            (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
+        if ( m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) )
             {
             // Copy content            
             if (node->m_nodeHeader.m_nbFaceIndexes > 0)

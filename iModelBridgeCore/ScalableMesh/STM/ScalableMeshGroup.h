@@ -122,6 +122,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual bool          _IsTerrain() override;
 
+        virtual bool          _IsTextured() override;
+
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
@@ -168,6 +170,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
@@ -194,8 +197,16 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
         virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) override;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
+
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override {}
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override {}
@@ -212,7 +223,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
 
-        virtual Utf8String                               _GetEditFilesBasePath() override { return Utf8String(); }
+        virtual Utf8String                         _GetEditFilesBasePath() override { return Utf8String(); }
+
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override {assert(!"Should not be called");}
 
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {

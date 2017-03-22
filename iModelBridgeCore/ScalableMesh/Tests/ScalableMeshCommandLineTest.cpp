@@ -777,7 +777,19 @@ void RunDTMSTMTriangulateTest()
     fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
     TerrainModel::BcDTMPtr bcdtm;
     //SortPoints(allVerts, allIndices);
-    MakeDTM(bcdtm, allVerts, allIndices);
+    for (size_t i = 5065; i < 10000; i++)
+        {
+        bvector<int32_t> indicesList;
+        indicesList.insert(indicesList.end(), allIndices.begin(), allIndices.end());
+        for (size_t j = 0; j < i; ++j)
+            {
+            indicesList.push_back(allIndices[allIndices.size() - 3]);
+            indicesList.push_back(allIndices[allIndices.size() - 2]);
+            indicesList.push_back(allIndices[allIndices.size() - 1]);
+            }
+
+        MakeDTM(bcdtm, allVerts, indicesList);
+        }
     }
 
 void LoadMesh(bvector<DPoint3d>& vertices, bvector<int>& indices, WString& path)
@@ -1373,9 +1385,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     RunPrecisionTest(stmFileName);*/
 
     //DarylsTestFunction();
-    RunDTMClipTest();
+   // RunDTMClipTest();
     //RunDTMTriangulateTest();
-   //RunDTMSTMTriangulateTest();
+   RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);

@@ -124,8 +124,20 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
 
         virtual void GetAllIDs(bvector<uint64_t>& allIds) override;
 
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) override;
+
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) override;
 
         virtual void SetAutoCommit(bool autoCommit) override;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) override;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) override;
     };
 

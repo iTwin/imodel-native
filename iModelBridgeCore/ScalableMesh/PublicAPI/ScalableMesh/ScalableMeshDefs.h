@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -142,6 +142,21 @@ enum SMStatus
     S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
     S_QTY,
     };
+
+enum class SMNonDestructiveClipType
+    {
+    Mask = 0,
+    Boundary,
+    Qty
+    };
+
+enum class SMClipGeometryType
+    {
+    Polygon = 0,
+    ComplexPolygon,
+    Qty
+    };
+
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 

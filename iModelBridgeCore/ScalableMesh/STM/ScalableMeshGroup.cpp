@@ -68,6 +68,14 @@ bool          ScalableMeshGroup::_IsTerrain()
     return false;
     }
 
+bool          ScalableMeshGroup::_IsTextured()
+    {
+    for (auto& member : m_members)
+        if (member->IsTextured()) return true;
+
+    return false;
+    }
+
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  ScalableMeshGroup::_GetDTMInterface(DTMAnalysisType type)
     {
@@ -255,12 +263,104 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
     return false;
     }
 
+ void                               ScalableMeshGroup::_SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    for (auto& member : m_members)
+        member->SetClipOnOrOff(id, isActive);
+    }
+ void                               ScalableMeshGroup::_GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    for (auto& member : m_members)
+        member->GetIsClipActive(id, isActive);
+    }
+
+ void                               ScalableMeshGroup::_GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    assert(false);
+    }
+
+ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+     {
+     auto clipPrim = ICurvePrimitive::CreateLineString(pts, ptsSize);
+     CurveVectorPtr clipVecPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, clipPrim);
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (m_regions[i].hasRestrictedRegion)
+             {
+             auto curvePtr = ICurvePrimitive::CreateLineString(m_regions[i].region);
+             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+             CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
+             if (!intersection.IsNull())
+                 {
+                 bvector<bvector<DPoint3d>> loops;
+                 if (intersection->CollectLinearGeometry(loops) && !loops.empty())
+                     if (m_members[i]->AddClip(loops.front().data(), loops.front().size(), clipID, geom, type, isActive)) return true;
+                 }
+             }
+         }
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (!m_regions[i].hasRestrictedRegion)
+             {
+             if (m_members[i]->AddClip(pts, ptsSize, clipID, geom, type, isActive)) return true;
+             }
+         }
+
+     return false;
+     }
+
+ bool                               ScalableMeshGroup::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+     {
+     auto clipPrim = ICurvePrimitive::CreateLineString(pts, ptsSize);
+     CurveVectorPtr clipVecPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, clipPrim);
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (m_regions[i].hasRestrictedRegion)
+             {
+             auto curvePtr = ICurvePrimitive::CreateLineString(m_regions[i].region);
+             CurveVectorPtr curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+             CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *clipVecPtr);
+             if (!intersection.IsNull())
+                 {
+                 bvector<bvector<DPoint3d>> loops;
+                 if (intersection->CollectLinearGeometry(loops) && !loops.empty())
+                     if (m_members[i]->ModifyClip(loops.front().data(), loops.front().size(), clipID, geom, type, isActive)) return true;
+                 }
+             }
+         }
+
+     for (size_t i = 0; i < m_members.size(); ++i)
+         {
+         if (!m_regions[i].hasRestrictedRegion)
+             {
+             if (m_members[i]->ModifyClip(pts, ptsSize, clipID, geom, type, isActive)) return true;
+             }
+         }
+
+     return false;
+     }
+
+
 bool                               ScalableMeshGroup::_RemoveClip(uint64_t clipID)
     {
     for (auto& member : m_members)
         member->RemoveClip(clipID);
     return true;
     }
+
+bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    for (auto& member : m_members)
+        if(member->GetClip(clipID, clipData))
+            return true;
+
+    return false;
+}
 
 void                               ScalableMeshGroup::_SetIsInsertingClips(bool toggleInsertMode)
     {
@@ -408,7 +508,7 @@ void                           ScalableMeshGroup::_GetAllCoverages(bvector<bvect
         }
     }
 
-void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids)
+void                               ScalableMeshGroup::_GetCoverageIds(bvector<uint64_t>& ids) const
     {
     for (auto& member : m_members)
         {
@@ -721,12 +821,16 @@ bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR directio
             DPoint3d currentPt;
             if (scalableMesh->GetDTMInterface(m_type)->GetDTMDraping()->IntersectRay(currentPt, direction, testPoint))
                 {
+
                 DPoint3d pt;
                 double param;
                 if (ray.ProjectPointBounded(pt, param, currentPt) && param < minParam && param > -1e-8)
                     {
-                    minPt = currentPt;
-                    minParam = param;
+                    if (m_group->IsWithinRegion(scalableMesh, &currentPt, 1))
+                    {
+                        minPt = currentPt;
+                        minParam = param;
+                    }
                     }
                 }
             }
@@ -743,8 +847,20 @@ bool ScalableMeshGroupDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR directio
                 double param;
                 if (ray.ProjectPointBounded(pt, param, currentPt) && param < minParam && param > -1e-8)
                     {
-                    minPt = currentPt;
-                    minParam = param;
+                    bool isOutsideRegions = true;
+                    for (auto& scalableMeshRegion : m_group->GetMembers())
+                    {
+                        if (m_group->IsRegionRestricted(scalableMeshRegion) && m_group->IsWithinRegion(scalableMeshRegion, &currentPt, 1))
+                        {
+                            isOutsideRegions = false;
+                            break;
+                        }
+                    }
+                    if (isOutsideRegions)
+                    {
+                        minPt = currentPt;
+                        minParam = param;
+                    }
                     }
                 }
             }
@@ -766,9 +882,9 @@ DTMStatusInt ScalableMeshGroupDTM::_ComputeCutFillVolume(double* cut, double* fi
 
         if (memberVolume > 0)
             {
-            *cut = memberCut;
-            *fill = memberFill;
-            *volume = memberVolume;
+            if(cut != nullptr) *cut = memberCut;
+            if (fill != nullptr) *fill = memberFill;
+            if (volume != nullptr) *volume = memberVolume;
             return code;
             }
         }
@@ -786,9 +902,9 @@ DTMStatusInt ScalableMeshGroupDTM::_ComputeCutFillVolumeClosed(double* cut, doub
 
         if (memberVolume > 0)
             {
-            *cut = memberCut;
-            *fill = memberFill;
-            *volume = memberVolume;
+            if (cut != nullptr) *cut = memberCut;
+            if (fill != nullptr) *fill = memberFill;
+            if (volume != nullptr) *volume = memberVolume;
             return code;
             }
         }

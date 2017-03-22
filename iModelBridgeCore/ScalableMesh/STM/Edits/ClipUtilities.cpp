@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2017-01-27\\";
+const wchar_t* s_path = L"C:\\work\\2017q1\\spar\\clip\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
@@ -850,11 +850,11 @@ size_t s_nclip = 0;
 
 bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, bvector<bpair<double, int>>& metadata, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
     {
-#ifndef NDEBUG
+//#ifndef NDEBUG
     bool dbg = false;
     if (dbg)
         {
-        WString nameBefore = WString(s_path)+L"fpreclipmeshregion_";
+        WString nameBefore = WString(s_path)+L"fpreclipmeshregion2d_";
         nameBefore.append(to_wstring(s_nclip).c_str());
         nameBefore.append(L"_");
         nameBefore.append(to_wstring(m_range.low.x).c_str());
@@ -869,7 +869,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         fclose(meshBeforeClip);
         for (size_t j = 0; j < polygons.size(); ++j)
             {
-            WString namePoly = WString(s_path) + L"fpreclippolyreg_";
+            WString namePoly = WString(s_path) + L"fpreclippolyreg2d_";
             namePoly.append(to_wstring(s_nclip).c_str());
             namePoly.append(L"_");
             namePoly.append(to_wstring(j).c_str());
@@ -885,7 +885,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fclose(polyCliPFile);
             }
         }
-#endif
+//#endif
     DTMUserTag    userTag = 0;
     DTMFeatureId* textureRegionIdsP = 0;
     long          numRegionTextureIds = 0;
@@ -972,10 +972,10 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
         PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
         vec->CopyFrom(*pf);
         if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-#ifndef NDEBUG
+//#ifndef NDEBUG
         if (dbg)
             {
-            WString name = WString(s_path) + L"fpostclipmeshnoutsideregion_";
+            WString name = WString(s_path) + L"fpostclipmeshnoutsideregion2d_";
             name.append(to_wstring(s_nclip).c_str());
             name.append(L"_");
             name.append(to_wstring(no).c_str());
@@ -993,7 +993,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
             fclose(meshAfterClip);
             }
-#endif
+//#endif
         polyfaces[0].push_back(vec);
         }
     for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
@@ -1007,10 +1007,10 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
             PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
             vec->CopyFrom(*pf);
             if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
-#ifndef NDEBUG
+//#ifndef NDEBUG
             if (dbg)
                 {
-                WString name = WString(s_path) + L"fpostclipmeshregion_";
+                WString name = WString(s_path) + L"fpostclipmeshregion2d_";
                 name.append(to_wstring(s_nclip).c_str());
                 name.append(L"_");
                 name.append(to_wstring(n).c_str());
@@ -1030,7 +1030,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
                 fwrite(vec->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
                 fclose(meshAfterClip);
                 }
-#endif
+//#endif
             ++n2;
             polyfaces[n + 1].push_back(vec);
             }
@@ -1424,14 +1424,16 @@ void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<Inte
     if (hasVertex != -1)
         {
         bvector<int32_t> firstTri(3);
-        firstTri[0] = useParam ? foundIntersects[hasVertex].newParamIdx : foundIntersects[hasVertex].newPtIdx;
-        firstTri[1] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
-        firstTri[2] = splitFacet[(foundIntersects[hasVertex].onVertex + 1) % 3];
+        firstTri[0] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
+        firstTri[1] = splitFacet[(foundIntersects[(hasVertex + 1) % 2].edgeIdx + 2) % 3];
+        firstTri[2] = splitFacet[(foundIntersects[(hasVertex + 1) % 2].edgeIdx + 3) % 3];
+       // firstTri[2] = splitFacet[(foundIntersects[hasVertex].onVertex + 1) % 3];
         newFacets.push_back(firstTri);
         bvector<int32_t> secondTri(3);
-        secondTri[0] = useParam ? foundIntersects[hasVertex].newParamIdx : foundIntersects[hasVertex].newPtIdx;
-        secondTri[1] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
-        secondTri[2] = splitFacet[(foundIntersects[hasVertex].onVertex + 2) % 3];
+        //secondTri[0] = useParam ? foundIntersects[hasVertex].newParamIdx : foundIntersects[hasVertex].newPtIdx;
+        secondTri[0] = useParam ? foundIntersects[(hasVertex + 1) % 2].newParamIdx : foundIntersects[(hasVertex + 1) % 2].newPtIdx;
+        secondTri[1] = splitFacet[(foundIntersects[(hasVertex + 1) % 2].edgeIdx + 1) % 3];
+        secondTri[2] = splitFacet[(foundIntersects[(hasVertex + 1) % 2].edgeIdx + 2) % 3];
         newFacets.push_back(secondTri);
         }
     else
@@ -1697,12 +1699,13 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
     PolyfaceHeaderPtr clippedMesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
     clippedMesh->CopyFrom(*meshP);
     s_nclip++;
+    int clipVal = (int)s_nclip;
 
-    bool dbg = false;
+    volatile bool dbg = false;
     if (dbg)
         {
-        WString nameBefore = WString(L"E:\\output\\scmesh\\2017-01-27\\") + L"fpreclipmeshregion_";
-        nameBefore.append(to_wstring(s_nclip).c_str());
+        WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpreclipmeshregion_";
+        nameBefore.append(to_wstring(clipVal).c_str());
         nameBefore.append(L".m");
         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
         size_t count = meshP->GetPointCount();
@@ -1714,8 +1717,8 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         fclose(meshBeforeClip);
         for (size_t j = 0; j < polygons.size(); ++j)
             {
-            WString namePoly = WString(L"E:\\output\\scmesh\\2017-01-27\\") + L"fpreclippolyreg_";
-            namePoly.append(to_wstring(s_nclip).c_str());
+            WString namePoly = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpreclippolyreg_";
+            namePoly.append(to_wstring(clipVal).c_str());
             namePoly.append(L"_");
             namePoly.append(to_wstring(j).c_str());
             namePoly.append(L".p");
@@ -1746,8 +1749,8 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
 
      if (dbg)
          {
-         WString nameBefore = WString(L"E:\\output\\scmesh\\2017-01-27\\") + L"fpostclipmeshregion_";
-         nameBefore.append(to_wstring(s_nclip).c_str());
+         WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
+         nameBefore.append(to_wstring(clipVal).c_str());
          nameBefore.append(L".m");
          FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
          size_t count = polyfaces[0][0]->GetPointCount();
@@ -1757,6 +1760,23 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
          fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
          fwrite(polyfaces[0][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
          fclose(meshBeforeClip);
+
+         for (size_t i = 1; i < polyfaces.size(); ++i)
+         {
+             WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
+             nameBefore.append(to_wstring(clipVal).c_str());
+             nameBefore.append(L"_");
+             nameBefore.append(to_wstring(i).c_str());
+             nameBefore.append(L".m");
+             FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
+             size_t count = polyfaces[i][0]->GetPointCount();
+             fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
+             fwrite(polyfaces[i][0]->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
+             count = polyfaces[i][0]->GetPointIndexCount();
+             fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
+             fwrite(polyfaces[i][0]->GetPointIndexCP(), sizeof(int32_t), count, meshBeforeClip);
+             fclose(meshBeforeClip);
+         }
          }
      return ret;
     }

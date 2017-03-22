@@ -132,6 +132,10 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     IScalableMesh* m_scMesh;
     Transform m_transformToUors;
     IDTMVolume* m_dtmVolume;
+    TerrainModel::BcDTMPtr m_dtm; //Maximum 5M points bcDtm representation of a ScalableMesh
+    bool                   m_tryCreateDtm; 
+
+
     protected:
 
     virtual IDTMDrapingP     _GetDTMDraping() override;
@@ -249,6 +253,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual __int64          _GetPointCount() override;
 
         virtual bool          _IsTerrain() override;
+
+        virtual bool          _IsTextured() override;
         
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
@@ -290,8 +296,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
 
         virtual bool                               _ShouldInvertClips() override;
@@ -300,6 +309,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) override;
 
 
@@ -316,7 +330,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) override;
         virtual BentleyStatus                   _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) override;
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
@@ -341,8 +355,10 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
 
-        virtual Utf8String                               _GetEditFilesBasePath() override;
+        virtual Utf8String                         _GetEditFilesBasePath() override;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override;        
+        
         virtual IScalableMeshNodePtr               _GetRootNode() override;
 
 #ifdef WIP_MESH_IMPORT
@@ -403,6 +419,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual bool          _IsTerrain() override;
 
+        virtual bool          _IsTextured() override { return false; }
+
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DTMAnalysisType type) override;
 
         virtual BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*  _GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type) override;
@@ -439,12 +457,35 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
+        virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+            {
+            return false;
+            }
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
+        virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+            {
+            return false;
+            }
+        virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override { return false; }
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
+
+        virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override
+            {
+            return;
+            }
+        virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override
+            {
+            return;
+            }
+
+        virtual void                               _GetClipType(uint64_t id, SMNonDestructiveClipType& type) override
+            {
+            return;
+            }
 
         virtual bool                               _ShouldInvertClips() override { return false; }
 
@@ -463,6 +504,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
         virtual int                    _SynchWithSources() override;
 
+        virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
+        
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
         virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {};
@@ -488,7 +531,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         virtual BentleyStatus                   _CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id) override { return ERROR; };
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override {};
-        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) override {};
+        virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override {};
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual Utf8String                               _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
