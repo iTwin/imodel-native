@@ -12,7 +12,6 @@
 #include <Units/Units.h>
 
 namespace BEU = BentleyApi::Units;
-//using namespace BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -290,6 +289,7 @@ struct Utils
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
     static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
     UNITS_EXPORT static Utf8String FormatProblemDescription(FormatProblemCode code);
+    UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName= nullptr, Utf8CP space = nullptr);
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
@@ -489,9 +489,6 @@ public:
 struct NumericFormatSpec
     {
 private:
-    //Utf8String          m_name;                  // name or ID of the format
-    //Utf8String          m_alias;                 // short alternative name (alias)
-    //double              m_minThreshold;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
     ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
@@ -576,10 +573,10 @@ public:
     UNITS_EXPORT size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0);
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8P stdName, double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
     //UNITS_EXPORT static Utf8String StdFormatComboValue(Utf8P stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
@@ -631,7 +628,8 @@ protected:
     Utf8CP m_unitLabel[indxLimit];
     FormatProblemCode m_problemCode;
     CompositeSpecType m_type;
-    NumericFormatSpecCP m_formatSpec;
+    bool m_includeZero;
+    Utf8String m_spacer;
 
     void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
@@ -640,6 +638,8 @@ protected:
     BEU::UnitCP SetInputUnit(BEU::UnitCP inputUnit) {return m_units[indxInput] = inputUnit; }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit);
+    Utf8CP GetUnitName(size_t indx, Utf8CP substitute) { return (nullptr == m_units[indx]) ? substitute : m_units[indx]->GetName(); }
+    Utf8String GetEffectiveLabel(size_t indx, Utf8CP substitute) { return Utils::IsNameNullOrEmpty(m_unitLabel[indx]) ? GetUnitName(indx, substitute) : m_unitLabel[indx]; }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit();
 public:
@@ -648,10 +648,10 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit=nullptr, BEU::UnitCP MinorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
     UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
     UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
-    UNITS_EXPORT Utf8CP GetMajorLabel(Utf8CP MajorLabel) { return m_unitLabel[indxMajor]; }
-    UNITS_EXPORT Utf8CP GetMiddleLabel(Utf8CP MiddleLabel) { return m_unitLabel[indxMiddle]; }
-    UNITS_EXPORT Utf8CP GetMinorLabel(Utf8CP MinorLabel) { return m_unitLabel[indxMinor]; }
-    UNITS_EXPORT Utf8CP GetSubLabel(Utf8CP SubLabel) { return m_unitLabel[indxSub]; }
+    UNITS_EXPORT Utf8String GetMajorLabel(Utf8CP substitute) { return GetEffectiveLabel(indxMajor, substitute); }
+    UNITS_EXPORT Utf8String GetMiddleLabel(Utf8CP substitute) { return GetEffectiveLabel(indxMiddle, substitute); }
+    UNITS_EXPORT Utf8String GetMinorLabel(Utf8CP substitute) { return GetEffectiveLabel(indxMinor, substitute); }
+    UNITS_EXPORT Utf8String GetSubLabel(Utf8CP substitute) { return GetEffectiveLabel(indxSub, substitute); }
     UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
     bool IsProblem() { return m_problemCode != FormatProblemCode::NoProblems; }
     bool NoProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
@@ -659,9 +659,14 @@ public:
     size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
     size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
     UNITS_EXPORT Utf8CP GetProblemDescription();
-    UNITS_EXPORT NumericFormatSpecCP AssignFormatSpec(NumericFormatSpecCP spec) { return (m_formatSpec = spec); }
+    //UNITS_EXPORT NumericFormatSpecCP AssignFormatSpec(NumericFormatSpecCP spec) { return (m_formatSpec = spec); }
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
-    UNITS_EXPORT Utf8String DecomposeValue(double dval, Utf8CP uomName = nullptr);
+    UNITS_EXPORT Utf8String FormatValue(double dval, NumericFormatSpecP fmtP, Utf8CP uomName = nullptr);
+    CompositeSpecType GetType() { return m_type; }
+    Utf8String GetSpacer() { return m_spacer; }
+    Utf8String SetSpacer(Utf8CP spacer) { return m_spacer = spacer; }
+    bool IsIncludeZero() { return m_includeZero; }
+    bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
     };
 
 struct CompositeValue
@@ -716,7 +721,7 @@ struct NamedFormatSpec
         FormatSpecType  GetSpecType(){return m_specType;}
         bool HasComposite() { return FormatSpecType::Composite == m_specType; }
         NumericFormatSpecP   GetNumericSpec() const { return m_numericSpec; }
-        CompositeValueSpecP  getCompositeSpec() { return  (HasComposite() ? m_compositeSpec : nullptr); }
+        CompositeValueSpecP  GetCompositeSpec() { return  (HasComposite() ? m_compositeSpec : nullptr); }
         bool IsProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() { return m_numericSpec->GetPresentationType(); }
@@ -763,7 +768,7 @@ struct StdFormatSet
 private:
     bvector<NamedFormatSpecP> m_formatSet;
  
-    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias = nullptr);
+    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias = nullptr, CompositeValueSpecP compS = nullptr);
     void StdInit();
     StdFormatSet() { StdInit(); }
     static StdFormatSet& Set() { static StdFormatSet set; return set; }
@@ -1078,10 +1083,12 @@ struct KindOfQuantity
         Utf8String m_defaultPresentationUnit;
         bvector<Utf8String> m_alternativePresentationUnitList;
 
-        FormatUnitSet m_persistenceFUS;
+        
         ////Quantity m_persistenceResolution;     // 1.0e-6 M   100.000003 1.100001
-        double m_relativeAccuracy;   // a parameter related to the accuracy of the measurement methods.
-        bvector<FormatUnitSet> m_presentationFUS;
+        double m_relativeError;   // a parameter related to the accuracy of the measurement methods.
+        // Certainty, Accuracy, MarginOfError, Error, Tolerance, 
+        FormatUnitSet m_persistenceFUS;
+        bvector<FormatUnitSet> m_presentationFUS;  
         mutable KindOfQuantityId m_kindOfQuantityId;
 */
 

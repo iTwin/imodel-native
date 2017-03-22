@@ -111,11 +111,12 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("24 YRD 2 FT 5.7 IN", qtr.FormatQuantTriad(" ", 2).c_str());
     EXPECT_STREQ ("24_YRD 2_FT 5.7_IN", qtr.FormatQuantTriad("_", 2).c_str());
     //StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec = -1, double round = -1.0);
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract", len, ftUOM).c_str());
-    EXPECT_STREQ ("74 1/2", NumericFormatSpec::StdFormatQuantity("fract16", len, ftUOM).c_str());
-    EXPECT_STREQ ("74 15/32", NumericFormatSpec::StdFormatQuantity("fract32", len, ftUOM).c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", len, yardUOM).c_str());
-    EXPECT_STREQ ("24 7/8", NumericFormatSpec::StdFormatQuantity("fract8", len, yrdsdUOM).c_str());
+    EXPECT_STREQ ("74 15/32 FT", NumericFormatSpec::StdFormatQuantity("fract", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("74 1/2 FT", NumericFormatSpec::StdFormatQuantity("fract16", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("74 15/32 FT", NumericFormatSpec::StdFormatQuantity("fract32", len, ftUOM, " ").c_str());
+    EXPECT_STREQ ("24 7/8 YRD", NumericFormatSpec::StdFormatQuantity("fract8", len, yardUOM, " ").c_str());
+    EXPECT_STREQ ("24 7/8-YRD", NumericFormatSpec::StdFormatQuantity("fract8", len, yrdsdUOM, "-").c_str());
+
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -137,6 +138,19 @@ TEST(FormattingTest, PhysValues)
 
     // Arc Angles
     EXPECT_STREQ (u8"135° 11' 30\"", atr.FormatQuantTriad("", 4).c_str());
+
+    EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang).c_str());
+    EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("dms8", ang).c_str());
+    EXPECT_STREQ (u8"135° 11 1/2'", NumericFormatSpec::StdFormatQuantity("dm8", ang).c_str());
+
+    BEU::Quantity const distM = BEU::Quantity(3560.5, *metrUOM);
+    EXPECT_STREQ ("2mile(s)373yrd(s) 2' 5 1/4\"", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());
+
+    
+    //LOG.infov("Distance %s", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());
+    //LOG.infov("dms8 %s", NumericFormatSpec::StdFormatQuantity("dms8", ang, degUOM).c_str());
+    //LOG.infov("dm8 %s", NumericFormatSpec::StdFormatQuantity("dm8", ang, degUOM).c_str());
+
 
     // Temperature
     EXPECT_STREQ (u8"97.88°F", NumericFormatSpec::StdFormatPhysValue("real4", 36.6, "CELSIUS", "FAHRENHEIT", u8"°F", nullptr).c_str());
@@ -195,14 +209,14 @@ TEST(FormattingTest, PhysValues)
 
     CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
 
-    /*if (cvs.NoProblem())
-        {
-        LOG.infov("MajorToMid %d", cvs.GetMajorToMiddleRatio());
-        LOG.infov("MidToMinor %d", cvs.GetMiddleToMinorRatio());
-        LOG.infov("MinorToSub %d", cvs.GetMinorToSubRatio());
-        }
-    else
-        LOG.infov("Error: %s", cvs.GetProblemDescription());*/
+    //if (cvs.NoProblem())
+    //    {
+    //    LOG.infov("MajorToMid %d", cvs.GetMajorToMiddleRatio());
+    //    LOG.infov("MidToMinor %d", cvs.GetMiddleToMinorRatio());
+    //    LOG.infov("MinorToSub %d", cvs.GetMinorToSubRatio());
+    //    }
+    //else
+    //    LOG.infov("Error: %s", cvs.GetProblemDescription());
 
     }
 

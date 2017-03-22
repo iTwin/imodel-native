@@ -107,7 +107,9 @@ BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
     return SUCCESS;
     }
 
-
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                               David.Fox-Rabinovitz     02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) const
     {
     if (m_unit == unit)
@@ -115,13 +117,7 @@ UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) con
         value = m_magnitude;
         return UnitsProblemCode::NoProblem;
         }
-
-    //UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) const
-    m_unit->Convert(value, m_magnitude, unit);
-    if (value == 0.0)
-        return UnitsProblemCode::UncomparableUnits;
-
-    return UnitsProblemCode::NoProblem;
+    return m_unit->Convert(value, m_magnitude, unit);
     }
 
 
@@ -145,7 +141,11 @@ UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) con
 Quantity Quantity::ConvertTo(UnitCP unit) const
     {
     double newValue;
-    if (nullptr == unit || SUCCESS != ConvertTo(unit, newValue))
+    if (nullptr == unit)
+        return *this;  // returning  the current Quantity (without conversion)
+
+    UnitsProblemCode prob = GetConvertedMagnitude(newValue, unit);
+    if(UnitsProblemCode::NoProblem != prob)
         return Quantity();     // when impossible to convert - return invalid quantity
 
     return Quantity(newValue, *unit);

@@ -332,6 +332,26 @@ bool Utils::AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP un2)
     return (ph1 == ph2);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//----------------------------------------------------------------------------------------
+Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
+    {
+    size_t txtL = Utils::IsNameNullOrEmpty(txtValue) ? 0 : strlen(txtValue);
+    size_t uomL = Utils::IsNameNullOrEmpty(unitName) ? 0 : strlen(unitName);
+    size_t spcL = Utils::IsNameNullOrEmpty(space) ? 0 : strlen(space);
+    if (0 == txtL)
+        txtValue = "";
+    if (0 == uomL)
+        return txtValue;
+    size_t totL = txtL + uomL + spcL + 2;
+    Utf8P buf = (char*)alloca(totL);
+    BeStringUtilities::Snprintf(buf, totL, "%s%s%s", txtValue, ((0 == spcL)? "":space), unitName);
+    return buf;
+    }
+
+
+
  //===================================================
  //
  // FormatStopWatchMethods
@@ -1024,10 +1044,15 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecP numSpec, Utf8CP alias, CompositeValueSpecP compSpec)
     {
+    m_specType = FormatSpecType::Undefined;
+    m_alias = alias;
     m_name = name;
     m_numericSpec = numSpec;
-    m_alias = alias;
+    if (nullptr != numSpec)
+        m_specType = FormatSpecType::Numeric;
     m_compositeSpec = compSpec;
+    if (nullptr != compSpec)
+        m_specType = FormatSpecType::Composite;
     m_problemCode = FormatProblemCode::NoProblems;
     if (Utils::IsNameNullOrEmpty(name))
         m_problemCode = FormatProblemCode::NFS_InvalidSpecName;

@@ -697,8 +697,10 @@ Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
     FormatDouble(dval, buf, sizeof(buf), prec, round);
     return Utf8String(buf);
     }
-
-Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 01/17
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, int prec, double round)
     {
     if (!qty.IsNullQuantity())
         return Utf8String();
@@ -706,9 +708,15 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
     FormatDouble(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
-    return Utf8String(buf);
+    if(nullptr == useUnit)
+        return Utf8String(buf);
+    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetName(), space);
+    return txt;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
     {
     return FormatDouble(RoundedValue(dval, round));
@@ -723,6 +731,9 @@ Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int prec, double round)
     {
     NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
@@ -733,17 +744,83 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8P stdName, double dval, int pr
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, int prec, double round)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::StdFormatQuantity(Utf8P stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
-    NumericFormatSpecP fmtP = StdFormatSet::GetNumericFormat(stdName);
-    if (nullptr == fmtP)  // invalid name
-        fmtP = StdFormatSet::DefaultDecimal();
-    if (nullptr == fmtP)
-        return "";
-    //UnitCP unitQ = qty.GetUnit();   
-   // Utf8CP useUOM = (nullptr == useUnit) ? unitQ->GetName() : useUnit->GetName();
-    BEU::Quantity temp = qty.ConvertTo(useUnit);
-    return fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
+    NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
+    // there are two major options here: the format is a pure Numeric or it has a composite specification
+    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
+    bool composite = (nullptr == namF) ? false : namF->HasComposite();
+    BEU::Quantity temp = qty.ConvertTo(useUnit); 
+    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()): useLabel;
+    Utf8String majT, midT, minT, subT;
+
+
+    if (composite)  // procesing composite parts
+        {
+        CompositeValueSpecP compS = namF->GetCompositeSpec();
+        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(),temp.GetUnit());
+        Utf8CP spacer = Utils::IsNameNullOrEmpty(space)? compS->GetSpacer().c_str() : space;
+        // for all parts but the last one we need to format an integer 
+        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(), 
+                                                  FormatConstant::DefaultFormatTraits(), 0);
+        fmtI.SetKeepSingleZero(false);
+        switch (compS->GetType())
+            {
+            case CompositeSpecType::Single: // there is only one value to report
+                majT = fmtP->FormatDouble(dval.GetMajor(), prec, round);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                break;
+
+            case CompositeSpecType::Double: 
+                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                majT += " " + midT;
+                break;
+
+            case CompositeSpecType::Triple:
+                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
+                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+                majT += " " + midT + " " + minT;
+                break;
+
+            case CompositeSpecType::Quatro:
+                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                minT = fmtI.FormatDouble(dval.GetMinor(), prec, round);
+                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+                subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
+                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel(nullptr).c_str(), spacer);
+                majT += midT + " " + minT + " " + subT;
+                break;
+            }
+        }
+    else
+        {
+        if (nullptr == fmtP)  // invalid name
+            fmtP = StdFormatSet::DefaultDecimal();
+        if (nullptr == fmtP)
+            return "";
+        majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
+        majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
+        /*if (nullptr != uomName)
+            {
+            if (!Utils::IsNameNullOrEmpty(space))
+                majT += Utf8String(space);
+            majT += Utf8String(uomName);
+            }*/
+        }
+    return majT;
     }
 
 //---------------------------------------------------------------------------------------
@@ -767,15 +844,15 @@ Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8P stdName, double dval, Utf
         txt +=toUnit->GetName();
         return txt;
         }
-    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, prec, round);
-    if (nullptr != space)
+    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, space, toLabel, prec, round);
+    /*if (nullptr != space)
         {
         str += space;
         if (nullptr == toLabel)
             str += toUnit->GetName();
         }
     if (nullptr != toLabel)
-        str += toLabel;
+        str += toLabel;*/
     return str;
     }
 
@@ -1109,9 +1186,9 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias)
+NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias, CompositeValueSpecP compS)
     {
-    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias, nullptr);
+    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias, compS);
     m_formatSet.push_back(nfs);
     return fmtP;
     }
@@ -1139,6 +1216,16 @@ void StdFormatSet::StdInit()
     AddFormat("Fractional16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
     AddFormat("Fractional32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
     AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
+    CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
+    cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
+    AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits,0), "dms", cvs);
+    AddFormat("AngleDMS8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "dms8", cvs);
+    cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE");
+    cvs->SetUnitLabels("\xC2\xB0", u8"'");
+    AddFormat("AngleDM8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "dm8", cvs);
+    cvs = new CompositeValueSpec("MILE", "YRD", "FT", "IN");
+    cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
+    AddFormat("AmerMYFI4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), "myfi4", cvs);
     }
 
 //---------------------------------------------------------------------------------------

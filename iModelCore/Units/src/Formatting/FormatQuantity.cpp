@@ -25,7 +25,7 @@ void CompositeValueSpec::Init()
     memset(m_units, 0, sizeof(m_units));
     m_problemCode = FormatProblemCode::NoProblems;
     m_type = CompositeSpecType::Undefined;
-    m_formatSpec = nullptr;
+    //m_formatSpec = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -143,24 +143,35 @@ BEU::UnitCP CompositeValueSpec::GetSmallestUnit()
 //---------------------------------------------------------------------------------------
 bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8CP MinorUnit, Utf8CP SubUnit)
     {
+    memset(m_units, 0, sizeof(m_units));
     BEU::UnitCP un = BEU::UnitRegistry::Instance().LookupUnit(MajorUnit);
     if (nullptr == un)
         return UpdateProblemCode(FormatProblemCode::CNS_InvalidMajorUnit);
+    else
+        m_units[indxMajor] = un;
 
-    m_units[indxMajor] = un;
-    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MiddleUnit)))
-        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+    if (!Utils::IsNameNullOrEmpty(MiddleUnit))
+        {
+        if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MiddleUnit)))
+            return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+        m_units[indxMiddle] = un;
+        }
 
-    m_units[indxMiddle] = un;
-    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MinorUnit)))
-        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
-
-    m_units[indxMinor] = un;
-    if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(SubUnit)))
-        return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
-    m_units[indxSub] = un;
+    if (!Utils::IsNameNullOrEmpty(MinorUnit))
+        {
+        if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(MinorUnit)))
+            return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+        m_units[indxMinor] = un;
+        }
+    if (!Utils::IsNameNullOrEmpty(SubUnit))
+        {
+        if (nullptr == (un = BEU::UnitRegistry::Instance().LookupUnit(SubUnit)))
+            return UpdateProblemCode(FormatProblemCode::CNS_InvalidUnitName);
+        m_units[indxSub] = un;
+        }
     return false;
     }
+
 
 //---------------------------------------------------------------------------------------
 // Constructor has three call formats that could use default values of arguments
@@ -269,13 +280,13 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
                     break;
                 case CompositeSpecType::Quatro:
                     majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
-                    middleSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
+                    middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
                     cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorSub));
                     rem = smallQ.GetMagnitude() - cv.GetMajor() * majorSub;
                     cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
                     rem -= cv.GetMiddle() * middleSub;
-                    cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMiddle]));
-                    cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMiddle]);
+                    cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMinor]));
+                    cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMinor]);
                     break;
                 default:
                     break;
@@ -285,12 +296,54 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
     return cv;
     }
 
-Utf8String CompositeValueSpec::DecomposeValue(double dval, Utf8CP uomName)
+Utf8String CompositeValueSpec::FormatValue(double dval, NumericFormatSpecP fmtP, Utf8CP uomName)
     {
     Utf8String txt;
+    BEU::UnitCP uom = Utils::IsNameNullOrEmpty(uomName)? nullptr : BEU::UnitRegistry::Instance().LookupUnit(uomName);
+    CompositeValue cv = DecomposeValue(dval, uom);
+    NumericFormatSpec fmtI = NumericFormatSpec(*fmtP);
+    fmtI.SetDecimalPrecision(DecimalPrecision::Precision0);  // cloning spec,  but setting precision to 0 for integer parts
+    Utf8String majT, midT, minT, subT;
+    //NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
+    //    FormatConstant::DefaultFormatTraits(), 0);
+    Utf8CP spacer = GetSpacer().c_str();
+    switch (m_type)
+        {
+        case CompositeSpecType::Single: // there is only one value to report
+            majT = fmtP->FormatDouble(cv.GetMajor());
+            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
+            break;
 
-    //BEU::UnitCP uom = Utils::IsNameNullOrEmpty(uomName)? nullptr : BEU::UnitRegistry::Instance().LookupUnit(uomName);
+        case CompositeSpecType::Double:
+            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
+            midT = fmtP->FormatDouble(cv.GetMajor());
+            midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            majT += midT;
+            break;
 
+        case CompositeSpecType::Triple:
+            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
+            midT = fmtI.FormatDouble(cv.GetMajor());
+            midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            minT = fmtP->FormatDouble(cv.GetMajor() );
+            minT = Utils::AppendUnitName(minT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            majT += midT + " " + minT;
+            break;
+
+        case CompositeSpecType::Quatro:
+            majT = fmtI.FormatDouble(cv.GetMajor());
+            majT = Utils::AppendUnitName(majT.c_str(), GetMajorLabel(nullptr).c_str(), spacer);
+            midT = fmtI.FormatDouble(cv.GetMajor());
+            midT = Utils::AppendUnitName(midT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            minT = fmtI.FormatDouble(cv.GetMajor());
+            minT = Utils::AppendUnitName(minT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            subT = fmtP->FormatDouble(cv.GetMajor());
+            subT = Utils::AppendUnitName(subT.c_str(), GetMiddleLabel(nullptr).c_str(), spacer);
+            majT += midT + " " + minT + " " + subT;
+            break;
+        }
     return txt;
     }
 //===================================================
