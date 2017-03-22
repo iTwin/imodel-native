@@ -52,7 +52,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus UpdateEnumerations(ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         BentleyStatus UpdateEnumeration(ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
 
-        BentleyStatus UpdateKindOfQuanitites(ECKindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateKindOfQuantities(ECKindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
 
         BentleyStatus UpdateProperties(ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
