@@ -709,7 +709,7 @@ void BriefcaseManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModelI
             {
             BeAssert(1 == nVals);
             auto el = m_db.Elements().GetElement(DgnElementId(vals[0].GetValueUInt64()));
-            return el.IsValid() && std::find(m_models.begin(), m_models.end(), el->GetModelId());
+            return el.IsValid() && (m_models.end() != std::find(m_models.begin(), m_models.end(), el->GetModelId()));
             }
     };
 
