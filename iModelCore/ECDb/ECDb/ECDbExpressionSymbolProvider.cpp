@@ -430,32 +430,37 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
     if (nullptr != entityClass && nullptr != (relationship = GetRelationshipClassFromSameSchema(*entityClass, relationshipName)))
         return SUCCESS;
     
-    // search in all schemas
-    bvector<ECN::ECSchemaCP> schemas = db.Schemas().GetSchemas();
-    if (schemas.empty())
-        return ERROR;
-
-    for (ECSchemaCP schema : schemas)
+    Utf8String sql("SELECT Id FROM ec_Class WHERE Name=?");
+    ECDb* ecdb = const_cast<ECDb*>(&db);
+    CachedStatementPtr statement = ecdb->GetCachedStatement(sql.c_str());
+    BeAssert(statement.IsValid());
+    if (nullptr == relationship)
         {
-        if (nullptr == relationship)
-            {
-            ECClassCP candidateRelationshipClass = schema->GetClassCP(relationshipName);
-            if (nullptr != candidateRelationshipClass)
-                relationship = candidateRelationshipClass->GetRelationshipClassCP();
-            }
+        statement->BindText(1, relationshipName, BeSQLite::Statement::MakeCopy::No);
 
-        if (nullptr == entityClass)
-            {
-            ECClassCP candidateEntityClass = schema->GetClassCP(className);
-            if (nullptr != candidateEntityClass)
-                entityClass = candidateEntityClass->GetEntityClassCP();
-            }
+        if (DbResult::BE_SQLITE_ROW != statement->Step())
+            return ERROR;
 
-        if (nullptr != relationship && nullptr != entityClass)
-            return SUCCESS;
+        ECClassCP candidateRelationshipClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));
+        if (nullptr == candidateRelationshipClass)
+            return ERROR;
+        relationship = candidateRelationshipClass->GetRelationshipClassCP();
         }
 
-    return ERROR;
+    if (nullptr == entityClass)
+        {
+        statement->ClearBindings();
+        statement->Reset();
+        statement->BindText(1, className, BeSQLite::Statement::MakeCopy::No);
+        if (DbResult::BE_SQLITE_ROW != statement->Step())
+            return ERROR;
+
+        ECClassCP candidateEntityClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));
+        if (nullptr == candidateEntityClass)
+            return ERROR;
+        entityClass = candidateEntityClass->GetEntityClassCP();
+        }
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
