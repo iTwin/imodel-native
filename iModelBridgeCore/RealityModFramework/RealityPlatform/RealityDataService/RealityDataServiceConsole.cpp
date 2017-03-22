@@ -82,6 +82,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Relationships;
     else if (args[0].EqualsI("Link"))
         m_lastCommand = Command::Link;
+    else if (args[0].EqualsI("CreateRD"))
+        m_lastCommand = Command::CreateRD;
     else
         {
         m_lastCommand = Command::Error;
@@ -92,8 +94,6 @@ void RealityDataConsole::InterpretCommand()
             m_lastCommand = Command::FileAccess;
         else if (args[0].EqualsI("AzureAdress"))
             m_lastCommand = Command::AzureAdress;
-        else if (args[0].EqualsI("CreateRD"))
-            m_lastCommand = Command::CreateRD;
         if(m_lastCommand != Command::Error)
             {
             if (args.size() > 1)
@@ -647,8 +647,8 @@ void RealityDataConsole::Download()
         }
 
     DisplayInfo (Utf8PrintfString("Downloading from %s\n", m_currentNode->node.GetLabel()), DisplayOption::Tip);
-    DisplayInfo ("if you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
-    DisplayInfo ("please enter the destination folder on the local machine (must be existing folder)\n ?", DisplayOption::Question);
+    DisplayInfo ("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
+    DisplayInfo ("Please enter the destination folder on the local machine (must be existing folder)\n ?", DisplayOption::Question);
     
     InterpretCommand();
     if(m_lastCommand == Command::Cancel)
@@ -657,7 +657,7 @@ void RealityDataConsole::Download()
     BeFileName fileName = BeFileName(m_lastInput);
     if(!fileName.DoesPathExist())
         {
-        DisplayInfo ("could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Error);
+        DisplayInfo ("Could not validate specified path. Please verify that the folder exists and try again\n", DisplayOption::Error);
         return;
         }
 
@@ -668,13 +668,13 @@ void RealityDataConsole::Download()
     TransferReport* tReport = download.Perform();
     Utf8String report;
     tReport->ToXml(report);
-    DisplayInfo ("if any files failed to download, they will be listed here: \n");
+    DisplayInfo ("If any files failed to download, they will be listed here: \n");
     DisplayInfo (Utf8PrintfString("%s\n", report));
     }
 
 void RealityDataConsole::Upload()
     {
-    DisplayInfo("please enter the source folder on the local machine (must be existing folder)\n  ?", DisplayOption::Question);
+    DisplayInfo("Please enter the source folder on the local machine (must be existing folder)\n  ?", DisplayOption::Question);
     
     InterpretCommand();
     if (m_lastCommand == Command::Cancel)
@@ -693,23 +693,23 @@ void RealityDataConsole::Upload()
         {
         std::string input;
         bmap<RealityDataField, Utf8String> properties;
-        DisplayInfo("please input value for Name\n  ?", DisplayOption::Question);
+        DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
-        DisplayInfo("please input value for Classification\n  ?", DisplayOption::Question);
+        DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
 
-        DisplayInfo("please input value for Type\n  ?", DisplayOption::Question);
+        DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
-        DisplayInfo("please input value for Visibility\n  ?", DisplayOption::Question);
+        DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
 
-        DisplayInfo("please input value for RootDocument\n  ?", DisplayOption::Question);
+        DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
@@ -721,14 +721,17 @@ void RealityDataConsole::Upload()
         }
 
     RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true, statusFunc);
-    upload.SetProgressCallBack(uploadProgressFunc);
-    upload.SetProgressStep(0.1);
-    upload.OnlyReportErrors(true);
-    TransferReport* tReport = upload.Perform();
-    Utf8String report;
-    tReport->ToXml(report);
-    DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
-    DisplayInfo(report);
+    if(upload.IsValidUpload())
+        {
+        upload.SetProgressCallBack(uploadProgressFunc);
+        upload.SetProgressStep(0.1);
+        upload.OnlyReportErrors(true);
+        TransferReport* tReport = upload.Perform();
+        Utf8String report;
+        tReport->ToXml(report);
+        DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
+        DisplayInfo(report);
+        }
     }
 
 void RealityDataConsole::Details()
@@ -1062,7 +1065,6 @@ void RealityDataConsole::Relationships()
         return;
         }   
 
-
     DisplayInfo("Projects attached to this RealityData\n\n");
     for(RealityDataProjectRelationshipPtr entity : entities)
         DisplayInfo(Utf8PrintfString(" ProjectId          : %s\n", entity->GetProjectId()));
@@ -1070,27 +1072,45 @@ void RealityDataConsole::Relationships()
 
 void RealityDataConsole::CreateRD()
     {
-    DisplayInfo("Currently unsupported");
-    return;
-    /*bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
-    properties.Insert(RealityDataField::Name, m_lastInput);
+    std::string input;
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
+    std::getline(std::cin, input);
+    Utf8String name = Utf8String(input.c_str()).Trim();
+    properties.Insert(RealityDataField::Name, name);
+
+    DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
+
+    DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
+
+    DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
+
+    DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
+    std::getline(std::cin, input);
+    properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
     RealityDataServiceCreate createRequest = RealityDataServiceCreate("", RealityDataServiceUpload::PackageProperties(properties));
+    
     int status;
     Utf8String response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
-
-    if (status != CURLE_OK)
+    
+    Json::Value instance(Json::objectValue);
+    Json::Reader::Parse(response, instance);
+    if (status == CURLE_OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+        {
+        DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name, instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString()), DisplayOption::Info);
+        }
+    else
         {
         DisplayInfo(Utf8PrintfString("There was an error creating a new RealityData. Curl failed with error code %d\n", status), DisplayOption::Error);
         DisplayInfo(Utf8PrintfString("And message %s\n", response), DisplayOption::Error);
         }
-    else
-        {
-        Json::Value instances(Json::objectValue);
-        Json::Reader::Parse(response, instances);
-        if (!instances["instances"].isNull() && !instances["instances"][0]["instanceId"].isNull())
-            DisplayInfo(Utf8PrintfString("New RealityData created with GUID %s", instances["instances"][0]["instanceId"].asString()), DisplayOption::Info);
-        }*/
     }
 
 void RealityDataConsole::Link()
