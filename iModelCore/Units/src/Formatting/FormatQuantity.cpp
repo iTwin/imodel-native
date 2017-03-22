@@ -213,6 +213,36 @@ CompositeValueSpec::CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8
         SetUnitRatios();
     }
 
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCP other)
+    {
+    memcpy(m_units, other->m_units, sizeof(m_units));
+    memcpy(m_ratio, other->m_ratio, sizeof(m_ratio));
+    memcpy(m_unitLabel, other->m_unitLabel, sizeof(m_unitLabel));
+    m_problemCode = other->m_problemCode;
+    m_type = other->m_type;
+    m_includeZero = other->m_includeZero;
+    m_spacer = Utf8String(other->m_spacer);
+    }
+
+//---------------------------------------------------------------------------------------
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
+    {
+    memcpy(m_units, other.m_units, sizeof(m_units));
+    memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
+    memcpy(m_unitLabel, other.m_unitLabel, sizeof(m_unitLabel));
+    m_problemCode = other.m_problemCode;
+    m_type = other.m_type;
+    m_includeZero = other.m_includeZero;
+    m_spacer = Utf8String(other.m_spacer);
+    }
+
 
 Utf8CP CompositeValueSpec::GetProblemDescription()
     {

@@ -123,22 +123,6 @@ bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double 
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(NumericFormatSpecCR other)
-    {
-    //m_name = other.m_name;
-    //m_alias = other.m_alias;
-    m_decPrecision = other.m_decPrecision;
-    //m_minTreshold = FormatConstant::FPV_MinTreshold();
-    m_presentationType = other.m_presentationType;
-    m_signOption = other.m_signOption;
-    m_fractPrecision = other.m_fractPrecision;
-    m_decimalSeparator = other.m_decimalSeparator;
-    m_thousandsSeparator = other.m_thousandsSeparator;
-    m_formatTraits = other.m_formatTraits;
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -147,6 +131,10 @@ NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption s
     {
     Init(presType, signOpt, formatTraits, precision);   
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//----------------------------------------------------------------------------------------
 
 
 //----------------------------------------------------------------------------------------
@@ -163,11 +151,6 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
         m_decPrecision = Utils::DecimalPrecisionByIndex(prec);
         }
     }
-
-//NumericFormat NumericFormat::StdNumericFormat(Utf8P stdName, int prec)
-//    {
-//
-//    }
 
 
 ////////            Helpers for NumericFormat
@@ -1199,6 +1182,9 @@ NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecP fmtP,
 void StdFormatSet::StdInit()
     {
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    //NumericFormatSpec nfs(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    //AddFormat("DefaultReal", &nfs, "real");
+
     AddFormat("DefaultReal", new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
     AddFormat("Real2",       new NumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2),"real2");
     AddFormat("Real3",       new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3),"real3");
