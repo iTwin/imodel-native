@@ -9,8 +9,8 @@ SET(CMAKE_CXX_FLAGS "${MY_CMAKE_FLAGS} ${CMAKE_CXX_FLAGS}" )
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 " )
 
 include_directories(
-        ${BUILD_CONTEXTS}/WSClient/PublicAPI
-        ${BUILD_CONTEXTS}/WSClient/VendorAPI
+        ${BUILD_CONTEXTS}/PublicAPI
+        ${BUILD_CONTEXTS}/VendorAPI
         )
 
 # Creates and names a library, sets it as either STATIC
@@ -50,10 +50,10 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
                        native-lib
 
-                       ${BUILD_CONTEXTS}/WSClient/SubParts/StaticLibs/libBentley.a
-                       ${BUILD_CONTEXTS}/WSClient/SubParts/StaticLibs/libBeIcu4c.a
-                       ${BUILD_CONTEXTS}/WSClient/SubParts/StaticLibs/libDgnPlatform.a
-                       ${BUILD_CONTEXTS}/WSClient/SubParts/StaticLibs/libConnectWebServicesClientC.so
+                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libBentley.a
+                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libBeIcu4c.a
+                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libDgnPlatform.a
+                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libConnectWebServicesClientC.so
 
                        # Links the target library to the log library
                        # included in the NDK.
