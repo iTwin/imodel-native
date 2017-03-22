@@ -1512,6 +1512,8 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                             return ERROR;
                             }
                         }
+                    else
+                        return ERROR;
                     }
                 else
                     return ERROR;
