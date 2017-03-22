@@ -108,12 +108,8 @@ CodeSpecPtr CodeSpec::CloneForImport(DgnDbStatus* outResult, DgnImportContext& i
         return nullptr;
         }
 
-    auto classId = GetClassId();
-    if (importer.IsBetweenDbs())
-        classId = importer.RemapClassId(classId);
-
-    CreateParams params(importer.GetDestinationDb(), classId, GetName().c_str());
-    CodeSpecPtr clone = GetCodeSpecHandler().Create(params);
+    CreateParams params(importer.GetDestinationDb(), GetName().c_str());
+    CodeSpecPtr clone = dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params);
     if (!clone.IsValid())
         {
         status = DgnDbStatus::NotFound; // better error code...?
@@ -147,11 +143,10 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
 
     Utf8String propsStr = codeSpec.SerializeProperties();
 
-    Statement stmt(m_dgndb, "INSERT INTO " BIS_TABLE(BIS_CLASS_CodeSpec) " (Id,Name,Properties,ECClassId) VALUES(?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " BIS_TABLE(BIS_CLASS_CodeSpec) " (Id,Name,Properties) VALUES(?,?,?)");
     stmt.BindId(1, newId);
     stmt.BindText(2, codeSpec.GetName(), Statement::MakeCopy::No);
     stmt.BindText(3, propsStr, Statement::MakeCopy::No);
-    stmt.BindId(4, codeSpec.GetClassId());
 
     if (BE_SQLITE_DONE != stmt.Step())
         return DgnDbStatus::WriteError;
@@ -169,7 +164,7 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
     {
-    DgnDbStatus ALLOW_NULL_OUTPUT (status, outResult);
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, outResult);
 
     if (!id.IsValid())
         {
@@ -178,7 +173,7 @@ CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
         }
 
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Properties,ECClassId FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT Name,Properties FROM " BIS_TABLE(BIS_CLASS_CodeSpec) " WHERE Id=?");
     stmt->BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -189,17 +184,9 @@ CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
 
     Utf8String name = stmt->GetValueText(0);
     Utf8String props = stmt->GetValueText(1);
-    DgnClassId classId = stmt->GetValueId<DgnClassId>(2);
 
-    CodeSpecHandlerP handler = dgn_CodeSpecHandler::CodeSpec::FindHandler(m_dgndb, classId);
-    if (nullptr == handler)
-        {
-        status = DgnDbStatus::MissingHandler;
-        return nullptr;
-        }
-
-    CodeSpec::CreateParams params(m_dgndb, classId, name.c_str(), id);
-    CodeSpecPtr codeSpec = handler->Create(params);
+    CodeSpec::CreateParams params(m_dgndb, name.c_str(), id);
+    CodeSpecPtr codeSpec = dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params);
     if (codeSpec.IsNull())
         {
         status = DgnDbStatus::NotFound;
@@ -207,7 +194,6 @@ CodeSpecPtr DgnCodeSpecs::LoadCodeSpec(CodeSpecId id, DgnDbStatus* outResult)
         }
 
     codeSpec->ReadProperties(props);
-
     status = DgnDbStatus::Success;
     return codeSpec;
     }
@@ -253,7 +239,7 @@ CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpec::CodeSpec(CreateParams const& params)
-    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec), m_registrySuffix(params.m_registrySuffix)
+    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec), m_registrySuffix(params.m_registrySuffix)
     {
     }
 
@@ -318,33 +304,12 @@ Utf8String CodeSpec::SerializeProperties() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecHandlerP dgn_CodeSpecHandler::CodeSpec::FindHandler(DgnDbCR dgndb, DgnClassId classId)
-    {
-    DgnDomain::Handler* handler = dgndb.Domains().LookupHandler(classId);
-    if (nullptr == handler)
-        handler = dgndb.Domains().FindHandler(classId, dgndb.Domains().GetClassId(GetHandler()));
-
-    return nullptr != handler ? handler->_ToCodeSpecHandler() : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecHandlerR CodeSpec::GetCodeSpecHandler() const
-    {
-    return *dgn_CodeSpecHandler::CodeSpec::FindHandler(m_dgndb, m_classId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec, Utf8CP registrySuffix)
     {
-    CodeSpecHandlerR handler = dgn_CodeSpecHandler::CodeSpec::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), codeSpecName, CodeSpecId(), scopeSpec, registrySuffix);
-    return handler.Create(params).get();
+    CreateParams params(db, codeSpecName, CodeSpecId(), scopeSpec, registrySuffix);
+    return dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
