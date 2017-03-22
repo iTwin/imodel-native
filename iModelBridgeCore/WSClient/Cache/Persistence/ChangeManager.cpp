@@ -149,7 +149,7 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
     if (SUCCESS != SchemaManager(db).ImportSchemas({ecSchema}))
         return nullptr;
 
-    return db.Schemas().GetECClass(schemaName.c_str(), relClassName.c_str())->GetRelationshipClassCP();
+    return db.Schemas().GetClass(schemaName.c_str(), relClassName.c_str())->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -491,7 +491,7 @@ uint64_t changeNumber
         info.SetChangeNumber(changeNumber);
         }
 
-    info.SetInstanceId(relationship.GetECInstanceId());
+    info.SetInstanceId(relationship.GetInstanceId());
     info.SetRemoteId(CreateRemoteId());
     info.SetChangeStatus(ChangeStatus::Created);
     info.SetSyncStatus(syncStatus);
@@ -1215,7 +1215,7 @@ BentleyStatus ChangeManager::ReadObjectPropertiesForCreation(ECInstanceKeyCR ins
         return ERROR;
         }
 
-    ECClassCP ecClass = m_dbAdapter.GetECClass(instanceKey.GetECClassId());
+    ECClassCP ecClass = m_dbAdapter.GetECClass(instanceKey.GetClassId());
     RemoveCalculatedProperties(propertiesJsonOut, *ecClass);
 
     return SUCCESS;

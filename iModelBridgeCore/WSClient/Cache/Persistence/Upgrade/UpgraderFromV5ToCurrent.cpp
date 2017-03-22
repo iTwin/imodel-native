@@ -212,7 +212,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopyData(DataSourceCache& newCache)
             return "SELECT TargetECClassId, TargetECInstanceId FROM ONLY [DSCJS].[RootRelationship] WHERE SourceECInstanceId = ?";
             });
 
-        statement->BindId(1, oldRootKey.GetECInstanceId());
+        statement->BindId(1, oldRootKey.GetInstanceId());
 
         bvector<ECInstanceKey> rootChildrenKeys;
         while (BE_SQLITE_ROW == statement->Step())
@@ -309,8 +309,8 @@ JsonValueCR oldParentInfo
         return ecsql;
         });
 
-    statement->BindId(1, oldParentKey.GetECClassId());
-    statement->BindId(2, oldParentKey.GetECInstanceId());
+    statement->BindId(1, oldParentKey.GetClassId());
+    statement->BindId(2, oldParentKey.GetInstanceId());
 
     bvector<ECInstanceKey> childrenKeys;
     DbResult status;
@@ -482,7 +482,7 @@ ECInstanceKey& newInstanceKey
             return ERROR;
             }
 
-        ECRelationshipClassCP relClass = newCache.GetChangeManager().GetLegacyParentRelationshipClass(newParentKey.GetECClassId(), ecClass->GetId());
+        ECRelationshipClassCP relClass = newCache.GetChangeManager().GetLegacyParentRelationshipClass(newParentKey.GetClassId(), ecClass->GetId());
         if (nullptr == relClass || !newCache.GetChangeManager().CreateRelationship(*relClass, newParentKey, newInstanceKey, syncStatus).IsValid())
             {
             return ERROR;
@@ -584,7 +584,7 @@ JsonValueR instanceInfo
         }
 
     // Instance and InstanceInfo
-    Utf8PrintfString statementKey("ReadInstanceData:%s", key.GetECClassId().ToString().c_str());
+    Utf8PrintfString statementKey("ReadInstanceData:%s", key.GetClassId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
         Utf8String ecsql("SELECT * FROM ONLY ");
@@ -595,7 +595,7 @@ JsonValueR instanceInfo
         return ecsql;
         });
 
-    statement->BindId(1, key.GetECInstanceId());
+    statement->BindId(1, key.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)
@@ -604,7 +604,7 @@ JsonValueR instanceInfo
         }
 
     JsonECSqlSelectAdapter jsonAdapter(*statement, ECValueFormat::RawNativeValues);
-    if (!jsonAdapter.GetRowInstance(instanceJson, key.GetECClassId()))
+    if (!jsonAdapter.GetRowInstance(instanceJson, key.GetClassId()))
         {
         return ERROR;
         }
@@ -654,7 +654,7 @@ JsonValueR fileInfo
             "LIMIT 1 ";
         });
 
-    statement->BindId(1, key.GetECInstanceId());
+    statement->BindId(1, key.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_DONE == status)

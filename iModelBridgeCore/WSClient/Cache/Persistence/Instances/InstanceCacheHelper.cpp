@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -266,7 +266,7 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(),
+        if (BE_SQLITE_OK != m_updaters.Get(*relClass).Update(relationshipKey.GetInstanceId(),
             relationshipInstance.GetProperties(), *source, *target))
             {
             return ERROR;
@@ -338,7 +338,7 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
         return ERROR;
         }
 
-    infoInOut.SetInstanceId(ecInstanceKey.GetECInstanceId());
+    infoInOut.SetInstanceId(ecInstanceKey.GetInstanceId());
     return SUCCESS;
     }
 
@@ -347,7 +347,7 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties)
     {
-    return BE_SQLITE_OK == m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), properties) ? SUCCESS : ERROR;
+    return BE_SQLITE_OK == m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetInstanceId(), properties) ? SUCCESS : ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -365,7 +365,7 @@ BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR inf
         }
 
     // Save merged instance
-    if (BE_SQLITE_OK != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), mergedJson))
+    if (BE_SQLITE_OK != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetInstanceId(), mergedJson))
         {
         return ERROR;
         }
