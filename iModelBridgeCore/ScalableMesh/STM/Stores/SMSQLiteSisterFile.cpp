@@ -150,57 +150,12 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     return sqlFilePtr;
     }
 
-
-void SMSQLiteSisterFile::RemoveSisterSQLiteFile(SMStoreDataType dataType)
-    {
-    switch (dataType)
-        {    
-        case SMStoreDataType::DiffSet:
-            {
-            std::lock_guard<std::mutex> lock(m_clipOpen);                        
-            m_smClipSQLiteFile = nullptr;
-            
-            WString sqlFileName;
-            GetSisterSQLiteFileName(sqlFileName, dataType);
-                
-            _wremove(sqlFileName.c_str());            
-            }                    
-            break;
-
-        case SMStoreDataType::ClipDefinition:
-        case SMStoreDataType::Skirt:
-        case SMStoreDataType::Coverage:
-            {
-            std::lock_guard<std::mutex> lock(m_defOpen);
-            m_smClipDefinitionSQLiteFile = nullptr;
-                
-            WString sqlFileName;
-            GetSisterSQLiteFileName(sqlFileName, dataType);
-                
-            _wremove(sqlFileName.c_str());            
-            }                    
-            break;
-
-        default:
-            assert(!"Unknown/Unsupported datatype");
-            break;
-        }
-    }
-
-
-
-bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath, bool inCreation)
+bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     {
     if (m_projectFilesPath.length() > 0)
         return false;
 
-    m_projectFilesPath = projectFilesPath;
-
-    //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
-    //Force the opening/creation of project file in main thread to avoid global mutex.
-    //GetSisterSQLiteFile(SMStoreDataType::DiffSet, inCreation);
-    //GetSisterSQLiteFile(SMStoreDataType::Skirt, inCreation);
-
+    m_projectFilesPath = projectFilesPath;    
     return true;
     }
 

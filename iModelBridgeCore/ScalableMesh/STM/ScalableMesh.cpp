@@ -1038,7 +1038,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             
             BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
-            bool result = dataStore->SetProjectFilesPath(projectFilesPath, false);
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
                                                                  
             ClipRegistry* registry = new ClipRegistry(dataStore);

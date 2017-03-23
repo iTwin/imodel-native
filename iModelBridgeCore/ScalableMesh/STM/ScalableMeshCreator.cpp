@@ -206,13 +206,6 @@ StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelFor
     return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
     }
 
-void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
-    {
-    return m_implP->SetBaseExtraFilesPath(path);
-    }
-
-
-
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
     {
     return GetAdvancedGCS().GetGeoRef().GetBasePtr();
@@ -627,7 +620,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         m_smSQLitePtr->GetFileName(fileNameStr);
         BeFileName fileNameDir(fileNameStr.c_str());                
         fileNameDir = fileNameDir.GetDirectoryName();
-        dataStore->SetProjectFilesPath(fileNameDir, true);
+        dataStore->SetProjectFilesPath(fileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -649,7 +642,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         m_smSQLitePtr->GetFileName(fileNameStr);
         BeFileName fileNameDir(fileNameStr.c_str());
         fileNameDir = fileNameDir.GetDirectoryName();
-        dataStore->SetProjectFilesPath(fileNameDir, true);
+        dataStore->SetProjectFilesPath(fileNameDir);
         pDataIndex->SetGenerating(true);        
         }           
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
@@ -812,13 +805,6 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     {
     return m_gcsDirty;
     }
-
-
-void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
-    {
-    m_baseExtraFilesPath = path;
-    }
-
 
 StatusInt IScalableMeshCreator::Impl::Load()
 {
