@@ -145,15 +145,17 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         bvector<QueuedRegionOp> m_queuedRegions;
 
+        void Cleanup(bool isModelDelete);
+
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
-        void InitializeTerrainRegions();
+        void InitializeTerrainRegions();        
 
     protected:
 
         struct Properties
             {
-            Utf8String          m_fileId;    
+            Utf8String          m_fileId;                
 
             void ToJson(Json::Value&) const;
             void FromJson(Json::Value const&);
@@ -186,6 +188,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
 
         void RefreshClips();
+
+        BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
 
 
     public:
@@ -233,9 +237,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
-
-        static BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
-
+        
         IScalableMesh* GetScalableMeshHandle();
 
         SCALABLEMESH_SCHEMA_EXPORT void ActivateClip(uint64_t id, ClipMode clip = ClipMode::Mask);
