@@ -85,6 +85,27 @@ public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Pose)
     DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Pose)
 
+    //! Yaw Pitch Roll angles can be define differently according to convention
+    enum class YPRConvention
+        {
+        // DgnDb convention
+        //  The coordinate system orientation has X forward, Y to the left, and Z up.
+        //  If only one is nonzero, the meanings are:
+        //  
+        //  YAW is rotation around Z (X towards Y) (turn left)
+        //  PITCH is rotation around negative Y (X towards Z)  (nose up)
+        //  ROLL is rotation around X (Y towards Z)    (tip right)
+        //
+        DgnDb = 0, //East Forward 
+          
+        // 0,0,0 = looking horizontally in y direction, z=top, x=right (If georeferenced XYZ=ENU, this means looking north horizontally)
+        // Order: 
+        // 1) turn right yaw radians (z-)
+        // 2) turn up pitch radians (x+)
+        // 3) tilt roll radians counter clockwise (y-) (NB: might be the opposite, waiting for a non zero roll to check!)
+        ENU_NorthForward,
+        };
+
     //! Create a new Shot 
     //! @param[in] IsECEFSupported Set to true if you have a GCS and want to support storing data in 
     //                             geocentric (Earth Centered Earth Fixed) coordinate system. 
@@ -118,8 +139,8 @@ public:
     DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
     DATACAPTURE_EXPORT RotMatrix            GetRotMatrix() const;
     DATACAPTURE_EXPORT void                 SetRotMatrix(RotMatrixCR rotation);
-    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll() const;
-    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles);
+    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll(YPRConvention convention=YPRConvention::DgnDb) const;
+    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles,YPRConvention convention=YPRConvention::DgnDb);
     DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
     DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
 

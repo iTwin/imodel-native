@@ -1997,9 +1997,16 @@ DgnDbStatus ScalableMeshModel::_OnDelete()
     {
     DgnDbStatus stat = T_Super::_OnDelete();
 
+    if (m_subModel)
+    {
+        m_parentModel->RemoveRegion(m_associatedRegion);
+    }
+
+
     Cleanup(true);
 
     return stat;
     }
+
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
