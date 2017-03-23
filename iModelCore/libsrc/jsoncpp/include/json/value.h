@@ -477,6 +477,13 @@ class JSON_API Value
       /// Same as removeMember(Utf8CP )
       Value removeMember(Utf8StringCR key) {return removeMember(key.c_str());}
 
+      void SetOrRemoveInt(Utf8CP key, Int val, Int defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveUInt(Utf8CP key, UInt val, UInt defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveInt64(Utf8CP key, Int64 val, Int64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveUInt64(Utf8CP key, UInt64 val, UInt64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveDouble(Utf8CP key, double val, double defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveBool(Utf8CP key, bool val, bool defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+
       /** \brief Remove the indexed array element.
 
           O(n) expensive operations.
