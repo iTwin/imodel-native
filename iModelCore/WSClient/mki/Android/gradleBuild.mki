@@ -20,6 +20,8 @@
     %include mdl.mki
 %endif
 
+%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
+
 # APP_ProjectRoot         Is the app's project root directory, just above libs and obj. This is used to compute DGNCLIENTAPP_LINK_OutputDir if DGNCLIENTAPP_LINK_OutputDir is not defined.
 # GRADLE_OPTIONS                    Optional. May be defined to additional gradle options
 # GRADLE_PROPERTIES                 Optional. May be defined to additional properties that should be generated to gradle.properties file.
@@ -55,6 +57,7 @@ always:
     %else
         GradleScriptsDir=$[@subst \, \/, $(BuildContext)\SubParts\AndroidTools\Gradle] \
     %endif
+	BentleyVersionStr=$(STDVER_fileversion)
 	org.gradle.jvmargs=-Xmx1536M
     $(GRADLE_PROPERTIES)
     <
@@ -116,3 +119,4 @@ always:
 
 always:
     ~putenv GRADLE_OPTS=$(SAVED_GRADLE_OPTS)
+

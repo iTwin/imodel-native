@@ -10,11 +10,20 @@ android {
         targetSdkVersion project.ext.targetSdkVersion        
         versionCode 1
         versionName "1.0"
+        archivesBaseName="getprojects"
         externalNativeBuild {
             cmake {
                 cppFlags "-fexceptions"
                 arguments "-DANDROID_STL=c++_static","-DBUILD_CONTEXTS=$BuildContextsDir"
             }
+        }
+    }
+    
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            output.outputFile = new File(
+                    output.outputFile.parent,
+                    output.outputFile.name.replace(".apk", "-${BentleyVersionStr}.apk"))
         }
     }
 
