@@ -82,6 +82,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Relationships;
     else if (args[0].EqualsI("Link"))
         m_lastCommand = Command::Link;
+    else if (args[0].EqualsI("Unlink"))
+        m_lastCommand = Command::Unlink;
     else if (args[0].EqualsI("CreateRD"))
         m_lastCommand = Command::CreateRD;
     else
@@ -92,8 +94,8 @@ void RealityDataConsole::InterpretCommand()
             m_lastCommand = Command::ChangeDir;
         else if (args[0].EqualsI("FileAccess"))
             m_lastCommand = Command::FileAccess;
-        else if (args[0].EqualsI("AzureAdress"))
-            m_lastCommand = Command::AzureAdress;
+        else if (args[0].EqualsI("AzureAddress"))
+            m_lastCommand = Command::AzureAddress;
         if(m_lastCommand != Command::Error)
             {
             if (args.size() > 1)
@@ -132,13 +134,14 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::Download,     &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload,       &RealityDataConsole::Upload);
     m_functionMap.Insert(Command::FileAccess,   &RealityDataConsole::FileAccess);
-    m_functionMap.Insert(Command::AzureAdress,  &RealityDataConsole::AzureAdress);
+    m_functionMap.Insert(Command::AzureAddress, &RealityDataConsole::AzureAddress);
     m_functionMap.Insert(Command::ChangeProps,  &RealityDataConsole::ChangeProps);
     m_functionMap.Insert(Command::Delete,       &RealityDataConsole::Delete);
     m_functionMap.Insert(Command::Filter,       &RealityDataConsole::Filter);
     m_functionMap.Insert(Command::Relationships,&RealityDataConsole::Relationships);
     m_functionMap.Insert(Command::CreateRD,     &RealityDataConsole::CreateRD);
     m_functionMap.Insert(Command::Link,         &RealityDataConsole::Link);
+    m_functionMap.Insert(Command::Unlink,       &RealityDataConsole::Unlink);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit,         &RealityDataConsole::DummyFunction);
@@ -266,28 +269,29 @@ void RealityDataConsole::Usage()
     {
     DisplayInfo ("  RealityDataConsole tool for RDS V1.0\n\n");
     DisplayInfo ("  Available Commands (case insensitive):\n");
-    DisplayInfo ("  Quit        Exit the application\n");
-    DisplayInfo ("  Retry       (during a multi-step operation) Restart current operation\n");
-    DisplayInfo ("  Help        Print current Display\n");
-    DisplayInfo ("  SetServer   Change server settings (server url, repository and schema)\n");
-    DisplayInfo ("  List        List all subfiles/folders for the given location on your server\n");
-    DisplayInfo ("  Dir         same as List\n");
-    DisplayInfo ("  Filter      filters RealityDatas returned from a List/Dir command\n");
-    DisplayInfo ("  cd          Change current location. Must be called in one of the following ways\n");
-    DisplayInfo ("  cd [number] navigates to node at the given index, as specified in the most recent List command\n");
-    DisplayInfo ("  cd ..       go up one level\n");
-    DisplayInfo ("  ListAll     List every file beneath the current location (paged)\n");
-    DisplayInfo ("  Details     show the details for the location\n");
-    DisplayInfo ("  Stat        show enterprise statistics\n");
-    DisplayInfo ("  Download    Download files from the current location on the server\n");
-    DisplayInfo ("  Upload      Upload files to the server\n");
-    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access (option \"w\" for write access)\n");
-    DisplayInfo ("  AzureAdress Prints the URL to use (pass \"read\" or \"write\")\n");
-    DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
-    DisplayInfo ("  Relationships Show all projects attached to this RealityData\n");
-    DisplayInfo ("  Link        Create a relationship between a RealityData and a project");
-    DisplayInfo ("  CreateRD    Create a new RealityData (must provide a name)\n");
-    DisplayInfo ("  Delete      Delete a RealityData, Folder or single Document\n");
+    DisplayInfo ("  Quit                Exit the application\n");
+    DisplayInfo ("  Retry               (during a multi-step operation) Restart current operation\n");
+    DisplayInfo ("  Help                Print current Display\n");
+    DisplayInfo ("  SetServer           Change server settings (server url, repository and schema)\n");
+    DisplayInfo ("  List                List all subfiles/folders for the given location on your server\n");
+    DisplayInfo ("  Dir                 same as List\n");
+    DisplayInfo ("  Filter              filters RealityDatas returned from a List/Dir command\n");
+    DisplayInfo ("  cd                  Change current location. Must be called in one of the following ways\n");
+    DisplayInfo ("  cd [number]         navigates to node at the given index, as specified in the most recent List command\n");
+    DisplayInfo ("  cd ..               go up one level\n");
+    DisplayInfo ("  ListAll             List every file beneath the current location (paged)\n");
+    DisplayInfo ("  Details             show the details for the location\n");
+    DisplayInfo ("  Stat                show enterprise statistics\n");
+    DisplayInfo ("  Download            Download files from the current location on the server\n");
+    DisplayInfo ("  Upload              Upload files to the server\n");
+    DisplayInfo ("  FileAccess <opt> [file]   Prints the URL to use if you wish to request an azure file access (option \"w\" for write access)\n");
+    DisplayInfo ("  AzureAddress        Prints the URL to use (pass \"read\" or \"write\" default is read)\n");
+    DisplayInfo ("  ChangeProps         Modify the properties of a RealityData\n");
+    DisplayInfo ("  Relationships       Show all projects attached to this RealityData\n");
+    DisplayInfo ("  Link                Create a relationship between a RealityData and a project");
+    DisplayInfo ("  Unlink              Remove a relationship between a RealityData and a project");
+    DisplayInfo ("  CreateRD            Create a new RealityData (must provide a name)\n");
+    DisplayInfo ("  Delete              Delete a RealityData, Folder or single Document\n");
     }
 
 void RealityDataConsole::PrintResults(bvector<Utf8String> results)
@@ -847,7 +851,7 @@ void RealityDataConsole::FileAccess()
     delete handshake;
     }
 
-void RealityDataConsole::AzureAdress()
+void RealityDataConsole::AzureAddress()
     {
     if (m_currentNode == nullptr)
         {
@@ -1144,6 +1148,35 @@ void RealityDataConsole::Link()
         return;
     
     RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_currentNode->node.GetInstanceId(), m_lastInput);
+    
+    int status = RequestType::Body;
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(relReq, status, RealityDataService::GetVerifyPeer());
+
+    Json::Value instances(Json::objectValue);
+    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+        DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
+    else
+        Relationships();
+    }
+
+void RealityDataConsole::Unlink()
+    {
+    if (m_currentNode == nullptr)
+        {
+        DisplayInfo("Please navigate to a RealityData before using this command\n", DisplayOption::Tip);
+        return;
+        }
+
+    DisplayInfo(Utf8PrintfString("Removing a relationship for %s\n", m_currentNode->node.GetInstanceId()), DisplayOption::Tip);
+    DisplayInfo("If you wish to change this, use command \"Cancel\" to back out and use cd to change the directory\n\n", DisplayOption::Tip);
+    DisplayInfo("Please enter the id of the project you would like to unlink this to\n ?", DisplayOption::Question);
+
+    InterpretCommand();
+    if (m_lastCommand == Command::Cancel)
+        return;
+    
+    RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete(m_currentNode->node.GetInstanceId(), m_lastInput);
     
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
