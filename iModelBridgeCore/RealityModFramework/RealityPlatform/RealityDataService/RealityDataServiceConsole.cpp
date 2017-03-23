@@ -482,11 +482,11 @@ void RealityDataConsole::ListRoots()
     if (m_queryFilter.length() > 0)
         enterpriseReq.SetQuery(m_queryFilter);
 
-    RequestStatus status = RequestStatus::SUCCESS;
+    RequestStatus status = RequestStatus::OK;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while(status == RequestStatus::SUCCESS)
+    while(status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
         partialVec = RealityDataService::Request(enterpriseReq, status); 
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
@@ -1054,7 +1054,7 @@ void RealityDataConsole::Relationships()
     RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(instanceId);
     bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, status);
 
-    if (status == RequestStatus::ERROR)
+    if (status == RequestStatus::BADREQ)
         {
         DisplayInfo("There was an error retrieving this information\n", DisplayOption::Error);
         return;

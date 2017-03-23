@@ -193,8 +193,8 @@ enum RequestType
 
 enum RequestStatus
     {
-    SUCCESS = 0,
-    ERROR = 1,
+    OK = 0,
+    BADREQ = 1,
     LASTPAGE = 2
     };
 

@@ -295,7 +295,7 @@ void ListCmd()
 
         size_t EnterpriseSizeKB(0);
         do {
-            if(RequestStatus::ERROR == status)
+            if(RequestStatus::BADREQ == status)
                 exit(-1);
 
             for (RealityDataPtr pData : enterpriseVec)
