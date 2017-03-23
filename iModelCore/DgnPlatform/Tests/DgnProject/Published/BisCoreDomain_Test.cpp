@@ -162,7 +162,6 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Statement statement(*m_db, "SELECT sql FROM sqlite_master WHERE type='index' AND sql LIKE 'CREATE INDEX%'");
         bvector<Utf8String> expectedSqlList;
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_CodeSpec)          "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Model)              "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ParentId]) WHERE ([ParentId] IS NOT NULL)");
@@ -172,7 +171,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement3d) "]([CategoryId])");
 
-        for (Utf8String expectedSql : expectedSqlList)
+        for (Utf8StringCR expectedSql : expectedSqlList)
             {
             bool found = false;
 
@@ -262,7 +261,6 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedCodeSpecs)
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_CategorySelector)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_DisplayStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart)->IsRepositoryScope());
-    ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LightDefinition)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_LineStyle)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_MaterialElement)->IsRepositoryScope());
     ASSERT_TRUE(m_db->CodeSpecs().GetCodeSpec(BIS_CODESPEC_ModelSelector)->IsRepositoryScope());

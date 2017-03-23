@@ -145,7 +145,7 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 //---------------------------------------------------------------------------------------
 static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey eid)
     {
-    return std::find(rels.begin(), rels.end(), eid.GetECInstanceId());
+    return std::find(rels.begin(), rels.end(), eid.GetInstanceId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +154,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 TransactionManagerTests::TransactionManagerTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -485,8 +485,8 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod 1st: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), s_nElements - 1);
-        ASSERT_EQ(rels.front(), firstRel.GetECInstanceId());
-        ASSERT_EQ(rels.back(), lastRel.GetECInstanceId());
+        ASSERT_EQ(rels.front(), firstRel.GetInstanceId());
+        ASSERT_EQ(rels.back(), lastRel.GetInstanceId());
         }
 
     // Modify the last Element => triggers last handler
@@ -501,7 +501,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 1);
-        ASSERT_EQ(rels.front(), lastRel.GetECInstanceId());
+        ASSERT_EQ(rels.front(), lastRel.GetInstanceId());
         }
 
     // Modify the next-to-last Element => triggers 2 handlers, the last one, and the previous
@@ -516,7 +516,7 @@ TEST_F(Performance_ElementDependencyGraph, Deep_Small)
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod next to last: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), 2);
-        ASSERT_EQ(rels.back(), lastRel.GetECInstanceId());
+        ASSERT_EQ(rels.back(), lastRel.GetInstanceId());
         }
     }
 
@@ -573,8 +573,8 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod Root: %lf seconds", timer.GetElapsedSeconds()).c_str());
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ(rels.size(), depCount);
-        ASSERT_EQ(rels.front(), firstRel.GetECInstanceId());
-        ASSERT_EQ(rels.back(), lastRel.GetECInstanceId());
+        ASSERT_EQ(rels.front(), firstRel.GetInstanceId());
+        ASSERT_EQ(rels.back(), lastRel.GetInstanceId());
         }
 
     // Modify a couple of the dependent Elements => triggers the handlers that output them (as checks)

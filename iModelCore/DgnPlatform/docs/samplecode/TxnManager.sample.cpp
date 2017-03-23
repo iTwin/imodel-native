@@ -33,7 +33,7 @@ struct TestTxnMonitor : TxnMonitor
 //---------------------------------------------------------------------------------------
 void TestTxnMonitor::_OnCommit(TxnManager& txnMgr)
     {
-    DgnClassId classOfInterest = DgnClassId(txnMgr.GetDgnDb().Schemas().GetECClassId("namespace", "classname")); // TODO: name of class here
+    DgnClassId classOfInterest = DgnClassId(txnMgr.GetDgnDb().Schemas().GetClassId("namespace", "classname")); // TODO: name of class here
 
     CheckClass(txnMgr, classOfInterest);
     CheckClassOrSubClasses(txnMgr, classOfInterest);
@@ -70,7 +70,7 @@ void TestTxnMonitor::CheckClass(TxnManager& txnMgr, DgnClassId classOfInterest)
 //---------------------------------------------------------------------------------------
 void TestTxnMonitor::CheckClassOrSubClasses(TxnManager& txnMgr, DgnClassId classOfInterest)
     {
-    ECN::ECClassCP targetClass = txnMgr.GetDgnDb().Schemas().GetECClass(classOfInterest);
+    ECN::ECClassCP targetClass = txnMgr.GetDgnDb().Schemas().GetClass(classOfInterest);
 
     auto elements = txnMgr.Elements().MakeIterator();
 
@@ -81,7 +81,7 @@ void TestTxnMonitor::CheckClassOrSubClasses(TxnManager& txnMgr, DgnClassId class
             /* unused - DgnElementId eid = element.GetElementId();*/
             DgnClassId ecclsid = element.GetECClassId();
 
-            ECN::ECClassCP ecclass = txnMgr.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(ecclsid.GetValue()));
+            ECN::ECClassCP ecclass = txnMgr.GetDgnDb().Schemas().GetClass(ECN::ECClassId(ecclsid.GetValue()));
             if (ecclass->Is(targetClass))
                 {
                 // TODO: do something here

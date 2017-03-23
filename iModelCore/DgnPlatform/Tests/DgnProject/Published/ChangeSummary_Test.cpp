@@ -163,7 +163,7 @@ void ChangeSummaryTestFixture::DumpSqlChanges(DgnDbCR dgnDb, Changes const& chan
 bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
     {
     Utf8String tableName = changeSummary.GetInstancesTableName();
-    ECClassId classId = m_db->Schemas().GetECClassId(schemaName, className);
+    ECClassId classId = m_db->Schemas().GetClassId(schemaName, className);
 
     Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
     CachedStatementPtr statement = m_db->GetCachedStatement(sql.c_str());
@@ -272,7 +272,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
                 ModeledElement.Id;NULL;1099511627782
                 ModeledElement.RelECClassId;NULL;BisCore:ModelModelsElement:174
                 Properties;NULL;"{"DisplayInfo":{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"mm","num":1000.0,"sys":2}}}"
-                Visibility;NULL;1
+                IsPrivate;NULL;0
         0:9;BisCore:AuthorityIssuesElementCode:169;Insert;No
                 SourceECClassId;NULL;BisCore:NullAuthority:274
                 SourceECInstanceId;NULL;0:1
@@ -554,7 +554,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 
     DgnElementId parentElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 0, 0, 0);
     DgnElementId childElementId = InsertPhysicalElement(*m_db, *csModel, csCategoryId, 1, 1, 1);
-    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     m_db->SaveChanges();
 
@@ -593,8 +593,8 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
 
-    ECClassId relClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
-    ECClassId elClassId = m_db->Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
+    ECClassId relClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    ECClassId elClassId = m_db->Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
 
     ChangeSummary::Instance instance = changeSummary.GetInstance(elClassId, ECInstanceId(childElementId.GetValue()));
     ASSERT_TRUE(instance.IsValid());
@@ -673,7 +673,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
-    ECClassId elClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "Element");
+    ECClassId elClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, "Element");
     changeSummary.QueryByClass(changes, elClassId, true, ChangeSummary::QueryDbOpcode::All);
     changedElements.empty();
     for (bmap<ECInstanceId, ChangeSummary::Instance>::const_iterator iter = changes.begin(); iter != changes.end(); iter++)

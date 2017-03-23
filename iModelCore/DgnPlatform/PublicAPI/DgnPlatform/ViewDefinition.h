@@ -13,6 +13,7 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
+#include "Lighting.h"
 #include "Render.h"
 
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
@@ -49,7 +50,7 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static constexpr Utf8CP str_Styles() {return "Styles";}
+    static constexpr Utf8CP str_Styles() {return "styles";}
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -122,7 +123,7 @@ public:
 
     DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this DisplayStyle's name
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_DisplayStyle, name);}//!< @private
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
 //=======================================================================================
@@ -175,7 +176,6 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
     static constexpr Utf8CP str_HLine() {return "hline";}
-    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
@@ -201,8 +201,10 @@ public:
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
 
-    Render::SceneLights GetSceneLights() {return Render::SceneLights::FromJson(GetStyle(str_SceneLights()));}
-    void SetSceneLights(Render::SceneLights const& lights) {SetStyle(str_SceneLights(), lights.ToJson());}
+    Render::SceneLights CreateSceneLights(Render::TargetR);
+    DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
+    DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
+    DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -212,7 +214,7 @@ public:
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment = val;}
     /** @} */
 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle3d));}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle3d));}//!< @private
 };
 
 //=======================================================================================
@@ -268,7 +270,7 @@ public:
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_ModelSelector, name);}//!< @private
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
 //=======================================================================================
@@ -325,7 +327,7 @@ public:
     //! Query the list of category selectors
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(db, BIS_CODESPEC_CategorySelector, name);} //!< @private
 };
 
@@ -358,7 +360,6 @@ public:
     };
 
 protected:
-    bool m_isPrivate = false;
     DgnElementId m_categorySelectorId;
     DgnElementId m_displayStyleId;
     mutable CategorySelectorPtr m_categorySelector;
@@ -418,8 +419,6 @@ public:
     
     Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
-    bool IsPrivate() const {return m_isPrivate;} //!< Return true if this ViewDefinition is private (should not be listed in the GUI, for example)
-    void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Set whether this ViewDefinition is private or not
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
@@ -854,7 +853,7 @@ protected:
 
 public:
     static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} 
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
     DGNPLATFORM_EXPORT DPoint3d ComputeEyePoint(Frustum const& frust) const;//!< private
@@ -1037,7 +1036,7 @@ protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
 public:
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition));} //!< private
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition));} //!< private
 
     //! Create a SpatialViewDefintion from CreateParams
     explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_modelSelector.IsValid()) SetModelSelector(*params.m_modelSelector);}
@@ -1083,7 +1082,7 @@ public:
         T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
 
     //! Look up the ECClass Id used for OrthographicViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition));}
 };
 
 //=======================================================================================
@@ -1163,7 +1162,7 @@ public:
     DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
     DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
 };
 
@@ -1197,7 +1196,7 @@ public:
     DGNPLATFORM_EXPORT Sheet::ViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
     //! Look up the ECClass Id used for SheetViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition));}
 };
 
 //=======================================================================================

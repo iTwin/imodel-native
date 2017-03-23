@@ -153,7 +153,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::GetElementClass() const
     {
-    return GetDgnDb().Schemas().GetECClass(GetElementClassId());
+    return GetDgnDb().Schemas().GetClass(GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,6 +331,41 @@ Utf8String DrawingGraphic::_GetInfoString(Utf8CP delimiter) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+    auto stat = stmt.BindBoolean(stmt.GetParameterIndex(str_IsPrivate()), IsPrivate());
+    BeAssert(ECSqlStatus::Success == stat);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParamsCR params)
+    {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_isPrivate = stmt.GetValueBoolean(params.GetSelectIndex(str_IsPrivate()));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_CopyFrom(DgnElementCR el)
+    {
+    T_Super::_CopyFrom(el);
+
+    auto& other = static_cast<DefinitionElementCR>(el);
+    m_isPrivate = other.m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionElement::_OnInsert()
@@ -389,7 +424,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP descript
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
 
     if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || !name || !*name)
         return nullptr;
@@ -419,7 +454,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(handler);
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements);
     DgnCode code = CreateCode(parentSubject, name);
 
     if (!parentId.IsValid() || !parentRelClassId.IsValid() || !classId.IsValid() || !name || !*name)
@@ -556,9 +591,9 @@ DgnDbStatus GroupInformationPartition::_OnSubModelInsert(DgnModelCR model) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    CreateParams createParams = InitCreateParams(parentSubject, label, dgn_ElementHandler::GroupInformationPartition::GetHandler());
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::GroupInformationPartition::GetHandler());
     if (!createParams.IsValid())
         return nullptr;
 
@@ -572,10 +607,44 @@ GroupInformationPartitionPtr GroupInformationPartition::Create(SubjectCR parentS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+GroupInformationPartitionCPtr GroupInformationPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
     {
-    GroupInformationPartitionPtr partition = Create(parentSubject, label, description);
+    GroupInformationPartitionPtr partition = Create(parentSubject, name, description);
     return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<GroupInformationPartition>(*partition) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InformationRecordPartition::_OnSubModelInsert(DgnModelCR model) const 
+    {
+    // An InformationRecordPartition can only be modeled by an InformationRecordModel
+    return model.IsInformationRecordModel() ? T_Super::_OnSubModelInsert(model) : DgnDbStatus::ElementBlockedChange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordPartitionPtr InformationRecordPartition::Create(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    CreateParams createParams = InitCreateParams(parentSubject, name, dgn_ElementHandler::InformationRecordPartition::GetHandler());
+    if (!createParams.IsValid())
+        return nullptr;
+
+    InformationRecordPartitionPtr partition = new InformationRecordPartition(createParams);
+    if (description && *description)
+        partition->SetDescription(description);
+
+    return partition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+InformationRecordPartitionCPtr InformationRecordPartition::CreateAndInsert(SubjectCR parentSubject, Utf8CP name, Utf8CP description)
+    {
+    InformationRecordPartitionPtr partition = Create(parentSubject, name, description);
+    return partition.IsValid() ? parentSubject.GetDgnDb().Elements().Insert<InformationRecordPartition>(*partition) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1823,7 +1892,7 @@ DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
     {
-    return DgnClassId(db.Schemas().GetECClassId(_GetECSchemaName(), _GetECClassName()));
+    return DgnClassId(db.Schemas().GetClassId(_GetECSchemaName(), _GetECClassName()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1831,7 +1900,7 @@ DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP DgnElement::Aspect::GetECClass(DgnDbR db) const
     {
-    return db.Schemas().GetECClass(_GetECSchemaName(), _GetECClassName());
+    return db.Schemas().GetClass(_GetECSchemaName(), _GetECClassName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1863,7 +1932,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
+        if (existing.IsValid() && (existing.GetClassId() != GetECClassId(db)))
             {
             _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
             existing = ECInstanceKey();  //  trigger an insert below
@@ -2000,14 +2069,14 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
         }
 
     if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)))) // WIP: Need to properly set RelECClassId!!!
+        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)))) // WIP: Need to properly set RelECClassId!!!
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
     if (BeSQLite::BE_SQLITE_DONE != stmt->Step(key))
         return DgnDbStatus::WriteError;
 
-    m_instanceId = key.GetECInstanceId();
+    m_instanceId = key.GetInstanceId();
     return DgnDbStatus::Success;
     }
 
@@ -2170,7 +2239,7 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::Load0(DgnEleme
     dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
     if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler()) 
         {
-        auto eclass = el.GetDgnDb().Schemas().GetECClass(classid);
+        auto eclass = el.GetDgnDb().Schemas().GetClass(classid);
         if (nullptr == eclass)
             return nullptr;
         aspect = new GenericUniqueAspect(*eclass);
@@ -2213,14 +2282,14 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
         return DgnDbStatus::WriteError;
 
     if ((ECSqlStatus::Success != stmt->BindId(1, el.GetElementId())) ||
-        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)))) // WIP: Need to properly set RelECClassId!!!
+        (ECSqlStatus::Success != stmt->BindId(2, el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)))) // WIP: Need to properly set RelECClassId!!!
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
     if (BeSQLite::BE_SQLITE_DONE != stmt->Step(key))
         return DgnDbStatus::WriteError;
 
-    m_instanceId = key.GetECInstanceId();
+    m_instanceId = key.GetInstanceId();
     return DgnDbStatus::Success;
     }
 
@@ -2649,7 +2718,7 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
         return DgnElement::AppData::DropMe::Yes;
 
     statement->BindId(1, element.GetElementId());
-    statement->BindId(2, element.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsExternalKeys));
+    statement->BindId(2, element.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsExternalKeys));
     statement->BindId(3, GetCodeSpecId());
     statement->BindText(4, GetExternalKey(), IECSqlBinder::MakeCopy::No);
 
@@ -3736,7 +3805,7 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
         return DgnDbStatus::WriteError;
         }
 
-    ECClassCP ecClass = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, className);
+    ECClassCP ecClass = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, className);
     BeAssert(nullptr != ecClass);
     if (nullptr == ecClass)
         return DgnDbStatus::BadArg;
@@ -4073,3 +4142,28 @@ bool DgnElement::IsDescendantOf(DgnElementId ancestorId) const
         return false;
     return parent->IsDescendantOf(ancestorId); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ElementHandler::Definition::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, DefinitionElement::str_IsPrivate(), 
+        [](ECValueR value, DgnElementCR el)
+            {
+            DefinitionElementCR def = (DefinitionElementCR)el;
+            value.SetBoolean(def.IsPrivate());
+            return DgnDbStatus::Success;
+            },
+        [](DgnElementR el, ECValueCR value)
+            {
+            if (!value.IsBoolean())
+                return DgnDbStatus::BadArg;
+            DefinitionElementR def = (DefinitionElementR)el;
+            def.SetIsPrivate(value.GetBoolean());
+            return DgnDbStatus::Success;
+            });
+    }
+

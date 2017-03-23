@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/DgnChangeSummary.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanceIds, Utf8CP relationshipSchemaName, Utf8CP relationshipClassName, ECRelationshipEnd relationshipEnd)
     {
-    ECN::ECClassId relationshipClassId = m_dgndb.Schemas().GetECClassId(relationshipSchemaName, relationshipClassName);
+    ECN::ECClassId relationshipClassId = m_dgndb.Schemas().GetClassId(relationshipSchemaName, relationshipClassName);
     BeAssert(relationshipClassId.IsValid());
 
     Utf8CP endInstanceIdAccessStr = (relationshipEnd == ECRelationshipEnd_Source) ? "SourceECInstanceId" : "TargetECInstanceId";
@@ -77,7 +77,7 @@ void DgnChangeSummary::FindChangedRelationshipEndIds(ECInstanceIdSet& endInstanc
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::FindUpdatedInstanceIds(ECInstanceIdSet& updatedInstanceIds, Utf8CP schemaName, Utf8CP className)
     {
-    ECN::ECClassId classId = m_dgndb.Schemas().GetECClassId(schemaName, className);
+    ECN::ECClassId classId = m_dgndb.Schemas().GetClassId(schemaName, className);
     BeAssert(classId.IsValid());
 
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
@@ -113,7 +113,7 @@ void DgnChangeSummary::FindRelatedInstanceIds(DgnElementIdSet& relatedElements, 
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetChangedElements(DgnElementIdSet& elementIds, ChangeSummary::QueryDbOpcode queryOpcode)
     {
-    ECClassId elClassId = m_dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    ECClassId elClassId = m_dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
 
     bmap<ECInstanceId, ChangeSummary::Instance> changes;
     QueryByClass(changes, elClassId, true, queryOpcode);
@@ -136,7 +136,7 @@ BentleyStatus DgnChangeSummary::ParseClassFullName(Utf8StringR schemaName, Utf8S
     if (classParts.size() != 2)
         return ERROR;
 
-    ECN::ECClassCP ecClass = m_dgndb.Schemas().GetECClass(classParts[0].c_str(), classParts[1].c_str());
+    ECN::ECClassCP ecClass = m_dgndb.Schemas().GetClass(classParts[0].c_str(), classParts[1].c_str());
     if (ecClass == nullptr)
         return ERROR;
 

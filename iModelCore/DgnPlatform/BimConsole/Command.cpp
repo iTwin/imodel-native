@@ -64,7 +64,7 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine(m_commandMap.at(".ecsql")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".metadata")->GetUsage().c_str());
     BimConsole::WriteLine();
-    BimConsole::WriteLine(m_commandMap.at(".createecclassviews")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".createclassviews")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
@@ -374,7 +374,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine("Current file: ");
     BimConsole::WriteLine("  %s", session.GetFile().GetPath());
 
-    SchemaVersion initialECDbProfileVersion(0, 0, 0, 0);
+    ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
         {
         BimConsole::WriteLine("  BriefcaseId: %" PRIu32, session.GetFile().GetECDbHandle()->GetBriefcaseId().GetValue());
@@ -393,7 +393,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             }
 
         if (BE_SQLITE_ROW == stmt.Step())
-            initialECDbProfileVersion = SchemaVersion(stmt.GetValueText(0));
+            initialECDbProfileVersion = ProfileVersion(stmt.GetValueText(0));
         }
 
 
@@ -525,7 +525,7 @@ void RollbackCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "ecschema";
+Utf8CP const ImportCommand::ECSCHEMA_SWITCH = "schema";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
@@ -537,7 +537,7 @@ Utf8CP const ImportCommand::CSV_SWITCH = "csv";
 //---------------------------------------------------------------------------------------
 Utf8String ImportCommand::_GetUsage() const
     {
-    return " .import ecschema <ecschema xml file|folder>\r\n"
+    return " .import schema <ecschema xml file|folder>\r\n"
         COMMAND_USAGE_IDENT "Imports the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
         COMMAND_USAGE_IDENT "in the folder are imported.\r\n"
         COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n"
@@ -641,7 +641,7 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
         return;
         }
 
-    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportECSchemas(context->GetCache().GetSchemas()))
+    if (SUCCESS == session.GetFile().GetECDbHandle()->Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         {
         session.GetFile().GetHandleR().SaveChanges();
         BimConsole::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
@@ -724,7 +724,7 @@ void ImportCommand::RunImportCsv(Session& session, BeFileNameCR csvFilePath, std
             return;
         }
 
-    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName, csvFilePath.GetNameUtf8().c_str());
+    BimConsole::WriteLine("Successfully imported %d rows into table %s from CSV file %s", rowCount, tableName.c_str(), csvFilePath.GetNameUtf8().c_str());
     }
 
 
@@ -861,7 +861,7 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "ecschema";
+Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "schema";
 //static
 Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 
@@ -870,7 +870,7 @@ Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 //---------------------------------------------------------------------------------------
 Utf8String ExportCommand::_GetUsage() const
     {
-    return " .export ecschema [v2] <out folder>  Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
+    return " .export schema [v2] <out folder>    Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
            COMMAND_USAGE_IDENT "Otherwise ECXML v3 is used.\r\n"
            "         tables <JSON file>     Exports the data in all tables of the file into a JSON file\r\n";
     }
@@ -931,7 +931,7 @@ void ExportCommand::RunExportTables(Session& session, Utf8CP jsonFile) const
 //---------------------------------------------------------------------------------------
 void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool useECXmlV2) const
     {
-    bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetECSchemas(true);
+    bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetSchemas(true);
     if (schemas.empty())
         {
         BimConsole::WriteErrorLine("Failed to load schemas from file.");
@@ -1036,21 +1036,21 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
         }
     }
 
-//******************************* CreateECClassViewsCommand ******************
+//******************************* CreateClassViewsCommand ******************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-Utf8String CreateECClassViewsCommand::_GetUsage() const
+Utf8String CreateClassViewsCommand::_GetUsage() const
     {
-    return " .createecclassviews            Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
+    return " .createclassviews              Creates or updates views in the file to visualize the EC content as ECClasses and\r\n"
         COMMAND_USAGE_IDENT "ECProperties rather than tables and columns.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     12/2015
 //---------------------------------------------------------------------------------------
-void CreateECClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
+void CreateClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
     {
     if (!session.IsECDbFileLoaded(true))
         return;
@@ -1061,7 +1061,7 @@ void CreateECClassViewsCommand::_Run(Session& session, Utf8StringCR args) const
         return;
         }
 
-    if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateECClassViewsInDb())
+    if (SUCCESS != session.GetFile().GetECDbHandle()->Schemas().CreateClassViewsInDb())
         BimConsole::WriteErrorLine("Failed to create ECClass views in the file.");
     else
         BimConsole::WriteLine("Created or updated ECClass views in the file.");
@@ -1582,7 +1582,7 @@ void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8Strin
     BeAssert(csvFile != nullptr);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), ECDbSchemaManager::GetValidateDbMappingSql()))
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), SchemaManager::GetValidateDbMappingSql()))
         {
         BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -1644,7 +1644,7 @@ void DebugCommand::_Run(Session& session, Utf8StringCR args) const
     for (BeFileNameCR schemaFile : diegoSchemas)
         {
         Utf8String cmdArgs;
-        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8());
+        cmdArgs.Sprintf("ecschema %s", schemaFile.GetNameUtf8().c_str());
         importCmd.Run(session, cmdArgs);
         }
     }

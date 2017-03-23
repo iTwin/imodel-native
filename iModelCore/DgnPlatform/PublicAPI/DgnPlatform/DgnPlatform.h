@@ -172,6 +172,9 @@ DGNPLATFORM_TYPEDEFS(IRepositoryManager)
 DGNPLATFORM_TYPEDEFS(ISubEntity)
 DGNPLATFORM_TYPEDEFS(IVariableMonitor)
 DGNPLATFORM_TYPEDEFS(InformationContentElement)
+DGNPLATFORM_TYPEDEFS(InformationRecordElement)
+DGNPLATFORM_TYPEDEFS(InformationRecordModel)
+DGNPLATFORM_TYPEDEFS(InformationRecordPartition)
 DGNPLATFORM_TYPEDEFS(InformationModel)
 DGNPLATFORM_TYPEDEFS(ImageGraphic)
 DGNPLATFORM_TYPEDEFS(LineStyleContext)
@@ -296,6 +299,9 @@ DGNPLATFORM_REF_COUNTED_PTR(IOwnedLocksIterator)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
 DGNPLATFORM_REF_COUNTED_PTR(ISubEntity)
 DGNPLATFORM_REF_COUNTED_PTR(ImageGraphic)
+DGNPLATFORM_REF_COUNTED_PTR(InformationRecordElement)
+DGNPLATFORM_REF_COUNTED_PTR(InformationRecordModel)
+DGNPLATFORM_REF_COUNTED_PTR(InformationRecordPartition)
 DGNPLATFORM_REF_COUNTED_PTR(LinkElement)
 DGNPLATFORM_REF_COUNTED_PTR(LinkModel)
 DGNPLATFORM_REF_COUNTED_PTR(LinkPartition)
@@ -405,7 +411,6 @@ BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a D
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnGeometryPartId, DgnElementId) //!< A DgnElementId that identifies a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#LineStyles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
