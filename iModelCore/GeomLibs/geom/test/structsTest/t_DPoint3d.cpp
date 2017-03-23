@@ -1364,3 +1364,34 @@ TEST(DPoint3d, OperatorOverload)
     pointCpy.Subtract(vec);
     Check::True(point == pointCpy);
     }
+
+TEST(DPoint3d,FromIntersectUnitPerpendicularsXY)
+    {
+    auto basePoint = DPoint3d::From (1,2,4);
+    auto targetA   = DPoint3d::From (2,5,2);
+    auto targetB   = DPoint3d::From (-2, 6, 2);
+    bvector<double> fractions {0,1,0.2, 0.5};
+    for (double fA : fractions)
+        {
+        Check::StartScope ("fA", fA);
+        for (double fB : fractions)
+            {
+            Check::StartScope ("fB", fB);
+            auto xyz = DPoint3d::FromIntersectPerpendicularsXY (basePoint, targetA, fA, targetB, fB);
+            if (Check::True (xyz.IsValid (), "FromIntersectUnitPerpendicularsXY"))
+                {
+                auto xyzA = DPoint3d::FromInterpolate (basePoint, fA, targetA);
+                auto xyzB = DPoint3d::FromInterpolate (basePoint, fB, targetB);
+                Check::Near (1.0, 1.0 + xyzA.DotProductToPointsXY (basePoint, xyz), "right angle on line A as viewed");
+                Check::Near (1.0, 1.0 + xyzB.DotProductToPointsXY (basePoint, xyz), "right angle on line B as viewed");
+                Check::ExactDouble (basePoint.z, xyz.Value ().z, "Copy z from base point");
+                }
+            Check::EndScope ();
+            }
+        Check::EndScope ();
+        }
+    auto targetA2 = DPoint3d::FromInterpolate (basePoint, 2.7, targetA);        // on line beyond targetA
+    auto failureCase = DPoint3d::FromIntersectPerpendicularsXY (basePoint, targetA, 0.2, targetA2, 1.0);
+    Check::False (failureCase.IsValid (), "Parallel lines do not intersect");
+    Check::Near (basePoint, failureCase, "Parallel case returns base point");
+    }
