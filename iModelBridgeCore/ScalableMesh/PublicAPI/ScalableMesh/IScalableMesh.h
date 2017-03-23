@@ -88,7 +88,7 @@ public:
     BENTLEY_SM_EXPORT static size_t GetMaximumVideoMemoryUsage();
 };
 
-
+struct IScalableMeshProgress;
 /*=================================================================================**//**
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
@@ -101,12 +101,16 @@ protected:
     virtual bool      _IsCurrentPreviewEnough() const = 0;
 
     virtual StatusInt _UpdatePreview(PolyfaceQueryCR currentGround) = 0;    
+
+    virtual bool _UpdateProgress(IScalableMeshProgress* progress) = 0;
     
 public:
 
     BENTLEY_SM_EXPORT bool      IsCurrentPreviewEnough() const;
 
     BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+
+    BENTLEY_SM_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
         
 };
 
