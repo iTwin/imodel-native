@@ -172,6 +172,18 @@ RealityDataConsole::RealityDataConsole() :
     m_realityDataProperties.push_back("OwnedBy");
     m_realityDataProperties.push_back("-Finish-");
 
+    m_visibilityOptions = bvector<Utf8String>();
+    m_visibilityOptions.push_back("PUBLIC");
+    m_visibilityOptions.push_back("PRIVATE");
+    m_visibilityOptions.push_back("PERMISSION");
+    m_visibilityOptions.push_back("ENTERPRISE");
+
+    m_classificationOptions = bvector<Utf8String>();
+    m_classificationOptions.push_back("Model");
+    m_classificationOptions.push_back("Imagery");
+    m_classificationOptions.push_back("Pinned");
+    m_classificationOptions.push_back("Terrain");
+
     m_filterProperties = bvector<Utf8String>();
     m_filterProperties.push_back("Name");
     m_filterProperties.push_back("Group");
@@ -689,6 +701,7 @@ void RealityDataConsole::Upload()
 
     Utf8String guid = "";
     Utf8String propertyString = "";
+    Utf8String option;
     if(m_currentNode == nullptr)
         {
         std::string input;
@@ -698,16 +711,16 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
-        properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
+        Choice(m_classificationOptions, option);
+        properties.Insert(RealityDataField::Classification, option);
 
         DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
         properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
-        properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
+        Choice(m_visibilityOptions, option);
+        properties.Insert(RealityDataField::Visibility, option);
 
         DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
         std::getline(std::cin, input);
@@ -1079,17 +1092,18 @@ void RealityDataConsole::CreateRD()
     Utf8String name = Utf8String(input.c_str()).Trim();
     properties.Insert(RealityDataField::Name, name);
 
+    Utf8String option;
     DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Classification, Utf8String(input.c_str()).Trim());
+    Choice(m_classificationOptions, option);
+    properties.Insert(RealityDataField::Classification, option);
 
     DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
     std::getline(std::cin, input);
     properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
     DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
-    properties.Insert(RealityDataField::Visibility, Utf8String(input.c_str()).Trim());
+    Choice(m_visibilityOptions, option);
+    properties.Insert(RealityDataField::Visibility, option);
 
     DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
     std::getline(std::cin, input);
