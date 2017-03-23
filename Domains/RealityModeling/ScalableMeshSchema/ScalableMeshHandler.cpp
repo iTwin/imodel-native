@@ -1979,6 +1979,12 @@ void ScalableMeshModel::ReloadMesh() // force to reload the entire mesh data
 DgnDbStatus ScalableMeshModel::_OnDelete()
     {
     DgnDbStatus stat = T_Super::_OnDelete();
+
+    if (m_subModel)
+    {
+        m_parentModel->RemoveRegion(m_associatedRegion);
+    }
+
     if (m_smPtr.IsValid())
         {
         BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(m_dgndb)).GetDirectoryName();
@@ -1997,5 +2003,6 @@ DgnDbStatus ScalableMeshModel::_OnDelete()
 
     return stat;
     }
+
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)

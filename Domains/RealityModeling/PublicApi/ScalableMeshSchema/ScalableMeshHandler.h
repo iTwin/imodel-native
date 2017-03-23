@@ -183,6 +183,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         virtual DgnDbStatus _OnDelete() override;
 
+
         SCALABLEMESH_SCHEMA_EXPORT virtual void _AddGraphicsToScene(BentleyApi::Dgn::ViewContextR context) override;
 
         void RefreshClips();
