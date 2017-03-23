@@ -366,7 +366,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const
     status = RequestToJSON((&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "SpatialEntityRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -401,7 +401,7 @@ SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDa
     status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityDataSourcePtr> entities = bvector<SpatialEntityDataSourcePtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "SpatialEntityDataSourceByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -421,7 +421,7 @@ SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServer
     status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityServerPtr> entities = bvector<SpatialEntityServerPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "SpatialEntityServerByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -441,7 +441,7 @@ SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMeta
     status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityMetadataPtr> entities = bvector<SpatialEntityMetadataPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "SpatialEntityServerByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -461,7 +461,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
     status = PagedRequestToJSON((&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
-    if (status == RequestStatus::ERROR)
+    if (status == RequestStatus::BADREQ)
     {
         std::cout << "SpatialEntityWithDetailsSpatialRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -487,8 +487,8 @@ Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& requ
     Json::Value packageInfos(Json::objectValue);
     Json::Reader::Parse(jsonString, packageInfos);
 
-    if (status == RequestStatus::ERROR || !packageInfos.isMember("changedInstance"))
-        status =  RequestStatus::ERROR;
+    if (status == RequestStatus::BADREQ || !packageInfos.isMember("changedInstance"))
+        status =  RequestStatus::BADREQ;
     else
         packageId = packageInfos["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
 
@@ -510,10 +510,10 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
 
     Utf8String resultString = WSGRequest::GetInstance().PerformRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
 
-    status = RequestStatus::SUCCESS;
+    status = RequestStatus::OK;
     if (stat != CURLE_OK)
         {
-        status = RequestStatus::ERROR;
+        status = RequestStatus::BADREQ;
         std::cout << "Package download failed with response" << std::endl;
         std::cout << resultString << std::endl;
         }
@@ -538,11 +538,11 @@ RequestStatus GeoCoordinationService::PagedRequestToJSON(RealityDataPagedRequest
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::ERROR;
+        return RequestStatus::BADREQ;
 
     request->AdvancePage();
 
-    return RequestStatus::SUCCESS;
+    return RequestStatus::OK;
 }
 
 //=====================================================================================
@@ -556,7 +556,7 @@ RequestStatus GeoCoordinationService::RequestToJSON(GeoCoordinationServiceReques
 
     Json::Value instances(Json::objectValue);
     if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::ERROR;
+        return RequestStatus::BADREQ;
 
-    return RequestStatus::SUCCESS;
+    return RequestStatus::OK;
 }

@@ -108,6 +108,8 @@ private:
     NodeList*            m_currentNode;
 
     bvector<Utf8String>  m_realityDataProperties;
+    bvector<Utf8String>  m_visibilityOptions;
+    bvector<Utf8String>  m_classificationOptions;
     bvector<Utf8String>  m_filterProperties;
     Utf8String           m_nameFilter;
     Utf8String           m_groupFilter;
