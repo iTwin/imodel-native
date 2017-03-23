@@ -79,6 +79,16 @@ public:
         else
             return GetWidth() > 1 ? Dimension::One : Dimension::Zero;
         }
+
+    static Dimension CalcDimension(uint16_t nColors)
+        {
+        switch (nColors)
+            {
+            case 0:     return Dimension::None;
+            case 1:     return Dimension::Zero;
+            default:    return nColors <= GetMaxWidth() ? Dimension::One : Dimension::Zero;
+            }
+        }
 };
 
 //=======================================================================================
