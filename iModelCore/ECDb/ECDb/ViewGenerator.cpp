@@ -30,17 +30,11 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 //static 
 BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     {
-    if (ecdb.IsReadonly())
-        {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
-        return ERROR;
-        }
-
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb,
-                                     "SELECT c.Id FROM " TABLE_Class " c, ec_ClassMap cm, " TABLE_ClassHasBaseClasses " cc "
-                                     "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_ECClassType_Entity " AND cm.MapStrategy<> " SQLVAL_MapStrategy_NotMapped
-                                     " GROUP BY c.Id"))
+                                     "SELECT distinct c.Id FROM " TABLE_Class " c, ec_ClassMap cm, " TABLE_ClassHasBaseClasses " cc "
+                                     "WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = " SQLVAL_ECClassType_Entity " AND "
+                                     "cm.MapStrategy<>" SQLVAL_MapStrategy_NotMapped " AND cm.MapStrategy<>" SQLVAL_MapStrategy_ExistingTable))
         return ERROR;
 
     std::vector<ClassMapCP> classMaps;
@@ -59,7 +53,6 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
             return ERROR;
             }
 
-        BeAssert(classMap->GetClass().IsEntityClass() && classMap->GetType() != ClassMap::Type::NotMapped);
         if (CreateUpdatableViewIfRequired(ecdb, *classMap) != SUCCESS)
             return ERROR;
         }
@@ -230,7 +223,8 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
     {
-    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap.IsRelationshipClassMap())
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable ||
+        classMap.IsRelationshipClassMap())
         return ERROR;
 
     UpdatableViewContext ctx(ecdb);
@@ -254,6 +248,10 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         {
         if (partition.GetTable().GetPersistenceType() == PersistenceType::Virtual)
             continue;
+
+        //WIP: If a class map has a subclass mapping to ExistingTable the class is not updatable polymorphically
+        //if (!partition.GetTable().IsOwnedByECDb())
+        //    return SUCCESS;
 
         updateTables.insert(&partition.GetTable());
         deleteTables.insert(&partition.GetTable());

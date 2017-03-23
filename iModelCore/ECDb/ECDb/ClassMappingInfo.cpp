@@ -839,15 +839,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
     //evaluate end tables
     const bool foreignKeyEndIsSource = resolvedStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable;
 
-    //check that the referenced end tables (including joined tables) are 1 at most
-    std::set<DbTable const*> referencedTables = GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass.GetTarget() : relClass.GetSource(), false);
-    if (referencedTables.size() > 1)
-        {
-        Issues().Report("Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName(), foreignKeyEndIsSource ? "Source" : "Target", foreignKeyEndIsSource ? "Target" : "Source");
-        return ERROR;
-        }
-
     //For the foreign key end we want to include joined tables as we have to create FKs into them.
     //For the referenced end we are just interested in the primary table and ignore joined tables.
     const bool ignoreJoinedTableOnSource = !foreignKeyEndIsSource;
@@ -859,6 +850,15 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
         {
         Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
                         m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    const size_t referencedEndTableCount = foreignKeyEndIsSource ? m_targetTables.size() : m_sourceTables.size();
+    //check that the referenced end tables (excluding joined tables) are 1 at most
+    if (referencedEndTableCount > 1)
+        {
+        Issues().Report("Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
+                        m_ecClass.GetFullName(), foreignKeyEndIsSource ? "Source" : "Target", foreignKeyEndIsSource ? "Target" : "Source");
         return ERROR;
         }
 

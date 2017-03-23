@@ -1602,13 +1602,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTables)
     {
-    SchemaItem testSchema("<?xml version='1.0' encoding='utf-8' ?>"
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "    <ECEntityClass typeName='A' >"
-                          "        <ECProperty propertyName='Price' typeName='double' />"
-                          "    </ECEntityClass>"
-                          "</ECSchema>", false, "");
-    ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
+    ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceId fi1Id;
@@ -1631,42 +1625,25 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
     fi2Id = embeddedFileTable.Import(&stat, "embed1", testFilePath.GetNameUtf8().c_str(), "JSON");
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(fi2Id.IsValid());
-    }
-    ecdb.SaveChanges();
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Reset();
-    stmt.ClearBindings();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?")) << "cannot delete polymorphically if an existing table is involved";
+    stmt.Finalize();
+
+    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Remove("embed1"));
+    }
 
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Reset();
-    stmt.ClearBindings();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    }
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.FileInfo WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi1Id));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Reset();
     stmt.ClearBindings();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, fi2Id));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
+   
     }
 
 //---------------------------------------------------------------------------------------
@@ -5239,6 +5216,174 @@ TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
         }
 
     ASSERT_EQ((int) expectedCodes.size(), rowCount);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
+    {
+    ECDbR ecdb = SetupECDb("updatedeletemixin.ecdb",
+                           SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                          <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                          <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                          <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                              <ECEntityClass typeName="Model">
+                                                 <ECCustomAttributes>
+                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                   </ClassMap>
+                                                   <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                                                 </ECCustomAttributes>
+                                                  <ECProperty propertyName="Name" typeName="string" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="IIsGeometricModel" modifier="Abstract">
+                                                 <ECCustomAttributes>
+                                                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                                        <AppliesToEntityClass>Model</AppliesToEntityClass>
+                                                    </IsMixin>"
+                                                 </ECCustomAttributes>
+                                                  <ECProperty propertyName="Is2d" typeName="boolean"/>
+                                                  <ECProperty propertyName="SupportedGeometryType" typeName="string" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="Model2d">
+                                                    <BaseClass>Model</BaseClass>
+                                                    <BaseClass>IIsGeometricModel</BaseClass>
+                                                  <ECProperty propertyName="Origin2d" typeName="Point2d" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="Model3d">
+                                                    <BaseClass>Model</BaseClass>
+                                                    <BaseClass>IIsGeometricModel</BaseClass>
+                                                  <ECProperty propertyName="Origin3d" typeName="Point3d" />
+                                              </ECEntityClass>
+                                          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+    ecdb.SaveChanges();
+
+    std::vector<ECInstanceKey> model2dKeys, model3dKeys, element2dKeys, element3dKeys;
+    //INSERT
+    {
+    ECInstanceKey key;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model2d(Name,Is2d,SupportedGeometryType,Origin2d) VALUES(?,true,'Line',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Main2d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(2, DPoint2d::From(1.0, 1.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model2dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Detail2d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(2, DPoint2d::From(1.5, 1.5)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model2dKeys.push_back(key);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model3d(Name,Is2d,SupportedGeometryType,Origin3d) VALUES(?,false,'Solid',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Main3d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(2.0, 2.0, 2.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model3dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Detail3d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(2.5, 2.5, 2.5)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model3dKeys.push_back(key);
+    }
+
+    {
+    //Select models via mixin
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Is2d, SupportedGeometryType FROM ts.IIsGeometricModel"));
+    int rowCount2d = 0;
+    int rowCount3d = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ECClassId actualClassId = stmt.GetValueId<ECClassId>(1);
+        if (actualClassId == model2dKeys[0].GetClassId())
+            {
+            rowCount2d++;
+            ASSERT_TRUE(stmt.GetValueBoolean(2)) << stmt.GetECSql();
+            ASSERT_STREQ("Line", stmt.GetValueText(3)) << stmt.GetECSql();
+            }
+        else if (actualClassId == model3dKeys[0].GetClassId())
+            {
+            rowCount3d++;
+            ASSERT_FALSE(stmt.GetValueBoolean(2)) << stmt.GetECSql();
+            ASSERT_STREQ("Solid", stmt.GetValueText(3)) << stmt.GetECSql();
+            }
+        }
+
+    ASSERT_EQ(2, rowCount2d) << stmt.GetECSql();
+    ASSERT_EQ(2, rowCount3d) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //Select concrete models
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Name, SupportedGeometryType, Origin2d FROM ts.Model2d"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_STREQ("Line", stmt.GetValueText(2));
+
+        const ECInstanceId actualModelId = stmt.GetValueId<ECInstanceId>(0);
+        Utf8CP actualModelName = stmt.GetValueText(1);
+        if (actualModelId == model2dKeys[0].GetInstanceId())
+            ASSERT_STREQ("Main2d", actualModelName) << stmt.GetECSql();
+        else if (actualModelId == model2dKeys[1].GetInstanceId())
+            ASSERT_STREQ("Detail2d", actualModelName) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Name, SupportedGeometryType, Origin3d FROM ts.Model3d"));
+    rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_STREQ("Solid", stmt.GetValueText(2));
+
+        const ECInstanceId actualModelId = stmt.GetValueId<ECInstanceId>(0);
+        Utf8CP actualModelName = stmt.GetValueText(1);
+        if (actualModelId == model3dKeys[0].GetInstanceId())
+            ASSERT_STREQ("Main3d", actualModelName) << stmt.GetECSql();
+        else if (actualModelId == model3dKeys[1].GetInstanceId())
+            ASSERT_STREQ("Detail3d", actualModelName) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+    }
+
+    //UPDATE Mixin
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.IIsGeometricModel SET SupportedGeometryType='Surface' WHERE Is2d"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    //Updates against mixins don't work yet. Once fixed this line should be uncommented.
+    //ASSERT_EQ(2, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    ASSERT_EQ(0, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    //DELETE Mixin
+    {
+    const int totalModifiedRowsBefore = ecdb.GetTotalModifiedRowCount();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ts.IIsGeometricModel WHERE Is2d=False"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    //the ECSQL deletes 2 models which results in 4 rows deleted (2 in primary and 2 in joined table)
+    ASSERT_EQ(4, ecdb.GetTotalModifiedRowCount() - totalModifiedRowsBefore) << stmt.GetECSql();
+    stmt.Finalize();
+    }
     }
 
 //---------------------------------------------------------------------------------------

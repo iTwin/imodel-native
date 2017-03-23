@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlDeleteTestDataset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlDeleteTestDataset.h"
@@ -178,7 +178,7 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
 
     ecsql = "DELETE FROM ecdbf.FileInfo WHERE ECInstanceId=?";
-    ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Polymorphic delete not supported as subclass is mapped to existing table which means it is readonly");
 
     return dataset;
     }

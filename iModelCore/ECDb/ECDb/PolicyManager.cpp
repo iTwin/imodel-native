@@ -152,6 +152,22 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
                     }
 
                 }
+
+            if (assertion.IsPolymorphicClassExpression())
+                {
+                for (Partition const& horizPartition : assertion.GetClassMap().GetStorageDescription().GetHorizontalPartitions())
+                    {
+                    if (!horizPartition.GetTable().IsOwnedByECDb())
+                        {
+                        Utf8String notSupportedMessage;
+                        notSupportedMessage.Sprintf("A subclass of ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore polymorphic ECSQL UPDATEs or DELETEs cannot be performed against that class.",
+                                                    className.c_str());
+
+                        return Policy::CreateNotSupported(notSupportedMessage);
+                        }
+                    }
+                }
+
             }
         }
 
