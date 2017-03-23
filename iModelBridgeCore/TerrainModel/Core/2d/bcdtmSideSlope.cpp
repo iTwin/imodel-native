@@ -4087,7 +4087,7 @@ int bcdtmSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlopeTa
        if( radial->sideSlopeOption == 5 || radial->sideSlopeOption == 6 || radial->sideSlopeOption == 7 )
          {
          long flag = 0;
-          if( bcdtmDrape_pointDtmObject((BC_DTM_OBJ *)radial->slopeToTin,radial->radialEndPoint.x,radial->radialEndPoint.y,&radial->surfaceZ,&EndFlag)) goto errexit ;
+          if( bcdtmDrape_pointDtmObject((BC_DTM_OBJ *)radial->slopeToTin,radial->radialEndPoint.x,radial->radialEndPoint.y,&radial->surfaceZ,&flag)) goto errexit ;
          if (EndFlag == 0 && flag == 0)
                 EndFlag = 1; // Outside
          }
