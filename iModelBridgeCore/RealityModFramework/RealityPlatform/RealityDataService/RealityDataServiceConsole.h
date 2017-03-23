@@ -47,13 +47,14 @@ enum class Command
     Download,
     Upload,
     FileAccess,
-    AzureAdress,
+    AzureAddress,
     ChangeProps,
     Delete,
     Filter,
     Relationships,
     CreateRD,
-    Link
+    Link,
+    Unlink
     };
 
 struct RealityDataConsole
@@ -86,13 +87,14 @@ public:
     void DummyFunction(){}
     void InputError();
     void FileAccess();
-    void AzureAdress();
+    void AzureAddress();
     void ChangeProps();
     void Delete();
     void Filter();
     void Relationships();
     void CreateRD();
     void Link();
+    void Unlink();
 
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

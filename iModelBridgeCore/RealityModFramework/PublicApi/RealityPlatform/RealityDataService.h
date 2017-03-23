@@ -116,10 +116,7 @@ private:
 	
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
-//! RealityDataProjectRelationshipByIdRequest
-//! This class represents a request for specific RealityDataProjectRelationship 
-//!  class object. Need to check if this class is necessary. We can return
-//!  all projects that have a link with a certain RealityData
+//! RealityDataProjectRelationshipByProjectIdRequest
 //=====================================================================================
 struct RealityDataProjectRelationshipByProjectIdRequest : public RealityDataUrl
     {
@@ -135,10 +132,7 @@ private:
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
-//! RealityDataProjectRelationshipByIdRequest
-//! This class represents a request for specific RealityDataProjectRelationship 
-//!  class object. Need to check if this class is necessary. We can return
-//!  all projects that have a link with a certain RealityData
+//! RealityDataProjectRelationshipByRealityDataIdRequest
 //=====================================================================================
 struct RealityDataProjectRelationshipByRealityDataIdRequest : public RealityDataUrl
     {
@@ -151,6 +145,7 @@ protected:
 private:
     RealityDataProjectRelationshipByRealityDataIdRequest() {}
     };
+
 
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
@@ -604,6 +599,18 @@ struct RealityDataRelationshipCreateRequest : public RealityDataUrl
     protected:
         REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
+
+//=====================================================================================
+//! @bsiclass                                   Alain.Robert 03/2017
+//! A class used to delete a relationship between an existing reality data and a project
+//=====================================================================================
+struct RealityDataRelationshipDelete : public RealityDataUrl
+    {
+        REALITYDATAPLATFORM_EXPORT RealityDataRelationshipDelete(Utf8String realityDataId, Utf8String projectId);
+    protected:
+        REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+    };
+
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason 02/2017

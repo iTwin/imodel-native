@@ -925,6 +925,34 @@ void RealityDataRelationshipCreateRequest::_PrepareHttpRequestStringAndPayload()
     m_requestHeader.push_back("Content-Type: application/json");
     }
 
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              03/2017
+//=====================================================================================
+RealityDataRelationshipDelete::RealityDataRelationshipDelete(Utf8String realityDataId, Utf8String projectId)
+    {
+    m_id = realityDataId;
+    m_validRequestString = false;
+
+    m_requestType = HttpRequestType::DELETE_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityDataProjectRelationship\",\"schemaName\":\"S3MX\", \"properties\": { \"ProjectId\" : \"");
+    m_requestPayload.append(projectId);
+    m_requestPayload.append("\"}}}");
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              03/2017
+//=====================================================================================
+void RealityDataRelationshipDelete::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/RealityDataProjectRelationship/");
+    m_httpRequestString.append(m_id);
+    m_requestHeader.push_back("Content-Type: application/json");
+    }
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
