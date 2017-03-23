@@ -253,7 +253,7 @@ public:
     //! Static helper method: converts a classification tag to a classification
     //! Returns SUCCESS if value valid and ERROR if given tag is invalid. In case of error the classification value remains unchanged
     REALITYDATAPLATFORM_EXPORT static StatusInt GetClassificationFromTag(Classification& returnedClassification, Utf8CP classificationTag);
-
+    REALITYDATAPLATFORM_EXPORT static Utf8String GetTagFromClassification(Classification classification);
 
     //! For later ... currently unused
     // REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSubClassification() const;

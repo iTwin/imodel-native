@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     bvector<Utf8String> filter2 = bvector<Utf8String>();
     filter1.push_back(RealityDataFilterCreator::FilterByOwner("francis.boily@bentley.com"));
     filter1.push_back(RealityDataFilterCreator::FilterByCreationDate(DateTime(2016,12,01), DateTime(2017,01,05))); 
-    filter1.push_back(RealityDataFilterCreator::FilterByClassification(Classification::Model));
+    filter1.push_back(RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification::MODEL));
     filter2.push_back(RealityDataFilterCreator::GroupFiltersAND(filter1));
     filter2.push_back(RealityDataFilterCreator::FilterByType("3mx"));
     filter2.push_back(RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::PUBLIC));
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
     bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
 
-    if (status != RequestStatus::BADREQ) // SUCCESS OR LASTPAGE
+    if (status != RequestStatus::BADREQ) 
         {
         std::cout << "Number of spatial entities found for filter : " << std::endl;
         std::cout << filteredSpatialEntities.size() << std::endl;

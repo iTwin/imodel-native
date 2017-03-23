@@ -279,16 +279,6 @@ protected:
 
     };
 
-//! The classification codes. The high level interface only supports the four base classification
-//&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
-enum class Classification
-    {
-    Imagery = 0x1,
-    Terrain = 0x2,
-    Model = 0x4,
-    Pinned = 0x8
-    };
-
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataFilterCreator
@@ -304,7 +294,7 @@ struct RealityDataFilterCreator
     //! Sets filtering upon the classification. The classification may contain
     //!  more than one classification by bitwise oring the classification
     //!  values.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(Classification classification);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(RealityDataBase::Classification classification);
 
     //! Filters the returned set by the reality data size.
     //! Both the min and max size must be specified

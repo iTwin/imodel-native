@@ -298,6 +298,24 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason         	    03/2017
+//-------------------------------------------------------------------------------------
+//! Static method that converts a classification to a classification tag 
+Utf8String RealityDataBase::GetTagFromClassification(RealityDataBase::Classification classification)
+{
+    if (Classification::MODEL == classification)
+        return "PUBLIC";
+    else if (Classification::TERRAIN == classification)
+        return "ENTERPRISE";
+    else if (Classification::IMAGERY == classification)
+        return "PERMISSION";
+    else if (Classification::PINNED == classification)
+        return "PRIVATE";
+
+    return "UNDEFINED";
+}
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataBase::SetClassificationByTag(Utf8CP classificationTag)
