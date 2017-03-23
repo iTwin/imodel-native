@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -439,6 +439,51 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     EXPECT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CustomAttributeTest, CanRetrieveBothPrimaryAndSupplementedCustomAttributes)
+    {
+    ECSchemaPtr primary = CreateCustomAttributeTestSchema();
+
+
+    SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
+
+    ECSchemaPtr supplementalSchema;
+    ECSchema::CreateSchema(supplementalSchema, "Supplemental", "sup", 1, 0, 1);
+    SupplementalSchemaMetaData metaData(primary->GetName().c_str(), primary->GetVersionRead(), primary->GetVersionWrite(), primary->GetVersionMinor(), 10, "Testing");
+    supplementalSchema->AddReferencedSchema(*coreCASchema);
+    supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
+
+    ECEntityClassP supClass;
+    supplementalSchema->CreateEntityClass(supClass, "ClassWithProperties");
+    IECInstancePtr caInstance = GetInstanceForClass("ClassHasCurrentTimeStampProperty", *coreCASchema);
+    ASSERT_EQ(ECObjectsStatus::Success, supClass->SetCustomAttribute(*caInstance));
+
+    bvector<ECSchemaP> supplementalSchemas;
+    supplementalSchemas.push_back(supplementalSchema.get());
+    SupplementedSchemaBuilder builder;
+    builder.UpdateSchema(*primary, supplementalSchemas);
+
+    ECClassP containerClass = primary->GetClassP("ClassWithProperties");
+    int count = 0;
+    for (IECInstancePtr ca : containerClass->GetCustomAttributes(false))
+        count++;
+
+    ASSERT_TRUE(1 == count) << "Should have found 1 custom attribute after supplementing";
+
+    IECInstancePtr instance = GetInstanceForClass("CustomAttribClass", *primary);
+    ASSERT_EQ(ECObjectsStatus::Success, containerClass->SetCustomAttribute(*instance));
+
+    count = 0;
+    for (IECInstancePtr ca : containerClass->GetCustomAttributes(false))
+        count++;
+
+    ASSERT_TRUE(2 == count) << "Should have found 2 custom attributes";
+
+    }
 
 #ifdef TEST_DEFECT_D_88458 
 //---------------------------------------------------------------------------------------
