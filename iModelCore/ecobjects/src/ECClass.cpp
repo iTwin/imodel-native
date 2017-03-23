@@ -2399,7 +2399,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     
     if (nullptr == resolvedSchema)
         {
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema which contains it cannot be found.", appliesToValue.GetUtf8CP());
+        LOG.errorv("Cannot resolve the 'applies to' class '%s' of mixin '%s' because the schema which contains it cannot be found.", appliesToValue.GetUtf8CP(), GetFullName());
         return nullptr;
         }
 
@@ -2407,7 +2407,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     if (nullptr == appliesToClass)
         {
         Utf8String fullSchemaName = resolvedSchema->GetFullSchemaName();
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), fullSchemaName.c_str());
+        LOG.errorv("Cannot resolve the 'applies to' class '%s' of mixin '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), GetFullName(), fullSchemaName.c_str());
         return nullptr;
         }
 
