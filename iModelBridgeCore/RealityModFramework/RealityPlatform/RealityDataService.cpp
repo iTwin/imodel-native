@@ -442,31 +442,9 @@ Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByClassification(Classification classification)
-    { 
-    Utf8String classif;
-    switch(classification)
-        {
-    case Classification::Terrain:
-        {
-        classif = "Terrain";
-        break;
-        }
-    case Classification::Pinned:
-        {
-        classif = "Pinned";
-        break;
-        }
-    case Classification::Imagery:
-        {
-        classif = "Imagery";
-        break;
-        }
-    default:
-        classif = "Model";
-        }
-
-    return Utf8PrintfString("Classification+eq+'%s'", classif);
+Utf8String RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification classification)
+    {
+    return Utf8PrintfString("Classification+eq+'%s'", RealityDataBase::GetTagFromClassification(classification));
     }
 
 //=====================================================================================
