@@ -719,7 +719,14 @@ public:
 
         //NEEDS_WORK_SM : Try do create something cleaner when doing storage factoring 
         //(i.e. : having count only in header automatically modified when storedpoolvector is modified).
-        return m_nodeHeader.m_nodeCount;       
+        if (m_nodeHeader.m_nodeCount > 0)
+            return m_nodeHeader.m_nodeCount;       
+
+        // Maybe points are not loaded yet...
+        SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(UNCONSTTHIS->GetPointsPtr());
+        return ptsPtr->size();
+
         }
 
     void LockPts()
