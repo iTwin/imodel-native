@@ -288,8 +288,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  AzureAddress        Prints the URL to use (pass \"read\" or \"write\" default is read)\n");
     DisplayInfo ("  ChangeProps         Modify the properties of a RealityData\n");
     DisplayInfo ("  Relationships       Show all projects attached to this RealityData\n");
-    DisplayInfo ("  Link                Create a relationship between a RealityData and a project");
-    DisplayInfo ("  Unlink              Remove a relationship between a RealityData and a project");
+    DisplayInfo ("  Link                Create a relationship between a RealityData and a project\n");
+    DisplayInfo ("  Unlink              Remove a relationship between a RealityData and a project\n");
     DisplayInfo ("  CreateRD            Create a new RealityData (must provide a name)\n");
     DisplayInfo ("  Delete              Delete a RealityData, Folder or single Document\n");
     }
