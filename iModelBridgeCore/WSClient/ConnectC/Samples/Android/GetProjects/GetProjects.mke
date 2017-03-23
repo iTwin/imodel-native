@@ -21,6 +21,7 @@
 %message I am here
 %message ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT)
 
+appName=getprojects
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -56,8 +57,8 @@ $(BuildDir)BeSecurity-1.0.0/build.gradle : $(_MakeFilePath)BeSecurity-1.0.0/buil
 $(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/MavenDependencies/com/bentley/android/BeSecurity/1.0.0/BeSecurity-1.0.0.aar
     $(LinkFirstDepToFirstTarget)
 
-
 #----------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 #--------------------------------------------------------------------------------------
 #   Set Variables
@@ -65,17 +66,28 @@ $(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/Maven
 
 APP_ProjectRoot = $(BuildDir)/
 
-buildOut = $(OutputRootDir)build/$(_MakeFileName)/
+buildOut = $(OutputRootDir)build/${_MakeFileName}/
 mavenDependenciesDirectory = $(BuildContext)SubParts/MavenDependencies/
 
 #--------------------------------------------------------------------------------------
 #   Use Gradle to build the DgnClientFx archive
 #--------------------------------------------------------------------------------------
+GRADLE_APK_BASE_NAME=$(appName)
 GRADLE_TASKS=clean assemble uploadArchives
 GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
                   MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)] \
 				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] 
-	
+
 #Verbose=1
 %include $(SrcRoot)WSClient/mki/Android/gradleBuild.mki
+
+#--------------------------------------------------------------------------------------
+#   Link to apk output file.
+#--------------------------------------------------------------------------------------
+%include $(SrcRoot)WSClient/mki/Android/getApkName.mki
+link_apk_to_context:
+	~linkfile $(ContextDeliveryDir)getprojects.apk=$(BuildDir)app/build/outputs/apk/$(TARGET_APK_NAME)
+
+
+
 
