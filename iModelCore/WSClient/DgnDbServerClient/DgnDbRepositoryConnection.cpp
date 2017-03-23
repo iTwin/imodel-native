@@ -3243,7 +3243,6 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 Dgn::DgnRevisionPtr               revision,
 Dgn::DgnDbCR                      dgndb,
 bool                              relinquishCodesLocks,
-bool                              containsSchemaChanges,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
@@ -3252,7 +3251,7 @@ ICancellationTokenPtr             cancellationToken
     DgnDbCP pDgnDb = &dgndb;
 
     // Stage 1. Create revision.
-    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, dgndb.GetBriefcaseId(), containsSchemaChanges));
+    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, dgndb.GetBriefcaseId(), revision->ContainsSchemaChanges(dgndb)));
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
