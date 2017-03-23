@@ -49,6 +49,8 @@ enum ScalableMeshStep
     STEP_GENERATE_LOD,
     STEP_TEXTURE,
     STEP_SAVE,
+    STEP_DETECT_GROUND,
+    STEP_GENERATE_TEXTURE,
     STEP_QTY
     };
 
@@ -56,7 +58,8 @@ enum ScalableMeshStepProcess
     {
     PROCESS_INACTIVE = 0,
     PROCESS_GENERATION,
-    PROCESS_TEXTURING
+    PROCESS_TEXTURING,
+    PROCESS_DETECT_GROUND
     };
 
 struct IScalableMeshCreator;

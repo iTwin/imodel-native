@@ -667,7 +667,7 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
     vector<int32_t> indices(poly->GetPointIndexCount());
     memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount()*sizeof(int32_t));
     bmap<int32_t, int32_t> allPts;
-    bmap<DPoint2d, int32_t, DPoint2dZYXTolerancedSortComparison> allUvs(DPoint2dZYXTolerancedSortComparison(1e-10));
+    std::map<DPoint2d, int32_t, DPoint2dZYXTolerancedSortComparison> allUvs(DPoint2dZYXTolerancedSortComparison(1e-5));
     for (size_t i = 0; i < poly->GetPointIndexCount(); ++i)
         {
         DPoint3d pt;
@@ -680,6 +680,8 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         }
     //size_t nFaceMisses = 0;
     poly->PointIndex().clear();
+    poly->Param().SetActive(true);
+    poly->ParamIndex().SetActive(true);
     for (size_t i = 0; i < indices.size(); i += 3)
         {
         DPoint2d uvCoords[3];
@@ -709,11 +711,12 @@ void Clipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::
         for (size_t uvI = 0; uvI < 3; ++uvI)
             {
             uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_nodeRange);
-            if (allUvs.count(uvCoords[uvI]) == 0)
+            if (allUvs.count(uvCoords[uvI]) == 0 || allUvs[uvCoords[uvI]] == 0)
                 {
                 poly->Param().push_back(uvCoords[uvI]);
-                allUvs[uvCoords[uvI]] = (int)poly->Param().size();
+                allUvs[uvCoords[uvI]] = (int)poly->GetParamCount();
                 }
+
             poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
             }
         }

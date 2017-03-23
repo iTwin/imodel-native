@@ -524,19 +524,28 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
             d.addedFaces.push_back(idx[1]);
             d.addedFaces.push_back(idx[2]);
         }
-        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr && addedFacets->GetClientParamIndexCP() != nullptr)
+        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
         {
-            if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+            if (addedFacets->GetClientParamIndexCP() != nullptr)
             {
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0]+1+(int) originalNUVs);
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+                {
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                }
+                else
+                {
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                }
             }
             else
             {
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
-                d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back( 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back(1 + (int)originalNUVs);
+                d.addedUvIndices.push_back( 1 + (int)originalNUVs);
             }
         }
         }

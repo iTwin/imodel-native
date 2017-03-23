@@ -15,6 +15,9 @@
 #include <ScalableMesh\IScalableMesh.h>
 #include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
 
+#include "../STM/ImagePPHeaders.h"
+#include "../STM/ScalableMeshCreator.h"
+
 /*----------------------------------------------------------------------+
 | This template class must be exported, so we instanciate and export it |
 +----------------------------------------------------------------------*/
@@ -41,6 +44,7 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         WString           m_smTerrainPath;
         IScalableMeshGroundPreviewerPtr  m_groundPreviewer;
         double            m_smGcsRatioToMeter; 
+        ScalableMeshProgress m_createProgress;
         
         
         void AddXYZFilePointsAsSeedPoints(TerrainModel::GroundDetection::GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder);

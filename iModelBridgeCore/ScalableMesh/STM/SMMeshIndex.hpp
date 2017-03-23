@@ -4044,6 +4044,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         bool hasClip = false;
         if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
             {
+            ComputeAndRemoveIntersections(polys, clipIds);
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)
                 {

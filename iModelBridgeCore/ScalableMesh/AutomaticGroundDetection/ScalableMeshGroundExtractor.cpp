@@ -67,6 +67,11 @@ StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGro
     {
     return _UpdatePreview(currentGround);
     }
+
+bool IScalableMeshGroundPreviewer::UpdateProgress(IScalableMeshProgress* progress)
+    {
+    return _UpdateProgress(progress);
+    }
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundPreviewer - End
 +----------------------------------------------------------------------------*/
@@ -330,6 +335,10 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(status == SUCCESS);
     //auto editFilesString = ((ScalableMeshBase*)m_scalableMesh.get())->GetPath();
+    m_createProgress.ProgressStep() = ScalableMeshStep::STEP_GENERATE_TEXTURE;
+    m_createProgress.ProgressStepIndex() = 1;
+    m_createProgress.Progress() = 0.0f;
+    m_groundPreviewer->UpdateProgress(&m_createProgress);
         
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
@@ -391,7 +400,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
                 DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
             closedPolygonPoints.assign(rangePts, rangePts + 5);
 
-            textureGenerator->GenerateTexture(closedPolygonPoints);
+            textureGenerator->GenerateTexture(closedPolygonPoints, &m_createProgress);
             }
 
         BeDirectoryIterator directoryIter(currentTextureDir);
@@ -410,6 +419,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
             }
         }
 
+
+    m_createProgress.Progress() = 1.0f;
+    m_groundPreviewer->UpdateProgress(&m_createProgress);
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
@@ -423,9 +435,12 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
             }        
         }
 
+    m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
     status = terrainCreator->Create(true, true);
     terrainCreator->SaveToFile();
+    m_groundPreviewer->UpdateProgress(nullptr);
     terrainCreator = nullptr;
+
 
 #if 0
     StatusInt openStatus;
@@ -517,6 +532,12 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     
     AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
 
+    m_createProgress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_DETECT_GROUND;
+    m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;
+    m_createProgress.ProgressStepIndex() = 0;
+    m_createProgress.Progress() = 0.0f;
+    m_groundPreviewer->UpdateProgress(&m_createProgress);
+
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
 
@@ -547,6 +568,8 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     clock_t startTime = clock();
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
+    m_createProgress.Progress() = 1.0f;
+    m_groundPreviewer->UpdateProgress(&m_createProgress);
     assert(status == SUCCESS);
 
     clock_t endTime = clock() - startTime;
