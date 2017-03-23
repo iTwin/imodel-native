@@ -281,8 +281,8 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  Stat        show enterprise statistics\n");
     DisplayInfo ("  Download    Download files from the current location on the server\n");
     DisplayInfo ("  Upload      Upload files to the server\n");
-    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access (option \"w\" for write access)\n");
-    DisplayInfo ("  AzureAdress Prints the URL to use (pass \"read\" or \"write\")\n");
+    DisplayInfo ("  FileAccess  Prints the URL to use if you wish to request an azure file access (option \"w\" for write access or \"r\" for read)\n");
+    DisplayInfo ("  AzureAdress Prints the URL to use (option \"w\" for write access or \"r\" for read)\n");
     DisplayInfo ("  ChangeProps Modify the properties of a RealityData\n");
     DisplayInfo ("  Relationships Show all projects attached to this RealityData\n");
     DisplayInfo ("  Link        Create a relationship between a RealityData and a project");
@@ -939,12 +939,11 @@ void RealityDataConsole::ChangeProps()
 
     RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(changeReq, status, RealityDataService::GetVerifyPeer());
+    RequestStatus status;
+    Utf8String response = RealityDataService::Request(changeReq, status);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+    if ((status != RequestStatus::OK) || !Json::Reader::Parse(response, instances) || instances.isMember("errorMessage"))
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else 
         Details();
@@ -1144,13 +1143,12 @@ void RealityDataConsole::Link()
         return;
     
     RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_currentNode->node.GetInstanceId(), m_lastInput);
-    
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(relReq, status, RealityDataService::GetVerifyPeer());
+
+    RequestStatus status;
+    Utf8String response = RealityDataService::Request(relReq, status);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+    if ((status != RequestStatus::OK) || !Json::Reader::Parse(response, instances) || instances.isMember("errorMessage"))
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();

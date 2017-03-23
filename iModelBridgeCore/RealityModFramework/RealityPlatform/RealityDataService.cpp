@@ -1676,31 +1676,48 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     guid.append(L"/");
     root.ReplaceAll(guid.c_str(), L""); //remove guid from root
 
-    for( int i = 0; i < filesInRepo.size(); ++i)
+    if ((filesInRepo.size() == 1) && (root.Equals(filesInRepo[0].first)))
         {
-        path = filesInRepo[i].first;
+        path = filesInRepo[0].first;
 
         fileUrl = L"/";
         fileUrl.append(path);
         fileUrl.ReplaceAll(L"\\", L"/");
         BeStringUtilities::WCharToUtf8(utf8FileUrl, fileUrl.c_str());
 
-        path.ReplaceAll(root.c_str(), L""); // if user downloader Folder1/Folder2/Data1, it should download to Data1, not Folder1/Folder2/Data1
-        parts = path.ReplaceAll(L"/", L"/"); // only way I've found to count occurences in a string, replace if better exists
-        if(parts > 0) //if file is in a directory
+        downloadLocation = targetLocation;
+        downloadLocation.AppendToPath(folders[folders.size()-1].c_str());
+
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second));
+        }
+    else
+        {
+        for( int i = 0; i < filesInRepo.size(); ++i)
             {
+            path = filesInRepo[i].first;
+
+            fileUrl = L"/";
+            fileUrl.append(path);
+            fileUrl.ReplaceAll(L"\\", L"/");
+            BeStringUtilities::WCharToUtf8(utf8FileUrl, fileUrl.c_str());
+
+            path.ReplaceAll(root.c_str(), L""); // if user downloader Folder1/Folder2/Data1, it should download to Data1, not Folder1/Folder2/Data1
+            parts = path.ReplaceAll(L"/", L"/"); // only way I've found to count occurences in a string, replace if better exists
+            if(parts > 0) //if file is in a directory
+                {
+                downloadLocation = targetLocation;
+                downloadLocation.AppendToPath(path.c_str());
+                downloadLocation.PopDir();
+
+                if (!downloadLocation.DoesPathExist())
+                    BeFileName::CreateNewDirectory(downloadLocation.c_str());
+                }
+
             downloadLocation = targetLocation;
             downloadLocation.AppendToPath(path.c_str());
-            downloadLocation.PopDir();
-
-            if (!downloadLocation.DoesPathExist())
-                BeFileName::CreateNewDirectory(downloadLocation.c_str());
-            }
-
-        downloadLocation = targetLocation;
-        downloadLocation.AppendToPath(path.c_str());
         
-        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
+            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
+            }
         }
 
     m_fullTransferSize = m_filesToTransfer.size();
