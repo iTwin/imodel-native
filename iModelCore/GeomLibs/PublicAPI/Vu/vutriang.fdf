@@ -126,6 +126,20 @@ double yPeriod
 );
 
 /*---------------------------------------------------------------------------------**//**
+@description Flip triangle edges in the graph to correct incircle condition
+@remarks This is a substantial full-graph modification function.
+@param graphP IN OUT graph header
+@group "VU Meshing"
+@usealinkgroup TriangleFlipFunctions
+@bsimethod                                                    Earlin.Lutz     03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int vu_flipTrianglesForIncircle
+(
+VuSetP  graphP,
+VuMarkedEdgeSetP edgeSet = nullptr
+);
+
+/*---------------------------------------------------------------------------------**//**
 @description Flip triangle edges to improve aspect ratio in the u-parameter direction.
 @remarks This is a substantial full-graph modification function.
 @remarks This variant is for triangles on a surface ruled in the y-coordinate direction and curved in the x-coordinate direction, thus long
