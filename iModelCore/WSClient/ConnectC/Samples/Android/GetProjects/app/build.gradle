@@ -10,7 +10,7 @@ android {
         targetSdkVersion project.ext.targetSdkVersion        
         versionCode 1
         versionName "1.0"
-        archivesBaseName="getprojects"
+        archivesBaseName="${ApkBaseName}"
         externalNativeBuild {
             cmake {
                 cppFlags "-fexceptions"
