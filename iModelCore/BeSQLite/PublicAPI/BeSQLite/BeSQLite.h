@@ -2550,6 +2550,10 @@ public:
     //! @see sqlite3_changes
     BE_SQLITE_EXPORT int GetModifiedRowCount() const;
 
+    //! @return the total number of rows modified since the database connection was opened.
+    //! @see sqlite3_total_changes
+    BE_SQLITE_EXPORT int GetTotalModifiedRowCount() const;
+
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
