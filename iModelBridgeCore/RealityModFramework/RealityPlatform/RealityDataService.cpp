@@ -1193,7 +1193,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
         if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
             {
-            RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
+            RealityDataCreate createRequest = RealityDataCreate(m_id, properties);
             int status;
             response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
             if(response.ContainsI("error"))

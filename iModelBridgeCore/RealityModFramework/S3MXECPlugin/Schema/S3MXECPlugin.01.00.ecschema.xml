@@ -69,7 +69,7 @@
         <!-- [Set by default/Unmodifyable] The ISO-8601 compliant string that indicates the time of creation of the folder -->
         <ECProperty propertyName="CreatedTimestamp" typeName="string" />
 
-        <!-- [Required] The CONNECT email address of the owner -->
+        <!-- [Set by default] The CONNECT email address of the owner. It is possible to change it to give ownership to someone else -->
         <ECProperty propertyName="OwnedBy" typeName="string" />
 
     </ECClass>
