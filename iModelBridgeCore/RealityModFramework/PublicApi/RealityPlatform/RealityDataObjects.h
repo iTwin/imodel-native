@@ -63,18 +63,22 @@ struct RealityDataProjectRelationship : public RefCountedBase
 public:
     //! Extracts a relationship from the given json instance.
     REALITYDATAPLATFORM_EXPORT static RealityDataProjectRelationshipPtr Create(Json::Value jsonInstance) { return new RealityDataProjectRelationship(jsonInstance); }
+    REALITYDATAPLATFORM_EXPORT static RealityDataProjectRelationshipPtr Create() { return new RealityDataProjectRelationship(); }
 
     //! Get/Set
     //! The RealityDataId of the RealityData linked to the project. Normally both RealityData and Project are of the same enterprise but if the RealityData is marked as public
     //! it may be referenced by projects from external enterprises. (Not so sure about linking external projects to public data)
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8StringCR realityDataId);
+    
 
     //! The project id that is linked with reality data.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProjectId() const;
+    REALITYDATAPLATFORM_EXPORT void SetProjectId(Utf8StringCR projectId);
     
 private:
     REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship(Json::Value jsonInstance);
-    RealityDataProjectRelationship() {};
+    REALITYDATAPLATFORM_EXPORT RealityDataProjectRelationship();
     Utf8String m_realityDataId;
     Utf8String m_projectId;
     }; 
@@ -91,26 +95,41 @@ struct RealityDataDocument : public RefCountedBase
 public:
     //! Create a document
     REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Create(Json::Value jsonInstance) { return new RealityDataDocument(jsonInstance); }
+    REALITYDATAPLATFORM_EXPORT static RealityDataDocumentPtr Create() { return new RealityDataDocument(); }
 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
+    //! The reality data the document is part of.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8StringCR realityDataId);
 
+    //! The Id of a document is the full encoded path and name of the document on the service.
+    //! As a convenience the id can be set by providing the folder or folder id and name
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8StringCR id);
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8StringCR folderId, Utf8StringCR name);
+    REALITYDATAPLATFORM_EXPORT void SetId(RealityDataFolderCR folder, Utf8StringCR name);
+
+    //! Name of the document (name of the file) including extensions.
+    //! The name of the document can be set by setting the id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
-
+    //! Cannot be set. Implied by the given Id. The folder id can be set by setting the id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFolderId() const;
 
+    //! Cannot be set. Implied by the Id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAccessUrl() const;
 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
+    //! Cannot be set. Implied by the Reality Data Id
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContainerName() const;
 
+    //! Cannot be set. Implied by the Name of the document. The content type is the extension of the Name of the document.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContentType() const;
     
+    //! Cannot be set. Computed based on the file content in the service
     REALITYDATAPLATFORM_EXPORT uint64_t GetSize() const;
 
 private:
     REALITYDATAPLATFORM_EXPORT RealityDataDocument(Json::Value jsonInstance);
-    RealityDataDocument() {}
+    REALITYDATAPLATFORM_EXPORT RealityDataDocument();
     Utf8String m_containerName;
     Utf8String m_name;
     Utf8String m_id;
@@ -133,18 +152,26 @@ public:
     //! Creates a representation of the folder. 
     REALITYDATAPLATFORM_EXPORT static RealityDataFolderPtr Create(Json::Value jsonInstance) { return new RealityDataFolder(jsonInstance); }
 
-    //! Get/Set
+    //! The reality data the folder is part of.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
+    REALITYDATAPLATFORM_EXPORT void SetRealityDataId(Utf8StringCR realityDataId);
+
+    //! The Id of a folder is the full encoded path folder on the service
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetId() const;
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8StringCR id);
+    REALITYDATAPLATFORM_EXPORT void SetId(Utf8StringCR parentId, Utf8StringCR folderName);
+    REALITYDATAPLATFORM_EXPORT void SetId(RealityDataFolderCR parentFolder, Utf8StringCR folderName); 
+
+    //! Name of the folder. The name can be set by setting the id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
 
-    //! Get/Set
+    //! The parent id. The parent id is implied in the id
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetParentId() const;
-
-    //! Get/Set
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() const;
 
 private:
     REALITYDATAPLATFORM_EXPORT RealityDataFolder(Json::Value jsonInstance);
-    RealityDataFolder();
+    REALITYDATAPLATFORM_EXPORT RealityDataFolder();
+    Utf8String m_id;
     Utf8String m_name;
     Utf8String m_parentId;
     Utf8String m_realityDataId;
@@ -162,22 +189,25 @@ struct RealityDataBase : public RefCountedBase
 {
 public:
 
-    enum class Classification
+    // This enum is intentionaly not a en enum class to enable conversion to int and oring values
+    enum Classification
         {
-        MODEL,
-        IMAGERY,
-        TERRAIN,
-        PINNED,
-        UNDEFINED
+        UNDEFINED_CLASSIF = 0x00,
+        IMAGERY = 0x1,
+        TERRAIN = 0x2,
+        MODEL = 0x4,
+        PINNED = 0x8,
         };
 
-    enum class Visibility
+    // This enum is intentionaly not a en enum class to enable conversion to int and oring values
+    enum Visibility
         {
-        PUBLIC,
-        ENTERPRISE,
-        PERMISSION,
-        PRIVATE,
-        UNDEFINED
+        UNDEFINED_VISIBILITY = 0x00,
+        PUBLIC = 0x01,
+        ENTERPRISE = 0x02,
+        PERMISSION = 0x04,
+        PRIVATE = 0x08
+
         };
 
 

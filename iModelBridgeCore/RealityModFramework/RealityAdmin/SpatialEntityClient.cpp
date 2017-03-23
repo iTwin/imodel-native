@@ -198,7 +198,7 @@ SpatialEntityHandlerStatus SpatialEntityClient::GetData() const
         pExtractedData->SetDataset(GetDataset().c_str());
 
         // Set classification (overide if specified)
-        if (GetClassification() != SpatialEntity::Classification::UNDEFINED)
+        if (GetClassification() != SpatialEntity::Classification::UNDEFINED_CLASSIF)
             pExtractedData->SetClassification(GetClassification());
 
         // Process created data.

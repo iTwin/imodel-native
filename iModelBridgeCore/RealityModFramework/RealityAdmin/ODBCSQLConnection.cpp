@@ -945,7 +945,7 @@ ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityCR d
     if (data.GetDataset().size() != 0)
         sprintf(entityBaseQuery, "%s, [Dataset] = '%s'", entityBaseQuery, data.GetDataset().c_str());
 
-    if (data.GetClassification() != SpatialEntity::Classification::UNDEFINED)
+    if (data.GetClassification() != SpatialEntity::Classification::UNDEFINED_CLASSIF)
         sprintf(entityBaseQuery, "%s, [Classification] = '%s'", entityBaseQuery, data.GetClassificationTag().c_str());
 
     if (xMin < xMax && yMin < yMax)

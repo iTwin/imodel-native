@@ -616,6 +616,9 @@ Utf8StringCR RealityDataPagedRequest::GetVersion() const { return RealityDataSer
 Utf8StringCR RealityDataPagedRequest::GetSchema() const { return RealityDataService::GetSchemaName(); }
 Utf8StringCR RealityDataPagedRequest::GetRepoId() const { return RealityDataService::GetRepoName(); }
 
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataPagedRequest::_PrepareBaseRequestString() const
     {
     m_serverName = RealityDataService::GetServerName();
@@ -868,7 +871,7 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceCreateRequest::RealityDataServiceCreateRequest(Utf8String realityDataId, Utf8String properties)
+RealityDataCreateRequest::RealityDataCreateRequest(Utf8String realityDataId, Utf8String properties)
     { 
     m_id = realityDataId; 
     m_validRequestString = false;
@@ -884,7 +887,7 @@ RealityDataServiceCreateRequest::RealityDataServiceCreateRequest(Utf8String real
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceCreateRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataCreateRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -894,7 +897,7 @@ void RealityDataServiceCreateRequest::_PrepareHttpRequestStringAndPayload() cons
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceChangeRequest::RealityDataServiceChangeRequest(Utf8String realityDataId, Utf8String properties)
+RealityDataChangeRequest::RealityDataChangeRequest(Utf8String realityDataId, Utf8String properties)
     {
     m_id = realityDataId;
     m_validRequestString = false;
@@ -910,7 +913,7 @@ RealityDataServiceChangeRequest::RealityDataServiceChangeRequest(Utf8String real
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceChangeRequest::_PrepareHttpRequestStringAndPayload() const
+void RealityDataChangeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -1191,7 +1194,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     Utf8String response;
     if(m_id.length() == 0)
         {
-        RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest(m_id, properties);
+        RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
     
@@ -1214,7 +1217,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
         if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
-            RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest(m_id, properties);
+            RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
             int status;
             response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
             if(response.ContainsI("error"))
@@ -2140,7 +2143,7 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRela
     return relations;
     }
 
-Utf8String RealityDataService::Request(const RealityDataServiceChangeRequest& request, RequestStatus& status)
+Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, RequestStatus& status)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2153,7 +2156,7 @@ Utf8String RealityDataService::Request(const RealityDataServiceChangeRequest& re
 
     if (status != RequestStatus::OK)
         {
-        std::cout << "RealityDataServiceChangeRequest failed with response" << std::endl;
+        std::cout << "RealityDataChangeRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         return "";
         }
@@ -2161,7 +2164,7 @@ Utf8String RealityDataService::Request(const RealityDataServiceChangeRequest& re
     return jsonString;
     }
 
-Utf8String RealityDataService::Request(const RealityDataServiceCreateRequest& request, RequestStatus& status)
+Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, RequestStatus& status)
 {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2174,7 +2177,7 @@ Utf8String RealityDataService::Request(const RealityDataServiceCreateRequest& re
 
     if (status != RequestStatus::OK)
         {
-        std::cout << "RealityDataServiceCreateRequest failed with response" << std::endl;
+        std::cout << "RealityDataCreateRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
         return "";
         }

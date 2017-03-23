@@ -257,7 +257,7 @@ Utf8String WSGRequest::_PerformRequest(const WSGURL& wsgRequest, int& result, bo
     curl_easy_cleanup(curl);
 
     Utf8String returnString = *curlString;
-    //delete curlString;
+    
     if (returnString.Contains("Token is not valid") && retry)
         {
         WSGRequest::GetInstance().RefreshToken();

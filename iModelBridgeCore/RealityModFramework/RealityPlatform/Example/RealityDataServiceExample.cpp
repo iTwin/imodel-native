@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
     RealityDataPtr entity = RealityDataService::Request(*idReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "Entity provenance for Id " << id << ":" << std::endl;
         std::cout << entity->GetName() << std::endl << std::endl;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(projectId);
     bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "number of relationships found for projectId " << projectId << " :" << std::endl;
         std::cout << relationships.size() << std::endl;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     RealityDataFolderByIdRequest* folderReq = new RealityDataFolderByIdRequest(folderId);
     RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "folder found for Id " << folderId << " :" << std::endl;
         std::cout << folder->GetName() << std::endl;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     RealityDataDocumentByIdRequest* documentReq = new RealityDataDocumentByIdRequest(documentId);
     RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "document with Id " << documentId << " :" << std::endl;
         std::cout << document->GetName() << std::endl;
@@ -130,7 +130,8 @@ int main(int argc, char *argv[])
     bvector<Utf8String> filter1 = bvector<Utf8String>();
     bvector<Utf8String> filter2 = bvector<Utf8String>();
     filter1.push_back(RealityDataFilterCreator::FilterByOwner("francis.boily@bentley.com"));
-    filter1.push_back(RealityDataFilterCreator::FilterByCreationDate(DateTime(2016,12,01), DateTime(2017,01,05)));
+    filter1.push_back(RealityDataFilterCreator::FilterByCreationDate(DateTime(2016,12,01), DateTime(2017,01,05))); 
+    filter1.push_back(RealityDataFilterCreator::FilterByClassification(Classification::Model));
     filter2.push_back(RealityDataFilterCreator::GroupFiltersAND(filter1));
     filter2.push_back(RealityDataFilterCreator::FilterByType("3mx"));
     filter2.push_back(RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility::PUBLIC));
@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
 
     bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
 
-    if (status != RequestStatus::ERROR) // SUCCESS OR LASTPAGE
+    if (status != RequestStatus::BADREQ) // SUCCESS OR LASTPAGE
         {
         std::cout << "Number of spatial entities found for filter : " << std::endl;
         std::cout << filteredSpatialEntities.size() << std::endl;
@@ -157,7 +158,7 @@ int main(int argc, char *argv[])
     RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
     bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "Number of spatial entities found for enterprise" << enterpriseId << " :" << std::endl;
         std::cout << enterpriseVec.size() << std::endl;
@@ -169,7 +170,7 @@ int main(int argc, char *argv[])
     RealityDataProjectRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataProjectRelationshipByProjectIdPagedRequest(projectId);
     bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, status);
 
-    if (status != RequestStatus::ERROR)
+    if (status != RequestStatus::BADREQ)
         {
         std::cout << "Number of relationships found for project " << projectId << " :" << std::endl;
         std::cout << relationVec.size() << std::endl;

@@ -188,6 +188,9 @@ private:
     RealityDataDocumentByIdRequest() {}
     };
 
+//=====================================================================================
+//! @bsiclass                                         Spencer.Mason            12/2016
+//=====================================================================================
 struct AzureHandshake : public RealityDataUrl
     {
 public:
@@ -556,9 +559,9 @@ typedef std::function<int()> RealityDataServiceTransfer_HeartbeatCallBack;
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A class used to create a new reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceCreateRequest : public RealityDataUrl
+struct RealityDataCreateRequest : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreateRequest(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataCreateRequest(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -567,9 +570,9 @@ protected:
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to modify an existing reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceChangeRequest : public RealityDataUrl
+struct RealityDataChangeRequest : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceChangeRequest(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataChangeRequest(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -927,10 +930,10 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RequestStatus& status);
 
     //! Returns a serverResponse or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataServiceChangeRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataChangeRequest& request, RequestStatus& status);
 
     //! Returns a RealityDataFolder or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataServiceCreateRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataCreateRequest& request, RequestStatus& status);
 
     //! Returns a RealityDataFolder or null if an error occured
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipCreateRequest& request, RequestStatus& status);

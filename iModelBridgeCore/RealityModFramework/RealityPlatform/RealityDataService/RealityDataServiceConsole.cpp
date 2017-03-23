@@ -937,7 +937,7 @@ void RealityDataConsole::ChangeProps()
             }
         }
 
-    RealityDataServiceChangeRequest changeReq = RealityDataServiceChangeRequest(m_currentNode->node.GetRootId(), propertyString);
+    RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1109,7 +1109,7 @@ void RealityDataConsole::CreateRD()
     std::getline(std::cin, input);
     properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
-    RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
+    RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
     
     RequestStatus status;
     Utf8String response = RealityDataService::Request(createRequest, status);

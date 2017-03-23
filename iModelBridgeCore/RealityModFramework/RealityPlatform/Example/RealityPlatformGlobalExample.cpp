@@ -138,7 +138,7 @@ class RealityPlatformClient
 
 
         // Create a request for spatial entity with details view
-        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, GeoCoordinationService::Classification::Imagery | GeoCoordinationService::Classification::Terrain);
+        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, RealityDataBase::Classification::IMAGERY | RealityDataBase::Classification::TERRAIN);
 
         // Run the request ... this request is paged but we are willing to fetch all pages (up to 500 total entries)
         StatusInt status = SUCCESS;
@@ -231,7 +231,7 @@ class RealityPlatformClient
 
         // Create a request for spatial entity with details view
         // Here we only want Imagery
-        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, GeoCoordinationService::Classification::Imagery);
+        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, RealityDataBase::Classification::IMAGERY);
 
         // As additional constraint we only want data originating from USGS
         myRequest.FilterDataProvider("USGS");
@@ -285,7 +285,7 @@ class RealityPlatformClient
 
         // Create a request for spatial entity with details view
         // Here we only want Imagery
-        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, GeoCoordinationService::Classification::Imagery);
+        SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, RealitydataBase::Classification::IMAGERY);
 
         // Run the request
         bvector<SpatialEntityPtr> listOfSpatialEntities = GeoCoordinationService::Request(myRequest);

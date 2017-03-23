@@ -26,6 +26,13 @@ RealityDataProjectRelationship::RealityDataProjectRelationship(Json::Value jsonI
             m_projectId = jsonInstance["properties"]["ProjectId"].asCString();
         }
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+RealityDataProjectRelationship::RealityDataProjectRelationship()
+    {
+    }
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
@@ -34,7 +41,26 @@ Utf8StringCR RealityDataProjectRelationship::GetRealityDataId() const { return m
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
+void RealityDataProjectRelationship::SetRealityDataId(Utf8StringCR realityDataId)  
+{
+    // Normally the id must comply with sme specific GUID format ... should validate
+    m_realityDataId = realityDataId; 
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            02/2017
+//-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataProjectRelationship::GetProjectId() const { return m_projectId; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataProjectRelationship::SetProjectId(Utf8StringCR projectId)  
+{ 
+    // Project id may comply with some naming rules ... check?
+    m_projectId = projectId; 
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
@@ -62,6 +88,13 @@ RealityDataDocument::RealityDataDocument(Json::Value jsonInstance)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+RealityDataDocument::RealityDataDocument()
+    {
+    m_size = 0;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
@@ -83,6 +116,54 @@ Utf8StringCR RealityDataDocument::GetContentType() const { return m_contentType;
 uint64_t RealityDataDocument::GetSize() const { return m_size; }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataDocument::SetRealityDataId(Utf8StringCR realityDataId)
+{
+    // Normally the id must comply with sme specific GUID format ... should validate
+    m_realityDataId = realityDataId; 
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataDocument::SetId(Utf8StringCR id)
+    {
+    // Should validate 
+    m_id = id;
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataDocument::SetId(Utf8StringCR folderId, Utf8StringCR name)
+    {
+    // folder id should be validated
+    m_id = folderId + "~2F" + name;
+
+    // Result id should be validated
+    
+    // Keep name and folder id as cache values
+    m_name = name;
+    m_folderId = folderId;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataDocument::SetId(RealityDataFolderCR folder, Utf8StringCR name)
+    {
+    m_id = folder.GetId() + "~2F" + name;
+
+    // Result id should be validated
+    
+    // Keep name and folder id as cache values
+    m_name = name;
+    m_folderId = folder.GetId();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            02/2017
 //-------------------------------------------------------------------------------------
 RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
@@ -102,10 +183,59 @@ RealityDataFolder::RealityDataFolder(Json::Value jsonInstance)
 //-------------------------------------------------------------------------------------
 Utf8StringCR RealityDataFolder::GetName() const { return m_name; }
 
+Utf8StringCR RealityDataFolder::GetId() const { return m_id; }
+
 Utf8StringCR RealityDataFolder::GetParentId() const { return m_parentId; }
 
 Utf8StringCR RealityDataFolder::GetRealityDataId() const { return m_realityDataId; }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataFolder::SetRealityDataId(Utf8StringCR realityDataId)
+{
+    // Normally the id must comply with sme specific GUID format ... should validate
+    m_realityDataId = realityDataId; 
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataFolder::SetId(Utf8StringCR id)
+    {
+    // Should validate 
+    m_id = id;
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataFolder::SetId(Utf8StringCR parentId, Utf8StringCR name)
+    {
+    // folder id should be validated
+    m_id = parentId + "~2F" + name;
+
+    // Result id should be validated
+    
+    // Keep name and folder id as cache values
+    m_name = name;
+    m_parentId = parentId;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           03/2017
+//-------------------------------------------------------------------------------------
+void RealityDataFolder::SetId(RealityDataFolderCR parentFolder, Utf8StringCR name)
+    {
+    m_id = parentFolder.GetId() + "~2F" + name;
+
+    // Result id should be validated
+    
+    // Keep name and folder id as cache values
+    m_name = name;
+    m_parentId = parentFolder.GetId();
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    4/2016
@@ -160,7 +290,7 @@ StatusInt RealityDataBase::GetClassificationFromTag(RealityDataBase::Classificat
     else if (tag == "Pinned")
         returnedClassification = Classification::PINNED;
     else if (tag == "Undefined")
-        returnedClassification = Classification::UNDEFINED;
+        returnedClassification = Classification::UNDEFINED_CLASSIF;
     else
         return ERROR;
 
@@ -309,7 +439,7 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
     else if (tag == "PRIVATE")
         returnedVisibility = Visibility::PRIVATE;
     else if (tag == "UNDEFINED")
-        returnedVisibility = Visibility::UNDEFINED;
+        returnedVisibility = Visibility::UNDEFINED_VISIBILITY;
     else
         return ERROR;
 
@@ -353,7 +483,7 @@ double RealityDataBase::GetResolutionValue() const
         {
         bvector<Utf8String> tokens;
         BeStringUtilities::Split(m_resolution.c_str(), "x", tokens);
-        BeAssert(2 == tokens.size());
+        BeAssert(2 >= tokens.size());
         if (2 == tokens.size()) 
             {
             // Convert to double.
@@ -361,6 +491,13 @@ double RealityDataBase::GetResolutionValue() const
             double resY = strtod(tokens[1].c_str(), NULL);
 
             m_resolutionValue = sqrt(resX * resY);
+            m_resolutionValueUpToDate = true;
+            }
+        else if (1 == tokens.size())
+            {
+            // Convert to double.
+            m_resolutionValue = strtod(tokens[0].c_str(), NULL);
+
             m_resolutionValueUpToDate = true;
             }
         else 
@@ -381,7 +518,7 @@ double RealityDataBase::GetAccuracyValue() const
         {
         bvector<Utf8String> tokens;
         BeStringUtilities::Split(m_accuracy.c_str(), "x", tokens);
-//DMxx        BeAssert(2 == tokens.size());
+        BeAssert(2 >= tokens.size());
         if (2 == tokens.size()) 
             {
             // Convert to double.
@@ -389,6 +526,13 @@ double RealityDataBase::GetAccuracyValue() const
             double accurY = strtod(tokens[1].c_str(), NULL);
 
             m_accuracyValue = sqrt(accurX * accurY);
+            m_accuracyValueUpToDate = true;
+            }
+        else if (1 == tokens.size())
+            {
+            // Convert to double.
+            m_accuracyValue = strtod(tokens[0].c_str(), NULL);
+
             m_accuracyValueUpToDate = true;
             }
         else 
@@ -406,8 +550,8 @@ RealityDataBase::RealityDataBase()
     m_resolutionValueUpToDate = false;
     m_accuracyValueUpToDate = false;
     m_approximateFootprint=false;
-    m_visibility = Visibility::UNDEFINED;
-    m_classification = Classification::UNDEFINED;
+    m_visibility = Visibility::UNDEFINED_VISIBILITY;
+    m_classification = Classification::UNDEFINED_CLASSIF;
     m_footprintExtentComputed = false;
     }
 
