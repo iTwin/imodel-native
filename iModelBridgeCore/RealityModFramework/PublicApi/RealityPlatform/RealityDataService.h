@@ -281,6 +281,16 @@ protected:
 
     };
 
+//! The classification codes. The high level interface only supports the four base classification
+//&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
+enum class Classification
+    {
+    Imagery = 0x1,
+    Terrain = 0x2,
+    Model = 0x4,
+    Pinned = 0x8
+    };
+
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
 //! RealityDataFilterCreator
@@ -296,7 +306,7 @@ struct RealityDataFilterCreator
     //! Sets filtering upon the classification. The classification may contain
     //!  more than one classification by bitwise oring the classification
     //!  values.
-    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(int classification);
+    REALITYDATAPLATFORM_EXPORT static Utf8String FilterByClassification(Classification classification);
 
     //! Filters the returned set by the reality data size.
     //! Both the min and max size must be specified
@@ -546,9 +556,9 @@ typedef std::function<int()> RealityDataServiceTransfer_HeartbeatCallBack;
 //! @bsiclass                                   Spencer.Mason 02/2017
 //! A class used to create a new reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceCreate : public RealityDataUrl
+struct RealityDataServiceCreateRequest : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceCreateRequest(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -557,9 +567,9 @@ protected:
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to modify an existing reality data in the reality data service.
 //=====================================================================================
-struct RealityDataServiceChange : public RealityDataUrl
+struct RealityDataServiceChangeRequest : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataServiceChange(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceChangeRequest(Utf8String realityDataId, Utf8String properties);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -595,9 +605,9 @@ struct RealityDataDeleteDocument : public RealityDataDocumentByIdRequest
 //! @bsiclass                                   Spencer.Mason 03/2017
 //! A class used to create a relationship between an existing reality data and a project
 //=====================================================================================
-struct RealityDataRelationshipCreate : public RealityDataUrl
+struct RealityDataRelationshipCreateRequest : public RealityDataUrl
     {
-        REALITYDATAPLATFORM_EXPORT RealityDataRelationshipCreate(Utf8String realityDataId, Utf8String projectId);
+        REALITYDATAPLATFORM_EXPORT RealityDataRelationshipCreateRequest(Utf8String realityDataId, Utf8String projectId);
     protected:
         REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };
@@ -846,6 +856,7 @@ public:
         else
             s_verifyPeer = true;
         s_realityDataCertificatePath = certificatePath;
+        s_initializedParams = true;
         }
 
     //! Returns the current name of the server
@@ -866,15 +877,8 @@ public:
     //! Returns the name of the schema defining the classes exposed by the RealityData Service.
     REALITYDATAPLATFORM_EXPORT static Utf8StringCR GetCertificatePath();
 
-    //! The classification codes. The high level interface only supports the four base classification
-    //&&AR Most to platform since Classification is shared by both GeoCoordinationService and RealityData Service
-    enum class Classification
-        {
-        Imagery = 0x1,
-        Terrain = 0x2,
-        Model = 0x4,
-        Pinned = 0x8
-        };
+    //! Validates if server parameters have been set
+    REALITYDATAPLATFORM_EXPORT static const bool AreParametersSet();
 
     //! Returns a list of RealityData objects that overlap the given region
     //! Since this request is a paged request it will advance to next page automatically
@@ -922,13 +926,22 @@ public:
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RequestStatus& status);
 
+    //! Returns a serverResponse or null if an error occured
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataServiceChangeRequest& request, RequestStatus& status);
+
+    //! Returns a RealityDataFolder or null if an error occured
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataServiceCreateRequest& request, RequestStatus& status);
+
+    //! Returns a RealityDataFolder or null if an error occured
+    REALITYDATAPLATFORM_EXPORT static Utf8String Request(const RealityDataRelationshipCreateRequest& request, RequestStatus& status);
+
     //! Returns the full WSG JSON returned by the request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse, Utf8String keyword = "instances");
 
     //! Returns the full WSG JSON returned by the Reality Data request
-    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse, Utf8String keyword = "instances");
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataProjectRelationshipPtr> _RequestRelationship(const RealityDataUrl* request, RequestStatus& status);
@@ -940,6 +953,7 @@ private:
     static Utf8String s_realityDataSchemaName;
     static bool s_verifyPeer;
     static Utf8String s_realityDataCertificatePath;
+    static bool s_initializedParams;
 
     static const Utf8String s_ImageryKey;
     static const Utf8String s_TerrainKey;

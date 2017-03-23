@@ -164,6 +164,8 @@ public:
                 }
             }
 
+        m_requestWithToken.ReplaceAll(" ", "%20");
+
         return m_requestWithToken;
         };
 
@@ -381,13 +383,13 @@ RequestStatus RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestU
 
     RequestStatus status = RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
 
-    if (status != RequestStatus::ERROR && m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
+    if (status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
         {
         m_allowAzureRedirection = true;
         return status;
         }
     else
-        return RequestStatus::ERROR;
+        return RequestStatus::BADREQ;
     }
 
 //=====================================================================================
@@ -440,9 +442,31 @@ Utf8String RealityDataFilterCreator::FilterByName(Utf8String name)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataFilterCreator::FilterByClassification(int classification)
+Utf8String RealityDataFilterCreator::FilterByClassification(Classification classification)
     { 
-    return Utf8PrintfString("Class+eq+%lu", classification);;
+    Utf8String classif;
+    switch(classification)
+        {
+    case Classification::Terrain:
+        {
+        classif = "Terrain";
+        break;
+        }
+    case Classification::Pinned:
+        {
+        classif = "Pinned";
+        break;
+        }
+    case Classification::Imagery:
+        {
+        classif = "Imagery";
+        break;
+        }
+    default:
+        classif = "Model";
+        }
+
+    return Utf8PrintfString("Classification+eq+'%s'", classif);
     }
 
 //=====================================================================================
@@ -844,7 +868,7 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf8String properties)
+RealityDataServiceCreateRequest::RealityDataServiceCreateRequest(Utf8String realityDataId, Utf8String properties)
     { 
     m_id = realityDataId; 
     m_validRequestString = false;
@@ -860,7 +884,7 @@ RealityDataServiceCreate::RealityDataServiceCreate(Utf8String realityDataId, Utf
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
+void RealityDataServiceCreateRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -870,7 +894,7 @@ void RealityDataServiceCreate::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf8String properties)
+RealityDataServiceChangeRequest::RealityDataServiceChangeRequest(Utf8String realityDataId, Utf8String properties)
     {
     m_id = realityDataId;
     m_validRequestString = false;
@@ -886,7 +910,7 @@ RealityDataServiceChange::RealityDataServiceChange(Utf8String realityDataId, Utf
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataServiceChange::_PrepareHttpRequestStringAndPayload() const
+void RealityDataServiceChangeRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityData/");
@@ -897,7 +921,7 @@ void RealityDataServiceChange::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataRelationshipCreate::RealityDataRelationshipCreate(Utf8String realityDataId, Utf8String projectId)
+RealityDataRelationshipCreateRequest::RealityDataRelationshipCreateRequest(Utf8String realityDataId, Utf8String projectId)
     {
     m_id = realityDataId;
     m_validRequestString = false;
@@ -913,7 +937,7 @@ RealityDataRelationshipCreate::RealityDataRelationshipCreate(Utf8String realityD
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataRelationshipCreate::_PrepareHttpRequestStringAndPayload() const
+void RealityDataRelationshipCreateRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/RealityDataProjectRelationship");
@@ -1167,7 +1191,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     Utf8String response;
     if(m_id.length() == 0)
         {
-        RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
+        RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest(m_id, properties);
         int status;
         response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
     
@@ -1188,9 +1212,9 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     else
         {
         RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
-        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR) //file does not exist, need POST Create
+        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
-            RealityDataServiceCreate createRequest = RealityDataServiceCreate(m_id, properties);
+            RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest(m_id, properties);
             int status;
             response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
             if(response.ContainsI("error"))
@@ -1198,7 +1222,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", response).c_str());
                 return BentleyStatus::ERROR;
                 }
-            if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::ERROR)
+            if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::BADREQ)
                 {
                 ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
                 return BentleyStatus::ERROR;
@@ -1588,6 +1612,12 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
         properties.append("\"Listable\" : false");
         }
 
+    if (!RealityDataService::AreParametersSet())
+        {
+        ReportStatus(0, nullptr, -1, "Server, Version, Repository and Schema not set, please use RealityDataService::SetServerComponents before calling this function\n");
+        return;
+        }
+
     if(CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
     m_handshakeRequest = new AzureHandshake(m_id, true);
@@ -1722,10 +1752,11 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
+Utf8String RealityDataService::s_realityDataServer = "dev-realitydataservices-eus.cloudapp.net";
 Utf8String RealityDataService::s_realityDataWSGProtocol = "2.4";
-Utf8String RealityDataService::s_realityDataRepoName = "IndexECPlugin-Server";
-Utf8String RealityDataService::s_realityDataSchemaName = "RealityModeling";
+Utf8String RealityDataService::s_realityDataRepoName = "S3MXECPlugin--Server";
+Utf8String RealityDataService::s_realityDataSchemaName = "S3MX";
+bool       RealityDataService::s_initializedParams = false;
 
 bool RealityDataService::s_verifyPeer = false;
 Utf8String RealityDataService::s_realityDataCertificatePath = "";
@@ -1735,23 +1766,30 @@ const Utf8String RealityDataService::s_TerrainKey = "Terrain";
 const Utf8String RealityDataService::s_ModelKey = "Model";
 const Utf8String RealityDataService::s_PinnedKey = "Pinned";
 
-Utf8StringCR RealityDataService::GetServerName() { return s_realityDataServer; }
-Utf8StringCR RealityDataService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
-Utf8StringCR RealityDataService::GetRepoName() { return s_realityDataRepoName; }
-Utf8StringCR RealityDataService::GetSchemaName() { return s_realityDataSchemaName; }
-const bool RealityDataService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
+Utf8StringCR RealityDataService::GetServerName()      { return s_realityDataServer; }
+Utf8StringCR RealityDataService::GetWSGProtocol()     { return s_realityDataWSGProtocol; }
+Utf8StringCR RealityDataService::GetRepoName()        { return s_realityDataRepoName; }
+Utf8StringCR RealityDataService::GetSchemaName()      { return s_realityDataSchemaName; }
+const bool   RealityDataService::GetVerifyPeer()      { return s_verifyPeer; } //TODO: verify when possible...
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
+const bool   RealityDataService::AreParametersSet()   { return s_initializedParams; }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
     {
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
+    if(!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return entities;
+        }
+
     Utf8String jsonString;
     status = PagedRequestToJSON((&request), jsonString);
 
-    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         { 
         std::cout << "RealityDataPagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1771,14 +1809,20 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 //=====================================================================================
 void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
     {
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return;
+        }
+
     Utf8String jsonString;
     status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataEnterpriseStatRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
-        status = RequestStatus::ERROR;
+        status = RequestStatus::BADREQ;
         }
 
     RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
@@ -1790,7 +1834,14 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
 bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDataByRootId& request, RequestStatus& status)
     {
     bvector<bpair<WString, uint64_t>> documents = bvector<bpair<WString, uint64_t>>();
-    if(request.GetAzureRedirectionRequestUrl() == RequestStatus::ERROR)
+    
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return documents;
+        }
+
+    if(request.GetAzureRedirectionRequestUrl() == RequestStatus::BADREQ)
         return documents;
     int64_t timer = request.GetTokenTimer();
 
@@ -1852,11 +1903,18 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
 //=====================================================================================
 RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
     {
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return nullptr;
+        }
+
     Utf8String jsonString;
     status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
     
-    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1872,10 +1930,16 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
 //=====================================================================================
 RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status)
     {
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return nullptr;
+        }
+
     Utf8String jsonString;
     status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataDocumentByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1893,6 +1957,12 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
 //=====================================================================================
 void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RequestStatus& status)
     {
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return;
+        }
+
     int stat = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     request.GetAzureRedirectionRequestUrl();
@@ -1905,10 +1975,10 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
     else
         resultString = WSGRequest::GetInstance().PerformRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
 
-    status = RequestStatus::SUCCESS;
+    status = RequestStatus::OK;
     if(stat != CURLE_OK)
         {
-        status = RequestStatus::ERROR;
+        status = RequestStatus::BADREQ;
         std::cout << "RealityDataDocumentContentByIdRequest failed with response" << std::endl;
         std::cout << resultString << std::endl;
         }
@@ -1919,10 +1989,16 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
 //=====================================================================================
 RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RequestStatus& status)
     {
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return nullptr;
+        }
+
     Utf8String jsonString;
     status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
 
-    if(status != RequestStatus::SUCCESS)
+    if(status != RequestStatus::OK)
         {
         std::cout << "RealityDataFolderByIdRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1940,11 +2016,17 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 //=====================================================================================
 bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
     {
+    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return entities;
+        }
+
     Utf8String jsonString;
     status = PagedRequestToJSON(static_cast<const RealityDataPagedRequest*>(&request), jsonString);
 
-    bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataListByEnterprisePagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -1980,14 +2062,20 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelationship(const RealityDataUrl* request, RequestStatus& status)
 {
+    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return relations;
+        }
+
     Utf8String jsonString;
     status = RequestToJSON(request, jsonString);
 
     Json::Value instances(Json::objectValue);
     Json::Reader::Parse(jsonString, instances);
-
-    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataProjectRelationshipRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -2022,14 +2110,21 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const Rea
 //=====================================================================================
 bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRelationships(const RealityDataPagedRequest* request, RequestStatus& status)
     {
+    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return relations;
+        }
+
     Utf8String jsonString;
     status = PagedRequestToJSON(request, jsonString);
 
     Json::Value instances(Json::objectValue);
     Json::Reader::Parse(jsonString, instances);
 
-    bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
-    if (status != RequestStatus::SUCCESS)
+    if (status != RequestStatus::OK)
         {
         std::cout << "RealityDataProjectRelationshipPagedRequest failed with response" << std::endl;
         std::cout << jsonString << std::endl;
@@ -2045,36 +2140,98 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRela
     return relations;
     }
 
-//=====================================================================================
-//! @bsimethod                                   Spencer.Mason              02/2017
-//=====================================================================================
-RequestStatus RealityDataService::PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse)
+Utf8String RealityDataService::Request(const RealityDataServiceChangeRequest& request, RequestStatus& status)
     {
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return "";
+        }
 
-    Json::Value instances(Json::objectValue);
-    if((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::ERROR;
+    Utf8String jsonString;
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
 
-    request->AdvancePage();
+    if (status != RequestStatus::OK)
+        {
+        std::cout << "RealityDataServiceChangeRequest failed with response" << std::endl;
+        std::cout << jsonString << std::endl;
+        return "";
+        }
 
-    return RequestStatus::SUCCESS;
+    return jsonString;
+    }
+
+Utf8String RealityDataService::Request(const RealityDataServiceCreateRequest& request, RequestStatus& status)
+{
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return "";
+        }
+
+    Utf8String jsonString;
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
+
+    if (status != RequestStatus::OK)
+        {
+        std::cout << "RealityDataServiceCreateRequest failed with response" << std::endl;
+        std::cout << jsonString << std::endl;
+        return "";
+        }
+
+    return jsonString;
+}
+
+Utf8String RealityDataService::Request(const RealityDataRelationshipCreateRequest& request, RequestStatus& status)
+    {
+    if (!RealityDataService::AreParametersSet())
+        {
+        status = RequestStatus::PARAMSNOTSET;
+        return "";
+        }
+
+    Utf8String jsonString;
+    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
+
+    if (status != RequestStatus::OK)
+        {
+        std::cout << "RealityDataRelationshipCreateRequest failed with response" << std::endl;
+        std::cout << jsonString << std::endl;
+        }
+
+    return jsonString;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RequestStatus RealityDataService::RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse)
+RequestStatus RealityDataService::PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse, Utf8String keyword)
     {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember("instances"))
-        return RequestStatus::ERROR;
+    if((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
+        return RequestStatus::BADREQ;
 
-    return RequestStatus::SUCCESS;
+    request->AdvancePage();
+
+    return RequestStatus::OK;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RequestStatus RealityDataService::RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse, Utf8String keyword)
+    {
+    int status = RequestType::Body;
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
+
+    Json::Value instances(Json::objectValue);
+    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
+        return RequestStatus::BADREQ;
+
+    return RequestStatus::OK;
     }

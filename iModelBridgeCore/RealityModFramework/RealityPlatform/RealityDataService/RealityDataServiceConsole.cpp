@@ -494,11 +494,11 @@ void RealityDataConsole::ListRoots()
     if (m_queryFilter.length() > 0)
         enterpriseReq.SetQuery(m_queryFilter);
 
-    RequestStatus status = RequestStatus::SUCCESS;
+    RequestStatus status = RequestStatus::OK;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while(status == RequestStatus::SUCCESS)
+    while(status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
         partialVec = RealityDataService::Request(enterpriseReq, status); 
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
@@ -937,7 +937,7 @@ void RealityDataConsole::ChangeProps()
             }
         }
 
-    RealityDataServiceChange changeReq = RealityDataServiceChange(m_currentNode->node.GetRootId(), propertyString);
+    RealityDataServiceChangeRequest changeReq = RealityDataServiceChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -1067,7 +1067,7 @@ void RealityDataConsole::Relationships()
     RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(instanceId);
     bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, status);
 
-    if (status == RequestStatus::ERROR)
+    if (status == RequestStatus::BADREQ)
         {
         DisplayInfo("There was an error retrieving this information\n", DisplayOption::Error);
         return;
@@ -1109,20 +1109,20 @@ void RealityDataConsole::CreateRD()
     std::getline(std::cin, input);
     properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
-    RealityDataServiceCreate createRequest = RealityDataServiceCreate("", RealityDataServiceUpload::PackageProperties(properties));
+    RealityDataServiceCreateRequest createRequest = RealityDataServiceCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
     
-    int status;
-    Utf8String response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
+    RequestStatus status;
+    Utf8String response = RealityDataService::Request(createRequest, status);
     
     Json::Value instance(Json::objectValue);
     Json::Reader::Parse(response, instance);
-    if (status == CURLE_OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+    if (status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
         {
         DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name, instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString()), DisplayOption::Info);
         }
     else
         {
-        DisplayInfo(Utf8PrintfString("There was an error creating a new RealityData. Curl failed with error code %d\n", status), DisplayOption::Error);
+        DisplayInfo("There was an error creating a new RealityData.", DisplayOption::Error);
         DisplayInfo(Utf8PrintfString("And message %s\n", response), DisplayOption::Error);
         }
     }
@@ -1143,7 +1143,7 @@ void RealityDataConsole::Link()
     if (m_lastCommand == Command::Cancel)
         return;
     
-    RealityDataRelationshipCreate relReq = RealityDataRelationshipCreate(m_currentNode->node.GetInstanceId(), m_lastInput);
+    RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_currentNode->node.GetInstanceId(), m_lastInput);
     
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
