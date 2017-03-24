@@ -1617,6 +1617,16 @@ void ScalableMeshModel::FindTerrainRegion(uint64_t id, ScalableMeshModel*& terra
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     3/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetRegionVisibility(uint64_t id, bool isVisible)
+{
+    //clip or un-clip the 3d 3sm
+    m_currentClips[id].second = isVisible;
+    RefreshClips();
+}
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2017
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::RemoveRegion(uint64_t id)
