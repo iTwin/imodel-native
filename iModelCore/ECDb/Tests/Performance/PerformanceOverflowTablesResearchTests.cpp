@@ -5,51 +5,39 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PerformanceTests.h"
-
-USING_NAMESPACE_BENTLEY_EC
+#include "PerformanceOverflowTablesResearchTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                                  Krischan.Eberle     01/2017
+// @bsiclass                                                  Krischan.Eberle 03/2017
 //---------------------------------------------------------------------------------------
-struct PerformanceOverflowTablesResearchTestFixture : ECDbTestFixture
+TEST_F(PerformanceOverflowTablesResearchTestFixture, PhysicalElementScenarios)
     {
-    
-protected:
-    struct Scenario final
+    //col counts don't include the id col
+    const int primaryTableColCount = 11; //bis_Element
+    const int secondaryTableUnsharedColCount = 18; // bis_GeometricElement3d
+
+    std::vector<int> maxClassColCounts {50, 100, 200};
+    std::vector<int> sharedColCounts {10, 20, 30, 40, 100};
+
+    std::vector<Scenario> scenarios;
+    for (int maxClassColCount : maxClassColCounts)
         {
-        int m_primaryTableCount;
-        int m_joinedTablesPerPrimaryTableCount;
-        int m_overflowTablesPerJoinedTableCount;
-
-        Scenario(int primaryTableCount, int joinedTablesPerPrimaryTableCount, int overflowTablesPerJoinedTableCount):
-            m_primaryTableCount(primaryTableCount), m_joinedTablesPerPrimaryTableCount(joinedTablesPerPrimaryTableCount), m_overflowTablesPerJoinedTableCount(overflowTablesPerJoinedTableCount) {}
-        };
-
-    void Setup(Db& db, BeFileName const& fileName, Scenario const& scenario)
-        {
-        BeFileName filePath = BuildECDbPath(fileName.GetNameUtf8().c_str());
-        ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(filePath));
-
-        for (int i = 0; i < scenario.m_primaryTableCount; i++)
+        for (int sharedColCount : sharedColCounts)
             {
-            Utf8String ddl;
-            ddl.Sprintf("CREATE TABLE prim%d(Id INTEGER PRIMARY KEY, c1 INTEGER, c2 INTEGER)", i + 1);
-            ASSERT_EQ(BE_SQLITE_OK, db.ExecuteSql(ddl.c_str())) << ddl.c_str();
+            const int secondaryTableColCount = secondaryTableUnsharedColCount + sharedColCount;
+            const int ternaryTableColCount = maxClassColCount - secondaryTableColCount;
 
-            for (int j = 0; j < scenario.m_joinedTablesPerPrimaryTableCount; j++)
-                {
-                Utf8String ddl;
-                ddl.Sprintf("CREATE TABLE joined%d_%d(Id INTEGER PRIMARY KEY, c1 INTEGER, c2 INTEGER)", i + 1, j + 1);
-                ASSERT_EQ(BE_SQLITE_OK, db.ExecuteSql(ddl.c_str())) << ddl.c_str();
-
-                }
+            scenarios.push_back(Scenario("PhysicalElement", primaryTableColCount, secondaryTableColCount, ternaryTableColCount));
             }
         }
-    };
 
+    for (Scenario const& scenario : scenarios)
+        {
+        RunInsertAllCols(scenario);
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan     01/2017
@@ -183,5 +171,7 @@ TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
             }
         }, "Delete using view");
     }
+
+
 
 END_ECDBUNITTESTS_NAMESPACE
