@@ -220,3 +220,7 @@ DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingC
 
 DataSourceCacheTests.CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance
 #<-----
+
+
+#Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
+CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema
