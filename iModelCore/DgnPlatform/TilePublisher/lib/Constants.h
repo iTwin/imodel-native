@@ -357,7 +357,7 @@ static std::string s_adjustPolylineContrast = R"RAW_STRING(
 
 )RAW_STRING";
 
-static std::string s_tesselatedTexturedPolylineVertexCommon = s_adjustPolylineContrast + s_octDecode + R"RAW_STRING(
+static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3  a_pos;
     attribute vec2  a_prev;
     attribute vec2  a_next;
@@ -397,11 +397,11 @@ R"RAW_STRING(
             v_texc.x += dot(thisDir, delta) * imagesPerPixel.x;
             v_texc.y += a_param.x * dot(perp, delta) * imagesPerPixel.y;
             }
-        v_color = adjustContrast(computeColor());
+        v_color = computeColor();
         }
 )RAW_STRING";
 
-static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + s_adjustPolylineContrast + R"RAW_STRING(
+static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3 a_pos;
     attribute vec2 a_prev;
     attribute vec2 a_next;
@@ -416,12 +416,12 @@ static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + s_adjus
 + s_tesselatedPolylinePositionCalculation +
 R"RAW_STRING(
             }
-        v_color = adjustContrast(computeColor());
+        v_color = computeColor();
         }
 )RAW_STRING";
 
 
-static std::string s_simpleSolidPolylineVertexCommon = s_adjustPolylineContrast + R"RAW_STRING(
+static std::string s_simpleSolidPolylineVertexCommon = R"RAW_STRING(
     attribute vec3 a_pos;
     uniform mat4 u_mv;
     uniform mat4 u_proj;
@@ -429,11 +429,11 @@ static std::string s_simpleSolidPolylineVertexCommon = s_adjustPolylineContrast 
     void main(void)
         {
         gl_Position =  u_proj * u_mv * vec4(a_pos, 1.0);
-        v_color = adjustContrast(computeColor());
+        v_color = computeColor();
         }
 )RAW_STRING";
 
-static std::string s_simpleTexturedPolylineVertexCommon = s_adjustPolylineContrast + R"RAW_STRING(
+static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
     attribute vec3  a_pos;
     attribute vec3  a_texScalePnt; 
     attribute float a_distance;
@@ -460,7 +460,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = s_adjustPolylineContra
 
         v_texc = vec2(a_distance * imagesPerMeter, .5);
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
-        v_color =  adjustContrast(computeColor());
+        v_color =  computeColor();
         }
 )RAW_STRING";
 
