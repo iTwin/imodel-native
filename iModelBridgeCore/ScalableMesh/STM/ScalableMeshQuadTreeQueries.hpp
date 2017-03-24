@@ -1097,7 +1097,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         {                                       
         assert(node->GetFilter()->IsProgressiveFilter() == false);
                     
-        if (node->m_nodeHeader.m_nbFaceIndexes > 0)
+        if (!node->IsEmpty()/*node->m_nodeHeader.m_nodeCount > 0*/)
             {         
             //NEEDS_WORK_SM - In progress, can miss triangle when considering only vertices 
             static bool s_clipMesh = true;                                
@@ -1515,7 +1515,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     #endif                     
         } 
     else
-    if (node->m_nodeHeader.m_totalCount > 0)
+    if ((node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount > 0) || !node->IsEmpty()) // The total count is not available in Cesium 3D tiles datasets...
         {            
         IsCorrect = true;
         }

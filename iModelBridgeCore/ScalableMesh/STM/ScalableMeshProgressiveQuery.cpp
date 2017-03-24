@@ -979,7 +979,7 @@ static double s_validExtentRatio = 0;
 
 void EstimateMeanNbPointsPerNode(int64_t& nbObjects, int64_t& nbNodes, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
     {            						
-	if (node->GetNbObjects() > 0 )
+	if (!node->IsEmpty())
 		{
 		double nodeExtentArea = (ExtentOp<Extent3dType>::GetXMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetXMin(node->GetNodeExtent())) *
 							(ExtentOp<Extent3dType>::GetYMax(node->GetNodeExtent()) - ExtentOp<Extent3dType>::GetYMin(node->GetNodeExtent()));
@@ -1386,7 +1386,7 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
                                       IScalableMeshDisplayCacheManagerPtr&                       displayCacheManagerPtr)
     {       
     for (size_t nodeInd = currentInd + 1; nodeInd < nodesToSearch.GetNodes().size(); nodeInd++)        
-        {                                                        
+        {   
         searchingNodes.push_back(nodesToSearch.GetNodes()[nodeInd]);
         }   
 
@@ -1423,10 +1423,14 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         {
         //Increase display responsiveness, especially for streaming.
         if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded())
+        {
+            currentInd--; //TFS# 669028 -- otherwise the current node never gets loaded
             break;
+        }
 
         nodesToSearch.GetNodes()[currentInd]->QueryVisibleNode (queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, nullptr);
         
+
         if ((clock() - startTime) > s_firstNodeSearchingDelay)
             {
             break;

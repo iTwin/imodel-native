@@ -158,9 +158,9 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     auto& box = volume[JSON_Box];
 
     AppendPoint(box, center);
-    AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x), 0.0, 0.0));
-    AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y), 0.0));
-    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)));
+    AppendPoint(box, DPoint3d::FromXYZ (std::max(s_minSize, diagonal.x)/2.0, 0.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, std::max(s_minSize, diagonal.y)/2.0, 0.0));
+    AppendPoint(box, DPoint3d::FromXYZ (0.0, 0.0, std::max(s_minSize, diagonal.z)/2.0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -383,7 +383,7 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     static const size_t s_b3dmHeaderSize = 24;
     static const char s_b3dmMagic[] = "b3dm";
     static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmNumBatches = m_batchIds.Count();
+    uint32_t b3dmNumBatches = /*m_batchIds.Count()*/0;
     uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
 
     outData.resize(b3dmLength);
@@ -609,13 +609,13 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+    //AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "_BATCHID");
 
-    static char         *s_programName                    = "polylineProgram",
-                        *s_vertexShaderName               = "polylineVertexShader",
-                        *s_fragmentShaderName             = "polylineFragmentShader",
-                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
-                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+    static char const   *s_programName                    = "unlitProgram",
+                        *s_vertexShaderName               = "unlitVertexShader",
+                        *s_fragmentShaderName             = "unlitFragmentShader",
+                        *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "unlitFragmentShaderBufferView";
 
     technique["program"] = s_programName;
 
@@ -625,7 +625,7 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
-    techniqueAttributes["a_batchId"] = "batch";
+    //techniqueAttributes["a_batchId"] = "batch";
 
     auto& techniqueUniforms = technique["uniforms"];
     techniqueUniforms["u_mv"] = "mv";
@@ -634,7 +634,7 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     auto& rootProgramNode = (rootNode["programs"][s_programName] = Json::objectValue);
     rootProgramNode["attributes"] = Json::arrayValue;
     AppendProgramAttribute(rootProgramNode, "a_pos");
-    AppendProgramAttribute(rootProgramNode, "a_batchId");
+    //AppendProgramAttribute(rootProgramNode, "a_batchId");
 
     rootProgramNode["vertexShader"]   = s_vertexShaderName;
     rootProgramNode["fragmentShader"] = s_fragmentShaderName;
@@ -644,9 +644,9 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
 
     auto& bufferViews = rootNode["bufferViews"];
-
-    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
-    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+    std::string vertexShaderString = s_shaderPrecision + s_unlitVertexShader;
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, vertexShaderString);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
 
     AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
     techniqueUniforms["u_color"] = "color";
@@ -686,7 +686,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
         AddTechniqueParameter(technique, "n", GLTF_FLOAT_VEC3, "NORMAL");
         AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
         }
-    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+    //AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "_BATCHID");
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -703,7 +703,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
-    techniqueAttributes["a_batchId"] = "batch";
+    //techniqueAttributes["a_batchId"] = "batch";
     if(!ignoreLighting)
         techniqueAttributes["a_n"] = "n";
 
@@ -716,7 +716,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
     auto& rootProgramNode = (rootNode["programs"][programName.c_str()] = Json::objectValue);
     rootProgramNode["attributes"] = Json::arrayValue;
     AppendProgramAttribute(rootProgramNode, "a_pos");
-    AppendProgramAttribute(rootProgramNode, "a_batchId");
+    //AppendProgramAttribute(rootProgramNode, "a_batchId");
     if (!ignoreLighting)
         AppendProgramAttribute(rootProgramNode, "a_n");
 
