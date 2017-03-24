@@ -89,15 +89,13 @@ Utf8String StubHttpResponseValidCodeEvent()
     return R"(
               {
               "Date":"SomeDate",
-              "CodeAuthorityId":"SomeCodeAuthorityId",
               "EventTopic":"SomeEventTopic",
+			  "CodeSpecId":"SomeCodeSpecId",
+			  "CodeScope":"SomeCodeScope",
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
-              "Namespace":"SomeNamespace",
               "Values":["SomeValue1", "SomeValue2", "SomeValue3"],
-              "Reserved":"True",
-              "Used":"False",
-              "BriefcaseId":3,
-              "UsedWithRevision":"SomeUsedWithRevision"
+              "State":1,
+			  "BriefcaseId":2
               }
              )";
     }
@@ -171,7 +169,6 @@ Utf8String StubHttpResponseInvalidCodeEvent1()
     return R"(
               {
               "Date":"SomeDate",
-              "CodeAuthorityId":"SomeLockType",
               "EventTopic":"SomeEventTopic"
               }
              )";
@@ -185,15 +182,10 @@ Utf8String StubHttpResponseInvalidCodeEvent2()
 	return R"(
               {
               "Date":"SomeDate",
-              "CodeAuthorityId":"SomeCodeAuthorityId",
               "EventTopic":"SomeEventTopic",
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
-              "Namespace":"SomeNamespace",
               "Values":[],
-              "Reserved":"True",
-              "Used":"False",
               "BriefcaseId":7,
-              "UsedWithRevision":"SomeUsedWithRevision"
               }
              )";
 }

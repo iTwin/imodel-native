@@ -238,6 +238,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
             {
             m_db->Revisions().AbandonCreateRevision();
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetMessage().c_str());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetDescription().c_str());
             return DgnDbServerStatusResult::Error(pushResult.GetError());
             }
         });
