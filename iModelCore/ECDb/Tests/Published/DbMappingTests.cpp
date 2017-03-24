@@ -646,10 +646,10 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     testDataset["UPDATE ecdbf.FileInfo SET Name='Foo' WHERE ECInstanceId=1"] = false;
     testDataset["DELETE FROM ecdbf.FileInfo"] = false;
 
-    testDataset["SELECT * FROM ec.ECClassDef"] = true;
-    testDataset["INSERT INTO ec.ECClassDef(SchemaId, Name, DisplayLabel) VALUES(1, 'Foo', 'Foo')"] = false;
-    testDataset["UPDATE ec.ECClassDef SET DisplayLabel='Foo' WHERE ECInstanceId=1"] = false;
-    testDataset["DELETE FROM ec.ECClassDef"] = false;
+    testDataset["SELECT * FROM meta.ECClassDef"] = true;
+    testDataset["INSERT INTO meta.ECClassDef(SchemaId, Name, DisplayLabel) VALUES(1, 'Foo', 'Foo')"] = false;
+    testDataset["UPDATE meta.ECClassDef SET DisplayLabel='Foo' WHERE ECInstanceId=1"] = false;
+    testDataset["DELETE FROM meta.ECClassDef"] = false;
 
     for (bpair<Utf8String, bool> const& testItem : testDataset)
         {
@@ -664,7 +664,7 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << ecsql;
         }
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("MetaSchema", "ECClassDef");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef");
     ASSERT_TRUE(testClass != nullptr);
 
     {
@@ -8619,9 +8619,9 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
     expectedSchemas.push_back("CoreCustomAttributes");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
+    expectedSchemas.push_back("ECDbMeta");
     expectedSchemas.push_back("ECDbSystem");
     expectedSchemas.push_back("EditorCustomAttributes");
-    expectedSchemas.push_back("MetaSchema");
     expectedSchemas.push_back("StartupCompany");
 
     // Validate the expected ECSchemas in the project

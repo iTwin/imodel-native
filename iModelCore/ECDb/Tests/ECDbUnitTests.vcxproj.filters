@@ -10,12 +10,6 @@
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp">
       <Filter>Published\ECSqlPrepareTestFramework\Datasets</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp">
-      <Filter>Published\ECSql</Filter>
-    </ClCompile>
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
@@ -172,9 +166,6 @@
     <ClCompile Include="Published\JsonUpdaterTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MetaSchemaECSqlTestFixture.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\NavigationPropsTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -210,6 +201,9 @@
     </ClCompile>
     <ClCompile Include="Published\ECSqlExecutionFrameworkTests.cpp">
       <Filter>Published\ECSqlExecutionTestFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbMetaSchemaECSqlTestFixture.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -278,6 +272,9 @@
     </ClInclude>
     <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h">
       <Filter>Published\ECSqlExecutionTestFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h">
+      <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

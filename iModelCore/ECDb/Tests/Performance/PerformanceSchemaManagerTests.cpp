@@ -78,7 +78,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     int classCount = -1;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ec.ECClassDef"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM meta.ECClassDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     classCount = stmt.GetValueInt(0);
     ASSERT_GT(classCount, 0);
@@ -114,7 +114,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     int classCount = -1;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ec.ECClassDef"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM meta.ECClassDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     classCount = stmt.GetValueInt(0);
     ASSERT_GT(classCount, 0);

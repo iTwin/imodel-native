@@ -242,6 +242,7 @@
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1B1D0762-AF1F-447F-BBE6-749055F1C200}</ProjectGuid>
