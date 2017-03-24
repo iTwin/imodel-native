@@ -353,8 +353,9 @@ BentleyStatus DataSourceCache::Reset()
     ignoreClasses.insert(m_db.Schemas().GetClass("Bentley_Standard_Classes", "InstanceCount"));
 
     bset<ECSchemaCP> ignoreSchemas;
+    ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbMap"));
     ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbSystem"));
-    ignoreSchemas.insert(m_db.Schemas().GetSchema("MetaSchema"));
+    ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbMeta"));
 
     for (ECSchemaCP ecSchema : ecSchemas)
         {
@@ -372,10 +373,10 @@ BentleyStatus DataSourceCache::Reset()
                 continue;
                 }
 
-            Utf8PrintfString key("DataSourceCache::Reset:%llu", ecClass->GetId().GetValue());
+            Utf8PrintfString key("DataSourceCache::Reset:%" PRIu64, ecClass->GetId().GetValue());
             auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
                 {
-                return Utf8PrintfString("SELECT %llu, ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
+                return Utf8PrintfString("SELECT %" PRIu64 ", ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
                                         ecClass->GetECSqlName().c_str());
                 });
 
