@@ -51,6 +51,9 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     }
 #endif
 
+static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
+Utf8String SchemaVersion::ToJson() const {return Utf8PrintfString (s_versionfmt, m_major, m_minor, m_sub1, m_sub2);}
+
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     {        
     Savepoint sp(*this, "CreateVersion");
@@ -61,13 +64,8 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version, Properties) VALUES(?,?)");
     SchemaVersion currentVersion = GetCurrentVersion();
     Utf8String versonJson(currentVersion.ToJson());
-#ifndef VANCOUVER_API
-       stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
-       stmt->BindText(2, "", Statement::MakeCopy::Yes);
-#else
-        stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
-        stmt->BindUtf8String(2, Utf8String(), Statement::MAKE_COPY_Yes);
-#endif
+    stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(2, "", Statement::MakeCopy::Yes);
     DbResult status = stmt->Step();
     status = status;
         

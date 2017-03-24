@@ -10,7 +10,6 @@ baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 #BUILD_USING_VS2013=1
-VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
@@ -28,6 +27,7 @@ dirToSearch=$(BuildContext)VendorAPI/CGAL
 
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
+
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -50,10 +50,6 @@ always:
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -wd4091 -wd4312
 
-
-%if defined(VANCOUVER)
-CCompOpts + -DVANCOUVER_API
-%endif
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT 
