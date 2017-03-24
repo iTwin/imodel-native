@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/InstanceCacheManager.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -72,7 +72,6 @@ namespace IndexECPlugin.Source.Helpers
         DataSource m_source;
         uint m_daysCacheIsValid;
         uint m_daysBeforeCacheReplaced;
-        string m_connectionString;
         ECQuerySettings m_querySettings;
         IDbQuerier m_dbQuerier;
         List<Tuple<string, IParamNameValueMap>> m_PreparedInsertBundleList;
@@ -83,16 +82,14 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="source">The SubAPI source</param>
         /// <param name="daysCacheIsValid">The maximum age allowed for the cached information (in days)</param>
-        /// <param name="connectionString">The connection string used to communicate to the appropriate database</param>
         /// <param name="querySettings">The ecquery settings of the present query</param>
         /// <param name="dbQuerier">The IDbQuerier object that will communicate with the database</param>
-        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, string connectionString, ECQuerySettings querySettings, IDbQuerier dbQuerier)
+        public InstanceCacheManager(DataSource source, uint daysCacheIsValid, ECQuerySettings querySettings, IDbQuerier dbQuerier)
             //: base(true, "CacheTableName", "CacheColumnName", "CacheJoinTableName", null)
             {
             m_source = source;
             m_daysCacheIsValid = daysCacheIsValid;
             m_daysBeforeCacheReplaced = ((m_daysCacheIsValid + 1) / 2);
-            m_connectionString = connectionString;
             m_querySettings = querySettings;
             m_dbQuerier = dbQuerier;
             m_PreparedInsertBundleList = new List<Tuple<string, IParamNameValueMap>>();
@@ -162,7 +159,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLQuery(m_source, instanceIdsList, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns);
 
-            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_connectionString, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, additionalColumns);
 
             foreach (IECInstance oldInstance in cachedInstances.Where(inst => (DateTime.UtcNow - (DateTime)inst.ExtendedData["DateCacheCreated"]).Days > m_daysCacheIsValid).ToList())
                 {
@@ -269,7 +266,7 @@ namespace IndexECPlugin.Source.Helpers
 
             string sqlQueryString = m_mimicTableWriter.CreateMimicSQLSpatialQuery(m_source, polygonDescriptor, baseECClass, basePropertiesSelected, out drh, out paramNameValueMap, additionalColumns, whereCriteria);
 
-            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, m_connectionString, additionalColumns);
+            List<IECInstance> cachedInstances = m_dbQuerier.QueryDbForInstances(sqlQueryString, drh, paramNameValueMap, actualECClass, basePropertiesSelected, additionalColumns);
 
 #if BBOXQUERY
 
@@ -378,7 +375,7 @@ namespace IndexECPlugin.Source.Helpers
 
             foreach ( Tuple<string, IParamNameValueMap> bundle in m_PreparedInsertBundleList )
                 {
-                m_dbQuerier.ExecuteNonQueryInDb(bundle.Item1, bundle.Item2, m_connectionString);
+                m_dbQuerier.ExecuteNonQueryInDb(bundle.Item1, bundle.Item2);
                 }
 
             m_PreparedInsertBundleList.Clear();

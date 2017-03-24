@@ -70,14 +70,10 @@ namespace IndexECPlugin.Source.QueryProviders
             IECClass ecClass = Schema.GetClass("SpatialEntityWithDetailsView");
 
             IECInstance instance = ecClass.CreateInstance();
+
             IECInstance instanceSEB = QuerySingleSpatialEntity(sourceID);
-            PrepareInstanceForCaching(instanceSEB);
-
             IECInstance instanceMetadata = QuerySingleMetadata(sourceID);
-            PrepareInstanceForCaching(instanceMetadata);
-
             IECInstance instanceSDS = QuerySingleSpatialDataSource(sourceID);
-            PrepareInstanceForCaching(instanceSDS);
 
             instance.InitializePropertiesToNull();
 

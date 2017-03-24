@@ -147,16 +147,16 @@ namespace IndexECPlugin.Source.Helpers
 
             m_sqlQueryBuilder.SpecifyFromClause(table);
 
-            //Special case for thumbnails and file 
-            if ( (m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && queriedClass.Name == "Thumbnail" )
-                {
-                IECInstance fileHolderAttribute = queriedClass.GetCustomAttributes("FileHolder");
-                if ( (fileHolderAttribute != null) && (fileHolderAttribute["Type"].StringValue == "SQLThumbnail") )
-                    {
-                    string streamableColumnName = fileHolderAttribute["LocationHoldingColumn"].StringValue;
-                    m_sqlQueryBuilder.AddSelectClause(table, streamableColumnName, ColumnCategory.streamData, null);
-                    }
-                }
+            ////Special case for thumbnails and file 
+            //if ( (m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && queriedClass.Name == "Thumbnail" )
+            //    {
+            //    IECInstance fileHolderAttribute = queriedClass.GetCustomAttributes("FileHolder");
+            //    if ( (fileHolderAttribute != null) && (fileHolderAttribute["Type"].StringValue == "SQLThumbnail") )
+            //        {
+            //        string streamableColumnName = fileHolderAttribute["LocationHoldingColumn"].StringValue;
+            //        m_sqlQueryBuilder.AddSelectClause(table, streamableColumnName, ColumnCategory.streamData, null);
+            //        }
+            //    }
 
             foreach ( IECProperty property in propertyList )
                 {

@@ -19,24 +19,44 @@ using RealityPackageNet;
 
 namespace IndexECPlugin.Source.Helpers
     {
-    internal class Packager
+    /// <summary>
+    /// Class for creating packages.
+    /// </summary>
+    public class Packager
         {
 
-        private string m_connectionString;
+        private IDbQuerier m_dbQuerier;
         private EnumerableBasedQueryHandler m_executeQuery;
-        bool m_osm;
-        List<double> m_selectedRegion;
-        BBox m_selectedBBox;
-        string m_coordinateSystem;
-        string m_email;
+        private bool m_osm;
+        private List<double> m_selectedRegion;
+        private BBox m_selectedBBox;
+        private string m_coordinateSystem;
+        private string m_email;
 
-        public Packager(string connectionString, EnumerableBasedQueryHandler executeQuery)
+        /// <summary>
+        /// Packager constructor
+        /// </summary>
+        /// <param name="dbQuerier">The IdbQuerier object that communicates with the database</param>
+        /// <param name="executeQuery">The query handler for getting the instances from the plugin itself</param>
+        public Packager (IDbQuerier dbQuerier, EnumerableBasedQueryHandler executeQuery)
             {
-            m_connectionString = connectionString;
+            m_dbQuerier = dbQuerier;
             m_executeQuery = executeQuery;
             }
 
-        public string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule, int major, int minor, string requestor, string requestorVersion)
+        /// <summary>
+        /// Insert package operation
+        /// </summary>
+        /// <param name="schema">The schema</param>
+        /// <param name="connection">The repository connection</param>
+        /// <param name="instance">The PackageRequest instance</param>
+        /// <param name="queryModule">The query module</param>
+        /// <param name="major">The requested major package version</param>
+        /// <param name="minor">The requested minor package version</param>
+        /// <param name="requestor">The name of the requesting app</param>
+        /// <param name="requestorVersion">The version of the requesting app</param>
+        /// <returns>The full name (including path) of the file</returns>
+        public string InsertPackageRequest (IECSchema schema, RepositoryConnection connection, IECInstance instance, QueryModule queryModule, int major, int minor, string requestor, string requestorVersion)
             {
 
             string name = Guid.NewGuid().ToString();
@@ -156,13 +176,13 @@ namespace IndexECPlugin.Source.Helpers
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
 
 
-            List<RealityDataNet> realityDataNetList = RealityDataPackager(sender, connection, queryModule, indexRequestedEntities, m_coordinateSystem, major);
+            List<RealityDataNet> realityDataNetList = RealityDataPackager(schema, connection, queryModule, indexRequestedEntities, m_coordinateSystem, major);
 
-            realityDataNetList.AddRange(SubAPIPackager(sender, connection, queryModule, subAPIRequestedEntities, major));
+            realityDataNetList.AddRange(SubAPIPackager(schema, connection, queryModule, subAPIRequestedEntities, major));
 
             //List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
             if ( m_osm )
-                realityDataNetList.Add(OsmPackager(sender, connection, queryModule));
+                realityDataNetList.Add(OsmPackager(schema, connection, queryModule));
 
             // Create data group and package.
             List<ImageryDataNet> imgGroup = new List<ImageryDataNet>();
@@ -203,8 +223,8 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 package.AddTerrainData(terrain);
                 }
-
-            if(!package.Write(Path.GetTempPath() + name + ".xrdp"))
+            string fullName = Path.GetTempPath() + name + ".xrdp";
+            if ( !package.Write(fullName) )
                 {
                 throw new UserFriendlyException("Package creation failed.");
                 }
@@ -227,10 +247,10 @@ namespace IndexECPlugin.Source.Helpers
 #endif
 
             Log.Logger.info("Created the package file " + instance.InstanceId + ". Region selected : " + selectedRegionStr);
-            return instance.InstanceId;
+            return fullName;
             }
 
-        private List<RealityDataNet> RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, int major)
+        private List<RealityDataNet> RealityDataPackager (IECSchema schema, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities, string coordinateSystem, int major)
             {
             List<RealityDataNet> RDNList = new List<RealityDataNet>();
             if ( basicRequestedEntities.Count == 0 )
@@ -238,28 +258,28 @@ namespace IndexECPlugin.Source.Helpers
                 return RDNList;
                 }
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
-            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            IECRelationshipClass metadataRelClass = schema.GetClass("SpatialEntityToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = schema.GetClass("Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), false);
 
-            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
-            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            IECRelationshipClass dataSourceRelClass = schema.GetClass("SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass dataSourceClass = schema.GetClass("SpatialDataSource");
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), false);
 
-            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+            IECClass spatialEntityClass = schema.GetClass("SpatialEntity");
 
-            IECClass wmsSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSSource");
+            IECClass wmsSourceClass = schema.GetClass("WMSSource");
             RelatedInstanceSelectCriteria wmsSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, wmsSourceClass), false);
 
-            IECClass multibandSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "MultibandSource");
+            IECClass multibandSourceClass = schema.GetClass("MultibandSource");
             RelatedInstanceSelectCriteria multibandSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, multibandSourceClass), false);
 
-            IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
-            
-            IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+            IECRelationshipClass serverRelClass = schema.GetClass("ServerToSpatialDataSource") as IECRelationshipClass;
+
+            IECClass serverClass = schema.GetClass("Server");
             RelatedInstanceSelectCriteria serverRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, serverClass), false);
             
-            IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
+            IECClass wmsServerClass = schema.GetClass("WMSServer");
             RelatedInstanceSelectCriteria wmsServerRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, wmsServerClass), false);
 
             ECQuery query = new ECQuery(spatialEntityClass);
@@ -786,12 +806,12 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private RealityDataNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule)
+        private RealityDataNet OsmPackager (IECSchema schema, RepositoryConnection connection, QueryModule queryModule)
             {
-            IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+            IECClass spatialEntityClass = schema.GetClass("SpatialEntity");
 
-            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
-            IECClass osmSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "OsmSource");
+            IECRelationshipClass dataSourceRelClass = schema.GetClass("SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass osmSourceClass = schema.GetClass("OsmSource");
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, osmSourceClass), true);
             dataSourceRelCrit.SelectAllProperties = false;
             dataSourceRelCrit.SelectedProperties = new List<IECProperty>();
@@ -800,8 +820,8 @@ namespace IndexECPlugin.Source.Helpers
             dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "AlternateURL2"));
             dataSourceRelCrit.SelectedProperties.Add(osmSourceClass.First(prop => prop.Name == "CoordinateSystem"));
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
-            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            IECRelationshipClass metadataRelClass = schema.GetClass("SpatialEntityToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = schema.GetClass("Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
             metadataRelCrit.SelectAllProperties = false;
             metadataRelCrit.SelectedProperties = new List<IECProperty>();
@@ -877,7 +897,7 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        private List<RealityDataNet> SubAPIPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities, int major)
+        private List<RealityDataNet> SubAPIPackager (IECSchema schema, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> subAPIRequestedEntities, int major)
             {
             List<RealityDataNet> usgsSourceNetList = new List<RealityDataNet>();
 
@@ -886,18 +906,18 @@ namespace IndexECPlugin.Source.Helpers
                 return usgsSourceNetList;
                 }
 
-            IECClass spatialentityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+            IECClass spatialentityClass = schema.GetClass("SpatialEntity");
 
-            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
-            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            IECRelationshipClass dataSourceRelClass = schema.GetClass("SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass dataSourceClass = schema.GetClass("SpatialDataSource");
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
 
-            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToMetadata") as IECRelationshipClass;
-            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            IECRelationshipClass metadataRelClass = schema.GetClass("SpatialEntityToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = schema.GetClass("Metadata");
             RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
 
-            IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
-            IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+            IECRelationshipClass serverRelClass = schema.GetClass("ServerToSpatialDataSource") as IECRelationshipClass;
+            IECClass serverClass = schema.GetClass("Server");
             RelatedInstanceSelectCriteria serverRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, serverClass), true);
 
 
@@ -1080,90 +1100,120 @@ namespace IndexECPlugin.Source.Helpers
                 }
             }
 
-        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor, string requestorVersion, string email, string userId, string boundingPolygon)
+        private void UploadPackageInDatabase (IECInstance instance, string version, string requestor,
+            string requestorVersion, string email, string userId, string boundingPolygon)
             {
-            using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
+            //using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
+            //    {
+            //    sqlConnection.Open();
+            //using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
+            //{
+            GenericParamNameValueMap map = new GenericParamNameValueMap();
+
+            //dbCommand.CommandText =
+            //    "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon, UserId) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7, @param8)";
+            //dbCommand.CommandType = CommandType.Text;
+
+            const string commandText =
+                "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon, UserId) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7, @param8)";
+
+            //DbParameter param0 = dbCommand.CreateParameter();
+            //param0.DbType = DbType.String;
+            //param0.ParameterName = "@param0";
+            //param0.Value = instance.InstanceId;
+            //dbCommand.Parameters.Add(param0);
+
+            map.AddParamNameValue("@param0", instance.InstanceId, DbType.String);
+
+            //DbParameter param1 = dbCommand.CreateParameter();
+            //param1.DbType = DbType.DateTime;
+            //param1.ParameterName = "@param1";
+            //param1.Value = DateTime.UtcNow;
+            //dbCommand.Parameters.Add(param1);
+
+            map.AddParamNameValue("@param1", DateTime.UtcNow, DbType.DateTime);
+
+            using ( FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open) )
                 {
-                sqlConnection.Open();
-                using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
+
+                long longLength = fstream.Length;
+                if ( longLength > int.MaxValue )
                     {
-                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent, PackageVersion, Requestor, RequestorVersion, BentleyInternal, BoundingPolygon, UserId) VALUES (@param0, @param1, @param2, @param3, @param4, @param5, @param6, @param7, @param8)";
-                    dbCommand.CommandType = CommandType.Text;
-
-                    DbParameter param0 = dbCommand.CreateParameter();
-                    param0.DbType = DbType.String;
-                    param0.ParameterName = "@param0";
-                    param0.Value = instance.InstanceId;
-                    dbCommand.Parameters.Add(param0);
-
-                    DbParameter param1 = dbCommand.CreateParameter();
-                    param1.DbType = DbType.DateTime;
-                    param1.ParameterName = "@param1";
-                    param1.Value = DateTime.UtcNow;
-                    dbCommand.Parameters.Add(param1);
-
-                    FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
-
-                    long longLength = fstream.Length;
-                    if ( longLength > int.MaxValue )
-                        {
-                        //Log.Logger.error("Package requested is too large.");
-                        throw new Bentley.Exceptions.UserFriendlyException("Package requested is too large. Please reduce the size of the order");
-                        }
-                    int intLength = Convert.ToInt32(longLength);
-                    byte[] fileBytes = new byte[fstream.Length];
-                    fstream.Seek(0, SeekOrigin.Begin);
-                    fstream.Read(fileBytes, 0, intLength);
-
-                    DbParameter param2 = dbCommand.CreateParameter();
-                    param2.DbType = DbType.Binary;
-                    param2.ParameterName = "@param2";
-                    param2.Value = fileBytes;
-                    dbCommand.Parameters.Add(param2);
-
-                    DbParameter param3 = dbCommand.CreateParameter();
-                    param3.DbType = DbType.String;
-                    param3.ParameterName = "@param3";
-                    param3.Value = (version == null) ? (object) DBNull.Value : (object) version;
-                    dbCommand.Parameters.Add(param3);
-
-                    DbParameter param4 = dbCommand.CreateParameter();
-                    param4.DbType = DbType.String;
-                    param4.ParameterName = "@param4";
-                    param4.Value = (requestor == null) ? (object) DBNull.Value : (object) requestor;
-                    dbCommand.Parameters.Add(param4);
-
-                    DbParameter param5 = dbCommand.CreateParameter();
-                    param5.DbType = DbType.String;
-                    param5.ParameterName = "@param5";
-                    param5.Value = (requestorVersion == null) ? (object) DBNull.Value : (object) requestorVersion;
-                    dbCommand.Parameters.Add(param5);
-
-                    DbParameter param6 = dbCommand.CreateParameter();
-                    param6.DbType = DbType.Boolean;
-                    param6.ParameterName = "@param6";
-                    param6.Value = email.EndsWith("bentley.com") || email.EndsWith("mailinator.com");
-                    dbCommand.Parameters.Add(param6);
-
-                    DbParameter param7 = dbCommand.CreateParameter();
-                    param7.DbType = DbType.String;
-                    param7.ParameterName = "@param7";
-                    param7.Value = (boundingPolygon == null) ? (object) DBNull.Value : (object) boundingPolygon;
-                    dbCommand.Parameters.Add(param7);
-
-                    DbParameter param8 = dbCommand.CreateParameter();
-                    param8.DbType = DbType.String;
-                    param8.ParameterName = "@param8";
-                    param8.Value = (userId == null) ? (object) DBNull.Value : (object) userId;
-                    dbCommand.Parameters.Add(param8);
-
-                    dbCommand.ExecuteNonQuery();
+                    //Log.Logger.error("Package requested is too large.");
+                    throw new Bentley.Exceptions.UserFriendlyException(
+                        "Package requested is too large. Please reduce the size of the order");
                     }
-                sqlConnection.Close();
+                int intLength = Convert.ToInt32(longLength);
+                byte[] fileBytes = new byte[fstream.Length];
+                fstream.Seek(0, SeekOrigin.Begin);
+                fstream.Read(fileBytes, 0, intLength);
+
+                //DbParameter param2 = dbCommand.CreateParameter();
+                //param2.DbType = DbType.Binary;
+                //param2.ParameterName = "@param2";
+                //param2.Value = fileBytes;
+                //dbCommand.Parameters.Add(param2);
+
+                map.AddParamNameValue("@param2", fileBytes, DbType.Binary);
                 }
+            //DbParameter param3 = dbCommand.CreateParameter();
+            //param3.DbType = DbType.String;
+            //param3.ParameterName = "@param3";
+            //param3.Value = (version == null) ? (object) DBNull.Value : (object) version;
+            //dbCommand.Parameters.Add(param3);
+
+            map.AddParamNameValue("@param3", (version == null) ? (object) DBNull.Value : (object) version, DbType.String);
+
+            //DbParameter param4 = dbCommand.CreateParameter();
+            //param4.DbType = DbType.String;
+            //param4.ParameterName = "@param4";
+            //param4.Value = (requestor == null) ? (object) DBNull.Value : (object) requestor;
+            //dbCommand.Parameters.Add(param4);
+
+            map.AddParamNameValue("@param4", (requestor == null) ? (object) DBNull.Value : (object) requestor, DbType.String);
+
+            //DbParameter param5 = dbCommand.CreateParameter();
+            //param5.DbType = DbType.String;
+            //param5.ParameterName = "@param5";
+            //param5.Value = (requestorVersion == null) ? (object) DBNull.Value : (object) requestorVersion;
+            //dbCommand.Parameters.Add(param5);
+
+            map.AddParamNameValue("@param5", (requestorVersion == null) ? (object) DBNull.Value : (object) requestorVersion, DbType.String);
+
+            //DbParameter param6 = dbCommand.CreateParameter();
+            //param6.DbType = DbType.Boolean;
+            //param6.ParameterName = "@param6";
+            //param6.Value = email.EndsWith("bentley.com") || email.EndsWith("mailinator.com");
+            //dbCommand.Parameters.Add(param6);
+
+            map.AddParamNameValue("@param6", email.EndsWith("bentley.com") || email.EndsWith("mailinator.com"), DbType.Boolean);
+
+            //DbParameter param7 = dbCommand.CreateParameter();
+            //param7.DbType = DbType.String;
+            //param7.ParameterName = "@param7";
+            //param7.Value = (boundingPolygon == null) ? (object) DBNull.Value : (object) boundingPolygon;
+            //dbCommand.Parameters.Add(param7);
+
+            map.AddParamNameValue("@param7", (boundingPolygon == null) ? (object) DBNull.Value : (object) boundingPolygon, DbType.String);
+
+            //DbParameter param8 = dbCommand.CreateParameter();
+            //param8.DbType = DbType.String;
+            //param8.ParameterName = "@param8";
+            //param8.Value = (userId == null) ? (object) DBNull.Value : (object) userId;
+            //dbCommand.Parameters.Add(param8);
+
+            map.AddParamNameValue("@param8", (userId == null) ? (object) DBNull.Value : (object) userId, DbType.String);
+
+            m_dbQuerier.ExecuteNonQueryInDb(commandText, map);
+
+            //dbCommand.ExecuteNonQuery();
+            //}
+            //sqlConnection.Close();
+            //}
+
             }
 
-        private RequestedEntity ECStructToRequestedEntity (IECStructValue structValue)
+            private RequestedEntity ECStructToRequestedEntity (IECStructValue structValue)
             {
             if ( structValue.ClassDefinition.Name != "RequestedEntity" )
                 {
@@ -1181,6 +1231,13 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
+        /// <summary>
+        /// Extracts the packaging stats 
+        /// </summary>
+        /// <param name="query">The ECQuery requesting the stats. It is possible to filter by creation time using upper and lower bounds</param>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="schema">The schema containing the stats ECClass</param>
+        /// <returns></returns>
             public static List<IECInstance> ExtractStats(ECQuery query, string connectionString, IECSchema schema)
             {
                 List<IECInstance> StatsList = new List<IECInstance>();

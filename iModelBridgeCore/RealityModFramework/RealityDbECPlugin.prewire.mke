@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: FeatureTrackingNuGets.prewire.mke $
+#     $Source: RealityDbECPlugin.prewire.mke $
 #    $RCSfile: imagepp.mke,v $
 #   $Revision: 1.00 $
 #       $Date: 2017/01/20 15:47:00 $
@@ -18,6 +18,10 @@ appName     = FeatureTracking.prewire
 MicrosoftWindowsAzureConfigurationSrc       = $(SrcRoot)nuget/Microsoft.WindowsAzure.ConfigurationManager.3.2.3/lib/net40/
 WindowsAzureServiceBusSrc                   = $(SrcRoot)nuget/WindowsAzure.ServiceBus.3.1.1/lib/net45-full/
 BentleySelectServerSaasClientSrc            = $(SrcRoot)nuget/Bentley.SelectServer.SaaS.Client.2017.3.7.2/lib/net45/
+BentleyDiscoveryBuddiClientSrc              = $(SrcRoot)nuget/Bentley.Discovery.Buddi.Client.11.0.0.20/lib/net45
+BentleyDiscoveryBuddiClientSrc              = $(SrcRoot)nuget/Bentley.Discovery.Buddi.Client.11.0.0.20/lib/net45
+CommonLoggingSrc                            = $(SrcRoot)nuget/Common.Logging.3.3.1/lib/net40
+CommonLoggingCoreSrc                        = $(SrcRoot)nuget/Common.Logging.Core.3.3.1/lib/net40
 
 $(BuildContext)Delivery/Microsoft.WindowsAzure.Configuration.dll : ${MicrosoftWindowsAzureConfigurationSrc}/Microsoft.WindowsAzure.Configuration.dll
     $(LinkFirstDepToFirstTarget)
@@ -26,4 +30,13 @@ $(BuildContext)Delivery/Microsoft.ServiceBus.dll : ${WindowsAzureServiceBusSrc}/
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/Bentley.SelectServer.SaaS.Client.dll : ${BentleySelectServerSaasClientSrc}/Bentley.SelectServer.SaaS.Client.dll
+    $(LinkFirstDepToFirstTarget)
+	
+$(BuildContext)Delivery/Bentley.Discovery.Buddi.Client.dll : ${BentleyDiscoveryBuddiClientSrc}/Bentley.Discovery.Buddi.Client.dll
+    $(LinkFirstDepToFirstTarget)
+	
+$(BuildContext)Delivery/Common.Logging.dll : ${CommonLoggingSrc}/Common.Logging.dll
+    $(LinkFirstDepToFirstTarget)
+	
+$(BuildContext)Delivery/Common.Logging.Core.dll : ${CommonLoggingCoreSrc}/Common.Logging.Core.dll
     $(LinkFirstDepToFirstTarget)

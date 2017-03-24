@@ -197,7 +197,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
 
                 m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
-                InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, connectionString, querySettings, new DbQuerier());
+                InstanceCacheManager = new InstanceCacheManager(dataSource, daysCacheIsValid, querySettings, new DbQuerier(connectionString));
                 }
 
             }

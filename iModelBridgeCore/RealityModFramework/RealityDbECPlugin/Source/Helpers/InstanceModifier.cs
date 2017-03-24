@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/InstanceModifier.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -62,9 +62,8 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="instances"></param>
         /// <param name="source"></param>
-        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public void Modify (IEnumerable<IECInstance> instances, DataSource source, string connectionString/*, ECQuerySettings ecQuerySettings*/)
+        public void Modify (IEnumerable<IECInstance> instances, DataSource source/*, ECQuerySettings ecQuerySettings*/)
             {
             m_mimicTableAccessor.GetStream = false;
 
@@ -93,7 +92,7 @@ namespace IndexECPlugin.Source.Helpers
                     throw new UserFriendlyException("The request returned too much data. Please refine the search filters.");
                     }
 
-                List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), connectionString, null, false);
+                List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), null, false);
 
                 //For each instance in the 
                 //If there is data and stream data (such as thumbnail data) set in instances, replace it if there is an override

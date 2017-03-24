@@ -17,6 +17,7 @@
 		<dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="#ConfManager_version#" />
 		<dependency id="WindowsAzure.ServiceBus" version="#ServiceBus_version#" />
 		<dependency id="Bentley.SelectServer.SaaS.Client" version="#SaaSClient_version#" />
+		<dependency id="Bentley.Discovery.Buddi.Client" version="#Buddi_version#" />
     </dependencies>
   </metadata>
   <files>
