@@ -509,7 +509,8 @@ bvector<DPoint3d> const points
 )
     {
     if (points.size () < 3)
-        return false;
+        return nullptr;
+
     VuSetP graph = vu_newVuSet (0);
     DRange3d worldRange = DRange3d::From (points);
     double localAbsTol = 1.0e-8;
@@ -646,8 +647,7 @@ TEST(Vu,CreateDelauney)
 
 TEST(Vu,CreateDelauneySkew)
     {
-
-    double dy = 30.0;
+    //double dy = 30.0;
     double a = 1.0;
     size_t numX = 7;
     size_t numY = 5;
