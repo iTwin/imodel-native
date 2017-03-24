@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Text;
 using System.Threading.Tasks;
+using Bentley.Discovery.Buddi.Client;
 using Bentley.EC.Persistence.Operations;
 using Bentley.EC.Persistence.Query;
 using Bentley.ECSystem.Configuration;
@@ -66,11 +67,28 @@ namespace IndexECPlugin.Source.Helpers
             {
             m_base64token = base64token;
 
-            m_rdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase");
-            if(m_rdsUrlBase == null)
+            string buddiRegionCode = ConfigurationRoot.GetAppSetting("RECPBuddiRegionCode");
+
+            string rdsBaseName;
+            BUDDIClient buddiClient = new BUDDIClient();
+            try
                 {
-                throw new ProgrammerException("The RECPRdsUrlBase app setting has not been set");
+                if ( buddiRegionCode == null )
+                    {
+                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName);
+                    }
+                else
+                    {
+                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName, int.Parse(buddiRegionCode));
+                    }
                 }
+            catch ( Exception )
+                {
+                throw new OperationFailedException("There was an error fetching RDS url with BUDDI.");
+                }
+
+            m_rdsUrlBase = rdsBaseName + "v2.3/repositories/S3MXECPlugin--Server/S3MX/";
+
             }
 
         private string GetHttpResponse (string url)
@@ -118,6 +136,7 @@ namespace IndexECPlugin.Source.Helpers
         /// <returns>The Jobject containing the information requested.</returns>
         public JObject GetSingleData (string entityID)
             {
+
             string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "/" + entityID;
 
             JObject jsonResponse = JObject.Parse(GetHttpResponse(url));

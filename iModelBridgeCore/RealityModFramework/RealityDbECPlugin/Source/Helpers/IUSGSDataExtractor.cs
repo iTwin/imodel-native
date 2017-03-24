@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/Helpers/IUSGSDataExtractor.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -228,16 +228,20 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 }
             string dateString = token.TryToGetString("publicationDate");
-            try
+            date = null;
+            if ( dateString != null )
                 {
-                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                }
-            catch ( FormatException )
-                {
-                Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
-                date = null;
-                }
 
+                try
+                    {
+                    date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                catch ( FormatException )
+                    {
+                    Log.Logger.error(String.Format("Error while filtering USGS National Agriculture Imagery Program entry {0}.", title));
+                    date = null;
+                    }
+                }
 
             }
 
@@ -250,7 +254,6 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractDateAndResolutionSB (JToken token, out DateTime? date, out string resolution, out string resolutionInMeters)
             {
-            string title = token.TryToGetString("title");
             date = null;
 
             JToken datesToken = token["dates"];
@@ -366,14 +369,18 @@ namespace IndexECPlugin.Source.Helpers
             title = token.TryToGetString("title");
             string dateString = token.TryToGetString("publicationDate");
 
-            try
+            date = null;
+            if ( dateString != null )
                 {
-                date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-                }
-            catch ( FormatException )
-                {
-                Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
-                date = null;
+                try
+                    {
+                    date = DateTime.ParseExact(dateString, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                catch ( FormatException )
+                    {
+                    Log.Logger.error(String.Format("Error while filtering USGS National Elevation Dataset entry {0}.", title));
+                    date = null;
+                    }
                 }
 
             double lat;
@@ -517,8 +524,10 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="resolutionInMeters">The resolution in meters of the data, if applicable</param>
         public void ExtractTitleDateAndResolution (JToken token, out string title, out DateTime? date, out string resolution, out string resolutionInMeters)
             {
-            string dateString = token.TryToGetString("publicationDate");
             title = token.TryToGetString("title");
+            date = null;
+
+            string dateString = token.TryToGetString("publicationDate");
             if ( dateString != null )
                 {
                 try
@@ -531,10 +540,7 @@ namespace IndexECPlugin.Source.Helpers
                     date = null;
                     }
                 }
-            else
-                {
-                date = null;
-                }
+                
             resolution = null;
             resolutionInMeters = null;
             }
