@@ -685,6 +685,102 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                           Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, RelationshipMappingTests)
+    {
+
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>OwnTable</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
+        "       <BaseClass>AHasB</BaseClass>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "BaseRelationshipClass having OwnTable mapping strategy is not supported in ECRelationshipClassHeirarchy."));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
+        "       <BaseClass>AHasB</BaseClass>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "BaseRelationshipClass having TablePerHeirarchy mapping strategy is expected to be supported in ECRelationshipClassHeirarchy."));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A' modifier='Abstract'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "Source or target constraint classes are abstract without subclasses. Apply the MapStrategy 'TablePerHierarchy' to the abstract constraint class"));
+
+    AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, NotMappedCATests)
