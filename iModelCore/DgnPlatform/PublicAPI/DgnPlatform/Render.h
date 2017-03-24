@@ -1711,6 +1711,14 @@ struct HiddenLineParams
 //=======================================================================================
 struct Light : RefCounted<NonCopyableClass>
 {
+    Lighting::LightType m_type;
+    ColorDef m_color;
+    ColorDef m_color2;
+    double m_intensity;  
+    double m_intensity2;
+    DPoint3d m_location;
+    DVec3d m_direction;
+    DGNPLATFORM_EXPORT Light(Lighting::Parameters const& params, DVec3dCP direction, DPoint3dCP location);
 };
 DEFINE_REF_COUNTED_PTR(Light)
 

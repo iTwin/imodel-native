@@ -236,25 +236,11 @@ ClipVectorPtr ViewDefinition::GetViewClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
     {
-    if (GridOrientationType::WorldXY != orientation)
-        SetDetail(str_GridOrient(), Json::Value((uint32_t) orientation));
-    else
-        RemoveDetail(str_GridOrient());
-
-    if (10 != gridsPerRef)
-        SetDetail(str_GridPerRef(), Json::Value(gridsPerRef));
-    else
-        RemoveDetail(str_GridPerRef());
-
-    if (1.0 != spacing.x)
-        SetDetail(str_GridSpaceX(), Json::Value(spacing.x));
-    else
-        RemoveDetail(str_GridSpaceX());
-
-    if (spacing.y != spacing.x)
-        SetDetail(str_GridSpaceY(), Json::Value(spacing.y));
-    else
-        RemoveDetail(str_GridSpaceY());
+    auto& details = GetDetailsR();
+    details.SetOrRemoveUInt(str_GridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
+    details.SetOrRemoveUInt(str_GridPerRef(), gridsPerRef, 10);
+    details.SetOrRemoveDouble(str_GridSpaceX(), spacing.x, 1.0);
+    details.SetOrRemoveDouble(str_GridSpaceY(), spacing.y, spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1182,10 +1168,7 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    if (ColorDef::Black() == val)
-        RemoveStyle(str_BackgroundColor());    // black is the default
-    else
-        SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    GetStylesR().SetOrRemoveInt(str_BackgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1201,10 +1184,7 @@ ColorDef DisplayStyle::GetMonochromeColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetMonochromeColor(ColorDef val)
     {
-    if (ColorDef::White() == val)
-        RemoveStyle(str_MonochromeColor());    // white is the default
-    else
-        SetStyle(str_MonochromeColor(), Json::Value(val.GetValue()));
+    GetStylesR().SetOrRemoveInt(str_MonochromeColor(), val.GetValue(), ColorDef::White().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
