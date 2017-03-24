@@ -21,11 +21,49 @@
 %message I am here
 %message ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT)
 
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+
+%if !defined (BuildContext)
+%error
+%endif
+
+DeliveryDir         = $(BuildContext)Delivery/
+BuildDir 			= $(OutputRootDir)build/WSClient/$(_MakeFileName)/
+SourceDir           = $(_MakeFilePath)app/  
+
+
+$(BuildDir)build.gradle : $(_MakeFilePath)build.gradle
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildDir)settings.gradle : $(_MakeFilePath)settings.gradle
+    $(LinkFirstDepToFirstTarget)
+
+#The Android App Directory
+$(BuildDir)app/ : $(_MakeFilePath)app/
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#Include the BeSecurity archive
+#$(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
+#    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#security jar
+%mkdir $(BuildDir)BeSecurity-1.0.0/
+	
+$(BuildDir)BeSecurity-1.0.0/build.gradle : $(_MakeFilePath)BeSecurity-1.0.0/build.gradle
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/MavenDependencies/com/bentley/android/BeSecurity/1.0.0/BeSecurity-1.0.0.aar
+    $(LinkFirstDepToFirstTarget)
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+
 #--------------------------------------------------------------------------------------
 #   Set Variables
 #--------------------------------------------------------------------------------------
 
-APP_ProjectRoot = $(_MakeFilePath)/
+APP_ProjectRoot = $(BuildDir)/
 
 buildOut = $(OutputRootDir)build/$(_MakeFileName)/
 mavenDependenciesDirectory = $(BuildContext)SubParts/MavenDependencies/
@@ -35,7 +73,9 @@ mavenDependenciesDirectory = $(BuildContext)SubParts/MavenDependencies/
 #--------------------------------------------------------------------------------------
 GRADLE_TASKS=clean assemble uploadArchives
 GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
-                  MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)]
+                  MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)] \
+				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] 
+	
+#Verbose=1
+%include $(SrcRoot)WSClient/mki/Android/gradleBuild.mki
 
-Verbose=1
-%include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki
