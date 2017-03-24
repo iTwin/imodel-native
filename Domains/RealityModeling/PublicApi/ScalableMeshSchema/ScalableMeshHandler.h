@@ -98,6 +98,23 @@ enum class ClipMode
     Mask
     };
 
+
+//=======================================================================================
+// @bsiclass                                                  
+//=======================================================================================
+struct IScalableMeshLocationProvider : public RefCountedBase
+    {
+    protected:
+
+        virtual BentleyStatus _GetExtraFileDirectory(const BeFileName& extraFileDir) const = 0;
+
+    public:
+
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(const BeFileName& extraFileDir) const;
+    };
+
+typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProviderPtr;
+
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
@@ -108,6 +125,8 @@ struct ScalableMeshModel : IMeshSpatialModel
 
 
     private:
+
+        static IScalableMeshLocationProviderPtr m_locationProviderPtr;
 
         IScalableMeshPtr                        m_smPtr;
         Transform                               m_smToModelUorTransform;
@@ -127,9 +146,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         int                                     m_startClipCount;
 
         bvector<ScalableMeshModel*>             m_terrainParts;
-        bmap<uint64_t, bpair<ClipMode, bool>>                m_currentClips;
-
-
+        bmap<uint64_t, bpair<ClipMode, bool>>   m_currentClips;
+        
         bool  m_subModel;
         ScalableMeshModel* m_parentModel;
         uint64_t m_associatedRegion;
@@ -145,15 +163,17 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         bvector<QueuedRegionOp> m_queuedRegions;
 
+        void Cleanup(bool isModelDelete);
+
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
-        void InitializeTerrainRegions();
+        void InitializeTerrainRegions();        
 
     protected:
 
         struct Properties
             {
-            Utf8String          m_fileId;    
+            Utf8String          m_fileId;                
 
             void ToJson(Json::Value&) const;
             void FromJson(Json::Value const&);
@@ -177,6 +197,7 @@ struct ScalableMeshModel : IMeshSpatialModel
         virtual BentleyStatus _StopClipMaskBulkInsert() override;
         virtual BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) override;
         virtual TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
+        
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
 
@@ -188,8 +209,12 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         void RefreshClips();
 
+        BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
+
 
     public:
+
+        static BentleyStatus SetLocationProvider(IScalableMeshLocationProviderPtr& locationProviderPtr);
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
         ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -234,9 +259,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         
         SCALABLEMESH_SCHEMA_EXPORT void ReloadMesh(); // force to reload the entire mesh data
-
-        static BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
-
+        
         IScalableMesh* GetScalableMeshHandle();
 
         SCALABLEMESH_SCHEMA_EXPORT void ActivateClip(uint64_t id, ClipMode clip = ClipMode::Mask);

@@ -87,6 +87,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         virtual BentleyStatus _StopClipMaskBulkInsert() = 0;
         virtual BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) = 0;
         virtual TerrainModel::IDTM* _GetDTM(BentleyApi::ScalableMesh::DTMAnalysisType type) = 0;
+                
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) = 0;
 
@@ -110,8 +111,7 @@ struct IMeshSpatialModel : Dgn::SpatialModel
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReloadAllClipMasks();
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StartClipMaskBulkInsert();
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StopClipMaskBulkInsert();
-         
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus StopClipMaskBulkInsert();                 
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus CreateIterator(ITerrainTileIteratorPtr& iterator);
 

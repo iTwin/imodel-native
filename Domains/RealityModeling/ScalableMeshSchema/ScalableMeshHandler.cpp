@@ -41,6 +41,20 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
 #define SM_ACTIVATE_UPLOADER 0
 #define SM_ACTIVATE_LOAD_TEST 0
+
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     3/2017
+//----------------------------------------------------------------------------------------
+IScalableMeshLocationProviderPtr ScalableMeshModel::m_locationProviderPtr = nullptr;
+
+BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(const BeFileName& extraFileDir) const
+    {
+    return _GetExtraFileDirectory(extraFileDir);
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -152,6 +166,15 @@ TerrainModel::IDTM* ScalableMeshModel::_GetDTM(ScalableMesh::DTMAnalysisType typ
     if (m_smPtr->GetGroup().IsValid() && !m_terrainParts.empty())
         return m_smPtr->GetGroup()->GetDTMInterface(storageToUor, type);
     return m_smPtr->GetDTMInterface(storageToUor, type);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     3/2017
+//----------------------------------------------------------------------------------------
+BentleyStatus ScalableMeshModel::SetLocationProvider(IScalableMeshLocationProviderPtr& locationProviderPtr)
+    {
+    m_locationProviderPtr = locationProviderPtr;
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1151,31 +1174,58 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
+    Cleanup(false);
+    }
+
+void ScalableMeshModel::Cleanup(bool isModelDelete)
+    {
     if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
     if (nullptr != m_currentDrawingInfoPtr.get())
-        {
+    {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        }
+    }
 
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(GetDgnDb()));
     if (appData != nullptr && appData->m_smTerrainPhysicalModelP == this)
-        ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
+        ScalableMeshTerrainModelAppData::Delete(GetDgnDb());
     ClearProgressiveQueriesInfo();
+
+    if (isModelDelete && m_smPtr.IsValid())
+        {                
+        bvector<BeFileName> extraFileNames;
+
+        m_smPtr->GetExtraFileNames(extraFileNames);
+        //Close the 3SM file, to close extra clip files.
+        m_smPtr = nullptr;
+        m_currentDrawingInfoPtr = nullptr;
+        m_progressiveQueryEngine = nullptr;
+
+        for (auto& extraFileName : extraFileNames)
+            {
+            _wremove(extraFileName.c_str());
+            }        
+        }    
     }
+
 
 BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject)
     {
-    BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
-    clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
+    BeFileName clipFileBase;
+    BeFileName extraFileDir;
 
-    size_t fullPathHash = std::hash<std::string>()(smFilename.GetNameUtf8().c_str());
-    if (smFilename.GetDirectoryName().CompareToI(BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName()) != 0)
+    if (m_locationProviderPtr.IsValid() && SUCCESS == m_locationProviderPtr->GetExtraFileDirectory(extraFileDir))
         {
-        clipFileBase.AppendUtf8("_");
-        clipFileBase.AppendUtf8(std::to_string(fullPathHash).c_str());
+        clipFileBase = extraFileDir;        
         }
-
+    else
+        {
+        clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
+        }
+        
+    WChar modelIdStr[1000];
+    BeStringUtilities::FormatUInt64(modelIdStr, GetModelId().GetValue());    
+    clipFileBase.AppendString(modelIdStr);        
     return clipFileBase;
     }
 
@@ -1196,7 +1246,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
 
 
-    allScalableMeshes.clear();
+    allScalableMeshes.clear();    
 
     BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
@@ -1995,21 +2045,8 @@ DgnDbStatus ScalableMeshModel::_OnDelete()
         m_parentModel->RemoveRegion(m_associatedRegion);
     }
 
-    if (m_smPtr.IsValid())
-        {
-        BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(m_dgndb)).GetDirectoryName();
-        WString pattern = L"*";
-        pattern+=m_path.GetFileNameWithoutExtension().c_str();
-        pattern += L"_clip*";
 
-        bvector<BeFileName> smGeneratedProjectFiles;
-        BeDirectoryIterator::WalkDirsAndMatch(smGeneratedProjectFiles, clipFileBase, pattern.c_str(), true);
-
-        for (BeFileName& currentFile : smGeneratedProjectFiles)
-            {
-            _wremove(currentFile.c_str());
-            }
-        }
+    Cleanup(true);
 
     return stat;
     }
