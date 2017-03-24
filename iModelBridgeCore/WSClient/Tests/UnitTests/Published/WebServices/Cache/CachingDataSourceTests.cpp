@@ -2318,7 +2318,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
     ASSERT_TRUE(result.GetValue().empty());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported_KnownIssue)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -2328,6 +2328,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSame
 
     EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
     EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
 
     EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"samePath")));
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"samePath")));
@@ -2352,7 +2355,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSame
     EXPECT_NE("", r2.GetError().GetMessage());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds_KnownIssue)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -2362,6 +2365,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDiff
 
     EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
     EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
 
     EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"someFilePath")));
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L"otherFilePath")));
@@ -2384,7 +2390,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDiff
     ASSERT_TRUE(r2.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds_KnownIssue)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -2394,6 +2400,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToMemm
 
     EXPECT_CALL(cache1->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
     EXPECT_CALL(cache2->GetChangeManagerMock(), HasChanges()).WillOnce(Return(true));
+
+    EXPECT_CALL(cache1->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(cache2->GetChangeManagerMock(), CommitLocalDeletions()).WillOnce(Return(SUCCESS));
 
     EXPECT_CALL(*cache1, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L":memory:")));
     EXPECT_CALL(*cache2, GetCacheDatabasePath()).WillOnce(Return(BeFileName(L":memory:")));
