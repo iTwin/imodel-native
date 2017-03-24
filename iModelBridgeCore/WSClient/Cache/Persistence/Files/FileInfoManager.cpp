@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 #include "../Core/CacheSchema.h"
 #include "../Core/ECDbFileInfoSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
+#include "../DataSourceCache.xliff.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -189,7 +190,12 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances, DateTimeCP maxLastAccessDate)
+CacheStatus FileInfoManager::DeleteFilesNotHeldByInstances
+(
+const ECInstanceKeyMultiMap& holdingInstances,
+DateTimeCP maxLastAccessDate,
+AsyncError* errorOut
+)
     {
     auto statement = m_statementCache->GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByInstances", [&]
         {
@@ -202,7 +208,7 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
         });
 
     JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    BentleyStatus returnValue = SUCCESS;
+    CacheStatus returnValue = CacheStatus::OK;
 
     while (ECSqlStepStatus::HasRow == statement->Step())
         {
@@ -210,42 +216,40 @@ BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKey
         Json::Value externalFileInfoJson;
 
         if (!adapter.GetRowInstance(cachedFileInfoJson, m_infoClass->GetId()))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
         if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
-            {
-            return ERROR;
-            }
+            return CacheStatus::Error;
 
         ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
         FileInfo fileInfo(cachedFileInfoJson, externalFileInfoJson, instanceKey, this);
 
         if (ECDbHelper::IsInstanceInMultiMap(instanceKey, holdingInstances))
-            {
             continue;
-            }
 
         if (IChangeManager::ChangeStatus::NoChange != fileInfo.GetChangeStatus())
-            {
             continue;
-            }
 
         bool shouldSkip;
         if (SUCCESS != CheckMaxLastAccessDate(fileInfo.GetFilePath(), maxLastAccessDate, shouldSkip))
             {
             // Return error from the function when we eventually finish, but continue processing
             // files anyway.
-            returnValue = ERROR;
-            }
-        if (shouldSkip)
-            {
-            continue;
+            returnValue = CacheStatus::Error;
             }
 
-        if (SUCCESS != m_fileStorage->RemoveStoredFile(fileInfo))
+        if (shouldSkip)
+            continue;
+        
+        auto status = m_fileStorage->RemoveStoredFile(fileInfo);
+        if (CacheStatus::OK != status)
             {
-            return ERROR;
+            if (errorOut != nullptr && CacheStatus::FileLocked == status)
+                {
+            	*errorOut = AsyncError(Utf8PrintfString(
+                    DataSourceCacheLocalizedString(ERROR_FileIsLocked).c_str(),
+                    Utf8String(fileInfo.GetFileName()).c_str()));
+                }
+            return status;
             }
         }
     return returnValue;
