@@ -2069,6 +2069,58 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
+    {
+    ECDbR ecdb = SetupECDb("incompletePoints.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (P2D,P3D,Code) VALUES (?,?,'C1')"));
+    //Binding Point 2d & 3d
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(-12.53, 21.76, -32.22)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT P2D,P3D FROM ts.Element WHERE Code='C1'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    //GetValuePoint3d can't be called for a 2d column.
+    ECValue val3d(stmt.GetValuePoint3d(0));
+    ASSERT_FALSE(val3d.IsPoint2d());
+
+    //GetValuePoint2d can't be called for a 3d column.
+    ECValue val2d(stmt.GetValuePoint2d(1));
+    ASSERT_FALSE(val2d.IsPoint3d());
+
+    //GetValueBoolean can't be called for a 2d/3d column.
+    ASSERT_EQ(false, stmt.GetValueBoolean(0));
+
+    //GetValueBlob can't be called for a 2d/3d column.
+    ASSERT_EQ(false, stmt.GetValueBlob(1));
+
+    //GetValueText can't be called for a 2d/3d column.
+    ASSERT_EQ(false, stmt.GetValueText(0));
+
+    //GetValueInt can't be called for a 2d/3d column.
+    ASSERT_EQ(0, stmt.GetValueInt(1));
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                  08/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ShareColumnsCAWithoutTPH)
