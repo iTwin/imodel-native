@@ -453,7 +453,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
 // @bsimethod                                   Spencer.Mason                02/2017
 //-------------------------------------------------------------------------------------
 bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoId, Utf8String nodePath)
-{
+    {
     nodePath.ReplaceAll("/", "~2F");
 
     bvector<Utf8String> lines;
@@ -476,7 +476,7 @@ bvector<NavNode> NodeNavigator::GetChildNodes(WSGServer server, Utf8String repoI
         returnVector.push_back(NavNode(instance, rootNode, rootId));
 
     return returnVector;
-}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                02/2017

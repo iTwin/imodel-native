@@ -260,16 +260,8 @@ static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, voi
     RealityDataFileDownload *fileDown = (RealityDataFileDownload *)pClient;
     if (!(fileDown->GetFileStream().IsOpen()))
         {
-        if (fileDown->iAppend)
-            {
-            if (fileDown->GetFileStream().Open(fileDown->GetFilename().c_str(), BeFileAccess::Write) != BeFileStatus::Success)
-                return 0;   // failure, can't open file to write
-            }
-        else
-            {
-            if (fileDown->GetFileStream().Create(fileDown->GetFilename().c_str(), true) != BeFileStatus::Success)
-                return 0;   // failure, can't open file to write
-            }
+        if (fileDown->GetFileStream().Open(fileDown->GetFilename().c_str(), BeFileAccess::Write) != BeFileStatus::Success)
+            return 0;   // failure, can't open file to write
         }
     fileDown->iAppend += nmemb;
     uint32_t byteWritten;
@@ -1535,6 +1527,12 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
             curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
             /* Set a pointer to our struct to pass to the callback */
             curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fileDownload);
+
+            if (fileDownload->GetFileStream().Create(fileDownload->GetFilename().c_str(), true) != BeFileStatus::Success)
+                {
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("\nFailed to create File %s on local machine\nAborting download of this file", fileDownload->GetFilename().c_str()).c_str());
+                return;   // failure, can't open file to write
+                }
             }
         else if (handshake != nullptr)
             {
@@ -1721,7 +1719,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     guid.append(L"/");
     root.ReplaceAll(guid.c_str(), L""); //remove guid from root
 
-    if ((filesInRepo.size() == 1) && (root.Equals(filesInRepo[0].first)))
+    if ((folders[folders.size() - 1]).length() != 0) //if path ends with "/" it is a folder; otherwise, it is a single document
         {
         path = filesInRepo[0].first;
 
