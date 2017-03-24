@@ -432,6 +432,55 @@ VuCoordinateMappingFunction *function
     }
 
 
+/*----------------------------------------------------------------------+
+* @param graphP IN containing graph
+* @param AP IN base node of edge candidate
+* @param userDataP IN unused.
++----------------------------------------------------------------------*/
+static bool    vu_incircleFlipTest
+(
+VuSetP  graphP,
+VuP     AP,
+VuScaleAndPeriod *pData
+)
+    {
+    /* Identify all nodes of the adjacent triangles, as labeled above */
+    VuP BP = VU_FSUCC(AP);
+    VuP CP = VU_FSUCC(BP);
+    VuP DP = VU_VSUCC(BP);
+    VuP EP = VU_FSUCC(DP);
+    VuP FP = VU_FSUCC(EP);
+    bool    swap_required = false;
+    if(VU_FSUCC(CP) == AP && VU_FSUCC(FP) == DP)
+        {
+        DPoint2d xyAE = VU_UV(AP);
+        DPoint2d xyBD = VU_UV(BP);
+        DPoint2d xyC  = VU_UV(CP);
+        DPoint2d xyF  = VU_UV(FP);
+        DVec2d uvF = DVec2d::FromStartEnd (xyAE, xyF);
+        DVec2d uvB = DVec2d::FromStartEnd (xyAE, xyBD);
+        DVec2d uvC = DVec2d::FromStartEnd (xyAE, xyC);
+//                    *
+//                   /|\
+//                  /B|D\
+//                 /  |  \
+//                /   |   \
+//               *C   |   F*
+//                \   |   /
+//                 \  |  /
+//                  \A|E/
+//                   \|/
+//                    *
+        RotMatrix Q = RotMatrix::FromRowValues
+            (
+            uvF.x, uvF.y, uvF.x * uvF.x + uvF.y * uvF.y,
+            uvC.x, uvC.y, uvC.x * uvC.x + uvC.y * uvC.y,
+            uvB.x, uvB.y, uvB.x * uvB.x + uvB.y * uvB.y
+            );
+        swap_required = Q.Determinant () > 0.0;
+        }
+    return swap_required;
+    }
 
 /*----------------------------------------------------------------------+
 * @param graphP IN containing graph
@@ -498,8 +547,23 @@ VuScaleAndPeriod *pData
                 }
             }
         }
+#ifdef CompareToIncircle
+    bool incircle = vu_incircleFlipTest (graphP, AP, pData);
+    static size_t s_numDifferent = 0;
+    static size_t s_numSame = 0;
+    static bool s_useIncircle = true;
+    if (incircle == swap_required)
+        s_numSame++;
+    else
+        s_numDifferent++;
+    return s_useIncircle ? incircle : swap_required;
+#else
     return swap_required;
+#endif
     }
+
+
+
 #ifdef CompileAll
 /*---------------------------------------------------------------------------------**//**
 @description Test if the aspect ratios the two triangles at an edge would be improved
@@ -775,6 +839,36 @@ VuMarkedEdgeSetP edgeSet
     data.xPeriod = periods.x;
     data.yPeriod = periods.y;
     return vu_flipEdgesFromEdgeSet (graphP, vu_scaledPeriodicQuadraticFlipTest, &data, edgeSet, s_maxFlip);
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+@description Flip triangle edges in the graph to correct incircle condition
+@remarks This is a substantial full-graph modification function.
+@param graphP IN OUT graph header
+@group "VU Meshing"
+@usealinkgroup TriangleFlipFunctions
+@bsimethod                                                    Earlin.Lutz     03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int vu_flipTrianglesForIncircle
+(
+VuSetP  graphP,
+VuMarkedEdgeSetP edgeSet
+)
+    {
+    static size_t s_maxFlip = 1000000;
+    VuScaleAndPeriod data;
+    DPoint3d periods;
+    data.xScale = 0.0;
+    data.yScale = 0.0;
+    vu_getPeriods (graphP, &periods);
+    data.xPeriod = periods.x;
+    data.yPeriod = periods.y;
+
+    return edgeSet == nullptr
+            ? vu_flipEdges (graphP, vu_incircleFlipTest, &data)
+            : vu_flipEdgesFromEdgeSet (graphP, vu_incircleFlipTest, &data, edgeSet, s_maxFlip);
     }
 
 

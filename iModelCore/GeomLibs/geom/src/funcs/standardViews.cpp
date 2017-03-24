@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/standardViews.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -292,7 +292,7 @@ double *pRadiansOut
     // This fact makes this whole thing cheap.
 
     for (j = 0; j < 3; j++)
-        if (fabs (pMatrixRV->form3d[pivotRow][j] - pMatrixRV->form3d[pivotRow][j]) > tol)
+        if (fabs (pMatrixRV->form3d[pivotRow][j] - pMatrixV->form3d[pivotRow][j]) > tol)
             return false;
 
     bsiRotMatrix_multiplyRotMatrixRotMatrixTranspose (&matrixR, pMatrixRV, pMatrixV);

@@ -1174,6 +1174,24 @@ TransformR worldToLocal
         }
     return false;
     }
-
-
+#ifdef BuildIntersectUnboundedXY
+// EDL -- coded Marcy 2017, not needed (or tested)
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+ValidatedDPoint3d DRay3d::IntesectUnboundedXY
+(
+DRay3dCR rayA
+DRay3dCR rayB
+)
+    {
+    double fractionA, fractionB;
+    if (bsiSVD_solve2x2 (&fractionA, &fractionB,
+            rayA.direction.x, rayB.direction.x,
+            rayA.direction.y, rayB.direction.y,
+            rayB.origin.x - rayA.origin.x,    rayA.origin.y - rayB.origin.y))
+        return ValidatedDPoint3d (rayA.origin + fractionA * rayA.direction);
+    return ValidatedDPoint3d (rayA.origin, false);
+    }
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE
