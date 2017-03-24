@@ -3,11 +3,11 @@
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
-#if !defined(JSON_IS_AMALGAMATION)
+#if !defined (JSON_IS_AMALGAMATION)
 # include <json/reader.h>
 # include <json/value.h>
 # include "json_tool.h"
-#endif // if !defined(JSON_IS_AMALGAMATION)
+#endif // if !defined (JSON_IS_AMALGAMATION)
 #include <utility>
 #include <cstdio>
 #include <cstring>
@@ -50,23 +50,18 @@ Features::strictMode()
 // Implementation of class Reader
 // ////////////////////////////////
 
-
-static inline bool 
-in( Reader::Char c, Reader::Char c1, Reader::Char c2, Reader::Char c3, Reader::Char c4 )
+static inline bool in(Reader::Char c, Reader::Char c1, Reader::Char c2, Reader::Char c3, Reader::Char c4)
 {
    return c == c1  ||  c == c2  ||  c == c3  ||  c == c4;
 }
 
-static inline bool 
-in( Reader::Char c, Reader::Char c1, Reader::Char c2, Reader::Char c3, Reader::Char c4, Reader::Char c5 )
+static inline bool in(Reader::Char c, Reader::Char c1, Reader::Char c2, Reader::Char c3, Reader::Char c4, Reader::Char c5)
 {
    return c == c1  ||  c == c2  ||  c == c3  ||  c == c4  ||  c == c5;
 }
 
 
-static bool 
-containsNewLine( Reader::Location begin, 
-                 Reader::Location end )
+static bool containsNewLine(Reader::Location begin, Reader::Location end)
 {
    for ( ;begin < end; ++begin )
       if ( *begin == '\n'  ||  *begin == '\r' )
@@ -77,23 +72,16 @@ containsNewLine( Reader::Location begin,
 
 // Class Reader
 // //////////////////////////////////////////////////////////////////
-
-Reader::Reader()
-   : features_( Features::all() )
+Reader::Reader() : features_(Features::all())
 {
 }
 
 
-Reader::Reader( const Features &features )
-   : features_( features )
+Reader::Reader(const Features &features) : features_(features)
 {
 }
 
-
-bool
-Reader::parse( const Utf8String &document, 
-               Value &root,
-               bool collectComments )
+bool Reader::parse(const Utf8String &document, Value &root, bool collectComments)
 {
    document_ = document;
    const char *begin = document_.c_str();
@@ -101,11 +89,7 @@ Reader::parse( const Utf8String &document,
    return parse( begin, end, root, collectComments );
 }
 
-
-bool 
-Reader::parse( const char *beginDoc, const char *endDoc, 
-               Value &root,
-               bool collectComments )
+bool Reader::parse(const char *beginDoc, const char *endDoc, Value &root, bool collectComments)
 {
    begin_ = beginDoc;
    end_ = endDoc;
@@ -134,11 +118,16 @@ Reader::parse( const char *beginDoc, const char *endDoc,
    return successful;
 }
 
-
-bool
-Reader::readValue()
+bool Reader::readValue()
 {
    Token token;
+
+  // readValue() may call itself only if it calls readObject() or ReadArray().
+  // These methods execute nodes_.push() just before and nodes_.pop)() just after calling readValue(). 
+  // parse() executes one nodes_.push(), so > instead of >=.
+  if (nodes_.size() > 1000) 
+      return addError("Exceeded nesting limit in readValue().", token);
+
    skipCommentTokens( token );
    bool successful = true;
 
@@ -172,21 +161,16 @@ Reader::readValue()
    return successful;
 }
 
-
-void 
-Reader::skipCommentTokens( Token &token )
+void Reader::skipCommentTokens(Token &token)
 {
-   if ( features_.allowComments_ )
-   {
-      do
-      {
-         readToken( token );
+   if (features_.allowComments_) {
+      do {
+         readToken(token);
       }
-      while ( token.type_ == tokenComment );
+      while (token.type_ == tokenComment);
    }
-   else
-   {
-      readToken( token );
+   else {
+      readToken(token);
    }
 }
 
@@ -496,8 +480,8 @@ Reader::decodeNumber( Token &token )
    bool isNegative = *current == '-';
    if ( isNegative )
       ++current;
-   Value::LargestUInt maxIntegerValue = isNegative ? Value::LargestUInt(-Value::minLargestInt) 
-                                                   : Value::maxLargestUInt;
+   Value::LargestUInt maxIntegerValue = isNegative ? Value::LargestUInt(-Value::minLargestInt()) 
+                                                   : Value::maxLargestUInt();
    Value::LargestUInt threshold = maxIntegerValue / 10;
    Value::UInt lastDigitThreshold = Value::UInt( maxIntegerValue % 10 );
    BeAssert( lastDigitThreshold >=0  &&  lastDigitThreshold <= 9 );

@@ -58,7 +58,7 @@ namespace Json {
                   bool collectComments = true );
       static bool Parse(BENTLEY_NAMESPACE_NAME::Utf8StringCR document, Value& root, bool comments=true) {Reader reader; return reader.parse(document, root, comments);}
 
-      static Value DoParse(BENTLEY_NAMESPACE_NAME::Utf8StringCR in, bool comments=true) {Value val; return Parse(in, val, comments) ? val : Value::null;}
+      static Value DoParse(BENTLEY_NAMESPACE_NAME::Utf8StringCR in, bool comments=true) {Value val; return Parse(in, val, comments) ? val : Value::GetNull();}
 
       /** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a> document.
        * \param beginDoc Pointer on the beginning of the UTF-8 encoded string of the document to read.
@@ -73,12 +73,6 @@ namespace Json {
        * \return \c true if the document was successfully parsed, \c false if an error occurred.
        */
       bool parse( const char *beginDoc, const char *endDoc, 
-                  Value &root,
-                  bool collectComments = true );
-
-      /// \brief Parse from input stream.
-      /// \see Json::operator>>(std::istream&, Json::Value&).
-      bool parse( std::istream &is,
                   Value &root,
                   bool collectComments = true );
 
@@ -173,11 +167,7 @@ namespace Json {
       Location begin_;
       Location end_;
       Location current_;
-//      Location lastValueEnd_;
-//      Value *lastValue_;
-//      Utf8StringAlias commentsBefore_;
       Features features_;
-//      bool collectComments_;
    };
 
 } // namespace Json

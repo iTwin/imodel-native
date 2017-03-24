@@ -133,27 +133,37 @@ class JSON_API Value
       typedef Json::LargestUInt LargestUInt;
       typedef Json::ArrayIndex ArrayIndex;
 
-      static const Value null;
-      /// Minimum signed integer value that can be stored in a Json::Value.
-      static const LargestInt minLargestInt;
-      /// Maximum signed integer value that can be stored in a Json::Value.
-      static const LargestInt maxLargestInt;
-      /// Maximum unsigned integer value that can be stored in a Json::Value.
-      static const LargestUInt maxLargestUInt;
+      //! Get a const reference to a NULL Json::Value
+      //! NOTE: this used to be a public static variable called "null". That's a bad idea. If you're looking at old code that
+      //! doesn't compile because it has Json::Value::null, simply change it to Json::Value::GetNull().
+      static JsonValueCR GetNull();
 
-      /// Minimum signed int value that can be stored in a Json::Value.
-      static const Int minInt;
-      /// Maximum signed int value that can be stored in a Json::Value.
-      static const Int maxInt;
-      /// Maximum unsigned int value that can be stored in a Json::Value.
-      static const UInt maxUInt;
+      //! Minimum signed integer value that can be stored in a Json::Value.
+      static constexpr LargestInt minLargestInt(){return LargestInt(~(LargestUInt(-1)/2));}
 
-      /// Minimum signed 64 bits int value that can be stored in a Json::Value.
-      static const Int64 minInt64;
-      /// Maximum signed 64 bits int value that can be stored in a Json::Value.
-      static const Int64 maxInt64;
-      /// Maximum unsigned 64 bits int value that can be stored in a Json::Value.
-      static const UInt64 maxUInt64;
+      //! Maximum signed integer value that can be stored in a Json::Value.
+      static constexpr LargestInt maxLargestInt() {return LargestInt(LargestUInt(-1)/2);}
+
+      //! Maximum unsigned integer value that can be stored in a Json::Value.
+      static constexpr LargestUInt maxLargestUInt() {return LargestUInt(-1);}
+
+      //! Minimum signed int value that can be stored in a Json::Value.
+      static constexpr Int minInt() {return Int(~(UInt(-1)/2));}
+
+      //! Maximum signed int value that can be stored in a Json::Value.
+      static constexpr Int maxInt() {return Int(UInt(-1)/2);}
+
+      //! Maximum unsigned int value that can be stored in a Json::Value.
+      static constexpr UInt maxUInt() {return UInt(-1);}
+
+      //! Minimum signed 64 bits int value that can be stored in a Json::Value.
+      static constexpr Int64 minInt64() {return Int64(~(UInt64(-1)/2));}
+
+      //! Maximum signed 64 bits int value that can be stored in a Json::Value.
+      static constexpr Int64 maxInt64() {return Int64(UInt64(-1)/2);}
+
+      //! Maximum unsigned 64 bits int value that can be stored in a Json::Value.
+      static constexpr UInt64 maxUInt64() {return UInt64(-1);}
 
    private:
       class CZString 
@@ -425,7 +435,7 @@ class JSON_API Value
 
       /// If the array contains at least index+1 elements, returns the element value, 
       /// otherwise returns defaultValue.
-      Value get(ArrayIndex index, JsonValueCR defaultValue) const {Value const* value = &((*this)[index]); return value == &null ? defaultValue : *value;}
+      Value get(ArrayIndex index, JsonValueCR defaultValue) const {Value const* value = &((*this)[index]); return value == &GetNull() ? defaultValue : *value;}
 
       /// Return true if index < size().
       bool isValidIndex(ArrayIndex index) const {return index < size();}
@@ -460,8 +470,8 @@ class JSON_API Value
        */
       JsonValueR operator[](StaticString const& key) {return resolveReference(key, true);}
 
-      /// Return the member named key if it exist, defaultValue otherwise.
-      Value get(Utf8CP key, JsonValueCR defaultValue) const {Value const* value = &((*this)[key]); return value == &null ? defaultValue : *value;}
+      /// Return the member named key if it exists, defaultValue otherwise.
+      Value get(Utf8CP key, JsonValueCR defaultValue) const {Value const* value = &((*this)[key]); return value == &GetNull() ? defaultValue : *value;}
 
       /// Return the member named key if it exist, defaultValue otherwise.
       Value get(Utf8StringCR key, JsonValueCR defaultValue) const {return get(key.c_str(), defaultValue);}
@@ -494,7 +504,7 @@ class JSON_API Value
       bool removeIndex(ArrayIndex i) {Value removed; return removeIndex(i, &removed);}
 
       /// Return true if the object has a member named key.
-      bool isMember(Utf8CP key) const {JsonValueCP value = &((*this)[key]); return value != &null;}
+      bool isMember(Utf8CP key) const {JsonValueCP value = &((*this)[key]); return value != &GetNull();}
 
       /// Return true if the object has a member named key.
       bool isMember(Utf8StringCR key) const {return isMember(key.c_str());}

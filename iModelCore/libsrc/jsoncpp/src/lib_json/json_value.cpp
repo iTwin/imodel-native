@@ -35,16 +35,7 @@ BEGIN_BENTLEY_NAMESPACE
 
 namespace Json {
 
-const Value Value::null;
-const Int Value::minInt = Int(~(UInt(-1)/2));
-const Int Value::maxInt = Int(UInt(-1)/2);
-const UInt Value::maxUInt = UInt(-1);
-const Int64 Value::minInt64 = Int64(~(UInt64(-1)/2));
-const Int64 Value::maxInt64 = Int64(UInt64(-1)/2);
-const UInt64 Value::maxUInt64 = UInt64(-1);
-const LargestInt Value::minLargestInt = LargestInt(~(LargestUInt(-1)/2));
-const LargestInt Value::maxLargestInt = LargestInt(LargestUInt(-1)/2);
-const LargestUInt Value::maxLargestUInt = LargestUInt(-1);
+JsonValueCR Value::GetNull() {static Value s_null; return s_null;}
 
 #if defined (__APPLE__)
 #if !defined (__LP64__)
@@ -151,15 +142,15 @@ Value::Int Value::asInt(Int defaultVal) const
       return defaultVal;
 
    case intValue:
-      JSON_ASSERT_MESSAGE(value_.int_ >= minInt  &&  value_.int_ <= maxInt, "unsigned integer out of signed int range");
+      JSON_ASSERT_MESSAGE(value_.int_ >= minInt()  &&  value_.int_ <= maxInt(), "unsigned integer out of signed int range");
       return Int(value_.int_);
 
    case uintValue:
-      JSON_ASSERT_MESSAGE(value_.uint_ <= UInt(maxInt), "unsigned integer out of signed int range");
+      JSON_ASSERT_MESSAGE(value_.uint_ <= UInt(maxInt()), "unsigned integer out of signed int range");
       return Int(value_.uint_);
 
    case realValue:
-      JSON_ASSERT_MESSAGE(value_.real_ >= minInt  &&  value_.real_ <= maxInt, "Real out of signed integer range");
+      JSON_ASSERT_MESSAGE(value_.real_ >= minInt()  &&  value_.real_ <= maxInt(), "Real out of signed integer range");
       return Int(value_.real_);
 
    case booleanValue:
@@ -190,15 +181,15 @@ Value::UInt Value::asUInt(UInt defaultVal) const
 
    case intValue:
       JSON_ASSERT_MESSAGE(value_.int_ >= 0, "Negative integer can not be converted to unsigned integer");
-      JSON_ASSERT_MESSAGE(value_.int_ <= maxUInt, "signed integer out of UInt range");
+      JSON_ASSERT_MESSAGE(value_.int_ <= maxUInt(), "signed integer out of UInt range");
       return UInt(value_.int_);
 
    case uintValue:
-      JSON_ASSERT_MESSAGE(value_.uint_ <= maxUInt, "unsigned integer out of UInt range");
+      JSON_ASSERT_MESSAGE(value_.uint_ <= maxUInt(), "unsigned integer out of UInt range");
       return UInt(value_.uint_);
 
    case realValue:
-      JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt,  "Real out of unsigned integer range");
+      JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt(),  "Real out of unsigned integer range");
       return UInt(value_.real_);
 
    case booleanValue:
@@ -236,7 +227,7 @@ Value::Int64 Value::asInt64(Int64 defaultVal) const
       return value_.uint_;
 
    case realValue:
-      JSON_ASSERT_MESSAGE(value_.real_ >= minInt64  &&  value_.real_ <= maxInt64, "Real out of Int64 range");
+      JSON_ASSERT_MESSAGE(value_.real_ >= minInt64()  &&  value_.real_ <= maxInt64(), "Real out of Int64 range");
       return Int(value_.real_);
 
    case booleanValue:
@@ -275,7 +266,7 @@ Value::UInt64 Value::asUInt64(UInt64 defaultVal) const
       return value_.uint_;
 
    case realValue:
-      JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt64,  "Real out of UInt64 range");
+      JSON_ASSERT_MESSAGE(value_.real_ >= 0  &&  value_.real_ <= maxUInt64(),  "Real out of UInt64 range");
       return UInt(value_.real_);
 
    case booleanValue:
@@ -420,8 +411,8 @@ bool Value::isConvertibleTo(ValueType other) const
              || other == booleanValue;
    case realValue:
       return (other == nullValue  &&  value_.real_ == 0.0)
-             || (other == intValue  &&  value_.real_ >= minInt  &&  value_.real_ <= maxInt)
-             || (other == uintValue  &&  value_.real_ >= 0  &&  value_.real_ <= maxUInt)
+             || (other == intValue  &&  value_.real_ >= minInt()  &&  value_.real_ <= maxInt())
+             || (other == uintValue  &&  value_.real_ >= 0  &&  value_.real_ <= maxUInt())
              || other == realValue
              || other == stringValue
              || other == booleanValue;
@@ -532,7 +523,7 @@ JsonValueR Value::operator[](ArrayIndex index)
    if (it != value_.map_->end()  &&  (*it).first == key)
       return (*it).second;
 
-   ObjectValues::value_type defaultValue(key, null);
+   ObjectValues::value_type defaultValue(key, GetNull());
    it = value_.map_->insert(it, defaultValue);
    return (*it).second;
 }
@@ -544,11 +535,11 @@ JsonValueCR Value::operator[](ArrayIndex index) const
 {
    JSON_ASSERT(type_ == nullValue  ||  type_ == arrayValue);
    if (type_ == nullValue)
-      return null;
+      return GetNull();
    CZString key(index);
    ObjectValues::const_iterator it = value_.map_->find(key);
    if (it == value_.map_->end())
-      return null;
+      return GetNull();
    return (*it).second;
 }
 
@@ -566,7 +557,7 @@ JsonValueR Value::resolveReference(const char *key, bool isStatic)
    if (it != value_.map_->end()  &&  (*it).first == actualKey)
       return (*it).second;
 
-   ObjectValues::value_type defaultValue(actualKey, null);
+   ObjectValues::value_type defaultValue(actualKey, GetNull());
    it = value_.map_->insert(it, defaultValue);
    JsonValueR value = (*it).second;
    return value;
@@ -579,11 +570,11 @@ JsonValueCR Value::operator[](const char *key) const
 {
    JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);
    if (type_ == nullValue)
-      return null;
+      return GetNull();
    CZString actualKey(key, CZString::noDuplication);
    ObjectValues::const_iterator it = value_.map_->find(actualKey);
    if (it == value_.map_->end())
-      return null;
+      return GetNull();
    return (*it).second;
 }
 
@@ -594,11 +585,11 @@ Value Value::removeMember(const char* key)
 {
    JSON_ASSERT(type_ == nullValue  ||  type_ == objectValue);
    if (type_ == nullValue)
-      return null;
+      return GetNull();
    CZString actualKey(key, CZString::noDuplication);
    ObjectValues::iterator it = value_.map_->find(actualKey);
    if (it == value_.map_->end())
-      return null;
+      return GetNull();
    Value old(it->second);
    value_.map_->erase(it);
    return old;
