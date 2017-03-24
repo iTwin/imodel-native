@@ -2315,7 +2315,12 @@ IBriefcaseManager::Response BulkUpdateBriefcaseManager::_AcquireLocksAndCodes()
         return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
         }
 
-    return T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
+    auto resp = T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
+    
+    if (RepositoryStatus::Success == resp.Result())     // If the request went through, 
+        m_req.Reset();                                  // then we no longer hold it in suspense. Note that caller is responsible for acting on locks/codes that were refused.
+
+    return resp;
     }
 
 /*---------------------------------------------------------------------------------**//**
