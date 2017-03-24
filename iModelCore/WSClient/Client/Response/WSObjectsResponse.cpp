@@ -2,7 +2,7 @@
 |
 |     $Source: Client/Response/WSObjectsResponse.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -80,7 +80,7 @@ JsonValueR WSObjectsResponse::GetJsonValuePrivate() const
         {
         Json::Value infoJson;
         if (!Json::Reader::Parse(m_httpBody->AsString(), infoJson))
-            infoJson = Json::Value::null;
+            infoJson = Json::Value::GetNull();
 
         m_jsonValue = std::make_shared<Json::Value>(infoJson);
         }
