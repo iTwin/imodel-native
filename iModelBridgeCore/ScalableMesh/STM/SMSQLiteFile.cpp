@@ -217,10 +217,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);
+        
+        if (result == BE_SQLITE_OK)
+        {
+            UpdateDatabase();
 
-        UpdateDatabase();
-
-        m_database->CloseDb();
+            m_database->CloseDb();
+        }
 
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
