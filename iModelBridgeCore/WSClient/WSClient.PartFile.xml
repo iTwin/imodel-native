@@ -709,7 +709,7 @@
     </ProductDirectoryList>
 
     <Part Name="CWSCC-Android-Samples" OnlyPlatforms="Android*">
-        <SubPart PartName="CWSCC-Android-Sample-GetProjects"/>
+        <SubPart PartName="CWSCC-Android-Sample-GetProjects" LibType="Static"/>
     </Part>
 
 
