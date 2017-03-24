@@ -14,19 +14,16 @@
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
+#include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
-extern bool s_stream_from_disk;
 extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
+extern bool s_import_from_bim_exported_cesium_3d_tiles;
 extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
-extern bool s_is_legacy_dataset;
-extern bool s_is_legacy_master_header;
-extern bool s_use_azure_sandbox;
-extern bool s_use_public_rds;
 extern bool s_use_qa_azure;
 
 //extern std::mutex fileMutex;
@@ -41,22 +38,84 @@ class DataSourceAccount;
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {
     public:
-        enum FormatType
+        enum FormatType { Binary, Json, Cesium3DTiles };
+        class SMStreamingSettings
             {
-            Binary,
-            Json,
-            Cesium3DTiles
+            public:
+
+                enum ServerLocation { LOCAL, RDS, AZURE };
+                enum CommMethod { FILE, CURL, WASTORAGE };
+                enum DataType { CESIUM3DTILES, SMCESIUM3DTILES, SMGROUPS };
+
+            public:
+                SMStreamingSettings() {};
+                SMStreamingSettings(const Json::Value& fileName);
+                SMStreamingSettings(const SMStreamingSettings& settings)
+                    : m_location(settings.m_location),
+                      m_commMethod(settings.m_commMethod),
+                      m_dataType(settings.m_dataType),
+                      m_public(settings.m_public),
+                      m_isPublishing(settings.m_isPublishing),
+                      m_guid(settings.m_guid),
+                      m_serverID(settings.m_serverID),
+                      m_url(settings.m_url)
+                    {}
+
+            bool IsLocal()            const   { return m_location == LOCAL; }
+            bool IsPublic()           const   { return m_public; }
+            bool IsUsingCURL()        const   { return m_commMethod == CURL; }
+            bool IsUsingWAStorage()   const   { return m_commMethod == WASTORAGE; }
+            bool IsDataFromLocal()    const   { return m_location == LOCAL; }
+            bool IsDataFromRDS()      const   { return m_location == RDS; }
+            bool IsDataFromAzure()    const   { return m_location == AZURE; }
+            bool IsPublishing()       const   { return m_isPublishing; }
+            bool IsCesium3DTiles()    const   { return m_dataType == CESIUM3DTILES; }
+            bool IsSMCesium3DTiles()  const   { return m_dataType == SMCESIUM3DTILES; }
+
+            WString GetServerID() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_serverID).c_str();
+                }
+
+            WString GetGUID() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_guid).c_str();
+                }
+
+            WString GetURL() const
+                {
+                return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_url).c_str();
+                }
+
+
+            public:
+
+            ServerLocation m_location = LOCAL;
+            CommMethod m_commMethod = CURL;
+            DataType m_dataType = CESIUM3DTILES;
+            bool m_public = false;
+            bool m_isPublishing = false;
+            string m_guid;
+            string m_serverID;
+            string m_url;
             };
+
     private : 
         
         bool m_use_node_header_grouping = false;
         bool m_use_virtual_grouping = false;
+        SMStreamingSettings m_settings;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
-        WString m_rootDirectory;        
+        WString m_rootDirectory;
+        WString m_masterFileName;
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<SMNodeGroup::Ptr> m_nodeHeaderGroups;
+        map<uint32_t, Json::Value*> m_nodeHeaderCache;
+        Transform m_transform;
+
+        SMNodeGroup::Ptr m_CesiumGroup;
 
     protected : 
 
@@ -68,22 +127,28 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const;
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize);
 
-        void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const;
+        void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader);
 
     private :
 
-        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory);
-        
+        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+
     public : 
     
         SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
-       
+
+        SMStreamingStore(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings);
+
         virtual ~SMStreamingStore();
 
 #ifdef VANCOUVER_API
         static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
             {
             return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
+            }
+        static SMStreamingStore* Create(DataSourceManager& dataSourceManager, const SMStreamingSettings& settings)
+            {
+            return new SMStreamingStore(dataSourceManager, settings);
             }
 #endif
 
@@ -94,6 +159,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
 
         void SetDataFormatType(FormatType formatType);
+
+        void SetIsPublishing(bool isPublishing)
+            {
+            m_settings.m_isPublishing = isPublishing;
+            }
 
         static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize);
 
@@ -152,6 +222,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
     public:
 
+        void ApplyTransformOnPoints(const Transform& transform);
+
         bool IsLoading();
 
         bool IsLoaded();
@@ -171,6 +243,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
         void SetID(const uint64_t& pi_ID);
 
         uint64_t GetID();
+
+        void SetURL(const DataSourceURL& url);
 
         void SetDataSourceURL(const DataSourceURL& pi_DataSource);
 
@@ -199,6 +273,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
         bool m_pIsLoading = false;
         bool m_pIsLoaded = false;
         uint64_t m_pID = -1;
+        DataSourceURL m_url;
         DataSourceURL m_pDataSourceURL;
         std::wstring m_pPrefix = L"p_";
         std::wstring m_extension = L".bin";
@@ -227,8 +302,10 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
 
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing = false, bool compress = true);
+        
         virtual ~SMStreamingNodeDataStore();
 
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
@@ -248,8 +325,10 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     protected:
 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        const Json::Value*            m_jsonHeader;
         DataSourceAccount*            m_dataSourceAccount;
         DataSourceURL                 m_dataSourceURL;
+        Transform                     m_transform;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         typedef std::map<ISMStore::NodeID, std::unique_ptr<StreamingDataBlock>> DataCache;

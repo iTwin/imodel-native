@@ -5978,24 +5978,35 @@ bool SMPointIndexNode<POINT, EXTENT>::IsEmpty() const
     if (GetNbPoints() > 0)
         return false;
 
-    if (HasRealChildren())
-        {
-        if (m_pSubNodeNoSplit != NULL)
-            {
-            return m_pSubNodeNoSplit->IsEmpty();
-            }
-        else
-            {
-            for (size_t i = 0; i < GetNumberOfSubNodesOnSplit(); ++i)
-                {
-                if (!m_apSubNodes[i]->IsEmpty())
-                    return false;
-                }
-            }
-        }
-    HINVARIANTS;
+    if (!(m_nodeHeader.m_contentExtent.IsNull() || m_nodeHeader.m_contentExtent.IsEmpty()))
+        return false;
 
-    return true;
+    SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+    for (auto point : *UNCONSTTHIS->GetPointsPtr())
+        {
+        m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(m_nodeHeader.m_contentExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(point));
+        }
+
+    return UNCONSTTHIS->GetPointsPtr()->size() > 0;
+    
+    //if (HasRealChildren())
+    //    {
+    //    if (m_pSubNodeNoSplit != NULL)
+    //        {
+    //        return m_pSubNodeNoSplit->IsEmpty();
+    //        }
+    //    else
+    //        {
+    //        for (size_t i = 0; i < GetNumberOfSubNodesOnSplit(); ++i)
+    //            {
+    //            if (!m_apSubNodes[i]->IsEmpty())
+    //                return false;
+    //            }
+    //        }
+    //    }
+    //HINVARIANTS;
+    //
+    //return true;
     }
 
 
@@ -6749,6 +6760,16 @@ template<class POINT, class EXTENT> uint32_t SMPointIndexNode<POINT, EXTENT>::Ge
 
         NbObjects = (uint32_t)m_nodeHeader.m_nodeCount;
 
+        if (NbObjects == 0 && !IsEmpty())
+            {
+            SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS = const_cast<SMPointIndexNode<POINT, EXTENT>*>(this);
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(UNCONSTTHIS->GetPointsPtr());
+
+            NbObjects = (uint32_t)pointsPtr->size();
+
+            }
+        //std::cout << "node (" << m_nodeHeader.m_id.m_integerID << ") --> count (" << NbObjects << ")" << std::endl;
+
         //Compute the
         if (((m_filter == NULL) ||(m_filter->IsProgressiveFilter() == true)) && (GetParentNodePtr() != 0))
             {
@@ -6925,7 +6946,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
                 disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 this->m_apSubNodes[indexNode] = nullptr;
-                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, pi_pGroup, nextGroup);
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
 
                 }
             }

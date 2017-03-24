@@ -194,9 +194,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
-#ifndef VANCOUVER_API
+//#ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA)
-#endif
+//#endif
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
@@ -208,9 +208,12 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
         assert(result == BE_SQLITE_OK);
         
-        UpdateDatabase();
+        if (result == BE_SQLITE_OK)
+        {
+            UpdateDatabase();
 
-        m_database->CloseDb();
+            m_database->CloseDb();
+        }
 
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }

@@ -22,7 +22,7 @@
 #ifndef VANCOUVER_API
 #define BEFILENAME(function, filename) filename.function()
 #else
-#define BEFILENAME(function, filename) BeFileName::function(filename.c_str());
+#define BEFILENAME(function, filename) BeFileName::function(filename.c_str())
 #endif
 
 template <class POINT> struct PointOp
