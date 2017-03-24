@@ -182,7 +182,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -209,6 +209,43 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching)
+    {
+    auto cache = GetTestCache();
+    auto schema = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" >  
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECClass>            
+            <ECClass typeName="B" >  
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECClass>
+            <ECRelationshipClass typeName="AB" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(1,1)" polymorphic="True">
+                    <Class class="A" />
+                </Source>
+                <Target cardinality="(1,1)" polymorphic="True">
+                    <Class class="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    auto cachedSchema = cache->GetAdapter().GetECSchema("UpdateSchema");
+    ASSERT_TRUE(nullptr != cachedSchema);
+    auto cachedRelClass = cachedSchema->GetClassCP("AB")->GetRelationshipClassCP();
+    ASSERT_TRUE(nullptr != cachedRelClass);
+    EXPECT_EQ("(0,1)", cachedRelClass->GetSource().GetCardinality().ToString());
+    EXPECT_EQ("(0,1)", cachedRelClass->GetTarget().GetCardinality().ToString());
+
+    // Test caching
+    StubInstances instances;
+    instances.Add({"UpdateSchema.A", "AA"}).AddRelated({"UpdateSchema.AB", "AABB"}, {"UpdateSchema.B", "BB"});
+    auto key = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
@@ -3010,7 +3047,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue)
     {
     // Arrange
     auto cache = GetTestCache();

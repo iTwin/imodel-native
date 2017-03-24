@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECSqlStatementCache.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -62,11 +62,13 @@ ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8Str
     else
         {
         statement = it->second;
-        if (ECSqlStatus::Success != statement->Reset())
+        auto status = statement->Reset();
+        if (ECSqlStatus::Success != status)
             {
             BeAssert(false && "Failed to reset statement");
             }
-        if (ECSqlStatus::Success != statement->ClearBindings())
+        status = statement->ClearBindings();
+        if (ECSqlStatus::Success != status)
             {
             BeAssert(false && "Failed to clear statement bindings");
             }

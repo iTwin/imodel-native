@@ -40,8 +40,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>__WSCLIENT_DLL_BUILD__;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -ax64 reb *WebServices* WSClient-PublishedAPI</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 reb *WebServices* WSClient-PublishedAPI -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices*</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
@@ -455,6 +455,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.03.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Policies_V3Conversion.01.01.ecschema.xml" />
