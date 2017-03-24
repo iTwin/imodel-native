@@ -530,7 +530,7 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceFromStatement(ECSqlStatement& stat
 
     if (BE_SQLITE_ROW != statement.Step())
         {
-        jsonInstanceOut = Json::Value::null;
+        jsonInstanceOut = Json::Value::GetNull();
         return ERROR;
         }
 

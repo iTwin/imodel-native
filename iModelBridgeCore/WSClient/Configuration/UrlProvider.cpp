@@ -291,7 +291,7 @@ void UrlProvider::CleanUpUrlCache()
     {
     for (auto& descriptor : s_urlRegistry)
         {
-        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, descriptor->GetName().c_str(), Json::Value::null);
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, descriptor->GetName().c_str(), Json::Value::GetNull());
         }
     }
 
