@@ -74,7 +74,7 @@ ECSqlStatus SingleECSqlPreparedStatement::Prepare(ECSqlPrepareContext& prepareCo
     if (prepareContext.NativeStatementIsNoop())
         {
         m_isNoopInSqlite = true;
-        m_nativeSql = "n/a";
+        m_nativeSql = "SQLite no-op";
         }
     else
         {

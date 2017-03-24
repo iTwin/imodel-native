@@ -112,7 +112,8 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
     switch (strategy)
         {
             case MapStrategy::ExistingTable:
-                return false;
+                //for existing table we also assume an exclusive root as ECDb only supports mapping a single ECClass to an existing table
+                return true;
 
                 //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
             case MapStrategy::OwnTable:
@@ -512,7 +513,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
         return ERROR;
 
     //Load ECClassId   ================================================
-    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this,GetClass().GetId(), *mapColumnsList);
+    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, *mapColumnsList);
     if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false && "Failed to create property map");
@@ -755,7 +756,7 @@ BentleyStatus ClassMap::MapSystemColumns()
         return ERROR;
         }
 
-    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), ecClassIdColumns);
+    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropertyMap = ECClassIdPropertyMap::CreateInstance(*this, ecClassIdColumns);
     if (ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false);

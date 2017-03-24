@@ -921,8 +921,38 @@ TEST_F(RelationshipMappingTestFixture, MultipleFkEndTables)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Name FROM ts.Child ORDER BY ECInstanceId"));
     int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        switch (rowCount)
+            {
+                case 1:
+                {
+                ASSERT_EQ(childKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << "Child 1";
+                ASSERT_EQ(childKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << "Child 1";
+                ASSERT_STREQ("Child1", stmt.GetValueText(2)) << "Child 1";
+                break;
+                }
+                case 2:
+                {
+                ASSERT_EQ(specialChildKey.GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue()) << "Child 2, SpecialChild";
+                ASSERT_EQ(specialChildKey.GetClassId().GetValue(), stmt.GetValueId<ECClassId>(1).GetValue()) << "Child 2, SpecialChild";
+                ASSERT_STREQ("Child2", stmt.GetValueText(2)) << "Child 2, SpecialChild";
+                break;
+                }
+
+                default:
+                    FAIL();
+                    return;
+            }
+        }
+    ASSERT_EQ(2, rowCount);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY TargetECInstanceId"));
+    rowCount = 0;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         rowCount++;
@@ -1488,6 +1518,272 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
     GetECDb().SaveChanges();
     ASSERT_EQ(BE_SQLITE_DONE, ExecuteNonSelectECSql(GetECDb(), "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, MixinsMappedToMultipleJoinedTablesOnReferencedEnd)
+    {
+    ECDbR ecdb = SetupECDb("multijoinedtablemixinonreferencedend.ecdb",
+                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                                          <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                          <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                          <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                                              <ECEntityClass typeName="Model">
+                                                 <ECCustomAttributes>
+                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                   </ClassMap>
+                                                   <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                                                 </ECCustomAttributes>
+                                                  <ECProperty propertyName="Name" typeName="string" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="IIsGeometricModel" modifier="Abstract">
+                                                 <ECCustomAttributes>
+                                                    <IsMixin xmlns="CoreCustomAttributes.01.00">
+                                                        <AppliesToEntityClass>Model</AppliesToEntityClass>
+                                                    </IsMixin>"
+                                                 </ECCustomAttributes>
+                                                  <ECProperty propertyName="Is2d" typeName="boolean"/>
+                                                  <ECProperty propertyName="SupportedGeometryType" typeName="string" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="Model2d">
+                                                    <BaseClass>Model</BaseClass>
+                                                    <BaseClass>IIsGeometricModel</BaseClass>
+                                                  <ECProperty propertyName="Origin2d" typeName="Point2d" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="Model3d">
+                                                    <BaseClass>Model</BaseClass>
+                                                    <BaseClass>IIsGeometricModel</BaseClass>
+                                                  <ECProperty propertyName="Origin3d" typeName="Point3d" />
+                                              </ECEntityClass>
+                                              <ECEntityClass typeName="Element">
+                                                 <ECCustomAttributes>
+                                                   <ClassMap xmlns="ECDbMap.02.00">
+                                                          <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                   </ClassMap>
+                                                 </ECCustomAttributes>
+                                                <ECProperty propertyName="Code" typeName="string" />
+                                                <ECNavigationProperty propertyName="Model" relationshipName="GeometricModelHasElements" direction="Backward"/>
+                                              </ECEntityClass>
+                                             <ECRelationshipClass typeName="GeometricModelHasElements" strength="Referencing" modifier="Sealed">
+                                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="GeometricModel">
+                                                    <Class class ="IIsGeometricModel" />
+                                                </Source>
+                                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Element">
+                                                    <Class class ="Element" />
+                                                </Target>
+                                             </ECRelationshipClass>
+                                          </ECSchema>)xml"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateClassViewsInDb());
+    ecdb.SaveChanges();
+
+    std::vector<ECInstanceKey> model2dKeys, model3dKeys, element2dKeys, element3dKeys;
+    //INSERT
+    {
+    ECInstanceKey key;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model2d(Name,Is2d,SupportedGeometryType,Origin2d) VALUES(?,true,'Line',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Main2d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(2, DPoint2d::From(1.0, 1.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model2dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Detail2d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(2, DPoint2d::From(1.5, 1.5)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model2dKeys.push_back(key);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model3d(Name,Is2d,SupportedGeometryType,Origin3d) VALUES(?,false,'Solid',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Main3d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(2.0, 2.0, 2.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model3dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Detail3d", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(2.5, 2.5, 2.5)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    model3dKeys.push_back(key);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element(Code, Model.Id) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "E-1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model2dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    element2dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "E-2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model2dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    element2dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "E-3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model3dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    element3dKeys.push_back(key);
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "E-4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, model3dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    ASSERT_TRUE(key.IsValid());
+    element3dKeys.push_back(key);
+    }
+
+    //SELECT Elements
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Code, Model.Id FROM ts.Element"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+
+        ECInstanceId currentId = stmt.GetValueId<ECInstanceId>(0);
+        if (currentId == element2dKeys[0].GetInstanceId() || currentId == element2dKeys[1].GetInstanceId())
+            ASSERT_EQ(model2dKeys[0].GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue()) << stmt.GetECSql();
+        else if (currentId == element3dKeys[0].GetInstanceId() || currentId == element3dKeys[1].GetInstanceId())
+            ASSERT_EQ(model3dKeys[0].GetInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue()) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(4, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //Select models via mixin
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Is2d, SupportedGeometryType FROM ts.IIsGeometricModel"));
+    int rowCount2d = 0;
+    int rowCount3d = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        ECClassId actualClassId = stmt.GetValueId<ECClassId>(1);
+        if (actualClassId == model2dKeys[0].GetClassId())
+            {
+            rowCount2d++;
+            ASSERT_TRUE(stmt.GetValueBoolean(2)) << stmt.GetECSql();
+            ASSERT_STREQ("Line", stmt.GetValueText(3)) << stmt.GetECSql();
+            }
+        else if (actualClassId == model3dKeys[0].GetClassId())
+            {
+            rowCount3d++;
+            ASSERT_FALSE(stmt.GetValueBoolean(2)) << stmt.GetECSql();
+            ASSERT_STREQ("Solid", stmt.GetValueText(3)) << stmt.GetECSql();
+            }
+        }
+
+    ASSERT_EQ(2, rowCount2d) << stmt.GetECSql();
+    ASSERT_EQ(2, rowCount3d) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //Select concrete models
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Name, SupportedGeometryType, Origin2d FROM ts.Model2d"));
+    rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_STREQ("Line", stmt.GetValueText(2));
+
+        const ECInstanceId actualModelId = stmt.GetValueId<ECInstanceId>(0);
+        Utf8CP actualModelName = stmt.GetValueText(1);
+        if (actualModelId == model2dKeys[0].GetInstanceId())
+            ASSERT_STREQ("Main2d", actualModelName) << stmt.GetECSql();
+        else if (actualModelId == model2dKeys[1].GetInstanceId())
+            ASSERT_STREQ("Detail2d", actualModelName) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Name, SupportedGeometryType, Origin3d FROM ts.Model3d"));
+    rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_STREQ("Solid", stmt.GetValueText(2));
+
+        const ECInstanceId actualModelId = stmt.GetValueId<ECInstanceId>(0);
+        Utf8CP actualModelName = stmt.GetValueText(1);
+        if (actualModelId == model3dKeys[0].GetInstanceId())
+            ASSERT_STREQ("Main3d", actualModelName) << stmt.GetECSql();
+        else if (actualModelId == model3dKeys[1].GetInstanceId())
+            ASSERT_STREQ("Detail3d", actualModelName) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+    }
+
+    //UPDATE NavProp
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.Element SET Model.Id=? WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, model2dKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, element2dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << stmt.GetECSql();
+    stmt.ClearBindings();
+    stmt.Reset();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, model3dKeys[1].GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, element3dKeys[0].GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << stmt.GetECSql();
+    stmt.Finalize();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT e.ECInstanceId, m.ECInstanceId, m.ECClassId, m.Is2d, m.SupportedGeometryType FROM ts.Element e JOIN ts.IIsGeometricModel m USING ts.GeometricModelHasElements ORDER BY m.ECInstanceId"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        const ECInstanceId actualElementId = stmt.GetValueId<ECInstanceId>(0);
+        if (actualElementId == element2dKeys[0].GetInstanceId())
+            {
+            ASSERT_EQ(model2dKeys[1].GetInstanceId().GetValue(), stmt.GetValueUInt64(1)) << stmt.GetECSql();
+            ASSERT_EQ(model2dKeys[1].GetClassId().GetValue(), stmt.GetValueUInt64(2)) << stmt.GetECSql();
+            ASSERT_TRUE(stmt.GetValueBoolean(3)) << stmt.GetECSql();
+            ASSERT_STREQ("Line", stmt.GetValueText(4)) << stmt.GetECSql();
+            }
+        else if (actualElementId == element2dKeys[1].GetInstanceId())
+            {
+            ASSERT_EQ(model2dKeys[0].GetInstanceId().GetValue(), stmt.GetValueUInt64(1)) << stmt.GetECSql();
+            ASSERT_EQ(model2dKeys[0].GetClassId().GetValue(), stmt.GetValueUInt64(2)) << stmt.GetECSql();
+            ASSERT_TRUE(stmt.GetValueBoolean(3)) << stmt.GetECSql();
+            ASSERT_STREQ("Line", stmt.GetValueText(4)) << stmt.GetECSql();
+            }
+        else if (actualElementId == element3dKeys[0].GetInstanceId())
+            {
+            ASSERT_EQ(model3dKeys[1].GetInstanceId().GetValue(), stmt.GetValueUInt64(1)) << stmt.GetECSql();
+            ASSERT_EQ(model3dKeys[1].GetClassId().GetValue(), stmt.GetValueUInt64(2)) << stmt.GetECSql();
+            ASSERT_FALSE(stmt.GetValueBoolean(3)) << stmt.GetECSql();
+            ASSERT_STREQ("Solid", stmt.GetValueText(4)) << stmt.GetECSql();
+            }
+        else if (actualElementId == element3dKeys[1].GetInstanceId())
+            {
+            ASSERT_EQ(model3dKeys[0].GetInstanceId().GetValue(), stmt.GetValueUInt64(1)) << stmt.GetECSql();
+            ASSERT_EQ(model3dKeys[0].GetClassId().GetValue(), stmt.GetValueUInt64(2)) << stmt.GetECSql();
+            ASSERT_FALSE(stmt.GetValueBoolean(3)) << stmt.GetECSql();
+            ASSERT_STREQ("Solid", stmt.GetValueText(4)) << stmt.GetECSql();
+            }
+        else
+            FAIL() << "Unexpected row returned from " << stmt.GetECSql();
+        }
+    ASSERT_EQ(4, rowCount);
+    }
     }
 
 

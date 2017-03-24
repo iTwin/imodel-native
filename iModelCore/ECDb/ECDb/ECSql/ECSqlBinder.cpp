@@ -215,8 +215,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
                 return true;
 
             BeAssert(propMap.GetClassMap().GetTables().size() == 1 && constraintClassIdPropMap.GetTables().size() == 1);
-            DbTable const* contextTable = &propMap.GetClassMap().GetJoinedTable();
-            return constraintClassIdPropMap.IsVirtual(*contextTable);
+            return constraintClassIdPropMap.IsVirtual(propMap.GetClassMap().GetJoinedTable());
             }
             case PropertyMap::Type::NavigationRelECClassId:
                 return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().IsVirtual();

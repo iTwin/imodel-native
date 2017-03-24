@@ -642,6 +642,9 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     testDataset["INSERT INTO ecdbf.EmbeddedFileInfo(Name) VALUES('Foo')"] = false;
     testDataset["UPDATE ecdbf.EmbeddedFileInfo SET Name='Foo' WHERE ECInstanceId=1"] = false;
     testDataset["DELETE FROM ecdbf.EmbeddedFileInfo"] = false;
+    //polymorphic update/delete where subclass maps to existing table
+    testDataset["UPDATE ecdbf.FileInfo SET Name='Foo' WHERE ECInstanceId=1"] = false;
+    testDataset["DELETE FROM ecdbf.FileInfo"] = false;
 
     testDataset["SELECT * FROM ec.ECClassDef"] = true;
     testDataset["INSERT INTO ec.ECClassDef(SchemaId, Name, DisplayLabel) VALUES(1, 'Foo', 'Foo')"] = false;

@@ -386,7 +386,7 @@ private:
     DbColumn* CreateColumn(DbColumnId, Utf8StringCR name, DbColumn::Type, int position, DbColumn::Kind, PersistenceType);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId exclusiveRootClass, DbTable const* parentOfJoinedTable);
 
     ~DbTable() {}
 
@@ -403,7 +403,15 @@ public:
     bool IsOwnedByECDb() const { return m_type != Type::Existing; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
-    ECN::ECClassId GetExclusiveRootECClassId() const { BeAssert(HasExclusiveRootECClass()); return m_exclusiveRootECClassId; }
+    ECN::ECClassId GetExclusiveRootECClassId() const 
+        {
+        if (!HasExclusiveRootECClass())
+            {
+            BeAssert(HasExclusiveRootECClass());
+            }
+
+        return m_exclusiveRootECClassId; 
+        }
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     DbColumn* CreateSharedColumn(DbColumn::Type);
@@ -519,8 +527,8 @@ public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_%d"), m_nullTable(nullptr), m_indexesLoaded(false), m_syncTableCacheNames(false) { }
     ~DbSchema() {}
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
-    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* CreateTable(DbTableId, Utf8StringCR name, DbTable::Type, PersistenceType type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
     DbTable const* FindTable(DbTableId id) const;
@@ -552,10 +560,10 @@ private:
     TableMapper();
     ~TableMapper();
 
-    static DbTable* CreateTableForExistingTableStrategy(DbSchema&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName);
-    static DbTable* CreateTableForOtherStrategies(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    static DbTable* CreateTableForExistingTableStrategy(DbSchema&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, ECN::ECClassId exclusiveRootClassId);
+    static DbTable* CreateTableForOtherStrategies(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
 public:
-    static DbTable* FindOrCreateTable(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable);
+    static DbTable* FindOrCreateTable(DbSchema&, Utf8StringCR tableName, DbTable::Type, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

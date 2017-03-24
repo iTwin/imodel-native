@@ -26,5 +26,3 @@ SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
 
-RelationshipMappingTestFixture.MultipleFkEndTables
-

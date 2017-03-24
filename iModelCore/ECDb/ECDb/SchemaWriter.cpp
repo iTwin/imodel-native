@@ -172,14 +172,19 @@ BentleyStatus SchemaWriter::ImportClass(ECN::ECClassCR ecClass)
     if (m_ecdb.Schemas().GetReader().GetClassId(ecClass).IsValid())
         return SUCCESS;
 
+    if (!m_ecdb.Schemas().GetReader().GetSchemaId(ecClass.GetSchema()).IsValid())
+        {
+        Issues().Report("Failed to import ECClass '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", ecClass.GetName().c_str(), ecClass.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import ECClass because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
     // GenerateId
     ECClassId ecClassId;
     if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::ECClassId).GetNextValue(ecClassId))
         return ERROR;
 
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
-
-    BeAssert(m_ecdb.Schemas().GetReader().GetSchemaId(ecClass.GetSchema()).IsValid());
 
     //now import actual ECClass
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -276,6 +281,13 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
     if (m_ecdb.Schemas().GetReader().GetEnumerationId(ecEnum).IsValid())
         return SUCCESS;
 
+    if (!m_ecdb.Schemas().GetReader().GetSchemaId(ecEnum.GetSchema()).IsValid())
+        {
+        Issues().Report("Failed to import ECEnumeration '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", ecEnum.GetName().c_str(), ecEnum.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import ECEnumeration because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -285,9 +297,6 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
         return ERROR;
 
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
-
-    BeAssert(m_ecdb.Schemas().GetReader().GetSchemaId(ecEnum.GetSchema()).IsValid());
-
     if (BE_SQLITE_OK != stmt->BindId(1, enumId))
         return ERROR;
 
@@ -336,6 +345,13 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
     if (m_ecdb.Schemas().GetReader().GetKindOfQuantityId(koq).IsValid())
         return SUCCESS;
 
+    if (!m_ecdb.Schemas().GetReader().GetSchemaId(koq.GetSchema()).IsValid())
+        {
+        Issues().Report("Failed to import KindOfQuantity '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", koq.GetName().c_str(), koq.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import KindOfQuantity because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,PersistencePrecision,DefaultPresentationUnit,AlternativePresentationUnits) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
@@ -345,9 +361,6 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         return ERROR;
 
     const_cast<KindOfQuantityR>(koq).SetId(koqId);
-
-    BeAssert(m_ecdb.Schemas().GetReader().GetSchemaId(koq.GetSchema()).IsValid());
-
     if (BE_SQLITE_OK != stmt->BindId(1, koqId))
         return ERROR;
 
@@ -1967,7 +1980,7 @@ BentleyStatus SchemaWriter::UpdateClasses(ClassChanges& classChanges, ECSchemaCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateKindOfQuanitites(ECKindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
+BentleyStatus SchemaWriter::UpdateKindOfQuantities(ECKindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
     if (!koqChanges.IsValid())
         return SUCCESS;
@@ -2297,7 +2310,7 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
     if (UpdateEnumerations(schemaChange.Enumerations(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
-    if (UpdateKindOfQuanitites(schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
+    if (UpdateKindOfQuantities(schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
     if (UpdateClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)
