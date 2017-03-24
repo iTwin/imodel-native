@@ -629,8 +629,8 @@ TEST_F(SchemaManagerTests, IncrementalLoading)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-    ECClassCP ecClass = ecdb.Schemas().GetClass("MetaSchema", "ECClassDef");
-    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass ('MetaSchema', 'ECClassDef') is expected to succeed as the class exists in the ecdb file.";
+    ECClassCP ecClass = ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef");
+    ASSERT_TRUE(ecClass != nullptr) << "ECDbSchemaManager::GetClass ('ECDbMeta', 'ECClassDef') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(schema != nullptr);
@@ -1355,7 +1355,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'Foo_has_Bars', 'RelationWithLinkTableMapping')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'Foo_has_Bars', 'RelationWithLinkTableMapping')"));
     bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -1467,7 +1467,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
     bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -1488,7 +1488,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb', 'Foo_has_Bars')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb', 'Foo_has_Bars')"));
     bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {

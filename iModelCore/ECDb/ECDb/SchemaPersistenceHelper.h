@@ -10,9 +10,9 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define METASCHEMA_ECENUMERATOR_PROPERTY_IntValue "IntValue"
-#define METASCHEMA_ECENUMERATOR_PROPERTY_StringValue "StringValue"
-#define METASCHEMA_ECENUMERATOR_PROPERTY_DisplayLabel "DisplayLabel"
+#define ECDBMETA_PROP_ECEnumerator_IntValue "IntValue"
+#define ECDBMETA_PROP_ECEnumerator_StringValue "StringValue"
+#define ECDBMETA_PROP_ECEnumerator_DisplayLabel "DisplayLabel"
 
 //=======================================================================================
 // @bsienum                                                Krischan.Eberle      12/2015

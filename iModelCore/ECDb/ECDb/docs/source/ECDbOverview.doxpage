@@ -379,8 +379,8 @@
 
     - Link Table mapping: Number of tables must be 1 on both ends.
     - Foreign Key mapping:
-        - Number of tables on the referenced end must be 1.
-        - Number of tables on the Foreign Key end
+        - Number of tables on the referenced end must be 1 (joined tables are not to be counted).
+        - Number of tables on the Foreign Key end (joined tables are to be counted)
             - 1: ok
             - > 1: ok, but <b>relationship becomes read-only</b>, i.e. it cannot be used in ECSQL INSERT, UPDATE, DELETE.
             Creating relationships of that kind is possible through @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties".

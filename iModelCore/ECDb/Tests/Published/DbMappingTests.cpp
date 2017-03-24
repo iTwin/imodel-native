@@ -642,11 +642,14 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     testDataset["INSERT INTO ecdbf.EmbeddedFileInfo(Name) VALUES('Foo')"] = false;
     testDataset["UPDATE ecdbf.EmbeddedFileInfo SET Name='Foo' WHERE ECInstanceId=1"] = false;
     testDataset["DELETE FROM ecdbf.EmbeddedFileInfo"] = false;
+    //polymorphic update/delete where subclass maps to existing table
+    testDataset["UPDATE ecdbf.FileInfo SET Name='Foo' WHERE ECInstanceId=1"] = false;
+    testDataset["DELETE FROM ecdbf.FileInfo"] = false;
 
-    testDataset["SELECT * FROM ec.ECClassDef"] = true;
-    testDataset["INSERT INTO ec.ECClassDef(SchemaId, Name, DisplayLabel) VALUES(1, 'Foo', 'Foo')"] = false;
-    testDataset["UPDATE ec.ECClassDef SET DisplayLabel='Foo' WHERE ECInstanceId=1"] = false;
-    testDataset["DELETE FROM ec.ECClassDef"] = false;
+    testDataset["SELECT * FROM meta.ECClassDef"] = true;
+    testDataset["INSERT INTO meta.ECClassDef(SchemaId, Name, DisplayLabel) VALUES(1, 'Foo', 'Foo')"] = false;
+    testDataset["UPDATE meta.ECClassDef SET DisplayLabel='Foo' WHERE ECInstanceId=1"] = false;
+    testDataset["DELETE FROM meta.ECClassDef"] = false;
 
     for (bpair<Utf8String, bool> const& testItem : testDataset)
         {
@@ -661,7 +664,7 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
             ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << ecsql;
         }
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("MetaSchema", "ECClassDef");
+    ECClassCP testClass = ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef");
     ASSERT_TRUE(testClass != nullptr);
 
     {
@@ -682,6 +685,102 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     ASSERT_FALSE(deleter.IsValid());
     }
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                           Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, RelationshipMappingTests)
+    {
+
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>OwnTable</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
+        "       <BaseClass>AHasB</BaseClass>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "BaseRelationshipClass having OwnTable mapping strategy is not supported in ECRelationshipClassHeirarchy."));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "    <ECRelationshipClass typeName='AHasB2' modifier='None' strength='referencing' >"
+        "       <BaseClass>AHasB</BaseClass>"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true, "BaseRelationshipClass having TablePerHeirarchy mapping strategy is expected to be supported in ECRelationshipClassHeirarchy."));
+
+    testSchemas.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECEntityClass typeName='A' modifier='Abstract'>"
+        "        <ECProperty propertyName='Price' typeName='double'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B'>"
+        "        <ECProperty propertyName='Name' typeName='string'/>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='AHasB' modifier='None' strength='referencing' >"
+        "       <Source multiplicity='(0,1)' polymorphic='True' roleLabel='A'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0,N)' polymorphic='True' roleLabel='B'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", false, "Source or target constraint classes are abstract without subclasses. Apply the MapStrategy 'TablePerHierarchy' to the abstract constraint class"));
+
+    AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1967,6 +2066,58 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA)
         "</ECSchema>", false, "SharedColumnCount can only be defined on first occurrence of SharedColumn option in a hierarchy"));
 
     AssertSchemaImport(testItems, "sharedtablecatests.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                         03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
+    {
+    ECDbR ecdb = SetupECDb("incompletePoints.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string'/>"
+        "        <ECProperty propertyName='P2D' typeName='point2d'/>"
+        "        <ECProperty propertyName='P3D' typeName='point3d'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ecdb.SaveChanges();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (P2D,P3D,Code) VALUES (?,?,'C1')"));
+    //Binding Point 2d & 3d
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(2, DPoint3d::From(-12.53, 21.76, -32.22)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT P2D,P3D FROM ts.Element WHERE Code='C1'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    //GetValuePoint3d can't be called for a 2d column.
+    ECValue val3d(stmt.GetValuePoint3d(0));
+    ASSERT_FALSE(val3d.IsPoint2d());
+
+    //GetValuePoint2d can't be called for a 3d column.
+    ECValue val2d(stmt.GetValuePoint2d(1));
+    ASSERT_FALSE(val2d.IsPoint3d());
+
+    //GetValueBoolean can't be called for a 2d/3d column.
+    ASSERT_EQ(false, stmt.GetValueBoolean(0));
+
+    //GetValueBlob can't be called for a 2d/3d column.
+    ASSERT_TRUE(nullptr == stmt.GetValueBlob(1));
+
+    //GetValueText can't be called for a 2d/3d column.
+    ASSERT_TRUE(nullptr == stmt.GetValueText(0));
+
+    //GetValueInt can't be called for a 2d/3d column.
+    ASSERT_EQ(0, stmt.GetValueInt(1));
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -8468,9 +8619,9 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
     expectedSchemas.push_back("CoreCustomAttributes");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
+    expectedSchemas.push_back("ECDbMeta");
     expectedSchemas.push_back("ECDbSystem");
     expectedSchemas.push_back("EditorCustomAttributes");
-    expectedSchemas.push_back("MetaSchema");
     expectedSchemas.push_back("StartupCompany");
 
     // Validate the expected ECSchemas in the project
