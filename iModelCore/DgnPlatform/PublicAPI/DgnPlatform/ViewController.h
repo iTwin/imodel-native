@@ -555,6 +555,7 @@ protected:
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
+    mutable Render::SceneLightsPtr m_lights;
 
     void QueryModelExtents(FitContextR);
 
@@ -591,6 +592,8 @@ public:
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
+    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off

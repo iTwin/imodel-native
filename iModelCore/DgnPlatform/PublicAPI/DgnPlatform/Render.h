@@ -1633,11 +1633,11 @@ DEFINE_REF_COUNTED_PTR(Light)
 //! A list of Render::Lights
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
-struct LightList
+struct LightList : RefCounted<NonCopyableClass>
 {
-    bvector<LightPtr> m_lights;
-    void AddLight(LightPtr light) {if (light.IsValid()) m_lights.push_back(light);}
-    bool IsEmpty() const {return m_lights.empty();}
+    bvector<LightPtr> m_list;
+    void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
+    bool IsEmpty() const {return m_list.empty();}
 };
 
 //=======================================================================================
@@ -1657,6 +1657,8 @@ struct SceneLights : LightList
 
     Brightness m_brightness;
 };
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SceneLights)
+DEFINE_REF_COUNTED_PTR(SceneLights)
 
 //=======================================================================================
 //! A Render::Plan holds a Frustum and the render settings for displaying
@@ -1676,8 +1678,8 @@ struct Plan
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
     HiddenLineParams m_hline;
-    SceneLights m_sceneLights;
     ClipVectorPtr m_activeVolume;
+    SceneLightsCPtr m_lights;
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
