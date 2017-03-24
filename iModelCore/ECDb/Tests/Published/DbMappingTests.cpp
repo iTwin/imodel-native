@@ -2110,10 +2110,10 @@ TEST_F(DbMappingTestFixture, StatementBindingInvalidScenarios)
     ASSERT_EQ(false, stmt.GetValueBoolean(0));
 
     //GetValueBlob can't be called for a 2d/3d column.
-    ASSERT_EQ(false, stmt.GetValueBlob(1));
+    ASSERT_TRUE(nullptr == stmt.GetValueBlob(1));
 
     //GetValueText can't be called for a 2d/3d column.
-    ASSERT_EQ(false, stmt.GetValueText(0));
+    ASSERT_TRUE(nullptr == stmt.GetValueText(0));
 
     //GetValueInt can't be called for a 2d/3d column.
     ASSERT_EQ(0, stmt.GetValueInt(1));
