@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -143,7 +143,7 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
 
     ObservableECDb& db = m_dbAdapter.GetECDb();
 
-    if (SUCCESS != SchemaManager(db).ImportSchemas({ecSchema}))
+    if (SUCCESS != SchemaManager(db).ImportExternalSchemas({ecSchema}))
         return nullptr;
 
     return db.Schemas().GetECClass(schemaName.c_str(), relClassName.c_str())->GetRelationshipClassCP();
