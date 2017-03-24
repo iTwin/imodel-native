@@ -454,6 +454,7 @@ BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
+int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 void     Db::SetAllowImplictTransactions(bool val) {m_dbFile->m_allowImplicitTxns=val;}
 

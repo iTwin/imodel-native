@@ -445,7 +445,7 @@ enum DbResult
     BE_SQLITE_ERROR_SchemaNotFound          = (BE_SQLITE_ERROR | 16 << 24), //!< The schema was not found in the database.
     BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded. 
     BE_SQLITE_ERROR_SchemaTooOld            = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
-	BE_SQLITE_ERROR_SchemaImportRequired    = (BE_SQLITE_IOERR | 18 << 24), //!< The schemas can and must be imported.
+    BE_SQLITE_ERROR_SchemaImportRequired    = (BE_SQLITE_IOERR | 18 << 24), //!< The schemas can and must be imported.
     BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 19 << 24), //!< Error acquiring schema lock
     BE_SQLITE_ERROR_SchemaImportFailed      = (BE_SQLITE_IOERR | 20 << 24), //!< Error importing schemas
     BE_SQLITE_ERROR_SchemaDomainMismatch    = (BE_SQLITE_IOERR | 21 << 24), //!< The name of the schema doesn't match the name of the domain. 
@@ -2568,6 +2568,10 @@ public:
     //! @return the number of rows modified by the last statement for this Db.
     //! @see sqlite3_changes
     BE_SQLITE_EXPORT int GetModifiedRowCount() const;
+
+    //! @return the total number of rows modified since the database connection was opened.
+    //! @see sqlite3_total_changes
+    BE_SQLITE_EXPORT int GetTotalModifiedRowCount() const;
 
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
