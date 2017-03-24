@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnScriptTest/DgnScriptTestPerformance.ts $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
@@ -84,7 +84,7 @@ module DgnScriptPerformanceTests {
                         geom = be.DgnBox.CreateCenteredBox(new be.DPoint3d(0, 0, 0), new be.DVector3d(1, 1, 1), true);
                     else
                         geom = be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(0, 0, 1), 1, 1, true);
-                    builder.AppendGeometry(geom);
+                    builder.AppendGeometry(geom, be.BuilderCoordSystem.Local);
                     if (0 != builder.Finish(ele)) {
                         be.Script.ReportError('Finish failed');
                         return -1;

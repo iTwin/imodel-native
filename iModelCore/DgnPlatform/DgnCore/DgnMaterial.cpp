@@ -53,7 +53,7 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf
   : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId)
     {
     if (parentMaterialId.IsValid())
-        m_parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);
+        m_parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_MaterialOwnsChildMaterials);
     }
 
 /*---------------------------------------------------------------------------------**//**

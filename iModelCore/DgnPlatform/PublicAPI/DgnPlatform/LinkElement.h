@@ -104,7 +104,7 @@ public:
 
     //! Query the DgnClassId of the dgn.LinkModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.LinkModel class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinkModel)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinkModel)); }
 };
 
 //=======================================================================================
@@ -286,7 +286,7 @@ public:
     //! @note This is a static method that always returns the DgnClassId of the LinkElement class - it does @em not return the class of a specific instance.
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb)
         {
-        return dgndb.Schemas().GetECClassId(LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
+        return dgndb.Schemas().GetClassId(LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
         }
     };
 

@@ -96,7 +96,7 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSqlClassParams::AppendClassName(Utf8StringR classname, DgnDbCR db, DgnClassId classId)
     {
-    ECClassCP ecclass = db.Schemas().GetECClass(classId);
+    ECClassCP ecclass = db.Schemas().GetClass(classId);
     BeAssert(nullptr != ecclass);
     if (nullptr == ecclass)
         return false;
@@ -189,7 +189,7 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
     if (nullptr != ehandler)
         {
         // Elements:
-        auto ecclass = dgndb.Schemas().GetECClass(ECClassId(classId.GetValue()));
+        auto ecclass = dgndb.Schemas().GetClass(ECClassId(classId.GetValue()));
         auto& layout = ecclass->GetDefaultStandaloneEnabler()->GetClassLayout();
 
         // Tell handler to register its custom-handled property accessors

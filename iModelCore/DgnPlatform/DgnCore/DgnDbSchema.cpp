@@ -12,7 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    auto customHandledProperty = GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
     if (nullptr == customHandledProperty)
         return false;
 
@@ -62,8 +62,8 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
         printf("%s\n", eclass.GetFullName());
         printf("---------------------------\n");
     #endif
-    m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
-    m_autoHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
+    m_customHandledProperty = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    m_autoHandledProperty = db.Schemas().GetClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +145,7 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, Dgn
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
-    stmt.BindId(4, db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    stmt.BindId(4, db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
 
     DbResult result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -171,7 +171,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(1, partitionId);
     statement.BindId(2, DgnModel::RepositoryModelId());
     statement.BindId(3, Elements().GetRootSubjectId());
-    statement.BindId(4, Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
+    statement.BindId(4, Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
     statement.BindId(5, partitionCode.GetCodeSpecId());
     statement.BindText(6, partitionCode.GetScope().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);

@@ -754,7 +754,7 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::Create(DgnDbStatus* statOut,
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, statOut);
     auto& db = smodel.GetDgnDb();
 
-    DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, className));
+    DgnClassId classId(db.Schemas().GetClassId(SCRIPT_DOMAIN_NAME, className));
     if (!classId.IsValid())
         {
         stat = DgnDbStatus::MissingDomain;
@@ -862,7 +862,7 @@ Utf8String ScriptDefinitionElement::GetEcmaScriptVersionRequired() const
 //---------------------------------------------------------------------------------------
 void ScriptDefinitionElement::GetSignature(Utf8StringR returnType, Utf8StringR arguments) const
     {
-    ECN::ECClassCP caClass = GetDgnDb().Schemas().GetECClass(SCRIPT_DOMAIN_NAME, "ScriptSignature");
+    ECN::ECClassCP caClass = GetDgnDb().Schemas().GetClass(SCRIPT_DOMAIN_NAME, "ScriptSignature");
     if (nullptr == caClass)
         {
         BeAssert(false);
@@ -1115,7 +1115,7 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initialize
 ScriptLibraryModelPtr ScriptLibraryModel::Create(DefinitionPartitionCR partition, Utf8CP sourceUrl)
     {
     DgnDbR db = partition.GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
+    DgnClassId classId(db.Schemas().GetClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
     CreateParams mcparams(db, classId, partition.GetElementId());
     auto model = new ScriptLibraryModel(mcparams);
     if (nullptr == model)

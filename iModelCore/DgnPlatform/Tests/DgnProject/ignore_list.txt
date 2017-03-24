@@ -38,3 +38,8 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # To be equal to: instance.MakeValueIterator().QueryCount()
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (213 ms)
+
+# UniqueRelationshipLinkTable::_UpdateSummary function needs to find out whether relationship link table
+# contains ECClassId column or not
+TransactionManagerTests.TestRelationshipLinkTableTracking
+

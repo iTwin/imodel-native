@@ -151,7 +151,7 @@ void ViewAttachmentTest::AddBoxToModel(AnnotationElement2dCPtr& geomElOut, DgnMo
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
 
     auto& db = GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
+    DgnClassId classId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, modelId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 

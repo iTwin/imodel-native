@@ -32,12 +32,12 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     if (model.Is3d())
         {
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
-        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
+        gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject)), categoryId, Placement3d()));
         }
     else
         {
         DgnCategoryId categoryId = DgnDbTestUtils::GetFirstDrawingCategoryId(db);
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), categoryId, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), categoryId, Placement2d()));
         }
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
@@ -160,7 +160,7 @@ TEST_F(DgnScriptTest, TestEga)
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
         var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, g3d.CategoryId, origin, angles); \
-        builder.AppendGeometry(box); \
+        builder.AppendGeometry(box, 0); \
         builder.Finish(element); \
         return 0;\
     } \

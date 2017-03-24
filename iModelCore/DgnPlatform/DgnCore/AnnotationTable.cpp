@@ -588,7 +588,7 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
     {
     AspectTypeData typeData = GetAspectTypeData (_GetAspectType());
     Utf8StringR sqlString = typeData.m_ecSqlInsertString;
-    ECClassId relClassId = m_table.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, typeData.m_isUniqueAspect ? BIS_REL_ElementOwnsUniqueAspect : BIS_REL_ElementOwnsMultiAspects);
+    ECClassId relClassId = m_table.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, typeData.m_isUniqueAspect ? BIS_REL_ElementOwnsUniqueAspect : BIS_REL_ElementOwnsMultiAspects);
     BeAssert(relClassId.IsValid());
 
     if (sqlString.empty())
