@@ -994,7 +994,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1009,7 +1009,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1026,7 +1026,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1044,7 +1044,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     auto path = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(path.DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1070,7 +1070,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(L"", cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_FALSE(path.DoesPathExist());
@@ -1093,7 +1093,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
 
     DateTime maxAccessDateTime;
     EXPECT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(maxAccessDateTime, unixMs));
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(&maxAccessDateTime));
 
     EXPECT_EQ(path, cache->ReadFilePath({"TestSchema.TestClass", "Foo"}));
     EXPECT_TRUE(path.DoesPathExist());
@@ -1109,7 +1109,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
 
-    EXPECT_EQ(SUCCESS, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
     }
