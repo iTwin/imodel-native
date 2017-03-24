@@ -108,7 +108,7 @@ void GetAtLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Ut
     ecSql.append(
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.ECInstanceId "
-        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
         "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
@@ -147,7 +147,7 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
     ecSql.append(
         "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
         "   FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart, FromToLocation.ECInstanceId "
-        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
         "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
@@ -190,7 +190,7 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
         "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
         "   coalesce(AtLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
         "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
-        "FROM ((SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, ec.ClassHasAllBaseClasses " 
+        "FROM ((SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
         "WHERE ILinearElement = ? AND ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
 
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
