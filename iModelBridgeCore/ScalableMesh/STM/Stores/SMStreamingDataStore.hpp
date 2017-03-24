@@ -2422,7 +2422,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
                 for (uint32_t i = 0; i < m_tileData.numUvs; i++)
                     {
-                    m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], uv_array[2 * i + 1]);
+                    m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], 1.0 - uv_array[2 * i + 1]);
                     }
                 }
             }
@@ -2483,7 +2483,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
         auto transform = Transform::FromIdentity();
         //transform = Transform::From(333011, 4728426, 0);
-        if (false && !RTCExtension.isNull() && RTCExtension.isMember("center"))
+        if (!RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];
             Transform rtcTransform = Transform::From(center[0].asDouble(), center[1].asDouble(), center[2].asDouble());
@@ -2512,7 +2512,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (float*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
+                // Cesium 3DTiles standard stores the points in the Y-up convention. Here we convert them back to Z-up convention.
+                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], -point_array[3 * i + 2], point_array[3 * i + 1]);
                 transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
                 }
             }
