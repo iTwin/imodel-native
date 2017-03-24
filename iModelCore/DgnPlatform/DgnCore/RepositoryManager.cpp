@@ -64,7 +64,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 {
-private:
+protected:
     enum class DbState { New, Ready, Invalid };
     enum class TableType { Owned, Unavailable };
 
@@ -157,6 +157,43 @@ private:
     static Utf8CP GetCurrentVersion() { return "1"; }
 public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BulkUpdateBriefcaseManager : BriefcaseManager, IBulkUpdateBriefcaseOps
+{
+    DEFINE_T_SUPER(BriefcaseManager)
+protected:
+    Request m_req;      // locks and codes that we must acquire before we can say that update has succeeded
+    bool m_inBulkUpdate = false;
+
+    BulkUpdateBriefcaseManager(DgnDbR db) : T_Super(db) {;}
+
+    Response _ProcessRequest(Request& req, RequestPurpose purpose) override;
+    RepositoryStatus _Relinquish(Resources) override;
+    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
+    RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override;
+    RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override;
+    void _OnElementInserted(DgnElementId) override;
+    void _OnModelInserted(DgnModelId) override;
+    RepositoryStatus _ReserveCode(DgnCodeCR) override;
+    void _OnDgnDbDestroyed() {m_req.Reset(); m_inBulkUpdate=false; T_Super::_OnDgnDbDestroyed();}
+    RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override;
+    void _OnCommit(TxnManager& mgr) override;
+    void _OnAppliedChanges(TxnManager& mgr) override;
+    void _OnUndoRedo(TxnManager& mgr, TxnAction) override;
+
+    // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
+
+    void _StartBulkUpdate() override {BeAssert(!m_inBulkUpdate); m_inBulkUpdate = true;}
+    Response _AcquireLocksAndCodes();
+    void _EndBulkUpdate() {BeAssert(m_req.IsEmpty()); m_inBulkUpdate = false;}
+
+    void AccumulateRequests(Request const&);
+public:
+    static RefCountedPtr<BulkUpdateBriefcaseManager> Create(DgnDbR db) {return new BulkUpdateBriefcaseManager(db);}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -709,7 +746,7 @@ void BriefcaseManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModelI
             {
             BeAssert(1 == nVals);
             auto el = m_db.Elements().GetElement(DgnElementId(vals[0].GetValueUInt64()));
-            return el.IsValid() && std::find(m_models.begin(), m_models.end(), el->GetModelId());
+            return el.IsValid() && (m_models.end() != std::find(m_models.begin(), m_models.end(), el->GetModelId()));
             }
     };
 
@@ -2199,5 +2236,208 @@ bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
 
     Invalidate();
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::AccumulateRequests(Request const& req)
+    {
+    BeAssert(m_inBulkUpdate);
+    m_req.Codes().insert(req.Codes().begin(), req.Codes().end());
+    m_req.Locks().GetLockSet().insert(req.Locks().GetLockSet().begin(), req.Locks().GetLockSet().end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response BulkUpdateBriefcaseManager::_ProcessRequest(IBriefcaseManager::Request& req, IBriefcaseManager::RequestPurpose purpose)
+    {
+    if (!m_inBulkUpdate || (IBriefcaseManager::RequestPurpose::Acquire != purpose))
+        return T_Super::_ProcessRequest(req, purpose);
+
+    AccumulateRequests(req);
+    return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_Relinquish(Resources res)
+    {
+    // *** NEEDS WORK: I don't know how to buffer this -- how would this intersect the individual requests in m_req?
+    return T_Super::_Relinquish(res);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_ReserveCode(DgnCodeCR code)
+    {
+    if (!m_inBulkUpdate)
+        return T_Super::_ReserveCode(code);
+
+    m_req.Codes().insert(code);
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_Demote(DgnLockSet& locks, DgnCodeSet const& codes)
+    {
+    if (!m_inBulkUpdate)
+        return T_Super::_Demote(locks, codes);
+
+    for (auto& code : codes)
+        {
+        auto i = m_req.Codes().find(code);
+        if (i != m_req.Codes().end())
+            *i = code;
+        }
+    for (auto& lock : locks)
+        {
+        auto& reqlocks = m_req.Locks();
+        reqlocks.Remove(lock.GetLockableId());
+        reqlocks.InsertLock(lock.GetLockableId(), lock.GetLevel());
+        }
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response BulkUpdateBriefcaseManager::_AcquireLocksAndCodes()
+    {
+    if (!m_inBulkUpdate)
+        {
+        BeAssert(false);
+        return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::InvalidRequest);
+        }
+
+    auto resp = T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
+    
+    if (RepositoryStatus::Success == resp.Result())     // If the request went through, 
+        m_req.Reset();                                  // then we no longer hold it in suspense. Note that caller is responsible for acting on locks/codes that were refused.
+
+    return resp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request& reqOut, DgnElementCR el, BeSQLite::DbOpcode op)
+    {
+    if (!m_inBulkUpdate)
+        return T_Super::_PrepareForElementOperation(reqOut, el, op);
+
+    Request req;
+    el.PopulateRequest(req, op);
+    AccumulateRequests(req);
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForModelOperation(Request& reqOut, DgnModelCR model, BeSQLite::DbOpcode op)
+    {
+    if (!m_inBulkUpdate)
+        return T_Super::_PrepareForModelOperation(reqOut, model, op);
+
+    Request req;
+    model.PopulateRequest(req, op);
+    AccumulateRequests(req);
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
+    {
+    if (LocksRequired())
+        m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::_OnModelInserted(DgnModelId id)
+    {
+    if (LocksRequired())
+        m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
+    {
+    if (m_inBulkUpdate)
+        {
+        BeAssert(false);
+        return RepositoryStatus::PendingTransactions;
+        }
+    return T_Super::_OnFinishRevision(rev);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
+    {
+    if (m_inBulkUpdate)
+        {
+        BeAssert(false);
+        TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Pending locks and codes");
+        mgr.ReportError(err);
+        return;
+        }
+    T_Super::_OnCommit(mgr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::_OnAppliedChanges(TxnManager& mgr)
+    {
+    // This is called by undo/redo and by revision manager
+    if (m_inBulkUpdate)
+        {
+        BeAssert(false && "downloading revisions in a bulk update transaction??");
+        m_inBulkUpdate = false;
+        m_req.Reset();
+        }
+    T_Super::_OnAppliedChanges(mgr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void BulkUpdateBriefcaseManager::_OnUndoRedo(TxnManager& mgr, TxnAction action)
+    {
+    if (m_inBulkUpdate)
+        {
+        m_inBulkUpdate = false;
+        m_req.Reset();
+        }
+    T_Super::_OnUndoRedo(mgr, action);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManagerPtr IBriefcaseManager::CreateMasterBriefcaseManager(DgnDbR db)
+    {
+    return MasterBriefcaseManager::Create(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManagerPtr IBriefcaseManager::CreateBulkUpdateBriefcaseManager(DgnDbR db)
+    {
+    return BulkUpdateBriefcaseManager::Create(db);
     }
 
