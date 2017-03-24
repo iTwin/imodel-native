@@ -583,7 +583,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     if (ECObjectsStatus::Success != FindEnumeration(schema, enumeration, sdInfo))
         {
         Utf8String enumName = CreateEnumerationName(rootClasses, prop);
-        status = CreateEnumeration(enumeration, schema, enumName.c_str(), sdInfo);
+        status = CreateEnumeration(enumeration, rootClasses[0]->GetSchemaR(), enumName.c_str(), sdInfo);
         int number = 1;
         while (ECObjectsStatus::NamedItemAlreadyExists == status)
             {
