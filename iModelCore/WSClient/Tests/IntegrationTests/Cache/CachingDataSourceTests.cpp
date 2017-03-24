@@ -77,7 +77,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     WSQuery query("GlobalSchema", "Project");
     query.SetTop(100);
     auto objResult = ds->GetObjects(key, query,
-                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
@@ -125,7 +125,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     txn.Commit();
 
     auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"),
-                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
@@ -330,11 +330,27 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG25ProjectWisePluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath = GetTestCachePath();
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWisePluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
