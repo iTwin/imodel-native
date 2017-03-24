@@ -1042,22 +1042,35 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 //
 //===================================================
 
-NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecP numSpec, Utf8CP alias, CompositeValueSpecP compSpec)
+ //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
+ 
+ //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
+ //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
+NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias)
     {
     m_specType = FormatSpecType::Undefined;
     m_alias = alias;
     m_name = name;
-    m_numericSpec = numSpec;
-    if (nullptr != numSpec)
-        m_specType = FormatSpecType::Numeric;
-    m_compositeSpec = compSpec;
-    if (nullptr != compSpec)
-        m_specType = FormatSpecType::Composite;
+    m_numericSpec = NumericFormatSpec(numSpec);
+    m_compositeSpec = CompositeValueSpec(compSpec);
+    m_specType = FormatSpecType::Composite;
     m_problemCode = FormatProblemCode::NoProblems;
     if (Utils::IsNameNullOrEmpty(name))
         m_problemCode = FormatProblemCode::NFS_InvalidSpecName;
     }
 
+NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias)
+    {
+    m_specType = FormatSpecType::Undefined;
+    m_alias = alias;
+    m_name = name;
+    m_numericSpec = NumericFormatSpec(numSpec);
+    m_specType = FormatSpecType::Numeric;
+    m_compositeSpec = CompositeValueSpec();
+    m_problemCode = FormatProblemCode::NoProblems;
+    if (Utils::IsNameNullOrEmpty(name))
+        m_problemCode = FormatProblemCode::NFS_InvalidSpecName;
+    }
 
 END_BENTLEY_FORMATTING_NAMESPACE
 

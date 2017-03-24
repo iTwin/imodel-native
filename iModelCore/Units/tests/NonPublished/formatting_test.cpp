@@ -142,11 +142,16 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("AngleDMS", ang).c_str());
     EXPECT_STREQ (u8"135° 11' 30\"", NumericFormatSpec::StdFormatQuantity("dms8", ang).c_str());
     EXPECT_STREQ (u8"135° 11 1/2'", NumericFormatSpec::StdFormatQuantity("dm8", ang).c_str());
-
-    BEU::Quantity const distM = BEU::Quantity(3560.5, *metrUOM);
+    BEU::Quantity distM = BEU::Quantity(3560.5, *metrUOM);
     EXPECT_STREQ ("2mile(s)373yrd(s) 2' 5 1/4\"", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());
 
-    
+    distM = BEU::Quantity(500.0, *metrUOM);
+    EXPECT_STREQ ("546yrd(s) 2' 5\"", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
+    EXPECT_STREQ ("1640' 5\"", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
+
+   /* LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());
+    LOG.infov("yfi8 %s", NumericFormatSpec::StdFormatQuantity("yfi8", distM).c_str());
+    LOG.infov("fi8 %s", NumericFormatSpec::StdFormatQuantity("fi8", distM).c_str());*/
     //LOG.infov("Distance %s", NumericFormatSpec::StdFormatQuantity("myfi4", distM).c_str());
     //LOG.infov("dms8 %s", NumericFormatSpec::StdFormatQuantity("dms8", ang, degUOM).c_str());
     //LOG.infov("dm8 %s", NumericFormatSpec::StdFormatQuantity("dm8", ang, degUOM).c_str());
@@ -506,7 +511,7 @@ TEST(FormattingTest, DictionaryValidation)
 
     Utf8CP name = *vec.begin();
     Utf8String nameL = StdFormatSet::StdFormatNameList(true);
-    NamedFormatSpecCP fmtP;
+    NamedFormatSpecP fmtP;
     Utf8String serT;
     LOG.infov("Aliases:  %s", nameL.c_str());
     nameL = StdFormatSet::StdFormatNameList(false);

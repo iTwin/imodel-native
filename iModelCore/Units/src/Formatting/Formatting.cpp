@@ -528,7 +528,7 @@ int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec = -1)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec, double round)
+size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec, double round)
     {
     double ival;
     Utf8Char sign = '+';
@@ -677,7 +677,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, in
 Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round)
     {
     char buf[64];
-    FormatDouble(dval, buf, sizeof(buf), prec, round);
+    FormatDoubleBuf(dval, buf, sizeof(buf), prec, round);
     return Utf8String(buf);
     }
 //---------------------------------------------------------------------------------------
@@ -690,7 +690,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     BEU::UnitCP unitQ = qty.GetUnit();
     BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
-    FormatDouble(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
+    FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     if(nullptr == useUnit)
         return Utf8String(buf);
     Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetName(), space);
@@ -750,6 +750,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR 
         NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(), 
                                                   FormatConstant::DefaultFormatTraits(), 0);
         fmtI.SetKeepSingleZero(false);
+
         switch (compS->GetType())
             {
             case CompositeSpecType::Single: // there is only one value to report
@@ -1118,7 +1119,7 @@ Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFormat)
+Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecP namedFormat)
     {
     Utf8String str;
 
@@ -1126,7 +1127,7 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
     // Names section
     str.append(*ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', ""));
     str.append(" " + *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', ""));
-    NumericFormatSpecCP format = namedFormat->GetNumericSpec();
+    NumericFormatSpecP format = namedFormat->GetNumericSpec();
     // formating type/mode
     str.append(" " + Utils::PresentationTypeName(format->GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
     // precision
@@ -1169,11 +1170,18 @@ Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias, CompositeValueSpecP compS)
+NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias)
     {
-    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias, compS);
+    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, compS, alias);
     m_formatSet.push_back(nfs);
-    return fmtP;
+    return nfs->GetNumericSpec();
+    }
+
+NumericFormatSpecP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias)
+    {
+    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP, alias);
+    m_formatSet.push_back(nfs);
+    return nfs->GetNumericSpec();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1204,14 +1212,21 @@ void StdFormatSet::StdInit()
     AddFormat("Fractional128", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
     CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
-    AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits,0), "dms", cvs);
-    AddFormat("AngleDMS8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "dms8", cvs);
+    AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits,0), cvs, "dms");
+    AddFormat("AngleDMS8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dms8");
     cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE");
     cvs->SetUnitLabels("\xC2\xB0", u8"'");
-    AddFormat("AngleDM8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "dm8", cvs);
+    AddFormat("AngleDM8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dm8");
     cvs = new CompositeValueSpec("MILE", "YRD", "FT", "IN");
     cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
-    AddFormat("AmerMYFI4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), "myfi4", cvs);
+    AddFormat("AmerMYFI4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), cvs, "myfi4");
+    cvs = new CompositeValueSpec("FT", "IN");
+    cvs->SetUnitLabels("'", "\"");
+    AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
+    cvs = new CompositeValueSpec("YRD", "FT", "IN");
+    cvs->SetUnitLabels("yrd(s)", "'", "\"");
+    AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
+
     }
 
 //---------------------------------------------------------------------------------------

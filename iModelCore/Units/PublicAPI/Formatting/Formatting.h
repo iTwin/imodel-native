@@ -573,7 +573,7 @@ public:
     
     UNITS_EXPORT int FormatInteger (int n, Utf8P bufOut, int bufLen);
     UNITS_EXPORT int static FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
-    UNITS_EXPORT size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0);
+    UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0);
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
@@ -645,6 +645,7 @@ protected:
 public:
 
    // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
+    CompositeValueSpec() { Init(); };
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCP other);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit=nullptr, BEU::UnitCP MinorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
@@ -705,29 +706,29 @@ public:
 struct NamedFormatSpec
     {
 private:
-        Utf8CP          m_name;                  // name or ID of the format
-        Utf8CP          m_alias;                 // short alternative name (alias)
-        NumericFormatSpecP   m_numericSpec;
-        CompositeValueSpecP  m_compositeSpec;
+        Utf8String      m_name;                  // name or ID of the format
+        Utf8String           m_alias;                 // short alternative name (alias)
+        NumericFormatSpec   m_numericSpec;
+        CompositeValueSpec  m_compositeSpec;
         FormatSpecType  m_specType;
         FormatProblemCode m_problemCode;
 
 public:
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecP numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
+        //UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
-        Utf8CP SetAlias(Utf8CP alias) { return m_alias = alias; }
-        Utf8CP GetAlias() const { return m_alias; }
-        bool HasName(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_name); }
-        bool HasAlias(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_alias); }
-        Utf8CP GetName() const { return m_name; };
+        Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
+        Utf8CP GetAlias() const { return m_alias.c_str(); }
+        bool HasName(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_name.c_str()); }
+        bool HasAlias(Utf8CP name) { return 0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()); }
+        Utf8CP GetName() const { return m_name.c_str(); };
         FormatSpecType  GetSpecType(){return m_specType;}
         bool HasComposite() { return FormatSpecType::Composite == m_specType; }
-        NumericFormatSpecP   GetNumericSpec() const { return m_numericSpec; }
-        CompositeValueSpecP  GetCompositeSpec() { return  (HasComposite() ? m_compositeSpec : nullptr); }
+        NumericFormatSpecP GetNumericSpec() { return &(this->m_numericSpec); }
+        CompositeValueSpecP GetCompositeSpec() { return  (HasComposite() ? &m_compositeSpec : nullptr); }
         bool IsProblem() { return m_problemCode == FormatProblemCode::NoProblems; }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
-        PresentationType GetPresentationType() { return m_numericSpec->GetPresentationType(); }
+        PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
     };
 
 //=======================================================================================
@@ -769,7 +770,8 @@ struct StdFormatSet
 private:
     bvector<NamedFormatSpecP> m_formatSet;
  
-    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecP fmtP, Utf8CP alias = nullptr, CompositeValueSpecP compS = nullptr);
+    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
+    NumericFormatSpecP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr);
     void StdInit();
     StdFormatSet() { StdInit(); }
     static StdFormatSet& Set() { static StdFormatSet set; return set; }
@@ -920,7 +922,7 @@ public:
     UNITS_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     UNITS_EXPORT FormatParameterP GetParameterByIndex(int index);
     UNITS_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
-    UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecCP format);
+    UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecP format);
     };
 
 //=======================================================================================
