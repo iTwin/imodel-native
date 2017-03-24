@@ -1213,9 +1213,12 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
+ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause, PolymorphicQuery polymorphic) const
     {
     Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,Model.Id,Parent.Id,UserLabel,LastMod FROM ");
+    if (PolymorphicQuery::No == polymorphic)
+        sql.append("ONLY ");
+
     sql.append(className);
 
     if (whereClause)
