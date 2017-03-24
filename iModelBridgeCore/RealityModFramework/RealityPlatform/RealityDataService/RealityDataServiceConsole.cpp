@@ -193,6 +193,7 @@ RealityDataConsole::RealityDataConsole() :
     m_filterProperties.push_back("Type");
     m_filterProperties.push_back("OwnedBy");
     m_filterProperties.push_back("Fuzzy Filter");
+    m_filterProperties.push_back("ProjectId");
     m_filterProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
@@ -497,6 +498,9 @@ void RealityDataConsole::ListRoots()
 
     if (m_queryFilter.length() > 0)
         enterpriseReq.SetQuery(m_queryFilter);
+
+    if (m_projectFilter.length() > 0)
+        enterpriseReq.SetProject(m_projectFilter);
 
     RequestStatus status = RequestStatus::OK;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
@@ -1027,6 +1031,7 @@ void RealityDataConsole::Filter()
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
         DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
+        DisplayInfo(Utf8PrintfString("ProjectId : %s\n", m_projectFilter));
         DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter));
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
@@ -1052,6 +1057,8 @@ void RealityDataConsole::Filter()
             m_ownerFilter = value;
         else if (filter.Equals("Fuzzy Filter"))
             m_queryFilter = value;
+        else if (filter.Equals("ProjectId"))
+            m_projectFilter = value;
         }
     }
 

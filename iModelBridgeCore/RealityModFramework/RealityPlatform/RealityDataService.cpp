@@ -626,6 +626,9 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     
     if (m_query.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+
+    if (m_project.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
 }
 
 //=====================================================================================
@@ -717,6 +720,11 @@ void RealityDataPagedRequest::SetFilter(Utf8StringCR filter) { m_filter = filter
 void RealityDataPagedRequest::SetQuery(Utf8StringCR query) { m_query = query; }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void RealityDataPagedRequest::SetProject(Utf8StringCR project) { m_project = project; }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayload() const
@@ -753,6 +761,9 @@ void RealityDataListByEnterprisePagedRequest::_PrepareHttpRequestStringAndPayloa
 
     if (m_query.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+
+    if (m_project.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
 }
 
 //=====================================================================================
@@ -774,6 +785,9 @@ void RealityDataProjectRelationshipByProjectIdPagedRequest::_PrepareHttpRequestS
 
     if (m_query.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+
+    if (m_project.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
     }
 
 //=====================================================================================
@@ -795,6 +809,9 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
 
     if (m_query.length() > 0)
         m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+
+    if (m_project.length() > 0)
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
     }
 
 //=====================================================================================

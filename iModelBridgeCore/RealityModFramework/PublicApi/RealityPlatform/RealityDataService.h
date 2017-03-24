@@ -417,6 +417,7 @@ public:
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
+    REALITYDATAPLATFORM_EXPORT void SetProject(Utf8StringCR project);
 
     //! Sets the sort order for the list. This sorting is performed server-side.
     //! Note that it is not possible to specify two sorts (sort by field a then by filed b is not supported).
@@ -435,6 +436,7 @@ protected:
     Utf8String m_filter;
     Utf8String m_query;
     Utf8String m_sort;
+    Utf8String m_project;
     };
 
 
