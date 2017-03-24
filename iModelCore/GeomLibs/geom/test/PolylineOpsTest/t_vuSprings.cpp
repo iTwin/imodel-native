@@ -542,7 +542,7 @@ bvector<DPoint3d> const points
     vu_flipTrianglesForIncircle (graph);
 
     PolyfaceHeaderPtr polyface = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
-    bvector<DPoint3d> &outputPoints = polyface->Point ();
+    //bvector<DPoint3d> &outputPoints = polyface->Point ();
     vu_transform (graph, &localToWorld);
     return graph;
     }
