@@ -35,8 +35,8 @@ $(BuildContext)Delivery/Bentley.SelectServer.SaaS.Client.dll : ${BentleySelectSe
 $(BuildContext)Delivery/Bentley.Discovery.Buddi.Client.dll : ${BentleyDiscoveryBuddiClientSrc}/Bentley.Discovery.Buddi.Client.dll
     $(LinkFirstDepToFirstTarget)
 	
-$(BuildContext)Delivery/Common.Logging.dll : ${CommonLoggingSrc}/Common.Logging.dll
-    $(LinkFirstDepToFirstTarget)
-	
-$(BuildContext)Delivery/Common.Logging.Core.dll : ${CommonLoggingCoreSrc}/Common.Logging.Core.dll
-    $(LinkFirstDepToFirstTarget)
+#$(BuildContext)Delivery/Common.Logging.dll : ${CommonLoggingSrc}/Common.Logging.dll
+#    $(LinkFirstDepToFirstTarget)
+#	
+#$(BuildContext)Delivery/Common.Logging.Core.dll : ${CommonLoggingCoreSrc}/Common.Logging.Core.dll
+#    $(LinkFirstDepToFirstTarget)

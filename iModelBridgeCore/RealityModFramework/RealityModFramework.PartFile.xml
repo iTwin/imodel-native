@@ -274,8 +274,8 @@
 			<Assemblies>Delivery/Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
 			<Assemblies>Delivery/Microsoft.ServiceBus.dll</Assemblies> 
 			<Assemblies>Delivery/Bentley.Discovery.Buddi.Client.dll</Assemblies> 
-			<Assemblies>Delivery/Common.Logging.dll</Assemblies>
-			<Assemblies>Delivery/Common.Logging.Core.dll</Assemblies>
+			<!--<Assemblies>Delivery/Common.Logging.dll</Assemblies>-->
+			<!--<Assemblies>Delivery/Common.Logging.Core.dll</Assemblies>-->
 		</Bindings>
 	</Part>
 	
