@@ -179,7 +179,7 @@ protected:
     void _OnElementInserted(DgnElementId) override;
     void _OnModelInserted(DgnModelId) override;
     RepositoryStatus _ReserveCode(DgnCodeCR) override;
-    void _OnDgnDbDestroyed() {m_req.Reset(); m_inBulkUpdate=false; T_Super::_OnDgnDbDestroyed();}
+    void _OnDgnDbDestroyed() override {m_req.Reset(); m_inBulkUpdate=false; T_Super::_OnDgnDbDestroyed();}
     RepositoryStatus _OnFinishRevision(DgnRevision const& rev) override;
     void _OnCommit(TxnManager& mgr) override;
     void _OnAppliedChanges(TxnManager& mgr) override;
@@ -188,8 +188,8 @@ protected:
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
 
     void _StartBulkUpdate() override {BeAssert(!m_inBulkUpdate); m_inBulkUpdate = true;}
-    Response _AcquireLocksAndCodes();
-    void _EndBulkUpdate() {BeAssert(m_req.IsEmpty()); m_inBulkUpdate = false;}
+    Response _AcquireLocksAndCodes() override;
+    void _EndBulkUpdate() override {BeAssert(m_req.IsEmpty()); m_inBulkUpdate = false;}
 
     void AccumulateRequests(Request const&);
 public:
