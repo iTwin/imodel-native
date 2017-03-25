@@ -3059,7 +3059,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
 
     Json::Value relationshipJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(relationshipJson, relationshipKey));
-    EXPECT_NE(Json::Value::null, relationshipJson);
+    EXPECT_NE(Json::Value::GetNull(), relationshipJson);
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
@@ -6115,7 +6115,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
-    EXPECT_EQ(Json::Value::null, instanceJson);
+    EXPECT_EQ(Json::Value::GetNull(), instanceJson);
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne)
@@ -6245,7 +6245,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
-    EXPECT_EQ(Json::Value::null, instanceJson);
+    EXPECT_EQ(Json::Value::GetNull(), instanceJson);
 
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }

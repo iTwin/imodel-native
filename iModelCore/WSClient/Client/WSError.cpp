@@ -423,7 +423,7 @@ WSError::Id WSError::GetId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonValueCR WSError::GetData() const
     {
-    return m_data ? *m_data : Json::Value::null;
+    return m_data ? *m_data : Json::Value::GetNull();
     }
 
 /*--------------------------------------------------------------------------------------+

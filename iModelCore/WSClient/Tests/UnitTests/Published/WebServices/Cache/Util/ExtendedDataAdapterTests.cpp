@@ -178,7 +178,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
 
     data = adapter.GetData(owner);
     EXPECT_TRUE(data.GetData().empty());
-    EXPECT_EQ(Json::Value::null, data.GetValue("Test"));
+    EXPECT_EQ(Json::Value::GetNull(), data.GetValue("Test"));
     }
 
 #endif
