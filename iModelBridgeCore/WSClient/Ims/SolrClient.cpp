@@ -2,7 +2,7 @@
 |
 |     $Source: Ims/SolrClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -77,7 +77,7 @@ AsyncTaskPtr<SolrGetResult> SolrClient::SendGetRequest(SolrQueryCR query) const
             {
             Json::Value json;
             if (!Json::Reader::Parse(httpResponse.GetBody().AsString(), json))
-                json = Json::Value::null;
+                json = Json::Value::GetNull();
 
             return SolrGetResult::Success(json);
             }

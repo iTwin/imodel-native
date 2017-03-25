@@ -342,7 +342,7 @@ TEST_F(WSErrorTests, GetData_ReturnsData)
     WSError error(StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
 
     JsonValueCR data = error.GetData();
-    EXPECT_NE(Json::Value::null, data);
+    EXPECT_NE(Json::Value::GetNull(), data);
     EXPECT_TRUE(data.isMember("customProperty"));
     EXPECT_EQ("TestData", data["customProperty"].asString());
     }
@@ -351,23 +351,23 @@ TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
     {
     WSError error(StubHttpResponse(ConnectionStatus::Canceled));
 
-    EXPECT_EQ(Json::Value::null, error.GetData());
+    EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
 
 TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
     {
-    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::None)).GetData());
-    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetData());
-    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetData());
-    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetData());
-    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetData());
+    EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::None)).GetData());
+    EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetData());
+    EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetData());
+    EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetData());
+    EXPECT_EQ(Json::Value::GetNull(), WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetData());
     }
 
 TEST_F(WSErrorTests, GetData_IMSRedirect)
     {
     WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
 
-    EXPECT_EQ(Json::Value::null, error.GetData());
+    EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
 
 TEST_F(WSErrorTests, GetData_Xml)
@@ -382,6 +382,6 @@ TEST_F(WSErrorTests, GetData_Xml)
 
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationXml}}));
 
-    EXPECT_EQ(Json::Value::null, error.GetData());
+    EXPECT_EQ(Json::Value::GetNull(), error.GetData());
     }
     
