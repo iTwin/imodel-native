@@ -288,6 +288,7 @@ static std::string s_unlitFragmentShader = R"RAW_STRING(
         }
 )RAW_STRING";
 
+// Polyline shaders.
 static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
         gl_Position    = u_proj * u_mv * vec4(a_pos,  1.0);
 
@@ -337,8 +338,25 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
             gl_Position.y += delta.y * 2.0 * gl_Position.w / czm_viewport.w;
 )RAW_STRING";
 
+static std::string s_adjustPolylineContrast = R"RAW_STRING(
+    
+    vec4 adjustContrast(vec4 color)
+        {
+        float tolerance = 0.01;
+        vec3 delta = abs(czm_backgroundColor.rgb - color.rgb);
+        if (delta.r+delta.g+delta.b < tolerance)
+            {
+            vec3 bgMod = czm_backgroundColor.rgb * vec3(0.3, 0.59, 0.11);
+            float bgIntensity = bgMod.r + bgMod.g + bgMod.b;
+            float fgIntensity = bgIntensity > 0.5 ? 0.0 : 1.0;
+            color.rgb = vec3(fgIntensity);
+            }
 
-// Polyline shaders.
+        return color;
+        }
+
+)RAW_STRING";
+
 static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3  a_pos;
     attribute vec2  a_prev;
@@ -383,7 +401,6 @@ R"RAW_STRING(
         }
 )RAW_STRING";
 
-// Polyline shaders.
 static std::string s_tesselatedSolidPolylineVertexCommon = s_octDecode + R"RAW_STRING(
     attribute vec3 a_pos;
     attribute vec2 a_prev;

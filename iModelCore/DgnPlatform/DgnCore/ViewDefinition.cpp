@@ -1190,14 +1190,14 @@ void DisplayStyle::SetMonochromeColor(ColorDef val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::SceneLights DisplayStyle3d::CreateSceneLights(Render::TargetR target)
+Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     {
     JsonValueCR sceneLights = GetStyle(Json::StaticString(str_SceneLights()));
 
-    Render::SceneLights lights;
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
-    lights.AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
+    Render::SceneLightsPtr lights = new Render::SceneLights();
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
 
     auto& sun = (Lighting::Parameters const&) sceneLights[str_Sun()];
     if (sun.IsValid())
@@ -1207,10 +1207,10 @@ Render::SceneLights DisplayStyle3d::CreateSceneLights(Render::TargetR target)
         if (!sundir.isNull())
             JsonUtils::DVec3dFromJson(dir, sundir);
 
-        lights.AddLight(target.CreateLight(sun, &dir));
+        lights->AddLight(target.CreateLight(sun, &dir));
         }
 
-    lights.m_brightness.FromJson(sceneLights[str_Brightness()]);
+    lights->m_brightness.FromJson(sceneLights[str_Brightness()]);
     return lights;
     }
 

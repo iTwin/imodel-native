@@ -262,16 +262,16 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         // Create a sheet
         DgnDbTestUtils::InsertDrawingCategory(*db, "TestDrawingCategory");
         DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "SheetListModel");
-        auto sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, "Sheet1");
-        auto sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1);
+        Sheet::ElementPtr sheet1 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale1, height1, width1, "Sheet1");
+        Sheet::ModelPtr sheetModel1 = DgnDbTestUtils::InsertSheetModel(*sheet1);
         sheetModelId1 = sheetModel1->GetModelId();
 
         ASSERT_EQ(1, countSheetModels(*db));
         ASSERT_NE(DgnDbStatus::Success, sheetModel1->Insert()) << "Should be illegal to INSERT a SheetModel that is already persistent";
 
         // Create a second sheet
-        auto sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, "Sheet2");
-        auto sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2);
+        Sheet::ElementPtr sheet2 = DgnDbTestUtils::InsertSheet(*sheetListModel, scale2, height2, width2, "Sheet2");
+        Sheet::ModelPtr sheetModel2 = DgnDbTestUtils::InsertSheetModel(*sheet2);
         sheetModelId2 = sheetModel2->GetModelId();
 
         ASSERT_EQ(2, countSheetModels(*db));
@@ -282,10 +282,30 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_EQ(height2, sheet2->GetHeight());
         ASSERT_EQ(width1, sheet1->GetWidth());
         ASSERT_EQ(width2, sheet2->GetWidth());
+        DgnCode Code1 = Sheet::Element::CreateCode(*sheetListModel, "Sheet1");
+        ASSERT_EQ(Code1,sheet1->GetCode());
+        DgnCode Code2 = Sheet::Element::CreateCode(*sheetListModel, "Sheet2");
+        ASSERT_EQ(Code2, sheet2->GetCode());
+
+        //Set Sheet properies 
+        sheet1->SetScale(2);
+        ASSERT_EQ(2, sheet1->GetScale());
+        sheet1->SetHeight(4);
+        ASSERT_EQ(4, sheet1->GetHeight());
+        sheet1->SetWidth(3.5);
+        ASSERT_EQ(3.5, sheet1->GetWidth());
+        sheet2->SetScale(2.5);
+        ASSERT_EQ(2.5, sheet2->GetScale());
+        sheet2->SetHeight(4);
+        ASSERT_EQ(4, sheet2->GetHeight());
+        sheet2->SetWidth(3);
+        ASSERT_EQ(3, sheet2->GetWidth());
+
+        ASSERT_TRUE(sheet1->Update().IsValid());
+        ASSERT_TRUE(sheet2->Update().IsValid());
 
         sheet1 = nullptr;
         sheet2 = nullptr;
-
         dbFileName = db->GetFileName();
         db->SaveChanges();
         db->CloseDb();
@@ -297,14 +317,26 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(db.IsValid());
 
-        auto sheetModel1 = db->Models().Get<Sheet::Model>(sheetModelId1);
+        Sheet::ModelPtr sheetModel1 = db->Models().Get<Sheet::Model>(sheetModelId1);
         ASSERT_TRUE(sheetModel1.IsValid());
 
+        Sheet::ElementCPtr sheet1 = db->Elements().Get<Sheet::Element>(sheetModel1->GetModeledElementId());
+        ASSERT_TRUE(sheet1.IsValid());
+        ASSERT_EQ(2, sheet1->GetScale());
+        ASSERT_EQ(4, sheet1->GetHeight());
+        ASSERT_EQ(3.5, sheet1->GetWidth());
+
+        DgnModelPtr sheetModel2 = db->Models().GetModel(sheetModelId2);
+        Sheet::ElementCPtr sheet2 = db->Elements().Get<Sheet::Element>(sheetModel2->GetModeledElementId());
+        ASSERT_EQ(2.5, sheet2->GetScale());
+        ASSERT_EQ(4, sheet2->GetHeight());
+        ASSERT_EQ(3, sheet2->GetWidth());
         // Delete Sheet2
         ASSERT_EQ(2, countSheetModels(*db));
-        DgnModelPtr sheetModel2 = db->Models().GetModel(sheetModelId2);
         ASSERT_EQ(DgnDbStatus::Success, sheetModel2->Delete());
         ASSERT_EQ(1, countSheetModels(*db));
+        sheet1 = nullptr;
+        sheet2 = nullptr;
         db->SaveChanges();
         db->CloseDb();
         }

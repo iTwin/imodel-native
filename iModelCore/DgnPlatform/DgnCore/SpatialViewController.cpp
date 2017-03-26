@@ -324,14 +324,44 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
         if (!model.IsValid())
             continue;
 
-        auto geomModel = model->ToGeometricModel3d();
-        if (nullptr != geomModel)
-            geomModel->_AddTerrainGraphics(context);
+        auto spatialModel = model->ToSpatialModelP();
+        if (nullptr != spatialModel)
+            spatialModel->_AddTerrainGraphics(context);
 
         Utf8CP message = model->GetCopyrightMessage();
         if (!Utf8String::IsNullOrEmpty(message)) // skip empty strings.
             m_copyrightMsgs.insert(message);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLightsPtr SpatialViewController::GetLights() const
+    {
+    DgnDb::VerifyClientThread();
+    if (!m_lights.IsValid())
+        {
+        Render::TargetP target = m_vp->GetRenderTarget();
+        if (nullptr == target)
+            return nullptr;
+
+        m_lights = GetSpatialViewDefinition().GetDisplayStyle3d().CreateSceneLights(*target); // lighting setup for the scene
+
+        auto& models = GetDgnDb().Models();
+        for (DgnModelId modelId : GetViewedModels())
+            {
+            DgnModelPtr model = models.GetModel(modelId);
+            if (!model.IsValid())
+                continue;
+
+            auto spatialModel = model->ToSpatialModelP();
+            if (nullptr != spatialModel)
+                spatialModel->AddLights(*m_lights, *target);
+            }
+        }
+
+    return m_lights;
     }
 
 /*---------------------------------------------------------------------------------**//**
