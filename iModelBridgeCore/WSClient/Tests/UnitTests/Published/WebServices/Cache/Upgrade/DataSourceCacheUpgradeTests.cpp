@@ -107,7 +107,7 @@ BeFileName GetSeedFilePath(BeFileName cachePath, Utf8StringCR fileName)
     return path.AppendToPath(BeFileName(fileName));
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "empty");
 
@@ -115,7 +115,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success)
     ASSERT_EQ(SUCCESS, cache.Open(paths.first, paths.second));
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "data");
 
@@ -126,7 +126,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData)
     EXPECT_FALSE(HasFailure());
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingNewCacheUpgradedFlag_SuccessAndContainsOldData)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
     {
     // *-upgrade-new is finalized but has not set upgraded flag - should upgrade again
     auto paths = GetSeedPaths(5, "interrupted1");
@@ -138,7 +138,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingN
     EXPECT_FALSE(HasFailure());
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNewCacheUpgradedFlag_SuccessAndContainsOldData)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
     {
     // *-upgrade-new is finalized and has set upgraded flag - should copy file and return
     auto paths = GetSeedPaths(5, "interrupted2");
@@ -150,7 +150,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNe
     EXPECT_FALSE(HasFailure());
     }
 
-TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_ServerInfoSetDoDefaultAndSchemasAreValid)
+TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_ServerInfoSetDoDefaultAndSchemasAreValid_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "data");
     auto client = MockWSRepositoryClient::Create();
@@ -163,7 +163,7 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_Server
     EXPECT_FALSE(HasFailure());
     }
 
-TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInterrupted1_SuccessAndContainsOldData)
+TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInterrupted1_SuccessAndContainsOldData_KnownIssue)
     {
     auto paths = GetSeedPaths(5, "interrupted1");
     auto client = MockWSRepositoryClient::Create();
@@ -404,7 +404,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -427,7 +427,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedProperti
     EXPECT_EQ(expected, changesJson);
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -450,7 +450,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadMod
     EXPECT_EQ(expected, changesJson);
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -507,7 +507,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadMod
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem)
+TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(8, "data");
@@ -564,7 +564,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -608,7 +608,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached)
     EXPECT_EQ(0, CountClassInstances(cache, "DSCacheSchema.CachedResponseInfoToResultWeakRelationship"));
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -645,7 +645,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved
     EXPECT_FALSE(cache.FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -699,7 +699,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine)
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine)
+TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(10, "data");
@@ -748,7 +748,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingRe
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges)
+TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(11, "data");
@@ -806,7 +806,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChange
 //    cache.Close();
 //    }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced)
+TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(12, "data");
@@ -824,7 +824,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemo
     EXPECT_EQ("", cache.ReadResponseCacheTag(fullResponseKey));
     }
 
-TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
+TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData_KnownIssue)
     {
     // Arrange
     auto paths = GetSeedPaths(12, "data");

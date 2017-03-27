@@ -46,16 +46,36 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaManager::ImportSchemas(const std::vector<BeFileName>& schemaPaths)
+BentleyStatus SchemaManager::ImportExternalSchemas(const std::vector<BeFileName>& schemaPaths)
     {
     std::vector<ECSchemaPtr> schemas;
     if (SUCCESS != LoadSchemas(schemaPaths, schemas) ||
-        SUCCESS != ImportSchemas(schemas))
+        SUCCESS != ImportExternalSchemas(schemas))
         {
         BeAssert(false);
         return ERROR;
         }
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaManager::ImportExternalSchemas(const std::vector<ECSchemaPtr>& schemas)
+    {
+    ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
+    for (auto schema : schemas)
+        {
+        if (schema.IsNull())
+            return ERROR;
+
+        if (SUCCESS != FixLegacySchema(*schema, *context))
+            return ERROR;
+
+        if (SUCCESS != FixLegacySchemaRelationshipCardinalities(*schema))
+            return ERROR;
+        }
+    return ImportSchemas(schemas);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -177,9 +197,6 @@ std::vector<ECSchemaPtr>& schemasOut
         if (schema.IsNull())
             return ERROR;
 
-        if (SUCCESS != FixLegacySchema(*schema, *context))
-            return ERROR;
-
         schemasOut.push_back(schema);
         }
 
@@ -213,8 +230,58 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
 
     LOG.warningv(
         "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb. "
-        "Some data may not be possible to cache - consider verifying required functionality.", 
+        "Some data may not be possible to cache - consider verifying required functionality.",
         schema.GetFullSchemaName().c_str());
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& schema)
+    {
+    // XXX: 2017-03 workaround to support WSG 2.5 schemas on DgnDb61-16Q4 for Navigator app.
+    // Relationships with (1,1) cardinality ends are mapped as required and such end class instance cannot be inserted without NavigationProperty.
+    // WSCache insert instances seperately, and WSG 2.x schemas have no NavigationProperties, so workaround to change cardinalities from (1,1) to (0,1) is done.
+
+    bset<ECClassCP> modifiedClasses;
+
+    for (ECClassCP ecClass : schema.GetClasses())
+        {
+        ECRelationshipClassCP ecRelClass = ecClass->GetRelationshipClassCP();
+        if (!ecRelClass)
+            continue;
+
+        if (0 == RelationshipCardinality::Compare(ecRelClass->GetSource().GetCardinality(), RelationshipCardinality::OneOne()))
+            {
+            ecRelClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+            modifiedClasses.insert(ecRelClass);
+            }
+
+        if (0 == RelationshipCardinality::Compare(ecRelClass->GetTarget().GetCardinality(), RelationshipCardinality::OneOne()))
+            {
+            ecRelClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+            modifiedClasses.insert(ecRelClass);
+            }
+        }
+
+    if (!modifiedClasses.empty())
+        {
+        Utf8String classesStr;
+        for (auto ecClass : modifiedClasses)
+            {
+            if (!classesStr.empty())
+                classesStr += ", ";
+            classesStr += ecClass->GetName();
+            }
+
+        LOG.warningv(
+            "Adjustements for schema '%s' relationship classes were applided due to compatibility issues. "
+            "End cardinalities (1,1) were changed to (0,1) for classes: %s",
+            schema.GetFullSchemaName().c_str(),
+            classesStr.c_str());
+        }
 
     return SUCCESS;
     }
