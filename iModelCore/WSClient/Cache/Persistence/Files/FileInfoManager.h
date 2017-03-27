@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,7 @@
 
 #include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
+#include <MobileDgn/Utils/Threading/AsyncError.h>
 
 #include "../Instances/ObjectInfoManager.h"
 #include "../Hierarchy/IDeleteHandler.h"
@@ -68,7 +69,11 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances, DateTimeCP maxLastAccessDate = nullptr);
+        CacheStatus DeleteFilesNotHeldByInstances(
+            const ECInstanceKeyMultiMap& holdingInstances,
+            DateTimeCP maxLastAccessDate = nullptr,
+            AsyncError* errorOut = nullptr
+            );
 
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
 
