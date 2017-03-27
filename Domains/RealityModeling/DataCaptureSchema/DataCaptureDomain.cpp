@@ -30,30 +30,9 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    DgnSubCategory::Appearance defaultApperance;
-    defaultApperance.SetInvisible(false);
-
-    DgnCategory cameraDeviceCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_CameraDevice, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    cameraDeviceCategory.Insert(defaultApperance);
-    BeAssert(cameraDeviceCategory.GetCategoryId().IsValid());
-    DgnCategory shotCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Shot, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    shotCategory.Insert(defaultApperance);
-    BeAssert(shotCategory.GetCategoryId().IsValid());
-    DgnCategory PoseCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Pose, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    PoseCategory.Insert(defaultApperance);
-    BeAssert(PoseCategory.GetCategoryId().IsValid());
-
-    DgnCategory gimbalCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Gimbal, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    gimbalCategory.Insert(defaultApperance);
-    BeAssert(gimbalCategory.GetCategoryId().IsValid());
-
-    DgnCategory gimbalAngleRangeCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_GimbalAngleRange, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    gimbalAngleRangeCategory.Insert(defaultApperance);
-    BeAssert(gimbalAngleRangeCategory.GetCategoryId().IsValid());
-
-    DgnCategory droneCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Drone, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    droneCategory.Insert(defaultApperance);
-    BeAssert(droneCategory.GetCategoryId().IsValid());
+    InsertCategory(dgndb, ColorDef::White(), BDCP_CATEGORY_AcquisitionDevice);
+    ColorDef orange(0xff,0x7f,0x27);
+    InsertCategory(dgndb, orange, BDCP_CATEGORY_Shot);
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
     BeAssert(authority.IsValid());
@@ -63,6 +42,23 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(authority->GetAuthorityId().IsValid());
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DataCaptureDomain::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP code)
+    {
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    appearance.SetInvisible(false);
+    appearance.SetWeight(2);
+
+    DgnCategory category(DgnCategory::CreateParams(db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain));
+    category.Insert(appearance);
+
+    BeAssert(category.GetCategoryId().IsValid());
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016

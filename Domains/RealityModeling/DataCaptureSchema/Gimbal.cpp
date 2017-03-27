@@ -26,7 +26,7 @@ void GimbalHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 GimbalPtr Gimbal::Create(Dgn::SpatialModelR model)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Gimbal, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     GimbalPtr cp = new Gimbal(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     return cp;

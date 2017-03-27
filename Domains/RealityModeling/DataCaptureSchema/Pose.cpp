@@ -49,7 +49,7 @@ void PoseHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 PosePtr Pose::Create(Dgn::SpatialModelR model, bool IsECEFSupported)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Pose, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     PosePtr cp = new Pose(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     cp->SetIsECEF(IsECEFSupported);

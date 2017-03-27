@@ -32,7 +32,7 @@ DronePtr Drone::Create(Dgn::SpatialModelR model, GimbalElementId gimbalId)
         }
 
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Drone, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     DronePtr cp = new Drone(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId), gimbalId);
     return cp;
