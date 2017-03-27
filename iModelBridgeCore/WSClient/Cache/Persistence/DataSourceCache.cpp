@@ -967,7 +967,7 @@ BentleyStatus DataSourceCache::RemoveFile(ObjectIdCR objectId)
     if (!info.IsInCache())
         return SUCCESS;
 
-    if (SUCCESS != m_state->GetFileStorage().RemoveStoredFile(info))
+    if (CacheStatus::OK != m_state->GetFileStorage().RemoveStoredFile(info))
         return ERROR;
 
     return SUCCESS;
@@ -1386,22 +1386,19 @@ BeFileName DataSourceCache::ReadFilePath(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate)
+CacheStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate, AsyncError* errorOut)
     {
     LogCacheDataForMethod();
 
     ECInstanceKeyMultiMap fullyPersistedInstances;
     if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
-        {
-        return ERROR;
-        }
+        return CacheStatus::Error;
 
-    if (SUCCESS != m_state->GetFileInfoManager().DeleteFilesNotHeldByInstances(fullyPersistedInstances, maxLastAccessDate))
-        {
-        return ERROR;
-        }
+    auto status = m_state->GetFileInfoManager().DeleteFilesNotHeldByInstances(fullyPersistedInstances, maxLastAccessDate, errorOut);
+    if (CacheStatus::OK != status)
+        return status;
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

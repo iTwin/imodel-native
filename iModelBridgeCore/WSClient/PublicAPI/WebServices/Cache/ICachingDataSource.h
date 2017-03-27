@@ -331,6 +331,7 @@ struct ICachingDataSource::Error : public AsyncError
 
     private:
         static ICachingDataSource::Status ConvertCacheStatus(CacheStatus status);
+        static Utf8String GetLocalizedMessage(ICachingDataSource::Status status);
         void HandleStatusCanceled(ICancellationTokenPtr ct);
 
     public:
@@ -340,18 +341,20 @@ struct ICachingDataSource::Error : public AsyncError
         WSCACHE_EXPORT Error(ICachingDataSource::Status status);
         //! Constructs error with matching status and localized message.
         WSCACHE_EXPORT Error(CacheStatus status);
+        //! Constructs error with matching status and specified error message or localized message if empty.
+        WSCACHE_EXPORT Error(CacheStatus status, AsyncError error);
         //! Constructs error with matching status and or status Canceled if cancellation token is non null and already canceled.
         //! Used when operation might have been canceled but status does not indicate that.
         WSCACHE_EXPORT Error(CacheStatus status, ICancellationTokenPtr ct);
         //! Constructs error with specificed server error with status NetworkErrorsOccured or Canceled.
-        WSCACHE_EXPORT Error(WSErrorCR error);
+        WSCACHE_EXPORT Error(WSError error);
         //! Constructs error with status InternalCacheError and message with desription from specified error.
-        WSCACHE_EXPORT Error(AsyncErrorCR error);
+        WSCACHE_EXPORT Error(AsyncError error);
         //! Constructs error with status and message with desription from specified error.
         //! Can be used with Status::ApplicationError to pass localized error message to user.
-        WSCACHE_EXPORT Error(ICachingDataSource::Status status, AsyncErrorCR error);
+        WSCACHE_EXPORT Error(ICachingDataSource::Status status, AsyncError error);
         //! Constructs error with status InternalCacheError and specified message.
-        WSCACHE_EXPORT Error(Utf8StringCR message);
+        WSCACHE_EXPORT Error(Utf8String message);
         //! Constructs error with supplied status or status Canceled if cancellation token is non null and already canceled.
         //! Used when operation might have been canceled but status does not indicate that.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status, ICancellationTokenPtr ct);
