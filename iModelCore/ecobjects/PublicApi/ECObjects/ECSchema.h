@@ -1284,6 +1284,7 @@ private:
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
+    void RenameDerivedProperties(Utf8String newName);
 
     // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
     // Used for instance transformation
