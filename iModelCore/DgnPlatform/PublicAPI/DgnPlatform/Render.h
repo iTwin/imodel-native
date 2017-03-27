@@ -1867,6 +1867,7 @@ public:
     bool IsUniform() const { return 1 == size(); }
     bool IsFull() const { BeAssert(size() <= GetMaxIndex()); return size() >= GetMaxIndex(); }
     uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+    bool AnyDefined() const { return size() > 1 || (IsUniform() && begin()->first.IsDefined()); }
 
     typedef Map::const_iterator const_iterator;
 
