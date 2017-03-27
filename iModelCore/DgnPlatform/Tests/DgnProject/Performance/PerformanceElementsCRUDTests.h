@@ -38,7 +38,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         DgnDbStatus SetPerfElementSub2PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPerfElementSub3PropertyValues(DgnElementPtr element, bool update = false) const;
         DgnDbStatus SetPropertyValues(Utf8CP className, DgnElementPtr element, bool update = false) const;
-        Dgn::PhysicalElementPtr CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId) const;
+        Dgn::PhysicalElementPtr CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent = DgnElementId(), DgnClassId dgnClassId = DgnClassId()) const;
 
         static DgnElementId generateTimeBasedId(int counter);
         static DgnElementId generateAlternatingBriefcaseId(int counter);
