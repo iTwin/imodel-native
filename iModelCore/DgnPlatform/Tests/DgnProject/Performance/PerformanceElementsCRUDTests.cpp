@@ -26,7 +26,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
         {
         SetupSeedProject(seedFileName.c_str());
         ASSERT_TRUE(m_db->IsDbOpen());
-        //m_db->Schemas().CreateECClassViewsInDb();
+        //m_db->Schemas().CreateClassViewsInDb();
         {
         bvector<DgnElementPtr> testElements;
         CreateElements(initialInstanceCount, testClassName, testElements, "InitialInstances");

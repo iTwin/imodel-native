@@ -26,7 +26,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="TypeDefinition" relationshipName="FunctionalElementIsOfType" direction="Forward">
+        <ECNavigationProperty propertyName="TypeDefinition" relationshipName="FunctionalElementIsOfType" direction="Forward" displayLabel="Type Definition">
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
         </ECNavigationProperty>
     </ECEntityClass>

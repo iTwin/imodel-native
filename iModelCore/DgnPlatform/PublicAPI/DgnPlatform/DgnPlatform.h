@@ -385,6 +385,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LightList)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(System)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
@@ -411,7 +412,6 @@ BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a D
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnGeometryPartId, DgnElementId) //!< A DgnElementId that identifies a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#LineStyles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory

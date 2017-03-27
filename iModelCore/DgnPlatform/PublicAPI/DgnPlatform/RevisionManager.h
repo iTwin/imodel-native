@@ -91,6 +91,9 @@ public:
     //! Extract the set of codes which were assigned to objects within this revision's changes
     DGNPLATFORM_EXPORT void ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const;
 
+    //! Determines if the revision contains schema changes
+    DGNPLATFORM_EXPORT bool ContainsSchemaChanges(DgnDbCR dgndb) const;
+
     //! Validate the contents of the revision
     //! @remarks Validates the contents of the ChangeStreamFile against the revision Id.
     DGNPLATFORM_EXPORT RevisionStatus Validate(DgnDbCR dgndb) const;

@@ -21,17 +21,9 @@ BEGIN_UNNAMED_NAMESPACE
     static constexpr Utf8CP str_Color() {return "color";}
     static constexpr Utf8CP str_Pattern() {return "pattern";}
     static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_Ambient() {return "ambient";}
-    static constexpr Utf8CP str_Flash() {return "flash";}
-    static constexpr Utf8CP str_PortraitLeft() {return "left";}
-    static constexpr Utf8CP str_PortraitRight() {return "right";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
     static constexpr Utf8CP str_AvgLum() {return "avgLum";}
     static constexpr Utf8CP str_MaxLum() {return "maxLum";}
     static constexpr Utf8CP str_Fstop() {return "fstop";}
-    static constexpr Utf8CP str_Sun() {return "sun";}
-    static constexpr Utf8CP str_Intensity() {return "intensity";}
-    static constexpr Utf8CP str_Direction() {return "dir";}
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,7 +337,13 @@ Render::Plan::Plan(DgnViewportCR vp)
     if (style3d)
         {
         m_hline = style3d->GetHiddenLineParams();
-        m_sceneLights = style3d->GetSceneLights();
+        auto spatial = controller._ToSpatialView();
+        if (spatial)
+            m_lights = spatial->GetLights();
+        else
+            {
+            BeAssert(false); // somehow we have a 3d style on a 2d controller???
+            }
         }
     }
 
@@ -724,53 +722,19 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Light::FromJson(JsonValueCR val)
+Render::Light::Light(Lighting::Parameters const& params, DVec3dCP direction, DPoint3dCP location)
     {
-    if (!val.isObject())
-        {
-        m_intensity = 0.0;
-        return;
-        }
-
-    m_intensity = val[str_Intensity()].asDouble();
-    m_color = ColorDef(val[str_Color()].asUInt(ColorDef::White().GetValue()));
+    BeAssert(params.IsValid());
+    m_type = params.GetType();
+    m_intensity = params.GetIntensity();
+    m_intensity2 = params.GetIntensity2();
+    m_color = params.GetColor();
+    m_color2 = params.GetColor2();
+    m_location = location ? *location : DPoint3d::FromZero();
+    m_direction = direction ? *direction : DVec3d::UnitX(); 
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::Light::ToJson() const
-    {
-    Json::Value val;
-    val[Json::StaticString(str_Intensity())] = m_intensity;
-    if (m_color != ColorDef::White())
-        val[Json::StaticString(str_Color())] = m_color.GetValue();
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::DirectionalLight::FromJson(JsonValueCR val)
-    {
-    T_Super::FromJson(val);
-    if (IsEnabled())
-        JsonUtils::DVec3dFromJson(m_direction, val[str_Direction()]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::DirectionalLight::ToJson() const
-    {
-    Json::Value val = T_Super::ToJson();
-    if (!m_direction.IsZero())
-        JsonUtils::DVec3dToJson(val[str_Direction()], m_direction);
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
+* @BSIMETHOD                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
     {
@@ -790,40 +754,6 @@ Json::Value Render::SceneLights::Brightness::ToJson() const
     if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
     if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
     if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::SceneLights Render::SceneLights::FromJson(JsonValueCR val)
-    {
-    SceneLights lights;
-
-    if (val.isObject())
-        {
-        lights.m_ambient.FromJson(val[str_Ambient()]);
-        lights.m_flash.FromJson(val[str_Flash()]);
-        lights.m_portraitLeft.FromJson(val[str_PortraitLeft()]);
-        lights.m_portraitRight.FromJson(val[str_PortraitRight()]);
-        lights.m_sun.FromJson(val[str_Sun()]);
-        lights.m_brightness.FromJson(val[str_Brightness()]);
-        }
-    return lights;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value Render::SceneLights::ToJson() const
-    {
-    Json::Value val;
-    if (m_ambient.IsEnabled()) val[Json::StaticString(str_Ambient())] = m_ambient.ToJson();
-    if (m_flash.IsEnabled()) val[Json::StaticString(str_Flash())] = m_flash.ToJson();
-    if (m_portraitLeft.IsEnabled()) val[Json::StaticString(str_PortraitLeft())] = m_portraitLeft.ToJson();
-    if (m_portraitRight.IsEnabled()) val[Json::StaticString(str_PortraitRight())] = m_portraitRight.ToJson();
-    if (m_brightness.IsValid()) val[Json::StaticString(str_Brightness())] = m_brightness.ToJson();
-    if (m_sun.IsEnabled()) val[Json::StaticString(str_Sun())] = m_sun.ToJson();
     return val;
     }
 

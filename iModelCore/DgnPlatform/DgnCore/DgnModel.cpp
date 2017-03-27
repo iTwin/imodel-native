@@ -148,7 +148,7 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_clas
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
     // WIP: Add m_modeledElementRelClassId to CreateParams!!!
-    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
+    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,6 +326,27 @@ PhysicalModelPtr PhysicalModel::Create(DgnDbR db, DgnElementId modeledElementId)
     return model->ToPhysicalModelP();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialModel::AddLights(Render::LightListR lights, Render::TargetR target) const
+    {
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT JsonProperties,Origin,Yaw,Pitch,Roll FROM " BIS_SCHEMA(BIS_CLASS_LightLocation) " WHERE Model.Id=? AND Enabled=1");
+    stmt->BindId(1, GetModelId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        DPoint3d origin = stmt->GetValuePoint3d(1);
+
+        DVec3d dir;
+        YawPitchRollAngles angles(Angle::FromDegrees(stmt->GetValueDouble(2)), Angle::FromDegrees(stmt->GetValueDouble(3)), Angle::FromDegrees(stmt->GetValueDouble(4)));
+        angles.ToRotMatrix().GetColumn(dir, 0);
+
+        Json::Value json;
+        if (Json::Reader::Parse(stmt->GetValueText(0), json))
+            lights.AddLight(target.CreateLight((Lighting::ParametersCR) json[Lighting::Location::str_Params()], &dir, &origin));
+        }
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1718,7 +1739,7 @@ DgnDbStatus DgnModel::ImportNonNavigationECRelationshipsFrom(DgnDbR destDb, DgnM
             ECN::IECRelationshipInstancePtr relinst(dynamic_cast<ECN::IECRelationshipInstanceP>(sourceReader.GetInstance().get()));
 
             ECN::ECClassCR srcClass = relinst->GetClass();
-            ECClassCP actualDstClass = destDb.Schemas().GetECClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
+            ECClassCP actualDstClass = destDb.Schemas().GetClass(srcClass.GetSchema().GetName().c_str(), srcClass.GetName().c_str());
             if (nullptr == actualDstClass)
                 {
                 // the lookup will fail to only if the ecclass is not found, and that can only be because the necessary domain/schema was not imported

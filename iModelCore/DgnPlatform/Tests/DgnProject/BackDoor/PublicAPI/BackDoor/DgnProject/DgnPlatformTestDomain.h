@@ -109,8 +109,8 @@ protected:
     void _CopyFrom(Dgn::DgnElementCR el) override;
 
 public:
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
-    static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
+    static ECN::ECClassCP GetTestElementECClass(Dgn::DgnDbR db) { return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME); }
     
     // This Create function does not put any geometry on the new element. The caller is expected to add a TestItem.
     static RefCountedPtr<TestElement> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode="");
@@ -169,7 +169,7 @@ struct PerfElement : Dgn::PhysicalElement
         PerfElement(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
         static PerfElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
@@ -195,7 +195,7 @@ struct PerfElementSub1 : PerfElement
         PerfElementSub1(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
         static PerfElementSub1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
@@ -221,7 +221,7 @@ struct PerfElementSub2 : PerfElementSub1
         PerfElementSub2(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
         static PerfElementSub2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
@@ -247,7 +247,7 @@ struct PerfElementSub3 : PerfElementSub2
         PerfElementSub3(CreateParams const& params) : T_Super(params) {}
 
     public:
-        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
         static PerfElementSub3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
@@ -278,7 +278,7 @@ struct CN : SUPERCN                                                             
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;                                                               \
     void _CopyFrom(Dgn::DgnElementCR el) override {/*TBD*/BeAssert("false");}                                                               \
   public:                                                                                                                                   \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, # CN)); }    \
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, # CN)); }    \
     static CN ## Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);                                            \
     };                                                                                                                                      \
                                                                                                                                             \
@@ -303,7 +303,7 @@ struct TestElement2d : Dgn::AnnotationElement2d
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement2d) 
 
 public:
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT2d_CLASS_NAME)); }
     TestElement2d(CreateParams const& params) : T_Super(params) {}
     static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnCode elementCode, double length);
 };
@@ -494,7 +494,7 @@ private:
 public:
     static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
 
-    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME);}
+    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME);}
 
     Utf8StringCR GetTestUniqueAspectProperty() const {return m_testUniqueAspectProperty;}
     void SetTestUniqueAspectProperty(Utf8CP s) {m_testUniqueAspectProperty = s;}
@@ -535,7 +535,7 @@ private:
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}
 
-    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME);}
+    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) {return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME);}
 
     Utf8StringCR GetTestMultiAspectProperty() const {return m_testMultiAspectProperty;}
     void SetTestMultiAspectProperty(Utf8CP s) {m_testMultiAspectProperty = s;}
@@ -588,7 +588,7 @@ public:
     static void SetProperty1(Dgn::DgnDbR, Utf8CP, EC::ECInstanceKeyCR);
     static Utf8String GetProperty1(Dgn::DgnDbR, EC::ECInstanceId);
 
-    static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
+    static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
 
     static ECInstanceKey Insert(Dgn::DgnDbR db, Dgn::DgnElementId root, Dgn::DgnElementId dependent);
     };

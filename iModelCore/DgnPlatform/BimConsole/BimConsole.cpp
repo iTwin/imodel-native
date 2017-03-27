@@ -163,7 +163,7 @@ void BimConsole::Setup()
     AddCommand(std::make_shared<ExportCommand>());
 
     AddCommand(std::make_shared<ParseCommand>());
-    AddCommand(std::make_shared<CreateECClassViewsCommand>());
+    AddCommand(std::make_shared<CreateClassViewsCommand>());
 
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());

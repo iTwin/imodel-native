@@ -605,7 +605,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
         return nullptr;
         }
 
-    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
     SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */));
     if (!rdlModel.IsValid())
@@ -755,7 +755,7 @@ void RedlineModel::StoreImage(Render::ImageSourceCR source, DPoint2dCR origin, D
     DgnCategoryId cat = DgnCategory::QueryCategoryId(db, DrawingCategory::CreateCode(db, DgnModel::DictionaryId(), CATEGORY_RedlineImage));
 
     DgnElementPtr gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, GetModelId(), 
-                            DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
+                            DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
 

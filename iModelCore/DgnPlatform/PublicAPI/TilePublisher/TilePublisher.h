@@ -79,6 +79,16 @@ public:
         else
             return GetWidth() > 1 ? Dimension::One : Dimension::Zero;
         }
+
+    static Dimension CalcDimension(uint16_t nColors)
+        {
+        switch (nColors)
+            {
+            case 0:     return Dimension::None;
+            case 1:     return Dimension::Zero;
+            default:    return nColors <= GetMaxWidth() ? Dimension::One : Dimension::Zero;
+            }
+        }
 };
 
 //=======================================================================================
@@ -153,7 +163,7 @@ public:
 
     PolylineType GetType() const { return m_type; }
 
-    std::string const& GetVertexShaderString() const;
+    std::string GetVertexShaderString(bool is3d) const;
     std::string const& GetFragmentShaderString() const;
     bool IsSimple() const { return PolylineType::Simple == GetType(); }
     bool IsTesselated() const { return PolylineType::Tesselated == GetType(); }

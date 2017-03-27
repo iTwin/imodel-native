@@ -445,7 +445,7 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::ECInstanceKeyCR key)
     {
-    auto inst = db.Schemas().GetECClass(key.GetECClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
+    auto inst = db.Schemas().GetClass(key.GetClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
     inst->SetValue("Property1", ECN::ECValue(value));
     ASSERT_EQ(BE_SQLITE_OK, db.UpdateNonNavigationRelationshipProperties(key, *inst));
     }

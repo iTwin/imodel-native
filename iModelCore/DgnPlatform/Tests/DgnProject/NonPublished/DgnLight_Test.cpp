@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#if defined (NEEDS_WORK_LIGHTS)
 #include <DgnPlatform/DgnLight.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -73,3 +74,4 @@ TEST_F(DgnLightsTest, CRUD)
     idToFind = LightDefinition::QueryLightId(db, lightCode);
     EXPECT_TRUE(lightId == idToFind);
     }
+#endif

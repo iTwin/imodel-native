@@ -4,7 +4,7 @@
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
 
-    <ECEntityClass typeName="DetailingSymbol" displayLabel="Detailing Symbol" modifier="Abstract">
+    <ECEntityClass typeName="DetailingSymbol" modifier="Abstract" displayLabel="Detailing Symbol">
         <!-- Mimics the like-named V8 type -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -12,7 +12,7 @@
         <BaseClass>bis:GraphicalElement2d</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TitleText" displayLabel="Title Text" modifier="Sealed">
+    <ECEntityClass typeName="TitleText" modifier="Sealed" displayLabel="Title Text">
         <!-- Mimics the like-named V8 type -->
         <BaseClass>DetailingSymbol</BaseClass>
     </ECEntityClass>
@@ -26,14 +26,14 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ViewAttachmentLabel" displayLabel="View Attachment Label" modifier="Sealed">
+    <ECEntityClass typeName="ViewAttachmentLabel" modifier="Sealed" displayLabel="View Attachment Label">
         <!-- Maps to the V8 type DrawingBoundary -->
         <!-- Its CodeValue is the section/elevation/plan/detail "id" -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DetailingSymbol</BaseClass>
-        <ECNavigationProperty propertyName="ViewAttachment" relationshipName="ViewAttachmentLabelAnnotatesViewAttachment" direction="Forward" readOnly="True">
+        <ECNavigationProperty propertyName="ViewAttachment" relationshipName="ViewAttachmentLabelAnnotatesViewAttachment" direction="Forward" readOnly="True" displayLabel="View Attachment">
         </ECNavigationProperty>
     </ECEntityClass>
 
@@ -54,31 +54,31 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DetailingSymbol</BaseClass>
-        <ECNavigationProperty propertyName="DrawingModel" relationshipName="CalloutRefersToDrawingModel" direction="Forward" readOnly="True">
+        <ECNavigationProperty propertyName="DrawingModel" relationshipName="CalloutRefersToDrawingModel" direction="Forward" readOnly="True" displayLabel="Drawing Model">
         </ECNavigationProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SectionCallout" displayLabel="Section Callout" modifier="Sealed">
+    <ECEntityClass typeName="SectionCallout" modifier="Sealed" displayLabel="Section Callout">
         <!-- Mimics the like-named V8 type -->
         <BaseClass>Callout</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ElevationCallout" displayLabel="Elevation Callout" modifier="Sealed">
+    <ECEntityClass typeName="ElevationCallout" modifier="Sealed" displayLabel="Elevation Callout">
         <!-- Mimics the like-named V8 type -->
         <BaseClass>Callout</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanCallout" displayLabel="Plan Callout" modifier="Sealed">
+    <ECEntityClass typeName="PlanCallout" modifier="Sealed" displayLabel="Plan Callout">
         <!-- Mimics the like-named V8 type -->
         <BaseClass>Callout</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="DetailCallout" displayLabel="Detail Callout" modifier="Sealed">
+    <ECEntityClass typeName="DetailCallout" modifier="Sealed" displayLabel="Detail Callout">
         <!-- Mimics the like-named V8 type -->
         <BaseClass>Callout</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="Graphic3d" displayLabel="3D Graphic" modifier="Sealed">
+    <ECEntityClass typeName="Graphic3d" modifier="Sealed" displayLabel="3D Graphic">
         <!-- A generic Graphic3d is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element is 3d but does not represent a SpatialLocation -->
@@ -88,7 +88,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalObject" displayLabel="Physical Object" modifier="Sealed">
+    <ECEntityClass typeName="PhysicalObject" modifier="Sealed" displayLabel="Physical Object">
         <!-- A generic PhysicalObject is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a PhysicalObject -->
@@ -98,7 +98,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SpatialLocation" displayLabel="Spatial Location" modifier="Sealed">
+    <ECEntityClass typeName="SpatialLocation" modifier="Sealed" displayLabel="Spatial Location">
         <!-- A generic SpatialLocation is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a SpatialLocation -->
@@ -108,7 +108,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GroupModel" displayLabel="Group Model" modifier="Sealed">
+    <ECEntityClass typeName="GroupModel" modifier="Sealed" displayLabel="Group Model">
         <BaseClass>bis:GroupInformationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -123,7 +123,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="MultiAspect">
+    <ECEntityClass typeName="MultiAspect" displayLabel="Multi-Aspect">
         <!-- Originally designed for the converted secondary instances from a v8 file-->
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
@@ -131,14 +131,14 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PhysicalType" displayLabel="Physical Type" modifier="Sealed">
+    <ECEntityClass typeName="PhysicalType" modifier="Sealed" displayLabel="Physical Type">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GraphicalType2d" displayLabel="2D Graphical Type" modifier="Sealed">
+    <ECEntityClass typeName="GraphicalType2d" modifier="Sealed" displayLabel="2D Graphical Type">
         <BaseClass>bis:GraphicalType2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

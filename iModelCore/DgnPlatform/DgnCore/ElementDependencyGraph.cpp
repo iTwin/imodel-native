@@ -663,11 +663,11 @@ void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships()
     // *** NEEDS WORK: Somehow, we should sort the deleted rels by the model of the their (former) source elements
     for (auto const& reldata : m_txnMgr.ElementDependencies().m_deletedRels)
         {
-        auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetECClassId()));
+        auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetClassId()));
         if (nullptr == handler)
             continue;
 
-        EDGLOG(LOG_TRACE, "%sDELETED %llu:%llu(%llu,%llu) (%llx)", "", reldata.m_relKey.GetECClassId().GetValue(), reldata.m_relKey.GetECInstanceId().GetValue(), 
+        EDGLOG(LOG_TRACE, "%sDELETED %llu:%llu(%llu,%llu) (%llx)", "", reldata.m_relKey.GetClassId().GetValue(), reldata.m_relKey.GetInstanceId().GetValue(), 
                                                                        reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
                                                                        (intptr_t)handler);
 

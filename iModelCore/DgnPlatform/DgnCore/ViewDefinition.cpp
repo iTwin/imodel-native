@@ -62,7 +62,14 @@ namespace ViewProperties
     static constexpr Utf8CP str_GridSpaceX() {return "gridSpaceX";}
     static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
     static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
-    static constexpr Utf8CP str_ACS() {return "ACS";}
+    static constexpr Utf8CP str_ACS() {return "acs";}
+    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
+    static constexpr Utf8CP str_Ambient() {return "ambient";}
+    static constexpr Utf8CP str_Flash() {return "flash";}
+    static constexpr Utf8CP str_Portrait() {return "portrait";}
+    static constexpr Utf8CP str_Sun() {return "sun";}
+    static constexpr Utf8CP str_SunDir() {return "sunDir";}
+    static constexpr Utf8CP str_Brightness() {return "brightness";}
 };
 
 using namespace ViewProperties;
@@ -229,25 +236,11 @@ ClipVectorPtr ViewDefinition::GetViewClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
     {
-    if (GridOrientationType::WorldXY != orientation)
-        SetDetail(str_GridOrient(), Json::Value((uint32_t) orientation));
-    else
-        RemoveDetail(str_GridOrient());
-
-    if (10 != gridsPerRef)
-        SetDetail(str_GridPerRef(), Json::Value(gridsPerRef));
-    else
-        RemoveDetail(str_GridPerRef());
-
-    if (1.0 != spacing.x)
-        SetDetail(str_GridSpaceX(), Json::Value(spacing.x));
-    else
-        RemoveDetail(str_GridSpaceX());
-
-    if (spacing.y != spacing.x)
-        SetDetail(str_GridSpaceY(), Json::Value(spacing.y));
-    else
-        RemoveDetail(str_GridSpaceY());
+    auto& details = GetDetailsR();
+    details.SetOrRemoveUInt(str_GridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
+    details.SetOrRemoveUInt(str_GridPerRef(), gridsPerRef, 10);
+    details.SetOrRemoveDouble(str_GridSpaceX(), spacing.x, 1.0);
+    details.SetOrRemoveDouble(str_GridSpaceY(), spacing.y, spacing.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -525,8 +518,8 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
     if (nullptr == db)
         return false;
 
-    auto entryClass = db->Schemas().GetECClass(entry.GetClassId());
-    auto desiredClass = db->Schemas().GetECClass(T_Desired::QueryClassId(*db));
+    auto entryClass = db->Schemas().GetClass(entry.GetClassId());
+    auto desiredClass = db->Schemas().GetClass(T_Desired::QueryClassId(*db));
     return nullptr != entryClass && nullptr != desiredClass && entryClass->Is(desiredClass);
     }
 
@@ -1175,10 +1168,7 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    if (ColorDef::Black() == val)
-        RemoveStyle(str_BackgroundColor());    // black is the default
-    else
-        SetStyle(str_BackgroundColor(), Json::Value(val.GetValue()));
+    GetStylesR().SetOrRemoveInt(str_BackgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1194,10 +1184,89 @@ ColorDef DisplayStyle::GetMonochromeColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetMonochromeColor(ColorDef val)
     {
-    if (ColorDef::White() == val)
-        RemoveStyle(str_MonochromeColor());    // white is the default
-    else
-        SetStyle(str_MonochromeColor(), Json::Value(val.GetValue()));
+    GetStylesR().SetOrRemoveInt(str_MonochromeColor(), val.GetValue(), ColorDef::White().GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
+    {
+    JsonValueCR sceneLights = GetStyle(Json::StaticString(str_SceneLights()));
+
+    Render::SceneLightsPtr lights = new Render::SceneLights();
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Flash()]));
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Ambient()]));
+    lights->AddLight(target.CreateLight((Lighting::Parameters const&) sceneLights[str_Portrait()]));
+
+    auto& sun = (Lighting::Parameters const&) sceneLights[str_Sun()];
+    if (sun.IsValid())
+        {
+        DVec3d dir = DVec3d::UnitZ();
+        auto& sundir = sceneLights[str_SunDir()];
+        if (!sundir.isNull())
+            JsonUtils::DVec3dFromJson(dir, sundir);
+
+        lights->AddLight(target.CreateLight(sun, &dir));
+        }
+
+    lights->m_brightness.FromJson(sceneLights[str_Brightness()]);
+    return lights;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
+    {
+    if (!params.IsValid())
+        return;
+
+    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    switch (params.GetType())
+        {
+        case Lighting::LightType::Ambient:
+            sceneLights[str_Ambient()] = params;
+            break;
+
+        case Lighting::LightType::Flash:
+            sceneLights[str_Flash()] = params;
+            break;
+
+        case Lighting::LightType::Portrait:
+            sceneLights[str_Portrait()] = params;
+            break;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR direction)
+    {
+    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    if (params.GetType() != Lighting::LightType::Solar || !params.IsValid())
+        {
+        sceneLights.removeMember(str_SunDir());
+        return;
+        }
+
+    sceneLights[str_Sun()] = params;
+    JsonUtils::DVec3dToJson(sceneLights[str_SunDir()], direction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle3d::SetSceneBrightness(Render::SceneLights::Brightness const& brightness)
+    {
+    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    if (!brightness.IsValid())
+        {
+        sceneLights.removeMember(str_Brightness());
+        return;
+        }
+    sceneLights[str_Brightness()] = brightness.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**

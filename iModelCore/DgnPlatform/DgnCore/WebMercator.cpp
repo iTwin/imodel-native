@@ -306,7 +306,7 @@ DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, DgnElementId modeledElementId, Properties const& props) : 
-    T_Super::CreateParams(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), modeledElementId),
+    T_Super::CreateParams(dgndb, DgnClassId(dgndb.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_StreetMapModel)), modeledElementId),
     m_properties(props)
     {
     }

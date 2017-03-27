@@ -895,6 +895,9 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     if (RevisionStatus::Success != status)
         return status;
 
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        m_dgndb.ClearECDbCache(); // Recreate the ECDb cache since the merge would have affected the schema entries. 
+
     return MergeDataChangesInRevision(revision, changeStream);
     }
 
@@ -1949,18 +1952,21 @@ void dgn_TxnTable::UniqueRelationshipLinkTable::_UpdateSummary(Changes::Change c
     Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
 
     //  Every table-per-class relationship link table is laid out like this: 
-    //      [0]ECInstanceId 
-    //      [1]SourceECInstanceId 
-    //      [2]TargetECInstanceId 
-    //      [3...] relationship instance properties ...     which we DO NOT TRACK
+    //      [0] Relationship instance ID
+    //      [1] Relationship class ID
+    //      [2] Source instance ID
+    //      [3] Target instance ID 
+    //      [4...] relationship instance properties ...     which we DO NOT TRACK
     int const ECInstanceId_LTColId = 0;
-    int const SourceECInstanceId_LTColId = 1;
-    int const TargetECInstanceId_LTColId = 2;
+    int const ECClassId_LTColId = 1;
+    int const SourceECInstanceId_LTColId = 2;
+    int const TargetECInstanceId_LTColId = 3;
+
     ECInstanceId relid = change.GetValue(ECInstanceId_LTColId, stage).GetValueId<ECInstanceId>();
     BeAssert(relid.IsValid());
 
-    //  ECClassId is *not* stored in a link table.
-    ECClassId relclsid = m_ecclass->GetId();
+    ECClassId relclsid = change.GetValue(ECClassId_LTColId, stage).GetValueId<ECClassId>();
+    BeAssert(relclsid.IsValid());
 
     DgnElementId srcelemid, tgtelemid;
     if (ChangeType::Insert == changeType || ChangeType::Delete == changeType)
@@ -1997,7 +2003,7 @@ void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change ch
     int const TargetECInstanceId_LTColId = 3;
     
     ECClassId relclsid = change.GetValue(ECClassId_LTColId, stage).GetValueId<ECClassId>();
-    ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetECClass(relclsid);
+    ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetClass(relclsid);
 
     if (m_ecclasses.find(relcls) == m_ecclasses.end())  // while this class (among others) is mapped into this table,
         return;                                         // I am not actually tracking this class.
