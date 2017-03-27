@@ -1956,15 +1956,27 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         {
         if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) because their types differ or the base class is sealed.",
-                       GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
-                       baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+            if (resolveConflicts)
+                {
+                LOG.warningv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) but their types differ.  The base class will not be added.",
+                           GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                           baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+                }
+            else
+                {
+                LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) because their types differ or the base class is sealed.",
+                           GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                           baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            }
+        else
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as a base class to ECClass '%s:%s'",
+                       baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(),
+                       GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as a base class to ECClass '%s:%s'",
-                   baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(),
-                   GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
         }
     return SchemaReadStatus::Success;
     }
@@ -3094,9 +3106,18 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
         if (nullptr == constraintAsEntity)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
-                         CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
+            if (2 == ecXmlVersionMajor)
+                {
+                LOG.warningv("Invalid ECSchemaXML: The ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
+                            m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                continue;
+                }
+            else
+                {
+                LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                           CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
             }
 
         bool alreadyExists = false;
