@@ -146,7 +146,7 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
 
     ObservableECDb& db = m_dbAdapter.GetECDb();
 
-    if (SUCCESS != SchemaManager(db).ImportSchemas({ecSchema}))
+    if (SUCCESS != SchemaManager(db).ImportExternalSchemas({ecSchema}))
         return nullptr;
 
     return db.Schemas().GetClass(schemaName.c_str(), relClassName.c_str())->GetRelationshipClassCP();

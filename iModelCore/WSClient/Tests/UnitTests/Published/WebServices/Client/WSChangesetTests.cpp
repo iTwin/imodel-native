@@ -1125,7 +1125,7 @@ TEST_F(WSChangesetTests, CalculateSize_LotsOfIntsances_PerformanceBetterThanDoin
         "Test5":"E - Ut maximus elit sit amet molestie faucibus. Duis pharetra, urna."
         })"));
     ObjectId testId("SomeTestSchema", "SomeTestClass", "TestId");
-    int testInstanceCount = 2500;
+    int testInstanceCount = 100;
     int testIterations = 3;
 
     auto testChangeset = [&] (std::function<void(WSChangeset&)> completeCallback, std::function<void(WSChangeset&)> incrementalCallback)

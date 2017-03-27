@@ -6,6 +6,31 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
+# ECSchema update in ECDb does not support deletions yet
+DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue
+
+# Pending fix on UniqueTaskHolder
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent_KnownIssue
+
+ChangeManagerTests.*
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Random crashes among at least half a dozen of these tests, no output or stack printed>
+
+ChangeGraphTests.*
+    # DgnDb61-16Q2, WinX86, DEBUG
+    # <Random crashes among these tests, no output or stack printed>
+
+CachingDataSourceTests.*
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
+
+# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
+DgnDbServerEventParserTests.LockEventTests
+DgnDbServerEventParserTests.RevisionEventTests
+DgnDbServerEventParserTests.CodeEventTests
+DgnDbServerEventParserTests.LocksDeletedEventTests
+DgnDbServerEventParserTests.CodesDeletedEventTests
+
 # DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
 DataSourceCacheUpgradeTests.Open_V20*
 
@@ -62,7 +87,7 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
 #Following tests were disabled and are added to ignore list instead
 ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
 ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
+DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds

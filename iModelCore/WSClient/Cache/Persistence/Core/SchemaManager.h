@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Core/SchemaManager.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -26,14 +26,16 @@ struct SchemaManager
         ECSchemaPtr LoadSchema(BeFileNameCR schemaPath, ECSchemaReadContext& context);
         BentleyStatus LoadSchemas(const std::vector<BeFileName>& schemaPaths, std::vector<ECSchemaPtr>& schemasOut);
         BentleyStatus FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context);
+        BentleyStatus FixLegacySchemaRelationshipCardinalities(ECSchema& schema);
         Utf8String ToFullNameListString(const std::vector<ECSchemaPtr>& schemas);
+        BentleyStatus ImportSchemas(const std::vector<ECSchemaPtr>& schemas);
 
     public:
         SchemaManager(ObservableECDb& m_db);
 
         BentleyStatus ImportCacheSchemas();
-        BentleyStatus ImportSchemas(const std::vector<BeFileName>& schemaPaths);
-        BentleyStatus ImportSchemas(const std::vector<ECSchemaPtr>& schemas);
+        BentleyStatus ImportExternalSchemas(const std::vector<BeFileName>& schemaPaths);
+        BentleyStatus ImportExternalSchemas(const std::vector<ECSchemaPtr>& schemas);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

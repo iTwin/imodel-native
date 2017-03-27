@@ -322,21 +322,11 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds_Kno
 
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
     Utf8String repositoryId = "Bentley.eB--viltest2-7.bentley.com~2CeB_Mobile_15.4";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath = GetTestCachePath();
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    }
-
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG25ProjectWisePluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://viltest3-16.bentley.com/ws25";
+    Utf8String serverUrl = "https://viltest3-5.bentley.com/ws250";
     Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Egde_10.00.01.71";
     Credentials creds("admin", "admin");
     BeFileName cachePath = GetTestCachePath();
@@ -368,7 +358,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     }
 
 // WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.FK_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG25ProjectWisePluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -493,7 +483,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     }
 
 // WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
-TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
