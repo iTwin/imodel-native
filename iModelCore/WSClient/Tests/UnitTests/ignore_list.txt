@@ -6,6 +6,31 @@ DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
 
+# ECSchema update in ECDb does not support deletions yet
+DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue
+
+# Pending fix on UniqueTaskHolder
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent_KnownIssue
+
+ChangeManagerTests.*
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Random crashes among at least half a dozen of these tests, no output or stack printed>
+
+ChangeGraphTests.*
+    # DgnDb61-16Q2, WinX86, DEBUG
+    # <Random crashes among these tests, no output or stack printed>
+
+CachingDataSourceTests.*
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
+
+# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
+DgnDbServerEventParserTests.LockEventTests
+DgnDbServerEventParserTests.RevisionEventTests
+DgnDbServerEventParserTests.CodeEventTests
+DgnDbServerEventParserTests.LocksDeletedEventTests
+DgnDbServerEventParserTests.CodesDeletedEventTests
+
 # DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
 DataSourceCacheUpgradeTests.Open_V20*
 
@@ -62,7 +87,7 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
 #Following tests were disabled and are added to ignore list instead
 ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
 ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
+DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
 CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
@@ -221,41 +246,6 @@ DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingC
 DataSourceCacheTests.CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance
 #<-----
 
-DgnDbServerEventParserTests.CodeEventTests
-    # bim0200, NDEBUG, x86 & x64
-    # [ RUN      ] DgnDbServerEventParserTests.CodeEventTests
-    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(359): error: Expected: (nullptr) != (validPtr), actual: 8-byte object <00-00 00-00 00-00 00-00> vs 0000000000000000
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [17] _C_specific_handler (0x7fff6c2bc0b0)
-    # [16] _chkstk (0x7fff8961aa80)
-    # [15] RtlImageNtHeaderEx (0x7fff895b9490)
-    # [14] KiUserExceptionDispatcher (0x7fff89619c80)
-    # [13] DgnDbServerEventParserTests_CodeEventTests_Test::TestBody (0x7ff6d6e2d800)
-    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6d703fed0)
-    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6d703fd60)
-    # [10] testing::Test::Run (0x7ff6d704fec0)
-    # [9] testing::TestInfo::Run (0x7ff6d70501d0)
-    # [8] testing::TestCase::Run (0x7ff6d704ffe0)
-    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff6d7050490)
-    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6d703ff70)
-    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6d703fe50)
-    # [4] testing::UnitTest::Run (0x7ff6d7050370)
-    # [3] main (0x7ff6d6a7c0e0)
-    # [2] __scrt_common_main_seh (0x7ff6d705ddec)
-    # [1] BaseThreadInitThunk (0x7fff88b08350)
-    # [0] RtlUserThreadStart (0x7fff895d70b0)
-    # [  FAILED  ] DgnDbServerEventParserTests.CodeEventTests (935 ms)
 
-DgnDbServerEventParserTests.InvalidEventTests
-    # bim0200, NDEBUG, x86 & x64
-    # [ RUN      ] DgnDbServerEventParserTests.InvalidEventTests
-    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(447): error:       Expected: nullptr
-    #       Which is: 8-byte object <00-00 00-00 00-00 00-00>
-    # To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2())
-    #       Which is: 000001A6FD00C410
-    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(458): error:       Expected: nullptr
-    #       Which is: 8-byte object <00-00 00-00 00-00 00-00>
-    # To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType().c_str(), StubHttpResponseInvalidCodeEvent2())
-    #       Which is: 000001A6FD00C350
-    # [  FAILED  ] DgnDbServerEventParserTests.InvalidEventTests (1 ms)
+#Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
+CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema

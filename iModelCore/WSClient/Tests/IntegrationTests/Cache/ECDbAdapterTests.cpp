@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Cache/ECDbAdapterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,13 +27,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define EXPECT_INSTANCE_EXISTS(db, key) \
     auto foundInstance = ECDbAdapter(*db).FindInstance(\
-    db->Schemas().GetECClass(key.GetECClassId()), \
-    Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()).c_str()); \
+    db->Schemas().GetClass(key.GetClassId()), \
+    Utf8PrintfString("ECInstanceId = %llu", key.GetInstanceId().GetValue()).c_str()); \
     EXPECT_TRUE(foundInstance.IsValid()); \
 
 #if 1
 #define EXPECT_CALL_OnBeforeDelete(listener, db, instanceKey) \
-    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _)) \
+    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetInstanceId(), _)) \
     .WillOnce(Invoke([&](ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&) \
     { \
     /* Check if instance was not deleted yet */ \
@@ -43,7 +43,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #else
 void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
     {
-    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _))
+    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetInstanceId(), _))
         .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
         {
         /* Check if instance was not deleted yet */
@@ -67,7 +67,7 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(cache->GetSchemas()));
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportSchemas(cache->GetSchemas()));
 
     return db;
     }
@@ -93,10 +93,10 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(cache->GetSchemas()));
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportSchemas(cache->GetSchemas()));
 
-    auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
-    auto holdingRelClass = seed.Schemas().GetECClass("TestSchema", "HoldingRel")->GetRelationshipClassCP();
+    auto ecClass = seed.Schemas().GetClass("TestSchema", "TestClass");
+    auto holdingRelClass = seed.Schemas().GetClass("TestSchema", "HoldingRel")->GetRelationshipClassCP();
 
     // Generate data
     auto start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -143,7 +143,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
         ECDbAdapter adapter(db);
 
         ECInstanceKeyMultiMap instances;
-        instances.Insert(parent.GetECClassId(), parent.GetECInstanceId());
+        instances.Insert(parent.GetClassId(), parent.GetInstanceId());
 
         start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         EXPECT_EQ(SUCCESS, adapter.DeleteInstances(instances));
@@ -176,9 +176,9 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, seed.Schemas().ImportECSchemas(cache->GetSchemas()));
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportSchemas(cache->GetSchemas()));
 
-    auto ecClass = seed.Schemas().GetECClass("TestSchema", "TestClass");
+    auto ecClass = seed.Schemas().GetClass("TestSchema", "TestClass");
 
     // Generate data
     auto start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -187,7 +187,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
         {
         ECInstanceKey key;
         INSERT_INSTANCE(seed, ecClass, key);
-        instances.insert({key.GetECClassId(), key.GetECInstanceId()});
+        instances.insert({key.GetClassId(), key.GetInstanceId()});
         }
     auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 

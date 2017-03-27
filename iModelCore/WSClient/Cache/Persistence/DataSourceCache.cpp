@@ -38,7 +38,7 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
         return nullptr;
         }
 
-    bvector<ECN::ECSchemaCP> schemas = state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas();
+    bvector<ECN::ECSchemaCP> schemas = state.GetECDbAdapter().GetECDb().Schemas().GetSchemas();
     return std::make_shared<ECDbDebugInfoHolder>(state.GetECDbAdapter().GetECDb(), schemas, "DataSourceCache debug information", context);
     }
 
@@ -291,7 +291,7 @@ void DataSourceCache::UnRegisterSchemaChangeListener(IECDbSchemaChangeListener* 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<BeFileName>& schemaPaths)
     {
-    return SchemaManager(m_db).ImportSchemas(schemaPaths);
+    return SchemaManager(m_db).ImportExternalSchemas(schemaPaths);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -299,7 +299,7 @@ BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<BeFileName>& sche
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<ECSchemaPtr>& schemas)
     {
-    return SchemaManager(m_db).ImportSchemas(schemas);
+    return SchemaManager(m_db).ImportExternalSchemas(schemas);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -341,7 +341,7 @@ BentleyStatus DataSourceCache::Reset()
         }
 
     // Remove all data
-    bvector<ECN::ECSchemaCP> ecSchemas = m_db.Schemas().GetECSchemas();
+    bvector<ECN::ECSchemaCP> ecSchemas = m_db.Schemas().GetSchemas();
     if (ecSchemas.empty())
         {
         BeAssert(false);
@@ -349,12 +349,13 @@ BentleyStatus DataSourceCache::Reset()
         }
 
     bset<ECClassCP> ignoreClasses;
-    ignoreClasses.insert(m_db.Schemas().GetECClass("Bentley_Standard_Classes", "AnyClass"));
-    ignoreClasses.insert(m_db.Schemas().GetECClass("Bentley_Standard_Classes", "InstanceCount"));
+    ignoreClasses.insert(m_db.Schemas().GetClass("Bentley_Standard_Classes", "AnyClass"));
+    ignoreClasses.insert(m_db.Schemas().GetClass("Bentley_Standard_Classes", "InstanceCount"));
 
     bset<ECSchemaCP> ignoreSchemas;
-    ignoreSchemas.insert(m_db.Schemas().GetECSchema("ECDbSystem"));
-    ignoreSchemas.insert(m_db.Schemas().GetECSchema("MetaSchema"));
+    ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbMap"));
+    ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbSystem"));
+    ignoreSchemas.insert(m_db.Schemas().GetSchema("ECDbMeta"));
 
     for (ECSchemaCP ecSchema : ecSchemas)
         {
@@ -372,10 +373,10 @@ BentleyStatus DataSourceCache::Reset()
                 continue;
                 }
 
-            Utf8PrintfString key("DataSourceCache::Reset:%llu", ecClass->GetId().GetValue());
+            Utf8PrintfString key("DataSourceCache::Reset:%" PRIu64, ecClass->GetId().GetValue());
             auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
                 {
-                return Utf8PrintfString("SELECT %llu, ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
+                return Utf8PrintfString("SELECT %" PRIu64 ", ECInstanceId FROM ONLY %s", ecClass->GetId().GetValue(),
                                         ecClass->GetECSqlName().c_str());
                 });
 
@@ -713,7 +714,7 @@ ICancellationTokenPtr ct
         {
         for (CachedInstanceKeyCR key : cachedInstances.GetCachedInstances())
             {
-            cachedInstanceKeysOut->Insert(key.GetInstanceKey().GetECClassId(), key.GetInstanceKey().GetECInstanceId());
+            cachedInstanceKeysOut->Insert(key.GetInstanceKey().GetClassId(), key.GetInstanceKey().GetInstanceId());
             }
         }
 
@@ -933,7 +934,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ECInstanceKeyCR instanceKey)
         return nullptr;
         }
 
-    auto statement = GetReadInstanceStatement(*ecClass, instanceKey.GetECInstanceId());
+    auto statement = GetReadInstanceStatement(*ecClass, instanceKey.GetInstanceId());
     if (BE_SQLITE_ROW != statement->Step())
         {
         return nullptr;
@@ -1631,7 +1632,7 @@ BentleyStatus DataSourceCache::MarkTemporaryInstancesAsPartial(const std::vector
             }
         if (!ECDbHelper::IsInstanceInMultiMap(infoKey, fullyPersistedNodes))
             {
-            temporaryInfos.insert(infoKey.GetECInstanceId());
+            temporaryInfos.insert(infoKey.GetInstanceId());
             }
         }
 
@@ -1892,7 +1893,7 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
         return ecSql;
         });
 
-    statement->BindId(1, instanceKey.GetECInstanceId());
+    statement->BindId(1, instanceKey.GetInstanceId());
 
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)

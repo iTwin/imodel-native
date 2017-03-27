@@ -182,7 +182,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_FailsAsECDbRequiresSharedColumnsCA)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassed_FailsAsECDbRequiresSharedColumnsCA_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -249,6 +249,43 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    }
+
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching)
+    {
+    auto cache = GetTestCache();
+    auto schema = ParseSchema(
+        R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" >  
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECClass>            
+            <ECClass typeName="B" >  
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECClass>
+            <ECRelationshipClass typeName="AB" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                <Source cardinality="(1,1)" polymorphic="True">
+                    <Class class="A" />
+                </Source>
+                <Target cardinality="(1,1)" polymorphic="True">
+                    <Class class="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    auto cachedSchema = cache->GetAdapter().GetECSchema("UpdateSchema");
+    ASSERT_TRUE(nullptr != cachedSchema);
+    auto cachedRelClass = cachedSchema->GetClassCP("AB")->GetRelationshipClassCP();
+    ASSERT_TRUE(nullptr != cachedRelClass);
+    EXPECT_EQ("(0,1)", cachedRelClass->GetSource().GetCardinality().ToString());
+    EXPECT_EQ("(0,1)", cachedRelClass->GetTarget().GetCardinality().ToString());
+
+    // Test caching
+    StubInstances instances;
+    instances.Add({"UpdateSchema.A", "AA"}).AddRelated({"UpdateSchema.AB", "AABB"}, {"UpdateSchema.B", "BB"});
+    auto key = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"}));
     }
 
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
@@ -1555,7 +1592,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     auto cache = GetTestCache();
 
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "NonExisting"}), nullptr);
-    EXPECT_TRUE(responseKey.GetParent().GetECClassId().IsValid());
+    EXPECT_TRUE(responseKey.GetParent().GetClassId().IsValid());
 
     EXPECT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
@@ -3059,7 +3096,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
 
     Json::Value relationshipJson;
     ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(relationshipJson, relationshipKey));
-    EXPECT_NE(Json::Value::null, relationshipJson);
+    EXPECT_NE(Json::Value::GetNull(), relationshipJson);
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
@@ -3077,7 +3114,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue)
     {
     // Arrange
     auto cache = GetTestCache();
@@ -5301,7 +5338,7 @@ TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKey
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
     EXPECT_FALSE(instanceKey.IsValid());
-    EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetECClassId());
+    EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetClassId());
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)
@@ -6115,7 +6152,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
-    EXPECT_EQ(Json::Value::null, instanceJson);
+    EXPECT_EQ(Json::Value::GetNull(), instanceJson);
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne)
@@ -6245,7 +6282,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
 
     Json::Value instanceJson;
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
-    EXPECT_EQ(Json::Value::null, instanceJson);
+    EXPECT_EQ(Json::Value::GetNull(), instanceJson);
 
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }

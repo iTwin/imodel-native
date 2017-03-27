@@ -164,7 +164,7 @@ DgnDbServerError::DgnDbServerError(HttpErrorCR error)
 
 JsonValueCR DgnDbServerError::GetExtendedData() const
     {
-    return m_wsError ? m_wsError->GetData() : Json::Value::null;
+    return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();
     }
 
 DgnDbServerError::Id DgnDbServerError::GetId() const
