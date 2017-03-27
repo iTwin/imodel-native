@@ -661,3 +661,19 @@ Json::Value Render::SceneLights::Brightness::ToJson() const
     return val;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Feature::operator<(FeatureCR rhs) const
+    {
+    if (GetElementId() != rhs.GetElementId())
+        return GetElementId() < rhs.GetElementId();
+    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
+        return GetSubCategoryId() < rhs.GetSubCategoryId();
+    else if (GetClass() != rhs.GetClass())
+        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
+    else
+        return false;
+    }
+
+

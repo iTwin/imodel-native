@@ -1508,29 +1508,31 @@ struct ColorIndex
 };
 
 //=======================================================================================
-//! Defines a look-up table of unique combinations of elementID, subcategoryID, and class
-//! for a graphic primitive.
+//! Describes 0 or more Features within a graphic primitive.
+//! The featureIDs refer to indices into a FeatureTable associated with the Graphic
+//! containing the primitive.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
 struct FeatureIndex
 {
-    struct Feature
+    enum class Type
     {
-        DgnElementId        m_elementId;
-        DgnSubCategoryId    m_subCategoryId;
-        DgnGeometryClass    m_class = DgnGeometryClass::Primary;
-
-        void Init(DgnElementId elem, DgnSubCategoryId subCat, DgnGeometryClass geomClass)
-            {
-            m_elementId = elem;
-            m_subCategoryId = subCat;
-            m_class = geomClass;
-            }
+        Empty, //!< No Features defined for this primitive. Union members invalid.
+        Uniform, //!< One Feature defined for this primitive. m_featureID holds the feature ID.
+        NonUniform //!< Multiple Features defined for this primitive. m_featureIDs holds per-vertex feature IDs.
     };
 
-    Feature const*  m_features = nullptr; // Lookup table
-    uint16_t const* m_indices = nullptr;  // indices into m_features, or NULL if m_numFeatures <= 1.
-    uint16_t        m_numFeatures = 0;    // Number of entries in m_features. If this is 1, m_indices is null and m_features[0] applies to the entire primitive.
+    Type    m_type = Type::Empty;
+    union
+        {
+        uint16_t        m_featureID;        // If m_numFeatures == 1, the ID of the single Feature within this primitive
+        uint16_t const* m_featureIDs;       // If m_numFeatures > 1, per-vertex Feature IDs
+        };
+
+    FeatureIndex() { m_featureIDs = nullptr; }
+
+    constexpr bool IsUniform() const { return Type::Uniform == m_type; }
+    constexpr bool IsEmpty() const { return Type::Empty == m_type; }
 
     void Reset() { *this = FeatureIndex(); }
 };
@@ -1775,6 +1777,106 @@ struct Plan
 };
 
 //=======================================================================================
+//! Describes a "feature" within a batched Graphic. A batched Graphic can
+//! contain multiple features. Each feature is associated with a unique combination of
+//! attributes (element ID, subcategory, geometry class). This allows geometry to be
+//! more efficiently batched on the GPU, while enabling features to be resymbolized
+//! individually.
+//!
+//! As a simple example, a single mesh primitive may contain geometry for 3 elements,
+//! all belonging to the same subcategory and geometry class. The mesh would therefore
+//! contain 3 primitives. Each vertex within the mesh would be associated with the
+//! index of the Feature to which it belongs, where the index is determined by the
+//! FeatureTable associated with the primitive.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct Feature
+{
+private:
+    DgnElementId        m_elementId;
+    DgnSubCategoryId    m_subCategoryId;
+    DgnGeometryClass    m_class = DgnGeometryClass::Primary;
+public:
+    Feature() : Feature(DgnElementId(), DgnSubCategoryId(), DgnGeometryClass::Primary) { }
+    Feature(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
+
+    DgnElementId GetElementId() const { return m_elementId; }
+    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
+    DgnGeometryClass GetClass() const { return m_class; }
+
+    bool operator!=(FeatureCR rhs) const { return !(*this == rhs); }
+    bool operator==(FeatureCR rhs) const
+        {
+        if (IsUndefined() && rhs.IsUndefined())
+            return true;
+        else
+            return GetElementId() == rhs.GetElementId() && GetSubCategoryId() == rhs.GetSubCategoryId() && GetClass() == rhs.GetClass();
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(FeatureCR rhs) const;
+
+    bool IsDefined() const { return m_elementId.IsValid() || m_subCategoryId.IsValid() || DgnGeometryClass::Primary != m_class; }
+    bool IsUndefined() const { return !IsDefined(); }
+};
+
+//=======================================================================================
+//! Defines a look-up table for Features within a batched Graphic. Consecutive 16-bit
+//! indices are assigned to each unique Feature. Primitives within the Graphic can
+//! use per-vertex indices to specify the distribution of Features within the primitive.
+//! A FeatureTable can be shared amongst multiple primitives within a single Graphic, and
+//! amongst multiple sub-Graphics of a Graphic.
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureTable
+{
+    typedef bmap<Feature, uint16_t> Map;
+private:
+    Map     m_map;
+    
+    static constexpr uint16_t GetMaxIndex() { return 0xffff; }
+public:
+    FeatureTable() { }
+    FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)) { }
+    FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); return *this; }
+
+    //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
+    uint16_t GetIndex(FeatureCR feature)
+        {
+        BeAssert(!IsFull());
+        uint16_t index = 0;
+        if (!FindIndex(index, feature) && !IsFull())
+            {
+            index = GetNumIndices();
+            m_map[feature] = index;
+            }
+
+        return index;
+        }
+
+    //! Looks up the index of an existing Feature. Returns false if the Feature does not exist in the lookup table.
+    bool FindIndex(uint16_t& index, FeatureCR feature) const
+        {
+        auto iter = m_map.find(feature);
+        bool found;
+        if (found = (m_map.end() != iter))
+            index = iter->second;
+
+        return found;
+        }
+
+    bool IsUniform() const { return 1 == size(); }
+    bool IsFull() const { BeAssert(size() <= GetMaxIndex()); return size() >= GetMaxIndex(); }
+    uint16_t GetNumIndices() const { return static_cast<uint16_t>(size()); }
+
+    typedef Map::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_map.begin(); }
+    const_iterator end() const { return m_map.end(); }
+    size_t size() const { return m_map.size(); }
+    bool empty() const { return m_map.empty(); }
+};
+
+//=======================================================================================
 //! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
 //! On Windows, for example, the default Render::Window holds an "HWND"
 // @bsiclass                                                    Keith.Bentley   11/15
@@ -1902,6 +2004,9 @@ struct System
 
     //! Create a Graphic consisting of a list of Graphics, with optional transform, clip, and view flag overrides applied to the list
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const = 0;
+
+    //! Create a Graphic consisting of batched Features.
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element

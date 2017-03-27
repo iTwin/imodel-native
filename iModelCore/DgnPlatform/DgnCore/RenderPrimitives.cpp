@@ -389,7 +389,7 @@ uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, ui
     auto index = static_cast<uint32_t>(m_points.size());
 
     m_points.push_back(toFPoint3d(point));
-    insertVertexAttribute(m_features, m_featureTable, feature, m_points);
+    m_features.Add(feature, m_points.size());
 
     if (nullptr != normal)
         m_normals.push_back(toFPoint3d(*normal));
@@ -400,6 +400,57 @@ uint32_t Mesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, ui
         insertVertexAttribute(m_colors, m_colorTable, fillColor, m_points);
 
     return index;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
+    {
+    if (nullptr == m_table)
+        return;
+
+    // Avoid allocating + populating big buffer of feature IDs unless necessary...
+    uint16_t index = m_table->GetIndex(feat);
+    if (!m_initialized)
+        {
+        // First feature - uniform.
+        m_uniform = index;
+        m_initialized = true;
+        }
+    else if (!m_indices.empty())
+        {
+        // Already non-uniform
+        m_indices.push_back(index);
+        }
+    else if (m_uniform != index)
+        {
+        // Second feature - back-fill uniform for existing verts
+        m_indices.resize(numVerts - 1);
+        std::fill(m_indices.begin(), m_indices.end(), uint16_t(0));
+        m_indices.push_back(index);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::Features::ToFeatureIndex(FeatureIndex& index) const
+    {
+    if (!m_initialized)
+        {
+        index.m_type = FeatureIndex::Type::Empty;
+        }
+    else if (m_indices.empty())
+        {
+        index.m_type = FeatureIndex::Type::Uniform;
+        index.m_featureID = m_uniform;
+        }
+    else
+        {
+        index.m_type = FeatureIndex::Type::NonUniform;
+        index.m_featureIDs = m_indices.data();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1194,7 +1245,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr);
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1214,7 +1265,7 @@ MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double toleran
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr);
 
                 uint32_t fillColor = displayParams->GetFillColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1307,45 +1358,6 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvec
     index.m_colors = colors.data();
     index.m_numColors = GetNumIndices();
     index.m_indices = indices.data();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t FeatureTable::GetIndex(FeatureCR feature)
-    {
-    BeAssert(!IsFull());
-    auto iter = m_map.find(feature);
-    if (m_map.end() != iter)
-        return iter->second;
-    else if (IsFull())
-        return 0;
-
-    uint16_t index = GetNumIndices();
-    m_map[feature] = index;
-    return index;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FeatureTable::ToFeatureIndex(FeatureIndex& index, bvector<FeatureIndex::Feature>& features, bvector<uint16_t> const& indices) const
-    {
-    index.Reset();
-    if (empty())
-        return;
-
-    features.resize(size());
-    for (auto const& kvp : *this)
-        features[kvp.second] = kvp.first;
-
-    index.m_features = features.data();
-    index.m_numFeatures = GetNumIndices();
-    if (!IsUniform())
-        {
-        BeAssert(!indices.empty());
-        index.m_indices = indices.data();
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1512,7 +1524,7 @@ bool MeshArgs::Init(MeshCR mesh, Render::System const& system, DgnDbR db)
         m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::BottomUp::No);
 
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-    mesh.GetFeatureTable().ToFeatureIndex(m_features, m_featureTable, mesh.Features());
+    mesh.ToFeatureIndex(m_features);
 
     return true;
     }
@@ -1535,7 +1547,6 @@ void MeshArgs::Clear()
     m_colors.Reset();
     m_colorTable.clear();
     m_features.Reset();
-    m_featureTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1577,7 +1588,6 @@ void PolylineArgs::Reset()
     m_colors.Reset();
     m_colorTable.clear();
     m_features.Reset();
-    m_featureTable.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1604,7 +1614,7 @@ bool PolylineArgs::Init(MeshCR mesh)
         m_lines = &m_polylines[0];
 
         mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-        mesh.GetFeatureTable().ToFeatureIndex(m_features, m_featureTable, mesh.Features());
+        mesh.ToFeatureIndex(m_features);
         }
 
     return IsValid();
@@ -2025,20 +2035,5 @@ GraphicPtr PrimitiveBuilder::_Finish()
 DisplayParamsCR PrimitiveBuilder::GetDisplayParams(bool ignoreLighting) const
     {
     return m_geomList.GetDisplayParamsCache().Get(GetGraphicParams(), GetGeometryParams(), ignoreLighting);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Feature::operator<(FeatureCR rhs) const
-    {
-    if (GetElementId() != rhs.GetElementId())
-        return GetElementId() < rhs.GetElementId();
-    else if (GetSubCategoryId() != rhs.GetSubCategoryId())
-        return GetSubCategoryId() < rhs.GetSubCategoryId();
-    else if (GetClass() != rhs.GetClass())
-        return static_cast<uint8_t>(GetClass()) < static_cast<uint8_t>(rhs.GetClass());
-    else
-        return false;
     }
 

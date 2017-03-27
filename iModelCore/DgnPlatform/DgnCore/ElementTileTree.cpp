@@ -727,7 +727,8 @@ BentleyStatus Loader::_LoadTile()
     PolylineArgs polylineArgs;
     MeshArgs meshArgs;
     bvector<Render::GraphicPtr> graphics;
-    for (auto const& mesh : geometry.Meshes())
+    auto& geometryMeshes = geometry.Meshes();
+    for (auto const& mesh : geometryMeshes)
         {
         bool haveMesh = !mesh->Triangles().empty();
         bool havePolyline = !haveMesh && !mesh->Polylines().empty();
@@ -768,17 +769,21 @@ BentleyStatus Loader::_LoadTile()
             graphics.push_back(rangeGraphic->Finish());
             }
 
+        GraphicPtr graphic;
         switch (graphics.size())
             {
             case 0:
                 break;
             case 1:
-                tile.SetGraphic(**graphics.begin());
+                graphic = *graphics.begin();
                 break;
             default:
-                tile.SetGraphic(*system._CreateGraphicList(std::move(graphics), root.GetDgnDb()));
+                graphic = system._CreateGraphicList(std::move(graphics), root.GetDgnDb());
                 break;
             }
+
+        if (graphic.IsValid())
+            tile.SetGraphic(*system._CreateBatch(*graphic, std::move(geometryMeshes.m_features)));
         }
 
     // No point subdividing empty nodes - improves performance if we don't
@@ -1107,6 +1112,7 @@ private:
     DRange3d        m_tileRange;
     LoadContextCR   m_loadContext;
     size_t          m_geometryCount = 0;
+    FeatureTable    m_featureTable;
     bool            m_maxGeometryCountExceeded = false;
 
     static constexpr double GetVertexClusterThresholdPixels() { return 5.0; }
@@ -1153,7 +1159,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
     if (m_builderMap.end() != found)
         return *found->second;
 
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1253,6 +1259,14 @@ void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
+    {
+    return Feature(elemId, params.GetSubCategoryId(), params.GetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
@@ -1283,7 +1297,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, Feature(elemId, displayParams), doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
+            builder.AddTriangle(*visitor, displayParams.GetMaterialId(), db, featureFromParams(elemId, displayParams), doVertexCluster, m_options.WantTwoSidedTriangles(), hasTexture, fillColor);
             }
         }
 
@@ -1330,7 +1344,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
     uint32_t fillColor = displayParams.GetFillColor();
     DgnElementId elemId = GetElementId(geom);
     for (auto& strokePoints : strokes.m_strokes)
-        builder.AddPolyline(strokePoints, Feature(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
+        builder.AddPolyline(strokePoints, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1343,6 +1357,7 @@ MeshList MeshGenerator::GetMeshes()
         if (!builder.second->GetMesh()->IsEmpty())
             meshes.push_back(builder.second->GetMesh());
 
+    meshes.m_features = std::move(m_featureTable);
     return meshes;
     }
 
