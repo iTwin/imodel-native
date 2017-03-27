@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ExtendedDataAdapterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,7 +58,7 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
+    EXPECT_EQ(SUCCESS, db.Schemas().ImportSchemas(cache->GetSchemas()));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
     });
 
@@ -125,7 +125,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Delete(instance.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass"), nullptr).Delete(instance.GetInstanceId()));
     data = adapter.GetData(instance);
     EXPECT_TRUE(data.GetData().empty());
     EXPECT_TRUE(data.GetValue("Test").isNull());
@@ -174,11 +174,11 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     data.SetValue("Test", "Value");
     ASSERT_EQ(SUCCESS, adapter.UpdateData(data));
 
-    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Delete(holder.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_OK, JsonDeleter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2"), nullptr).Delete(holder.GetInstanceId()));
 
     data = adapter.GetData(owner);
     EXPECT_TRUE(data.GetData().empty());
-    EXPECT_EQ(Json::Value::null, data.GetValue("Test"));
+    EXPECT_EQ(Json::Value::GetNull(), data.GetValue("Test"));
     }
 
 #endif

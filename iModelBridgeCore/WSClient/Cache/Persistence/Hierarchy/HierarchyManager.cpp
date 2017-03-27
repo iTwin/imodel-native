@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -161,7 +161,7 @@ BentleyStatus HierarchyManager::CheckAndCleanupHiearchy(ECInstanceKeyCR instance
 BentleyStatus HierarchyManager::DeleteInstance(ECInstanceKeyCR instance)
     {
     ECInstanceKeyMultiMap instances;
-    instances.Insert(instance.GetECClassId(), instance.GetECInstanceId());
+    instances.Insert(instance.GetClassId(), instance.GetInstanceId());
 
     return m_dbAdapter.DeleteInstances(instances);
     }
@@ -211,7 +211,7 @@ BentleyStatus HierarchyManager::DeleteInstances(bset<ECInstanceKey> instancesSet
     ECInstanceKeyMultiMap instances;
     for (ECInstanceKeyCR instance : instancesSet)
         {
-        instances.Insert(instance.GetECClassId(), instance.GetECInstanceId());
+        instances.Insert(instance.GetClassId(), instance.GetInstanceId());
         }
     return m_dbAdapter.DeleteInstances(instances);
     }
@@ -381,8 +381,8 @@ ECInstanceKeyMultiMap& keysOut
             "WHERE SourceECClassId = ? AND SourceECInstanceId = ? ";
         });
 
-    statement->BindId(1, source.GetECClassId());
-    statement->BindId(2, source.GetECInstanceId());
+    statement->BindId(1, source.GetClassId());
+    statement->BindId(2, source.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))
@@ -420,8 +420,8 @@ ECInstanceKeyMultiMap& keysOut
             "WHERE TargetECClassId = ? AND TargetECInstanceId = ?";
         });
 
-    statement->BindId(1, target.GetECClassId());
-    statement->BindId(2, target.GetECInstanceId());
+    statement->BindId(1, target.GetClassId());
+    statement->BindId(2, target.GetInstanceId());
 
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement->Step()))

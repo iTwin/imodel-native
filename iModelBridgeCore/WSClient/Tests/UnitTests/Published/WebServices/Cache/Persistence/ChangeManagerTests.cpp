@@ -2306,15 +2306,15 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_MultipleModifiedObjects_Commit
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"B"})")));
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"TestProperty":"C"})")));
 
-    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, a)["TestProperty"]);
-    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, b)["TestProperty"]);
-    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, c)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, b)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["TestProperty"]);
     // Act
     auto revision = cache->GetChangeManager().ReadInstanceRevision(b);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
     // Assert
-    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, a)["TestProperty"]);
-    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, c)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, a)["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ReadModifiedProperties(*cache, c)["TestProperty"]);
     }
 
 TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedObject_RemovesChangeStatus)
@@ -2731,8 +2731,8 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_MultipleModifiedInstancesWithS
     Json::Value ca, cb;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(a, ca));
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(b, cb));
-    EXPECT_EQ(Json::Value::null, ca["TestProperty"]);
-    EXPECT_EQ(Json::Value::null, cb["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), ca["TestProperty"]);
+    EXPECT_EQ(Json::Value::GetNull(), cb["TestProperty"]);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_ReturnsChangedPropertiesOnly)
@@ -2814,7 +2814,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_NotExistingInstance_ReturnsErr
 
     Json::Value properties;
     ASSERT_EQ(ERROR, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(Json::Value::null, properties);
+    EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_NotChangedInstance_ReturnsError)
@@ -2824,7 +2824,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_NotChangedInstance_ReturnsErro
 
     Json::Value properties;
     ASSERT_EQ(ERROR, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(Json::Value::null, properties);
+    EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_CreatedInstance_ReturnsError)
@@ -2834,7 +2834,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_CreatedInstance_ReturnsError)
 
     Json::Value properties;
     ASSERT_EQ(ERROR, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(Json::Value::null, properties);
+    EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedAfterInstanceWasCreated_ReturnsErrorForCreatedObject)
@@ -2859,7 +2859,7 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_DeletedInstance_ReturnsError)
 
     Json::Value properties;
     ASSERT_EQ(ERROR, cache->GetChangeManager().ReadModifiedProperties(instance, properties));
-    EXPECT_EQ(Json::Value::null, properties);
+    EXPECT_EQ(Json::Value::GetNull(), properties);
     }
 
 TEST_F(ChangeManagerTests, ModifyObject_InstanceIsRemoved_BackupInstanceIsRemoved)

@@ -207,8 +207,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforePushRevisionToServer);
 #endif
-    // TODO: specify if revision has schema changes
-    return m_repositoryConnection->Push(revision, *m_db, relinquishCodesLocks, false, uploadCallback, cancellationToken)
+    return m_repositoryConnection->Push(revision, *m_db, relinquishCodesLocks, uploadCallback, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (DgnDbServerStatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -239,6 +238,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
             {
             m_db->Revisions().AbandonCreateRevision();
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetMessage().c_str());
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pushResult.GetError().GetDescription().c_str());
             return DgnDbServerStatusResult::Error(pushResult.GetError());
             }
         });
