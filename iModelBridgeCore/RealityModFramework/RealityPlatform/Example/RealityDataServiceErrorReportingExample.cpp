@@ -23,8 +23,8 @@ static void errorCallback(Utf8String basicMessage, const RawServerResponse& rawR
     std::cout << "Request failed with the following response:\n" << std::endl;
     std::cout << Utf8PrintfString("response header:\n %s\n", rawResponse.header) << std::endl;
     std::cout << Utf8PrintfString("response body:\n %s\n", rawResponse.body) << std::endl;
-    std::cout << Utf8PrintfString("response curlCode: %u\n", rawResponse.curlCode) << std::endl;
     std::cout << Utf8PrintfString("response code: %lu\n", rawResponse.responseCode) << std::endl;
+    std::cout << Utf8PrintfString("response curlCode: %d - %s\n", rawResponse.curlCode, curl_easy_strerror((CURLcode)(rawResponse.curlCode))) << std::endl;
     }
 
 /*-----------------------------------------------------------------//
