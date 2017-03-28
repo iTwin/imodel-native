@@ -127,7 +127,7 @@ public:
     //! Get the id of this Gimbal element
     DATACAPTURE_EXPORT GimbalElementId GetId() const;
 
-    //! Make an iterator over all GimbalAngleRange-s relevant to a Session
+    //! Make an iterator over all GimbalAngleRange-s relevant to a PhotoPlan
     DATACAPTURE_EXPORT static Gimbal::GimbalAngleRangeIterator MakeGimbalAngleRangeIterator(Dgn::DgnDbCR dgndb, GimbalElementId gimbalZoneId);
 
     DATACAPTURE_EXPORT void SetGimbalAngleRangeElementIdSet(DgnElementIdSet gimablAngleRangeIdSet);
