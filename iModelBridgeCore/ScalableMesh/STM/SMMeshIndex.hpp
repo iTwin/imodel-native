@@ -4043,8 +4043,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
         bool hasClip = false;
         if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
-            {
-            ComputeAndRemoveIntersections(polys, clipIds);
+            {            
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)
                 {
@@ -4927,7 +4926,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
 
         // The root node contains the spatial object ... add it
         nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->AddFeatureDefinition(type, points, extent, m_indexHeader.m_HasMaxExtent);
-        assert(nAddedPoints >= points.size());
+        //assert(nAddedPoints >= points.size());
         }
     }
 
