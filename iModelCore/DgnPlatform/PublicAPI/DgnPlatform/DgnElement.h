@@ -3395,7 +3395,7 @@ public:
     //! @see DgnElement::CopyForEdit
     DGNPLATFORM_EXPORT DgnElementCPtr QueryElementByFederationGuid(BeSQLite::BeGuidCR federationGuid) const;
 
-    //! argument for _BindWriteParams
+    //! argument for MakeIterator
     enum class PolymorphicQuery : bool {No = false, Yes = true};
 
     //! Make an iterator over elements of the specified ECClass in this DgnDb.
@@ -3403,7 +3403,7 @@ public:
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     //! @param[in] polymorphic If false only specified class is returned. The default is true which also returns all derived classes.
-    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr, PolymorphicQuery polymorphic= PolymorphicQuery::Yes) const;
+    DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr, PolymorphicQuery polymorphic=PolymorphicQuery::Yes) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}

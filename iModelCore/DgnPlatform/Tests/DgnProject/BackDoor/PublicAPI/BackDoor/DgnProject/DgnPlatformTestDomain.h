@@ -170,7 +170,7 @@ struct PerfElement : Dgn::PhysicalElement
 
     public:
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENT_CLASS_NAME)); }
-        static PerfElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+        static PerfElementPtr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
 //---------------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ struct PerfElementSub1 : PerfElement
 
     public:
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME)); }
-        static PerfElementSub1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+        static PerfElementSub1Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
 //---------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ struct PerfElementSub2 : PerfElementSub1
 
     public:
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME)); }
-        static PerfElementSub2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+        static PerfElementSub2Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
 //---------------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ struct PerfElementSub3 : PerfElementSub2
 
     public:
         static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME)); }
-        static PerfElementSub3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId);
+        static PerfElementSub3Ptr Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Dgn::DgnElementId parentId = Dgn::DgnElementId(), Dgn::DgnClassId parentRelClassId = Dgn::DgnClassId());
     };
 
 //---------------------------------------------------------------------------------------

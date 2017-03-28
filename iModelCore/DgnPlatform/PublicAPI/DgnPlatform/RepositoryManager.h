@@ -399,6 +399,32 @@ public:
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
+
+    DGNPLATFORM_EXPORT static IBriefcaseManagerPtr CreateMasterBriefcaseManager(DgnDbR db); 
+    DGNPLATFORM_EXPORT static IBriefcaseManagerPtr CreateBulkUpdateBriefcaseManager(DgnDbR db); 
+};
+
+/*=====================================================================================*/
+//! Interface adopted by a briefcase manager that supports efficient bulk update.
+// @bsistruct                                                    Sam.Wilson     03/17
+/*=====================================================================================*/
+struct IBulkUpdateBriefcaseOps
+{
+protected:
+    virtual void _StartBulkUpdate() = 0;
+    virtual IBriefcaseManager::Response _AcquireLocksAndCodes() = 0;
+    virtual void _EndBulkUpdate() = 0;
+
+public:
+    //!< Call this before starting the bulk update 
+    void StartBulkUpdate() {_StartBulkUpdate();}
+    
+    //! Call this to acquire all of the codes and locks were detected during the update.
+    //! @note the caller must check the response for locks and codes that could not be obtained.
+    IBriefcaseManager::Response AcquireLocksAndCodes() {return _AcquireLocksAndCodes();}
+  
+    //!< Call this when the bulk update is done.
+    void EndBulkUpdate() {_EndBulkUpdate();}
 };
 
 /*=====================================================================================*/

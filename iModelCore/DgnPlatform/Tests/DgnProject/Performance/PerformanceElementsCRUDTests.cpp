@@ -251,16 +251,16 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::SetPropertyValues(Utf8CP classNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Sam.Wilson                       01/17
 //+---------------+---------------+---------------+---------------+---------------+------
-Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId) const
+Dgn::PhysicalElementPtr PerformanceElementsCRUDTestFixture::CreatePerfElement(Utf8CP className, DgnModelR targetModel, DgnCategoryId catId, DgnElementId parent, DgnClassId dgnClassId) const
     {
     if (0 == strcmp(className, PERF_TEST_PERFELEMENT_CLASS_NAME))
-        return PerfElement::Create(*m_db, targetModel.GetModelId(), catId);
+        return PerfElement::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId);
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB1_CLASS_NAME))
-        return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId);
+        return PerfElementSub1::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId);
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB2_CLASS_NAME))
-        return PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId);
+        return PerfElementSub2::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId);
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTSUB3_CLASS_NAME))
-        return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId);
+        return PerfElementSub3::Create(*m_db, targetModel.GetModelId(), catId, parent, dgnClassId);
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHBASE_CLASS_NAME))
         return PerfElementCHBase::Create(*m_db, targetModel.GetModelId(), catId);
     if (0 == strcmp(className, PERF_TEST_PERFELEMENTCHSUB1_CLASS_NAME))
@@ -747,4 +747,3 @@ TEST_F(QueryCategoryIdPerformanceTest, TimeStatements)
     TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=?", nIterations);
     TimeECSqlStatement("SELECT Parent.Id FROM bis.Element WHERE ECInstanceId=? ECSqlOptions NoECClassIdFilter", nIterations);
     }
-

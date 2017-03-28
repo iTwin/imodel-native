@@ -66,6 +66,7 @@ protected:
 public:
     DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
     DisplayStyle3dP ToDisplayStyle3dP() {return const_cast<DisplayStyle3dP>(_ToDisplayStyle3d());}
+    bool Is3d() const {return nullptr != ToDisplayStyle3d();}
 
     //! Construct a new DisplayStyle.
     //! @param[in] db The DgnDb to hold the DisplayStyle
@@ -201,7 +202,7 @@ public:
     Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
     void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
 
-    Render::SceneLights CreateSceneLights(Render::TargetR);
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
     DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
