@@ -236,6 +236,24 @@ ClipVectorPtr ViewDefinition::GetViewClip() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::SetGridSettings(GridOrientationType orientation, DPoint2dCR spacing, uint32_t gridsPerRef)
     {
+    switch (orientation)
+        {
+        case GridOrientationType::WorldYZ:
+        case GridOrientationType::WorldXZ:
+            {
+            if (!IsView3d())
+                return;
+            break;
+            }
+
+        case GridOrientationType::GeoCoord:
+            {
+            if (!IsSpatialView())
+                return;
+            break;
+            }
+        }
+
     auto& details = GetDetailsR();
     details.SetOrRemoveUInt(str_GridOrient(), (uint32_t) orientation, (uint32_t)GridOrientationType::WorldXY);
     details.SetOrRemoveUInt(str_GridPerRef(), gridsPerRef, 10);

@@ -26,6 +26,7 @@
 #define BIS_CLASS_AuxCoordSystem            "AuxCoordSystem"
 #define BIS_CLASS_AuxCoordSystem2d          "AuxCoordSystem2d"
 #define BIS_CLASS_AuxCoordSystem3d          "AuxCoordSystem3d"
+#define BIS_CLASS_AuxCoordSystemSpatial     "AuxCoordSystemSpatial"
 #define BIS_CLASS_Category                  "Category"
 #define BIS_CLASS_CategorySelector          "CategorySelector"
 #define BIS_CLASS_CodeSpec                  "CodeSpec"

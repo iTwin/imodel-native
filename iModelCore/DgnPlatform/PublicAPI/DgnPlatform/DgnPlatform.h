@@ -60,6 +60,7 @@ DGNPLATFORM_TYPEDEFS(AnnotationElement2d)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem2d)
 DGNPLATFORM_TYPEDEFS(AuxCoordSystem3d)
+DGNPLATFORM_TYPEDEFS(AuxCoordSystemSpatial)
 DGNPLATFORM_TYPEDEFS(AxisAlignedBox2d)
 DGNPLATFORM_TYPEDEFS(AxisAlignedBox3d)
 DGNPLATFORM_TYPEDEFS(BoundingBox2d)
@@ -795,12 +796,12 @@ enum class OutputMessageAlert
 
 enum class GridOrientationType
 {
-    View    = 0,
-    WorldXY = 1,           //!< Top
-    WorldYZ = 2,           //!< Right
-    WorldXZ = 3,           //!< Front
-    ACS     = 4,
-    Maximum = 4,
+    View     = 0,
+    WorldXY  = 1, //!< Top
+    WorldYZ  = 2, //!< Right
+    WorldXZ  = 3, //!< Front
+    AuxCoord = 4,
+    GeoCoord = 5,
 };
 
 enum AngleModeVals
