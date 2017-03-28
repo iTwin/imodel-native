@@ -208,8 +208,8 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     uint64_t choice;
 
     //InterpretCommand();
-    std::string str;
-    std::getline(std::cin, str);
+    std::wstring str;
+    std::getline(std::wcin, str);
     input = Utf8String(str.c_str()).Trim();
     if(input.EqualsI("Quit"))
         {
@@ -234,7 +234,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
         else
             {
             DisplayInfo("Could not extract a number from provided input. Use input as was provided? [ y / n ]\n", DisplayOption::Question);
-            std::getline(std::cin, str);
+            std::getline(std::wcin, str);
             Utf8String use(str.c_str());
             if (!use.EqualsI("y"))
                 {
@@ -247,10 +247,14 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
 
 int main(int argc, char* argv[])
     {
+//DMx    SetConsoleOutputCP(65001);  // CP_UTF8
+
     SetConsoleTitle("RealityDataService Navigator");
 
     RealityDataConsole console = RealityDataConsole();
     console.Run();
+
+//DMx    SetConsoleOutputCP(1252);
     }
 
 void RealityDataConsole::Run()
@@ -312,8 +316,8 @@ void RealityDataConsole::ConfigureServer()
     DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
     DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net\n  ?", DisplayOption::Question);
     Utf8String server;
-    std::string input;
-    std::getline(std::cin, input);
+    std::wstring input;
+    std::getline(std::wcin, input);
     server = Utf8String(input.c_str()).Trim();
     if(server.length() == 0)
         server = "dev-realitydataservices-eus.cloudapp.net";
@@ -322,7 +326,7 @@ void RealityDataConsole::ConfigureServer()
         {
         DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
         Utf8String temp;
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         temp = Utf8String(input.c_str()).Trim();
         if(temp.EqualsI("y"))
             {
@@ -551,13 +555,13 @@ void RealityDataConsole::ListAll()
     DisplayInfo (Utf8PrintfString(" %lu files in selection.\n", filesInRepo.size()), DisplayOption::Tip);
     DisplayInfo ("these will be displayed, 20 at a time. Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
 
-    std::string str;
+    std::wstring str;
     size_t placeholder = 0;
     size_t step;
     size_t size = filesInRepo.size();
     while (m_lastCommand != Command::Cancel && placeholder < size)
         {
-        std::getline(std::cin, str);
+        std::getline(std::wcin, str);
         if(Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
         else
@@ -644,8 +648,6 @@ static void downloadProgressFunc(Utf8String filename, double fileProgress, doubl
     char progressString[1024];
     sprintf(progressString, "percentage of files downloaded : %f\r", repoProgress * 100.0);
     std::cout << progressString;
-	
-//DMxx    RealityDataConsole::DisplayInfo (Utf8PrintfString("percentage of files downloaded : %f\r", repoProgress * 100.0)); //, RealityDataConsole::Tip);
     }
 
 static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
@@ -654,8 +656,6 @@ static void uploadProgressFunc(Utf8String filename, double fileProgress, double 
     //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
     sprintf(progressString, "upload percent : %f\r", repoProgress * 100.0);
     std::cout << progressString ;
-	
-//DMxx    RealityDataConsole::DisplayInfo(Utf8PrintfString("upload percent : %f\r", repoProgress * 100.0)); //, RealityDataConsole::Tip);
     }
 
 void RealityDataConsole::Download()
@@ -712,10 +712,10 @@ void RealityDataConsole::Upload()
     Utf8String option;
     if(m_currentNode == nullptr)
         {
-        std::string input;
+        std::wstring input;
         bmap<RealityDataField, Utf8String> properties;
         DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
@@ -723,7 +723,7 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::Classification, option);
 
         DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
@@ -731,7 +731,7 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::Visibility, option);
 
         DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
         propertyString = RealityDataServiceUpload::PackageProperties(properties);
@@ -914,7 +914,7 @@ void RealityDataConsole::ChangeProps()
     Utf8String input; 
     DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
     bmap<RealityDataField, Utf8String> props = bmap<RealityDataField, Utf8String>();
-    std::string str;
+    std::wstring str;
     Utf8String propertyString = "";
     Utf8String value;
     while (input != "-Finish-")
@@ -926,7 +926,7 @@ void RealityDataConsole::ChangeProps()
             {
             DisplayInfo(Utf8PrintfString("Input value for %s\n", input));
 
-            std::getline(std::cin, str);
+            std::getline(std::wcin, str);
             if(propertyString.length() > 0)
                 propertyString.append(",");
 
@@ -1022,7 +1022,7 @@ void RealityDataConsole::Filter()
     {
     Utf8String filter = "";
     Utf8String value;
-    std::string str;
+    std::wstring str;
     while (filter != "-Finish-")
         {
         DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
@@ -1045,7 +1045,7 @@ void RealityDataConsole::Filter()
         else
             DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
 
-        std::getline(std::cin, str);
+        std::getline(std::wcin, str);
         value = Utf8String(str.c_str());
         if (filter.Equals("Name"))
             m_nameFilter = value;
@@ -1095,10 +1095,10 @@ void RealityDataConsole::Relationships()
 
 void RealityDataConsole::CreateRD()
     {
-    std::string input;
+    std::wstring input;
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     Utf8String name = Utf8String(input.c_str()).Trim();
     properties.Insert(RealityDataField::Name, name);
 
@@ -1108,7 +1108,7 @@ void RealityDataConsole::CreateRD()
     properties.Insert(RealityDataField::Classification, option);
 
     DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
     DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
@@ -1116,7 +1116,7 @@ void RealityDataConsole::CreateRD()
     properties.Insert(RealityDataField::Visibility, option);
 
     DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
@@ -1222,7 +1222,7 @@ void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
         }
     
     if (!msg.empty())
-        std::cout << msg;
+        std::wcout << WString(msg.c_str(), true).c_str();
 
     // commande
     SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
