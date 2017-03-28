@@ -93,12 +93,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
-#define BDCP_CATEGORY_CameraDevice                                         "CameraDevice"
+#define BDCP_CATEGORY_AcquisitionDevice                                    "AcquisitionDevice"
 #define BDCP_CATEGORY_Shot                                                 "Shot"
-#define BDCP_CATEGORY_Pose                                                 "Pose"
-#define BDCP_CATEGORY_GimbalAngleRange                                     "GimbalAngleRange"
-#define BDCP_CATEGORY_Gimbal                                               "Gimbal"
-#define BDCP_CATEGORY_Drone                                                "Drone"
 
 //-----------------------------------------------------------------------------------------
 // Authority names

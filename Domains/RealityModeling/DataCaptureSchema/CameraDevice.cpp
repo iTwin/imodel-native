@@ -468,7 +468,7 @@ CameraDevicePtr CameraDevice::Create(Dgn::SpatialModelR model, CameraDeviceModel
         }
 
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_CameraDevice, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     CameraDevicePtr cp = new CameraDevice(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraDeviceModel);
     return cp;

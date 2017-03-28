@@ -106,11 +106,11 @@ struct IScalableMeshLocationProvider : public RefCountedBase
     {
     protected:
 
-        virtual BentleyStatus _GetExtraFileDirectory(const BeFileName& extraFileDir) const = 0;
+        virtual BentleyStatus _GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const = 0;
 
     public:
 
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(const BeFileName& extraFileDir) const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const;
     };
 
 typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProviderPtr;
@@ -214,7 +214,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
     public:
 
-        static BentleyStatus SetLocationProvider(IScalableMeshLocationProviderPtr& locationProviderPtr);
+        SCALABLEMESH_SCHEMA_EXPORT static BentleyStatus SetLocationProvider(IScalableMeshLocationProvider& locationProviderPtr);
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
         ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);

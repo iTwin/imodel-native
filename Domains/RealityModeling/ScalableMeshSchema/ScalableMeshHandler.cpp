@@ -49,9 +49,9 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 //----------------------------------------------------------------------------------------
 IScalableMeshLocationProviderPtr ScalableMeshModel::m_locationProviderPtr = nullptr;
 
-BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(const BeFileName& extraFileDir) const
+BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const
     {
-    return _GetExtraFileDirectory(extraFileDir);
+    return _GetExtraFileDirectory(extraFileDir, dgnDb);
     }
 
 
@@ -171,9 +171,9 @@ TerrainModel::IDTM* ScalableMeshModel::_GetDTM(ScalableMesh::DTMAnalysisType typ
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     3/2017
 //----------------------------------------------------------------------------------------
-BentleyStatus ScalableMeshModel::SetLocationProvider(IScalableMeshLocationProviderPtr& locationProviderPtr)
+BentleyStatus ScalableMeshModel::SetLocationProvider(IScalableMeshLocationProvider& locationProvider)
     {
-    m_locationProviderPtr = locationProviderPtr;
+    m_locationProviderPtr = &locationProvider;
     return SUCCESS;
     }
 
@@ -1214,7 +1214,7 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
     BeFileName clipFileBase;
     BeFileName extraFileDir;
 
-    if (m_locationProviderPtr.IsValid() && SUCCESS == m_locationProviderPtr->GetExtraFileDirectory(extraFileDir))
+    if (m_locationProviderPtr.IsValid() && SUCCESS == m_locationProviderPtr->GetExtraFileDirectory(extraFileDir, dgnProject))
         {
         clipFileBase = extraFileDir;        
         }
@@ -1225,7 +1225,7 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
         
     WChar modelIdStr[1000];
     BeStringUtilities::FormatUInt64(modelIdStr, GetModelId().GetValue());    
-    clipFileBase.AppendString(modelIdStr);        
+    clipFileBase.AppendToPath(modelIdStr);
     return clipFileBase;
     }
 

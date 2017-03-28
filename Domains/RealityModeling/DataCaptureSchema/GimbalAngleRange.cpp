@@ -30,7 +30,7 @@ void GimbalAngleRangeHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 GimbalAngleRangePtr GimbalAngleRange::Create(Dgn::SpatialModelR model)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_GimbalAngleRange, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     GimbalAngleRangePtr cp = new GimbalAngleRange(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     return cp;

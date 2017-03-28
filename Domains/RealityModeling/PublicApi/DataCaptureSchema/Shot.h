@@ -109,6 +109,9 @@ public:
     //! @return Id of the Shot or invalid Id if an Shot was not found
     DATACAPTURE_EXPORT static ShotElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
+    DATACAPTURE_EXPORT static Dgn::ColorDef GetDefaultColor();
+    DATACAPTURE_EXPORT static int           GetDefaultWeight();
+
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT ShotElementId GetId() const;
 
@@ -116,7 +119,6 @@ public:
     DATACAPTURE_EXPORT void             SetCameraDeviceId(CameraDeviceElementId val);
     DATACAPTURE_EXPORT PoseElementId    GetPoseId() const;
     DATACAPTURE_EXPORT void             SetPoseId(PoseElementId val);
-
 };
 
 //=================================================================================

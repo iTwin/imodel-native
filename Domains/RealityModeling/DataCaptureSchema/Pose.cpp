@@ -49,7 +49,7 @@ void PoseHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 PosePtr Pose::Create(Dgn::SpatialModelR model, bool IsECEFSupported)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Pose, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, model.GetDgnDb());
 
     PosePtr cp = new Pose(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     cp->SetIsECEF(IsECEFSupported);
@@ -85,12 +85,12 @@ bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Daniel.McKenzie                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target)
+void Pose::FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, double scaleFactor)
     {
     RotMatrix rotMatrix = pose.GetRotMatrix();
     DPoint3d center = pose.GetCenter();
 
-    double zOff = 1.10 * center.Distance(target);
+    double zOff = (1.10 * center.Distance(target)) * scaleFactor;
     double xOff = zOff * tan(fieldofView.x);
     double yOff = zOff * tan(fieldofView.y);
 
