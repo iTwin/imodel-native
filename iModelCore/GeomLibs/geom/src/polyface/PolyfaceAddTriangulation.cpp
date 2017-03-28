@@ -18,7 +18,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> &inpoints)
     {
     // work with a local duplicate free copy of the points....
     if (inpoints.size () < 3)
-        return nullptr;
+        return false;
     bvector<DPoint3d> points;
     points.push_back (inpoints.front ());
     for (size_t i = 1; i < inpoints.size (); i++)
@@ -526,7 +526,7 @@ bvector<DPoint3d> const points
 )
     {
     if (points.size () < 3)
-        return false;
+        return nullptr;
     VuSetP graph = vu_newVuSet (0);
     DRange3d worldRange = DRange3d::From (points);
     double localAbsTol = 1.0e-8;
