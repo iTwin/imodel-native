@@ -111,6 +111,10 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
+                    BeFileName path(sqlFileName);
+                    if (!path.GetDirectoryName().DoesPathExist())
+                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+
                     m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
                     }
                 }
@@ -134,6 +138,10 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 if (status == 0)
                     {
+                    BeFileName path(sqlFileName);
+                    if (!path.GetDirectoryName().DoesPathExist())
+                        BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+
                     m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
                     }
                 }
