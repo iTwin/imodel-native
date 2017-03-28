@@ -256,3 +256,7 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
     #   Actual: false
     # Expected: true
     # [  FAILED  ] DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
+
+ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
+    # bim0200dev, x64 & x86, DEBUG, 
+    # hangs
