@@ -28,7 +28,7 @@ Utf8StringR formattedValue
             case CodeFragmentSpec::Type::FixedString:
                 formattedValue.append(fragmentSpec.GetFixedString());
                 break;
-            case CodeFragmentSpec::Type::SequenceNumber:
+            case CodeFragmentSpec::Type::Sequence:
                 formattedValue.append(generatedSequenceNumber);
                 break;
             default:
@@ -42,22 +42,16 @@ Utf8StringR formattedValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnDbCodeAdmin::_GetNextSequenceNumber
-(
-Utf8StringR fragmentString,
-DgnElementCR element,
-CodeFragmentSpecCR fragmentSpec,
-CodeScopeSpecCR scope,
-Utf8StringCR sequenceMask
-) const 
+DgnCode DgnDbCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR codeSpec, Utf8StringCR sequenceMask) const
     {
-    DgnDbR dgndb = element.GetModel()->GetDgnDb();
+#if 0
+    DgnDbR dgndb = element.GetDgnDb();
     DgnDbRepositoryManager* repositoryManager = static_cast<DgnDbRepositoryManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
     auto repositoryConnection = repositoryManager->GetRepositoryConnectionPtr();
     
-	// TODO: remove when DgnPlatform will use #
+    // TODO: remove when DgnPlatform will use #
     Utf8String mask(sequenceMask);
-    mask.ReplaceAll("?", "#");
+    //mask.ReplaceAll("?", "#");
 
     auto queryResult = repositoryConnection->QueryCodeNextAvailable(mask, *element.GetCodeSpec())->GetResult();
     if (!queryResult.IsSuccess())
@@ -86,6 +80,10 @@ Utf8StringCR sequenceMask
         return DgnDbStatus::BadRequest;
 
     return DgnDbStatus::Success;
+#else
+    BeAssert(false);
+    return DgnCode();
+#endif
     }
 
 //---------------------------------------------------------------------------------------
