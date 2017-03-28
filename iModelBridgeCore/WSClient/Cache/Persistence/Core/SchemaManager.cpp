@@ -253,6 +253,7 @@ BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& 
         if (!ecRelClass)
             continue;
 
+#ifdef WIP_MERGE_Vincas
         if (0 == RelationshipCardinality::Compare(ecRelClass->GetSource().GetCardinality(), RelationshipCardinality::OneOne()))
             {
             ecRelClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
@@ -264,8 +265,9 @@ BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& 
             ecRelClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
             modifiedClasses.insert(ecRelClass);
             }
+#endif
         }
-
+        
     if (!modifiedClasses.empty())
         {
         Utf8String classesStr;
