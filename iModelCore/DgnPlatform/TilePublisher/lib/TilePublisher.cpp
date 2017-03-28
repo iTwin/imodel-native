@@ -1067,7 +1067,9 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     {
     auto const& found = m_textureImages.find (&textureImage);
 
-    if (found != m_textureImages.end())
+    // For composite tiles, we must ensure that the texture is defined for each individual tile - cannot share
+    bool textureExists = found != m_textureImages.end();
+    if (textureExists && tileData.m_json.isMember("textures") && tileData.m_json["textures"].isMember(found->second.c_str()))
         return found->second;
 
     bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
@@ -1201,7 +1203,8 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         tileData.AddBinaryData (imageData.data(), imageData.size());
         }
 
-    m_textureImages.Insert (&textureImage, textureId);
+    if (!textureExists)
+        m_textureImages.Insert (&textureImage, textureId);
 
     return textureId;
     }
@@ -1441,10 +1444,9 @@ Utf8String PolylineMaterial::GetTechniqueNamePrefix() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string const& PolylineMaterial::GetVertexShaderString() const
+std::string PolylineMaterial::GetVertexShaderString(bool is3d) const
     {
     std::string const* list = nullptr;
-
     if (IsTextured())
         list = IsTesselated() ? s_tesselatedTexturedPolylineVertexShaders : s_simpleTexturedPolylineVertexShaders;
     else
@@ -1452,7 +1454,14 @@ std::string const& PolylineMaterial::GetVertexShaderString() const
 
     auto index = static_cast<uint8_t>(GetColorIndexDimension());
 
-    return list[index];
+    std::string vs = list[index];
+    if (is3d)
+        return vs;
+
+    Utf8String vs2d(s_adjustPolylineContrast.c_str());
+    vs2d.append(vs.c_str());
+    vs2d.ReplaceAll("v_color = computeColor()", "v_color = adjustContrast(computeColor())");
+    return vs2d.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1791,7 +1800,9 @@ PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, T
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, PolylineMaterial const& mat, bool doBatchIds)
     {
+    bool is3d = m_tile.GetModel().Is3d();
     Utf8String prefix(mat.GetTechniqueNamePrefix());
+    prefix.append(is3d ? "3d" : "2d");
     Utf8String techniqueName = prefix + "Technique";
     if (tileData.m_json.isMember("techniques") && tileData.m_json["techniques"].isMember(techniqueName.c_str()))
         return techniqueName;
@@ -1834,7 +1845,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     if (doBatchIds)
         vertexShaderString.append(s_batchIdShaderAttribute);
 
-    vertexShaderString.append(mat.GetVertexShaderString());
+    vertexShaderString.append(mat.GetVertexShaderString(is3d));
     tileData.AddBufferView(vertexShaderBufferViewName.c_str(), vertexShaderString);
     tileData.AddBufferView(fragmentShaderBufferViewName.c_str(), mat.GetFragmentShaderString());
 
