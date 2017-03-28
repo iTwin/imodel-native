@@ -214,8 +214,8 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
     if (!dateStr.empty())
         DateTime::FromString(info->m_uploadedDate, dateStr.c_str());
 
-    info->m_initialized = properties.HasMember(ServerSchema::Property::Initialized) ?
-		(InitializationState)properties[ServerSchema::Property::Initialized].GetInt() : InitializationState::NotStarted;
+    info->m_initialized = properties.HasMember(ServerSchema::Property::InitializationState) ?
+		(InitializationState)properties[ServerSchema::Property::InitializationState].GetInt() : InitializationState::NotStarted;
 
     return info;
     }

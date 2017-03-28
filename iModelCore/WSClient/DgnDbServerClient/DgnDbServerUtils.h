@@ -114,6 +114,7 @@ namespace ServerSchema
         static Utf8CP ConflictingCodes = "ConflictingCodes";
         static Utf8CP CodesNotFound = "CodesNotFound";
         static Utf8CP Initialized = "Initialized";
+        static Utf8CP InitializationState = "InitializationState";
         static Utf8CP FileInitialized = "FileInitialized";
         static Utf8CP RepositoryInitialized = "RepositoryInitialized";
         static Utf8CP ContainingChanges = "ContainingChanges";
