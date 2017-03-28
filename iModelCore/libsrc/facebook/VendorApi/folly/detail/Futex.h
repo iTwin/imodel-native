@@ -24,7 +24,7 @@
 #include <boost/noncopyable.hpp>
 #endif
 
-#include <folly/portability/config.h>
+#include <folly/portability/Config.h>
 #include <folly/portability/Unistd.h>
 
 namespace folly { namespace detail {

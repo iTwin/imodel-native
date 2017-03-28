@@ -19,7 +19,7 @@
 #include <mutex>
 #include <typeindex>
 #include <unordered_map>
-#include <folly/portability/config.h>
+#include <folly/portability/Config.h>
 
 namespace folly {
 namespace detail {

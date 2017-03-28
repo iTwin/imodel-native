@@ -12,7 +12,7 @@
 #include <vector>
 #include <queue>
 
-#include <folly/portability/config.h>
+#include <folly/portability/Config.h>
 #include <folly/Executor.h>
 
 namespace BeFolly {

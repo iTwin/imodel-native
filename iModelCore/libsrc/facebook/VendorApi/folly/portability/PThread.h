@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <folly/portability/config.h>
+#include <folly/portability/Config.h>
 
 #if defined (BENTLEY_CHANGE)
 namespace folly {
