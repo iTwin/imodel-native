@@ -165,6 +165,37 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>", false, "ForeignKey mapping can only have a CA when the mapping strategy is set to NotMapped."));
 
+    testSchemas.push_back(
+        SchemaItem(
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECEntityClass typeName='A'>"
+            "        <ECProperty propertyName='Price' typeName='double'/>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B'>"
+            "        <ECProperty propertyName='Name' typeName='string'/>"
+            "    </ECEntityClass>"
+            "    <ECRelationshipClass typeName='Rel' modifier='None' strength='referencing' >"
+            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='A'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='B'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "     </ECRelationshipClass>"
+            "    <ECRelationshipClass typeName='Rel1' modifier='None' strength='referencing' >"
+            "    <BaseClass>Rel</BaseClass>"
+            "    <ECCustomAttributes>"
+            "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+            "    </ECCustomAttributes>"
+            "       <Source multiplicity='(1..1)' polymorphic='true' roleLabel='As'>"
+            "           <Class class='A' />"
+            "       </Source>"
+            "       <Target multiplicity='(0..*)' polymorphic='true' roleLabel='Bs'>"
+            "           <Class class='B' />"
+            "       </Target>"
+            "     </ECRelationshipClass>"
+            "</ECSchema>", false, "ForeignKeyConstraint CA on child RelationshipClass is not supported. Only the root class can have it."));
+
     AssertSchemaImport(testSchemas, "RelationshipMappingTests.ecdb");
     }
 
