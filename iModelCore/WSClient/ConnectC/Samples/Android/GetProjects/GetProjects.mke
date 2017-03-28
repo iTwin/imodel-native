@@ -21,8 +21,12 @@
 %message I am here
 %message ANDROID_SDK_ROOT=$(ANDROID_SDK_ROOT)
 
+appName=getprojects
 
-#----------------------------------------------------------------------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+#   Prewire
+#--------------------------------------------------------------------------------------
 
 %if !defined (BuildContext)
 %error
@@ -32,6 +36,8 @@ DeliveryDir         = $(BuildContext)Delivery/
 BuildDir 			= $(OutputRootDir)build/WSClient/$(_MakeFileName)/
 SourceDir           = $(_MakeFilePath)app/  
 
+%message BuildContext=$(BuildContext)
+%message OutBuildContexts=$(OutBuildContexts)
 
 $(BuildDir)build.gradle : $(_MakeFilePath)build.gradle
     $(LinkFirstDepToFirstTarget)
@@ -40,12 +46,20 @@ $(BuildDir)settings.gradle : $(_MakeFilePath)settings.gradle
     $(LinkFirstDepToFirstTarget)
 
 #The Android App Directory
-$(BuildDir)app/ : $(_MakeFilePath)app/
-    $(LinkFirstDepToFirstTargetAsDirectory)
+SourceGradleAppDir=$(_MakeFilePath)app/
+BuildGradleAppDir=$(BuildDir)app/
 
-#Include the BeSecurity archive
-#$(BuildDir)BeSecurity-1.0.0/ : $(_MakeFilePath)BeSecurity-1.0.0/
-#    $(LinkFirstDepToFirstTargetAsDirectory)
+$(BuildGradleAppDir) : $(SourceGradleAppDir)
+     $(bcopyCmd) -srcFjaw  $(SourceGradleAppDir) $(BuildGradleAppDir)
+
+BuildAssetsDir=$(BuildGradleAppDir)src/main/assets/
+%mkdir  $(BuildAssetsDir)
+
+$(BuildAssetsDir)http/cabundle.pem : $(OutBuildContexts)BeHttp/Delivery/http/cabundle.pem
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildAssetsDir)sqlang/DgnClientFx_en.sqlang.db3 : $(OutBuildContexts)DgnClientFx/Delivery/sqlang/DgnClientFx_en.sqlang.db3
+    $(LinkFirstDepToFirstTarget)
 
 #security jar
 %mkdir $(BuildDir)BeSecurity-1.0.0/
@@ -56,26 +70,35 @@ $(BuildDir)BeSecurity-1.0.0/build.gradle : $(_MakeFilePath)BeSecurity-1.0.0/buil
 $(BuildDir)BeSecurity-1.0.0/BeSecurity-1.0.0.aar : $(BuildContext)SubParts/MavenDependencies/com/bentley/android/BeSecurity/1.0.0/BeSecurity-1.0.0.aar
     $(LinkFirstDepToFirstTarget)
 
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------
-
 #--------------------------------------------------------------------------------------
 #   Set Variables
 #--------------------------------------------------------------------------------------
 
 APP_ProjectRoot = $(BuildDir)/
 
-buildOut = $(OutputRootDir)build/$(_MakeFileName)/
+buildOut = $(OutputRootDir)build/${_MakeFileName}/
 mavenDependenciesDirectory = $(BuildContext)SubParts/MavenDependencies/
 
 #--------------------------------------------------------------------------------------
 #   Use Gradle to build the DgnClientFx archive
 #--------------------------------------------------------------------------------------
+GRADLE_APK_BASE_NAME=$(appName)
 GRADLE_TASKS=clean assemble uploadArchives
 GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
                   MavenDependenciesDirectory=$[@subst \, \/, $(mavenDependenciesDirectory)] \
-				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] 
-	
+				  BuildContextsDir=$[@subst \, \/, $(BuildContext)] \
+				  AssetsDir=$[@subst \, \/, $(BuildAssetsDir)] 
+
 #Verbose=1
 %include $(SrcRoot)WSClient/mki/Android/gradleBuild.mki
+
+#--------------------------------------------------------------------------------------
+#   Link to apk output file.
+#--------------------------------------------------------------------------------------
+%include $(SrcRoot)WSClient/mki/Android/getApkName.mki
+link_apk_to_context:
+	~linkfile $(ContextDeliveryDir)getprojects.apk=$(BuildDir)app/build/outputs/apk/$(TARGET_APK_NAME)
+
+
+
 
