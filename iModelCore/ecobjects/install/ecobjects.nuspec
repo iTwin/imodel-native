@@ -12,12 +12,14 @@
         <language>en-US</language>
     </metadata>
     <files>
-        <file src="Assemblies\ECObjects6.dll" target="lib\net45\ECObjects6.dll" />
-        <file src="Assemblies\BeLibxml2.dll" target="lib\net45\BeLibxml2.dll" />
-        <file src="Assemblies\Bentley5.dll" target="lib\net45\Bentley5.dll" />
-        <file src="Assemblies\BentleyAllocator.dll" target="lib\net45\BentleyAllocator.dll" />
-        <file src="Files\BentleyGeom5.dll" target="lib\net45\BentleyGeom5.dll" />
-        <file src="Files\BentleyGeomSerialization5.dll" target="lib\net45\BentleyGeomSerialization5.dll" />
-        <file src="Assemblies\BeXml1.dll" target="lib\net45\BeXml1.dll" />
+        <file src="Assemblies\ECObjectsB02.dll" target="lib\native\ECObjectsB02.dll" />
+        <file src="Assemblies\BeLibxml2B02.dll" target="lib\native\BeLibxml2B02.dll" />
+        <file src="Assemblies\BentleyB02.dll" target="lib\native\BentleyB02.dll" />
+        <file src="Assemblies\BentleyGeomB02.dll" target="lib\native\BentleyGeomB02.dll" />
+        <file src="Assemblies\BentleyGeomSerializationB02.dll" target="lib\native\BentleyGeomSerializationB02.dll" />
+        <file src="Assemblies\BeXmlB02.dll" target="lib\native\BeXmlB02.dll" />
+        <file src="Assemblies\bentleylog4cxx.dll" target="lib\native\bentleylog4cxx.dll" />
+        <file src="Assemblies\bentleylog4cxxB02.dll" target="lib\native\bentleylog4cxxB02.dll" />
+        <file src="Assemblies\UnitsB02.dll" target="lib\native\UnitsB02.dll" />
     </files>
 </package>
