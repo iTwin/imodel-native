@@ -839,9 +839,8 @@ struct RealityDataService
 public:
     //!
     //! The SetServerComponents static method enables to set the RealityData Service URL REST API component strings
-    //! The server parameter contains the name of the server including the communication protocol. The default value is
-    //! https://connect-realitydataservices.bentley.com/ 
-    //! The WSGProtocol is a string containing the WSG version number. Default is '2.4'
+    //! The server parameter contains the name of the server including the communication protocol. 
+    //! The WSGProtocol is a string containing the WSG version number. 
     //! name is the name of the WSG service for the RealityData Service. It should always be "IndexECPlugin-Server"
     //! schemaName is the name of the schema exposing the RealityData Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
