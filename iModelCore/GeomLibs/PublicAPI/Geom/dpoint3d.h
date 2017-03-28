@@ -884,7 +884,7 @@ static DPoint3d FromInterpolate (DPoint3dCR pointA, double fraction, DPoint3dCR 
 //! @param [in] fraction fractional parameter
 //! @param [in] pointB end point
 //! @param [in] fractionXYPerpendicular
-static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerp);
+static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerpendicular);
 
 
 //! return the centroid for points with specified weights
