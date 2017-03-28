@@ -552,6 +552,8 @@ static CurveVectorPtr CircleInRectangle ()
         0.0,
         CurveVector::BOUNDARY_TYPE_Outer);
     CurveVectorPtr parent = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parent->Add (rectangle);
+    parent->Add (disk0);
     return parent;
     }
 
