@@ -27,7 +27,7 @@ DronePtr Drone::Create(Dgn::SpatialModelR model, GimbalElementId gimbalId)
     {
     if (!gimbalId.IsValid())
         {
-        BeAssert(false && "Cannot create a session with an invalid gimbalId");
+        BeAssert(false && "Cannot create a PhotoPlan with an invalid gimbalId");
         return nullptr;
         }
 
@@ -233,7 +233,7 @@ void Drone::DeleteDroneHasGimbalRelationship(DgnDbR dgndb) const
     DbResult stepStatus = statement->Step();
     if (BE_SQLITE_DONE != stepStatus)
         {
-        BeAssert(false && "Error deleting SessionHasOperationZone Relationship");
+        BeAssert(false && "Error deleting PhotoPlanHasOperationZone Relationship");
         }
     }
 
