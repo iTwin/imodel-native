@@ -34,6 +34,7 @@ struct DgnDbCodeLockSetResultInfo;
 struct DgnDbCodeTemplate;
 struct DgnDbCodeTemplateSetResultInfo;
 typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
+typedef bvector<CodeSpecPtr> CodeSpecPtrSet;
 
 typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallback;
 typedef std::shared_ptr<DgnDbServerEventCallback> DgnDbServerEventCallbackPtr;
@@ -363,6 +364,9 @@ private:
     DgnDbServerStatusTaskPtr QueryUnavailableLocksInternal(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex,
                                                            DgnDbCodeLockSetResultInfoPtr codesLocksOut, ICancellationTokenPtr cancellationToken) const;
 
+    DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailableInternal (std::shared_ptr<WSChangeset> changeset, int startIndex, 
+        int incrementBy, ICancellationTokenPtr cancellationToken) const;
+
     WSQuery CreateRevisionsAfterIdQuery (Utf8StringCR revisionId, BeGuidCR fileId) const;
     WSQuery CreateRevisionsByIdQuery(std::deque<ObjectId>& revisionIds) const;
 
@@ -594,14 +598,22 @@ public:
     //! Returns maximum used code value by the given pattern.
     //! @param[in] codeTemplates
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(DgnDbCodeTemplateSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(CodeSpecPtrSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns next available code by the given pattern, index start and increment by value.
     //! @param[in] codeTemplates
     //! @param[in] startIndex
     //! @param[in] incrementBy
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(CodeSpecPtrSet codeTemplates, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken=nullptr) const;
+
+    //! Returns next available code by the given pattern, index start and increment by value.
+    //! @param[in] mask
+    //! @param[in] codeSpec
+    //! @param[in] startIndex
+    //! @param[in] incrementBy
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(Utf8StringCR mask, CodeSpecCR codeSpec, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken=nullptr) const;
 
     //! Checks if RepositoryConnection is subscribed to EventService
     DGNDBSERVERCLIENT_EXPORT bool IsSubscribedToEvents() const;
