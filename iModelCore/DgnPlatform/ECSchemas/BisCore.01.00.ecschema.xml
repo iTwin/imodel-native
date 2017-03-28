@@ -2011,9 +2011,6 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
-        <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private">
-            <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
-        </ECProperty>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>
