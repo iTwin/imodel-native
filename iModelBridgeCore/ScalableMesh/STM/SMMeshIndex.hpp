@@ -2894,7 +2894,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     POINT splitPosition = GetDefaultSplitPosition();
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
         {
-
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -2938,7 +2939,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
                 return;
             }
 
-
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 1)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 1);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 8;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
