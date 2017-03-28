@@ -239,7 +239,7 @@ CodeSpecCPtr DgnCodeSpecs::GetCodeSpec(Utf8CP name)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpec::CodeSpec(CreateParams const& params)
-    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec), m_registrySuffix(params.m_registrySuffix)
+    : m_dgndb(params.m_dgndb), m_codeSpecId(params.m_id), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec)
     {
     }
 
@@ -248,18 +248,18 @@ CodeSpec::CodeSpec(CreateParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::ToPropertiesJson(JsonValueR json) const
     {
+    if (!m_specProperties.empty())
+        json[str_spec()] = m_specProperties;
+
+    json[str_version()] = BeVersion(1, 0).ToMajorMinorString();
+    json[str_scopeSpec()] = GetScope();
+
     Json::Value fragmentSpecArray(Json::arrayValue);
     for (CodeFragmentSpecCR fragmentSpec : GetFragmentSpecs())
-        fragmentSpecArray.append(fragmentSpec.ToJson());
+        fragmentSpecArray.append(fragmentSpec);
 
     if (fragmentSpecArray.size() > 0)
-        json["fragmentSpecs"] = fragmentSpecArray;
-
-    json["specVersion"] = BeVersion(1, 0).ToMajorMinorString();
-    json["scopeSpecType"] = (int)GetScope().GetType();
-
-    if (!m_registrySuffix.empty())
-        json["registrySuffix"] = m_registrySuffix;
+        json[str_fragmentSpecs()] = fragmentSpecArray;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,20 +267,15 @@ void CodeSpec::ToPropertiesJson(JsonValueR json) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CodeSpec::FromPropertiesJson(JsonValueCR json)
     {
-    JsonValueCR fragmentSpecArrayJson = json["fragmentSpecs"];
+    m_specProperties = json[str_spec()];
+    SetScope((CodeScopeSpecCR)json[str_scopeSpec()]);
+
+    JsonValueCR fragmentSpecArrayJson = json[str_fragmentSpecs()];
     if (!fragmentSpecArrayJson.isNull())
         {
         for (JsonValueCR fragmentSpecJson : fragmentSpecArrayJson)
-            GetFragmentSpecsR().push_back(CodeFragmentSpec::FromJson(fragmentSpecJson));
+            GetFragmentSpecsR().push_back((CodeFragmentSpecCR)fragmentSpecJson);
         }
-
-    JsonValueCR scopeSpecTypeJson = json["scopeSpecType"];
-    if (!scopeSpecTypeJson.isNull())
-        SetScope(CodeScopeSpec((CodeScopeSpec::Type)scopeSpecTypeJson.asInt()));
-
-    JsonValueCR registrySuffixJson = json["registrySuffix"];
-    if (!registrySuffixJson.isNull())
-        m_registrySuffix = registrySuffixJson.asCString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,9 +301,9 @@ Utf8String CodeSpec::SerializeProperties() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec, Utf8CP registrySuffix)
+CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR scopeSpec)
     {
-    CreateParams params(db, codeSpecName, CodeSpecId(), scopeSpec, registrySuffix);
+    CreateParams params(db, codeSpecName, CodeSpecId(), scopeSpec);
     return dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params).get();
     }
 
@@ -326,6 +321,28 @@ static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope,
         return DgnDbStatus::InvalidId;
 
     return insertStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId CodeSpec::GetScopeElementId(DgnElementCR element) const
+    {
+    switch (GetScope().GetType())
+        {
+        case CodeScopeSpec::Type::Repository:            
+            return element.GetDgnDb().Elements().GetRootSubjectId();          
+
+        case CodeScopeSpec::Type::Model:            
+            return element.GetModel()->GetModeledElementId(); 
+
+        case CodeScopeSpec::Type::ParentElement:    
+            return element.GetParentId();                     
+
+        default:
+            BeAssert(false);                                            
+            return DgnElementId();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,136 +522,4 @@ Utf8CP DgnCode::Iterator::Options::GetECSql() const
 DgnCode::Iterator::Iterator(DgnDbR db, Options options)
     {
     Prepare(db, options.GetECSql(), 3);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CodeFragmentSpec::ToJson() const
-    {
-    Json::Value json(Json::objectValue);
-    json["type"] = (int)GetType();
-    json["prompt"] = GetPrompt();
-    json["inSequenceMask"] = IsInSequenceMask();
-
-    if (MIN_MinChars != GetMinChars())
-        json["minChars"] = GetMinChars();
-
-    if (MAX_MaxChars != GetMaxChars())
-        json["maxChars"] = GetMaxChars();
-
-    switch (GetType())
-        {
-        case Type::FixedString:
-            json["fixedString"] = m_param1;
-            break;
-
-        case Type::PropertyValue:
-            json["propertyName"] = m_param1;
-            break;
-
-        case Type::ElementTypeCode:
-        case Type::SequenceNumber:
-            // no additional data to write
-            break;
-
-        default:
-            BeAssert(false); // unexpected type
-            break;
-        }
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromJson(JsonValueCR json)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType((CodeFragmentSpec::Type)json["type"].asInt());
-    fragmentSpec.SetPrompt(json["prompt"].asCString());
-    fragmentSpec.SetInSequenceMask(json["inSequenceMask"].asBool());
-    fragmentSpec.SetMinChars(json.get("minChars", MIN_MinChars).asInt());
-    fragmentSpec.SetMaxChars(json.get("maxChars", MAX_MaxChars).asInt());
-
-    switch (fragmentSpec.GetType())
-        {
-        case Type::FixedString:
-            fragmentSpec.SetParam1(json["fixedString"].asCString());
-            break;
-
-        case Type::PropertyValue:
-            fragmentSpec.SetParam1(json["propertyName"].asCString());
-            break;
-
-        case Type::ElementTypeCode:
-        case Type::SequenceNumber:
-            // no additional data to read
-            break;
-
-        default:
-            BeAssert(false); // unexpected type
-            break;
-        }
-
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromFixedString(Utf8CP fixedString, Utf8CP prompt, bool inSequenceMask)
-    {
-    if (!fixedString || !*fixedString)
-        return CodeFragmentSpec();
-
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::FixedString);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    fragmentSpec.SetMinChars(strlen(fixedString));
-    fragmentSpec.SetMaxChars(strlen(fixedString));
-    fragmentSpec.SetParam1(fixedString);
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromElementTypeCode(Utf8CP prompt, bool inSequenceMask)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::ElementTypeCode);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromSequenceNumber(Utf8CP prompt)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::SequenceNumber);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(false); // by definition, the sequence number is not part of the sequence mask
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromPropertyValue(Utf8CP propertyName, Utf8CP prompt, bool inSequenceMask)
-    {
-    if (!propertyName || !*propertyName)
-        return CodeFragmentSpec();
-
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::PropertyValue);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    fragmentSpec.SetParam1(propertyName);
-    return fragmentSpec;
     }

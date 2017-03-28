@@ -532,9 +532,6 @@ public:
         //! Supervises the creation and management of element codes.
         struct CodeAdmin : IHostObject
         {
-        private:
-            DgnElementId GetCodeScopeElementId(DgnElementCR, CodeScopeSpecCR) const;
-
         public:
             //! Register the default CodeSpec for the specified ECClass
             //! @see _GetDefaultCodeSpecId
@@ -548,24 +545,23 @@ public:
             //! Generate a DgnCode for the specified element using the specified CodeSpec
             DGNPLATFORM_EXPORT virtual DgnCode _GenerateCode(DgnElementCR, CodeSpecCR) const;
             
-            //! Build the sequence mask needed by _GetNextSequenceNumber
+            //! Reserve the next DgnCode given an element, a CodeSpec, and a sequenceMask
             //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _BuildSequenceMask(Utf8StringR, CodeSpecCR, CodeFragmentStringListCR) const;
+            DGNPLATFORM_EXPORT virtual DgnCode _ReserveNextCodeInSequence(DgnElementCR, CodeSpecCR, Utf8StringCR) const;
 
-            //! Get the next sequence number given an element and CodeSpec context
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeFragmentSpecCR, CodeScopeSpecCR, Utf8StringCR) const;
+            //! Attempt to reserve the specified DgnCode for the specified element
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _ReserveCode(DgnElementCR, DgnCodeCR) const;
+            
+            //! Validate a code against the specified CodeSpec
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnCodeCR, CodeSpecCR) const;
 
-            //! Get the class name for the specified element
+            //! Get the class type code for the specified element
             //! @note Called by _GenerateCode
             DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
 
             //! Get the value of a property as specified by the CodeFragmentSpec
             //! @note Called by _GenerateCode
             DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
-
-            //! Validate the code of the specified element against the specified CodeSpec
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnCodeCR, CodeSpecCR) const;
         };
 
         typedef bvector<DgnDomain*> T_RegisteredDomains;
