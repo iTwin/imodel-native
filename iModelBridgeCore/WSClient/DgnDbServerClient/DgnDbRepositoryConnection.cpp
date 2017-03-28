@@ -529,7 +529,7 @@ void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDb
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------ef------------------------------
+//---------------------------------------------------------------------------------------
 DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::UploadNewMasterFile";
@@ -608,7 +608,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::CancelMasterFileCreation(ICa
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
     Utf8String filter;
-    filter.Sprintf("%s+gt+0", ServerSchema::Property::Initialized);
+    filter.Sprintf("%s+gt+0", ServerSchema::Property::InitializationState);
     query.SetFilter(filter);
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
