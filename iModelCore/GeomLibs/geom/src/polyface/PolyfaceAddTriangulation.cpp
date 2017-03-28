@@ -18,7 +18,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> &inpoints)
     {
     // work with a local duplicate free copy of the points....
     if (inpoints.size () < 3)
-        return false;
+        return nullptr;
     bvector<DPoint3d> points;
     points.push_back (inpoints.front ());
     for (size_t i = 1; i < inpoints.size (); i++)
