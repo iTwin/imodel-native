@@ -675,10 +675,17 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <Product Name="CWSCC-Samples" >
         <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
-        <SubPart PartName="CWSCC-Android-Sample-GetProjects"/>
+        <SubProduct ProductName="GetProjects-Android"/>
+    </Product>
+
+    <Product Name="GetProjects-Android" >
+        <Directories DirectoryListName="CWSCCSamplesDirectoryList" />
+        <SubPart PartName="CWSCC-Android-Samples"/>
     </Product>
 
     <ProductDirectoryList ListName="CWSCCSamplesDirectoryList" >
+        <ProductDirectory Name="Assemblies"                         Deliver="false"/>
+        <ProductDirectory Name="Assemblies"                         Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
@@ -690,13 +697,19 @@
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
         <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+        <ProductDirectory Name="Assets"                             Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>        
+        <ProductDirectory Name="MavenDependencies"                  Deliver="false"/>
+        <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>    
+        <ProductDirectory Name="AndroidSO"                          Deliver="false"/>
+        <ProductDirectory Name="AndroidSO"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="APK"                                Path=""/>    
+        <ProductDirectory Name="APK"                                Path=""  LibType="static"/>
     </ProductDirectoryList>
 
     <Part Name="CWSCC-Android-Samples" OnlyPlatforms="Android*">
-        <SubPart PartName="CWSCC-Android-Sample-GetProjects"/>
+        <SubPart PartName="CWSCC-Android-Sample-GetProjects" LibType="Static"/>
     </Part>
 
 
@@ -711,6 +724,9 @@
         <SubPart PartName="Tools-AndroidShared" />
         <SubPart PartName="WebServiceClientComponents" />
         <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
+        <Bindings>
+            <Files ProductDirectoryName="APK">Delivery/getprojects.apk</Files>
+        </Bindings>
     </Part>
 
 

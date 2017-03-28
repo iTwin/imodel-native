@@ -50,10 +50,10 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
                        native-lib
 
-                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libBentley.a
-                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libBeIcu4c.a
-                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libDgnPlatform.a
-                       ${BUILD_CONTEXTS}/SubParts/StaticLibs/libConnectWebServicesClientC.so
+                       ${BUILD_CONTEXTS}/SubParts/Libs/libBentley.a
+                       ${BUILD_CONTEXTS}/SubParts/Libs/libBeIcu4c.a
+                       ${BUILD_CONTEXTS}/SubParts/Libs/libDgnPlatform.a
+                       ${BUILD_CONTEXTS}/SubParts/Libs/libConnectWebServicesClientC.so
 
                        # Links the target library to the log library
                        # included in the NDK.

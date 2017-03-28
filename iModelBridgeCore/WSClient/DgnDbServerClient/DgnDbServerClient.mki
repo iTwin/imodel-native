@@ -39,7 +39,8 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h        \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionInfo.h         \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerConfiguration.h
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerConfiguration.h        \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbCodeAdmin.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -92,3 +93,5 @@ $(o)DgnDbServerRevisionCreateEvent$(oext)  : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerCodeEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerCodeEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerDeletedEvent$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerDeletedEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbCodeAdmin$(oext)                  : $(DgnDbServerClientMkiSourceDir)DgnDbCodeAdmin.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
