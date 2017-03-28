@@ -1268,7 +1268,6 @@ DgnDbStatus SetCodeTemplatesJsonRequestToChangeSet
 )
     {
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::CodeTemplate, "");
-    DgnDbStatus status;
 
     for (auto& codeSpec : templates)
         {
