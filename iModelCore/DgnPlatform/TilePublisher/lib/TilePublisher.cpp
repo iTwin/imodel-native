@@ -1063,16 +1063,16 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/02016
 +---------------+---------------+---------------+---------------+---------------+------*/
- Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP  suffix)
+Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextureImageCPtr& textureImage, TileMeshCR mesh, Utf8CP  suffix)
     {
-    auto const& found = m_textureImages.find (&textureImage);
+    auto const& found = m_textureImages.find (textureImage);
 
     // For composite tiles, we must ensure that the texture is defined for each individual tile - cannot share
     bool textureExists = found != m_textureImages.end();
     if (textureExists && tileData.m_json.isMember("textures") && tileData.m_json["textures"].isMember(found->second.c_str()))
         return found->second;
 
-    bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
+    bool        hasAlpha = textureImage->GetImageSource().GetFormat() == ImageSource::Format::Png;
 
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
@@ -1088,7 +1088,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 
 
     DRange3d    range = mesh.GetRange(), uvRange = mesh.GetUVRange();
-    Image       image (textureImage.GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
+    Image       image (textureImage->GetImageSource(), hasAlpha ? Image::Format::Rgba : Image::Format::Rgb);
 
     // This calculation should actually be made for each triangle and maximum used.
     static      double      s_requiredSizeRatio = 2.0, s_sizeLimit = 1024.0;
@@ -1126,7 +1126,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         targetImageSize.y = roundToMultipleOfTwo (currentImageSize.y);
         }
 
-    ImageSource         imageSource = textureImage.GetImageSource();
+    ImageSource         imageSource = textureImage->GetImageSource();
     static const int    s_imageQuality = 50;
 
 
@@ -1134,7 +1134,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         {
         Image           targetImage = Image::FromResizedImage (targetImageSize.x, targetImageSize.y, image);
 
-        imageSource = ImageSource (targetImage, textureImage.GetImageSource().GetFormat(), s_imageQuality);
+        imageSource = ImageSource (targetImage, textureImage->GetImageSource().GetFormat(), s_imageQuality);
         }
 
     if (m_context.GetTextureMode() == PublisherContext::External ||
@@ -1204,7 +1204,7 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
         }
 
     if (!textureExists)
-        m_textureImages.Insert (&textureImage, textureId);
+        m_textureImages.Insert (textureImage, textureId);
 
     return textureId;
     }
@@ -1731,7 +1731,10 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
         matJson["name"] = mat.GetDgnMaterial()->GetMaterialName().c_str();
 
     if (mat.IsTextured())
-        matJson["values"]["tex"] = AddTextureImage(tileData, *mat.GetTexture(), mesh, suffix);
+        {
+        TileTextureImageCPtr    texture = mat.GetTexture();
+        matJson["values"]["tex"] = AddTextureImage(tileData, texture, mesh, suffix);
+        }
     else
         AddMaterialColor (matJson, mat, tileData, mesh, suffix);
 
@@ -1786,8 +1789,10 @@ PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, T
 
     if (mat.IsTextured())
         {
+        TileTextureImageCPtr    texture = mat.GetTexture();
+
         matJson["values"]["texLength"] = mat.GetTextureLength();
-        matJson["values"]["tex"] = AddTextureImage(tileData, *mat.GetTexture(), mesh, suffix);
+        matJson["values"]["tex"] = AddTextureImage(tileData, texture, mesh, suffix);
         }
 
     AddMaterialColor (matJson, mat, tileData, mesh, suffix);
