@@ -131,24 +131,8 @@ ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), 
     if (acsId.IsValid())
         m_auxCoordSys = m_dgndb.Elements().Get<AuxCoordSystem>(acsId);
 
-    if (m_auxCoordSys.IsValid())
-        return;
-
-    AuxCoordSystemPtr acs;
-
-    if (def.IsView3d())
-        {
-        acs = new AuxCoordSystem3d(def.GetDgnDb());
-
-        if (def.IsSpatialView())
-            acs->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
-        }
-    else
-        {
-        acs = new AuxCoordSystem2d(def.GetDgnDb());
-        }
-
-    m_auxCoordSys = acs.get();
+    if (!m_auxCoordSys.IsValid())
+        m_auxCoordSys = AuxCoordSystem::CreateNew(def);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -834,10 +818,14 @@ void ViewController::PointToGrid(DPoint3dR point) const
     {
     GridOrientationType orientation = _GetGridOrientationType();
 
-    if (GridOrientationType::ACS == orientation)
+    if (GridOrientationType::AuxCoord == orientation)
         {
         GetAuxCoordinateSystem().PointToGrid(*m_vp, point);
         return;
+        }
+    else if (GridOrientationType::GeoCoord == orientation)
+        {
+        // NEEDSWORK...
         }
 
     bool        isoGrid = false;
@@ -863,10 +851,14 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     GridOrientationType orientation = _GetGridOrientationType();
 
-    if (GridOrientationType::ACS == orientation)
+    if (GridOrientationType::AuxCoord == orientation)
         {
         GetAuxCoordinateSystem().DrawGrid(context);
         return;
+        }
+    else if (GridOrientationType::GeoCoord == orientation)
+        {
+        // NEEDSWORK...
         }
 
     bool        isoGrid = false;

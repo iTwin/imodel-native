@@ -2212,5 +2212,9 @@
         <ECProperty propertyName="Pitch" typeName="double"></ECProperty>
         <ECProperty propertyName="Roll" typeName="double"></ECProperty>
     </ECEntityClass>
+    <ECEntityClass typeName="AuxCoordSystemSpatial" displayLabel="Spatial Auxiliary Coordinate System" description="A spatial coordinate system.">
+        <BaseClass>AuxCoordSystem3d</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+    </ECEntityClass>
 
 </ECSchema>

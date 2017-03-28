@@ -316,7 +316,7 @@ public:
 
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
-    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (Is3d() != (nullptr != acs.ToAuxCoordSystem3d())) return false; m_auxCoordSys = &acs; return true;}
+    bool SetAuxCoordinateSystem(AuxCoordSystemCR acs) {if (!acs.IsValidForView(*this)) return false; m_auxCoordSys = &acs; return true;}
 
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation, DPoint2dCR roundingDistance, bool isoGrid = false) const;
     DGNPLATFORM_EXPORT void PointToGrid(DPoint3dR point) const;

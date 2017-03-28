@@ -567,7 +567,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId GetAuxiliaryCoordinateSystemId() const;
 
     //! Set the AuxiliaryCoordinateSystem for this view.
-    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId); // NEEDWORK: Make protected, ViewDefinition2d/3d should take AuxiliaryCoordinateSystem2d/3d...
+    DGNPLATFORM_EXPORT void SetAuxiliaryCoordinateSystem(DgnElementId acsId);
 
     //! Query if the specified model is displayed in this view
     bool ViewsModel(DgnModelId modelId) {return _ViewsModel(modelId);}
