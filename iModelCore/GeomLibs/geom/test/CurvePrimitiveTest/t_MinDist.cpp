@@ -62,3 +62,72 @@ TEST(CurveCurve, MinDistBsplineToCircle)
     Check::EndScope ();
     }
     
+//!<ul>
+//!<li> Test if two curve vectors have matching structure and are geometrically related by relationship of their local transforms.
+//!<li> This relies on the behavior of LOCAL_COORDINATE_SCALE_UnitAxesAtStart:
+//!<ul>
+//!<li> origin is at start of first primitive.
+//!<li> frame X axs is tangent is along first primitive from that point
+//!<li> frame Y axis is in plane of the tangent and the first subsequent tangent that is not parallel to X
+//!<ul>
+//!<li> Skew and scaling is not detected.
+//!<ul>
+bool TestSameStructureAndGeometryWithTransform (
+CurveVectorCR dataA,    //!< [in] first geometry
+CurveVectorCR dataB,    //!< [in] second geometry
+TransformR transformAToB,   //! [out] transform that relocates dataB on top of dataA
+TransformR transformBToA    //! [out] transform that relocateds dataA on top of dataB
+)
+    {
+    transformBToA = Transform::FromIdentity ();
+    if (!dataA.IsSameStructure (dataB))
+        return false;
+    Transform worldToLocalA, localToWorldA, worldToLocalB, localToWorldB;
+    DRange3d localRangeA, localRangeB;
+    auto dataA1 = dataA.CloneInLocalCoordinates (LOCAL_COORDINATE_SCALE_UnitAxesAtStart, localToWorldA, worldToLocalA, localRangeA);
+    auto dataB1 = dataB.CloneInLocalCoordinates (LOCAL_COORDINATE_SCALE_UnitAxesAtStart, localToWorldB, worldToLocalB, localRangeB);
+    if (dataA1->IsSameStructureAndGeometry (*dataB1))
+        {
+        transformAToB = localToWorldB * worldToLocalA;
+        transformBToA = localToWorldA * worldToLocalB;
+        return true;
+        }
+    return false;
+    }
+
+TEST(CurveVector, IsSameStructureAndGeometryWithTransform)
+    {
+    bvector<CurveVectorPtr> curveSets;
+    SampleGeometryCreator::AddMultiPrimitiveXYOpenPaths (curveSets);
+    curveSets.push_back (SampleGeometryCreator::CircleInRectangle ());
+    curveSets.push_back (SquareWavePolygon (4));
+    curveSets.push_back (SquareWavePolygon (6));
+    Transform placementA = Transform::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (1,2,3), Angle::DegreesToRadians (45)), DPoint3d::From (3,1,-2));
+    Transform placementB = Transform::From (RotMatrix::FromVectorAndRotationAngle (DVec3d::From (3,-1,2), Angle::DegreesToRadians (14)), DPoint3d::From (20,10,9));
+    Transform inversePlacementA, inversePlacementB;
+    inversePlacementA.InverseOf (placementA);
+    inversePlacementB.InverseOf (placementB);
+    Transform transformAToB, transformBToA;
+    for (size_t i = 0; i < curveSets.size (); i++)
+        {
+        Check::NamedScope scopeI ("curveI", i);
+        auto curveI0 = curveSets[i];
+        for (size_t j = i; j < curveSets.size (); j++)
+            {
+            Check::NamedScope scopeI ("curveJ", j);
+            Check::Bool (i == j, TestSameStructureAndGeometryWithTransform (*curveSets[i], *curveSets[j], transformAToB, transformBToA), "TestSameStructureWithTransform trivial cases");
+            }
+        }
+    size_t n = 0;
+    for (auto &curves : curveSets)
+        {
+        Check::NamedScope scopeI ("PlacedCurve", n++);
+        auto curveA = curves->Clone (placementA);
+        auto curveB = curves->Clone (placementB);
+        if (Check::True (TestSameStructureAndGeometryWithTransform (*curveA, *curveB, transformAToB, transformBToA), "same geometry transformed"))
+            {
+            Check::Near (placementA * inversePlacementB, transformBToA,"B to A");
+            Check::Near (placementB * inversePlacementA, transformAToB,"A to B");
+            }
+        }
+    }

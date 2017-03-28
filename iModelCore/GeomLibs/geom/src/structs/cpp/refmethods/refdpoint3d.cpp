@@ -2553,6 +2553,24 @@ DPoint3dCR pointB
     return result;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      11/2016
++--------------------------------------------------------------------------------------*/
+DPoint3d DPoint3d::FromInterpolateAndPerpendicularXY
+(
+DPoint3dCR pointA,
+double     fraction,
+DPoint3dCR pointB,
+double fractionXYPerp
+)
+    {
+    DVec3d vector = pointB - pointA;
+    DPoint3d result;
+    result.Interpolate (pointA, fraction, pointB);
+    result.x -= fractionXYPerp * vector.y;
+    result.y += fractionXYPerp * vector.x;
+    return result;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2016

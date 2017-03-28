@@ -879,6 +879,14 @@ static DPoint3d FromProduct (TransformCR transform, DPoint3dCR point);
 //! @param [in] pointB end point
 static DPoint3d FromInterpolate (DPoint3dCR pointA, double fraction, DPoint3dCR pointB);
 
+//! interpolate between points.  Then add a shift in the xy plane by a fraction of the XY projection perpendicular
+//! @param [in] pointA start point
+//! @param [in] fraction fractional parameter
+//! @param [in] pointB end point
+//! @param [in] fractionXYPerpendicular
+static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerp);
+
+
 //! return the centroid for points with specified weights
 static DPoint3d FromWeightedAverage
 (

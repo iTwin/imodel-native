@@ -162,6 +162,7 @@ static void ThrowAssert ()
 struct NamedScope
 {
 NamedScope (char const *name){Check::StartScope (name);}
+NamedScope (char const *name, size_t value){Check::StartScope (name, value);}
 ~NamedScope (){Check::EndScope();}
 void KeepAlive (){}
 };
