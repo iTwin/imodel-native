@@ -338,13 +338,15 @@ public:
 //=======================================================================================
 struct TilePublisher
 {
+    struct CompareImageP { bool operator() (const TileTextureImageCPtr& p0, const TileTextureImageCPtr& p1) const { return p0.get() < p1.get(); } };
 
-    typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
+    typedef bmap<TileTextureImageCPtr, Utf8String, CompareImageP>  TextureImageMap;
+
 private:
     DPoint3d                m_centroid;
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
-    bmap<TileTextureImageCP, Utf8String>    m_textureImages;
+    TextureImageMap         m_textureImages;
 
     enum class VertexEncoding
         {
@@ -368,7 +370,6 @@ private:
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
-    void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
     Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
@@ -392,7 +393,7 @@ private:
     PolylineMaterial AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddPolylineTechnique(PublishTileData& tileData, PolylineMaterial const& mat, bool doBatchIds);
 
-    Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCPtr& textureImage, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
