@@ -962,9 +962,10 @@ void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId mater
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t TileMeshBuilder::AddVertex(VertexKey const& vertex)
     {
-    auto found = m_unclusteredVertexMap.find(vertex);
-    if (m_unclusteredVertexMap.end() != found)
-        return found->second;
+    // Consider all points, otherwise strange artifacts appear for textured meshes...
+    //auto found = m_unclusteredVertexMap.find(vertex);
+    //if (m_unclusteredVertexMap.end() != found)
+    //    return found->second;
 
     auto index = m_mesh->AddVertex(vertex.m_point, vertex.GetNormal(), vertex.GetParam()/*, vertex.m_entityId*/);
     m_unclusteredVertexMap[vertex] = index;

@@ -190,9 +190,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
         BeFileName url(settings.GetURL().c_str());
-        if (BEFILENAME(IsDirectory, url))
+        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) 
             {
-            assert(settings.IsPublishing());
+            BeFileName::CreateNewDirectory(url.c_str());
             }
         else
             {
@@ -200,7 +200,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             url = BEFILENAME(GetDirectoryName, url);
             }
         account_prefix = DataSourceURL((L"file:///" + url).c_str());
-        if (m_settings.IsPublishing() && !BeFileName::DoesPathExist(url.c_str())) BeFileName::CreateNewDirectory(url.c_str());
         }
     else if (settings.IsLocal())
         {
@@ -823,7 +822,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 
     // But looking at other Cesium 3D tiles datasets (Marseille, Orlando) the computed tolerance seem to be something like this
     // and seems to work reasonably well as long as the bounding volume tightly fits the data :
-    double tolerance = header->m_geometryResolution == -1 ? 64 / pow(2, header->m_level) : header->m_geometryResolution; // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
+    double tolerance = header->m_geometricResolution > 0 ? header->m_geometricResolution : (header->m_geometryResolution == -1 ? 64 / pow(2, header->m_level) : header->m_geometryResolution); // SM_NEEDS_WORK : Is this going to work for all datasets? What value should this be?
 
     assert(tolerance > 0);
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
@@ -859,70 +858,70 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
     {
     block["id"] = ConvertBlockID(blockID);
-    block["resolution"] = (ISMStore::NodeID)header->m_level;
+    //block["resolution"] = (ISMStore::NodeID)header->m_level;
     block["parentID"] = header->m_parentNodeID.IsValid() ? ConvertBlockID(header->m_parentNodeID) : ISMStore::GetNullNodeID();
-    block["isLeaf"] = header->m_IsLeaf;
-    block["isBranched"] = header->m_IsBranched;
+    //block["isLeaf"] = header->m_IsLeaf;
+    //block["isBranched"] = header->m_IsBranched;
 
-    size_t nbChildren = header->m_IsLeaf || (!header->m_IsBranched  && !header->m_SubNodeNoSplitID.IsValid()) ? 0 : (!header->m_IsBranched ? 1 : header->m_numberOfSubNodesOnSplit);
+    //size_t nbChildren = header->m_IsLeaf || (!header->m_IsBranched  && !header->m_SubNodeNoSplitID.IsValid()) ? 0 : (!header->m_IsBranched ? 1 : header->m_numberOfSubNodesOnSplit);
 
-    block["nbChildren"] = nbChildren;
+    //block["nbChildren"] = nbChildren;
 
-    auto& children = block["children"];
+    //auto& children = block["children"];
 
-    if (nbChildren > 1)
-        {
-        for (size_t childInd = 0; childInd < nbChildren; childInd++)
-            {
-            Json::Value& child = childInd >= children.size() ? children.append(Json::Value()) : children[(int)childInd];
-            child["index"] = (uint8_t)childInd;
-            child["id"] = header->m_apSubNodeID[childInd].IsValid() ? ConvertChildID(header->m_apSubNodeID[childInd]) : ISMStore::GetNullNodeID();
-            }
-        }
-    else if (nbChildren == 1)
-        {
-        Json::Value& child = children.empty() ? children.append(Json::Value()) : children[0];
-        child["index"] = 0;
-        child["id"] = header->m_SubNodeNoSplitID.IsValid() ? ConvertChildID(header->m_SubNodeNoSplitID) : ConvertChildID(header->m_apSubNodeID[0]);
-        }
-
-    auto& neighbors = block["neighbors"];
-    int neighborInfoInd = 0;
-    for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
-        {
-        for (size_t neighborInd = 0; neighborInd < header->m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
-            {
-            Json::Value& neighbor = (uint32_t)neighborInfoInd >= neighbors.size() ? neighbors.append(Json::Value()) : neighbors[(uint32_t)neighborInfoInd];
-            neighbor["nodePos"] = (uint8_t)neighborPosInd;
-            neighbor["nodeId"] = ConvertNeighborID(header->m_apNeighborNodeID[neighborPosInd][neighborInd]);
-            neighborInfoInd++;
-            }
-        }
-
-    auto& extent = block["nodeExtent"];
-
-    extent["xMin"] = ExtentOp<EXTENT>::GetXMin(header->m_nodeExtent);
-    extent["yMin"] = ExtentOp<EXTENT>::GetYMin(header->m_nodeExtent);
-    extent["zMin"] = ExtentOp<EXTENT>::GetZMin(header->m_nodeExtent);
-    extent["xMax"] = ExtentOp<EXTENT>::GetXMax(header->m_nodeExtent);
-    extent["yMax"] = ExtentOp<EXTENT>::GetYMax(header->m_nodeExtent);
-    extent["zMax"] = ExtentOp<EXTENT>::GetZMax(header->m_nodeExtent);
-
-    if (header->m_contentExtentDefined)
-        {
-        block["contentExtentDefined"] = true;
-        auto& contentExtent = block["contentExtent"];
-        contentExtent["xMin"] = ExtentOp<EXTENT>::GetXMin(header->m_contentExtent);
-        contentExtent["yMin"] = ExtentOp<EXTENT>::GetYMin(header->m_contentExtent);
-        contentExtent["zMin"] = ExtentOp<EXTENT>::GetZMin(header->m_contentExtent);
-        contentExtent["xMax"] = ExtentOp<EXTENT>::GetXMax(header->m_contentExtent);
-        contentExtent["yMax"] = ExtentOp<EXTENT>::GetYMax(header->m_contentExtent);
-        contentExtent["zMax"] = ExtentOp<EXTENT>::GetZMax(header->m_contentExtent);
-        }
-    else
-        {
-        block["contentExtentDefined"] = false;
-        }
+    //if (nbChildren > 1)
+    //    {
+    //    for (size_t childInd = 0; childInd < nbChildren; childInd++)
+    //        {
+    //        Json::Value& child = childInd >= children.size() ? children.append(Json::Value()) : children[(int)childInd];
+    //        child["index"] = (uint8_t)childInd;
+    //        child["id"] = header->m_apSubNodeID[childInd].IsValid() ? ConvertChildID(header->m_apSubNodeID[childInd]) : ISMStore::GetNullNodeID();
+    //        }
+    //    }
+    //else if (nbChildren == 1)
+    //    {
+    //    Json::Value& child = children.empty() ? children.append(Json::Value()) : children[0];
+    //    child["index"] = 0;
+    //    child["id"] = header->m_SubNodeNoSplitID.IsValid() ? ConvertChildID(header->m_SubNodeNoSplitID) : ConvertChildID(header->m_apSubNodeID[0]);
+    //    }
+    //
+    //auto& neighbors = block["neighbors"];
+    //int neighborInfoInd = 0;
+    //for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
+    //    {
+    //    for (size_t neighborInd = 0; neighborInd < header->m_apNeighborNodeID[neighborPosInd].size(); neighborInd++)
+    //        {
+    //        Json::Value& neighbor = (uint32_t)neighborInfoInd >= neighbors.size() ? neighbors.append(Json::Value()) : neighbors[(uint32_t)neighborInfoInd];
+    //        neighbor["nodePos"] = (uint8_t)neighborPosInd;
+    //        neighbor["nodeId"] = ConvertNeighborID(header->m_apNeighborNodeID[neighborPosInd][neighborInd]);
+    //        neighborInfoInd++;
+    //        }
+    //    }
+    //
+    //auto& extent = block["nodeExtent"];
+    //
+    //extent["xMin"] = ExtentOp<EXTENT>::GetXMin(header->m_nodeExtent);
+    //extent["yMin"] = ExtentOp<EXTENT>::GetYMin(header->m_nodeExtent);
+    //extent["zMin"] = ExtentOp<EXTENT>::GetZMin(header->m_nodeExtent);
+    //extent["xMax"] = ExtentOp<EXTENT>::GetXMax(header->m_nodeExtent);
+    //extent["yMax"] = ExtentOp<EXTENT>::GetYMax(header->m_nodeExtent);
+    //extent["zMax"] = ExtentOp<EXTENT>::GetZMax(header->m_nodeExtent);
+    //
+    //if (header->m_contentExtentDefined)
+    //    {
+    //    block["contentExtentDefined"] = true;
+    //    auto& contentExtent = block["contentExtent"];
+    //    contentExtent["xMin"] = ExtentOp<EXTENT>::GetXMin(header->m_contentExtent);
+    //    contentExtent["yMin"] = ExtentOp<EXTENT>::GetYMin(header->m_contentExtent);
+    //    contentExtent["zMin"] = ExtentOp<EXTENT>::GetZMin(header->m_contentExtent);
+    //    contentExtent["xMax"] = ExtentOp<EXTENT>::GetXMax(header->m_contentExtent);
+    //    contentExtent["yMax"] = ExtentOp<EXTENT>::GetYMax(header->m_contentExtent);
+    //    contentExtent["zMax"] = ExtentOp<EXTENT>::GetZMax(header->m_contentExtent);
+    //    }
+    //else
+    //    {
+    //    block["contentExtentDefined"] = false;
+    //    }
 
 
     block["totalCount"] = header->m_totalCount;
@@ -1330,6 +1329,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         uint32_t parentNodeID = nodeHeader["parentID"].asUInt();
         header->m_parentNodeID = parentNodeID != ISMStore::GetNullNodeID() ? HPMBlockID(parentNodeID) : ISMStore::GetNullNodeID();
 
+        header->m_geometricResolution = cesiumNodeHeader["geometricError"].asFloat();
+        header->m_textureResolution = header->m_geometricResolution;
         //auto& nodeExtent = nodeHeader["nodeExtent"];
         //assert(nodeExtent.isObject());
         //ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
@@ -2367,6 +2368,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     auto extensions = cesiumBatchTableHeader.isMember("extensions") ? cesiumBatchTableHeader["extensions"] : Json::Value();
     auto RTCExtension = extensions.isMember("CESIUM_RTC") ? extensions["CESIUM_RTC"] : Json::Value();
     auto points_are_quantized = pointAccessor.isMember("extensions") && pointAccessor["extensions"].isMember("WEB3D_quantized_attributes");
+    auto indiceType = indiceAccessor["componentType"].asUInt();
 
     struct buffer_object_pointer
         {
@@ -2428,7 +2430,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
                 for (uint32_t i = 0; i < m_tileData.numUvs; i++)
                     {
-                    m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], uv_array[2 * i + 1]);
+                    m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], 1.0 - uv_array[2 * i + 1]);
                     }
                 }
             }
@@ -2468,12 +2470,22 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.indiceOffset = m_tileData.textureOffset + m_tileData.textureSize;
         m_tileData.m_indicesData = reinterpret_cast<int32_t *>(this->data() + m_tileData.indiceOffset);
-        if (indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint16_t))
+        if (indiceType == 5123 && indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint16_t))
             {
-            auto indice_array = (int16_t*)(buffer + indice_buffer_pointer.offset);
+            auto indice_array = (uint16_t*)(buffer + indice_buffer_pointer.offset);
             for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
                 {
-                m_tileData.m_indicesData[i] = (int32_t)indice_array[i] + 1; // QV wants indices to start at 1 for the moment
+                m_tileData.m_indicesData[i] = (uint32_t)indice_array[i] + 1; // QV wants indices to start at 1 for the moment
+                assert(m_tileData.m_indicesData[i] > 0);
+                }
+            }
+        else if (indiceType == 5125 && indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint32_t))
+            {
+            auto indice_array = (uint32_t*)(buffer + indice_buffer_pointer.offset);
+            for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
+                {
+                m_tileData.m_indicesData[i] = (uint32_t)indice_array[i] + 1; // QV wants indices to start at 1 for the moment
+                assert(m_tileData.m_indicesData[i] > 0);
                 }
             }
         else
