@@ -30,9 +30,10 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    InsertCategory(dgndb, ColorDef::White(), BDCP_CATEGORY_AcquisitionDevice);
-    ColorDef orange(0xff,0x7f,0x27);
-    InsertCategory(dgndb, orange, BDCP_CATEGORY_Shot);
+    InsertCategory(dgndb, ColorDef::White(), 1, BDCP_CATEGORY_AcquisitionDevice);
+
+    //Insert Shot category with it's own color and weight
+    InsertCategory(dgndb, Shot::GetDefaultColor(), Shot::GetDefaultWeight(), BDCP_CATEGORY_Shot);
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
     BeAssert(authority.IsValid());
@@ -46,12 +47,12 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DataCaptureDomain::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP code)
+void DataCaptureDomain::InsertCategory(DgnDbR db, ColorDef const& color, int const weight, Utf8CP code)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
     appearance.SetInvisible(false);
-    appearance.SetWeight(2);
+    appearance.SetWeight(weight);
 
     DgnCategory category(DgnCategory::CreateParams(db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain));
     category.Insert(appearance);
