@@ -35,7 +35,7 @@ struct DataCaptureDomain : Dgn::DgnDomain
 
 private:
     static Dgn::DgnCategoryId QueryCategoryId(Dgn::DgnDbCR, Utf8CP);
-    static void InsertCategory(Dgn::DgnDbR, Dgn::ColorDef const&, Utf8CP);
+    static void InsertCategory(Dgn::DgnDbR, Dgn::ColorDef const&, int const, Utf8CP);
 
 protected:
     void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
