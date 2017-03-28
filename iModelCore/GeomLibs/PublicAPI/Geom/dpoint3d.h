@@ -881,10 +881,10 @@ static DPoint3d FromInterpolate (DPoint3dCR pointA, double fraction, DPoint3dCR 
 
 //! interpolate between points.  Then add a shift in the xy plane by a fraction of the XY projection perpendicular
 //! @param [in] pointA start point
-//! @param [in] fraction fractional parameter
+//! @param [in] fraction fractional parameter along the line from A to B
 //! @param [in] pointB end point
-//! @param [in] fractionXYPerpendicular
-static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerpendicular);
+//! @param [in] fractionXYPerp fractional parameter applied to vector that is the XY parts of (B-A), rotated CCW in plane.
+static DPoint3d FromInterpolateAndPerpendicularXY (DPoint3dCR pointA, double fraction, DPoint3dCR pointB, double fractionXYPerp);
 
 
 //! return the centroid for points with specified weights
