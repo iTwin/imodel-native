@@ -42,8 +42,10 @@ int main(int argc, char *argv[])
         return -1;
         }
 
+    RawServerResponse rawResponse = RawServerResponse();
+
     WSGServer wsgServer = WSGServer(argv[1], false);
-    Utf8String version = wsgServer.GetVersion();
+    Utf8String version = wsgServer.GetVersion(rawResponse);
     RealityDataService::SetServerComponents(argv[1], version, argv[2], argv[3]);
 
     Utf8String sourceOnServer = Utf8String(argv[4]);
@@ -76,14 +78,17 @@ int main(int argc, char *argv[])
         }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, sourceOnServer);
-    download.SetProgressCallBack(progressFunc);
-    download.SetProgressStep(0.5);
-    download.OnlyReportErrors(true);
-    TransferReport* tReport = download.Perform();
-    Utf8String report;
-    tReport->ToXml(report);
-    std::cout << std::endl << "if any files failed to download, they will be listed here: " << std::endl;
-    std::cout << report << std::endl;
+    if(download.IsValidTransfer())
+        {
+        download.SetProgressCallBack(progressFunc);
+        download.SetProgressStep(0.5);
+        download.OnlyReportErrors(true);
+        TransferReport* tReport = download.Perform();
+        Utf8String report;
+        tReport->ToXml(report);
+        std::cout << std::endl << "if any files failed to download, they will be listed here: " << std::endl;
+        std::cout << report << std::endl;
+        }
     
     std::cout << "Press a key to continue..." << std::endl;
     getch();
