@@ -85,14 +85,14 @@ public:
     double GetLumens() const {return Value(str_Lumens()).asDouble(0.0);}
     void SetLumens(double lumens) {SetOrRemoveDouble(str_Lumens(), lumens, 0.0);}
 
-    uint32_t GetKelvins() const {return Value(str_Kelvins()).asUInt();} 
-    void SetKelvins(uint32_t kelvins) {SetOrRemoveUInt(str_Kelvins(), kelvins, 0);}
+    uint32_t GetKelvin() const {return Value(str_Kelvins()).asUInt();} 
+    void SetKelvin(uint32_t kelvins) {SetOrRemoveUInt(str_Kelvins(), kelvins, 0);}
 
     uint32_t GetShadowSamples() const {return Value(str_Shadows()).asUInt();}
     void SetShadowSamples(uint32_t val) {SetOrRemoveUInt(str_Shadows(), val, 0);}
 
-    uint32_t GetBulbs() const {return Value(str_Bulbs()).asUInt(1);}
-    void SetBulbs(uint32_t bulbs) {SetOrRemoveUInt(str_Bulbs(), bulbs, 1);}
+    uint32_t GetBulbCount() const {return Value(str_Bulbs()).asUInt(1);}
+    void SetBulbCount(uint32_t bulbs) {SetOrRemoveUInt(str_Bulbs(), bulbs, 1);}
 
     Spot GetSpot() const {auto& spot=Value(str_Spot()); return Spot(AngleInDegrees::FromDegrees(spot[str_Inner()].asDouble()), AngleInDegrees::FromDegrees(spot[str_Outer()].asDouble()));}
     void SetSpot(Spot val) {auto& spot=(*this)[str_Spot()]; spot[str_Inner()] = val.m_inner.Degrees(); spot[str_Outer()] = val.m_outer.Degrees();}
@@ -110,10 +110,7 @@ struct Location : SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LightLocation, SpatialLocationElement);
 public:
 
-protected:
     static constexpr Utf8CP str_Params() {return "light";}
-    
-public:
     explicit Location(CreateParams const& params) : T_Super(params) {}
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightLocation));}//!< @private
     ParametersCR GetParameters() const {return (ParametersCR) m_jsonProperties[str_Params()];}
