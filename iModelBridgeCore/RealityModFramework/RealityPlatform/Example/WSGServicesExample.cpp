@@ -24,40 +24,46 @@ int main(int argc, char *argv[])
     WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false); 
 
     //-----------------WSGServer methods-----------------------//
-    Utf8String version = server.GetVersion(); 
+    RawServerResponse versionResponse = RawServerResponse();
+    Utf8String version = server.GetVersion(versionResponse);
 
     std::cout << "Version:" << std::endl;
     std::cout << version << std::endl << std::endl;
-    
-    bvector<Utf8String> plugins = server.GetPlugins();
+
+    RawServerResponse pluginResponse = RawServerResponse();
+    bvector<Utf8String> plugins = server.GetPlugins(pluginResponse);
 
     std::cout << "Plugins:" << std::endl;
     for( Utf8String plugin : plugins )
         std::cout<< plugin << std::endl;
     std::wcout << std::endl;
 
-    bvector<Utf8String> repos = server.GetRepositories();
+    RawServerResponse repoResponse = RawServerResponse();
+    bvector<Utf8String> repos = server.GetRepositories(repoResponse);
 
     std::cout << "Repos:" << std::endl;
     for (Utf8String repo : repos)
         std::cout << repo << std::endl;
     std::cout << std::endl;
 
-    bvector<Utf8String> schemas = server.GetSchemaNames(repos[0]);
+    RawServerResponse schemaResponse = RawServerResponse();
+    bvector<Utf8String> schemas = server.GetSchemaNames(repos[0], schemaResponse);
 
     std::cout << "Schemas in " << repos[0] << ":" << std::endl;
     for (Utf8String schema : schemas)
         std::cout << schema << std::endl;
     std::cout << std::endl;
-    
-    bvector<Utf8String> classes = server.GetClassNames(repos[0], schemas[0]);
+
+    RawServerResponse classResponse = RawServerResponse();
+    bvector<Utf8String> classes = server.GetClassNames(repos[0], schemas[0], classResponse);
 
     std::cout << "Classes in " << schemas[0] << ":" << std::endl;
     for (Utf8String classname : classes)
         std::cout << classname << std::endl;
     std::cout << std::endl;
 
-    Utf8String classJSON = server.GetJSONClassDefinition(repos[0], schemas[0], classes[0]);
+    RawServerResponse jsonResponse = RawServerResponse();
+    Utf8String classJSON = server.GetJSONClassDefinition(repos[0], schemas[0], classes[0], jsonResponse);
 
     std::cout << classes[0] << " as JSON:" << std::endl;
     std::cout << classJSON << std::endl << std::endl;
@@ -66,7 +72,8 @@ int main(int argc, char *argv[])
 
     //-----------------WSGRequest methods-----------------------//
     //getting all Nav Roots
-    bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, repos[0]);
+    RawServerResponse nodeResponse = RawServerResponse();
+    bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, repos[0], nodeResponse);
 
     std::cout << "NavRoots:" << std::endl;
     for (NavNode root : nodes)
@@ -79,7 +86,8 @@ int main(int argc, char *argv[])
 
     for(nodeIndex = 0; (subNodes.size() < 1) && nodeIndex < nodes.size(); ++nodeIndex)
         {
-        subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], nodes[nodeIndex]);
+        nodeResponse = RawServerResponse();
+        subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], nodes[nodeIndex], nodeResponse);
         }
 
     if(nodeIndex > nodes.size())
@@ -115,7 +123,10 @@ int main(int argc, char *argv[])
                 }
             }
         if (!objectFound)
-            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0]);
+            {
+            nodeResponse = RawServerResponse();
+            subNodes = NodeNavigator::GetInstance().GetChildNodes(server, repos[0], subNodes[0], nodeResponse);
+            }
         }
         
     if(!objectFound)
@@ -133,12 +144,14 @@ int main(int argc, char *argv[])
     objectId.append(subNodes[objectIndex].GetInstanceId());
     objectId.ReplaceAll("/","~2F");
 
-    WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetClassName(), objectId);
-    int status = 0;
-    Utf8String returnJsonString = WSGRequest::GetInstance().PerformRequest(*objRequest, status, 0);
+    versionResponse = RawServerResponse();
+    WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(versionResponse), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetClassName(), objectId);
+
+    RawServerResponse objResponse = RawServerResponse();
+    WSGRequest::GetInstance().PerformRequest(*objRequest, objResponse, 0);
 
     std::cout << "Object JSON :" << std::endl;
-    std::cout << returnJsonString << std::endl << std::endl;
+    std::cout << objResponse.body << std::endl << std::endl;
 
     // we won't execute the actual download, because a randomly chosen file could represent several gigabytes
     // but this code shows how it could be done

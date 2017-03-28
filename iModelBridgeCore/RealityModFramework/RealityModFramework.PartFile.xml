@@ -11,7 +11,7 @@
     </Part>
     
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
-	    <SubPart PartName="RealityPackage" />
+        <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
@@ -138,6 +138,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDataServiceErrorReportingExample" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceErrorReportingExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServiceErrorReportingExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatform\Example\RealityDataServiceUploader.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -212,6 +222,7 @@
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="WSGServicesExample"/>
         <SubPart PartName="RealityDataServiceExample"/>
+        <SubPart PartName="RealityDataServiceErrorReportingExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
         <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDataServiceDownloader"/>
@@ -233,7 +244,7 @@
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-    	<SubPart PartName="RealityServicesNet"/>
+        <SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <Bindings>
@@ -242,9 +253,9 @@
     </Part>
     
     <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64">
-	<!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">-->
-	    <SubPart PartName="RealityDbECPluginNuGetPackages"/>
-    	<SubPart PartName="RealityServicesNet"/>
+    <!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">-->
+        <SubPart PartName="RealityDbECPluginNuGetPackages"/>
+        <SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <Bindings>
@@ -257,29 +268,42 @@
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
         <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <Bindings>
-            <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies> 	
+            <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies>    
             <Files ProductDirectoryName="Assemblies">Delivery/UsageDataExtractor.exe.config</Files>
         </Bindings>
     </Part>
     
-	<Part Name="RealityDbECPluginNuGetPackages" BentleyBuildMakeFile="RealityDbECPlugin.prewire.mke">
-		<NuGetPackage targetFramework=".NETFramework4.5">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
-	    <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
-	    <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
-	    <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
-		<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>
-		<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>
-		<Bindings>
-			<Assemblies>Delivery/Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
-			<Assemblies>Delivery/Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
-			<Assemblies>Delivery/Microsoft.ServiceBus.dll</Assemblies> 
-			<Assemblies>Delivery/Bentley.Discovery.Buddi.Client.dll</Assemblies> 
-			<!--<Assemblies>Delivery/Common.Logging.dll</Assemblies>-->
-			<!--<Assemblies>Delivery/Common.Logging.Core.dll</Assemblies>-->
-		</Bindings>
-	</Part>
-	
+    <Part Name="RealityDbECPluginNuGetPackages">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        
+        <!-- The following subparts have been added because BentleyDesktopClient already has a part for it. We have to get 
+        this dll from that particular subpart, or else we have a conflict when building with RealityModFramework BuildStrategy 
+        when using the commented lines below instead. If we do not get it from any source, we have a problem building 
+        RealityContextServices BuildStrategy. If we ever get rid of BentleyDesktopClient from our other parts, 
+        we'll be able to remove these subparts below and use the commented lines instead.-->
+        
+        <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        
+        
+        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
+        <Bindings>
+            <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
+            <Assemblies>NuGet\net45\Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
+            <Assemblies>NuGet\net45-full\Microsoft.ServiceBus.dll</Assemblies> 
+            <Assemblies>NuGet\net45\Bentley.Discovery.Buddi.Client.dll</Assemblies> 
+            <!--<Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>-->
+            <!--<Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>-->
+        </Bindings>
+    </Part>
+    
     <Part Name="RequiredNugets" BentleyBuildMakeFile="RequiredNugets.prewire.mke">
+    
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
         <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
@@ -293,8 +317,8 @@
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.OData.*</Files> 
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.Data.Services.Client.*</Files> 
             <Files ProductDirectoryName="Assemblies">Delivery/Microsoft.WindowsAzure.Storage.*</Files> 
-            <Files ProductDirectoryName="Assemblies">Delivery/System.Spatial.*</Files> 	
-            <Assemblies>Delivery/BentleyIT.STS.RelyingPartyCommon.dll</Assemblies> 	
+            <Files ProductDirectoryName="Assemblies">Delivery/System.Spatial.*</Files>  
+            <Assemblies>Delivery/BentleyIT.STS.RelyingPartyCommon.dll</Assemblies>  
         </Bindings>
     </Part>
     
@@ -482,6 +506,7 @@
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
 
         <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
         <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>
@@ -534,6 +559,9 @@
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies"        Path="" Deliver="false"/>
         <ProductDirectory Name="managedtests"                   Path=""/>
+        
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
+        
         
     </ProductDirectoryList>
 

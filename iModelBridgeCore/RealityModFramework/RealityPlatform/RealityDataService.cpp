@@ -242,16 +242,6 @@ static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, Real
     return request->OnReadData(buffer, size * count);
     }
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    AzureHandshake* handshake = (AzureHandshake*)userp;
-    if (handshake != nullptr)
-        handshake->GetJsonResponse().append((char*)contents, size * nmemb);
-    else
-        ((Utf8String*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-    }
-
 static size_t DownloadWriteCallback(void *buffer, size_t size, size_t nmemb, void *pClient)
     {
     if (NULL == pClient)
@@ -362,7 +352,7 @@ void RealityDataDocumentContentByIdRequest::ChangeInstanceId(Utf8String instance
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RequestStatus RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
+RawServerResponse RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestUrl() const
     {
     if(m_handshakeRequest == nullptr)
         {
@@ -373,15 +363,12 @@ RequestStatus RealityDataDocumentContentByIdRequest::GetAzureRedirectionRequestU
         m_handshakeRequest = new AzureHandshake(root, false);
         }
 
-    RequestStatus status = RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
+    RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
 
-    if (status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
-        {
+    if (rawResponse.status != RequestStatus::BADREQ && m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) == BentleyStatus::SUCCESS)
         m_allowAzureRedirection = true;
-        return status;
-        }
-    else
-        return RequestStatus::BADREQ;
+
+    return rawResponse;
     }
 
 //=====================================================================================
@@ -1206,15 +1193,14 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
 //=====================================================================================
 BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     {
-    Utf8String response;
     if(m_id.length() == 0)
         {
         RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
-        int status;
-        response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
+    RawServerResponse createResponse = RawServerResponse();
+        WSGRequest::GetInstance().PerformRequest(createRequest, createResponse, RealityDataService::GetVerifyPeer());
     
         Json::Value instance(Json::objectValue);
-        Json::Reader::Parse(response, instance);
+        Json::Reader::Parse(createResponse.body, instance);
         if (!instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
             {
             m_id = instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
@@ -1223,26 +1209,30 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         else
             {
             ReportStatus(0, nullptr, -1, "RealityData creation failed\n");
-            ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", response).c_str());
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", createResponse.body).c_str());
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
             return BentleyStatus::ERROR;
             }
         }
     else
         {
         RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
-        if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::BADREQ) //file does not exist, need POST Create
+        RawServerResponse idResponse;
+        if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
             RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
-            int status;
-            response = WSGRequest::GetInstance().PerformRequest(createRequest, status, RealityDataService::GetVerifyPeer());
-            if(response.ContainsI("error"))
+            RawServerResponse createResponse = RawServerResponse();
+            WSGRequest::GetInstance().PerformRequest(createRequest, createResponse, RealityDataService::GetVerifyPeer());
+            if(createResponse.body.ContainsI("error"))
                 {
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", response).c_str());
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", createResponse.body).c_str());
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
                 return BentleyStatus::ERROR;
                 }
-            if (RealityDataService::RequestToJSON((RealityDataUrl*)getRequest, response) == RequestStatus::BADREQ)
+            if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ)
                 {
                 ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", idResponse.responseCode).c_str());
                 return BentleyStatus::ERROR;
                 }
             
@@ -1261,10 +1251,10 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-BentleyStatus AzureHandshake::ParseResponse(Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer)
+BentleyStatus AzureHandshake::ParseResponse(Utf8StringCR jsonResponse, Utf8StringR azureServer, Utf8StringR azureToken, int64_t& tokenTimer)
     {
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(m_jsonResponse, instances);
+    Json::Reader::Parse(jsonResponse, instances);
 
     Json::Value instance;
     
@@ -1313,6 +1303,13 @@ TransferReport* RealityDataServiceTransfer::Perform()
     m_progress = 0.0;
 
     m_report = TransferReport();
+
+    if(!IsValidTransfer())
+        {
+        ReportStatus(0, nullptr, -1, "No files to transfer, please verify that the previous steps completed without failure");
+        return &m_report;
+        }
+
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
@@ -1471,12 +1468,8 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
     if (NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
         return;
 
-    int code = 2; //BodyNoToken
-    AzureHandshake* handshake = dynamic_cast<AzureHandshake*>(request);
     RealityDataFileTransfer* fileTransfer = dynamic_cast<RealityDataFileTransfer*>(request);
-    if (handshake != nullptr)
-        code = 0;
-    else if(fileTransfer != nullptr)
+    if(fileTransfer != nullptr)
         {
         fileTransfer->SetAzureToken(GetAzureToken());
         fileTransfer->UpdateTransferedSize();
@@ -1487,7 +1480,10 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
     RealityDataFileUpload* fileUpload = dynamic_cast<RealityDataFileUpload*>(request);
     RealityDataFileDownload* fileDownload = dynamic_cast<RealityDataFileDownload*>(request);
 
-    CURL *pCurl = PrepareCurl(*request, code, verifyPeer, nullptr);
+    RawServerResponse rawResponse= RawServerResponse();
+    rawResponse.curlCode = ServerType::Azure;
+
+    CURL *pCurl = PrepareCurl(*request, rawResponse, verifyPeer, nullptr);
     if (pCurl)
         {
         curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
@@ -1533,13 +1529,6 @@ void RealityDataServiceTransfer::SetupCurlforFile(RealityDataUrl* request, bool 
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("\nFailed to create File %s on local machine\nAborting download of this file", fileDownload->GetFilename().c_str()).c_str());
                 return;   // failure, can't open file to write
                 }
-            }
-        else if (handshake != nullptr)
-            {
-            /* Define our callback to get called when there's data to be written */
-            curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, WriteCallback);
-            /* Set a pointer to our struct to pass to the callback */
-            curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, handshake);
             }
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
@@ -1589,8 +1578,8 @@ Utf8String RealityDataServiceTransfer::GetAzureToken()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(currentTime);
     if ((m_azureTokenTimer - currentTime) < (0))
         {
-        RealityDataService::RequestToJSON((RealityDataUrl*)m_handshakeRequest, m_handshakeRequest->GetJsonResponse());
-        if(m_handshakeRequest->ParseResponse(m_azureServer, m_azureToken, m_azureTokenTimer) != BentleyStatus::SUCCESS)
+        RawServerResponse rawResponse = RealityDataService::BasicRequest((RealityDataUrl*)m_handshakeRequest);
+        if(m_handshakeRequest->ParseResponse(rawResponse.body, m_azureServer, m_azureToken, m_azureTokenTimer) != BentleyStatus::SUCCESS)
             ReportStatus(0, nullptr, -1, "Failure retrieving Azure token\n");
         }
     return m_azureToken;
@@ -1688,7 +1677,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId)
+RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func)
     {
     m_id = serverId;
     m_azureTokenTimer = 0;
@@ -1698,13 +1687,21 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     m_onlyReportErrors = false;
     m_currentTransferedAmount = 0;
     m_handshakeRequest = nullptr;
+    m_pStatusFunc = pi_func;
 
     m_handshakeRequest = new AzureHandshake(m_id, false);
     GetAzureToken();
 
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_id);
-    RequestStatus status;
-    bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
+    RawServerResponse rawResponse = RawServerResponse();
+    bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, rawResponse);
+
+    if(rawResponse.status == RequestStatus::BADREQ)
+        {
+        ReportStatus(0, nullptr, -1, "Error performing SAS request on Azure server\n");
+        return;
+        }
+
     BeFileName downloadLocation;
     WString path;
     WString fileUrl;
@@ -1719,7 +1716,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     guid.append(L"/");
     root.ReplaceAll(guid.c_str(), L""); //remove guid from root
 
-    if ((folders[folders.size() - 1]).length() != 0) //if path ends with "/" it is a folder; otherwise, it is a single document
+    if ((folders.size() > 1) && !m_id.EndsWith("/")) //if path ends with "/" it is a folder; otherwise, it is a single document
         {
         path = filesInRepo[0].first;
 
@@ -1771,7 +1768,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList)
+RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func)
     {
     m_id = serverId;
     m_azureTokenTimer = 0;
@@ -1781,6 +1778,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
     m_onlyReportErrors = false;
     m_currentTransferedAmount = 0;
     m_handshakeRequest = nullptr;
+    m_pStatusFunc = pi_func;
 
     m_handshakeRequest = new AzureHandshake(m_id, false);
     GetAzureToken();
@@ -1815,31 +1813,35 @@ const bool   RealityDataService::GetVerifyPeer()      { return s_verifyPeer; } /
 Utf8StringCR RealityDataService::GetCertificatePath() { return s_realityDataCertificatePath; }
 const bool   RealityDataService::AreParametersSet()   { return s_initializedParams; }
 
+static void defaultErrorCallback(Utf8String basicMessage, const RawServerResponse& rawResponse)
+    {
+    std::cout << basicMessage << std::endl;
+    std::cout << rawResponse.body << std::endl;
+    }
+
+RealityDataService_ErrorCallBack RealityDataService::s_errorCallback = defaultErrorCallback;
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RequestStatus& status)
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if(!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return entities;
         }
 
-    Utf8String jsonString;
-    status = PagedRequestToJSON((&request), jsonString);
+    rawResponse = PagedBasicRequest((&request));
 
-    if (status != RequestStatus::OK)
-        { 
-        std::cout << "RealityDataPagedRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        }
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataPagedRequest failed with response", rawResponse);
     else
         {
-        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
         if ((uint8_t)entities.size() < request.GetPageSize())
-            status = RequestStatus::LASTPAGE;
+            rawResponse.status = RequestStatus::LASTPAGE;
         }
 
     return entities;
@@ -1848,56 +1850,50 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RequestStatus& status)
+void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, uint64_t* pNbRealityData, uint64_t* pTotalSizeKB, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return;
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
 
-    if (status != RequestStatus::OK)
-        {
-        std::cout << "RealityDataEnterpriseStatRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        status = RequestStatus::BADREQ;
-        }
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataEnterpriseStatRequest failed with response", rawResponse);
 
-    RealityConversionTools::JsonToEnterpriseStat(jsonString.c_str(), pNbRealityData, pTotalSizeKB);
+    RealityConversionTools::JsonToEnterpriseStat(rawResponse.body.c_str(), pNbRealityData, pTotalSizeKB);
     }
     
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDataByRootId& request, RequestStatus& status)
+bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDataByRootId& request, RawServerResponse& rawResponse)
     {
     bvector<bpair<WString, uint64_t>> documents = bvector<bpair<WString, uint64_t>>();
     
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return documents;
         }
-
-    if(request.GetAzureRedirectionRequestUrl() == RequestStatus::BADREQ)
+    rawResponse = request.GetAzureRedirectionRequestUrl();
+    if(rawResponse.status == RequestStatus::BADREQ)
         return documents;
     int64_t timer = request.GetTokenTimer();
 
     bool nextMarker;
-    int stat = RequestType::BodyNoToken;
     WString value, fileName;
-    Utf8String xmlResponse;
     uint64_t fileSize;
     do
         {
         WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-        xmlResponse = WSGRequest::GetInstance().PerformAzureRequest(request, stat, RealityDataService::GetVerifyPeer());
+        rawResponse = RawServerResponse();
+        WSGRequest::GetInstance().PerformAzureRequest(request, rawResponse, RealityDataService::GetVerifyPeer());
 
         BeXmlStatus xmlStatus = BEXML_Success;
-        BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str());
+        BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, rawResponse.body.c_str());
         BeAssert(reader.IsValid());
 
         value.clear();
@@ -1915,7 +1911,7 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
 
         nextMarker = false;
         //the previous loop reaches the end of the file, so to find the "NextMarker" element, we need to restart from the top
-        reader = BeXmlReader::CreateAndReadFromString(xmlStatus, xmlResponse.c_str()); 
+        reader = BeXmlReader::CreateAndReadFromString(xmlStatus, rawResponse.body.c_str());
         if((IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "NextMarker", false, nullptr))))
             {
             reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
@@ -1942,26 +1938,24 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RequestStatus& status)
+RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
 
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return nullptr;
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
     
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "RealityDataByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("RealityDataByIdRequest failed with response", rawResponse);
         return nullptr;
         }
-    RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
+    RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
 
     return entities[0];
     }
@@ -1969,26 +1963,24 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RequestStatus& status)
+RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return nullptr;
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
 
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "RealityDataDocumentByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("RealityDataDocumentByIdRequest failed with response", rawResponse);
         return nullptr;
         }
 
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(jsonString, instances);
+    Json::Reader::Parse(rawResponse.body, instances);
 
     return RealityDataDocument::Create(instances["instances"][0]);
     }
@@ -1996,58 +1988,50 @@ RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentById
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RequestStatus& status)
+void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request, FILE* file, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return;
         }
 
-    int stat = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
     request.GetAzureRedirectionRequestUrl();
-    Utf8String resultString = "";
-    if (request.IsAzureRedirectionPossible())
-        {
-        //request.SetAzureRedirectionUrlToContainer(azureUrl);
-        resultString = WSGRequest::GetInstance().PerformAzureRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
-        }
-    else
-        resultString = WSGRequest::GetInstance().PerformRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
 
-    status = RequestStatus::OK;
-    if(stat != CURLE_OK)
+    if (request.IsAzureRedirectionPossible())
+        WSGRequest::GetInstance().PerformAzureRequest(request, rawResponse, RealityDataService::GetVerifyPeer(), file);
+    else
+        WSGRequest::GetInstance().PerformRequest(request, rawResponse, RealityDataService::GetVerifyPeer(), file);
+
+    if(rawResponse.curlCode != CURLE_OK)
         {
-        status = RequestStatus::BADREQ;
-        std::cout << "RealityDataDocumentContentByIdRequest failed with response" << std::endl;
-        std::cout << resultString << std::endl;
+        rawResponse.status = RequestStatus::BADREQ;
+        s_errorCallback("RealityDataDocumentContentByIdRequest failed with response", rawResponse);
         }
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RequestStatus& status)
+RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return nullptr;
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString);
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
 
-    if(status != RequestStatus::OK)
+    if(rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "RealityDataFolderByIdRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("RealityDataFolderByIdRequest failed with response", rawResponse);
         return nullptr;
         }
 
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(jsonString, instances);
+    Json::Reader::Parse(rawResponse.body, instances);
 
     return RealityDataFolder::Create(instances["instances"][0]);
     }
@@ -2055,28 +2039,24 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RequestStatus& status)
+bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnterprisePagedRequest& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return entities;
         }
 
-    Utf8String jsonString;
-    status = PagedRequestToJSON(static_cast<const RealityDataPagedRequest*>(&request), jsonString);
+    rawResponse = PagedBasicRequest(static_cast<const RealityDataPagedRequest*>(&request));
 
-    if (status != RequestStatus::OK)
-        {
-        std::cout << "RealityDataListByEnterprisePagedRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        }
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataListByEnterprisePagedRequest failed with response", rawResponse);
     else
         {
-        RealityConversionTools::JsonToRealityData(jsonString.c_str(), &entities);
+        RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
         if ((uint16_t)entities.size() < request.GetPageSize())
-            status = RequestStatus::LASTPAGE;
+            rawResponse.status = RequestStatus::LASTPAGE;
         }
 
     return entities;
@@ -2085,42 +2065,38 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByEnter
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse)
     {
-    return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), status);
+    return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdRequest& request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse)
     {
-    return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), status);
+    return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelationship(const RealityDataUrl* request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelationship(const RealityDataUrl* request, RawServerResponse& rawResponse)
 {
     bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
 
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return relations;
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(request, jsonString);
+    rawResponse = BasicRequest(request);
 
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(jsonString, instances);
-    if (status != RequestStatus::OK)
-        {
-        std::cout << "RealityDataProjectRelationshipRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        }
+    Json::Reader::Parse(rawResponse.body, instances);
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataProjectRelationshipRequest failed with response", rawResponse);
     else
         {
         for (auto instance : instances["instances"])
@@ -2133,146 +2109,139 @@ bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestRelations
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse)
     {
-    return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), status);
+    return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::Request(const RealityDataProjectRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse)
     {
-    return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), status);
+    return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRelationships(const RealityDataPagedRequest* request, RequestStatus& status)
+bvector<RealityDataProjectRelationshipPtr> RealityDataService::_RequestPagedRelationships(const RealityDataPagedRequest* request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataProjectRelationshipPtr> relations = bvector<RealityDataProjectRelationshipPtr>();
 
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return relations;
         }
 
-    Utf8String jsonString;
-    status = PagedRequestToJSON(request, jsonString);
+    rawResponse = PagedBasicRequest(request);
 
     Json::Value instances(Json::objectValue);
-    Json::Reader::Parse(jsonString, instances);
+    Json::Reader::Parse(rawResponse.body, instances);
 
-    if (status != RequestStatus::OK)
-        {
-        std::cout << "RealityDataProjectRelationshipPagedRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
-        }
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataProjectRelationshipPagedRequest failed with response", rawResponse);
     else
         {
         for (auto instance : instances["instances"])
             relations.push_back(RealityDataProjectRelationship::Create(instance));
         if ((uint8_t)relations.size() < request->GetPageSize())
-            status = RequestStatus::LASTPAGE;
+            rawResponse.status = RequestStatus::LASTPAGE;
         }
 
     return relations;
     }
 
-Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, RequestStatus& status)
+Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return "";
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
 
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "RealityDataChangeRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("RealityDataChangeRequest failed with response", rawResponse);
         return "";
         }
 
-    return jsonString;
+    return rawResponse.body;
     }
 
-Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, RequestStatus& status)
+Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, RawServerResponse& rawResponse)
 {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return "";
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
 
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
         {
-        std::cout << "RealityDataCreateRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        s_errorCallback("RealityDataCreateRequest failed with response", rawResponse);
         return "";
         }
 
-    return jsonString;
+    return rawResponse.body;
 }
 
-Utf8String RealityDataService::Request(const RealityDataRelationshipCreateRequest& request, RequestStatus& status)
+Utf8String RealityDataService::Request(const RealityDataRelationshipCreateRequest& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
-        status = RequestStatus::PARAMSNOTSET;
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
         return "";
         }
 
-    Utf8String jsonString;
-    status = RequestToJSON(static_cast<const RealityDataUrl*>(&request), jsonString, "changedInstance");
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request), "changedInstance");
 
-    if (status != RequestStatus::OK)
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataRelationshipCreateRequest failed with response", rawResponse);
+
+    return rawResponse.body;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RawServerResponse RealityDataService::PagedBasicRequest(const RealityDataPagedRequest* request, Utf8String keyword)
+    {
+    RawServerResponse response = RawServerResponse();
+    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
+
+    Json::Value instances(Json::objectValue);
+    if((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
+        response.status = RequestStatus::BADREQ;
+    else
         {
-        std::cout << "RealityDataRelationshipCreateRequest failed with response" << std::endl;
-        std::cout << jsonString << std::endl;
+        request->AdvancePage();
+        response.status = RequestStatus::OK;
         }
 
-    return jsonString;
+    return response;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RequestStatus RealityDataService::PagedRequestToJSON(const RealityDataPagedRequest* request, Utf8StringR jsonResponse, Utf8String keyword)
+RawServerResponse RealityDataService::BasicRequest(const RealityDataUrl* request, Utf8String keyword)
     {
-    int status = RequestType::Body;
+    RawServerResponse response = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
+    WSGRequest::GetInstance().PerformRequest(*request, response, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        return RequestStatus::BADREQ;
-
-    request->AdvancePage();
-
-    return RequestStatus::OK;
-    }
-
-//=====================================================================================
-//! @bsimethod                                   Spencer.Mason              02/2017
-//=====================================================================================
-RequestStatus RealityDataService::RequestToJSON(const RealityDataUrl* request, Utf8StringR jsonResponse, Utf8String keyword)
-    {
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    jsonResponse = WSGRequest::GetInstance().PerformRequest(*request, status, RealityDataService::GetVerifyPeer());
-
-    Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
-        return RequestStatus::BADREQ;
-
-    return RequestStatus::OK;
+    if ((response.curlCode != CURLE_OK) || !Json::Reader::Parse(response.body, instances) || instances.isMember("errorMessage") || !instances.isMember(keyword.c_str()))
+        response.status = RequestStatus::BADREQ;
+    else
+        response.status = RequestStatus::OK;
+    
+    return response;
     }

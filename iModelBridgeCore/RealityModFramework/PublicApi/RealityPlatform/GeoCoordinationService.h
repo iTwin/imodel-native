@@ -68,6 +68,8 @@ public:
 protected:
     // Default constructor
     GeoCoordinationServiceRequest() { m_validRequestString = false; }
+    
+    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServiceRequest(){}
 
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
     };
@@ -133,6 +135,8 @@ public:
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
 
+    REALITYDATAPLATFORM_EXPORT virtual ~GeoCoordinationServicePagedRequest(){}
+
     GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) { m_startIndex = startIndex; m_pageSize = pageSize; BeAssert(m_pageSize >0); }
 
     Utf8String m_order;
@@ -183,7 +187,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityWithDetailsByIdRequest() : m_requestType(GET_Request) {}
+    SpatialEntityWithDetailsByIdRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
     
 //=====================================================================================
@@ -202,7 +206,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityByIdRequest(): m_requestType(GET_Request) {}
+    SpatialEntityByIdRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
 
 
@@ -222,7 +226,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityDataSourceByIdRequest(): m_requestType(GET_Request) {}
+    SpatialEntityDataSourceByIdRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
 
 //=====================================================================================
@@ -241,7 +245,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityServerByIdRequest(): m_requestType(GET_Request) {}
+    SpatialEntityServerByIdRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
 
 //=====================================================================================
@@ -260,7 +264,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    SpatialEntityMetadataByIdRequest(): m_requestType(GET_Request) {}
+    SpatialEntityMetadataByIdRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
 
 //=====================================================================================
@@ -274,15 +278,16 @@ struct PackagePreparationRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT PackagePreparationRequest(bvector<GeoPoint2D> projectArea, bvector<Utf8String> listOfSpatialEntities);
+    REALITYDATAPLATFORM_EXPORT PackagePreparationRequest(bvector<GeoPoint2d> projectArea, bvector<Utf8String> listOfSpatialEntities);
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    bvector<GeoPoint2D>     m_projectArea;
+    bvector<GeoPoint2d>     m_projectArea;
     bvector<Utf8String>     m_listOfSpatialEntities;
-    PackagePreparationRequest(): m_requestType(POST_Request) {}
+    PackagePreparationRequest() { m_requestType = HttpRequestType::POST_Request; }
+    virtual ~PackagePreparationRequest(){}
     };
 
 //=====================================================================================
@@ -301,7 +306,7 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    PreparedPackageRequest(): m_requestType(GET_Request) {}
+    PreparedPackageRequest() { m_requestType = HttpRequestType::GET_Request; }
     };
 
 //=====================================================================================
@@ -315,7 +320,7 @@ struct DownloadReportUploadRequest : public GeoCoordinationServiceRequest
 public:
     //! Create a request for spatial entity of the given identifier
     REALITYDATAPLATFORM_EXPORT DownloadReportUploadRequest(Utf8StringCR identifier, BeFileName report) : m_downloadReport(report)
-    { m_validRequestString = false; m_id = identifier; m_requestType = PUT_Request}
+    { m_validRequestString = false; m_id = identifier; m_requestType = HttpRequestType::PUT_Request; }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -339,14 +344,13 @@ struct GeoCoordinationService
 public:
     //!
     //! The SetServerComponents static method enables to set the GeoCoordination Service URL REST API component strings
-    //! The server parameter contains the name of the server including the communication protocol. The default value is
-    //! https://connect-contextservices.bentley.com/ 
+    //! The server parameter contains the name of the server including the communication protocol. 
     //! The WSGProtocol is a string containing the WSG version number. Default is '2.4'
     //! name is the name of the WSG service for the GeoCoordination Service. It should always be "IndexECPlugin-Server"
     //! schemaName is the name of the schema exposing the GeoCoordination Service classes. Default is "RealityModeling"
     //! All fields must be provided if used. Normally the present method shold only be used for development purposes
     //! When accessing one of the dev or qa version of GeoCoordination Service.
-    static SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
+    REALITYDATAPLATFORM_EXPORT static void SetServerComponents(Utf8StringCR server, Utf8StringCR WSGProtocol, Utf8StringCR name, Utf8StringCR schemaName)
         {
         BeAssert(server.size() != 0);
         BeAssert(WSGProtocol.size() != 0);
@@ -360,31 +364,31 @@ public:
         }
 
     //! Returns the current name of the server
-    static Utf8StringCR GetServer();
+    static Utf8StringCR GetServerName();
 
     //! Results the string containing the WSG protocol version number
     static Utf8StringCR GetWSGProtocol();
 
     //! Returns the name of the WSG repository containing the GeoCoordination Service objects
-    static Utf8StringCR GetName();
+    static Utf8StringCR GetRepoName();
 
     //! Returns the name of the schema defining the classes exposed by the GeoCoordination Service.
-    static Utf8StringCR getSchemaName();
+    static Utf8StringCR GetSchemaName();
 
     //! The classification codes. The high level interface only supports the four base classification
     enum class Classification
         {
         Imagery = 0x1,
-        Terrain = 0x2;
-        Model = 0x4;
-        Pinned = 0x8;
-        }
+        Terrain = 0x2,
+        Model = 0x4,
+        Pinned = 0x8
+        };
 
     enum class InformationSource
         {
-        USGS_NationalMap = 0x01;
-        PublicIndex = 0x02;
-        }
+        USGS_NationalMap = 0x01,
+        PublicIndex = 0x02
+        };
 public:
     //! Returns the SpatialEntity object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityByIdRequest& request, RequestStatus& status);
@@ -394,7 +398,7 @@ public:
     REALITYDATAPLATFORM_EXPORT static SpatialEntityPtr Request(const SpatialEntityWithDetailsByIdRequest& request, RequestStatus& status);
 
     //! Returns a SpatialEntitDataSource or null if an error occured
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceById& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Request(const SpatialEntityDataSourceByIdRequest& request, RequestStatus& status);
 
     //! Returns a SpatialEntityServer or null if an error occured
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Request(const SpatialEntityServerByIdRequest& request, RequestStatus& status);
@@ -412,32 +416,35 @@ public:
     REALITYDATAPLATFORM_EXPORT static Utf8String Request(const PackagePreparationRequest& request, RequestStatus& status);
 
     //! Returns the content of the Package requested or an empty vector if an error occured
-    REALITYDATAPLATFORM_EXPORT static bvector<byte> Request(const PreparedPackageRequest& request, RequestStatus& status);
+    REALITYDATAPLATFORM_EXPORT static bvector<Byte> Request(const PreparedPackageRequest& request, RequestStatus& status);
 
     //! Uploads a download report. It is not possible to know if the call worked or not.
     REALITYDATAPLATFORM_EXPORT static void Request(const DownloadReportUploadRequest& request, RequestStatus& status);
 
     //! Returns the full WSG JSON returned by the package preparation request
-    REALITYDATAPLATFORM_EXPORT static RequestStatus RequestToJSON(const GeoCoordinationServiceRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus BasicRequest(const GeoCoordinationServiceRequest* request, Utf8StringR jsonResponse);
 
     //! Returns the full WSG JSON returned by the spatial entity with details spatial request
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
-    REALITYDATAPLATFORM_EXPORT static RequestStatus PagedRequestToJSON(const GeoCoordinationServicePagedRequest* request, Utf8StringR jsonResponse);
+    REALITYDATAPLATFORM_EXPORT static RequestStatus BasicPagedRequest(const GeoCoordinationServicePagedRequest* request, Utf8StringR jsonResponse);
 
-    static Utf8String s_geoCoordinationServer = "https://connect-contextservices.bentley.com/";
-    static Utf8String s_geoCoordinationWSGProtocol = "2.4";
-    static Utf8String s_geoCoordinationName = "IndexECPlugin-Server";
-    static Utf8String s_geoCoordinationSchemaName = "RealityModeling";
+    static Utf8String s_geoCoordinationServer;
+    static Utf8String s_geoCoordinationWSGProtocol;
+    static Utf8String s_geoCoordinationRepoName;
+    static Utf8String s_geoCoordinationSchemaName;
 
-    static const Utf8String s_ImageryKey = "Imagery";
-    static const Utf8String s_TerrainKey = "Terrain";
-    static const Utf8String s_ModelKey = "Model";
-    static const Utf8String s_PinnedKey = "Pinned";
+    static int s_verifyPeer;
+    static Utf8String s_certificatePath;
 
-    static const Utf8String s_USGSInformationSourceKey = "usgsapi";
-    static const Utf8String s_PublicIndexInformationSourceKey = "index";
-    static const Utf8String s_AllInformationSourceKey = "all";
+    static const Utf8String s_ImageryKey;
+    static const Utf8String s_TerrainKey;
+    static const Utf8String s_ModelKey;
+    static const Utf8String s_PinnedKey;
+
+    static const Utf8String s_USGSInformationSourceKey;
+    static const Utf8String s_PublicIndexInformationSourceKey;
+    static const Utf8String s_AllInformationSourceKey;
 
 private:
     REALITYDATAPLATFORM_EXPORT static bvector<SpatialEntityPtr> SpatialEntityRequestBase(GeoCoordinationServiceRequest* request);

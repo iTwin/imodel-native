@@ -189,7 +189,8 @@ void ParsingParamters (int argc, char* argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String RootName, int MaxEntryDisplay=25)
     {
-    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(Server, Repo, Root);
+    RawServerResponse nodeResponse = RawServerResponse();
+    bvector<NavNode> subNodes = NodeNavigator::GetInstance().GetChildNodes(Server, Repo, Root, nodeResponse);
     std::cout << RootName << std::endl;
     bool folderEmpty=true;
     int count=0;
@@ -201,8 +202,8 @@ void ListSubItem(WSGServer& Server, Utf8String Repo, NavNode Root, Utf8String Ro
                 {
                 Utf8String repoName(subNode.GetRootId() + "~2F" + subNode.GetInstanceId());
                 repoName.ReplaceAll("/", "~2F");
-                RequestStatus status;
-                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName), status);
+                RawServerResponse idResponse = RawServerResponse();
+                RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(repoName), idResponse);
                 std::cout << "  " << subNode.GetInstanceId() << 
                     std::setw(12) << " Size(KB): " << document->GetSize() <<
                     std::setw(16) << " ContentType: " << document->GetContentType() << std::endl;
@@ -261,8 +262,6 @@ void ListCmd()
     {
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
-        RequestStatus status;
-
         RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
         enterpriseReq->SetPageSize(25);
 
@@ -283,19 +282,21 @@ void ListCmd()
         if (s_option & (OptSortGroup))
             enterpriseReq->SortBy(RealityDataField::Group, true);
 
-        bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
+        RawServerResponse enterpriseResponse = RawServerResponse();
+        bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse);
 
         bvector<RealityDataProjectRelationshipPtr> relationships;
         if (s_option & (OptFilterProject))
             {
             RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(s_filterProject);
-            relationships = RealityDataService::Request(*relationReq, status);
+            RawServerResponse relationResponse = RawServerResponse();
+            relationships = RealityDataService::Request(*relationReq, relationResponse);
             }
 
 
         size_t EnterpriseSizeKB(0);
         do {
-            if(RequestStatus::BADREQ == status)
+            if(RequestStatus::BADREQ == enterpriseResponse.status)
                 exit(-1);
 
             for (RealityDataPtr pData : enterpriseVec)
@@ -334,20 +335,22 @@ void ListCmd()
                 }
 
             enterpriseVec.clear();
+            enterpriseResponse = RawServerResponse();
             }
-        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, status)).size() > 0);
+        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse)).size() > 0);
         std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 
         if (s_cmd & (CmdListAll | CmdListAllDetail))
             {
             WSGServer server = WSGServer("dev-realitydataservices-eus.cloudapp.net", false);
-            bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server");
+            RawServerResponse nodeResponse = RawServerResponse();
+            bvector<NavNode> nodes = NodeNavigator::GetInstance().GetRootNodes(server, "S3MXECPlugin--Server", nodeResponse);
 
             for (NavNode root : nodes)
                 {
-                RequestStatus status2;
-                RealityDataPtr pData2 = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), status2);
+                RawServerResponse idResponse = RawServerResponse();
+                RealityDataPtr pData2 = RealityDataService::Request(RealityDataByIdRequest(root.GetInstanceId()), idResponse);
 
                 ListSubItem(server, "S3MXECPlugin--Server", root, root.GetInstanceId() + " -- " + pData2->GetName());
                 }
@@ -357,8 +360,8 @@ void ListCmd()
     if (s_cmd == CmdListItem)
         {
         s_itemPath.ReplaceAll("/", "~2F");
-        RequestStatus status;
-        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
+        RawServerResponse documentResponse = RawServerResponse();
+        RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), documentResponse);
 
         std::cout << document->GetFolderId() << document->GetName() <<
             std::setw(12) << " Size(KB): " << document->GetSize() <<
@@ -377,8 +380,8 @@ void DownloadCmd()
     std::cout << "Downloading : ";
 
     s_itemPath.ReplaceAll("/", "~2F");
-    RequestStatus status;
-    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), status);
+    RawServerResponse documentResponse = RawServerResponse();
+    RealityDataDocumentPtr document = RealityDataService::Request(RealityDataDocumentByIdRequest(s_itemPath), documentResponse);
 
     std::cout << document->GetId() << std::endl;
 
@@ -390,7 +393,8 @@ void DownloadCmd()
     if (0 != pFile)
         {
         RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
-        RealityDataService::Request(*contentRequest, pFile, status);
+        RawServerResponse contentResponse = RawServerResponse();
+        RealityDataService::Request(*contentRequest, pFile, contentResponse);
         fclose (pFile);
         std::cout << "  Done." << std::endl;
         }
@@ -422,11 +426,11 @@ int main(int argc, char* argv[])
 
     if (s_cmd == CmdEntrStat)
         {
-        RequestStatus status;
+        RawServerResponse statResponse = RawServerResponse();
         RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
         uint64_t NbRealityData;
         uint64_t TotalSizeKB;
-        RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
+        RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, statResponse);
 
         std::cout << "Enterprise statistics: " << std::endl;
         std::cout << "   NbRealityData: " << NbRealityData << std::endl;
