@@ -1212,7 +1212,7 @@ DgnDbStatus GenerateValuePattern(CodeSpecCPtr codeSpec, Utf8StringR valuePattern
             case CodeFragmentSpec::Type::FixedString:
                 valuePattern.append(fragmentSpec.GetFixedString());
                 break;
-            case CodeFragmentSpec::Type::SequenceNumber:
+            case CodeFragmentSpec::Type::Sequence:
                 placeholder = Utf8String(fragmentSpec.GetMinChars(), '#');
                 valuePattern.append(placeholder);
                 break;

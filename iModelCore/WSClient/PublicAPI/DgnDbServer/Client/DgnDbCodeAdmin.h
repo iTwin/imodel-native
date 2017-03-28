@@ -24,7 +24,7 @@ private:
 	
     DgnDbStatus GenerateCodeValue (CodeSpecCR codeSpec, Utf8StringCR generatedSequenceNumber, Utf8StringR formattedValue) const;
 public:
-    DGNDBSERVERCLIENT_EXPORT DgnDbStatus _GetNextSequenceNumber (Utf8StringR fragmentString, DgnElementCR element, CodeFragmentSpecCR fragmentSpec, CodeScopeSpecCR scope, Utf8StringCR sequenceMask) const override;
+    DGNDBSERVERCLIENT_EXPORT DgnCode _ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR codeSpec, Utf8StringCR sequenceMask) const override;
     DGNDBSERVERCLIENT_EXPORT DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName) override;
     DGNDBSERVERCLIENT_EXPORT CodeSpecId _GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputClass) const override;
     };
