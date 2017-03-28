@@ -209,6 +209,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
 
     RegisterHandler(ACSElementHandler::CoordSys2d::GetHandler());
     RegisterHandler(ACSElementHandler::CoordSys3d::GetHandler());
+    RegisterHandler(ACSElementHandler::CoordSysSpatial::GetHandler());
 
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
     

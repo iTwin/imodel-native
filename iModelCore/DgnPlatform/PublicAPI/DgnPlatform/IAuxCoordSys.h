@@ -266,7 +266,7 @@ namespace ACSElementHandler
 
     struct CoordSysSpatial : CoordSys3d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystem3d, AuxCoordSystemSpatial, CoordSysSpatial, CoordSys3d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AuxCoordSystemSpatial, AuxCoordSystemSpatial, CoordSysSpatial, CoordSys3d, DGNPLATFORM_EXPORT);
     };
  };
 
