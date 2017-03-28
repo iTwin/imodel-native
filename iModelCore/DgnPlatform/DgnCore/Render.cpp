@@ -720,20 +720,6 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::Light::Light(Lighting::Parameters const& params, DVec3dCP direction, DPoint3dCP location)
-    {
-    BeAssert(params.IsValid());
-    m_type = params.GetType();
-    m_intensity = params.GetIntensity();
-    m_intensity2 = params.GetIntensity2();
-    m_color = params.GetColor();
-    m_color2 = params.GetColor2();
-    m_location = location ? *location : DPoint3d::FromZero();
-    m_direction = direction ? *direction : DVec3d::UnitX(); 
-    }
-/*---------------------------------------------------------------------------------**//**
 * @BSIMETHOD                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::SceneLights::Brightness::FromJson(JsonValueCR val)

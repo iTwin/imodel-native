@@ -330,7 +330,9 @@ void SpatialViewController::DrawSkyBox(TerrainContextR context)
     flags.SetShowVisibleEdges(false);
     flags.SetShowMaterials(true);
     flags.SetShowShadows(false);
-    flags.SetIgnoreLighting(true);
+    flags.SetShowSourceLights(false);
+    flags.SetShowCameraLights(false);
+    flags.SetShowSolarLight(false);
     flags.SetMonochrome(false);
 
     GraphicBranch branch;

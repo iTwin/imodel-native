@@ -52,12 +52,13 @@ private:
     uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
     uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
-    uint32_t m_sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used.
     uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
     uint32_t m_grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
     uint32_t m_visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode.
     uint32_t m_hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode.
-    uint32_t m_ignoreLighting:1;   //!< Controls whether lights are used.
+    uint32_t m_sourceLights:1;     //!< Controls whether the source lights in spatial models are used
+    uint32_t m_cameraLights:1;     //!< Controls whether camera (ambient, portrait, flashbulb) lights are used.
+    uint32_t m_solarLight:1;       //!< Controls whether sunlight ussed
     uint32_t m_shadows:1;          //!< Shows or hides shadows.
     uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied.
     uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
@@ -78,12 +79,13 @@ public:
         m_fill = 1;
         m_textures = 1;
         m_materials = 1;
-        m_sceneLights = 1;
+        m_sourceLights = 1;
+        m_cameraLights = 1;
+        m_solarLight = 1;
         m_acsTriad = 0;
         m_grid = 0;
         m_visibleEdges = 0;
         m_hiddenEdges = 0;
-        m_ignoreLighting = 0;
         m_shadows = 0;
         m_noClipVolume = 0;
         m_constructions = 0;
@@ -111,8 +113,6 @@ public:
     void SetShowTextures(bool val) {m_textures = val;}
     bool ShowMaterials() const {return m_materials;}
     void SetShowMaterials(bool val) {m_materials = val;}
-    bool ShowSceneLights() const {return m_sceneLights;}
-    void SetShowSceneLights(bool val) {m_sceneLights = val;}
     bool ShowAcsTriad() const {return m_acsTriad;}
     void SetShowAcsTriad(bool val) {m_acsTriad = val;}
     bool ShowGrid() const {return m_grid;}
@@ -121,8 +121,12 @@ public:
     void SetShowVisibleEdges(bool val) {m_visibleEdges = val;}
     bool ShowHiddenEdges() const {return m_hiddenEdges;}
     void SetShowHiddenEdges(bool val) {m_hiddenEdges = val;}
-    bool IgnoreLighting() const {return m_ignoreLighting;}
-    void SetIgnoreLighting(bool val) {m_ignoreLighting = val;}
+    bool ShowSourceLights() const {return m_sourceLights;}
+    void SetShowSourceLights(bool val) {m_sourceLights = val;}
+    bool ShowCameraLights() const {return m_cameraLights;}
+    void SetShowCameraLights(bool val) {m_cameraLights = val;}
+    bool ShowSolarLight() const {return m_solarLight;}
+    void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
     bool ShowClipVolume() const {return !m_noClipVolume;}
@@ -1618,14 +1622,6 @@ struct HiddenLineParams
 //=======================================================================================
 struct Light : RefCounted<NonCopyableClass>
 {
-    Lighting::LightType m_type;
-    ColorDef m_color;
-    ColorDef m_color2;
-    double m_intensity;  
-    double m_intensity2;
-    DPoint3d m_location;
-    DVec3d m_direction;
-    DGNPLATFORM_EXPORT Light(Lighting::Parameters const& params, DVec3dCP direction, DPoint3dCP location);
 };
 DEFINE_REF_COUNTED_PTR(Light)
 
