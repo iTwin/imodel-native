@@ -118,7 +118,8 @@ public:
 
 
     DATACAPTURE_EXPORT static bool          GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
-    DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, double scaleFactor=1.0);
+    DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, 
+                                            double scaleFactor=1.0, bool calculateAtOrigin=false);
 
     //Position and orientation in ECEF system OR local if ECEF is not supported (IsECEF is false)
     DATACAPTURE_EXPORT bool                 IsECEF() const;
