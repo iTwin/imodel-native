@@ -1896,6 +1896,16 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateTriangleGrid (int numPerRow);
 //! @param [in] retainFringeTriangles true to keep the fringe triangles.  If false, any edge that reaches the outer rectangle is deleted.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateXYTriangulation (bvector <DPoint3d> const &points, double fringeExpansionFactor = 0.10, bool retainFringeTriangles = false);
 
+//! Create a Delauney triangulation of points as viewed in xy.  Return the triangulation and its Voronoi dual as separate polyfaces.
+//! @return true if meshes created.
+GEOMDLLIMPEXP static bool CreateDelauneyTriangulationAndVoronoiRegionsXY
+(
+bvector <DPoint3d> const &points,   //!< [in] points to triangulate
+PolyfaceHeaderPtr &delauney,        //!< [in] delauney triangulation of the points.
+PolyfaceHeaderPtr &voronoi          //!< [in] voronoi regions around the points.
+);
+
+
 //! Create a triangulation of regions as viewed in xy
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateConstrainedTriangulation
 (

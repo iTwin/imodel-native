@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceAddTriangulation.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -515,6 +515,119 @@ IFacetOptionsP strokeOptions
     if (nullptr != paths)
         paths->CollectLinearGeometry (pathPoints, strokeOptions);
     return CreateConstrainedTriangulation (loopPoints, &pathPoints, isolatedPoints);
+    }
+
+
+//! Create a triangulation of points.
+//! 
+static VuSetP CreateDelauney
+(
+bvector<DPoint3d> const points
+)
+    {
+    if (points.size () < 3)
+        return false;
+    VuSetP graph = vu_newVuSet (0);
+    DRange3d worldRange = DRange3d::From (points);
+    double localAbsTol = 1.0e-8;
+    auto localRange = DRange3d::From (-1,-1,-1,1,1,1);
+    BentleyApi::Transform localToWorld, worldToLocal;
+
+    if (!Transform::TryUniformScaleXYRangeFit (worldRange, localRange, worldToLocal, localToWorld))
+        return nullptr;
+
+    bvector<DPoint3d> localPoints;
+    worldToLocal.Multiply (localPoints, points);
+
+    // Trivial triangulation of the convex hull.
+    bvector<DPoint3d> xyzHull (points.size () + 2);
+    int numOut;
+    bsiDPoint3dArray_convexHullXY (&xyzHull[0], &numOut, (DPoint3d*)&localPoints[0], (int)localPoints.size ());    
+    xyzHull.resize (numOut);
+    vu_addEdgesXYTol (graph, nullptr, xyzHull, true, localAbsTol, VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE);
+
+    vu_mergeOrUnionLoops (graph, VUUNION_UNION);
+    vu_regularizeGraph (graph);
+    vu_parityFloodFromNegativeAreaFaces (graph, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
+    vu_splitMonotoneFacesToEdgeLimit (graph, 3);
+    // final flip for true delauney condition . . .
+    vu_flipTrianglesForIncircle (graph);
+    
+    vu_insertAndRetriangulate (graph, &localPoints[0], (int)localPoints.size (), false);
+    // this should not be needed ... but retriangulate seems wrong..
+    vu_flipTrianglesForIncircle (graph);
+
+    vu_transform (graph, &localToWorld);
+    return graph;
+    }
+
+
+// nodeA, nodeB, nodeC are 3 nodes in an FSucc chain.
+// nodeD is (if needed) nodeA->FPred.
+// if this is a add its circumcenter to the points.
+// if there is a right turn (or straight) output a point to the left of the midpoint of nodeA..nodeB and then a point to the right of nodeA..nodeD
+static void AppendPseudoCenters (VuP nodeA, bvector<DPoint3d> &points)
+    {
+    static double s_exteriorFactor = 2.0;
+    auto nodeB = nodeA->FSucc ();
+    auto nodeC = nodeB->FSucc ();
+    auto xyzA = nodeA->GetXYZ ();
+    auto xyzB = nodeB->GetXYZ ();
+    auto xyzC = nodeC->GetXYZ ();
+    DVec3d vectorAB, vectorBC;
+    vectorAB = xyzB - xyzA;
+    vectorBC = xyzC - xyzB;
+    static double s_exteriorAngleTol = 1.0e-8;
+    double theta = vectorAB.AngleToXY (vectorBC);   // This is signed, goes 0 at straight line, negative for turn to right.
+    if (theta > s_exteriorAngleTol)
+        {
+        auto voronoiPoint = DPoint3d::FromIntersectPerpendicularsXY (xyzB, xyzA, 0.5, xyzC, 0.5);
+        if (voronoiPoint.IsValid ())
+            points.push_back (voronoiPoint.Value ());
+        }
+    else
+        {
+        //  we appear to be on the outside ...
+        // output a point some distance away on this edge's left bisector, and perhaps likewise at the FPred edge ....
+        points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (xyzA, 0.5, xyzB, s_exteriorFactor));
+        auto xyzD = nodeA->FPred ()->GetXYZ ();
+        if (xyzD.CrossProductToPointsXY (xyzA, xyzB) <= 0.0)
+            points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (xyzD, 0.5, xyzA, s_exteriorFactor));
+        }
+    }
+
+static PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
+    {
+    _VuSet::TempMask visitMask (graph);
+    auto facets = PolyfaceHeader::CreateVariableSizeIndexed ();
+    VU_SET_LOOP (vertexSeed, graph)
+        {
+        vertexSeed->SetMaskAroundVertex (visitMask.Mask ());
+        bvector<DPoint3d> points;
+        VU_VERTEX_LOOP (sector, vertexSeed)
+            {
+            AppendPseudoCenters (sector, points);
+            }
+        END_VU_VERTEX_LOOP (sector, vertexSeed)
+        DPoint3dOps::Compress (points, DoubleOps::SmallMetricDistance ());
+        facets->AddPolygon (points);
+        }
+    END_VU_SET_LOOP (vertexSeed, graph)
+    facets->Compress ();
+    return facets;
+    }
+
+bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
+    {
+    VuSetP graph = CreateDelauney (points);
+    if (graph != nullptr)
+        {
+        delauney = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
+        voronoi = CreateVoronoi (graph);
+        vu_freeVuSet (graph);
+        return true;
+        }
+    return false;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

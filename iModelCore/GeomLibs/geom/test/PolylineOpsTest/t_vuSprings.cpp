@@ -500,52 +500,6 @@ DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj)
     return (1.0 - Lij (ri, rj)) * delta;
     }
 };
-
-//! Create a triangulation of points.
-//! 
-VuSetP CreateDelauney
-(
-bvector<DPoint3d> const points
-)
-    {
-    if (points.size () < 3)
-        return false;
-    VuSetP graph = vu_newVuSet (0);
-    DRange3d worldRange = DRange3d::From (points);
-    double localAbsTol = 1.0e-8;
-    auto localRange = DRange3d::From (-1,-1,-1,1,1,1);
-    BentleyApi::Transform localToWorld, worldToLocal;
-
-    if (!Transform::TryUniformScaleXYRangeFit (worldRange, localRange, worldToLocal, localToWorld))
-        return nullptr;
-
-    bvector<DPoint3d> localPoints;
-    worldToLocal.Multiply (localPoints, points);
-
-    // Trivial triangulation of the convex hull.
-    bvector<DPoint3d> xyzHull (points.size () + 2);
-    int numOut;
-    bsiDPoint3dArray_convexHullXY (&xyzHull[0], &numOut, (DPoint3d*)&localPoints[0], (int)localPoints.size ());    
-    xyzHull.resize (numOut);
-    vu_addEdgesXYTol (graph, nullptr, xyzHull, true, localAbsTol, VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE);
-
-    vu_mergeOrUnionLoops (graph, VUUNION_UNION);
-    vu_regularizeGraph (graph);
-    vu_parityFloodFromNegativeAreaFaces (graph, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
-    vu_splitMonotoneFacesToEdgeLimit (graph, 3);
-    // final flip for true delauney condition . . .
-    vu_flipTrianglesForIncircle (graph);
-    
-    vu_insertAndRetriangulate (graph, &localPoints[0], (int)localPoints.size (), false);
-    // this should not be needed ... but retriangulate seems wrong..
-    vu_flipTrianglesForIncircle (graph);
-
-    PolyfaceHeaderPtr polyface = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
-    bvector<DPoint3d> &outputPoints = polyface->Point ();
-    vu_transform (graph, &localToWorld);
-    return graph;
-    }
-
 void AddPoints (bvector<DPoint3d> &points, DEllipse3dCR arc, size_t numEdge)
     {
     double df = 1.0 / (double)numEdge;
@@ -553,127 +507,6 @@ void AddPoints (bvector<DPoint3d> &points, DEllipse3dCR arc, size_t numEdge)
         points.push_back (arc.FractionToPoint (i * df));
     }
 
-
-void OutputBisectorSplits (VuSetP graph)
-    {
-    bvector<DPoint3d> out;
-    VU_SET_LOOP (nodeB, graph)
-        {
-        auto nodeA = nodeB->FSucc ();
-        auto nodeC = nodeB->FPred ();
-        auto xyzA = nodeA->GetXYZ ();
-        auto xyzB = nodeB->GetXYZ ();
-        auto xyzC = nodeC->GetXYZ ();
-        ValidatedDPoint3d voronoiPoint;
-        if (xyzB.CrossProductToPointsXY (xyzA, xyzC) > 0.0)
-            {
-            auto voronoiPoint = DPoint3d::FromIntersectPerpendicularsXY (xyzB, xyzA, 0.5, xyzC, 0.5);
-            if (voronoiPoint.IsValid ())
-                {
-                out.clear ();
-                out.push_back (DPoint3d::FromInterpolate (xyzB, 0.5, xyzA));
-                out.push_back (voronoiPoint.Value ());
-                out.push_back (DPoint3d::FromInterpolate (xyzB, 0.5, xyzC));
-                Check::SaveTransformed (out);
-                }            
-            }
-        }
-    END_VU_SET_LOOP (nodeA, graph)
-    }
-
-DPoint3d GetPseudoCenter (VuP nodeA)
-    {
-    auto nodeB = nodeA->FSucc ();
-    auto nodeC = nodeB->FSucc ();
-    auto xyzA = nodeA->GetXYZ ();
-    auto xyzB = nodeB->GetXYZ ();
-    auto xyzC = nodeC->GetXYZ ();
-    if (xyzA.CrossProductToPointsXY (xyzB, xyzC) > 0.0)
-        {
-        auto voronoiPoint = DPoint3d::FromIntersectPerpendicularsXY (xyzB, xyzA, 0.5, xyzC, 0.5);
-        if (voronoiPoint.IsValid ())
-            return voronoiPoint.Value ();
-        }
-    DVec3d vectorAB = xyzB - xyzA;
-    DPoint3d xyzMid = DPoint3d::FromInterpolate (xyzA, 0.5, xyzB);
-    DVec3d perp = DVec3d::FromCCWPerpendicularXY (vectorAB);
-    return xyzMid + perp;
-    }
-
-void AppendPseudoCenters (VuP nodeA, bvector<DPoint3d> &points)
-    {
-    static double s_exteriorFactor = 2.0;
-    auto nodeB = nodeA->FSucc ();
-    auto nodeC = nodeB->FSucc ();
-    auto xyzA = nodeA->GetXYZ ();
-    auto xyzB = nodeB->GetXYZ ();
-    auto xyzC = nodeC->GetXYZ ();
-    if (xyzA.CrossProductToPointsXY (xyzB, xyzC) > 0.0)
-        {
-        auto voronoiPoint = DPoint3d::FromIntersectPerpendicularsXY (xyzB, xyzA, 0.5, xyzC, 0.5);
-        if (voronoiPoint.IsValid ())
-            points.push_back (voronoiPoint.Value ());
-        }
-    else
-        {
-        //  we appear to be on the outside ...
-        // output a point some distance away on this edge's left bisector, and perhaps likewise at the FPred edge ....
-        points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (xyzA, 0.5, xyzB, s_exteriorFactor));
-        auto xyzD = nodeA->FPred ()->GetXYZ ();
-        if (xyzD.CrossProductToPointsXY (xyzA, xyzB) <= 0.0)
-            points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (xyzD, 0.5, xyzA, s_exteriorFactor));
-        }
-    }
-void OutputCircumcenterChords (VuSetP graph)
-    {
-    bvector<DPoint3d> out;
-    VU_SET_LOOP (nodeA, graph)
-        {
-        if (nodeA->GetId () > nodeA->EdgeMate ()->GetId ())
-            {
-            DPoint3d xyzA = GetPseudoCenter (nodeA);
-            DPoint3d xyzB = GetPseudoCenter (nodeA->EdgeMate ());
-            out.clear ();
-            out.push_back (xyzA);
-            out.push_back (xyzB);
-            Check::SaveTransformed (out);
-            }
-        }
-    END_VU_SET_LOOP (nodeA, graph)
-    }
-
-PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
-    {
-    _VuSet::TempMask visitMask (graph);
-    auto facets = PolyfaceHeader::CreateVariableSizeIndexed ();
-    VU_SET_LOOP (vertexSeed, graph)
-        {
-        vertexSeed->SetMaskAroundVertex (visitMask.Mask ());
-        bvector<DPoint3d> points;
-        VU_VERTEX_LOOP (sector, vertexSeed)
-            {
-            AppendPseudoCenters (sector, points);
-            }
-        END_VU_VERTEX_LOOP (sector, vertexSeed)
-        DPoint3dOps::Compress (points, DoubleOps::SmallMetricDistance ());
-        facets->AddPolygon (points);
-        }
-    END_VU_SET_LOOP (vertexSeed, graph)
-    facets->Compress ();
-    return facets;
-    }
-
-bool vu_createDelauneyAndVoronoi (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
-    {
-    VuSetP graph = CreateDelauney (points);
-    if (graph != nullptr)
-        {
-        delauney = vu_toPolyface (graph, VU_EXTERIOR_EDGE);
-        voronoi = CreateVoronoi (graph);
-        return true;
-        }
-    return false;
-    }
 TEST(Vu,CreateDelauney)
     {
     double dy = 50.0;
@@ -695,7 +528,7 @@ TEST(Vu,CreateDelauney)
         AddPoints (points, arcs[i], i< edgeCount.size () ? edgeCount[i] : 9);
         Check::SaveTransformed (points);
         PolyfaceHeaderPtr delauney, voronoi;
-        if (Check::True (vu_createDelauneyAndVoronoi (points, delauney, voronoi)))
+        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
             {
             Check::Shift (0,dy,0);
             Check::SaveTransformed (*delauney);
@@ -722,15 +555,15 @@ TEST(Vu,CreateDelauneySkew)
             for (size_t i = 0; i <= numX; i++)
                 points.push_back (frame.Evaluate ((double) i, (double) j));
 
+        SaveAndRestoreCheckTransform shifter (points.back ().x + 3.0 * a,0,0);
         Check::SaveTransformed (points);
         PolyfaceHeaderPtr delauney, voronoi;
-        if (Check::True (vu_createDelauneyAndVoronoi (points, delauney, voronoi)))
+        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
             {
             Check::Shift (0,dy,0);
             Check::SaveTransformed (*delauney);
             Check::SaveTransformed (*voronoi);
             }
-        Check::Shift (points.back ().x + 3.0 * a, 0, 0);
         }
     Check::ClearGeometry ("Vu.CreateDelauneySkew");
     }
@@ -738,22 +571,24 @@ TEST(Vu,CreateDelauneySkew)
 
 TEST(Vu,CreateDelauneyCircle)
     {
-    double dy = 30.0;
-    bvector<DPoint3d> points;
     auto ellipse0 = DEllipse3d::From (0,0,0,    10,0,0,  0,10,0,   0, Angle::TwoPi ());
-    AddPoints (points, ellipse0, 7);
-    Check::SaveTransformed (points);
-    Check::Shift (0,dy,0);
-    auto delauney = CreateDelauney (points);
-    if (delauney != nullptr)
+    // put points on a circle. This is inherently bad for delauney !!!
+    for (size_t numPoints : bvector<size_t> { 5,7,11,16,32})
         {
-        PolyfaceHeaderPtr polyface = vu_toPolyface (delauney, VU_EXTERIOR_EDGE);
-        Check::SaveTransformed (*polyface);
-        //OutputCircumcenterChords (delauney);
-        auto voronoi = CreateVoronoi (delauney);
-        Check::SaveTransformed (*voronoi);
+        bvector<DPoint3d> points;
+        AddPoints (points, ellipse0, numPoints);
+        auto range = DRange3d::From (points);
+        double delta = 3.0 * range.XLength () + 5.0;
+        SaveAndRestoreCheckTransform shifter (delta,0,0);
+        Check::SaveTransformed (points);
+        Check::Shift (0,delta,0);
+        PolyfaceHeaderPtr delauney, voronoi;
+        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+            {
+            Check::SaveTransformed (*delauney);
+            Check::SaveTransformed (*voronoi);
+            }
         }
-    vu_freeVuSet (delauney);
     Check::ClearGeometry ("Vu.CreateDelauneyCircle");
     }
 
@@ -766,17 +601,12 @@ TEST(Vu,IncircleFlipProblem)
         DPoint3d::From (-84.52519939, 31.04557674),
         DPoint3d::From (-81.43532935, 30.00000000) 
         };
-    auto delauney = CreateDelauney (points);
-    if (delauney != nullptr)
+    PolyfaceHeaderPtr delauney, voronoi;
+    if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
         {
-        PolyfaceHeaderPtr polyface = vu_toPolyface (delauney, VU_EXTERIOR_EDGE);
-        Check::SaveTransformed (*polyface);
-        //Check::Shift (0,dy,0);
-        //OutputCircumcenterChords (delauney);
-        auto voronoi = CreateVoronoi (delauney);
+        Check::SaveTransformed (*delauney);
         Check::SaveTransformed (*voronoi);
         }
-    vu_freeVuSet (delauney);
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
