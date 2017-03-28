@@ -1862,6 +1862,64 @@ TEST_F(StandardValueToEnumConversionTest, UseBasePropertyStandardValueIfSubset)
     CheckTypeName("TestClass_testProp", *m_schema, "testProp", {"TestClass", "DerivedClassWithSubset", "DerivedClassWithExact"});
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    03/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, TestRootClassInSeparateSchema)
+    {
+    Utf8CP baseSchemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='baseTest' version='1.0' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECClass typeName='TestClass' isDomainClass='True'>"
+        "       <ECProperty propertyName='testProp' typeName='int'/>"
+        "   </ECClass>"
+        "</ECSchema>";
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='test' version='1.0' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECSchemaReference name='baseTest' version='01.00' prefix='base'/>"
+        "   <ECClass typeName='TestClass' isDomainClass='True'>"
+        "       <BaseClass>base:TestClass</BaseClass>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>2</Value>"
+        "                           <DisplayString>value2</DisplayString>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr baseSchema;
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success ,ECSchema::ReadFromXmlString(baseSchema, baseSchemaXml, *context));
+    ASSERT_TRUE(baseSchema.IsValid());
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Schema conversion failed";
+
+    ASSERT_EQ(0, schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+    ASSERT_EQ(1, baseSchema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+
+    CheckTypeName("base:TestClass_testProp", *schema, "testProp", {"TestClass"});
+    CheckTypeName("TestClass_testProp", *baseSchema, "testProp", {"TestClass"});
+    }
+
 Utf8String StandardCustomAttributeConversionTests::GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name)
     {
     ECValue value;
