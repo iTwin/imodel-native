@@ -1355,7 +1355,7 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
     ECN::ECValue v;
     bool isPrivate = false;
     if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_IsPrivate) && !v.IsNull())
-        isPrivate = TO_BOOL(v.GetInteger());
+        isPrivate = v.GetBoolean();
 
     DgnElementId modeledElementId;
     if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
