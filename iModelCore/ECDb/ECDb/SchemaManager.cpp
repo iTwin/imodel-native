@@ -209,7 +209,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
-    if (compareContext.ReloadContextECSchemas(*this) == ERROR)
+    if (SUCCESS != compareContext.ReloadContextECSchemas(*this))
         return ERROR;
 
     if (SUCCESS != GetDbMap().MapSchemas(ctx))

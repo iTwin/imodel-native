@@ -5125,6 +5125,8 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
     statement.Finalize();
     }
 
+
+
 //---------------------------------------------------------------------------------
 // @bsimethod                             Krischan.Eberle                      02/17
 //+---------------+---------------+---------------+---------------+---------------+------

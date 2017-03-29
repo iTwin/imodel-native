@@ -5643,7 +5643,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_TablePerHierarchyPlusVirtualTabl
 TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
     {
     bvector<SchemaItem> testSchemas;
-  /*  testSchemas.push_back(SchemaItem("TPH, no joined table, no shared columns",
+    testSchemas.push_back(SchemaItem("TPH, no joined table, no shared columns",
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                      "<ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
@@ -5714,7 +5714,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
                                      "    <BaseClass>IMixin</BaseClass>"
                                      "    <ECProperty propertyName='MyClass_Prop1' typeName='string' />"
                                      "  </ECEntityClass>"
-                                     "</ECSchema>"));*/
+                                     "</ECSchema>"));
 
     testSchemas.push_back(SchemaItem("TPH, joined table, shared columns",
                                      "<?xml version = '1.0' encoding = 'utf-8'?>"
