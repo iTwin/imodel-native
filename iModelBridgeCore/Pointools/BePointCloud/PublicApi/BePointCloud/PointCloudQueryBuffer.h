@@ -311,6 +311,13 @@ typedef ChannelBufferPool<PointCloudIntensityChannel>   PointCloudIntensityChann
 typedef ChannelBufferPool<PointCloudNormalChannel>      PointCloudNormalChannelPool;
 typedef ChannelBufferPool<PointCloudByteChannel>        PointCloudByteChannelPool;
 
+// To satisfy clang 8.1.0.
+template <> PointCloudRgbChannelPool PointCloudRgbChannel::m_pool;
+template <> PointCloudXyzChannelPool PointCloudXyzChannel::m_pool;
+template <> PointCloudIntensityChannelPool PointCloudIntensityChannel::m_pool;
+template <> PointCloudNormalChannelPool PointCloudNormalChannel::m_pool;
+template <> PointCloudByteChannelPool PointCloudByteChannel::m_pool;
+
 typedef std::vector<std::pair<RefCountedPtr<IPointCloudSymbologyChannel>, RefCountedPtr<PointCloudSymbologyChannel> > > PointCloudSymbologyChannelVector;
 typedef PointCloudSymbologyChannelVector const&                                                                         PointCloudSymbologyChannelVectorCR;
 
