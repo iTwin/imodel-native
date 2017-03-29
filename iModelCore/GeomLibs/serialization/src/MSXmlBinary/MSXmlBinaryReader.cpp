@@ -171,7 +171,7 @@ Utf8String MSXmlBinaryReader::ValueHandle::GetString()
         case ValueHandleType::Int64:
             return Utf8PrintfString("%" PRId64, GetInt64());
         case ValueHandleType::UInt64:
-            return Utf8PrintfString("%" PRIu64, GetInt64());
+            return Utf8PrintfString("%" PRIu64, GetUInt64());
         case ValueHandleType::Single:
             return Utf8PrintfString("%f", GetFloat());
         case ValueHandleType::Double:
