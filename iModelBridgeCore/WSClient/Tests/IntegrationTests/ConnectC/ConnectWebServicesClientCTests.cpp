@@ -1065,6 +1065,50 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     ASSERT_TRUE (status == SUCCESS);
     }
 
+
+TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds)
+    {
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_pmadmUsername.c_str(),
+        m_pmadmPassword.c_str(),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
+        m_applicationName.c_str (),
+        m_applicationVersion.c_str (),
+        m_applicationGuid.c_str (),
+        m_ccProductId.c_str (),
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
+        );
+    ASSERT_TRUE (api != nullptr);
+
+    //get a project instance id
+    WCharP wProjectInstanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    CWSCCDATABUFHANDLE project;
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4 (api, wProjectInstanceId, &project);
+
+    wchar_t stringBuf[4096];
+    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_V4_BUFF_NAME, 0, 4096, stringBuf);
+    ASSERT_TRUE(status == SUCCESS);
+
+    const WString RootFolderName = L""; //documentation says "" for root.
+    WPrintfString RootFolderDescription(L"My Root Folder for Project %s", stringBuf);
+
+    int64_t folderSize = 0;
+    bool isRootFolder;
+    bool isAutomatedPublishingFolder;
+    
+    status = ConnectWebSServiceClientC_CreateRootProjectShareStorage(api, wProjectInstanceId);    
+    EXPECT_TRUE(status == SUCCESS);
+    }
+
+TEST_F (ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
+    {
+    }
+
 //#endif
 
     
