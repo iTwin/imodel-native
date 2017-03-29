@@ -157,6 +157,67 @@ TEST_F(PerformanceOverflowTables_PhysicalElementTests, Delete)
         }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle 03/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, InsertSingleColumn)
+    {
+    std::vector<Scenario> scenarios = GetTestScenarios();
+    for (Scenario const& scenario : scenarios)
+        {
+        RunInsertSingleCol(scenario);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle 03/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, UpdateSingleColumn)
+    {
+    std::vector<Scenario> scenarios = GetTestScenarios();
+    for (Scenario const& scenario : scenarios)
+        {
+        RunUpdateSingleCol(scenario);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle 03/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, SelectSingleColumn)
+    {
+    std::vector<Scenario> scenarios = GetTestScenarios();
+    for (Scenario const& scenario : scenarios)
+        {
+        RunSelectSingleCol(scenario);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle 03/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, SelectWhereSingleColumn)
+    {
+    std::vector<Scenario> scenarios = GetTestScenarios();
+    for (Scenario const& scenario : scenarios)
+        {
+        RunSelectWhereSingleCol(scenario);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                  Krischan.Eberle 03/2017
+//---------------------------------------------------------------------------------------
+TEST_F(PerformanceOverflowTablesResearch_NullColumnsTestFixture, Delete)
+    {
+    std::vector<Scenario> scenarios = GetTestScenarios();
+    for (Scenario const& scenario : scenarios)
+        {
+        RunDelete(scenario);
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan     01/2017
 //---------------------------------------------------------------------------------------
