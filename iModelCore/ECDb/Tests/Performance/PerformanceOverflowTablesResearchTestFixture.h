@@ -195,6 +195,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertAllCols(Scenario con
             {
             ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, !isFirstStmt)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
+            ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
 
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
@@ -270,6 +271,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunInsertSingleCol(Scenario c
             {
             ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, !isFirstStmt)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
+            ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
 
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
@@ -374,7 +376,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateAllCols(Scenario con
             {
             ASSERT_EQ(BE_SQLITE_OK, BindValues(*stmt, rowId, true)) << stmt->GetSql() << " " << db.GetLastError().c_str();
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step()) << stmt->GetSql() << " " << db.GetLastError().c_str();
-
+            ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
             }
@@ -449,7 +451,7 @@ void PerformanceOverflowTablesResearchTestFixture::RunUpdateSingleCol(Scenario c
             ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.BindInt(1, ComputeValue(rowId, colIx)));
             ASSERT_EQ(BE_SQLITE_OK, stmt->m_stmt.BindInt(stmt->m_idParamIndex, rowId));
             ASSERT_EQ(BE_SQLITE_DONE, stmt->m_stmt.Step());
-            ASSERT_EQ(1, db.GetModifiedRowCount());
+            ASSERT_EQ(1, db.GetModifiedRowCount()) << stmt->GetSql() << scenario.ToFileNameString().c_str();
             stmt->m_stmt.Reset();
             stmt->m_stmt.ClearBindings();
             }
@@ -680,14 +682,11 @@ DbResult PerformanceOverflowTablesResearchTestFixture::BindValues(StatementInfo&
         return BE_SQLITE_ERROR;
         }
 
-    int firstParamIndex = 1;
     if (bindToId)
         {
-        DbResult stat = stmt.m_stmt.BindInt(firstParamIndex, rowId);
+        DbResult stat = stmt.m_stmt.BindInt(stmt.m_idParamIndex, rowId);
         if (BE_SQLITE_OK != stat)
             return stat;
-
-        firstParamIndex++;
         }
 
     for (bpair<int, int> const& kvPair : stmt.m_colIxParamIxMap)
@@ -1034,8 +1033,8 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
             std::vector<Scenario> scenarios;
             for (int colCount : {10, 20, 30, 50, 80, 130, 210, 340, 550})
                 {
-                scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::First));
                 scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::Middle));
+                scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::First));
                 scenarios.push_back(Scenario(colCount, Scenario::ColumnMode::Last));
                 }
 
@@ -1161,7 +1160,7 @@ void PerformanceOverflowTablesResearch_NullColumnsTestFixture::RunSelectWhereSin
     const int rowIdIncrement = s_initialRowCount / s_opCount;
 
     Utf8String sql;
-    sql.Sprintf("SELECT Id FROM t WHERE Id %% %d = 0 AND %s IS NOT NULL", rowIdIncrement, GetColumnName(colIx).c_str());
+    sql.Sprintf("SELECT Id FROM t WHERE %s IS NOT NULL AND Id %% %d = 0", GetColumnName(colIx).c_str(), rowIdIncrement);
     StopWatch timer(true);
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, sql.c_str())) << sql.c_str() << " " << db.GetLastError().c_str();
