@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BePointCloud/PointCloudQueryBuffer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -311,12 +311,14 @@ typedef ChannelBufferPool<PointCloudIntensityChannel>   PointCloudIntensityChann
 typedef ChannelBufferPool<PointCloudNormalChannel>      PointCloudNormalChannelPool;
 typedef ChannelBufferPool<PointCloudByteChannel>        PointCloudByteChannelPool;
 
-// To satisfy clang 8.1.0.
-template <> PointCloudRgbChannelPool PointCloudRgbChannel::m_pool;
-template <> PointCloudXyzChannelPool PointCloudXyzChannel::m_pool;
-template <> PointCloudIntensityChannelPool PointCloudIntensityChannel::m_pool;
-template <> PointCloudNormalChannelPool PointCloudNormalChannel::m_pool;
-template <> PointCloudByteChannelPool PointCloudByteChannel::m_pool;
+// To satisfy clang 8.1.0 -- must be careful since MSVC 14 doesn't like this.
+#if defined (__APPLE__) && defined (__clang__)
+    template <> PointCloudRgbChannelPool PointCloudRgbChannel::m_pool;
+    template <> PointCloudXyzChannelPool PointCloudXyzChannel::m_pool;
+    template <> PointCloudIntensityChannelPool PointCloudIntensityChannel::m_pool;
+    template <> PointCloudNormalChannelPool PointCloudNormalChannel::m_pool;
+    template <> PointCloudByteChannelPool PointCloudByteChannel::m_pool;
+#endif
 
 typedef std::vector<std::pair<RefCountedPtr<IPointCloudSymbologyChannel>, RefCountedPtr<PointCloudSymbologyChannel> > > PointCloudSymbologyChannelVector;
 typedef PointCloudSymbologyChannelVector const&                                                                         PointCloudSymbologyChannelVectorCR;
