@@ -715,8 +715,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTre
         std::cout << "Time to process tree: " << (clock() - t) / CLOCKS_PER_SEC << std::endl;
         //WaitForThreadStop();
         distributor = nullptr;
-        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
-        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LIGHT_THREAD_POOL_NUMBER_THREADS << std::endl;
+        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
+        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
         std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
         }
 
@@ -5205,12 +5205,12 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }
                 set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
                 std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch) s_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
-                for (size_t i =0; i < 8; ++i)
+                for (auto& node : nodesToStitch) LightThreadPool::GetInstance()->m_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
+                for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
                     RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
                     {
                     vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
-                    size_t firstIdx = nNodes / 8 * threadId;
+                    size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
                     myNodes.push_back(vec[firstIdx]);
                     while (myNodes.size() > 0)
                         {
@@ -5221,7 +5221,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                         neighbors.push_back(current);
                         bool reservedNode = false;
 
-                        reservedNode = TryReserveNodes(s_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
+                        reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
 
                         if (reservedNode == true)
                             {
@@ -5239,10 +5239,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                             if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
                             unsigned int val = (unsigned int)-1;
                             unsigned int id = (unsigned int)threadId;
-                            s_nodeMap[current].compare_exchange_strong(id, val);
+                            LightThreadPool::GetInstance()->m_nodeMap[current].compare_exchange_strong(id, val);
                             }
                         myNodes.erase(myNodes.begin());
-                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / 8 * (threadId+1))
+                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
                             {
                             firstIdx += 1;
                             myNodes.push_back(vec[firstIdx]);
@@ -5252,7 +5252,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
 
                 WaitForThreadStop();
-                s_nodeMap.clear();
+                LightThreadPool::GetInstance()->m_nodeMap.clear();
                 for (auto& node : nodesToStitch)
                     {
                     if (stitchedNodes.count(node) == 0)
