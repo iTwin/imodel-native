@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1495,6 +1495,7 @@ ExpressionStatus  ECEvaluator::EvaluateExpression (EvaluationResult& result, WCh
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus  ECEvaluator::EvaluateExpression(EvaluationResult& result, Utf8CP expr, ExpressionContextR context)
     {
+    result.Clear();
     NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
     if (tree.IsNull ())
         return ExpressionStatus::UnknownSymbol;

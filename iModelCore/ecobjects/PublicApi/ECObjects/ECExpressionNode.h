@@ -889,10 +889,10 @@ public:
     static CallNodePtr      Create(ArgumentTreeNodeR arguments, Utf8CP methodName, bool dotted)
                                     { return new CallNode(arguments, methodName, dotted); }
 
-    ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context);
-    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, ExpressionContextR context);
-    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context);
-    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context);
+    ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, bvector<ExpressionContextP> const& contextsStack);
+    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, bvector<ExpressionContextP> const& contextsStack);
+    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, bvector<ExpressionContextP> const& contextsStack);
+    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, bvector<ExpressionContextP> const& contextsStack);
 
 };  //  End of struct CallNode
 
