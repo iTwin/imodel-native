@@ -202,7 +202,8 @@ WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState
     if (Format::SingeInstance == m_format && !m_instances.empty())
         {
         BeAssert(false);
-        return *(WSChangeset::Instance*)nullptr;
+        WSChangeset::Instance* nullInstance = nullptr;
+        return *nullInstance;
         }
 
     m_instances.push_back(std::make_shared<Instance>());
