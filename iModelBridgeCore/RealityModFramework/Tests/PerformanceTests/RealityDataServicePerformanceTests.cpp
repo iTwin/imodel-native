@@ -199,14 +199,16 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
     DisplayInfo("WSG Request handshake test: ", DisplayOption::Info);
 
     m_server = WSGServer(serverName, verifyCertificate);
-    Utf8String version = m_server.GetVersion();
+    RawServerResponse response;
+
+    Utf8String version = m_server.GetVersion(response);
     if (version.size() == 0)
         return ERROR;
 
     Utf8String repo = "S3MXECPlugin--Server";
     Utf8String schema = "S3MX";
     
-    bvector<Utf8String> repoNames = m_server.GetRepositories();
+    bvector<Utf8String> repoNames = m_server.GetRepositories(response);
     if(repoNames.size() == 0)
         {
         DisplayInfo("There was an error contacting the server. No repositories found\n", DisplayOption::Error);
@@ -228,7 +230,7 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
         return ERROR;
         }
         
-    bvector<Utf8String> schemaNames = m_server.GetSchemaNames(repo);
+    bvector<Utf8String> schemaNames = m_server.GetSchemaNames(repo, response);
 
     if (schemaNames.size() == 0)
         {
@@ -260,15 +262,9 @@ StatusInt RealityDataServicePerformanceTests::ConfigureServerTest(Utf8String ser
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest()
     {
-    RequestStatus result = OK;
-
-
-
-    
+    RawServerResponse response;
 
     RealityDataCreateRequest creationRequest(*m_newRealityData); 
-
-
     
     int64_t startTime;
     int64_t endTime;
@@ -277,18 +273,18 @@ StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(creationRequest, result);
+    RealityDataService::Request(creationRequest, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
-    if (SUCCESS != result)
-        std::cout << "Creation Test: Failure no: " << result << std::endl;
+    if (SUCCESS != response.status)
+        std::cout << "Creation Test: Failure no: " << response.status << std::endl;
     else
         std::cout << "Creation Test: " << (endTime - startTime) / 1000.0 << std::endl;
   
-    return (StatusInt)result;
+    return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
@@ -296,7 +292,7 @@ StatusInt RealityDataServicePerformanceTests::CreateRealityDataTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
     {
-    RequestStatus result;
+    RawServerResponse response;
 
     int64_t startTime;
     int64_t endTime;
@@ -309,18 +305,18 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(creationRelationshipRequest, result);
+    RealityDataService::Request(creationRelationshipRequest, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
-    if (SUCCESS != result)
-        std::cout << "Relationship creation Test: Failure no: " << result << std::endl;
+    if (OK != response.status)
+        std::cout << "Relationship creation Test: Failure no: " << response.status << std::endl;
     else
         std::cout << "Relationship creation Test: " << (endTime - startTime) / 1000.0 << std::endl;
     
-    return (StatusInt)result;
+    return (StatusInt)response.status;
     }
 
 //-------------------------------------------------------------------------------------
@@ -328,6 +324,8 @@ StatusInt RealityDataServicePerformanceTests::CreateRelationshipToProject()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::UploadTest()
     {
+    RawServerResponse response;
+
     // Upload file
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     properties.Insert(RealityDataField::Name, m_newRealityData->GetName());
@@ -338,17 +336,15 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
 
     Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
     RealityDataServiceUpload upload = RealityDataServiceUpload(BeFileName(m_tempFileName), m_newRealityData->GetIdentifier(), formatedProps, true, true, statusFunc);
-    if(upload.IsValidUpload())
-        {
-        upload.SetProgressCallBack(uploadProgressFunc);
-        upload.SetProgressStep(0.1);
-        upload.OnlyReportErrors(true);
-        TransferReport* tReport = upload.Perform();
-        Utf8String report;
-        tReport->ToXml(report);
-        DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
-        DisplayInfo(report);
-        }
+    upload.SetProgressCallBack(uploadProgressFunc);
+    upload.SetProgressStep(0.1);
+    upload.OnlyReportErrors(true);
+    TransferReport* tReport = upload.Perform();
+    Utf8String report;
+    tReport->ToXml(report);
+    DisplayInfo("if any files failed to upload, they will be listed here: \n", DisplayOption::Tip);
+    DisplayInfo(report);
+     
 
     return SUCCESS;
     }
@@ -359,6 +355,8 @@ StatusInt RealityDataServicePerformanceTests::UploadTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::DownloadTest()
     {
+    RawServerResponse response;
+
     // Create a temporary file
     char fileNameBuffer[1025];
     Utf8String downloadFileName = Utf8String(tmpnam(fileNameBuffer));
@@ -391,6 +389,8 @@ StatusInt RealityDataServicePerformanceTests::DownloadTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::NavigationTest()
     {
+    RawServerResponse response;
+
     // To BE DONE!
     
     return SUCCESS;
@@ -403,7 +403,7 @@ StatusInt RealityDataServicePerformanceTests::NavigationTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
     {
-    RequestStatus result;
+    RawServerResponse response;
 
     int64_t startTime;
     int64_t endTime;
@@ -415,7 +415,7 @@ StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataPtr myRealityData = RealityDataService::Request(myRealityDataRequest, result);
+    RealityDataPtr myRealityData = RealityDataService::Request(myRealityDataRequest, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
@@ -425,12 +425,12 @@ StatusInt RealityDataServicePerformanceTests::InformationExtractionTest()
         return ERROR;
 
     // Report
-    if (SUCCESS != result)
-        std::cout << "Information Extraction Test: Failure no: " << result;
+    if (OK != response.status)
+        std::cout << "Information Extraction Test: Failure no: " << response.status;
     else
         std::cout << "Information Extraction Test: " << (endTime - startTime) / 1000.0;
     
-    return (StatusInt)result;
+    return (StatusInt)response.status;
     }
 
 
@@ -450,7 +450,7 @@ StatusInt RealityDataServicePerformanceTests::InformationManagementTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
     {
-    RequestStatus result = OK;
+    RawServerResponse response;
 
     int64_t startTime = 0;
     int64_t endTime = 0;
@@ -462,19 +462,19 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
 
     // Perform operation
 #if (0)
-    RealityDataService::Request(myRequest, result);
+    RealityDataService::Request(myRequest, response);
 #endif
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
-    if (OK != result)
-        std::cout << "Relationship deletion Test: Failure no: " << result;
+    if (OK != response.status)
+        std::cout << "Relationship deletion Test: Failure no: " << response.status;
     else
         std::cout << "Relationship deletion Test: " << (endTime - startTime) / 1000.0;
     
-    return (StatusInt)result;
+    return (StatusInt)response.status;
     }
 
 
@@ -483,7 +483,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRelationship()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
     {
-    RequestStatus result;
+    RawServerResponse response;
   
     RealityDataDelete deletionRequest(m_newRealityData->GetIdentifier()); 
     
@@ -494,18 +494,18 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(deletionRequest, result);
+    RealityDataService::Request(deletionRequest, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
     // Report
-    if (OK != result)
-        std::cout << "Deletion Test: Failure no: " << result;
+    if (OK != response.status)
+        std::cout << "Deletion Test: Failure no: " << response.status;
     else
         std::cout << "Deletion Test: " << (endTime - startTime) / 1000.0;
     
-    return (StatusInt)result;    
+    return (StatusInt)response.status;    
     }
 
 
@@ -514,7 +514,7 @@ StatusInt RealityDataServicePerformanceTests::DeleteRealityDataTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::ListTest()
     {
-    RequestStatus result = OK;
+    RawServerResponse response;
 
     Utf8String nodeString;
     bvector<Utf8String> nodeStrings;
@@ -531,7 +531,7 @@ StatusInt RealityDataServicePerformanceTests::ListTest()
 
     PrintResults(nodeStrings);
 #endif
-    return result;
+    return response.status;
     }
 
 
@@ -541,12 +541,13 @@ StatusInt RealityDataServicePerformanceTests::ListTest()
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest()
     {
-    RequestStatus status;
-    RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
+    RawServerResponse response;
+    RealityDataEnterpriseStatRequest ptt("");
     uint64_t NbRealityData;
     uint64_t TotalSizeKB;
-    RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
-    return SUCCESS;
+    RealityDataService::Request(ptt, &NbRealityData, &TotalSizeKB, response);
+
+    return (StatusInt)response.status;
     }
 
 
