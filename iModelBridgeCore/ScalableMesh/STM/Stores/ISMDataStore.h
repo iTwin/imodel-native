@@ -227,7 +227,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
          Set the path of the files created for a given project (e.g. : dgndb file). 
         -----------------------------------------------------------------------------*/
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) = 0;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.

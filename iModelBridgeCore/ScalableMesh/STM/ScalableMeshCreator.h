@@ -230,7 +230,7 @@ struct IScalableMeshCreator::Impl
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
-          WString                             m_baseExtraFilesPath;
+          
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
@@ -252,9 +252,7 @@ struct IScalableMeshCreator::Impl
         StatusInt  SetTextureProvider(ITextureProviderPtr provider);
         StatusInt  SetTextureStreamFromUrl(WString url);
 
-        StatusInt                           Filter                         ();
-
-        void                               SetBaseExtraFilesPath(const WString& path);
+        StatusInt                           Filter                         ();        
 
         ScalableMeshProgress*            GetProgress();
 

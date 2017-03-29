@@ -557,6 +557,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\SMTextureTileStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMCesiumPublisher.h" />
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
@@ -725,6 +726,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
+    <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />

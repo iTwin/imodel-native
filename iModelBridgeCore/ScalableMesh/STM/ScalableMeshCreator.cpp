@@ -206,13 +206,6 @@ StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelFor
     return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
     }
 
-void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
-    {
-    return m_implP->SetBaseExtraFilesPath(path);
-    }
-
-
-
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
     {
     return GetAdvancedGCS().GetGeoRef().GetBasePtr();
@@ -611,9 +604,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create manager?
-			DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
+        DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
         
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
@@ -622,8 +615,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
+
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());                
+        fileNameDir = fileNameDir.GetDirectoryName();
+        dataStore->SetProjectFilesPath(fileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -641,9 +638,11 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher2_5d,
                                        pMesher3d);
 
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
-
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+        fileNameDir = fileNameDir.GetDirectoryName();
+        dataStore->SetProjectFilesPath(fileNameDir);
         pDataIndex->SetGenerating(true);        
         }           
     if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
@@ -806,13 +805,6 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     {
     return m_gcsDirty;
     }
-
-
-void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
-    {
-    m_baseExtraFilesPath = path;
-    }
-
 
 StatusInt IScalableMeshCreator::Impl::Load()
 {

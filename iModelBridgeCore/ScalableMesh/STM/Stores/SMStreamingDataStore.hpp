@@ -1017,9 +1017,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
     {
-    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath, inCreation);
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
 template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)

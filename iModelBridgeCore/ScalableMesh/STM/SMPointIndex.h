@@ -943,10 +943,10 @@ public:
                         {
                         //HASSERT(m_nodeHeader.m_balanced == m_pSubNodeNoSplit->m_nodeHeader.m_balanced);
 
-                        HASSERT(ExtentOp<EXTENT>::GetXMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
-                        HASSERT(ExtentOp<EXTENT>::GetXMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
-                        HASSERT(ExtentOp<EXTENT>::GetYMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
-                        HASSERT(ExtentOp<EXTENT>::GetYMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
+                        //HASSERT(ExtentOp<EXTENT>::GetXMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
+                       // HASSERT(ExtentOp<EXTENT>::GetXMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
+                       // HASSERT(ExtentOp<EXTENT>::GetYMin(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
+                       // HASSERT(ExtentOp<EXTENT>::GetYMax(m_pSubNodeNoSplit->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
                         }
 
                     }
@@ -957,10 +957,10 @@ public:
                         if (m_apSubNodes[indexNodes] != NULL && m_apSubNodes[indexNodes]->IsLoaded())
                             {
                             //HASSERT(m_nodeHeader.m_balanced == m_apSubNodes[indexNodes]->m_nodeHeader.m_balanced);
-                            HASSERT(ExtentOp<EXTENT>::GetXMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
-                            HASSERT(ExtentOp<EXTENT>::GetXMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
-                            HASSERT(ExtentOp<EXTENT>::GetYMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
-                            HASSERT(ExtentOp<EXTENT>::GetYMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
+                            //HASSERT(ExtentOp<EXTENT>::GetXMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent));
+                            //HASSERT(ExtentOp<EXTENT>::GetXMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent));
+                           // HASSERT(ExtentOp<EXTENT>::GetYMin(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) >= ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent));
+                           // HASSERT(ExtentOp<EXTENT>::GetYMax(m_apSubNodes[indexNodes]->m_nodeHeader.m_nodeExtent) <= ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
                             }
 
                         }
