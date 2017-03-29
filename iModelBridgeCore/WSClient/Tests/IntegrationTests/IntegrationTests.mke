@@ -17,6 +17,7 @@ wsClientUnitTestsDir = $(SrcRoot)WSClient/Tests/UnitTests/Published/
 BEGTEST_NAME = WSClientIntegrationTests
 BEGTEST_INPUT = $(baseDir)
 BEGTEST_OUTPUT = $(OutputRootDir)build/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 
 dirToSearch = $(wsClientUnitTestsDir)Utils/
 %include cincapnd.mki
