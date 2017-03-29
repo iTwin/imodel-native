@@ -30,17 +30,26 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    InsertCategory(dgndb, ColorDef::White(), 1, BDCP_CATEGORY_AcquisitionDevice);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_AcquisitionDevice, dgndb);
 
-    //Insert Shot category with it's own color and weight
-    InsertCategory(dgndb, Shot::GetDefaultColor(), Shot::GetDefaultWeight(), BDCP_CATEGORY_Shot);
+    if (!categoryId.IsValid())    
+        InsertCategory(dgndb, ColorDef::White(), 1, BDCP_CATEGORY_AcquisitionDevice);
 
-    auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
-    BeAssert(authority.IsValid());
-    if (authority.IsValid())
+    categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Shot, dgndb);
+
+    if (!categoryId.IsValid())
+        //Insert Shot category with it's own color and weight
+        InsertCategory(dgndb, Shot::GetDefaultColor(), Shot::GetDefaultWeight(), BDCP_CATEGORY_Shot);
+
+    if (!dgndb.Authorities().QueryAuthorityId(BDCP_AUTHORITY_DataCapture).IsValid())
         {
-        authority->Insert();
-        BeAssert(authority->GetAuthorityId().IsValid());
+        auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
+        BeAssert(authority.IsValid());
+        if (authority.IsValid())
+            {
+            authority->Insert();
+            BeAssert(authority->GetAuthorityId().IsValid());
+            }
         }
     }
 
