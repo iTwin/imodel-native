@@ -357,7 +357,9 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to rename property %s:%s to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
     else
+        {
         LOG.warningv("The property %s:%s was renamed to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
+        }
 
     return status;
     }
@@ -396,26 +398,94 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         return status;
         }
 
+    LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), prop->GetName().c_str(), newName.c_str());
+
     // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
-    newProperty->SetOriginalName(originalName.c_str());
+    AddPropertyMapping(originalName.c_str(), newName.c_str());
 
     if (renameDerivedProperties)
         {
-        for (ECClassP derivedClass : m_derivedClasses)
-            {
-            ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
-            if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
-                derivedClass->RenameConflictProperty(fromDerived, renameDerivedProperties, newName);
-            for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
-                {
-                ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
-                if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
-                    continue;
-                derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
-                }
-            }
+        RenameDerivedProperties(newName);
         }
     return ECObjectsStatus::Success;
+    }
+
+void ECClass::RenameDerivedProperties(Utf8String newName)
+    {
+    for (ECClassP derivedClass : m_derivedClasses)
+        {
+        ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
+        if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
+            derivedClass->RenameConflictProperty(fromDerived, true, newName);
+        for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
+            {
+            ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
+            if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
+                continue;
+            derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, newName);
+            }
+        derivedClass->RenameDerivedProperties(newName);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECClass::AddPropertyMapping(Utf8CP originalName, Utf8CP newName)
+    {
+    LOG.debugv("Attempting to add RenamedPropertiesMapping custom attribute to ECClass '%s' for Property '%s'.", GetFullName(), newName);
+
+    IECInstancePtr renameInstance = GetCustomAttributeLocal("RenamedPropertiesMapping");
+    if (!renameInstance.IsValid())
+        renameInstance = ConversionCustomAttributeHelper::CreateCustomAttributeInstance("RenamedPropertiesMapping");
+    if (!renameInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'RenamedPropertiesMapping' custom attribute for ECClass '%s'", GetFullName());
+        return;
+        }
+
+    ECValue v;
+    renameInstance->GetValue(v, "PropertyMapping");
+    Utf8String remapping("");
+    if (!v.IsNull())
+        remapping = Utf8String(v.GetUtf8CP()).append(";");
+
+    remapping.append(originalName).append("|").append(newName);
+
+    v.SetUtf8CP(remapping.c_str());
+    if (ECObjectsStatus::Success != renameInstance->SetValue("PropertyMapping", v))
+        {
+        LOG.warningv("Failed to create 'RenamedPropertiesMapping' custom attribute for the ECClass '%s' with 'PropertyMapping' set to '%s'.", GetFullName(), remapping.c_str());
+        return;
+        }
+
+    // Add ECv3ConversionAttributes as a schema reference, if it is not already.
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaKey key("ECv3ConversionAttributes", 1, 0);
+    ECSchemaPtr convSchema = ECSchema::LocateSchema(key, *context);
+    if (!convSchema.IsValid())
+        {
+        LOG.warningv("Failed to locate schema, %s.", key.GetName().c_str());
+        LOG.warningv("Failed to add 'PropertyRenamed' custom attribute to property '%s.%s'.", GetFullName(), GetName().c_str());
+        }
+
+    if (!ECSchema::IsSchemaReferenced(GetSchema(), *convSchema))
+        {
+        if (ECObjectsStatus::Success != GetContainerSchema()->AddReferencedSchema(*convSchema))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", convSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            LOG.warningv("Failed to add 'RenamedPropertiesMapping' custom attribute to ECClass '%s'.", GetFullName(), GetName().c_str());
+            return;
+            }
+        }
+
+    if (ECObjectsStatus::Success != SetCustomAttribute(*renameInstance))
+        {
+        LOG.warningv("Failed to add 'RenamedPropertiesMapping' custom attribute, with 'PropertyMapping' set to '%s', to ECClass '%s'.", remapping.c_str(), GetFullName());
+        return;
+        }
+
+    LOG.debugv("Successfully added RenamedPropertiesMapping custom attribute to ECClass '%s'", GetFullName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -597,7 +667,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 pProperty->SetName(newName);
 
                 // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
-                pProperty->SetOriginalName(originalName.c_str());
+                AddPropertyMapping(originalName.c_str(), newName.c_str());
                 }
             else
                 return status;
@@ -1886,15 +1956,27 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         {
         if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) because their types differ or the base class is sealed.",
-                       GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
-                       baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+            if (resolveConflicts)
+                {
+                LOG.warningv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) but their types differ.  The base class will not be added.",
+                           GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                           baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+                }
+            else
+                {
+                LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has an invalid base class '%s:%s' (%d) because their types differ or the base class is sealed.",
+                           GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                           baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            }
+        else
+            {
+            LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as a base class to ECClass '%s:%s'",
+                       baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(),
+                       GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as a base class to ECClass '%s:%s'",
-                   baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(),
-                   GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
         }
     return SchemaReadStatus::Success;
     }
@@ -2337,7 +2419,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     
     if (nullptr == resolvedSchema)
         {
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema which contains it cannot be found.", appliesToValue.GetUtf8CP());
+        LOG.errorv("Cannot resolve the 'applies to' class '%s' of mixin '%s' because the schema which contains it cannot be found.", appliesToValue.GetUtf8CP(), GetFullName());
         return nullptr;
         }
 
@@ -2345,7 +2427,7 @@ ECEntityClassCP ECEntityClass::GetAppliesToClass() const
     if (nullptr == appliesToClass)
         {
         Utf8String fullSchemaName = resolvedSchema->GetFullSchemaName();
-        LOG.errorv("Cannot resolve mixin class '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), fullSchemaName.c_str());
+        LOG.errorv("Cannot resolve the 'applies to' class '%s' of mixin '%s' because the schema '%s' does not contain the class.", appliesToValue.GetUtf8CP(), GetFullName(), fullSchemaName.c_str());
         return nullptr;
         }
 
@@ -3024,9 +3106,18 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
         if (nullptr == constraintAsEntity)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
-                         CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
+            if (2 == m_relClass->GetSchema().GetVersionRead())
+                {
+                LOG.warningv("Invalid ECSchemaXML: The ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
+                            m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                continue;
+                }
+            else
+                {
+                LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                           CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
             }
 
         bool alreadyExists = false;

@@ -636,10 +636,6 @@ private:
     ECPropertyCP            m_baseProperty;
     mutable IECTypeAdapter* m_cachedTypeAdapter;
 
-    // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
-    // Used for instance transformation
-    void SetOriginalName(Utf8CP originalName);
-
     static void     SetErrorHandling (bool doAssert);
 protected:
     Utf8String              m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
@@ -1288,6 +1284,11 @@ private:
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties, Utf8String newName);
+    void RenameDerivedProperties(Utf8String newName);
+
+    // Adds the ECv3ConversionAttributes:RenamedPropertiesMapping Custom Attribute with the original name provided.
+    // Used for instance transformation
+    void AddPropertyMapping(Utf8CP originalName, Utf8CP newName);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 

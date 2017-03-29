@@ -39,7 +39,7 @@
     <IntDir>$(OutRoot)Winx64\Build\ECObjectsTest\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)Winx64\Build\ECObjectsTest\</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECObjects-Gtest\ECObjectsTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir);$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\TestFixture\;$(OutRoot)Winx64\BuildContexts\ECObjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECObjects\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup>
