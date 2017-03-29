@@ -258,28 +258,35 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
 PropertyMap const& PropertyNameExp::GetPropertyMap() const
     {
     BeAssert(GetClassRefExp() != nullptr);
-    if (GetClassRefExp()->GetType() == Exp::Type::ClassName)
+    PropertyMap const* propertyMap = nullptr;
+    switch (GetClassRefExp()->GetType())
         {
-        ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
-        PropertyMap const* propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
-        if (propertyMap == nullptr)
+            case Exp::Type::ClassName:
             {
-            BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+            ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
+            propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
+            break;
             }
-        return *propertyMap;
+
+            case Exp::Type::SubqueryRef:
+            {
+            PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+            BeAssert(propertyRef != nullptr);
+            DerivedPropertyExp const& referencedDerivedPropertyRef = propertyRef->LinkedTo();
+            BeAssert(referencedDerivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+            if (referencedDerivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName)
+                propertyMap = &referencedDerivedPropertyRef.GetExpression()->GetAs<PropertyNameExp>().GetPropertyMap();
+
+            break;
+            }
+
+            default:
+                BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
+                break;
         }
 
-    if (GetClassRefExp()->GetType() == Exp::Type::SubqueryRef)
-        {
-        PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
-        BeAssert(propertyRef != nullptr);
-        DerivedPropertyExp const& derivedPropertyRef = propertyRef->LinkedTo();
-        if (derivedPropertyRef.GetExpression()->GetType() == Exp::Type::PropertyName)
-            return derivedPropertyRef.GetExpression()->GetAs<PropertyNameExp>().GetPropertyMap();
-        }
-
-    BeAssert(false && "Case not handled");
-    return *((PropertyMap const*) (nullptr));
+    BeAssert(propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
+    return *propertyMap;
     }
 
 //-----------------------------------------------------------------------------------------
