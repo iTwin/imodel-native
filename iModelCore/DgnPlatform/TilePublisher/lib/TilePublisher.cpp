@@ -1357,7 +1357,7 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     if (doBatchIds)
         vertexShaderString.append(s_batchIdShaderAttribute);
 
-    vertexShaderString.append(mat.GetVertexShaderString());
+    vertexShaderString.append(mat.GetVertexShaderString(m_tile.GetModel().Is3d()));
 
     data.AddBufferView(vertexShaderBufferView.c_str(),  vertexShaderString);
     data.AddBufferView(fragmentShaderBufferView.c_str(), mat.GetFragmentShaderString());
@@ -1380,7 +1380,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, Utf8CP suffix)
     m_type = displayParams.GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
-    m_hasAlpha = map.HasTransparency() || IsTesselated(); // tesselated shader always needs transparency for AA
+    m_hasAlpha = map.HasTransparency();         // || IsTesselated(); // Turn this on if we use alpha in tesselated polylines.
     m_colorDimension = ColorIndex::CalcDimension(map.GetNumIndices());
     m_width = 1.0  + static_cast<double> (displayParams.GetRasterWidth());
 
@@ -1444,7 +1444,7 @@ Utf8String PolylineMaterial::GetTechniqueNamePrefix() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string PolylineMaterial::GetVertexShaderString(bool is3d) const
+std::string PolylineMaterial::_GetVertexShaderString(bool is3d) const
     {
     std::string const* list = nullptr;
     if (IsTextured())
@@ -1454,11 +1454,20 @@ std::string PolylineMaterial::GetVertexShaderString(bool is3d) const
 
     auto index = static_cast<uint8_t>(GetColorIndexDimension());
 
-    std::string vs = list[index];
+    return list[index];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+std::string TileMaterial::GetVertexShaderString(bool is3d) const
+    {
+    std::string vs = _GetVertexShaderString(is3d);
+
     if (is3d)
         return vs;
 
-    Utf8String vs2d(s_adjustPolylineContrast.c_str());
+    Utf8String vs2d(s_adjustBackgroundColorContrast.c_str());
     vs2d.append(vs.c_str());
     vs2d.ReplaceAll("v_color = computeColor()", "v_color = adjustContrast(computeColor())");
     return vs2d.c_str();
@@ -1543,7 +1552,7 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db) : TileMate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string const& MeshMaterial::GetVertexShaderString() const
+std::string MeshMaterial::_GetVertexShaderString(bool is3d) const
     {
     if (IsTextured())
         return IgnoresLighting() ? s_unlitTextureVertexShader : s_texturedVertexShader;
@@ -2885,11 +2894,11 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto const& viewId : m_viewIds)
         {
         SpatialViewDefinitionPtr spatialView = nullptr;
-        auto drawingView = GetDgnDb().Elements().Get<DrawingViewDefinition>(viewId);
-        if (drawingView.IsValid())
+        auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
+        if (view2d.IsValid())
             {
             surfacesOnly = false;           // Always publish lines, text etc. in sheets.
-            viewedModels.insert(drawingView->GetBaseModelId());
+            viewedModels.insert(view2d->GetBaseModelId());
             }
         else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
             {
@@ -2923,8 +2932,8 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
         if (model.IsValid())
             {
             auto spatialModel = model->ToSpatialModel();
-            auto drawingModel = nullptr == spatialModel ? dynamic_cast<DrawingModelCP>(model.get()) : nullptr;
-            if (nullptr == spatialModel && nullptr == drawingModel)
+            auto model2d = nullptr == spatialModel ? dynamic_cast<GraphicalModel2dCP>(model.get()) : nullptr;
+            if (nullptr == spatialModel && nullptr == model2d)
                 {
                 BeAssert(false && "Unsupported model type");
                 continue;
@@ -2998,16 +3007,17 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
-    auto spatialView = view.ToSpatialView();
-    auto drawingView = nullptr == spatialView ? view.ToDrawingView() : nullptr;
+    auto                spatialView = view.ToSpatialView();
+    ViewDefinition2dCP  view2d;
     if (nullptr != spatialView)
         {
         auto selectorId = spatialView->GetModelSelectorId().ToString();
         json["modelSelector"] = selectorId;
         }
-    else if (nullptr != drawingView)
+    else if (nullptr != (view2d = view.ToDrawingView()) ||
+             nullptr != (view2d = view.ToSheetView()))
         {
-        auto fakeModelSelectorId = drawingView->GetBaseModelId().ToString();
+        auto fakeModelSelectorId = view2d->GetBaseModelId().ToString();
         fakeModelSelectorId.append("_2d");
         json["modelSelector"] = fakeModelSelectorId;
         }
@@ -3092,14 +3102,14 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         if (!viewDefinition.IsValid())
             continue;
 
-        auto spatialView = viewDefinition->ToSpatialView();
-        auto drawingView = nullptr == spatialView ? viewDefinition->ToDrawingView() : nullptr;
+        auto                spatialView = viewDefinition->ToSpatialView();
+        ViewDefinition2dCP  view2d;
+
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
-        else if (nullptr != drawingView)
-            all2dModelIds.insert(drawingView->GetBaseModelId());
-        else
-            continue;   // ###TODO: Sheets
+        else if (nullptr != (view2d = viewDefinition->ToDrawingView()) ||
+                 nullptr != (view2d = viewDefinition->ToSheetView()))
+            all2dModelIds.insert(view2d->GetBaseModelId());
 
         Json::Value entry(Json::objectValue);
  

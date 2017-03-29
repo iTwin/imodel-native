@@ -338,7 +338,7 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
             gl_Position.y += delta.y * 2.0 * gl_Position.w / czm_viewport.w;
 )RAW_STRING";
 
-static std::string s_adjustPolylineContrast = R"RAW_STRING(
+static std::string s_adjustBackgroundColorContrast = R"RAW_STRING(
     
     vec4 adjustContrast(vec4 color)
         {
