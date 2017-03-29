@@ -236,6 +236,66 @@ WCharCP ProjectGuid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebSServiceClientC_CreateRootProjectShareStorage
+(
+CWSCCHANDLE apiHandle,
+WCharCP projectGuid
+)
+    {
+    VERIFY_API
+    
+    if (projectGuid == nullptr)
+        {
+        api->SetStatusMessage ("projectGuid is invalid in ConnectWebSServiceClientC_CreateRootProjectShareStorage.");
+        api->SetStatusDescription ("You must specify a projectGuid to create the Project Share Storage instance.");
+        return INVALID_PARAMETER;
+        }
+    
+    Json::Value instance;
+    instance["schemaName"] = "ProjectShare";
+    instance["className"] = "Folder";
+    instance["InstanceId"] = Utf8String(projectGuid);
+
+    Json::Value propertiesJson;
+    propertiesJson["FolderName"] = "";
+    propertiesJson["ContentType"] = "Folder";
+    bool isRootFolder = true;
+    propertiesJson["RootFolder"] = &isRootFolder;
+    if (propertiesJson.size() == 0)
+        {
+        api->SetStatusMessage("Invalid parameter passed to function");
+        api->SetStatusDescription("There were not any valid Folder properties passed in.");
+        return INVALID_PARAMETER;
+        }
+
+    instance["properties"] = propertiesJson;
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+
+    Utf8String connectwsgprojectshareUrl = UrlProvider::Urls::ConnectWsgProjectShare.Get();
+    if (api->m_repositoryClients.find(connectwsgprojectshareUrl + "BentleyCONNECT--Main") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgprojectshareUrl,
+            "BentleyCONNECT--Main"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgprojectshareUrl + "BentleyCONNECT--Main")->second;
+    auto result = client->SendCreateObjectRequest(objectCreationJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebSServiceClientC_CreateRootProjectShareStorage completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle)
     {
     if (NULL == apiHandle)

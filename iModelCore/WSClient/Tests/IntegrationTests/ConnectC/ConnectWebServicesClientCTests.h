@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,8 @@
 #include <WebServices/ConnectC/CWSCCBufferPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h>
+#include <WebServices/ConnectC/ConnectWsgProjectShare/ProjectShareBufferGenPublic.h>
+#include <WebServices/ConnectC/ConnectWsgProjectShare/ProjectShareGenPublic.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <Bentley/Bentley.h>
 
