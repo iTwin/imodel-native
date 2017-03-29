@@ -202,7 +202,11 @@ WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState
     if (Format::SingeInstance == m_format && !m_instances.empty())
         {
         BeAssert(false);
-        return *(WSChangeset::Instance*)nullptr;
+        // Note: The following officially produces undefined behavior in C++.
+        // The variable definition and return must be on separate lines to avoid
+        // a warning from the LLVM compiler (which is treated as an error).
+        WSChangeset::Instance* nullRetVal = nullptr;
+        return *nullRetVal;
         }
 
     m_instances.push_back(std::make_shared<Instance>());
