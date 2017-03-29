@@ -296,7 +296,8 @@ PropertyMapCR PropertyNameExp::GetPropertyMap() const
         }
 
     BeAssert(false && "Case not handled");
-    return *((PropertyMapCP) (nullptr));
+    PropertyMapCP nullMap = nullptr;
+    return *nullMap;
     }
 
 
