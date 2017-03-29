@@ -71,7 +71,7 @@ DataSourceTransferScheduler::DataSourceTransferScheduler(void)
 
 DataSourceTransferScheduler::~DataSourceTransferScheduler(void)
     {
-
+    this->shutDown();
     }
 
 
