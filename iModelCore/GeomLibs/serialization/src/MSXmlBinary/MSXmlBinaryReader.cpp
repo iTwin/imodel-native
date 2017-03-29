@@ -59,13 +59,6 @@ int32_t MSXmlBinaryReader::ValueHandle::GetInt32()
 
 int64_t MSXmlBinaryReader::ValueHandle::GetInt64()
     {
-#ifdef CopyBytes
-    int64_t iValue;
-    Byte*  bytes = (Byte*)&iValue;
-    for (uint32_t i = 0; i < 7)
-        bytes[i] = m_buffer[m_offset + i];
-    return iValue;
-#else
     Byte b1, b2, b3, b4;
     b1 = m_buffer[m_offset + 0];
     b2 = m_buffer[m_offset + 1];
@@ -78,7 +71,6 @@ int64_t MSXmlBinaryReader::ValueHandle::GetInt64()
     b4 = m_buffer[m_offset + 7];
     int64_t hi = (uint32_t)(((((b4 << 8) + b3) << 8) + b2) << 8) + b1;
     return (hi << 32) + lo;
-#endif
     }
 
 uint64_t MSXmlBinaryReader::ValueHandle::GetUInt64()
