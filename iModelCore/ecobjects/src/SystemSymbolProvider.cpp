@@ -2,7 +2,7 @@
 |
 |     $Source: src/SystemSymbolProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -699,6 +699,21 @@ SystemSymbolProvider::SystemSymbolProvider()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static ExpressionStatus IsNull(EvaluationResult& evalResult, void*, EvaluationResultVector& arguments)
+    {
+    evalResult.InitECValue().SetBoolean(false);
+    for (EvaluationResultCR arg : arguments)
+        {
+        if (arg.IsECValue() && !arg.GetECValue()->IsNull())
+            return ExpressionStatus::Success;
+        }
+    evalResult.GetECValue()->SetBoolean(true);
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SystemSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
@@ -707,6 +722,8 @@ void SystemSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bve
     // There doesn't seem to be a reason to limit the set of published symbols, and we avoid having to do any further processing/allocation
     // by simply always publishing the full set of symbols.
     context.AddSymbol(*m_systemNamespaceSymbol);
+
+    context.AddSymbol(*MethodSymbol::Create("IsNull", &IsNull, nullptr, nullptr));
     }
 
 
