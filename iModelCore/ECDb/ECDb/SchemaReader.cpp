@@ -348,15 +348,18 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
     //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
     schemaKey->m_loadedTypeCount++;
-    m_classCache[ecClassId] = std::unique_ptr<ClassDbEntry>(new ClassDbEntry(*ecClass));
+    m_classCache[ecClassId] = std::make_unique<ClassDbEntry>(*ecClass);
+
+    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
+        return nullptr;
+
+    if (SUCCESS != LoadMixinAppliesToClass(ctx, *ecClass))
+        return nullptr;
 
     if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
         return nullptr;
 
     if (SUCCESS != LoadPropertiesFromDb(ecClass, ctx, ecClassId))
-        return nullptr;
-
-    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ECContainerId(ecClassId), SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class))
         return nullptr;
 
     ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
@@ -777,6 +780,60 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     03/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::LoadMixinAppliesToClass(Context& ctx, ECN::ECClassCR mixinClass) const
+    {
+    IECInstancePtr mixinCA = mixinClass.GetCustomAttributeLocal("CoreCustomAttributes", "IsMixin");
+    if (mixinCA == nullptr)
+        return SUCCESS;
+
+    ECValue appliesToValue;
+    if (ECObjectsStatus::Success != mixinCA->GetValue(appliesToValue, "AppliesToEntityClass"))
+        {
+        LOG.errorv("Could not load Mixin ECClass %s. Could not read the IsMixin Custom Attribute's property 'AppliesToEntityClass'.", mixinClass.GetFullName());
+        return ERROR;
+        }
+
+    Utf8CP val = nullptr;
+    if (appliesToValue.IsNull() || !appliesToValue.IsString() || Utf8String::IsNullOrEmpty((val = appliesToValue.GetUtf8CP())))
+        {
+        LOG.errorv("Could not load Mixin ECClass %s. The IsMixin Custom Attribute's property 'AppliesToEntityClass' is unset or has an invalid value.", mixinClass.GetFullName());
+        return ERROR;
+        }
+
+    Utf8String appliesToSchemaAlias;
+    Utf8String appliesToClassName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(appliesToSchemaAlias, appliesToClassName, val))
+        {
+        LOG.errorv("Could not load Mixin ECClass %s. The IsMixin Custom Attribute has an invalid value for 'AppliesToEntityClass': %s", mixinClass.GetFullName(), val);
+        return ERROR;
+        }
+
+    ResolveSchema resolveSchemaName = ResolveSchema::AutoDetect;
+    Utf8StringCP effectiveSchemaName = &appliesToSchemaAlias;
+    if (appliesToSchemaAlias.empty())
+        {
+        effectiveSchemaName = &mixinClass.GetSchema().GetName();
+        resolveSchemaName = ResolveSchema::BySchemaName;
+        }
+
+    BeAssert(effectiveSchemaName != nullptr);
+
+    ECClassId appliesToClassId = GetClassId(*effectiveSchemaName, appliesToClassName, resolveSchemaName);
+    if (!appliesToClassId.IsValid() || 
+        //this is the important step and the mere purpose of the routine. We need to load the applies to class into memory
+        //so that ECObjects can validate the mixin.
+        GetClass(ctx, appliesToClassId) == nullptr) 
+        {
+        LOG.errorv("Could not load Mixin ECClass %s. The 'applies to' class '%s.%s' does not exist.", mixinClass.GetFullName(), appliesToSchemaAlias.c_str(), appliesToClassName.c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1107,6 +1164,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 
     return SUCCESS;
     }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1143,6 +1201,8 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ct
 
     return SUCCESS;
     }
+
+
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
