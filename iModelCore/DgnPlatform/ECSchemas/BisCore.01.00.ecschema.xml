@@ -472,8 +472,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="An Information Content Element is pure information.">
-        <!-- NOTE: Only platform can directly subclass from InformationContentElement. Everyone else should pick the most appropriate superclass. -->
+    <ECEntityClass typeName="InformationContentElement" modifier="Abstract" displayLabel="Information Content Element" description="Information Content Element is an abstract base class for modeling pure information entities. Only the core framework should directly subclass from Information Content Element. Domain and application developers should start with the most appropriate subclass of Information Content Element.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <BfoMapping xmlns="BisCore.01.00">
@@ -485,7 +484,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="InformationRecordElement" modifier="Abstract" displayLabel="Information Record Element" description="An information element whose main purpose is to hold an information record.">
+    <ECEntityClass typeName="InformationRecordElement" modifier="Abstract" displayLabel="Information Record Element" description="Information Record Element is an abstract base class for modeling information records. Information Record Element is the default choice if no other subclass of Information Content Element makes sense.">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -523,7 +522,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element.">
+    <ECEntityClass typeName="PhysicalType" modifier="Abstract" displayLabel="Physical Type" description="Defines a set of properties (the 'type') that can be associated with a Physical Element. A Physical Type has a strong correlation with something that can be ordered from a catalog since all instances share a common set of properties.">
         <BaseClass>TypeDefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -663,7 +662,7 @@
             <Class class="Subject"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract" displayLabel="Information Partition" description="An Information Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Model.">
+    <ECEntityClass typeName="InformationPartitionElement" modifier="Abstract" displayLabel="Information Partition" description="Information Partition is an abstract base class for elements that indicate that there is a new modeling perspective within the overall DgnDb information hierarchy. An Information Partition is always parented to a Subject and broken down by a Model.">
         <BaseClass>InformationContentElement</BaseClass>
         <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
@@ -675,50 +674,50 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-    <ECEntityClass typeName="DefinitionPartition" modifier="Sealed" displayLabel="Definition Partition" description="A Definition Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Definition Model.">
+    <ECEntityClass typeName="DefinitionPartition" modifier="Sealed" displayLabel="Definition Partition" description="A Definition Partition element indicates that there is a definition-related modeling perspective within the overall DgnDb information hierarchy. A Definition Partition is always parented to a Subject and broken down by a Definition Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="DocumentPartition" modifier="Sealed" displayLabel="Document Partition" description="A Document Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Document List Model.">
+    <ECEntityClass typeName="DocumentPartition" modifier="Sealed" displayLabel="Document Partition" description="A Document Partition element indicates that there is a document-related modeling perspective within the overall DgnDb information hierarchy. A Document Partition is always parented to a Subject and broken down by a Document List Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="GroupInformationPartition" modifier="Sealed" displayLabel="Group Information Partition" description="A Group Information Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Group Information Model.">
+    <ECEntityClass typeName="GroupInformationPartition" modifier="Sealed" displayLabel="Group Information Partition" description="A Group Information Partition element indicates that there is a group-information-related modeling perspective within the overall DgnDb information hierarchy. A Group Information Partition is always parented to a Subject and broken down by a Group Information Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="InformationRecordPartition" modifier="Sealed" displayLabel="Information Record Partition" description="A Information Record Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by an Information Record Model.">
+    <ECEntityClass typeName="InformationRecordPartition" modifier="Sealed" displayLabel="Information Record Partition" description="A Information Record Partition element indicates that there is an information-record-related modeling perspective within the overall DgnDb information hierarchy. An Information Record Partition is always parented to a Subject and broken down by an Information Record Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="LinkPartition" modifier="Sealed" displayLabel="Link Partition" description="A Link Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Link Model.">
+    <ECEntityClass typeName="LinkPartition" modifier="Sealed" displayLabel="Link Partition" description="A Link Partition element indicates that there is a link-related modeling perspective within the overall DgnDb information hierarchy. A Link Partition is always parented to a Subject and broken down by a Link Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="PhysicalPartition" modifier="Sealed" displayLabel="Physical Partition" description="A Physical Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Physical Model.">
+    <ECEntityClass typeName="PhysicalPartition" modifier="Sealed" displayLabel="Physical Partition" description="A Physical Partition element indicates that there is a physical modeling perspective within the overall DgnDb information hierarchy. A Physical Partition is always parented to a Subject and broken down by a Physical Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialLocationPartition" modifier="Sealed" displayLabel="Spatial Location Partition" description="A Spatial Location Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Spatial Location Model.">
+    <ECEntityClass typeName="SpatialLocationPartition" modifier="Sealed" displayLabel="Spatial Location Partition" description="A Spatial Location Partition element indicates that there is a spatial-location-related modeling perspective within the overall DgnDb information hierarchy. A Spatial Location Partition is always parented to a Subject and broken down by a Spatial Location Model.">
         <BaseClass>InformationPartitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract" displayLabel="Information Reference" description="An information element whose main purpose is to reference something else.">
+    <ECEntityClass typeName="InformationReferenceElement" modifier="Abstract" displayLabel="Information Reference" description="Information Reference is an abstract base class for modeling entities whose main purpose is to reference something else.">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -727,7 +726,7 @@
             </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract" displayLabel="Group Information" description="An information element whose main purpose is to reference a group of related elements.">
+    <ECEntityClass typeName="GroupInformationElement" modifier="Abstract" displayLabel="Group Information" description="Group Information is an abstract base class for modeling entities whose main purpose is to reference a group of related elements.">
         <BaseClass>InformationReferenceElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -936,13 +935,13 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GeometricElement" modifier="Abstract" displayLabel="Geometric Element" description="A Geometric Element is used to model real world entities that intrinsicly have geometry.">
+    <ECEntityClass typeName="GeometricElement" modifier="Abstract" displayLabel="Geometric Element" description="Geometric Element is an abstract base class used to model real world entities that intrinsicly have geometry.">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="A 3D Geometric Element is used to model real world entities that intrinsicly have 3D geometry.">
+    <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="3D Geometric Element is an abstract base class used to model real world entities that intrinsicly have 3D geometry.">
         <!-- Base class for elements with 3d geometry -->
         <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
@@ -1064,7 +1063,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="GeometricElement2d" modifier="Abstract" displayLabel="2D Geometric Element" description="Abstract base class for 2D geometric elements">
+    <ECEntityClass typeName="GeometricElement2d" modifier="Abstract" displayLabel="2D Geometric Element" description="2D Geometric Element is an abstract base class used to model information entities that intrinsicly have 2D geometry.">
         <!-- NOTE: only platform should directly subclass GeometricElement2d -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
@@ -1997,8 +1996,13 @@
         <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
     </ECEntityClass>
 
-    <ECEntityClass typeName="DisplayStyle" displayLabel="Display Style">
+    <ECEntityClass typeName="DisplayStyle" modifier="Abstract" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DisplayStyle2d" displayLabel="2D Display Style">
+        <BaseClass>DisplayStyle</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
 

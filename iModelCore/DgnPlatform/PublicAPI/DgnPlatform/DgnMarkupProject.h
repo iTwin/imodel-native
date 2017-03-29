@@ -171,7 +171,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : ViewDefinition2d
         explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) {}
 
         //! Construct a new RedlineViewDefinition prior to inserting it
-        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyleR displayStyle) : 
+        RedlineViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) : 
                 T_Super(db, name, QueryClassId(db), baseModelId, categories, displayStyle) {}
 
 
