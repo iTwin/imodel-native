@@ -32,6 +32,7 @@ namespace IndexECPlugin.Source
         public const string RdsRealityDataClass = "RealityData";
         public const string RdsDocumentClass = "Document/";
         public const string RdsSubAPIString = "RDS";
+        public const string RdsName = "RealityDataServices";
         public const string RdsSourceName = "RealityDataService";
         public const string RdsLoginKey = "BentleyCONNECT";
         public const string RdsLoginMethod = "CUSTOM";

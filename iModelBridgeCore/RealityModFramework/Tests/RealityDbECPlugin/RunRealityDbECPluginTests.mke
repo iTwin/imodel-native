@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------
 #     $Source: Tests/RealityDbECPlugin/RunRealityDbECPluginTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 ASSEMBLY_NAME             = Bentley.RealityDbECPlugin.Tests
@@ -25,6 +25,6 @@ ASSEMBLY_TARGET_DIRECTORY= $(ProductTestDir)
 NUNIT_COMMAND=$(ProductTestDir)nunit-console.exe
 ATP_CATEGORIES_EXCLUDE = Performance,WorkInProgress,Helper,LongRunning
 
-EXECUTE_ATP_DEPENDENCIES  = $(ProductTestDir)Bentley.RealityDbECPlugin.dll
+EXECUTE_ATP_DEPENDENCIES  = $(ProductTestDir)Bentley.RealityDbECPluginC.dll
 %include $(SharedMki)nunit.mki
 

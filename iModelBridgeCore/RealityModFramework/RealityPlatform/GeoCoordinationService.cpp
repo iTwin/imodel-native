@@ -32,7 +32,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-static Utf8String GetPolygonAsString(bvector<GeoPoint2D> area, bool urlEncode) const
+static Utf8String GetPolygonAsString(bvector<GeoPoint2d> area, bool urlEncode)
     {
     Utf8String polygon;
     bool first = true;
@@ -73,9 +73,11 @@ Utf8StringCR GeoCoordinationServicePagedRequest::GetRepoId() const { return GeoC
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-SpatialEntityWithDetailsSpatialRequest::SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2D> projectArea, int classification) :
-    m_informationSourcefilter(false), m_projectArea(projectArea), m_informationSourceFilter(classification), m_filter("")
+SpatialEntityWithDetailsSpatialRequest::SpatialEntityWithDetailsSpatialRequest(bvector<GeoPoint2d> projectArea, int classification) :
+    m_informationSourcefilter(false), m_projectArea(projectArea)
     {   
+    m_informationSourceFilter = classification;
+    m_filter = "";
     m_validRequest = false;
     }
 
@@ -90,7 +92,7 @@ void SpatialEntityWithDetailsSpatialRequest::_PrepareHttpRequestStringAndPayload
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/SpatialEntityWithDetailsView?polygon={points:[");
     m_httpRequestString.append(GetPolygonAsString(m_projectArea, false));
 
@@ -212,7 +214,7 @@ void SpatialEntityWithDetailsByIdRequest::_PrepareHttpRequestStringAndPayload() 
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/SpatialEntityWithDetailsView/");
     m_httpRequestString.append(m_id);
     }
@@ -225,7 +227,7 @@ void SpatialEntityByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/SpatialEntity/");
     m_httpRequestString.append(m_id);
     }
@@ -238,7 +240,7 @@ void SpatialEntityDataSourceByIdRequest::_PrepareHttpRequestStringAndPayload() c
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/SpatialDataSource/");
     m_httpRequestString.append(m_id);
     }
@@ -251,7 +253,7 @@ void SpatialEntityServerByIdRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/Server/");
     m_httpRequestString.append(m_id);
     }
@@ -264,7 +266,7 @@ void SpatialEntityMetadataByIdRequest::_PrepareHttpRequestStringAndPayload() con
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/Metadata/");
     m_httpRequestString.append(m_id);
     }
@@ -272,10 +274,10 @@ void SpatialEntityMetadataByIdRequest::_PrepareHttpRequestStringAndPayload() con
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-PackagePreparationRequest::PackagePreparationRequest(bvector<GeoPoint2D> projectArea, bvector<Utf8String> listOfSpatialEntities):
+PackagePreparationRequest::PackagePreparationRequest(bvector<GeoPoint2d> projectArea, bvector<Utf8String> listOfSpatialEntities):
     m_projectArea(projectArea), m_listOfSpatialEntities(listOfSpatialEntities)
     {
-    m_validRequest = false;
+    m_validRequestString = false;
     }
 
 //=====================================================================================
@@ -286,7 +288,7 @@ void PackagePreparationRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/PackageRequest");
 
     m_requestPayload = "{'instance':{'instanceId':null,'className':'PackageRequest','schemaName':'RealityModeling','properties':{'RequestedEntities':[";
@@ -314,7 +316,7 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/PreparedPackage/");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("/$file");
@@ -328,7 +330,7 @@ void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
     m_httpRequestString.append("/v");
-    m_httpRequestString.append(RealityDataService::GetWSGProtocol());
+    m_httpRequestString.append(GeoCoordinationService::GetWSGProtocol());
     m_httpRequestString.append("/RealityModeling/DownloadReport/");
     m_httpRequestString.append(m_id);
     m_httpRequestString.append("/$file");
@@ -337,25 +339,29 @@ void DownloadReportUploadRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String GeoCoordinationService::s_realityDataServer = "https://connect-contextservices.bentley.com/";
-Utf8String GeoCoordinationService::s_realityDataWSGProtocol = "2.4";
-Utf8String GeoCoordinationService::s_realityDataRepoName = "IndexECPlugin-Server";
-Utf8String GeoCoordinationService::s_realityDataSchemaName = "RealityModeling";
+Utf8String GeoCoordinationService::s_geoCoordinationServer = "";
+Utf8String GeoCoordinationService::s_geoCoordinationWSGProtocol = "2.4";
+Utf8String GeoCoordinationService::s_geoCoordinationRepoName = "IndexECPlugin-Server";
+Utf8String GeoCoordinationService::s_geoCoordinationSchemaName = "RealityModeling";
 
 int GeoCoordinationService::s_verifyPeer = 0;
-Utf8String GeoCoordinationService::s_realityDataCertificatePath = "";
+Utf8String GeoCoordinationService::s_certificatePath = "";
 
 const Utf8String GeoCoordinationService::s_ImageryKey = "Imagery";
 const Utf8String GeoCoordinationService::s_TerrainKey = "Terrain";
 const Utf8String GeoCoordinationService::s_ModelKey = "Model";
 const Utf8String GeoCoordinationService::s_PinnedKey = "Pinned";
 
-Utf8StringCR GeoCoordinationService::GetServerName() { return s_realityDataServer; }
-Utf8StringCR GeoCoordinationService::GetWSGProtocol() { return s_realityDataWSGProtocol; }
-Utf8StringCR GeoCoordinationService::GetRepoName() { return s_realityDataRepoName; }
-Utf8StringCR GeoCoordinationService::GetSchemaName() { return s_realityDataSchemaName; }
+const Utf8String GeoCoordinationService::s_USGSInformationSourceKey = "usgsapi";
+const Utf8String GeoCoordinationService::s_PublicIndexInformationSourceKey = "index";
+const Utf8String GeoCoordinationService::s_AllInformationSourceKey = "all";
+
+Utf8StringCR GeoCoordinationService::GetServerName() { return s_geoCoordinationServer; }
+Utf8StringCR GeoCoordinationService::GetWSGProtocol() { return s_geoCoordinationWSGProtocol; }
+Utf8StringCR GeoCoordinationService::GetRepoName() { return s_geoCoordinationRepoName; }
+Utf8StringCR GeoCoordinationService::GetSchemaName() { return s_geoCoordinationSchemaName; }
 const int GeoCoordinationService::GetVerifyPeer() { return s_verifyPeer; } //TODO: verify when possible...
-Utf8StringCR GeoCoordinationService::GetCertificatePath() { return s_realityDataCertificatePath; }
+Utf8StringCR GeoCoordinationService::GetCertificatePath() { return s_certificatePath; }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
@@ -363,7 +369,7 @@ Utf8StringCR GeoCoordinationService::GetCertificatePath() { return s_realityData
 bvector<SpatialEntityPtr> GeoCoordinationService::SpatialEntityRequestBase(const GeoCoordinationServiceRequest* request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON((&request), jsonString);
+    status = BasicRequest((&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
     if (status != RequestStatus::OK)
@@ -398,7 +404,7 @@ SpatialEntityPtr GeoCoordinationService::Request(const SpatialEntityWithDetailsB
 SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDataSourceById& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityDataSourcePtr> entities = bvector<SpatialEntityDataSourcePtr>();
     if (status != RequestStatus::OK)
@@ -418,7 +424,7 @@ SpatialEntityDataSourcePtr GeoCoordinationService::Request(const SpatialEntityDa
 SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServerByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityServerPtr> entities = bvector<SpatialEntityServerPtr>();
     if (status != RequestStatus::OK)
@@ -438,7 +444,7 @@ SpatialEntityServerPtr GeoCoordinationService::Request(const SpatialEntityServer
 SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMetadataByIdRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     bvector<SpatialEntityMetadataPtr> entities = bvector<SpatialEntityMetadataPtr>();
     if (status != RequestStatus::OK)
@@ -458,7 +464,7 @@ SpatialEntityMetadataPtr GeoCoordinationService::Request(const SpatialEntityMeta
 bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWithDetailsSpatialRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = PagedRequestToJSON((&request), jsonString);
+    status = BasicPagedRequest((&request), jsonString);
 
     bvector<SpatialEntityPtr> entities = bvector<SpatialEntityPtr>();
     if (status == RequestStatus::BADREQ)
@@ -480,7 +486,7 @@ bvector<SpatialEntityPtr> GeoCoordinationService::Request(const SpatialEntityWit
 Utf8String GeoCoordinationService::Request(const PackagePreparationRequest& request, RequestStatus& status)
     {
     Utf8String jsonString;
-    status = RequestToJSON(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
+    status = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request), jsonString);
 
     Utf8String packageInfos;
     Utf8String packageId = "";
@@ -503,12 +509,12 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
     Utf8String jsonString;
     
     int stat = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
+    WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
     char outfile[1024] = "";
     strcpy(outfile, fileName.GetNameUtf8().c_str());
     FILE* file = fopen(outfile, "wb");
 
-    Utf8String resultString = WSGRequest::GetInstance().PerformRequest(request, stat, RealityDataService::GetVerifyPeer(), file);
+    Utf8String resultString = WSGRequest::GetInstance().PerformRequest(request, stat, GeoCoordinationService::GetVerifyPeer(), file);
 
     status = RequestStatus::OK;
     if (stat != CURLE_OK)
@@ -530,7 +536,7 @@ void Request(const DownloadReportUploadRequest& request, RequestStatus& status)
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-RequestStatus GeoCoordinationService::PagedRequestToJSON(RealityDataPagedRequest* const request, Utf8StringR jsonResponse)
+RequestStatus GeoCoordinationService::BasicPagedRequest(GeoCoordinationServicePagedRequest* const request, Utf8StringR jsonResponse)
 {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
@@ -548,7 +554,7 @@ RequestStatus GeoCoordinationService::PagedRequestToJSON(RealityDataPagedRequest
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
-RequestStatus GeoCoordinationService::RequestToJSON(GeoCoordinationServiceRequest* const request, Utf8StringR jsonResponse)
+RequestStatus GeoCoordinationService::BasicRequest(GeoCoordinationServiceRequest* const request, Utf8StringR jsonResponse)
 {
     int status = RequestType::Body;
     WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());

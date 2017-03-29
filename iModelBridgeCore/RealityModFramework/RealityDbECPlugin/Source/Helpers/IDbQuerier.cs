@@ -29,7 +29,6 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="paramNameValueMap">The IParamNameValueMap object, usually returned by the same object that created the command string.</param>
         /// <param name="ecClass">The class of the ECInstances created.</param>
         /// <param name="propertyList">The list of properties that will be filled in the ECInstances.</param>
-        /// <param name="connectionString">The connection string necessary to communicate with the database.</param>
         /// <param name="nonInstanceDataColumnList">The list of queried columns that are not reflected by ECProperties in the ECInstances. 
         ///   These infos will be put in the extended data of the instances</param>
         /// <param name="createDefaultThumbnail">If the call for thumbnail data, this indicates if the thumbnail returned will be the default image.</param>
@@ -39,7 +38,6 @@ namespace IndexECPlugin.Source.Helpers
             DataReadingHelper dataReadingHelper,
             IParamNameValueMap paramNameValueMap,
             IECClass ecClass, IEnumerable<IECProperty> propertyList,
-            string connectionString,
             IEnumerable<string> nonInstanceDataColumnList = null,
             bool createDefaultThumbnail = true);
 
@@ -48,12 +46,10 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="sqlCommandString">The command string.</param>
         /// <param name="paramNameValueMap">The IParamNameValueMap object, usually returned by the same object that created the command string.</param>
-        /// <param name="connectionString">The connection string object necessary to communicate with the database.</param>
         /// <returns>The return code of the command.</returns>
         int ExecuteNonQueryInDb
            (string sqlCommandString,
-           IParamNameValueMap paramNameValueMap,
-           string connectionString
+           IParamNameValueMap paramNameValueMap
            );
         }
 
@@ -61,14 +57,17 @@ namespace IndexECPlugin.Source.Helpers
     /// A class for communicating with a database.
     /// </summary>
     public class DbQuerier : IDbQuerier
-        {
+    {
+
+        private string m_connectionString;
 
         /// <summary>
         /// Default constructor
         /// </summary>
-        public DbQuerier()
-            {
-            }
+        public DbQuerier(string connectionString)
+        {
+            m_connectionString = connectionString;
+        }
 
 
         /// <summary>
@@ -79,7 +78,6 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="paramNameValueMap">The IParamNameValueMap object, usually returned by the same object that created the command string.</param>
         /// <param name="ecClass">The class of the ECInstances created.</param>
         /// <param name="propertyList">The list of properties that will be filled in the ECInstances.</param>
-        /// <param name="connectionString">The connection string necessary to communicate with the database.</param>
         /// <param name="nonInstanceDataColumnList">The list of queried columns that are not reflected by ECProperties in the ECInstances. 
         ///   These infos will be put in the extended data of the instances</param>
         /// <param name="createDefaultThumbnail">If the call for thumbnail data, this indicates if the thumbnail returned will be the default image.</param>
@@ -89,7 +87,6 @@ namespace IndexECPlugin.Source.Helpers
             DataReadingHelper dataReadingHelper,
             IParamNameValueMap paramNameValueMap,
             IECClass ecClass, IEnumerable<IECProperty> propertyList,
-            String connectionString,
             IEnumerable<string> nonInstanceDataColumnList = null,
             bool createDefaultThumbnail = true)
             {
@@ -98,7 +95,7 @@ namespace IndexECPlugin.Source.Helpers
             List<IECInstance> instanceList = new List<IECInstance>();
 
             //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            using ( IDbConnection dbConnection = new SqlConnection(connectionString) )
+            using ( IDbConnection dbConnection = new SqlConnection(m_connectionString) )
                 {
 
                 dbConnection.Open();
@@ -232,16 +229,14 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="sqlCommandString">The command string.</param>
         /// <param name="paramNameValueMap">The IParamNameValueMap object, usually returned by the same object that created the command string.</param>
-        /// <param name="connectionString">The connection string necessary to communicate with the database.</param>
         /// <returns>The return code of the command.</returns>
         public int ExecuteNonQueryInDb
             (string sqlCommandString,
-            IParamNameValueMap paramNameValueMap,
-            String connectionString
+            IParamNameValueMap paramNameValueMap
             )
             {
             //Todo: generalize the dbConnection creation to any sql db, not only sql server.
-            using ( IDbConnection dbConnection = new SqlConnection(connectionString) )
+            using ( IDbConnection dbConnection = new SqlConnection(m_connectionString) )
                 {
                 dbConnection.Open();
 

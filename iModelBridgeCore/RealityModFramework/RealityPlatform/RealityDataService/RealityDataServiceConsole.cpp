@@ -193,6 +193,7 @@ RealityDataConsole::RealityDataConsole() :
     m_filterProperties.push_back("Type");
     m_filterProperties.push_back("OwnedBy");
     m_filterProperties.push_back("Fuzzy Filter");
+    m_filterProperties.push_back("ProjectId");
     m_filterProperties.push_back("-Finish-");
 
     m_hConsole = GetStdHandle(STD_OUTPUT_HANDLE);       // see the methods Disp...()
@@ -207,8 +208,8 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
     uint64_t choice;
 
     //InterpretCommand();
-    std::string str;
-    std::getline(std::cin, str);
+    std::wstring str;
+    std::getline(std::wcin, str);
     input = Utf8String(str.c_str()).Trim();
     if(input.EqualsI("Quit"))
         {
@@ -233,7 +234,7 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
         else
             {
             DisplayInfo("Could not extract a number from provided input. Use input as was provided? [ y / n ]\n", DisplayOption::Question);
-            std::getline(std::cin, str);
+            std::getline(std::wcin, str);
             Utf8String use(str.c_str());
             if (!use.EqualsI("y"))
                 {
@@ -246,10 +247,14 @@ void RealityDataConsole::Choice(bvector<Utf8String> options, Utf8StringR input)
 
 int main(int argc, char* argv[])
     {
+//DMx    SetConsoleOutputCP(65001);  // CP_UTF8
+
     SetConsoleTitle("RealityDataService Navigator");
 
     RealityDataConsole console = RealityDataConsole();
     console.Run();
+
+//DMx    SetConsoleOutputCP(1252);
     }
 
 void RealityDataConsole::Run()
@@ -284,13 +289,13 @@ void RealityDataConsole::Usage()
     DisplayInfo ("  Stat                show enterprise statistics\n");
     DisplayInfo ("  Download            Download files from the current location on the server\n");
     DisplayInfo ("  Upload              Upload files to the server\n");
-    DisplayInfo ("  FileAccess <opt> [file]   Prints the URL to use if you wish to request an azure file access (option \"w\" for write access)\n");
-    DisplayInfo ("  AzureAddress        Prints the URL to use (pass \"read\" or \"write\" default is read)\n");
+    DisplayInfo ("  FileAccess <opt>    Prints the URL to use if you wish to request an azure file access (option \"w\" for write access or \"r\" for read access)\n");
+    DisplayInfo ("  AzureAddress <opt>  Prints the URL to use (option \"w\" for write access or \"r\" for read access)\n");
     DisplayInfo ("  ChangeProps         Modify the properties of a RealityData\n");
     DisplayInfo ("  Relationships       Show all projects attached to this RealityData\n");
     DisplayInfo ("  Link                Create a relationship between a RealityData and a project\n");
     DisplayInfo ("  Unlink              Remove a relationship between a RealityData and a project\n");
-    DisplayInfo ("  CreateRD            Create a new RealityData (must provide a name)\n");
+    DisplayInfo ("  CreateRD            Create a new RealityData\n");
     DisplayInfo ("  Delete              Delete a RealityData, Folder or single Document\n");
     }
 
@@ -311,8 +316,8 @@ void RealityDataConsole::ConfigureServer()
     DisplayInfo("Welcome to the RealityDataService Navigator. Please enter your server name\n", DisplayOption::Question);
     DisplayInfo("  Example format : dev-realitydataservices-eus.cloudapp.net\n  ?", DisplayOption::Question);
     Utf8String server;
-    std::string input;
-    std::getline(std::cin, input);
+    std::wstring input;
+    std::getline(std::wcin, input);
     server = Utf8String(input.c_str()).Trim();
     if(server.length() == 0)
         server = "dev-realitydataservices-eus.cloudapp.net";
@@ -321,7 +326,7 @@ void RealityDataConsole::ConfigureServer()
         {
         DisplayInfo("Does this server have a recognized certificate? [ y / n ]  ?", DisplayOption::Question);
         Utf8String temp;
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         temp = Utf8String(input.c_str()).Trim();
         if(temp.EqualsI("y"))
             {
@@ -340,7 +345,8 @@ void RealityDataConsole::ConfigureServer()
     DisplayInfo("Retrieving version information. One moment...\n\n", DisplayOption::Tip);
 
     m_server = WSGServer(server, verifyCertificate);
-    Utf8String version = m_server.GetVersion();
+    RawServerResponse versionResponse = RawServerResponse();
+    Utf8String version = m_server.GetVersion(versionResponse);
 
     if(version.length() == 0)
         {
@@ -361,8 +367,9 @@ void RealityDataConsole::ConfigureServer()
 
     Utf8String repo;
     Utf8String schema;
-    
-    bvector<Utf8String> repoNames = m_server.GetRepositories();
+
+    RawServerResponse repoResponse = RawServerResponse();
+    bvector<Utf8String> repoNames = m_server.GetRepositories(repoResponse);
     m_lastCommand = Command::Error;
     if(repoNames.size() == 0)
         {
@@ -404,7 +411,8 @@ void RealityDataConsole::ConfigureServer()
         {
         DisplayInfo("\n");
 
-        bvector<Utf8String> schemaNames = m_server.GetSchemaNames(repo);
+        RawServerResponse schemaResponse = RawServerResponse();
+        bvector<Utf8String> schemaNames = m_server.GetSchemaNames(repo, schemaResponse);
 
         if (schemaNames.size() == 0)
             {
@@ -463,10 +471,12 @@ void RealityDataConsole::List()
     Utf8String nodeString;
     bvector<Utf8String> nodeStrings;
 
+    RawServerResponse nodeResponse = RawServerResponse();
+
     if(m_currentNode == nullptr)
         return ListRoots();
     else
-        m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node);
+        m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node, nodeResponse);
 
     for (NavNode node : m_serverNodes)
         {
@@ -498,13 +508,17 @@ void RealityDataConsole::ListRoots()
     if (m_queryFilter.length() > 0)
         enterpriseReq.SetQuery(m_queryFilter);
 
-    RequestStatus status = RequestStatus::OK;
+    if (m_projectFilter.length() > 0)
+        enterpriseReq.SetProject(m_projectFilter);
+
+    RawServerResponse enterpriseResponse = RawServerResponse();
+    enterpriseResponse.status = RequestStatus::OK;
     bvector<RealityDataPtr> enterpriseVec = bvector<RealityDataPtr>();
     bvector<RealityDataPtr> partialVec;
 
-    while(status == RequestStatus::OK)
+    while(enterpriseResponse.status == RequestStatus::OK)
         {//When LASTPAGE has been added, loop will exit
-        partialVec = RealityDataService::Request(enterpriseReq, status); 
+        partialVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
         enterpriseVec.insert(enterpriseVec.end(), partialVec.begin(), partialVec.end());
         }
     bvector<Utf8String> nodes = bvector<Utf8String>();
@@ -528,11 +542,11 @@ void RealityDataConsole::ListAll()
         }
 
     AzureHandshake* handshake = new AzureHandshake(m_currentNode->node.GetInstanceId(), false);
-    RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
+    RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
     Utf8String azureServer;
     Utf8String azureToken;
     int64_t tokenTimer;
-    BentleyStatus handshakeStatus = handshake->ParseResponse(azureServer, azureToken, tokenTimer);
+    BentleyStatus handshakeStatus = handshake->ParseResponse(handshakeResponse.body, azureServer, azureToken, tokenTimer);
     delete handshake;
     if (handshakeStatus != BentleyStatus::SUCCESS)
         {
@@ -541,19 +555,20 @@ void RealityDataConsole::ListAll()
         }
 
     AllRealityDataByRootId rdsRequest = AllRealityDataByRootId(m_currentNode->node.GetInstanceId());
-    RequestStatus status;
-    bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, status);
+
+    RawServerResponse sasResponse = RawServerResponse();
+    bvector<bpair<WString, uint64_t>> filesInRepo = RealityDataService::Request(rdsRequest, sasResponse);
     
     DisplayInfo (Utf8PrintfString(" %lu files in selection.\n", filesInRepo.size()), DisplayOption::Tip);
     DisplayInfo ("these will be displayed, 20 at a time. Input \"Cancel\" to quit at any time, otherwise press enter to proceed to the next page\n", DisplayOption::Tip);
 
-    std::string str;
+    std::wstring str;
     size_t placeholder = 0;
     size_t step;
     size_t size = filesInRepo.size();
     while (m_lastCommand != Command::Cancel && placeholder < size)
         {
-        std::getline(std::cin, str);
+        std::getline(std::wcin, str);
         if(Utf8String(str.c_str()).Trim().EqualsI("Cancel"))
             m_lastCommand = Command::Cancel;
         else
@@ -624,11 +639,11 @@ void RealityDataConsole::ChangeDir()
 
 void RealityDataConsole::EnterpriseStat()
     {
-    RequestStatus status;
+    RawServerResponse rawResponse = RawServerResponse();
     RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
     uint64_t NbRealityData;
     uint64_t TotalSizeKB;
-    RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, status);
+    RealityDataService::Request(*ptt, &NbRealityData, &TotalSizeKB, rawResponse);
 
     DisplayInfo ("Enterprise statistics: \n");
     DisplayInfo (Utf8PrintfString("   NbRealityData: %lu\n", NbRealityData));
@@ -640,8 +655,6 @@ static void downloadProgressFunc(Utf8String filename, double fileProgress, doubl
     char progressString[1024];
     sprintf(progressString, "percentage of files downloaded : %f\r", repoProgress * 100.0);
     std::cout << progressString;
-	
-//DMxx    RealityDataConsole::DisplayInfo (Utf8PrintfString("percentage of files downloaded : %f\r", repoProgress * 100.0)); //, RealityDataConsole::Tip);
     }
 
 static void uploadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
@@ -650,8 +663,6 @@ static void uploadProgressFunc(Utf8String filename, double fileProgress, double 
     //sprintf(progressString, "%s upload percent : %f", filename.c_str(), progress * 100.0f);
     sprintf(progressString, "upload percent : %f\r", repoProgress * 100.0);
     std::cout << progressString ;
-	
-//DMxx    RealityDataConsole::DisplayInfo(Utf8PrintfString("upload percent : %f\r", repoProgress * 100.0)); //, RealityDataConsole::Tip);
     }
 
 void RealityDataConsole::Download()
@@ -678,14 +689,17 @@ void RealityDataConsole::Download()
         }
 
     RealityDataServiceDownload download = RealityDataServiceDownload(fileName, m_currentNode->node.GetInstanceId());
-    download.SetProgressCallBack(downloadProgressFunc);
-    download.SetProgressStep(0.1);
-    download.OnlyReportErrors(true);
-    TransferReport* tReport = download.Perform();
-    Utf8String report;
-    tReport->ToXml(report);
-    DisplayInfo ("If any files failed to download, they will be listed here: \n");
-    DisplayInfo (Utf8PrintfString("%s\n", report));
+    if(download.IsValidTransfer())
+        {
+        download.SetProgressCallBack(downloadProgressFunc);
+        download.SetProgressStep(0.1);
+        download.OnlyReportErrors(true);
+        TransferReport* tReport = download.Perform();
+        Utf8String report;
+        tReport->ToXml(report);
+        DisplayInfo ("If any files failed to download, they will be listed here: \n");
+        DisplayInfo (Utf8PrintfString("%s\n", report));
+        }
     }
 
 void RealityDataConsole::Upload()
@@ -708,10 +722,10 @@ void RealityDataConsole::Upload()
     Utf8String option;
     if(m_currentNode == nullptr)
         {
-        std::string input;
+        std::wstring input;
         bmap<RealityDataField, Utf8String> properties;
         DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::Name, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Classification\n  ?", DisplayOption::Question);
@@ -719,7 +733,7 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::Classification, option);
 
         DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
         DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
@@ -727,7 +741,7 @@ void RealityDataConsole::Upload()
         properties.Insert(RealityDataField::Visibility, option);
 
         DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
-        std::getline(std::cin, input);
+        std::getline(std::wcin, input);
         properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
         propertyString = RealityDataServiceUpload::PackageProperties(properties);
@@ -738,7 +752,7 @@ void RealityDataConsole::Upload()
         }
 
     RealityDataServiceUpload upload = RealityDataServiceUpload(fileName, guid, propertyString, true, true, statusFunc);
-    if(upload.IsValidUpload())
+    if(upload.IsValidTransfer())
         {
         upload.SetProgressCallBack(uploadProgressFunc);
         upload.SetProgressStep(0.1);
@@ -758,8 +772,8 @@ void RealityDataConsole::Details()
         DisplayInfo("please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
         }
+    RawServerResponse rawResponse = RawServerResponse();
     Utf8String className = m_currentNode->node.GetClassName();
-    RequestStatus status;
     
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
@@ -767,7 +781,7 @@ void RealityDataConsole::Details()
     if (className == "Document")
         {
         RealityDataDocumentByIdRequest documentReq = RealityDataDocumentByIdRequest(instanceId);
-        RealityDataDocumentPtr document = RealityDataService::Request(documentReq, status);
+        RealityDataDocumentPtr document = RealityDataService::Request(documentReq, rawResponse);
 
         if(document == nullptr)
             {
@@ -787,7 +801,7 @@ void RealityDataConsole::Details()
     else if (className == "Folder")
         {
         RealityDataFolderByIdRequest folderReq = RealityDataFolderByIdRequest(instanceId);
-        RealityDataFolderPtr folder = RealityDataService::Request(folderReq, status);
+        RealityDataFolderPtr folder = RealityDataService::Request(folderReq, rawResponse);
 
         if (folder == nullptr)
             {
@@ -802,7 +816,7 @@ void RealityDataConsole::Details()
     else if (className == "RealityData")
         {
         RealityDataByIdRequest idReq = RealityDataByIdRequest(instanceId);
-        RealityDataPtr entity = RealityDataService::Request(idReq, status);
+        RealityDataPtr entity = RealityDataService::Request(idReq, rawResponse);
 
         if (entity == nullptr)
             {
@@ -865,9 +879,9 @@ void RealityDataConsole::AzureAddress()
     else
         handshake = new AzureHandshake(m_currentNode->node.GetRootId(), false);
 
-    RequestStatus status;
+    RawServerResponse idResponse = RawServerResponse();
     RealityDataByIdRequest idReq = RealityDataByIdRequest(m_currentNode->node.GetRootId());
-    RealityDataPtr entity = RealityDataService::Request(idReq, status);
+    RealityDataPtr entity = RealityDataService::Request(idReq, idResponse);
 
     if (entity == nullptr)
         {
@@ -875,11 +889,11 @@ void RealityDataConsole::AzureAddress()
         return;
         }
 
-    RealityDataService::RequestToJSON((RealityDataUrl*)handshake, handshake->GetJsonResponse());
+    RawServerResponse handshakeResponse = RealityDataService::BasicRequest((RealityDataUrl*)handshake);
     Utf8String azureServer;
     Utf8String azureToken;
     int64_t tokenTimer;
-    BentleyStatus handshakeStatus = handshake->ParseResponse(azureServer, azureToken, tokenTimer);
+    BentleyStatus handshakeStatus = handshake->ParseResponse(handshakeResponse.body, azureServer, azureToken, tokenTimer);
     delete handshake;
     Utf8String rootDocument = entity->GetRootDocument();
 
@@ -910,7 +924,7 @@ void RealityDataConsole::ChangeProps()
     Utf8String input; 
     DisplayInfo("set properties from the list, use the -Finish- option to send the update\n", DisplayOption::Tip);
     bmap<RealityDataField, Utf8String> props = bmap<RealityDataField, Utf8String>();
-    std::string str;
+    std::wstring str;
     Utf8String propertyString = "";
     Utf8String value;
     while (input != "-Finish-")
@@ -922,7 +936,7 @@ void RealityDataConsole::ChangeProps()
             {
             DisplayInfo(Utf8PrintfString("Input value for %s\n", input));
 
-            std::getline(std::cin, str);
+            std::getline(std::wcin, str);
             if(propertyString.length() > 0)
                 propertyString.append(",");
 
@@ -943,12 +957,11 @@ void RealityDataConsole::ChangeProps()
 
     RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(changeReq, status, RealityDataService::GetVerifyPeer());
+    RawServerResponse changeResponse = RawServerResponse();
+    Utf8String response = RealityDataService::Request(changeReq, changeResponse);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+    if ((changeResponse.status != RequestStatus::OK) || !Json::Reader::Parse(changeResponse.body, instances) || instances.isMember("errorMessage"))
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else 
         Details();
@@ -966,7 +979,7 @@ void RealityDataConsole::Delete()
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
     std::string str;
-    Utf8String jsonResponse = "";
+    RawServerResponse rawResponse = RawServerResponse();
 
     if (className == "Document")
         {
@@ -976,7 +989,7 @@ void RealityDataConsole::Delete()
             return;
 
         RealityDataDeleteDocument documentReq = RealityDataDeleteDocument(instanceId);
-        RealityDataService::RequestToJSON(&documentReq, jsonResponse);
+        rawResponse = RealityDataService::BasicRequest(&documentReq);
         }
     else if (className == "Folder")
         {
@@ -986,7 +999,7 @@ void RealityDataConsole::Delete()
             return;
 
         RealityDataDeleteFolder folderReq = RealityDataDeleteFolder(instanceId);
-        RealityDataService::RequestToJSON(&folderReq, jsonResponse);
+        rawResponse = RealityDataService::BasicRequest(&folderReq);
         }
     else if (className == "RealityData")
         {
@@ -997,15 +1010,15 @@ void RealityDataConsole::Delete()
             return;
 
         RealityDataDelete realityDataReq = RealityDataDelete(instanceId);
-        RealityDataService::RequestToJSON(&realityDataReq, jsonResponse);
+        rawResponse = RealityDataService::BasicRequest(&realityDataReq);
         }
 
-        if(jsonResponse.Contains("errorMessage"))
+        if(rawResponse.body.Contains("errorMessage"))
             {
             Json::Value instances(Json::objectValue);
-            if (Json::Reader::Parse(jsonResponse, instances) && instances.isMember("errorMessage"))
-                jsonResponse = instances["errorMessage"].asString();
-            DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", jsonResponse), DisplayOption::Error);
+            if (Json::Reader::Parse(rawResponse.body, instances) && instances.isMember("errorMessage"))
+                rawResponse.body = instances["errorMessage"].asString();
+            DisplayInfo(Utf8PrintfString("There was an error removing this item\n%s", rawResponse.body), DisplayOption::Error);
             }
         else
             {
@@ -1019,7 +1032,7 @@ void RealityDataConsole::Filter()
     {
     Utf8String filter = "";
     Utf8String value;
-    std::string str;
+    std::wstring str;
     while (filter != "-Finish-")
         {
         DisplayInfo("\n---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n", DisplayOption::Error);
@@ -1028,6 +1041,7 @@ void RealityDataConsole::Filter()
         DisplayInfo(Utf8PrintfString("Group : %s\n", m_groupFilter));
         DisplayInfo(Utf8PrintfString("Type : %s\n", m_typeFilter));
         DisplayInfo(Utf8PrintfString("OwnedBy : %s\n", m_ownerFilter));
+        DisplayInfo(Utf8PrintfString("ProjectId : %s\n", m_projectFilter));
         DisplayInfo(Utf8PrintfString("Fuzzy Filter : %s\n", m_queryFilter));
         DisplayInfo("---", DisplayOption::Error); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---", DisplayOption::Question); DisplayInfo("---", DisplayOption::Tip); DisplayInfo("---\n\n", DisplayOption::Error);
         DisplayInfo("set filters from the list, use the -Finish- option to return\n", DisplayOption::Tip);
@@ -1041,7 +1055,7 @@ void RealityDataConsole::Filter()
         else
             DisplayInfo(Utf8PrintfString("Set filter for %s (Enter blank field to remove filter). Careful, filters are case sensitive\n", filter), DisplayOption::Tip);
 
-        std::getline(std::cin, str);
+        std::getline(std::wcin, str);
         value = Utf8String(str.c_str());
         if (filter.Equals("Name"))
             m_nameFilter = value;
@@ -1053,6 +1067,8 @@ void RealityDataConsole::Filter()
             m_ownerFilter = value;
         else if (filter.Equals("Fuzzy Filter"))
             m_queryFilter = value;
+        else if (filter.Equals("ProjectId"))
+            m_projectFilter = value;
         }
     }
 
@@ -1063,15 +1079,15 @@ void RealityDataConsole::Relationships()
         DisplayInfo("Please navigate to an item (with cd) before using this function\n", DisplayOption::Tip);
         return;
         }
-    RequestStatus status;
+    RawServerResponse projectResponse = RawServerResponse();
 
     Utf8String instanceId = m_currentNode->node.GetInstanceId();
     instanceId.ReplaceAll("/", "~2F");
 
     RealityDataProjectRelationshipByRealityDataIdRequest idReq = RealityDataProjectRelationshipByRealityDataIdRequest(instanceId);
-    bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, status);
+    bvector<RealityDataProjectRelationshipPtr> entities = RealityDataService::Request(idReq, projectResponse);
 
-    if (status == RequestStatus::BADREQ)
+    if (projectResponse.status == RequestStatus::BADREQ)
         {
         DisplayInfo("There was an error retrieving this information\n", DisplayOption::Error);
         return;
@@ -1089,10 +1105,10 @@ void RealityDataConsole::Relationships()
 
 void RealityDataConsole::CreateRD()
     {
-    std::string input;
+    std::wstring input;
     bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
     DisplayInfo("Please input value for Name\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     Utf8String name = Utf8String(input.c_str()).Trim();
     properties.Insert(RealityDataField::Name, name);
 
@@ -1102,7 +1118,7 @@ void RealityDataConsole::CreateRD()
     properties.Insert(RealityDataField::Classification, option);
 
     DisplayInfo("Please input value for Type\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     properties.Insert(RealityDataField::Type, Utf8String(input.c_str()).Trim());
 
     DisplayInfo("Please input value for Visibility\n  ?", DisplayOption::Question);
@@ -1110,24 +1126,24 @@ void RealityDataConsole::CreateRD()
     properties.Insert(RealityDataField::Visibility, option);
 
     DisplayInfo("Please input value for RootDocument\n  ?", DisplayOption::Question);
-    std::getline(std::cin, input);
+    std::getline(std::wcin, input);
     properties.Insert(RealityDataField::RootDocument, Utf8String(input.c_str()).Trim());
 
     RealityDataCreateRequest createRequest = RealityDataCreateRequest("", RealityDataServiceUpload::PackageProperties(properties));
     
-    RequestStatus status;
-    Utf8String response = RealityDataService::Request(createRequest, status);
+    RawServerResponse createResponse = RawServerResponse();
+    Utf8String response = RealityDataService::Request(createRequest, createResponse);
     
     Json::Value instance(Json::objectValue);
-    Json::Reader::Parse(response, instance);
-    if (status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
+    Json::Reader::Parse(createResponse.body, instance);
+    if (createResponse.status == RequestStatus::OK && !instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
         {
         DisplayInfo(Utf8PrintfString("New RealityData \"%s\" created with GUID %s", name, instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString()), DisplayOption::Info);
         }
     else
         {
         DisplayInfo("There was an error creating a new RealityData.", DisplayOption::Error);
-        DisplayInfo(Utf8PrintfString("And message %s\n", response), DisplayOption::Error);
+        DisplayInfo(Utf8PrintfString("And message %s\n", createResponse.body), DisplayOption::Error);
         }
     }
 
@@ -1148,13 +1164,12 @@ void RealityDataConsole::Link()
         return;
     
     RealityDataRelationshipCreateRequest relReq = RealityDataRelationshipCreateRequest(m_currentNode->node.GetInstanceId(), m_lastInput);
-    
-    int status = RequestType::Body;
-    WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(relReq, status, RealityDataService::GetVerifyPeer());
+
+    RawServerResponse relationResponse = RawServerResponse();
+    Utf8String response = RealityDataService::Request(relReq, relationResponse);
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+    if ((relationResponse.status != RequestStatus::OK) || !Json::Reader::Parse(relationResponse.body, instances) || instances.isMember("errorMessage"))
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();
@@ -1178,12 +1193,12 @@ void RealityDataConsole::Unlink()
     
     RealityDataRelationshipDelete relReq = RealityDataRelationshipDelete(m_currentNode->node.GetInstanceId(), m_lastInput);
     
-    int status = RequestType::Body;
+    RawServerResponse relationResponse = RawServerResponse();
     WSGRequest::GetInstance().SetCertificatePath(RealityDataService::GetCertificatePath());
-    Utf8String jsonResponse = WSGRequest::GetInstance().PerformRequest(relReq, status, RealityDataService::GetVerifyPeer());
+    WSGRequest::GetInstance().PerformRequest(relReq, relationResponse, RealityDataService::GetVerifyPeer());
 
     Json::Value instances(Json::objectValue);
-    if ((status != CURLE_OK) || !Json::Reader::Parse(jsonResponse, instances) || instances.isMember("errorMessage"))
+    if ((relationResponse.status != CURLE_OK) || !Json::Reader::Parse(relationResponse.body, instances) || instances.isMember("errorMessage"))
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();
@@ -1217,7 +1232,7 @@ void RealityDataConsole::DisplayInfo(Utf8StringCR msg, DisplayOption option)
         }
     
     if (!msg.empty())
-        std::cout << msg;
+        std::wcout << WString(msg.c_str(), true).c_str();
 
     // commande
     SetConsoleTextAttribute(m_hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);

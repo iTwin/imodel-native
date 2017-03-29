@@ -118,6 +118,7 @@ private:
     Utf8String           m_typeFilter;
     Utf8String           m_ownerFilter;
     Utf8String           m_queryFilter;
+    Utf8String           m_projectFilter;
 
     HANDLE        m_hConsole;
     };

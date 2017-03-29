@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/QueryProviders/UsgsAPIQueryProvider.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -97,7 +97,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 daysCacheIsValid = 10;
                 }
-            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, connectionString, querySettings, new DbQuerier());
+            m_instanceCacheManager = new InstanceCacheManager(DataSource.USGS, daysCacheIsValid, querySettings, new DbQuerier(connectionString));
 
             }
 

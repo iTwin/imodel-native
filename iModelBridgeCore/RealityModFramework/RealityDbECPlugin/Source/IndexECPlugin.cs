@@ -624,13 +624,15 @@ namespace IndexECPlugin.Source
                             {
                             requestorVersion = extendedParameters["RequestorVersion"].ToString();
                             }
-                            Packager packager = new Packager(ConnectionString, (EnumerableBasedQueryHandler) ExecuteQuery);
-                            packager.InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule, version, 0, requestor, requestorVersion);
-                            return;
-                            
+                        string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
+                        IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
+                        Packager packager = new Packager(new DbQuerier(ConnectionString), (EnumerableBasedQueryHandler) ExecuteQuery);
+                        packager.InsertPackageRequest(schema, connection, instance, sender.ParentECPlugin.QueryModule, version, 0, requestor, requestorVersion);
+                        return;
+
                     default:
-                            Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
-                            throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+                        Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
+                        throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
                     }
                 }
             catch ( Exception e )

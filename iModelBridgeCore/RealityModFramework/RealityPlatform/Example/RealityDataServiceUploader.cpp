@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     Utf8String Id = guid.ToString();*/
 
     RealityDataServiceUpload* upload = new RealityDataServiceUpload(fName, ""/*Id.ToLower()*/, propertyString, false, true, statusFunc);
-    if (upload->IsValidUpload())
+    if (upload->IsValidTransfer())
         {
         std::cout << Utf8PrintfString("Upload file : %s \n", fName.GetNameUtf8());
 

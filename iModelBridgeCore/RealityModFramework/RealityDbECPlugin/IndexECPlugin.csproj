@@ -9,19 +9,20 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>IndexECPlugin</RootNamespace>
     <AssemblyName>IndexECPlugin</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;CONNECTENV</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;CONNECTENV;IMSOFF</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -34,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Bentley.Discovery.Buddi.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
+      <HintPath>packages\Bentley.Discovery.Buddi.Client.11.0.0.20\lib\net45\Bentley.Discovery.Buddi.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Bentley.EC.AbstractUI3">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
       <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
@@ -74,10 +79,17 @@
     </Reference>
     <Reference Include="Bentley.Platform">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
-      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.SelectServer.SaaS.Client, Version=2017.2.17.2, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
       <HintPath>packages\Bentley.SelectServer.SaaS.Client.2017.2.17.2\lib\net45\Bentley.SelectServer.SaaS.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.ServiceBus, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -100,9 +112,12 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.identitymodel.services" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Web" />
@@ -115,6 +130,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Source\FileRetrievalControllers\DRStreamRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\PackageRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\PackageStreamRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
@@ -122,9 +138,9 @@
     <Compile Include="Source\Helpers\DataReadingHelper.cs" />
     <Compile Include="Source\Helpers\DbConnectionHelper.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
+    <Compile Include="Source\Helpers\DownloadReportHelper.cs" />
     <Compile Include="Source\Helpers\ECQueryConverter.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
-    <Compile Include="Source\Helpers\IAustraliaDataFetcher.cs" />
     <Compile Include="Source\Helpers\IDbQuerier.cs" />
     <Compile Include="Source\Helpers\InstanceCacheManager.cs" />
     <Compile Include="Source\Helpers\InstanceComplement.cs" />
@@ -134,7 +150,6 @@
     <Compile Include="Source\Helpers\MimicTableAccessor.cs" />
     <Compile Include="Source\Helpers\MimicTableWriter.cs" />
     <Compile Include="Source\Helpers\Packager.cs" />
-    <Compile Include="Source\Helpers\SchemaHelper.cs" />
     <Compile Include="Source\Helpers\IUSGSDataExtractor.cs" />
     <Compile Include="Source\Helpers\IUSGSDataFetcher.cs" />
     <Compile Include="Source\Helpers\SourceStringMap.cs" />
@@ -146,7 +161,6 @@
     <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\JTokenExtension.cs" />
     <Compile Include="Source\Log.cs" />
-    <Compile Include="Source\QueryProviders\AustraliaAPIQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\RdsAPIQueryProvider.cs" />
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
@@ -171,10 +185,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="External\location.config">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="External\newDbLocation.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -190,10 +200,9 @@
     <Content Include="External\Assemblies\Bentley.GeometryNET.Structs.dll" />
     <Content Include="External\Assemblies\Bentley.logging-2.0.dll" />
     <Content Include="External\Assemblies\Bentley.Platform.dll" />
-    <Content Include="External\ECSchemaNewDB.xml" />
-    <Content Include="External\ECSchemaStubv3.xml">
-      <SubType>Designer</SubType>
-    </Content>
+    <EmbeddedResource Include="External\ECSchemaDB.xml">
+      <LogicalName>ECSchemaDB.xml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

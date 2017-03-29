@@ -66,12 +66,12 @@ int main(int argc, char *argv[])
         std::cout << report << std::endl;
         }*/
 
-    RequestStatus status;
+    RawServerResponse idResponse = RawServerResponse();
 
     RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
-    RealityDataPtr entity = RealityDataService::Request(*idReq, status);
+    RealityDataPtr entity = RealityDataService::Request(*idReq, idResponse);
 
-    if (status != RequestStatus::BADREQ)
+    if (idResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "Entity provenance for Id " << id << ":" << std::endl;
         std::cout << entity->GetName() << std::endl << std::endl;
@@ -80,9 +80,10 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving provenance for id" << std::endl;
 
     RealityDataProjectRelationshipByProjectIdRequest* relationReq = new RealityDataProjectRelationshipByProjectIdRequest(projectId);
-    bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, status);
+    RawServerResponse relationResponse = RawServerResponse();
+    bvector<RealityDataProjectRelationshipPtr> relationships = RealityDataService::Request(*relationReq, relationResponse);
 
-    if (status != RequestStatus::BADREQ)
+    if (relationResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "number of relationships found for projectId " << projectId << " :" << std::endl;
         std::cout << relationships.size() << std::endl;
@@ -91,9 +92,10 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving relationships for id" << std::endl;
 
     RealityDataFolderByIdRequest* folderReq = new RealityDataFolderByIdRequest(folderId);
-    RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, status);
+    RawServerResponse folderResponse = RawServerResponse();
+    RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, folderResponse);
 
-    if (status != RequestStatus::BADREQ)
+    if (folderResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "folder found for Id " << folderId << " :" << std::endl;
         std::cout << folder->GetName() << std::endl;
@@ -102,9 +104,10 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving folder for id" << std::endl;
 
     RealityDataDocumentByIdRequest* documentReq = new RealityDataDocumentByIdRequest(documentId);
-    RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, status);
+    RawServerResponse documentResponse = RawServerResponse();
+    RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, documentResponse);
 
-    if (status != RequestStatus::BADREQ)
+    if (documentResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "document with Id " << documentId << " :" << std::endl;
         std::cout << document->GetName() << std::endl;
@@ -125,7 +128,8 @@ int main(int argc, char *argv[])
     strcpy(outfile, fileName.GetNameUtf8().c_str());
     FILE* file = fopen(outfile, "wb");
 
-    RealityDataService::Request(*contentRequest, file, status);
+    RawServerResponse contentResponse = RawServerResponse();
+    RealityDataService::Request(*contentRequest, file, contentResponse);
     
     bvector<Utf8String> filter1 = bvector<Utf8String>();
     bvector<Utf8String> filter2 = bvector<Utf8String>();
@@ -145,9 +149,10 @@ int main(int argc, char *argv[])
     filteredRequest->SetFilter(filters);
     filteredRequest->SortBy(RealityDataField::ModifiedTimestamp, true);
 
-    bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, status);
+    RawServerResponse filteredResponse = RawServerResponse();
+    bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, filteredResponse);
 
-    if (status != RequestStatus::BADREQ) 
+    if (filteredResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "Number of spatial entities found for filter : " << std::endl;
         std::cout << filteredSpatialEntities.size() << std::endl;
@@ -156,9 +161,10 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving spatial entities with filter" << std::endl;
 
     RealityDataListByEnterprisePagedRequest* enterpriseReq = new RealityDataListByEnterprisePagedRequest(enterpriseId);
-    bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, status);
+    RawServerResponse enterpriseResponse = RawServerResponse();
+    bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse);
 
-    if (status != RequestStatus::BADREQ)
+    if (enterpriseResponse.status != RequestStatus::BADREQ)
         {
         std::cout << "Number of spatial entities found for enterprise" << enterpriseId << " :" << std::endl;
         std::cout << enterpriseVec.size() << std::endl;
@@ -168,9 +174,10 @@ int main(int argc, char *argv[])
 
 
     RealityDataProjectRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataProjectRelationshipByProjectIdPagedRequest(projectId);
-    bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, status);
+    RawServerResponse relationResponse2 = RawServerResponse();
+    bvector<RealityDataProjectRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, relationResponse2);
 
-    if (status != RequestStatus::BADREQ)
+    if (relationResponse2.status != RequestStatus::BADREQ)
         {
         std::cout << "Number of relationships found for project " << projectId << " :" << std::endl;
         std::cout << relationVec.size() << std::endl;

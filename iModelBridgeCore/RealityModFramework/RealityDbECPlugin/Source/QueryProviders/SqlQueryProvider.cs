@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/QueryProviders/SqlQueryProvider.cs $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -142,7 +142,7 @@ namespace IndexECPlugin.Source.QueryProviders
             ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap, out propertyList);
 
 
-            IDbQuerier dbQuerier = new DbQuerier();
+            IDbQuerier dbQuerier = new DbQuerier(m_connectionString);
 
 #if BBOXQUERY
             bool removeSpatial = false;
@@ -158,7 +158,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 #endif
 
-            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList, m_connectionString);
+            List<IECInstance> instanceList = dbQuerier.QueryDbForInstances(sqlCommandString, dataReadingHelper, paramNameValueMap, ecClass, propertyList);
 
 #if BBOXQUERY
             if ( m_polygonDescriptor != null )
