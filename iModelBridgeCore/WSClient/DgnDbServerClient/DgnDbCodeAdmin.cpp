@@ -42,48 +42,94 @@ Utf8StringR formattedValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Algirdas.Mikoliunas             03/2017
 //---------------------------------------------------------------------------------------
+DgnDbStatus DgnDbCodeAdmin::GenerateMask
+(
+CodeSpecCR codeSpec,
+Utf8StringR mask
+) const
+    {
+    Utf8String placeholder;
+    for (CodeFragmentSpecCR fragmentSpec : codeSpec.GetFragmentSpecs())
+        {
+        switch (fragmentSpec.GetType())
+            {
+            case CodeFragmentSpec::Type::FixedString:
+                mask.append(fragmentSpec.GetFixedString());
+                break;
+            case CodeFragmentSpec::Type::Sequence:
+                placeholder = Utf8String(fragmentSpec.GetMinChars(), '#');
+                mask.append(placeholder);
+                break;
+            default:
+                return DgnDbStatus::BadRequest;
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Algirdas.Mikoliunas             03/2017
+//---------------------------------------------------------------------------------------
 DgnCode DgnDbCodeAdmin::_ReserveNextCodeInSequence(DgnElementCR element, CodeSpecCR codeSpec, Utf8StringCR sequenceMask) const
     {
-#if 0
     DgnDbR dgndb = element.GetDgnDb();
     DgnDbRepositoryManager* repositoryManager = static_cast<DgnDbRepositoryManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
     auto repositoryConnection = repositoryManager->GetRepositoryConnectionPtr();
     
-    // TODO: remove when DgnPlatform will use #
-    Utf8String mask(sequenceMask);
-    //mask.ReplaceAll("?", "#");
-
-    auto queryResult = repositoryConnection->QueryCodeNextAvailable(mask, *element.GetCodeSpec())->GetResult();
+    // Query next available code 
+    auto queryResult = repositoryConnection->QueryCodeNextAvailable(codeSpec)->GetResult();
     if (!queryResult.IsSuccess())
-        return DgnDbStatus::BadRequest;
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
+    auto templateResult = queryResult.GetValue();
+    if (Utf8String::IsNullOrEmpty(templateResult.GetValue().c_str()))
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
 
-    auto templateResult = *queryResult.GetValue().GetTemplates().begin();
+    // Generate next available code locally
     Utf8String generatedValue;
+    if (DgnDbStatus::Success != GenerateCodeValue(codeSpec, templateResult.GetValue(), generatedValue))
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
 
-    auto elementClass = element.GetElementClass();
-    CodeSpecId codeSpecId = _GetDefaultCodeSpecId(dgndb, *elementClass);
-    auto codeSpec = dgndb.CodeSpecs().GetCodeSpec(codeSpecId);
-
-    GenerateCodeValue(*codeSpec, templateResult.GetValue(), generatedValue);
     auto generatedCode = DgnCode(templateResult.GetCodeSpecId(), generatedValue, templateResult.GetScope());
 
     // Reserve code
+    DgnDbStatus result = this->_ReserveCode(element, generatedCode);
+    if (DgnDbStatus::Success != result)
+        {
+        BeAssert(false);
+        return DgnCode();
+        }
+        
+    return generatedCode;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Algirdas.Mikoliunas             03/2017
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnDbCodeAdmin::_ReserveCode(DgnElementCR element, DgnCodeCR codeToReserve) const
+    {
+    DgnDbR dgndb = element.GetDgnDb();
+    DgnDbRepositoryManager* repositoryManager = static_cast<DgnDbRepositoryManager*>(T_HOST.GetRepositoryAdmin()._GetRepositoryManager(dgndb));
+
     IBriefcaseManager::Request request;
-    request.Codes().insert(generatedCode);
+    request.Codes().insert(codeToReserve);
+
     RepositoryStatus result = repositoryManager->Acquire(request, dgndb).Result();
-
     if (RepositoryStatus::Success != result)
-        return DgnDbStatus::BadRequest;
-
-    fragmentString = templateResult.GetValue();
-    if (Utf8String::IsNullOrEmpty(fragmentString.c_str()))
-        return DgnDbStatus::BadRequest;
+        {
+        return DgnDbStatus::CodeNotReserved;
+        }
 
     return DgnDbStatus::Success;
-#else
-    BeAssert(false);
-    return DgnCode();
-#endif
     }
 
 //---------------------------------------------------------------------------------------
