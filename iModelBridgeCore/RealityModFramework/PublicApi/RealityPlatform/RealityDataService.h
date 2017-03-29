@@ -547,6 +547,7 @@ typedef std::function<int()> RealityDataServiceTransfer_HeartbeatCallBack;
 struct RealityDataCreateRequest : public RealityDataUrl
     {
     REALITYDATAPLATFORM_EXPORT RealityDataCreateRequest(Utf8String realityDataId, Utf8String properties);
+    REALITYDATAPLATFORM_EXPORT RealityDataCreateRequest(RealityDataCR realityData);
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
     };

@@ -863,6 +863,35 @@ RealityDataCreateRequest::RealityDataCreateRequest(Utf8String realityDataId, Utf
     }
 
 //=====================================================================================
+//! @bsimethod                                   Alain.Robert              03/2017
+//=====================================================================================
+RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
+    { 
+    m_id = realityData.GetIdentifier(); 
+    m_validRequestString = false;
+
+
+
+
+    bmap<RealityDataField, Utf8String> properties = bmap<RealityDataField, Utf8String>();
+    properties.Insert(RealityDataField::Name, realityData.GetName());
+    properties.Insert(RealityDataField::Classification, realityData.GetClassificationTag());
+    properties.Insert(RealityDataField::Type, realityData.GetRealityDataType());
+    properties.Insert(RealityDataField::Visibility, realityData.GetVisibilityTag());
+    properties.Insert(RealityDataField::RootDocument, realityData.GetRootDocument());
+
+    Utf8String formatedProps = RealityDataServiceUpload::PackageProperties(properties);
+
+    m_requestType = HttpRequestType::POST_Request;
+    m_requestPayload = "{\"instance\":{\"instanceId\":\"";
+    m_requestPayload.append(m_id);
+    m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
+    m_requestPayload.append(formatedProps);
+    m_requestPayload.append("}}}");
+    }
+
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataCreateRequest::_PrepareHttpRequestStringAndPayload() const

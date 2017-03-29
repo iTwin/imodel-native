@@ -57,6 +57,15 @@
             <Assemblies>Delivery/AwsTraverser.exe</Assemblies>
         </Bindings>
     </Part>
+
+    <Part Name="RealityDataServicePerformanceTests" BentleyBuildMakeFile="Tests\PerformanceTests\RealityDataServicePerformanceTests.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataServicePerformanceTests.exe</Assemblies>
+        </Bindings>
+    </Part>
     
     <Part Name="BentleyDesktopClient-Api" BentleyBuildMakeFile="RealityModFrameworkBentleyDesktopClient.prewire.mke" OnlyPlatforms="x64">
         <SubPart PartName="ConnectClientAPI"           PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
@@ -230,6 +239,7 @@
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
         <SubPart PartName="RealityContextTest"/>
+        <SubPart PartName="RealityDataServicePerformanceTests"/>
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
