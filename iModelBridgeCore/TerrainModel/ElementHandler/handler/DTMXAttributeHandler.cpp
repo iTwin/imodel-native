@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMXAttributeHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1817,7 +1817,7 @@ void    DTMHeaderXAttributeHandler::DeleteCache (XAttributeHandleCR xAttr, Trans
 
         for (int i = 0; i < numDep; i++)
             {
-            if (refs[i]->GetElementType() == 106)
+            if (refs[i]->GetElementType() == 106 && !refs[i]->IsDeleted())
                 {
                 EditElementHandle element (refs[i], nullptr);
 
