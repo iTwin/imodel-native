@@ -2359,10 +2359,13 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
 
         gatherPolyline (polylinePoints, polylineColors, polylineAttributes, polyline, mesh, doColors, doBatchIds);
 
+        if (polylinePoints.size() < 2)
+            continue;
 
         DRange3d        polylineRange = DRange3d::From(polylinePoints);
         DPoint3d        rangeCenter = DPoint3d::FromInterpolate(polylineRange.low, .5, polylineRange.high);
         double          cumulativeLength = 0.0;
+        bool            isClosed = polylinePoints.front().IsEqual(polylinePoints.back());
         
         for (size_t i=0, last = polylinePoints.size()-1; i<last; i++)
             {
@@ -2375,10 +2378,10 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
             uint16_t            colors0 = 0, colors1 = 0, attributes0 = 0, attributes1 = 1;
             static double       s_extendDistance = .1;
             DVec3d              thisDir = DVec3d::FromStartEndNormalize(p0, p1), negatedThisDir = DVec3d::FromScale(thisDir, -1.0),
-                                prevDir0 = isStart ? negatedThisDir : DVec3d::FromStartEnd(p0,  polylinePoints[i-1]),
+                                prevDir0 = isStart ? (isClosed ?  DVec3d::FromStartEndNormalize(p0,  polylinePoints[last-1]) : negatedThisDir) : DVec3d::FromStartEndNormalize(p0,  polylinePoints[i-1]),
                                 nextDir0 = thisDir,
                                 prevDir1 = negatedThisDir,
-                                nextDir1 = isEnd ? thisDir : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
+                                nextDir1 = isEnd ? (isClosed ? DVec3d::FromStartEndNormalize(p1, polylinePoints[1]) : thisDir) : DVec3d::FromStartEndNormalize(p1, polylinePoints[i+2]);
             size_t              baseIndex = tesselation.m_points.size();
                         
             if (doColors)
@@ -2414,11 +2417,12 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                       rangeCenter);
                 }
             
-            if (!isStart)
+            if (isClosed || !isStart)
                 tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
-            if (!isEnd)
+            if (isClosed || !isEnd)
                 tesselation.AddJointTriangles(baseIndex+1, length1, p1, prevDir1, nextDir1, attributes1, colors1, 6.0, rangeCenter);
+
             }
         maxLength = std::max(maxLength, cumulativeLength);
         }
