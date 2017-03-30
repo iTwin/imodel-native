@@ -632,13 +632,13 @@ void DoClips (bvector<DPoint3d> const &clipPoints)
     bvector<size_t> edgeCount {7,9,12, 6, 11};
     double dyMax = 10.0;
     SaveAndRestoreCheckTransform shifterY;
-    auto baseTransformA = Check::GetTransform ();
+    /* unused - auto baseTransformA = */Check::GetTransform ();
 
     for (size_t i = 0; i < s_arcSamples.size (); i++)
         {
         SaveAndRestoreCheckTransform shifterX;
 
-        auto baseTransformB = Check::GetTransform ();
+        /* unused - auto baseTransformB = */Check::GetTransform ();
         AddPoints (points, s_arcSamples[i], i < edgeCount.size () ? edgeCount[i] : 9);
         PolyfaceHeaderPtr delauney, voronoi, voronoiInside;
         DRange3d rangeA = DRange3d::From (points);
