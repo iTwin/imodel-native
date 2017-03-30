@@ -1,6 +1,5 @@
 #include "testHarness.h"
 
-
 static int s_noisy = 0;
 void TestXYSingleIntersection (size_t a0, size_t a1, size_t b0, size_t b1)
     {
@@ -432,7 +431,45 @@ TEST(Vu,SpineContextC)
     Check::ClearGeometry("Vu.SpineContextC");
     }
 
-
+TEST(Vu,SpineContextBridgePier)
+    {
+    double dxTotal = 10.0;
+    double dyTotal = 14.0;
+    double dxBar = 3.0;
+    double dyBar = 2.0;
+    double dxFillet = 1.0;
+    double markerSize = 0.15;
+    auto options = IFacetOptions::CreateForCurves ();
+    for (double f : bvector<double> {1.0, 2.0, 0.5, 4.0})
+        {
+        double dyFillet = f * dxFillet;
+        auto section = CreateFilletedSymmetricT (dxTotal, dyTotal, dxBar, dyBar, dxFillet, dyFillet);
+        SaveAndRestoreCheckTransform shifter (2.0 * dxTotal, 0,0);
+        for (double maxEdgeLength : bvector<double> {1000.0, 5.0, 2.0, 1.0, 0.5})
+            {
+            SaveAndRestoreCheckTransform shifter (0, 2.0 * dyTotal, 0);
+            bvector<DPoint3d> xyz;
+            options->SetMaxEdgeLength (maxEdgeLength);
+            section->AddStrokePoints (xyz, *options);
+                {
+                Check::SaveTransformedMarkers (xyz, markerSize);
+                VuSpineContext sc;
+                sc.InsertEdges (xyz, true);
+                bool useParity = true;
+                double minSplitRadians = 0.3;
+                double minDiagonalAngle = 1.0;
+                sc.TriangulateForSpine (useParity, minSplitRadians);
+                sc.MarkBoxes (true, minDiagonalAngle);
+                bvector<bvector<DPoint3d>> edges;
+                sc.GetSpineEdges (edges);
+                Check::SaveTransformed (xyz);
+                Check::SaveTransformed (edges);
+                Check::Shift (80,0,0);
+                }
+            }
+        }
+    Check::ClearGeometry("Vu.SpineContextBridgePier");
+    }
 
 
 TEST(PolylineOps,GreedyTriangulation1)

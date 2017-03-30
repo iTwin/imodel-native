@@ -54,3 +54,13 @@ double dyLeft,  //!< [in] vertical width of left bar (measured from top down
 double dyRight,      //!< [in] vertical width of right bar (measuredFrom top down)
 bool close  = true  //!< [in] true to add closure point.
 );
+
+// return a "T" shape
+CurveVectorPtr CreateFilletedSymmetricT (
+double dxTotal, //!< [in] total width of range box
+double dyTotal, //!< [in] total height of range box
+double dxLeft,  //!< [in] x distance under the left bar
+double dyLeft,  //!< [in] vertical width of left bar (measured from top down
+double dxFillet,    //!< [in] x size under elliptic fillet
+double dyFillet    //!< [in] y size under elliptic fillet
+);
