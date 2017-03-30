@@ -3844,10 +3844,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasCli
 {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid()) return false;
-    bool isUpToDate = true;
+    bool isUpToDate = false;
     for (const auto& diffSet : *diffsetPtr)
     {
-        if (diffSet.clientID == (uint64_t)-1 && !diffSet.upToDate) isUpToDate= false;
+        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) isUpToDate= true;
     }
     for (const auto& diffSet : *diffsetPtr)
     {
