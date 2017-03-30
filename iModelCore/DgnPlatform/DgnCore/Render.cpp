@@ -14,16 +14,6 @@ BEGIN_UNNAMED_NAMESPACE
     static int s_progressiveTarget;
     static double s_frameRateGoal;
 
-    static constexpr Utf8CP str_Hidden() {return "hidden";}
-    static constexpr Utf8CP str_Visible() {return "visible";}
-    static constexpr Utf8CP str_Width() {return "width";}
-    static constexpr Utf8CP str_OvrColorFlag() {return "ovrColor";}
-    static constexpr Utf8CP str_Color() {return "color";}
-    static constexpr Utf8CP str_Pattern() {return "pattern";}
-    static constexpr Utf8CP str_TransparencyThreshold() {return "transThreshold";}
-    static constexpr Utf8CP str_AvgLum() {return "avgLum";}
-    static constexpr Utf8CP str_MaxLum() {return "maxLum";}
-    static constexpr Utf8CP str_Fstop() {return "fstop";}
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -671,10 +661,10 @@ Transform Render::Material::Trans2x3::GetTransform() const
 Json::Value Render::HiddenLineParams::Style::ToJson() const
     {
     Json::Value val;
-    val[Json::StaticString(str_OvrColorFlag())] = m_ovrColor;
-    val[Json::StaticString(str_Color())] = m_color.GetValue();
-    val[Json::StaticString(str_Pattern())] = (Json::UInt32) m_pattern;
-    val[Json::StaticString(str_Width())] = (Json::UInt32) m_width;
+    val[json_ovrColor()] = m_ovrColor;
+    val[json_color()] = m_color.GetValue();
+    val[json_pattern()] = (Json::UInt32) m_pattern;
+    val[json_width()] = (Json::UInt32) m_width;
     return val;
     }
 
@@ -683,10 +673,10 @@ Json::Value Render::HiddenLineParams::Style::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::HiddenLineParams::Style::FromJson(JsonValueCR val)
     {
-    m_ovrColor = val[str_OvrColorFlag()].asBool(m_ovrColor);
-    m_color = ColorDef(val[str_Color()].asUInt(m_color.GetValue()));
-    m_pattern = (GraphicParams::LinePixels) val[str_Pattern()].asUInt((uint32_t) m_pattern);
-    m_width = val[str_Width()].asUInt(m_width);
+    m_ovrColor = val[json_ovrColor()].asBool(m_ovrColor);
+    m_color = ColorDef(val[json_color()].asUInt(m_color.GetValue()));
+    m_pattern = (GraphicParams::LinePixels) val[json_pattern()].asUInt((uint32_t) m_pattern);
+    m_width = val[json_width()].asUInt(m_width);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -697,9 +687,9 @@ Json::Value Render::HiddenLineParams::ToJson() const
     HiddenLineParams defaults;
     Json::Value val;
 
-    if (m_visible != defaults.m_visible) val[Json::StaticString(str_Visible())] = m_visible.ToJson();
-    if (m_hidden != defaults.m_hidden) val[Json::StaticString(str_Hidden())] = m_hidden.ToJson();
-    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[Json::StaticString(str_TransparencyThreshold())] = m_transparencyThreshold;
+    if (m_visible != defaults.m_visible) val[json_visible()] = m_visible.ToJson();
+    if (m_hidden != defaults.m_hidden) val[json_hidden()] = m_hidden.ToJson();
+    if (m_transparencyThreshold != defaults.m_transparencyThreshold) val[json_transThreshold()] = m_transparencyThreshold;
     return val;
     }
 
@@ -712,9 +702,9 @@ Render::HiddenLineParams Render::HiddenLineParams::FromJson(JsonValueCR val)
 
     if (val.isObject())
         {
-        params.m_visible.FromJson(val[str_Visible()]);
-        params.m_hidden.FromJson(val[str_Hidden()]);
-        params.m_transparencyThreshold = val[str_TransparencyThreshold()].asDouble(params.m_transparencyThreshold);
+        params.m_visible.FromJson(val[json_visible()]);
+        params.m_hidden.FromJson(val[json_hidden()]);
+        params.m_transparencyThreshold = val[json_transThreshold()].asDouble(params.m_transparencyThreshold);
         }
     return params;
     }
@@ -726,9 +716,9 @@ void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
     {
     if (!val.isObject())
         return;
-    m_avgLum = val[str_AvgLum()].asDouble();
-    m_maxLum = val[str_MaxLum()].asDouble();
-    m_fstop = val[str_Fstop()].asDouble();
+    m_avgLum = val[json_avgLum()].asDouble();
+    m_maxLum = val[json_maxLum()].asDouble();
+    m_fstop = val[json_fstop()].asDouble();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -737,9 +727,9 @@ void Render::SceneLights::Brightness::FromJson(JsonValueCR val)
 Json::Value Render::SceneLights::Brightness::ToJson() const
     {
     Json::Value val;
-    if (0.0 != m_avgLum) val[Json::StaticString(str_AvgLum())] = m_avgLum;
-    if (0.0 != m_maxLum) val[Json::StaticString(str_MaxLum())] = m_maxLum;
-    if (0.0 != m_fstop) val[Json::StaticString(str_Fstop())] = m_fstop;
+    if (0.0 != m_avgLum) val[json_avgLum()] = m_avgLum;
+    if (0.0 != m_maxLum) val[json_maxLum()] = m_maxLum;
+    if (0.0 != m_fstop) val[json_fstop()] = m_fstop;
     return val;
     }
 

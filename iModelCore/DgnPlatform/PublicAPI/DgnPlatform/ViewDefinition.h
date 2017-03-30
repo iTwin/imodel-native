@@ -50,7 +50,8 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
 
-    static constexpr Utf8CP str_Styles() {return "styles";}
+    BE_JSON_NAME(styles);
+
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
     DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
@@ -62,8 +63,8 @@ protected:
     virtual DisplayStyle3dCP _ToDisplayStyle3d() const {return nullptr;}
     DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
-    JsonValueCR GetStyles() const {return m_jsonProperties[str_Styles()];}
-    JsonValueR GetStylesR() {return m_jsonProperties[Json::StaticString(str_Styles())];}
+    JsonValueCR GetStyles() const {return m_jsonProperties[json_styles()];}
+    JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
 public:
     DisplayStyle2dCP ToDisplayStyle2d() const {return _ToDisplayStyle2d();}
@@ -197,10 +198,11 @@ protected:
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
     explicit DisplayStyle3d(CreateParams const& params) : T_Super(params) {}
-    static constexpr Utf8CP str_HLine() {return "hline";}
     DisplayStyle3dCP _ToDisplayStyle3d() const override final {return this;}
 
 public:
+    BE_JSON_NAME(hline)
+
     //! Construct a new DisplayStyle3d.
     //! @param[in] db The DgnDb to hold the DisplayStyle3d
     //! @param[in] name The name of the DisplayStyle3d. Must be unique across all DisplayStyles
@@ -220,13 +222,14 @@ public:
     //! Turn the GroundPlane on or off.
     void SetGroundPlaneEnabled(bool val) {m_environment.m_groundPlane.m_enabled = val;}
 
-    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(str_HLine()));}
-    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(str_HLine(), params.ToJson());}
+    Render::HiddenLineParams GetHiddenLineParams() {return Render::HiddenLineParams::FromJson(GetStyle(json_hline()));}
+    void SetHiddenLineParams(Render::HiddenLineParams const& params) {SetStyle(json_hline(), params.ToJson());}
 
     DGNPLATFORM_EXPORT Render::SceneLightsPtr CreateSceneLights(Render::TargetR);
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
     DGNPLATFORM_EXPORT void SetSceneBrightness(Render::SceneLights::Brightness const&);
+    DGNPLATFORM_EXPORT Render::SceneLights::Brightness GetSceneBrightness() const;
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
@@ -388,8 +391,9 @@ protected:
     mutable DisplayStylePtr m_displayStyle;
 
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
-    static constexpr Utf8CP str_Description() {return "Description";}
-    static constexpr Utf8CP str_ViewDetails() {return "viewDetails";}
+    static constexpr Utf8CP prop_Description() {return "Description";}
+    BE_JSON_NAME(viewDetails)
+
     static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector);} 
@@ -429,8 +433,8 @@ protected:
     virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     void SetupDisplayStyle(DisplayStyleR style) {BeAssert(!IsPersistent()); m_displayStyle = &style; m_displayStyleId=style.GetElementId();}
     Utf8String ToDetailJson();
-    JsonValueCR GetDetails() const {return m_jsonProperties[str_ViewDetails()];}
-    JsonValueR GetDetailsR() {return m_jsonProperties[str_ViewDetails()];}
+    JsonValueCR GetDetails() const {return m_jsonProperties[json_viewDetails()];}
+    JsonValueR GetDetailsR() {return m_jsonProperties[json_viewDetails()];}
     void AdjustAspectRatio(double windowAspect);
 
 public:
@@ -439,8 +443,8 @@ public:
     //! Determine whether two ViewDefinitions are "equal", including their unsaved state
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
-    Utf8String GetDescription() const {return GetPropertyValueString(str_Description());} //!< Get description
-    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(str_Description(), value.c_str());} //!< Set description
+    Utf8String GetDescription() const {return GetPropertyValueString(prop_Description());} //!< Get description
+    DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition

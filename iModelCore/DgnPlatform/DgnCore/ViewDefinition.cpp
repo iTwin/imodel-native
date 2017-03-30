@@ -64,13 +64,13 @@ namespace ViewProperties
     static constexpr Utf8CP str_GridSpaceY() {return "gridSpaceY";}
     static constexpr Utf8CP str_GridPerRef() {return "gridPerRef";}
     static constexpr Utf8CP str_ACS() {return "acs";}
-    static constexpr Utf8CP str_SceneLights() {return "sceneLights";}
     static constexpr Utf8CP str_Ambient() {return "ambient";}
     static constexpr Utf8CP str_Flash() {return "flash";}
     static constexpr Utf8CP str_Portrait() {return "portrait";}
     static constexpr Utf8CP str_Sun() {return "sun";}
     static constexpr Utf8CP str_SunDir() {return "sunDir";}
-    static constexpr Utf8CP str_Brightness() {return "brightness";}
+    BE_JSON_NAME(sceneLights);
+    BE_JSON_NAME(brightness);
 };
 
 using namespace ViewProperties;
@@ -1211,7 +1211,7 @@ void DisplayStyle::SetMonochromeColor(ColorDef val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
     {
-    JsonValueCR sceneLights = GetStyle(Json::StaticString(str_SceneLights()));
+    JsonValueCR sceneLights = GetStyle(json_sceneLights());
 
     Render::SceneLightsPtr lights = new Render::SceneLights();
     if (m_viewFlags.ShowCameraLights())
@@ -1235,7 +1235,7 @@ Render::SceneLightsPtr DisplayStyle3d::CreateSceneLights(Render::TargetR target)
             }
         }
 
-    lights->m_brightness.FromJson(sceneLights[str_Brightness()]);
+    lights->m_brightness.FromJson(sceneLights[json_brightness()]);
     return lights;
     }
 
@@ -1247,7 +1247,7 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
     if (!params.IsValid())
         return;
 
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     switch (params.GetType())
         {
         case Lighting::LightType::Ambient:
@@ -1269,7 +1269,7 @@ void DisplayStyle3d::SetSceneLight(Lighting::Parameters const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR direction)
     {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     if (params.GetType() != Lighting::LightType::Solar || !params.IsValid())
         {
         sceneLights.removeMember(str_SunDir());
@@ -1283,15 +1283,25 @@ void DisplayStyle3d::SetSolarLight(Lighting::Parameters const& params, DVec3dCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+Render::SceneLights::Brightness DisplayStyle3d::GetSceneBrightness() const
+    {
+    Render::SceneLights::Brightness brightness;
+    brightness.FromJson(GetStyles()[json_sceneLights()][json_brightness()]);
+    return brightness;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle3d::SetSceneBrightness(Render::SceneLights::Brightness const& brightness)
     {
-    JsonValueR sceneLights = GetStylesR()[str_SceneLights()];
+    JsonValueR sceneLights = GetStylesR()[json_sceneLights()];
     if (!brightness.IsValid())
         {
-        sceneLights.removeMember(str_Brightness());
+        sceneLights.removeMember(json_brightness());
         return;
         }
-    sceneLights[str_Brightness()] = brightness.ToJson();
+    sceneLights[json_brightness()] = brightness.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
