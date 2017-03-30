@@ -52,12 +52,13 @@ private:
     uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
     uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
-    uint32_t m_sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used.
     uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
     uint32_t m_grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
     uint32_t m_visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode.
     uint32_t m_hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode.
-    uint32_t m_ignoreLighting:1;   //!< Controls whether lights are used.
+    uint32_t m_sourceLights:1;     //!< Controls whether the source lights in spatial models are used
+    uint32_t m_cameraLights:1;     //!< Controls whether camera (ambient, portrait, flashbulb) lights are used.
+    uint32_t m_solarLight:1;       //!< Controls whether sunlight ussed
     uint32_t m_shadows:1;          //!< Shows or hides shadows.
     uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied.
     uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
@@ -78,12 +79,13 @@ public:
         m_fill = 1;
         m_textures = 1;
         m_materials = 1;
-        m_sceneLights = 1;
+        m_sourceLights = 1;
+        m_cameraLights = 1;
+        m_solarLight = 1;
         m_acsTriad = 0;
         m_grid = 0;
         m_visibleEdges = 0;
         m_hiddenEdges = 0;
-        m_ignoreLighting = 0;
         m_shadows = 0;
         m_noClipVolume = 0;
         m_constructions = 0;
@@ -111,8 +113,6 @@ public:
     void SetShowTextures(bool val) {m_textures = val;}
     bool ShowMaterials() const {return m_materials;}
     void SetShowMaterials(bool val) {m_materials = val;}
-    bool ShowSceneLights() const {return m_sceneLights;}
-    void SetShowSceneLights(bool val) {m_sceneLights = val;}
     bool ShowAcsTriad() const {return m_acsTriad;}
     void SetShowAcsTriad(bool val) {m_acsTriad = val;}
     bool ShowGrid() const {return m_grid;}
@@ -121,8 +121,12 @@ public:
     void SetShowVisibleEdges(bool val) {m_visibleEdges = val;}
     bool ShowHiddenEdges() const {return m_hiddenEdges;}
     void SetShowHiddenEdges(bool val) {m_hiddenEdges = val;}
-    bool IgnoreLighting() const {return m_ignoreLighting;}
-    void SetIgnoreLighting(bool val) {m_ignoreLighting = val;}
+    bool ShowSourceLights() const {return m_sourceLights;}
+    void SetShowSourceLights(bool val) {m_sourceLights = val;}
+    bool ShowCameraLights() const {return m_cameraLights;}
+    void SetShowCameraLights(bool val) {m_cameraLights = val;}
+    bool ShowSolarLight() const {return m_solarLight;}
+    void SetShowSolarLight(bool val) {m_solarLight = val;}
     bool ShowShadows() const {return m_shadows;}
     void SetShowShadows(bool val) {m_shadows = val;}
     bool ShowClipVolume() const {return !m_noClipVolume;}
@@ -725,6 +729,13 @@ enum class FillDisplay //!< Whether a closed region should be drawn for wirefram
     Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
 };
 
+enum class BackgroundFill
+{
+    None    = 0, //!< single color fill uses the fill color and line color to draw either a solid or outline fill
+    Solid   = 1, //!< single color fill uses the view's background color to draw a solid fill
+    Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
+};
+
 enum class DgnGeometryClass
 {
     Primary      = 0,
@@ -828,13 +839,12 @@ private:
         bool m_weight:1;
         bool m_style:1;
         bool m_material:1;
-        bool m_fill:1;   // If not set, fill is an opaque fill that matches sub-category appearance color...
-        bool m_bgFill:1; // When set, fill is an opaque fill that matches current view background color...
+        bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
         AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
     AppearanceOverrides m_appearanceOverrides; //!< flags for parameters that override SubCategory::Appearance.
-    bool m_resolved = false;  //!< whether Resolve has established SubCategory::Appearance/effective values.
+    bool m_resolved = false; //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
     DgnMaterialId m_materialId; //!< render material Id.
@@ -842,13 +852,14 @@ private:
     int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
     uint32_t m_weight = 0;
     ColorDef m_lineColor;
-    ColorDef m_fillColor;  //!< fill color (applicable only if filled)
+    ColorDef m_fillColor; //!< fill color (applicable only if filled)
+    BackgroundFill m_backgroundFill = BackgroundFill::None; //!< support for fill using the view's background color.
     FillDisplay m_fillDisplay = FillDisplay::Never; //!< whether or not the element should be displayed filled
     double m_elmTransparency = 0; //!< transparency, 1.0 == completely transparent.
     double m_netElmTransparency = 0; //!< net transparency for element/category.
     double m_fillTransparency = 0;  //!< fill transparency, 1.0 == completely transparent.
     double m_netFillTransparency = 0; //!< net transparency for fill/category.
-    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary;   //!< geometry class
+    DgnGeometryClass m_geometryClass = DgnGeometryClass::Primary; //!< geometry class
     LineStyleInfoPtr m_styleInfo; //!< line style id plus modifiers.
     GradientSymbPtr m_gradient; //!< gradient fill settings.
     PatternParamsPtr m_pattern; //!< area pattern settings.
@@ -868,8 +879,8 @@ public:
     void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo; if (styleInfo) m_resolved = false;}
     void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
     void SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
-    void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_appearanceOverrides.m_bgFill = false; m_fillColor = color;}
-    void SetFillColorToViewBackground() {m_appearanceOverrides.m_fill = false; m_appearanceOverrides.m_bgFill = true;} // FillDisplay::Blanking creates an opaque view background fill...
+    void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_fillColor = color; m_backgroundFill = BackgroundFill::None;}
+    void SetFillColorFromViewBackground(bool outline=false) {m_appearanceOverrides.m_fill = true; m_backgroundFill = outline ? BackgroundFill::Outline : BackgroundFill::Solid; m_resolved = false;}
     void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
     void SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;} // NOTE: Sets BOTH element and fill transparency...
@@ -889,14 +900,13 @@ public:
     void SetWeightToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_weight = false;}
     void SetLineStyleToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_style = false;}
     void SetMaterialToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_material = false;}
-    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = m_appearanceOverrides.m_bgFill = false;}
+    void SetFillColorToSubCategoryAppearance() {m_resolved = m_appearanceOverrides.m_fill = false;}
 
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
     bool IsMaterialFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_material;}
-    bool IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill && !m_appearanceOverrides.m_bgFill;}
-    bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
+    bool IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill;}
     //! @endcond
 
     //! Compare two GeometryParams for equivalence, i.e. both values are from sub-category appearance or have the same override.
@@ -915,10 +925,13 @@ public:
     ColorDef GetLineColor() const {BeAssert(m_appearanceOverrides.m_color || m_resolved); return m_lineColor;}
 
     //! Get element fill color
-    ColorDef GetFillColor() const {BeAssert(m_appearanceOverrides.m_fill || m_resolved); return m_fillColor;}
+    ColorDef GetFillColor() const {BeAssert((m_appearanceOverrides.m_fill && BackgroundFill::None == m_backgroundFill) || m_resolved); return m_fillColor;}
 
     //! Get fill display setting
     FillDisplay GetFillDisplay() const {return m_fillDisplay;}
+
+    //! Get solid fill color type setting
+    bool IsFillColorFromViewBackground(bool* outline=nullptr) const {if (outline) *outline = BackgroundFill::Outline == m_backgroundFill; return BackgroundFill::None != m_backgroundFill;}
 
     //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
     GradientSymbCP GetGradient() const {return m_gradient.get();}
@@ -1618,14 +1631,6 @@ struct HiddenLineParams
 //=======================================================================================
 struct Light : RefCounted<NonCopyableClass>
 {
-    Lighting::LightType m_type;
-    ColorDef m_color;
-    ColorDef m_color2;
-    double m_intensity;  
-    double m_intensity2;
-    DPoint3d m_location;
-    DVec3d m_direction;
-    DGNPLATFORM_EXPORT Light(Lighting::Parameters const& params, DVec3dCP direction, DPoint3dCP location);
 };
 DEFINE_REF_COUNTED_PTR(Light)
 

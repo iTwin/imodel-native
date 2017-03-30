@@ -84,7 +84,7 @@ void ViewAttachmentTest::SetUp()
     m_drawingModelId = drawingModel->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle2d(db,""));
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -322,7 +322,7 @@ TEST_F(ViewAttachmentTest, Geom)
     Sheet::ViewAttachmentPtr pAttach = cpAttach->MakeCopy<Sheet::ViewAttachment>();
     ASSERT_TRUE(pAttach.IsValid());
 
-    DisplayStylePtr noStyle = new DisplayStyle(db,"");
+    DisplayStyle2dPtr noStyle = new DisplayStyle2d(db,"");
     CategorySelectorPtr cats = new CategorySelector(db,"");
     SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *cats, *noStyle);
     sheetView.Insert();

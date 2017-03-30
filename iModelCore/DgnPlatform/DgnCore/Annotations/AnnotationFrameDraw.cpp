@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationFrameDraw.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -63,7 +63,7 @@ static void setFillSymbology(Render::GraphicBuilderR graphic, ViewContextR conte
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
         case AnnotationColorType::RGBA: geomParams.SetFillColor(colorValue); break;
-        case AnnotationColorType::ViewBackground: geomParams.SetFillColorToViewBackground(); break;
+        case AnnotationColorType::ViewBackground: geomParams.SetFillColorFromViewBackground(true); break;
         default: BeAssert(false) /* unknown */; break;
         }
 

@@ -18,10 +18,11 @@ namespace StyleJson
     static constexpr Utf8CP str_NoConstruction() {return "noConstruct";}
     static constexpr Utf8CP str_NoDimension()    {return "noDim";}
     static constexpr Utf8CP str_NoFill()         {return "noFill";}
-    static constexpr Utf8CP str_NoLighting()     {return "noLighting";}
+    static constexpr Utf8CP str_NoCameraLight()  {return "noCameraLights";}
+    static constexpr Utf8CP str_NoSourceLight()  {return "noSourceLights";}
+    static constexpr Utf8CP str_NoSolarLight()   {return "noSolarLight";}
     static constexpr Utf8CP str_NoMaterial()     {return "noMaterial";}
     static constexpr Utf8CP str_NoPattern()      {return "noPattern";}
-    static constexpr Utf8CP str_NoSceneLight()   {return "noSceneLight";}
     static constexpr Utf8CP str_NoStyle()        {return "noStyle";}
     static constexpr Utf8CP str_NoText()         {return "noText";}
     static constexpr Utf8CP str_NoTexture()      {return "noTexture";}
@@ -55,12 +56,13 @@ void ViewFlags::FromJson(JsonValueCR val)
     m_acsTriad = val[str_Acs()].asBool();
     m_textures = !val[str_NoTexture()].asBool();
     m_materials = !val[str_NoMaterial()].asBool();
-    m_sceneLights = !val[str_NoSceneLight()].asBool();
+    m_cameraLights = !val[str_NoCameraLight()].asBool();
+    m_sourceLights = !val[str_NoSourceLight()].asBool();
+    m_solarLight = !val[str_NoSolarLight()].asBool();
     m_visibleEdges = val[str_VisibleEdges()].asBool();
     m_hiddenEdges = val[str_HiddenEdges()].asBool();
     m_shadows = val[str_Shadows()].asBool();
     m_noClipVolume = !val[str_ClipVolume()].asBool();
-    m_ignoreLighting = val[str_NoLighting()].asBool();
     m_monochrome = val[str_Monochrome()].asBool();
     m_edgeMask = val[str_EdgeMask()].asUInt();
     m_hLineMaterialColors = val[str_HlineMatColors()].asBool();
@@ -94,12 +96,13 @@ Json::Value ViewFlags::ToJson() const
     if (m_acsTriad) val[Json::StaticString(str_Acs())] = true;
     if (!m_textures) val[Json::StaticString(str_NoTexture())] = true;
     if (!m_materials) val[Json::StaticString(str_NoMaterial())] = true;
-    if (!m_sceneLights) val[Json::StaticString(str_NoSceneLight())] = true;
+    if (!m_cameraLights) val[Json::StaticString(str_NoCameraLight())] = true;
+    if (!m_sourceLights) val[Json::StaticString(str_NoSourceLight())] = true;
+    if (!m_solarLight) val[Json::StaticString(str_NoSolarLight())] = true;
     if (m_visibleEdges) val[Json::StaticString(str_VisibleEdges())] = true;
     if (m_hiddenEdges) val[Json::StaticString(str_HiddenEdges())] = true;
     if (m_shadows) val[Json::StaticString(str_Shadows())] = true;
     if (!m_noClipVolume) val[Json::StaticString(str_ClipVolume())] = true;
-    if (m_ignoreLighting) val[Json::StaticString(str_NoLighting())] = true;
     if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
     if (m_monochrome) val[Json::StaticString(str_Monochrome())] = true;
     if (m_hLineMaterialColors) val[Json::StaticString(str_HlineMatColors())] = true;
@@ -128,24 +131,8 @@ ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), 
     if (acsId.IsValid())
         m_auxCoordSys = m_dgndb.Elements().Get<AuxCoordSystem>(acsId);
 
-    if (m_auxCoordSys.IsValid())
-        return;
-
-    AuxCoordSystemPtr acs;
-
-    if (def.IsView3d())
-        {
-        acs = new AuxCoordSystem3d(def.GetDgnDb());
-
-        if (def.IsSpatialView())
-            acs->SetOrigin(def.GetDgnDb().GeoLocation().GetGlobalOrigin());
-        }
-    else
-        {
-        acs = new AuxCoordSystem2d(def.GetDgnDb());
-        }
-
-    m_auxCoordSys = acs.get();
+    if (!m_auxCoordSys.IsValid())
+        m_auxCoordSys = AuxCoordSystem::CreateNew(def);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,10 +818,14 @@ void ViewController::PointToGrid(DPoint3dR point) const
     {
     GridOrientationType orientation = _GetGridOrientationType();
 
-    if (GridOrientationType::ACS == orientation)
+    if (GridOrientationType::AuxCoord == orientation)
         {
         GetAuxCoordinateSystem().PointToGrid(*m_vp, point);
         return;
+        }
+    else if (GridOrientationType::GeoCoord == orientation)
+        {
+        // NEEDSWORK...
         }
 
     bool        isoGrid = false;
@@ -860,10 +851,14 @@ void ViewController::_DrawGrid(DecorateContextR context)
 
     GridOrientationType orientation = _GetGridOrientationType();
 
-    if (GridOrientationType::ACS == orientation)
+    if (GridOrientationType::AuxCoord == orientation)
         {
         GetAuxCoordinateSystem().DrawGrid(context);
         return;
+        }
+    else if (GridOrientationType::GeoCoord == orientation)
+        {
+        // NEEDSWORK...
         }
 
     bool        isoGrid = false;

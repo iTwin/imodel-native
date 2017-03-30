@@ -114,7 +114,7 @@ struct TileMaterial
 protected:
     Utf8String              m_name;
     ColorIndex::Dimension   m_colorDimension;
-    bool                    m_hasAlpha;
+    bool                    m_hasAlpha = false;
     TileTextureImageCPtr    m_texture;
     bool                    m_overridesAlpha = false;
     bool                    m_overridesRgb = false;
@@ -125,6 +125,8 @@ protected:
 
     void AddColorIndexTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
     void AddTextureTechniqueParameters(Json::Value& technique, Json::Value& program, PublishTileData& data) const;
+
+    virtual std::string _GetVertexShaderString(bool is3d) const = 0;
 
 public:
     Utf8StringCR GetName() const { return m_name; }
@@ -137,7 +139,7 @@ public:
     bool OverridesRgb() const { return m_overridesRgb; }
     double GetAlphaOverride() const { return m_alphaOverride; }
     RgbFactor const& GetRgbOverride() const { return m_rgbOverride; }
-
+    std::string GetVertexShaderString(bool is3d) const;
 };
 
 //=======================================================================================
@@ -158,12 +160,13 @@ private:
     PolylineType            m_type;
     double                  m_width;
     double                  m_textureLength;       // If positive, meters, if negative, pixels (Cosmetic).
+protected:
+    virtual std::string _GetVertexShaderString(bool is3d) const override;
 public:
     PolylineMaterial(TileMeshCR mesh, Utf8CP suffix);
 
     PolylineType GetType() const { return m_type; }
 
-    std::string GetVertexShaderString(bool is3d) const;
     std::string const& GetFragmentShaderString() const;
     bool IsSimple() const { return PolylineType::Simple == GetType(); }
     bool IsTesselated() const { return PolylineType::Tesselated == GetType(); }
@@ -187,6 +190,8 @@ private:
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
     bool                    m_ignoreLighting;
+protected:
+    virtual std::string _GetVertexShaderString(bool is3d) const override;
 public:
     MeshMaterial(TileMeshCR mesh, Utf8CP suffix, DgnDbR db);
 
@@ -197,7 +202,6 @@ public:
     double GetSpecularExponent() const { return m_specularExponent; }
     RgbFactor const& GetSpecularColor() const { return m_specularColor; }
 
-    std::string const& GetVertexShaderString() const;
     std::string const& GetFragmentShaderString() const;
     Utf8String GetTechniqueNamePrefix() const;
 
@@ -338,13 +342,15 @@ public:
 //=======================================================================================
 struct TilePublisher
 {
+    struct CompareImageP { bool operator() (const TileTextureImageCPtr& p0, const TileTextureImageCPtr& p1) const { return p0.get() < p1.get(); } };
 
-    typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
+    typedef bmap<TileTextureImageCPtr, Utf8String, CompareImageP>  TextureImageMap;
+
 private:
     DPoint3d                m_centroid;
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
-    bmap<TileTextureImageCP, Utf8String>    m_textureImages;
+    TextureImageMap         m_textureImages;
 
     enum class VertexEncoding
         {
@@ -368,7 +374,6 @@ private:
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
-    void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
     Utf8String AddMeshVertexAttributes  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
@@ -392,7 +397,7 @@ private:
     PolylineMaterial AddPolylineMaterial(PublishTileData& tileData, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddPolylineTechnique(PublishTileData& tileData, PolylineMaterial const& mat, bool doBatchIds);
 
-    Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCPtr& textureImage, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddColorIndex(PublishTileData& tileData, ColorIndex& colorIndex, TileMeshCR mesh, Utf8CP suffix);
 public:
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
