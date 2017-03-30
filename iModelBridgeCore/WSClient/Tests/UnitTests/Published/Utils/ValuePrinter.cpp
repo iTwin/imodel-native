@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -431,7 +431,6 @@ std::ostream& operator << (std::ostream &o, BeVersionCR version)
     o << version.ToString().c_str();
     return o;
     }
-
 
 BEGIN_BENTLEY_NAMESPACE
 namespace Json

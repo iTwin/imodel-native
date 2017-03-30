@@ -2,13 +2,15 @@
 |
 |     $Source: Client/WSChangeset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/WSChangeset.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+WSChangeset::Instance WSChangeset::Instance::s_invalidInstance(false);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
@@ -202,11 +204,7 @@ WSChangeset::Instance& WSChangeset::AddInstance(ObjectId instanceId, ChangeState
     if (Format::SingeInstance == m_format && !m_instances.empty())
         {
         BeAssert(false);
-        // Note: The following officially produces undefined behavior in C++.
-        // The variable definition and return must be on separate lines to avoid
-        // a warning from the LLVM compiler (which is treated as an error).
-        WSChangeset::Instance* nullRetVal = nullptr;
-        return *nullRetVal;
+        return WSChangeset::Instance::s_invalidInstance;
         }
 
     m_instances.push_back(std::make_shared<Instance>());
@@ -272,6 +270,9 @@ ChangeState state,
 JsonValuePtr properties
 )
     {
+    if (!m_isValid)
+        return s_invalidInstance;
+
     m_relationships.push_back(std::make_shared<Relationship>());
     auto& relationship = m_relationships.back();
 

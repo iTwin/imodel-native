@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -99,8 +99,12 @@ struct WSChangeset::Instance
     friend struct WSChangeset;
 
     private:
+        static Instance s_invalidInstance;
+
+    private:
+        bool m_isValid;
         ObjectId m_id;
-        ChangeState m_state;
+        ChangeState m_state = ChangeState::Existing;
         std::shared_ptr<Json::Value> m_properties;
         mutable size_t m_baseSize = 0;
         bvector<std::shared_ptr<Relationship>> m_relationships;
@@ -121,6 +125,8 @@ struct WSChangeset::Instance
         static ObjectId GetObjectIdFromInstance(RapidJsonValueCR instance);
 
     public:
+        Instance(bool isValid = true) : m_isValid(isValid) {};
+
         //! Add related instance
         //! @return added related instance
         WSCLIENT_EXPORT Instance& AddRelatedInstance
