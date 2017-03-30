@@ -118,6 +118,7 @@ protected:
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     bool m_noQuery = false;
+    bool m_featureSymbologyDirty = true;
     SpecialElements m_special;
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
@@ -218,6 +219,9 @@ public:
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
     virtual void _PickTerrain(PickContextR context) {}
+
+    bool IsFeatureSymbologyDirty() const {return m_featureSymbologyDirty;}
+    void SetFeatureSymbologyDirty(bool dirty=true) {m_featureSymbologyDirty = dirty;}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}

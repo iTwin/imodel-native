@@ -231,6 +231,7 @@ struct Task : RefCounted<NonCopyableClass>
         DestroyTarget,
         FindNearestZ,
         Initialize,
+        OverrideFeatureSymbology,
         ReadImage,
         Redraw,
         RenderFrame,
@@ -1878,6 +1879,30 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct FeatureSymbologyOverrides
+{
+    enum class HiddenClass
+    {
+        None = 0,
+        Constructions = 1 << 0,
+        Dimensions = 1 << 1,
+        Patterns = 1 << 2,
+    };
+
+    DgnElementIdSet     m_alwaysDrawn;
+    DgnElementIdSet     m_neverDrawn;
+    DgnSubCategoryIdSet m_visibleSubCategories;
+    HiddenClass         m_hiddenClasses = HiddenClass::None;
+    bool                m_alwaysDrawnExclusive;
+
+    DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
+};
+
+ENUM_IS_FLAGS(FeatureSymbologyOverrides::HiddenClass);
+
+//=======================================================================================
 //! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
 //! On Windows, for example, the default Render::Window holds an "HWND"
 // @bsiclass                                                    Keith.Bentley   11/15
@@ -2097,6 +2122,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();

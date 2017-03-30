@@ -154,6 +154,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
 void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
     GetViewDefinition().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
+    SetFeatureSymbologyDirty();
     _OnCategoryChange(onOff);
     }
 
