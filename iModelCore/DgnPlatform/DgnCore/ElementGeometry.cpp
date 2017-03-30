@@ -1529,12 +1529,13 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             }
         else
             {
-            bool isBgFill = elParams.IsFillColorFromViewBackground();
+            bool outline = false;
+            bool isBgFill = elParams.IsFillColorFromViewBackground(&outline);
             bool useFillColor = !isBgFill && !elParams.IsFillColorFromSubCategoryAppearance();
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
-                                           useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor, isBgFill,
-                                           elParams.GetFillTransparency());
+                                           useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor,
+                                           isBgFill ? (outline ? 2 : 1) : 0, elParams.GetFillTransparency());
             fbb.Finish(mloc);
             }
 
@@ -2082,11 +2083,15 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                             changed = true;
                             }
                         }
-                    else if (ppfb->isBgColor())
+                    else if (0 != ppfb->backgroundFill())
                         {
-                        if (!elParams.IsFillColorFromViewBackground())
+                        bool currOutline;
+                        bool currBgFill = elParams.IsFillColorFromViewBackground(&currOutline);
+                        bool useOutline = (2 == ppfb->backgroundFill());
+
+                        if (!currBgFill || useOutline != currOutline)
                             {
-                            elParams.SetFillColorToViewBackground();
+                            elParams.SetFillColorFromViewBackground(useOutline);
                             changed = true;
                             }
                         }
@@ -3031,7 +3036,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     break;
                     }
 
-                if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_isBgColor() || ppfb->has_transparency()))
+                if (!(ppfb->has_color() || ppfb->has_useColor() || ppfb->has_backgroundFill() || ppfb->has_transparency()))
                     break;
 
                 output._DoOutputLine(Utf8PrintfString("  ").c_str());
@@ -3041,10 +3046,14 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                     ColorDef color(ppfb->color());
                     output._DoOutputLine(Utf8PrintfString("Fill: [Red:%d Green:%d Blue:%d Alpha:%d] ", color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()).c_str());
                     }
-                else if (ppfb->has_isBgColor())
-                    output._DoOutputLine(Utf8PrintfString("Fill: View Background ").c_str());
+                else if (ppfb->has_backgroundFill())
+                    {
+                    output._DoOutputLine(Utf8PrintfString("Fill: View Background %s", 1 == ppfb->backgroundFill() ? "Solid" : "Outline").c_str());
+                    }
                 else
-                    output._DoOutputLine(Utf8PrintfString("Fill: Opaque ").c_str());
+                    {
+                    output._DoOutputLine(Utf8PrintfString("Fill: Single Color ").c_str());
+                    }
 
                 if (ppfb->has_transparency())
                     output._DoOutputLine(Utf8PrintfString("Transparency: %lf ", ppfb->transparency()).c_str());
