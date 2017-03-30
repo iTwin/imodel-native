@@ -1996,8 +1996,13 @@
         <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
     </ECEntityClass>
 
-    <ECEntityClass typeName="DisplayStyle" displayLabel="Display Style">
+    <ECEntityClass typeName="DisplayStyle" modifier="Abstract" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DisplayStyle2d" displayLabel="2D Display Style">
+        <BaseClass>DisplayStyle</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
 

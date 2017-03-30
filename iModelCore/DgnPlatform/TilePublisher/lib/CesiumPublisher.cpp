@@ -30,7 +30,7 @@ DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
         auto view = ViewDefinition::Get(db, entry.GetId());
-        if (view.IsValid() && (view->IsSpatialView() || view->IsDrawingView()))
+        if (view.IsValid() && !view->IsPrivate() && (view->IsSpatialView() || view->IsDrawingView() || view->IsSheetView()))
             {
             viewId = view->GetViewId();
             break;
@@ -64,7 +64,7 @@ DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
         view = ViewDefinition::Get(db, entry.GetId());
-        if (view.IsValid() && (view->IsSpatialView() || view->IsDrawingView()))
+        if (view.IsValid() &&!view->IsPrivate() && (view->IsSpatialView() || view->IsDrawingView() || view->IsSheetView()))
             viewIds.insert(entry.GetId());
         }
 

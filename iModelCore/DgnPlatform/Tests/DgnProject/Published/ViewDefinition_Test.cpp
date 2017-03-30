@@ -162,6 +162,7 @@ TEST_F(ViewDefinitionTests, MakeIterator)
     ASSERT_TRUE(view3B->GetPropertyValueBoolean("IsPrivate"));
     ASSERT_EQ(2, ViewDefinition::QueryCount(*m_db, "WHERE IsPrivate=TRUE"));
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                               Ridha.Malik                   3/17
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -179,7 +180,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(*m_db))
             categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-        DisplayStylePtr style = new DisplayStyle(*m_db, "");
+        DisplayStyle2dPtr style = new DisplayStyle2d(*m_db, "");
         ASSERT_TRUE(style.IsValid());
         Render::ViewFlags flags = style->GetViewFlags();
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
@@ -269,6 +270,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
     ASSERT_EQ(DgnDbStatus::Success, SviewDef->Delete());
     ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
     }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                               Ridha.Malik                   3/17
  +---------------+---------------+---------------+---------------+---------------+------*/

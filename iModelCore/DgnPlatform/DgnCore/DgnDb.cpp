@@ -49,7 +49,7 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
 
-    ApplyECDbSettings(false /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
+    ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
 //--------------------------------------------------------------------------------------
@@ -63,15 +63,6 @@ ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const {return GetECDbSettin
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
 SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
-
-//--------------------------------------------------------------------------------------
-//Back door for converter
-// @bsimethod                                Sam.Wilson                11/2016
-//---------------+---------------+---------------+---------------+---------------+------
-extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
-    {
-    return (void*)db.GetECCrudWriteToken();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12

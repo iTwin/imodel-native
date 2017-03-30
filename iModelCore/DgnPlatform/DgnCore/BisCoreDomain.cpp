@@ -203,6 +203,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ViewElementHandler::ViewModels::GetHandler());
     RegisterHandler(ViewElementHandler::ViewCategories::GetHandler());
     RegisterHandler(ViewElementHandler::ViewDisplayStyle::GetHandler());
+    RegisterHandler(ViewElementHandler::ViewDisplayStyle2d::GetHandler());
     RegisterHandler(ViewElementHandler::ViewDisplayStyle3d::GetHandler());
     RegisterHandler(ViewElementHandler::OrthographicView::GetHandler());
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());

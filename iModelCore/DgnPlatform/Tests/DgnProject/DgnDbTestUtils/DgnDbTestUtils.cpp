@@ -376,7 +376,7 @@ ModelSelectorCPtr DgnDbTestUtils::InsertModelSelector(DgnDbR db, Utf8CP name, Dg
 DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewName)
     {
     DgnDbR db = model.GetDgnDb();
-    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db.GetDictionaryModel(), viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db.GetDictionaryModel(), viewName ? viewName : model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle2d(db,""));
     EXPECT_TRUE(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))

@@ -725,7 +725,6 @@ struct JsRenderGeometryParams : RefCountedBaseWithCreate
     void SetLineColor(JsColorDefP v) {m_value.SetLineColor(v->m_value);}
     JsColorDefP GetFillColor() {return new JsColorDef(m_value.GetFillColor());}
     void SetFillColor(JsColorDefP v) {m_value.SetFillColor(v->m_value);}
-    void SetFillColorToViewBackground() {m_value.SetFillColorToViewBackground();}
     VALUE_TYPE_GET_SET_CAST(RenderFillDisplay, Render::FillDisplay, FillDisplay)
     VALUE_TYPE_GET_SET_CAST(RenderDgnGeometryClass, Render::DgnGeometryClass, GeometryClass)
     VALUE_TYPE_GET_SET(uint32_t, Weight)

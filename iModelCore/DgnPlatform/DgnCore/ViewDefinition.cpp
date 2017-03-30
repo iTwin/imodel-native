@@ -25,6 +25,7 @@ namespace ViewElementHandler
     HANDLER_DEFINE_MEMBERS(ViewModels);
     HANDLER_DEFINE_MEMBERS(ViewCategories);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle);
+    HANDLER_DEFINE_MEMBERS(ViewDisplayStyle2d);
     HANDLER_DEFINE_MEMBERS(ViewDisplayStyle3d);
 }
 
@@ -1902,7 +1903,10 @@ void View::_RegisterPropertyAccessors(ECSqlClassInfo& params, ClassLayoutCR layo
             else
                 {
                 auto view2d = viewDef.ToView2dP();
-                view2d->SetDisplayStyle(*style->MakeCopy<Dgn::DisplayStyle>());
+                auto style2d = style->ToDisplayStyle2d();
+                if (nullptr == style2d)
+                    return DgnDbStatus::BadArg;
+                view2d->SetDisplayStyle2d(*style2d->MakeCopy<Dgn::DisplayStyle2d>());
                 }
 
             return DgnDbStatus::Success;
@@ -2262,7 +2266,7 @@ Sheet::ViewControllerPtr SheetViewDefinition::LoadViewController(bool o) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyleP displayStyleIn)
+TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categorySelectorIn, DisplayStyle2dP displayStyleIn)
     {
     DgnDbR db = definitionModel.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(ViewElementHandler::TemplateView2d::GetHandler());
@@ -2270,10 +2274,10 @@ TemplateViewDefinition2dPtr TemplateViewDefinition2d::Create(DefinitionModelR de
         return nullptr;
 
     CategorySelectorP categorySelector = categorySelectorIn ? categorySelectorIn : new CategorySelector(db, "");
-    DisplayStyleP displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle(db, "");
+    auto displayStyle = displayStyleIn ? displayStyleIn : new DisplayStyle2d(db, "");
 
     TemplateViewDefinition2dPtr viewDef = new TemplateViewDefinition2d(CreateParams(db, definitionModel.GetModelId(), classId, CreateCode(definitionModel, name), *categorySelector));
-    viewDef->SetDisplayStyle(*displayStyle);
+    viewDef->SetDisplayStyle2d(*displayStyle);
 
     if (nullptr == categorySelectorIn)
         {

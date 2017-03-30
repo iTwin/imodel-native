@@ -40,10 +40,10 @@ ModelSelectorCPtr createAndInsertModelSelector(DgnDbR db, Utf8CP name, DgnModelI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DisplayStyleCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
+DisplayStyle2dCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
     {
     // DisplayStyle is a definition element that is normally shared by many ViewDefinitions.
-    DisplayStyle displayStyle(db, name);
+    DisplayStyle2d displayStyle(db, name);
     Render::ViewFlags viewFlags = displayStyle.GetViewFlags();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
     return db.Elements().Insert(displayStyle);
@@ -62,7 +62,7 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, Ca
     view.SetStandardViewRotation(StandardView::Iso);
     view.LookAtVolume(db.GeoLocation().GetProjectExtents());
 
-    // Write the ViewDefinition to the bim
+    // Write the ViewDefinition to the db
     return !view.Insert().IsValid() ? DgnViewId() : view.GetViewId();
     }
 //__PUBLISH_EXTRACT_END__

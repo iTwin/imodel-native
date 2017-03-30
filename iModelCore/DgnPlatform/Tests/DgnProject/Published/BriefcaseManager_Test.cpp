@@ -2755,7 +2755,7 @@ struct IndirectLocksTest : DoubleBriefcaseTest
 
     void _InitMasterFile() override
         {
-        DisplayStyle style(*m_db, "MyDisplayStyle");
+        DisplayStyle2d style(*m_db, "MyDisplayStyle");
         style.Insert();
         m_displayStyleId = style.GetElementId();
         ASSERT_TRUE(m_displayStyleId.IsValid());
@@ -2796,7 +2796,7 @@ bool IndirectLocksTest::CreateView(DgnDbR db)
     if (!categorySelector->Insert().IsValid())
         return false;
 
-    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle>(m_displayStyleId);
+    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle2d>(m_displayStyleId);
     EXPECT_TRUE(displayStyleA.IsValid());
     if (!displayStyleA.IsValid())
         return false;
