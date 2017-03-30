@@ -1883,24 +1883,19 @@ public:
 //=======================================================================================
 struct FeatureSymbologyOverrides
 {
-    enum class HiddenClass
-    {
-        None = 0,
-        Constructions = 1 << 0,
-        Dimensions = 1 << 1,
-        Patterns = 1 << 2,
-    };
-
     DgnElementIdSet     m_alwaysDrawn;
     DgnElementIdSet     m_neverDrawn;
     DgnSubCategoryIdSet m_visibleSubCategories;
-    HiddenClass         m_hiddenClasses = HiddenClass::None;
+    bool                m_constructions;
+    bool                m_dimensions;
+    bool                m_patterns;
     bool                m_alwaysDrawnExclusive;
 
+    FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
-};
 
-ENUM_IS_FLAGS(FeatureSymbologyOverrides::HiddenClass);
+    DGNPLATFORM_EXPORT bool IsFeatureVisible(FeatureCR) const;
+};
 
 //=======================================================================================
 //! A Render::Window is a platform specific object that identifies a rectangular window on a screen.

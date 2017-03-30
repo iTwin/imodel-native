@@ -688,26 +688,46 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
         return; // no point in worrying about the rest...
 
     ViewFlags vf = view.GetViewFlags();
-    if (!vf.ShowConstructions())
-        m_hiddenClasses = HiddenClass::Constructions;
-
-    if (!vf.ShowDimensions())
-        m_hiddenClasses = (m_hiddenClasses | HiddenClass::Dimensions);
-
-    if (!vf.ShowPatterns())
-        m_hiddenClasses = (m_hiddenClasses | HiddenClass::Patterns);
+    m_constructions = vf.ShowConstructions();
+    m_dimensions = vf.ShowDimensions();
+    m_patterns = vf.ShowPatterns();
 
     // Features are defined by subcategory, which only implies category...
     // A subcategory is visible if it belongs to a viewed category and its appearance's visibility flag is set
     static constexpr Utf8CP ecsql = "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE InVirtualSet(?, Parent.Id)";
     CachedECSqlStatementPtr stmt = view.GetDgnDb().GetPreparedECSqlStatement(ecsql);
     stmt->BindVirtualSet(1, view.GetViewedCategories());
-    while (BE_SQLITE_OK == stmt->Step())
+    while (BE_SQLITE_ROW == stmt->Step())
         {
         auto subcatId = stmt->GetValueId<DgnSubCategoryId>(0);
         auto appearance = view.GetSubCategoryAppearance(subcatId);
         if (appearance.IsVisible())
             m_visibleSubCategories.insert(subcatId);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FeatureSymbologyOverrides::IsFeatureVisible(FeatureCR feat) const
+    {
+    auto elemId = feat.GetElementId();
+    bool alwaysDrawn = elemId.IsValid() && m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
+    if (alwaysDrawn || m_alwaysDrawnExclusive)
+        return alwaysDrawn;
+
+    if (elemId.IsValid() && m_neverDrawn.end() != m_neverDrawn.find(elemId))
+        return false;
+
+    if (feat.GetSubCategoryId().IsValid() && m_visibleSubCategories.end() == m_visibleSubCategories.find(feat.GetSubCategoryId()))
+        return false;
+
+    switch (feat.GetClass())
+        {
+        case DgnGeometryClass::Construction:    return m_constructions;
+        case DgnGeometryClass::Dimension:       return m_dimensions;
+        case DgnGeometryClass::Pattern:         return m_patterns;
+        default:                                return true;
         }
     }
 
