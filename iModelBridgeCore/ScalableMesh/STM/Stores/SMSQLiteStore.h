@@ -35,7 +35,9 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
-                        
+
+        virtual void SaveProjectFiles() override;
+                                
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;
 
         virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;

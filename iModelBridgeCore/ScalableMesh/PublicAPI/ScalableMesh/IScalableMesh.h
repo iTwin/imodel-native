@@ -247,7 +247,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) = 0;
-
+        
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
         virtual Utf8String                         _GetEditFilesBasePath() = 0;

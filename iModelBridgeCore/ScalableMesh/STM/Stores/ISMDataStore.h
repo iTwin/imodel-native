@@ -230,6 +230,11 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
 
         /**----------------------------------------------------------------------------
+        Save the content of the project files.
+        -----------------------------------------------------------------------------*/
+        virtual void SaveProjectFiles() = 0;
+
+        /**----------------------------------------------------------------------------
          Get the next node ID available.
         -----------------------------------------------------------------------------*/
         virtual uint64_t GetNextID() const = 0;

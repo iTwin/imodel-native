@@ -669,7 +669,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->Progress() = 0.0;
 
     pDataIndex->Store();
-    m_smSQLitePtr->CommitAll();
+    m_smSQLitePtr->Save();
 
     pDataIndex = 0;
 

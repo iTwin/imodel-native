@@ -220,7 +220,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {}
         virtual void _ReFilter() override {}
-
+        
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override {}
 
         virtual Utf8String                         _GetEditFilesBasePath() override { return Utf8String(); }

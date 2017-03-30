@@ -42,6 +42,8 @@ class SMSQLiteSisterFile
 
         bool SetProjectFilesPath(BeFileName& projectFilesPath);
 
+        void SaveSisterFiles();
+
         bool IsProjectFilesPathSet();
 
     };

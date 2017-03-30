@@ -180,6 +180,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    
 
+template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
+    {
+    __super::SaveSisterFiles();
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
     SMSQLiteFilePtr sqlFilePtr;
