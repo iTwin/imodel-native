@@ -168,7 +168,7 @@ void ChangeTestFixture::CreateDefaultView(DgnDbR db)
             models->AddModel(id);
         }
 
-    SpatialViewDefinition view(db, "Default", *categories, *style, *models);
+    SpatialViewDefinition view(db.GetDictionaryModel(), "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());

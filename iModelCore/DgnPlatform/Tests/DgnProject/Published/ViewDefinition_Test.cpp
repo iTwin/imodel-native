@@ -24,7 +24,7 @@ OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialMode
     ModelSelectorPtr modelSelector = new ModelSelector(db, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(db, name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(db.GetDictionaryModel(), name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
     BeAssert(viewDef.IsValid());
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
@@ -185,7 +185,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         flags.SetRenderMode(Render::RenderMode::SmoothShade);
         style->SetViewFlags(flags);
         //Create a  DrawingView
-        DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(*m_db, "DrawingView", drawingModel->GetModelId(), *categories, *style);
+        DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(m_db->GetDictionaryModel(), "DrawingView", drawingModel->GetModelId(), *categories, *style);
         ASSERT_TRUE(viewDef.IsValid());
         ASSERT_EQ(viewDef->GetName(), "DrawingView");
         viewDef->SetDescription("DrawingView Descr");
@@ -197,11 +197,11 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         ViewDefinitionCPtr viewDefele = viewDef->Insert();
         ASSERT_TRUE(viewDefele.IsValid());
         DviewDefid = viewDefele->GetViewId();
-        ASSERT_TRUE(DviewDefid == ViewDefinition::QueryViewId(*m_db,"DrawingView"));
+        ASSERT_TRUE(DviewDefid == ViewDefinition::QueryViewId(m_db->GetDictionaryModel(), "DrawingView"));
         //Create SheetView
         Sheet::ElementPtr sheet = DgnDbTestUtils::InsertSheet(*DocListModel, 1.0, 1.0, 1.0, "MySheet");
         Sheet::ModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
-        SheetViewDefinitionPtr sheetView=new SheetViewDefinition(*m_db, "MySheetView", sheetModel->GetModelId(), *categories, *style);
+        SheetViewDefinitionPtr sheetView=new SheetViewDefinition(m_db->GetDictionaryModel(), "MySheetView", sheetModel->GetModelId(), *categories, *style);
         ASSERT_TRUE(sheetView.IsValid());
         ASSERT_EQ(sheetView->GetName(), "MySheetView");
         sheetView->SetDescription("SheetView Descr");
@@ -212,7 +212,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
         //Insert SheetView
         ViewDefinitionCPtr sheetviewele=sheetView->Insert();
         SviewDefid = sheetviewele->GetViewId();
-        ASSERT_TRUE(SviewDefid == ViewDefinition::QueryViewId(*m_db, "MySheetView"));
+        ASSERT_TRUE(SviewDefid == ViewDefinition::QueryViewId(m_db->GetDictionaryModel(), "MySheetView"));
         }
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
@@ -306,7 +306,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition3dCRUD)
         //Update the view element
         ASSERT_TRUE(view->Update().IsValid());
         viewid = view->GetViewId();
-        ASSERT_TRUE(viewid == ViewDefinition::QueryViewId(*m_db, "view1"));
+        ASSERT_TRUE(viewid == ViewDefinition::QueryViewId(m_db->GetDictionaryModel(), "view1"));
         }
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();

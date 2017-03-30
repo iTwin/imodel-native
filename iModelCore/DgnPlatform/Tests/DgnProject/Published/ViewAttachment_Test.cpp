@@ -84,7 +84,7 @@ void ViewAttachmentTest::SetUp()
     m_drawingModelId = drawingModel->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(db, "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle(db,""));
+    DrawingViewDefinition view(db.GetDictionaryModel(), "MyDrawingView", m_drawingModelId, *new CategorySelector(db,""), *new DisplayStyle(db,""));
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -324,7 +324,7 @@ TEST_F(ViewAttachmentTest, Geom)
 
     DisplayStylePtr noStyle = new DisplayStyle(db,"");
     CategorySelectorPtr cats = new CategorySelector(db,"");
-    SheetViewDefinition sheetView(db, "MySheetView", m_sheetModelId, *cats, *noStyle);
+    SheetViewDefinition sheetView(db.GetDictionaryModel(), "MySheetView", m_sheetModelId, *cats, *noStyle);
     sheetView.Insert();
 
     Sheet::ViewControllerPtr viewController = sheetView.LoadViewController();
@@ -333,9 +333,9 @@ TEST_F(ViewAttachmentTest, Geom)
     viewController->ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController->ChangeCategoryDisplay(m_annotationCatId, true);
     viewController->GetViewDefinition().GetCategorySelector().Update();
-
     db.SaveChanges();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   1/17
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -712,11 +712,11 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         return nullptr;
         }
 
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db, redline->GetCode().GetValue().c_str(), 
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(db.GetDictionaryModel(), redline->GetCode().GetValue().c_str(), 
                                                               model.GetModelId(), *new CategorySelector(db, ""), *new DisplayStyle(db));
 
     //  The view always has the same name as the redline and its model
-    DgnCode code = CreateCode(db, redline->GetCode().GetValue());
+    DgnCode code = CreateCode(db.GetDictionaryModel(), redline->GetCode().GetValue());
     if (!view->IsValidCode(code))
         {
         createStatus = DgnDbStatus::InvalidName;

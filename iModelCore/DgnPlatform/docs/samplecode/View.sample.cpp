@@ -21,9 +21,9 @@ USING_NAMESPACE_BENTLEY_DGN
 CategorySelectorCPtr createAndInsertCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const& categories)
     {
     // CategorySelector is a definition element that is normally shared by many ViewDefinitions.
-    CategorySelector catSel(db, name);
-    catSel.GetCategoriesR() = categories;
-    return db.Elements().Insert(catSel);
+    CategorySelector categorySelector(db, name);
+    categorySelector.GetCategoriesR() = categories;
+    return db.Elements().Insert(categorySelector);
     }
 
 //---------------------------------------------------------------------------------------
@@ -32,9 +32,9 @@ CategorySelectorCPtr createAndInsertCategorySelector(DgnDbR db, Utf8CP name, Dgn
 ModelSelectorCPtr createAndInsertModelSelector(DgnDbR db, Utf8CP name, DgnModelIdSet const& models)
     {
     // ModelSelector is a definition element that is normally shared by many ViewDefinitions.
-    ModelSelector modSel(db, name);
-    modSel.GetModelsR() = models;
-    return db.Elements().Insert(modSel);
+    ModelSelector modelSelector(db, name);
+    modelSelector.GetModelsR() = models;
+    return db.Elements().Insert(modelSelector);
     }
 
 //---------------------------------------------------------------------------------------
@@ -43,21 +43,21 @@ ModelSelectorCPtr createAndInsertModelSelector(DgnDbR db, Utf8CP name, DgnModelI
 DisplayStyleCPtr createAndInsertDisplayStyle(DgnDbR db, Utf8CP name)
     {
     // DisplayStyle is a definition element that is normally shared by many ViewDefinitions.
-    DisplayStyle dstyle(db, name);
-    Render::ViewFlags viewFlags = dstyle.GetViewFlags();
+    DisplayStyle displayStyle(db, name);
+    Render::ViewFlags viewFlags = displayStyle.GetViewFlags();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
-    return db.Elements().Insert(dstyle);
+    return db.Elements().Insert(displayStyle);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, CategorySelectorR catSel, ModelSelectorR modSel, DisplayStyle3dR dstyle)
+DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DRange3dCR viewExtents, CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
     {
     // Construct the ViewDefinition
     // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
     // That is why they are inputs to this function. 
-    SpatialViewDefinition view(db, name, catSel, dstyle, modSel);
+    SpatialViewDefinition view(db.GetDictionaryModel(), name, categorySelector, displayStyle, modelSelector);
 
     view.SetStandardViewRotation(StandardView::Iso);
     view.LookAtVolume(db.GeoLocation().GetProjectExtents());

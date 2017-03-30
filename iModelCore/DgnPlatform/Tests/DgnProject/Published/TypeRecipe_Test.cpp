@@ -66,8 +66,8 @@ struct TypeTests : public DgnDbTestFixture
     bool IsInstanceSpecific(DgnElementCR);
     void SetInstanceSpecific(DgnElementR, bool);
     DgnViewId InsertSpatialView(SpatialModelR, Utf8CP);
-    DgnViewId InsertTemplateView2d(DgnDbR, Utf8CP);
-    DgnViewId InsertTemplateView3d(DgnDbR, Utf8CP);
+    DgnViewId InsertTemplateView2d(DefinitionModelR, Utf8CP);
+    DgnViewId InsertTemplateView3d(DefinitionModelR, Utf8CP);
 };
 
 //---------------------------------------------------------------------------------------
@@ -941,9 +941,9 @@ DgnDbStatus TypeTests::DropSpatialElementToGeometry(SpatialModelR model, Spatial
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2017
 //---------------------------------------------------------------------------------------
-DgnViewId TypeTests::InsertTemplateView2d(DgnDbR db, Utf8CP name)
+DgnViewId TypeTests::InsertTemplateView2d(DefinitionModelR model, Utf8CP name)
     {
-    TemplateViewDefinition2dPtr view = TemplateViewDefinition2d::Create(db, name);
+    TemplateViewDefinition2dPtr view = TemplateViewDefinition2d::Create(model, name);
     if (view.IsValid())
         {
         view->SetStandardViewRotation(StandardView::Top);
@@ -957,9 +957,9 @@ DgnViewId TypeTests::InsertTemplateView2d(DgnDbR db, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2017
 //---------------------------------------------------------------------------------------
-DgnViewId TypeTests::InsertTemplateView3d(DgnDbR db, Utf8CP name)
+DgnViewId TypeTests::InsertTemplateView3d(DefinitionModelR model, Utf8CP name)
     {
-    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(db, name);
+    TemplateViewDefinition3dPtr view = TemplateViewDefinition3d::Create(model, name);
     if (view.IsValid())
         {
         view->SetStandardViewRotation(StandardView::Iso);
@@ -980,7 +980,7 @@ DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
     ModelSelectorPtr modelSelector = new ModelSelector(db, "");
     modelSelector->AddModel(model.GetModelId());
 
-    OrthographicViewDefinition view(db, name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
+    OrthographicViewDefinition view(db.GetDictionaryModel(), name, *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *modelSelector);
 
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         view.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
@@ -1098,8 +1098,8 @@ TEST_F(TypeTests, CreateSampleBim)
     ASSERT_EQ(DgnDbStatus::Success, dropStatus);
     InsertSpatialView(*drop3B1, "Drop 3B1 View");
 
-    InsertTemplateView2d(*m_db, "2D Template View");
-    InsertTemplateView3d(*m_db, "3D Template View");
+    InsertTemplateView2d(*typeModel2d, "2D Template View");
+    InsertTemplateView3d(*typeModel3d, "3D Template View");
     }
 
 //---------------------------------------------------------------------------------------

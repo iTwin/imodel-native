@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
     {
     if (!m_viewName.empty())
-        return ViewDefinition::QueryViewId(db, m_viewName);
+        return ViewDefinition::QueryViewId(db.GetDictionaryModel(), m_viewName);
 
     // Try default view
     DgnViewId viewId;

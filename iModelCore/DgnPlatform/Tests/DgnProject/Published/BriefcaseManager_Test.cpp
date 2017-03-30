@@ -2801,7 +2801,7 @@ bool IndirectLocksTest::CreateView(DgnDbR db)
     if (!displayStyleA.IsValid())
         return false;
 
-    DrawingViewDefinition view(db, "MyView", Model2dId(), *categorySelector, *displayStyleA);
+    DrawingViewDefinition view(db.GetDictionaryModel(), "MyView", Model2dId(), *categorySelector, *displayStyleA);
     Acquire(view, BeSQLite::DbOpcode::Insert);
     return view.Insert().IsValid();
     }

@@ -1014,7 +1014,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition2d)
         DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
         DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
 
-        DrawingViewDefinition view(*m_db, "Default", drawingModel->GetModelId(),*categories, *style);
+        DrawingViewDefinition view(m_db->GetDictionaryModel(), "Default", drawingModel->GetModelId(),*categories, *style);
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(raindex, "RotationAngle"));
@@ -1126,7 +1126,7 @@ TEST_F(GetSetCustomHandledProprty, Viewdefinition3d)
                 models->AddModel(id);
              }
 
-        SpatialViewDefinition view(*m_db, "Default", *categories, *style, *models);
+        SpatialViewDefinition view(m_db->GetDictionaryModel(), "Default", *categories, *style, *models);
         view.SetStandardViewRotation(StandardView::Iso);
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(orindex, "Origin"));
         ASSERT_EQ(DgnDbStatus::Success, view.GetPropertyIndex(exindex, "Extents"));
