@@ -603,13 +603,14 @@ TEST(Vu,IncircleFlipProblem)
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
-
+//! construct delauney triangulations and voronoi diagram for given station points (e.g. room centers)
+//! clip the voronoi to the wall polygon.
 bool DoClips (
 bvector<DPoint3d> const &stationPoints, //!< [in] nominal room centers
 bvector<DPoint3d> const &wallPoints,    //!< [in] (single) wall polygon
-PolyfaceHeaderPtr &delauney,            //!<  [in] delauney triangulation of room centers
-PolyfaceHeaderPtr &voronoi,             //!< [in] voronoi regions
-PolyfaceHeaderPtr &voronoiInsideWalls   //!< [in] voronoi regions clipped to wall 
+PolyfaceHeaderPtr &delauney,            //!<  [out] delauney triangulation of room centers
+PolyfaceHeaderPtr &voronoi,             //!< [out] voronoi regions
+PolyfaceHeaderPtr &voronoiInsideWalls   //!< [out] voronoi regions clipped to wall 
 )
     {
     auto clipper = PolyfaceHeader::CreateVariableSizeIndexed ();
